@@ -1,0 +1,492 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      clients: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          nif: string | null
+          notes: string | null
+          phone: string
+          shop_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          nif?: string | null
+          notes?: string | null
+          phone?: string
+          shop_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          nif?: string | null
+          notes?: string | null
+          phone?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          client_id: string
+          cost_total: number
+          created_at: string
+          date: string
+          id: string
+          lines: Json
+          notes: string | null
+          number: string
+          profit: number
+          shop_id: string
+          status: string
+          subtotal: number
+          token: string | null
+          total: number
+          validity_date: string
+          vat_total: number
+          vehicle_id: string
+        }
+        Insert: {
+          client_id: string
+          cost_total?: number
+          created_at?: string
+          date?: string
+          id?: string
+          lines?: Json
+          notes?: string | null
+          number: string
+          profit?: number
+          shop_id: string
+          status?: string
+          subtotal?: number
+          token?: string | null
+          total?: number
+          validity_date?: string
+          vat_total?: number
+          vehicle_id: string
+        }
+        Update: {
+          client_id?: string
+          cost_total?: number
+          created_at?: string
+          date?: string
+          id?: string
+          lines?: Json
+          notes?: string | null
+          number?: string
+          profit?: number
+          shop_id?: string
+          status?: string
+          subtotal?: number
+          token?: string | null
+          total?: number
+          validity_date?: string
+          vat_total?: number
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          country: string
+          created_at: string
+          currency: string
+          email: string
+          id: string
+          labor_rate: number
+          language: string
+          logo_url: string | null
+          name: string
+          phone: string
+          user_id: string
+          vat_rate: number
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          id?: string
+          labor_rate?: number
+          language?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string
+          user_id: string
+          vat_rate?: number
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          id?: string
+          labor_rate?: number
+          language?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string
+          user_id?: string
+          vat_rate?: number
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          client_id: string
+          created_at: string
+          fuel: string
+          id: string
+          make: string
+          mileage: number
+          model: string
+          notes: string | null
+          plate: string
+          shop_id: string
+          vin: string | null
+          year: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          fuel?: string
+          id?: string
+          make: string
+          mileage?: number
+          model: string
+          notes?: string | null
+          plate: string
+          shop_id: string
+          vin?: string | null
+          year?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          fuel?: string
+          id?: string
+          make?: string
+          mileage?: number
+          model?: string
+          notes?: string | null
+          plate?: string
+          shop_id?: string
+          vin?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          client_description: string | null
+          client_id: string
+          completed_at: string | null
+          cost_total: number
+          created_at: string
+          delivered_at: string | null
+          diagnosis: string | null
+          entry_mileage: number
+          id: string
+          labor_hours: number
+          lines: Json
+          notes: string | null
+          number: string
+          origin: string
+          profit: number
+          quote_id: string | null
+          shop_id: string
+          status: string
+          subtotal: number
+          technician: string | null
+          total: number
+          vat_total: number
+          vehicle_id: string
+        }
+        Insert: {
+          client_description?: string | null
+          client_id: string
+          completed_at?: string | null
+          cost_total?: number
+          created_at?: string
+          delivered_at?: string | null
+          diagnosis?: string | null
+          entry_mileage?: number
+          id?: string
+          labor_hours?: number
+          lines?: Json
+          notes?: string | null
+          number: string
+          origin?: string
+          profit?: number
+          quote_id?: string | null
+          shop_id: string
+          status?: string
+          subtotal?: number
+          technician?: string | null
+          total?: number
+          vat_total?: number
+          vehicle_id: string
+        }
+        Update: {
+          client_description?: string | null
+          client_id?: string
+          completed_at?: string | null
+          cost_total?: number
+          created_at?: string
+          delivered_at?: string | null
+          diagnosis?: string | null
+          entry_mileage?: number
+          id?: string
+          labor_hours?: number
+          lines?: Json
+          notes?: string | null
+          number?: string
+          origin?: string
+          profit?: number
+          quote_id?: string | null
+          shop_id?: string
+          status?: string
+          subtotal?: number
+          technician?: string | null
+          total?: number
+          vat_total?: number
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import Layout from "@/components/Layout";
 import Auth from "@/pages/Auth";
+import OnboardingWizard from "@/pages/OnboardingWizard";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import Vehicles from "@/pages/Vehicles";
@@ -23,20 +25,34 @@ const queryClient = new QueryClient();
 function AppRoutes() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
     });
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check if shop is configured
+  useEffect(() => {
+    if (!session) return;
+    const checkShop = async () => {
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("name")
+        .eq("user_id", session.user.id)
+        .single();
+      // If shop name is empty, needs onboarding
+      setNeedsOnboarding(!shop?.name || shop.name.trim() === '');
+    };
+    checkShop();
+  }, [session]);
 
   if (loading) {
     return (
@@ -47,6 +63,10 @@ function AppRoutes() {
   }
 
   if (!session) return <Auth />;
+
+  if (needsOnboarding) {
+    return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;
+  }
 
   return (
     <Layout>
@@ -69,11 +89,13 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <LanguageProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

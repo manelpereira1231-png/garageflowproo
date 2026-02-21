@@ -8,27 +8,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Car } from "lucide-react";
 import { toast } from "sonner";
-import { FUEL_TYPES } from "@/types/garage";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-interface VehicleRow {
-  id: string;
-  client_id: string;
-  make: string;
-  model: string;
-  year: number;
-  plate: string;
-  vin: string | null;
-  mileage: number;
-  fuel: string;
-  notes: string | null;
-  clients?: { name: string } | null;
-}
-
-interface ClientOption { id: string; name: string; }
+const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
+const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
 
 export default function Vehicles() {
-  const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
+  const { t } = useLanguage();
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,12 +26,8 @@ export default function Vehicles() {
   });
 
   const fetchData = async () => {
-    const { data: v } = await supabase
-      .from("vehicles")
-      .select("*, clients(name)")
-      .order("created_at", { ascending: false });
+    const { data: v } = await supabase.from("vehicles").select("*, clients(name)").order("created_at", { ascending: false });
     if (v) setVehicles(v);
-    
     const { data: c } = await supabase.from("clients").select("id, name").order("name");
     if (c) setClients(c);
   };
@@ -54,27 +38,19 @@ export default function Vehicles() {
     e.preventDefault();
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error("Sessão expirada"); setLoading(false); return; }
-
+    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
-    if (!shop) { toast.error("Configure a oficina primeiro"); setLoading(false); return; }
+    if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
     const { error } = await supabase.from("vehicles").insert({
-      shop_id: shop.id,
-      client_id: form.client_id,
-      make: form.make,
-      model: form.model,
-      year: parseInt(form.year),
-      plate: form.plate.toUpperCase(),
-      vin: form.vin || null,
-      mileage: parseInt(form.mileage),
-      fuel: form.fuel,
-      notes: form.notes || null,
+      shop_id: shop.id, client_id: form.client_id, make: form.make, model: form.model,
+      year: parseInt(form.year), plate: form.plate.toUpperCase(), vin: form.vin || null,
+      mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     });
 
     if (error) toast.error(error.message);
     else {
-      toast.success("Veículo criado!");
+      toast.success(t('vehicles.created'));
       setOpen(false);
       fetchData();
     }
@@ -91,62 +67,42 @@ export default function Vehicles() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Veículos</h1>
-          <p className="text-muted-foreground text-sm mt-1">{vehicles.length} veículos</p>
+          <h1 className="page-title">{t('vehicles.title')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{vehicles.length} {t('vehicles.title').toLowerCase()}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />Novo Veículo</Button>
+            <Button><Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Novo Veículo</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('vehicles.new')}</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label>Cliente *</Label>
+                <Label>{t('vehicles.client')} *</Label>
                 <Select value={form.client_id} onValueChange={v => setForm({...form, client_id: v})}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar cliente" /></SelectTrigger>
-                  <SelectContent>
-                    {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue placeholder={t('vehicles.selectClient')} /></SelectTrigger>
+                  <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5"><Label>{t('vehicles.make')} *</Label><Input value={form.make} onChange={e => setForm({...form, make: e.target.value})} required /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.model')} *</Label><Input value={form.model} onChange={e => setForm({...form, model: e.target.value})} required /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.plate')} *</Label><Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="number" value={form.mileage} onChange={e => setForm({...form, mileage: e.target.value})} /></div>
                 <div className="space-y-1.5">
-                  <Label>Marca *</Label>
-                  <Input value={form.make} onChange={e => setForm({...form, make: e.target.value})} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Modelo *</Label>
-                  <Input value={form.model} onChange={e => setForm({...form, model: e.target.value})} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Ano</Label>
-                  <Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Matrícula *</Label>
-                  <Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>VIN</Label>
-                  <Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Quilometragem</Label>
-                  <Input type="number" value={form.mileage} onChange={e => setForm({...form, mileage: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Combustível</Label>
+                  <Label>{t('vehicles.fuel')}</Label>
                   <Select value={form.fuel} onValueChange={v => setForm({...form, fuel: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {FUEL_TYPES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FUEL_VALUES.map((f, i) => <SelectItem key={f} value={f}>{t(FUEL_KEYS[i])}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "A criar..." : "Criar Veículo"}
+                {loading ? t('vehicles.creating') : t('vehicles.create')}
               </Button>
             </form>
           </DialogContent>
@@ -155,25 +111,25 @@ export default function Vehicles() {
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Pesquisar por matrícula, marca..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder={t('vehicles.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Veículo</TableHead>
-              <TableHead>Matrícula</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Km</TableHead>
-              <TableHead>Combustível</TableHead>
+              <TableHead>{t('vehicles.vehicle')}</TableHead>
+              <TableHead>{t('vehicles.plate')}</TableHead>
+              <TableHead>{t('vehicles.client')}</TableHead>
+              <TableHead>{t('vehicles.mileage')}</TableHead>
+              <TableHead>{t('vehicles.fuel')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  {vehicles.length === 0 ? "Sem veículos. Crie o primeiro!" : "Nenhum resultado."}
+                  {vehicles.length === 0 ? t('vehicles.empty') : t('vehicles.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(v => (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
-  Menu, X, LogOut, ChevronRight, Globe
+  Menu, X, LogOut, ChevronRight, Globe, CreditCard
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/vehicles", label: t('nav.vehicles'), icon: Car },
     { path: "/quotes", label: t('nav.quotes'), icon: FileText },
     { path: "/services", label: t('nav.services'), icon: Wrench },
+    { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
   ];
 

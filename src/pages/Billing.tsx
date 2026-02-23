@@ -1,15 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubscription, type Plan } from "@/hooks/useSubscription";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Building2, Clock } from "lucide-react";
+import { Check, Crown, Zap, Building2, Clock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, prices, isTrialing, trialDaysLeft, loading } = useSubscription();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [upgrading, setUpgrading] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // Handle return from Stripe
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success(t('billing.paymentSuccess'));
+      // Trigger subscription check
+      supabase.functions.invoke('check-subscription');
+    }
+    if (searchParams.get('canceled') === 'true') {
+      toast.info(t('billing.paymentCanceled'));
+    }
+  }, [searchParams, t]);
 
   if (loading) {
     return (
@@ -64,9 +80,34 @@ export default function Billing() {
     },
   ];
 
-  const handleUpgrade = (targetPlan: Plan) => {
+  const handleUpgrade = async (targetPlan: Plan) => {
     if (targetPlan === 'free') return;
-    toast.info(t('billing.stripeComingSoon'));
+    setUpgrading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: targetPlan, billing_cycle: billingCycle },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar checkout');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao abrir portal');
+    }
   };
 
   return (
@@ -103,12 +144,20 @@ export default function Billing() {
               </p>
             </div>
           </div>
-          {plan === 'free' && (
-            <Button onClick={() => handleUpgrade('pro')} className="gradient-primary text-primary-foreground">
-              <Crown className="w-4 h-4 mr-2" />
-              {t('billing.tryPro')}
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {plan !== 'free' && (
+              <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                {t('billing.manage')}
+              </Button>
+            )}
+            {plan === 'free' && (
+              <Button onClick={() => handleUpgrade('pro')} disabled={upgrading} className="gradient-primary text-primary-foreground">
+                <Crown className="w-4 h-4 mr-2" />
+                {t('billing.tryPro')}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -146,7 +195,7 @@ export default function Billing() {
               key={key}
               className={`relative bg-card border rounded-xl p-6 transition-all ${
                 isCurrentPlan ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
-              } ${key === 'pro' ? 'md:-mt-2 md:mb-(-2)' : ''}`}
+              }`}
             >
               {key === 'pro' && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -167,6 +216,11 @@ export default function Billing() {
                     </span>
                   )}
                 </div>
+                {key !== 'free' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('billing.trial30')}
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -187,13 +241,15 @@ export default function Billing() {
                     : ''
                 }`}
                 variant={key === 'free' ? 'outline' : 'default'}
-                disabled={isCurrentPlan}
+                disabled={isCurrentPlan || upgrading}
                 onClick={() => handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
                   : key === 'free'
                   ? t('billing.downgrade')
+                  : upgrading
+                  ? t('common.loading')
                   : t('billing.upgrade')
                 }
               </Button>

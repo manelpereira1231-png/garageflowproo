@@ -258,6 +258,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.feature.chatbot': 'Chatbot',
     'billing.feature.api': 'API & Integrações',
 
+    'billing.manage': 'Gerir Subscrição',
+    'billing.trial30': 'Trial de 30 dias incluído',
+    'billing.paymentSuccess': 'Pagamento confirmado! O seu plano foi atualizado.',
+    'billing.paymentCanceled': 'Pagamento cancelado.',
+
     // Notifications
     'nav.notifications': 'Notificações',
   },
@@ -501,6 +506,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.feature.chatbot': 'Chatbot',
     'billing.feature.api': 'API & Integrations',
 
+    'billing.manage': 'Manage Subscription',
+    'billing.trial30': '30-day free trial included',
+    'billing.paymentSuccess': 'Payment confirmed! Your plan has been updated.',
+    'billing.paymentCanceled': 'Payment canceled.',
+
     'nav.notifications': 'Notifications',
   },
 
@@ -742,6 +752,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.feature.multiShop': 'Multi-taller',
     'billing.feature.chatbot': 'Chatbot',
     'billing.feature.api': 'API e Integraciones',
+
+    'billing.manage': 'Gestionar Suscripción',
+    'billing.trial30': 'Prueba gratuita de 30 días incluida',
+    'billing.paymentSuccess': '¡Pago confirmado! Tu plan ha sido actualizado.',
+    'billing.paymentCanceled': 'Pago cancelado.',
 
     'nav.notifications': 'Notificaciones',
   },

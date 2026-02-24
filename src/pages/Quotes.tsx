@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -21,14 +23,21 @@ const statusColors: Record<QuoteStatus, string> = {
 
 export default function Quotes() {
   const { t } = useLanguage();
+  const { limits } = useSubscription();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
+  const [shop, setShop] = useState<any>(null);
 
   const fetchQuotes = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).single();
+    if (shopData) setShop(shopData);
+
     const { data } = await supabase
       .from("quotes")
-      .select("*, clients(name), vehicles(make, model, plate)")
+      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
       .order("created_at", { ascending: false });
     if (data) setQuotes(data);
   };
@@ -41,39 +50,65 @@ export default function Quotes() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setConverting(null); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
-    if (!shop) { toast.error(t('common.configureShop')); setConverting(null); return; }
+    const { data: shopData } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
+    if (!shopData) { toast.error(t('common.configureShop')); setConverting(null); return; }
 
-    // Generate service number
-    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shop.id);
+    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopData.id);
     const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
 
     const { error: insertError } = await supabase.from("work_orders").insert({
-      shop_id: shop.id,
-      number: num,
-      origin: 'quote',
-      quote_id: quote.id,
-      client_id: quote.client_id,
-      vehicle_id: quote.vehicle_id,
-      entry_mileage: 0,
-      lines: quote.lines,
-      labor_hours: 0,
-      subtotal: quote.subtotal,
-      vat_total: quote.vat_total,
-      total: quote.total,
-      cost_total: quote.cost_total,
-      profit: quote.profit,
-      status: 'approved',
-      notes: quote.notes,
+      shop_id: shopData.id, number: num, origin: 'quote', quote_id: quote.id,
+      client_id: quote.client_id, vehicle_id: quote.vehicle_id, entry_mileage: 0,
+      lines: quote.lines, labor_hours: 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
+      total: quote.total, cost_total: quote.cost_total, profit: quote.profit, status: 'approved', notes: quote.notes,
     });
 
     if (insertError) { toast.error(insertError.message); setConverting(null); return; }
 
-    // Update quote status
     await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
     toast.success(t('quotes.converted'));
     setConverting(null);
     fetchQuotes();
+  };
+
+  const downloadPdf = (q: any) => {
+    if (!shop) return;
+    const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
+    const doc = generatePdf({
+      type: 'quote',
+      number: q.number,
+      date: q.date || new Date(q.created_at).toLocaleDateString('pt-PT'),
+      validityDate: q.validity_date,
+      shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+      clientName: (q.clients as any)?.name || '',
+      clientEmail: (q.clients as any)?.email,
+      clientPhone: (q.clients as any)?.phone,
+      clientNif: (q.clients as any)?.nif,
+      vehicleMake: (q.vehicles as any)?.make || '',
+      vehicleModel: (q.vehicles as any)?.model || '',
+      vehiclePlate: (q.vehicles as any)?.plate || '',
+      lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total, profit: q.profit,
+      notes: q.notes, currency: shop.currency || 'EUR',
+    }, limits.pdfWatermark);
+    doc.save(`${q.number}.pdf`);
+  };
+
+  const handleExportCsv = () => {
+    const csvData = quotes.map(q => ({
+      Número: q.number,
+      Cliente: (q.clients as any)?.name,
+      Veículo: `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model}`,
+      Matrícula: (q.vehicles as any)?.plate,
+      Status: q.status,
+      Subtotal: q.subtotal,
+      IVA: q.vat_total,
+      Total: q.total,
+      Lucro: q.profit,
+      Data: q.date,
+      Validade: q.validity_date,
+    }));
+    exportToCsv(csvData, 'orcamentos');
+    toast.success(t('common.exported'));
   };
 
   const filtered = quotes.filter(q =>
@@ -90,9 +125,14 @@ export default function Quotes() {
           <h1 className="page-title">{t('quotes.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{quotes.length} {t('quotes.title').toLowerCase()}</p>
         </div>
-        <Link to="/quotes/new">
-          <Button><Plus className="w-4 h-4 mr-2" />{t('quotes.new')}</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <FileDown className="w-4 h-4 mr-1" />CSV
+          </Button>
+          <Link to="/quotes/new">
+            <Button><Plus className="w-4 h-4 mr-2" />{t('quotes.new')}</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -133,17 +173,22 @@ export default function Quotes() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {['draft', 'sent', 'approved'].includes(q.status) && (
-                    <Button
-                      variant="ghost" size="sm"
-                      onClick={() => convertToService(q)}
-                      disabled={converting === q.id}
-                      className="text-xs"
-                    >
-                      <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
-                      {converting === q.id ? t('quotes.converting') : t('quotes.convert')}
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs">
+                      PDF
                     </Button>
-                  )}
+                    {['draft', 'sent', 'approved'].includes(q.status) && (
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => convertToService(q)}
+                        disabled={converting === q.id}
+                        className="text-xs"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+                        {converting === q.id ? t('quotes.converting') : t('quotes.convert')}
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

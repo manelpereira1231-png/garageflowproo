@@ -20,6 +20,7 @@ import Services from "@/pages/Services";
 import ServiceForm from "@/pages/ServiceForm";
 import SettingsPage from "@/pages/Settings";
 import Billing from "@/pages/Billing";
+import Alerts from "@/pages/Alerts";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,7 @@ function AppRoutes() {
         <Route path="/services/new" element={<ServiceForm />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/alerts" element={<Alerts />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

@@ -3,11 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -20,20 +24,87 @@ const statusColors: Record<ServiceStatus, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
+
 export default function Services() {
   const { t } = useLanguage();
+  const { limits } = useSubscription();
   const [services, setServices] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [shop, setShop] = useState<any>(null);
 
   const fetchServices = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).single();
+    if (shopData) setShop(shopData);
+
     const { data } = await supabase
       .from("work_orders")
-      .select("*, clients(name), vehicles(make, model, plate)")
+      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
       .order("created_at", { ascending: false });
     if (data) setServices(data);
   };
 
   useEffect(() => { fetchServices(); }, []);
+
+  const advanceStatus = async (service: any) => {
+    const currentIdx = statusFlow.indexOf(service.status);
+    if (currentIdx === -1 || currentIdx >= statusFlow.length - 1) return;
+    const nextStatus = statusFlow[currentIdx + 1];
+    const updates: any = { status: nextStatus };
+    if (nextStatus === 'completed') updates.completed_at = new Date().toISOString();
+    if (nextStatus === 'delivered') updates.delivered_at = new Date().toISOString();
+
+    const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
+    if (error) toast.error(error.message);
+    else { toast.success(`${t(`service.${nextStatus}`)}`); fetchServices(); }
+  };
+
+  const cancelService = async (id: string) => {
+    const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success(t('service.cancelled')); fetchServices(); }
+  };
+
+  const downloadPdf = (s: any) => {
+    if (!shop) return;
+    const lines = (Array.isArray(s.lines) ? s.lines : []) as any[];
+    const doc = generatePdf({
+      type: 'service',
+      number: s.number,
+      date: new Date(s.created_at).toLocaleDateString('pt-PT'),
+      shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+      clientName: (s.clients as any)?.name || '',
+      clientEmail: (s.clients as any)?.email,
+      clientPhone: (s.clients as any)?.phone,
+      clientNif: (s.clients as any)?.nif,
+      vehicleMake: (s.vehicles as any)?.make || '',
+      vehicleModel: (s.vehicles as any)?.model || '',
+      vehiclePlate: (s.vehicles as any)?.plate || '',
+      lines, subtotal: s.subtotal, vatTotal: s.vat_total, total: s.total, profit: s.profit,
+      notes: s.notes, technician: s.technician, diagnosis: s.diagnosis, laborHours: s.labor_hours,
+      currency: shop.currency || 'EUR',
+    }, limits.pdfWatermark);
+    doc.save(`${s.number}.pdf`);
+  };
+
+  const handleExportCsv = () => {
+    const csvData = services.map(s => ({
+      Número: s.number,
+      Cliente: (s.clients as any)?.name,
+      Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
+      Matrícula: (s.vehicles as any)?.plate,
+      Status: s.status,
+      Subtotal: s.subtotal,
+      IVA: s.vat_total,
+      Total: s.total,
+      Lucro: s.profit,
+      Data: new Date(s.created_at).toLocaleDateString('pt-PT'),
+    }));
+    exportToCsv(csvData, 'servicos');
+    toast.success(t('common.exported'));
+  };
 
   const filtered = services.filter(s =>
     s.number?.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,9 +118,14 @@ export default function Services() {
           <h1 className="page-title">{t('services.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{services.length} {t('services.title').toLowerCase()}</p>
         </div>
-        <Link to="/services/new">
-          <Button><Plus className="w-4 h-4 mr-2" />{t('services.new')}</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <FileDown className="w-4 h-4 mr-1" />CSV
+          </Button>
+          <Link to="/services/new">
+            <Button><Plus className="w-4 h-4 mr-2" />{t('services.new')}</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -67,12 +143,13 @@ export default function Services() {
               <TableHead>{t('quotes.total')}</TableHead>
               <TableHead>{t('quotes.profit')}</TableHead>
               <TableHead>{t('quotes.status')}</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {services.length === 0 ? t('services.empty') : t('services.noResults')}
                 </TableCell>
               </TableRow>
@@ -87,6 +164,24 @@ export default function Services() {
                   <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
                     {t(`service.${s.status}`)}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">
+                      PDF
+                    </Button>
+                    {!['delivered', 'cancelled'].includes(s.status) && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => advanceStatus(s)} className="text-xs">
+                          <ChevronRight className="w-3.5 h-3.5 mr-0.5" />
+                          {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => cancelService(s.id)} className="text-xs text-destructive">
+                          ✕
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

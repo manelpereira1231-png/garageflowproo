@@ -3,13 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wrench, Mail, Lock, User } from "lucide-react";
+import { Wrench, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Auth() {
   const { t } = useLanguage();
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +19,14 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isLogin) {
+      if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success(t('auth.resetSent'));
+        setMode('login');
+      } else if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success(t('auth.welcomeBack'));
@@ -53,16 +60,23 @@ export default function Auth() {
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4">
-            {isLogin ? t('auth.login') : t('auth.signup')}
+            {mode === 'forgot' ? t('auth.resetPassword') : mode === 'login' ? t('auth.login') : t('auth.signup')}
           </h2>
 
+          {mode === 'forgot' && (
+            <button onClick={() => setMode('login')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {t('auth.backToLogin')}
+            </button>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {mode === 'signup' && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">{t('auth.shopName')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input id="name" placeholder="Auto Centro Lisboa" value={name} onChange={e => setName(e.target.value)} className="pl-9" required={!isLogin} />
+                  <Input id="name" placeholder="Auto Centro Lisboa" value={name} onChange={e => setName(e.target.value)} className="pl-9" required />
                 </div>
               </div>
             )}
@@ -73,22 +87,37 @@ export default function Auth() {
                 <Input id="email" type="email" placeholder="oficina@email.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-9" required />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-9" required minLength={6} />
+            {mode !== 'forgot' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="password">{t('auth.password')}</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-9" required minLength={6} />
+                </div>
               </div>
-            </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? t('auth.processing') : isLogin ? t('auth.login') : t('auth.signup')}
+              {loading
+                ? t('auth.processing')
+                : mode === 'forgot'
+                  ? t('auth.sendResetLink')
+                  : mode === 'login'
+                    ? t('auth.login')
+                    : t('auth.signup')}
             </Button>
           </form>
 
-          <div className="mt-4 text-center">
-            <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}
-            </button>
+          <div className="mt-4 text-center space-y-2">
+            {mode === 'login' && (
+              <button onClick={() => setMode('forgot')} className="block w-full text-sm text-muted-foreground hover:text-primary transition-colors">
+                {t('auth.forgotPassword')}
+              </button>
+            )}
+            {mode !== 'forgot' && (
+              <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="block w-full text-sm text-muted-foreground hover:text-primary transition-colors">
+                {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
+              </button>
+            )}
           </div>
         </div>
       </div>

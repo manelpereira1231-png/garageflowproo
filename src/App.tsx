@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import Layout from "@/components/Layout";
 import Auth from "@/pages/Auth";
 import OnboardingWizard from "@/pages/OnboardingWizard";
+import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import Vehicles from "@/pages/Vehicles";
@@ -63,7 +64,14 @@ function AppRoutes() {
     );
   }
 
-  if (!session) return <Auth />;
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<Auth />} />
+      </Routes>
+    );
+  }
 
   if (needsOnboarding) {
     return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;

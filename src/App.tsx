@@ -156,8 +156,14 @@ function AppRoutes() {
       setSession(session);
       setLoading(false);
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error && error.message?.includes('session_not_found')) {
+        // Session expired - sign out gracefully
+        supabase.auth.signOut();
+        setSession(null);
+      } else {
+        setSession(session);
+      }
       setLoading(false);
     });
     return () => subscription.unsubscribe();

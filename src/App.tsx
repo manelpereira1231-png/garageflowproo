@@ -52,30 +52,65 @@ const adminRoutes = [
 ];
 
 function AuthenticatedRoutes() {
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
   useEffect(() => {
     const checkShop = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setNeedsOnboarding(!shop?.name || shop.name.trim() === '');
+      if (!user) { setNeedsOnboarding(false); return; }
+      // Retry up to 3 times to handle race condition with trigger creating the shop
+      for (let i = 0; i < 3; i++) {
+        const { data: shop } = await supabase
+          .from("shops")
+          .select("name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (shop) {
+          setNeedsOnboarding(!shop.name || shop.name.trim() === '');
+          return;
+        }
+        // Wait before retry
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      setNeedsOnboarding(true);
     };
     checkShop();
   }, []);
 
-  // Super admin skips onboarding and goes straight to admin panel
-  if (!adminLoading && isSuperAdmin && needsOnboarding) {
+  // Show loading while checking
+  if (adminLoading || needsOnboarding === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Super admin NEVER sees onboarding - always goes to admin panel
+  if (isSuperAdmin) {
     return (
       <Routes>
         {adminRoutes.map(r => (
           <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
         ))}
+        {/* Also allow access to shop routes if super admin has a shop */}
+        <Route path="/quote/:token" element={<QuoteApproval />} />
+        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/clients" element={<Layout><Clients /></Layout>} />
+        <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
+        <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
+        <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
+        <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
+        <Route path="/services" element={<Layout><Services /></Layout>} />
+        <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
+        <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
+        <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+        <Route path="/billing" element={<Layout><Billing /></Layout>} />
+        <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+        <Route path="/team" element={<Layout><Team /></Layout>} />
+        <Route path="/chat" element={<Layout><Chat /></Layout>} />
+        <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
@@ -87,15 +122,8 @@ function AuthenticatedRoutes() {
 
   return (
     <Routes>
-      {/* Admin routes - only for super_admin */}
-      {isSuperAdmin && adminRoutes.map(r => (
-        <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
-      ))}
-
       {/* Redirect non-admin users away from /admin routes */}
-      {!isSuperAdmin && (
-        <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
-      )}
+      <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
 
       {/* Shop routes */}
       <Route path="/quote/:token" element={<QuoteApproval />} />

@@ -75,7 +75,7 @@ export default function AdminBilling() {
   };
 
   const cancelSub = async (sub: SubRow) => {
-    const { error } = await supabase.from("subscriptions").update({ status: "cancelled", plan: "free" }).eq("id", sub.id);
+    const { error } = await supabase.from("subscriptions").update({ status: "canceled", plan: "free" }).eq("id", sub.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {

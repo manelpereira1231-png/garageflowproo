@@ -18,6 +18,9 @@ interface PdfData {
   shopName: string;
   shopEmail: string;
   shopPhone: string;
+  shopNif?: string;
+  shopAddress?: string;
+  shopLogoUrl?: string;
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -184,11 +187,14 @@ export function generatePdf(data: PdfData, watermark: boolean): jsPDF {
     doc.restoreGraphicsState();
   }
 
-  // Footer
+  // Footer with fiscal info
   const pageH = doc.internal.pageSize.getHeight();
   doc.setTextColor(150, 150, 150);
   doc.setFontSize(7);
-  doc.text(`Gerado por GarageFlow — ${data.shopName}`, pageW / 2, pageH - 8, { align: "center" });
+  const footerParts = [`Gerado por GarageFlow — ${data.shopName}`];
+  if (data.shopNif) footerParts.push(`NIF: ${data.shopNif}`);
+  if (data.shopAddress) footerParts.push(data.shopAddress);
+  doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
 
   return doc;
 }

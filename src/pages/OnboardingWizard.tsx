@@ -1,27 +1,62 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
+import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
 
 const countries = Object.keys(VAT_RATES);
-const STEPS = 3;
+const STEPS = 5;
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const { t, setLanguage, language } = useLanguage();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
     country: "Portugal", currency: "EUR",
     vat_rate: "23", labor_rate: "35", language: language as string,
+    nif: "", address: "",
   });
+  const [alerts, setAlerts] = useState({
+    pending_quotes: true,
+    expired_quotes: true,
+    completed_services: true,
+    channel_email: true,
+    channel_sms: false,
+    channel_whatsapp: false,
+  });
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo deve ter no máximo 2MB");
+      return;
+    }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadLogo = async (shopId: string): Promise<string | null> => {
+    if (!logoFile) return null;
+    const ext = logoFile.name.split('.').pop();
+    const path = `${shopId}/logo.${ext}`;
+    const { error } = await supabase.storage.from("shop-logos").upload(path, logoFile, { upsert: true });
+    if (error) { console.error(error); return null; }
+    const { data } = supabase.storage.from("shop-logos").getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const handleFinish = async () => {
     if (!form.name.trim()) {
@@ -32,7 +67,14 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
 
-    const { error } = await supabase.from("shops").update({
+    // Get shop id first
+    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
+    if (!shop) { toast.error("Oficina não encontrada"); setLoading(false); return; }
+
+    // Upload logo if provided
+    const logoUrl = await uploadLogo(shop.id);
+
+    const updatePayload: any = {
       name: form.name,
       email: form.email,
       phone: form.phone,
@@ -41,10 +83,27 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate),
       language: form.language,
-    }).eq("user_id", user.id);
+      nif: form.nif,
+      address: form.address,
+    };
+    if (logoUrl) updatePayload.logo_url = logoUrl;
+
+    const { error } = await supabase.from("shops").update(updatePayload).eq("user_id", user.id);
 
     if (error) { toast.error(error.message); }
     else {
+      // Create default alerts
+      const alertTypes = [];
+      if (alerts.pending_quotes) alertTypes.push({ title: "Orçamentos Pendentes", type: "quote_pending", message: "Existem orçamentos aguardando resposta do cliente." });
+      if (alerts.expired_quotes) alertTypes.push({ title: "Orçamentos Expirados", type: "quote_expired", message: "Alguns orçamentos atingiram a data de validade." });
+      if (alerts.completed_services) alertTypes.push({ title: "Serviços Concluídos", type: "service_completed", message: "Serviços concluídos aguardando entrega ao cliente." });
+
+      if (alertTypes.length > 0) {
+        await supabase.from("alerts").insert(
+          alertTypes.map(a => ({ ...a, shop_id: shop.id, status: "pending" }))
+        );
+      }
+
       setLanguage(form.language as Language);
       toast.success(t('settings.configured'));
       onComplete();
@@ -52,15 +111,15 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     setLoading(false);
   };
 
-  const stepIndicator = (
-    <div className="flex items-center justify-center gap-2 mb-8">
-      {Array.from({ length: STEPS }).map((_, i) => (
-        <div key={i} className={`h-2 rounded-full transition-all duration-300 ${
-          i === step ? 'w-8 bg-primary' : i < step ? 'w-2 bg-primary/60' : 'w-2 bg-border'
-        }`} />
-      ))}
-    </div>
-  );
+  const progress = ((step + 1) / STEPS) * 100;
+
+  const stepTitles = [
+    t('onboarding.step1') || "Dados da Oficina",
+    t('onboarding.step2') || "Configurações Fiscais",
+    "Branding & Logo",
+    "Alertas & Notificações",
+    "Confirmação",
+  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -76,15 +135,22 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           <p className="text-muted-foreground text-sm mt-1">{t('onboarding.subtitle')}</p>
         </div>
 
-        {stepIndicator}
+        {/* Progress */}
+        <div className="mb-2">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>{stepTitles[step]}</span>
+            <span>{step + 1}/{STEPS}</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
 
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm mt-4">
           {/* Step 0: Shop Info */}
           {step === 0 && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">1</span>
-                {t('onboarding.step1')}
+                {stepTitles[0]}
               </h2>
               <div className="space-y-1.5">
                 <Label>{t('settings.shopName')} *</Label>
@@ -100,16 +166,6 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+351 912 345 678" />
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Step 1: Fiscal */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">2</span>
-                {t('onboarding.step2')}
-              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>{t('settings.country')}</Label>
@@ -119,9 +175,42 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   </Select>
                 </div>
                 <div className="space-y-1.5">
+                  <Label>{t('settings.language')}</Label>
+                  <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pt">Português</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Fiscal */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">2</span>
+                {stepTitles[1]}
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>NIF / VAT *</Label>
+                  <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder="123456789" />
+                </div>
+                <div className="space-y-1.5">
                   <Label>{t('settings.vatRate')}</Label>
                   <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Morada</Label>
+                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123, Lisboa" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>{t('settings.laborRate')}</Label>
                   <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
@@ -134,29 +223,109 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
             </div>
           )}
 
-          {/* Step 2: Language */}
+          {/* Step 2: Branding & Logo */}
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">3</span>
-                {t('onboarding.step3')}
+                {stepTitles[2]}
               </h2>
-              <div className="space-y-1.5">
-                <Label>{t('settings.language')}</Label>
-                <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pt">Português</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                  </SelectContent>
-                </Select>
+              <p className="text-sm text-muted-foreground">
+                O logo aparece em PDFs de orçamentos e serviços, no dashboard e emails enviados aos clientes.
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                <div 
+                  className="w-32 h-32 rounded-2xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden bg-muted/30"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <span className="text-xs text-muted-foreground">Upload Logo</span>
+                    </div>
+                  )}
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                <p className="text-xs text-muted-foreground">PNG, JPG ou SVG · máx. 2MB</p>
               </div>
-              <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-                <p>✅ {t('settings.shopName')}: <strong className="text-foreground">{form.name || '—'}</strong></p>
-                <p>✅ {t('settings.country')}: <strong className="text-foreground">{form.country}</strong> ({form.vat_rate}% IVA)</p>
-                <p>✅ {t('settings.laborRate')}: <strong className="text-foreground">{form.currency} {form.labor_rate}/h</strong></p>
+              {/* PDF Preview hint */}
+              <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-3">
+                <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Pré-visualização de PDF</p>
+                  <p>O seu logo será aplicado em todos os PDFs gerados. No plano FREE, os PDFs incluem marca d'água "GarageFlow". Nos planos PRO/GARAGE a marca d'água é removida.</p>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Step 3: Alerts */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">4</span>
+                <Bell className="w-4 h-4" />
+                {stepTitles[3]}
+              </h2>
+              <p className="text-sm text-muted-foreground">Ative alertas automáticos para nunca perder prazos e oportunidades.</p>
+              <div className="space-y-3">
+                {[
+                  { key: 'pending_quotes' as const, label: 'Orçamentos Pendentes', desc: 'Alerta quando orçamentos aguardam resposta' },
+                  { key: 'expired_quotes' as const, label: 'Orçamentos Expirados', desc: 'Alerta quando orçamentos atingem data limite' },
+                  { key: 'completed_services' as const, label: 'Serviços Concluídos', desc: 'Alerta quando serviços estão prontos para entrega' },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                    <div>
+                      <p className="text-sm font-medium">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch checked={alerts[item.key]} onCheckedChange={v => setAlerts({...alerts, [item.key]: v})} />
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2">
+                <Label className="text-sm font-medium mb-2 block">Canais de notificação</Label>
+                <div className="flex gap-3">
+                  {[
+                    { key: 'channel_email' as const, label: 'Email' },
+                    { key: 'channel_sms' as const, label: 'SMS' },
+                    { key: 'channel_whatsapp' as const, label: 'WhatsApp' },
+                  ].map(ch => (
+                    <label key={ch.key} className="flex items-center gap-2 text-sm">
+                      <Switch checked={alerts[ch.key]} onCheckedChange={v => setAlerts({...alerts, [ch.key]: v})} />
+                      {ch.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Confirmation */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-bold">5</span>
+                {stepTitles[4]}
+              </h2>
+              <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+                <p>✅ <strong>{t('settings.shopName')}:</strong> {form.name || '—'}</p>
+                <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% IVA)</p>
+                <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
+                <p>✅ <strong>Morada:</strong> {form.address || '—'}</p>
+                <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>
+                <p>✅ <strong>Logo:</strong> {logoFile ? logoFile.name : 'Sem logo'}</p>
+                <p>✅ <strong>Alertas:</strong> {[alerts.pending_quotes && 'Pendentes', alerts.expired_quotes && 'Expirados', alerts.completed_services && 'Concluídos'].filter(Boolean).join(', ') || 'Nenhum'}</p>
+                <p>✅ <strong>Plano:</strong> FREE (Trial 30 dias)</p>
+              </div>
+              {logoPreview && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                  <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-lg object-contain" />
+                  <span className="text-sm text-muted-foreground">Logo da oficina</span>
+                </div>
+              )}
             </div>
           )}
 

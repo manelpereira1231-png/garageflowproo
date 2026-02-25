@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
+import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -27,6 +28,7 @@ export default function Quotes() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [shop, setShop] = useState<any>(null);
 
   const fetchQuotes = async () => {
@@ -69,6 +71,63 @@ export default function Quotes() {
     toast.success(t('quotes.converted'));
     setConverting(null);
     fetchQuotes();
+  };
+
+  const sendQuoteEmail = async (q: any) => {
+    const clientEmail = (q.clients as any)?.email;
+    if (!clientEmail) {
+      toast.error(t('quotes.noClientEmail'));
+      return;
+    }
+    if (!shop) return;
+    setSendingEmail(q.id);
+
+    try {
+      const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
+      const vehicleInfo = `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model} — ${(q.vehicles as any)?.plate}`;
+      const approvalUrl = q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
+      const lang = shop.language || 'pt';
+
+      const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
+      const subject = `${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;
+
+      const html = quoteEmailHtml({
+        shopName: shop.name,
+        shopEmail: shop.email,
+        shopPhone: shop.phone,
+        shopNif: shop.nif,
+        shopAddress: shop.address,
+        shopLogoUrl: shop.logo_url,
+        clientName: (q.clients as any)?.name || '',
+        quoteNumber: q.number,
+        quoteDate: q.date || new Date(q.created_at).toLocaleDateString('pt-PT'),
+        validityDate: q.validity_date,
+        lines,
+        subtotal: q.subtotal,
+        vatTotal: q.vat_total,
+        total: q.total,
+        currency: shop.currency || 'EUR',
+        vehicleInfo,
+        notes: q.notes,
+        approvalUrl,
+        lang,
+      });
+
+      await sendEmail({ to: clientEmail, subject, html });
+
+      // Update status to 'sent' if still draft
+      if (q.status === 'draft') {
+        await supabase.from("quotes").update({ status: 'sent' }).eq("id", q.id);
+      }
+
+      toast.success(t('quotes.emailSent'));
+      fetchQuotes();
+    } catch (err: any) {
+      console.error('Email error:', err);
+      toast.error(t('quotes.emailError'));
+    } finally {
+      setSendingEmail(null);
+    }
   };
 
   const downloadPdf = async (q: any) => {
@@ -187,6 +246,17 @@ export default function Quotes() {
                     <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs">
                       PDF
                     </Button>
+                    {!['converted', 'rejected', 'expired'].includes(q.status) && (
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => sendQuoteEmail(q)}
+                        disabled={sendingEmail === q.id}
+                        className="text-xs"
+                      >
+                        {sendingEmail === q.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}
+                        {sendingEmail === q.id ? t('quotes.sending') : t('quotes.sendEmail')}
+                      </Button>
+                    )}
                     {['draft', 'sent', 'approved'].includes(q.status) && (
                       <Button
                         variant="ghost" size="sm"

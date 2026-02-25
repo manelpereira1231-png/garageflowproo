@@ -126,6 +126,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.selectVehicle': 'Selecionar',
     'quotes.selectClientFirst': 'Escolha cliente primeiro',
     'quotes.fillRequired': 'Preencha cliente, veículo e adicione pelo menos uma linha.',
+    'quotes.sendEmail': 'Enviar por Email',
+    'quotes.sending': 'A enviar...',
+    'quotes.emailSent': 'Orçamento enviado por email!',
+    'quotes.emailError': 'Erro ao enviar email.',
+    'quotes.noClientEmail': 'Cliente não tem email definido.',
 
     // Quote Status
     'status.draft': 'Rascunho',
@@ -460,6 +465,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.selectVehicle': 'Select',
     'quotes.selectClientFirst': 'Choose client first',
     'quotes.fillRequired': 'Fill in client, vehicle and add at least one line.',
+    'quotes.sendEmail': 'Send by Email',
+    'quotes.sending': 'Sending...',
+    'quotes.emailSent': 'Quote sent by email!',
+    'quotes.emailError': 'Error sending email.',
+    'quotes.noClientEmail': 'Client has no email address.',
 
     'status.draft': 'Draft',
     'status.sent': 'Sent',
@@ -779,6 +789,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.selectVehicle': 'Seleccionar',
     'quotes.selectClientFirst': 'Elige cliente primero',
     'quotes.fillRequired': 'Rellena cliente, vehículo y añade al menos una línea.',
+    'quotes.sendEmail': 'Enviar por Email',
+    'quotes.sending': 'Enviando...',
+    'quotes.emailSent': '¡Presupuesto enviado por email!',
+    'quotes.emailError': 'Error al enviar email.',
+    'quotes.noClientEmail': 'El cliente no tiene email.',
 
     'status.draft': 'Borrador',
     'status.sent': 'Enviado',

@@ -41,7 +41,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Logo deve ter no máximo 2MB");
+      toast.error(t('error.maxFileSize'));
       return;
     }
     setLogoFile(file);
@@ -69,7 +69,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
 
     // Get shop id first
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
-    if (!shop) { toast.error("Oficina não encontrada"); setLoading(false); return; }
+    if (!shop) { toast.error(t('error.shopNotFound')); setLoading(false); return; }
 
     // Upload logo if provided
     const logoUrl = await uploadLogo(shop.id);

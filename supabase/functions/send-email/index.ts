@@ -3,6 +3,10 @@ import { Resend } from "npm:resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// Sandbox mode: all emails go to the account owner.
+// Once you verify a domain on Resend, set this to "" to disable redirect.
+const SANDBOX_REDIRECT = "manelpereira11@gmail.com";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -31,17 +35,21 @@ serve(async (req: Request) => {
       );
     }
 
-    const toArray = Array.isArray(to) ? to : [to];
-    // Use provided 'from' or default to onboarding@resend.dev
-    // Once you have a verified domain, pass from: "GarageFlow <noreply@yourdomain.com>"
-    const senderAddress = from || "GarageFlow <onboarding@resend.dev>";
+    const originalTo = Array.isArray(to) ? to : [to];
+    
+    // Determine if we need sandbox redirect
+    const useSandbox = !!SANDBOX_REDIRECT;
+    const finalTo = useSandbox ? [SANDBOX_REDIRECT] : originalTo;
+    const finalSubject = useSandbox ? `[Para: ${originalTo.join(", ")}] ${subject}` : subject;
+    // In sandbox: from MUST be onboarding@resend.dev
+    const finalFrom = useSandbox ? "GarageFlow <onboarding@resend.dev>" : (from || "GarageFlow <onboarding@resend.dev>");
 
-    console.log(`Sending email to [${toArray.join(", ")}] from [${senderAddress}] subject: ${subject}`);
+    console.log(`Sending email | to: ${finalTo.join(",")} | original: ${originalTo.join(",")} | subject: ${finalSubject}`);
 
     const { data, error } = await resend.emails.send({
-      from: senderAddress,
-      to: toArray,
-      subject,
+      from: finalFrom,
+      to: finalTo,
+      subject: finalSubject,
       html,
     });
 

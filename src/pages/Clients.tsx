@@ -29,16 +29,16 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
+  const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    const shopId = getActiveShopId();
+    if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
     const { error } = await supabase.from("clients").insert({
-      shop_id: shop.id, name: form.name, phone: form.phone, email: form.email,
+      shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
     });
 

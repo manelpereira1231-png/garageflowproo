@@ -26,9 +26,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const loadAlertCount = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("id, name").eq("user_id", user.id).maybeSingle();
+      if (!activeShopId) return;
+      const { data: shop } = await supabase.from("shops").select("id, name").eq("id", activeShopId).maybeSingle();
       if (!shop) return;
       setShopName(shop.name || "");
       const { count } = await supabase
@@ -41,7 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     loadAlertCount();
     const interval = setInterval(loadAlertCount, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeShopId]);
 
   const navItems = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },

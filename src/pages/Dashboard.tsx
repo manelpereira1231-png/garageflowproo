@@ -23,11 +23,22 @@ export default function Dashboard() {
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
 
+  // Get activeShopId from localStorage (set by useShopContext/ShopSwitcher)
+  const getActiveShopId = async (): Promise<string | null> => {
+    const stored = localStorage.getItem("garageflow_active_shop");
+    if (stored) return stored;
+    // Fallback: get first shop user has access to
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+    return shop?.id || null;
+  };
+
   useEffect(() => {
     const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("user_id", user.id).maybeSingle();
+      const shopId = await getActiveShopId();
+      if (!shopId) return;
+      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
       if (!shop) return;
       setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
       setShopName(shop.name || '');

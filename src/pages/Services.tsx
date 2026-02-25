@@ -34,9 +34,9 @@ export default function Services() {
   const [shop, setShop] = useState<any>(null);
 
   const fetchServices = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+    const activeId = localStorage.getItem("garageflow_active_shop");
+    if (!activeId) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
     if (shopData) setShop(shopData);
 
     const { data } = await supabase

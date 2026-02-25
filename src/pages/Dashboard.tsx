@@ -27,7 +27,7 @@ export default function Dashboard() {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("user_id", user.id).single();
+      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("user_id", user.id).maybeSingle();
       if (!shop) return;
       setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
       setShopName(shop.name || '');

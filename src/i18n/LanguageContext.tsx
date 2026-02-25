@@ -18,7 +18,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const loadLanguage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).single();
+      const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
       if (shop?.language && ['pt', 'en', 'es'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
       }

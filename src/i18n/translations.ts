@@ -371,6 +371,21 @@ export const translations: Record<Language, Record<string, string>> = {
     'team.role.technician': 'Técnico',
     'team.role.super_admin': 'Super Admin',
     'team.disabledFree': 'Gestão de equipa disponível nos planos Pro e Garage.',
+
+    // Shop Switcher
+    'shop.select': 'Selecionar oficina',
+    'shop.unnamed': 'Oficina sem nome',
+    'shop.createNew': 'Criar nova oficina',
+    'nav.chat': 'Chat',
+
+    // Chat
+    'chat.title': 'Chat',
+    'chat.subtitle': 'Comunique com clientes e equipa',
+    'chat.empty': 'Sem mensagens. Comece uma conversa!',
+    'chat.placeholder': 'Escreva uma mensagem...',
+    'chat.allConversations': 'Todas as conversas',
+    'chat.general': 'Geral',
+    'chat.disabledPlan': 'Chat disponível apenas no plano Garage.',
   },
 
   en: {
@@ -721,6 +736,19 @@ export const translations: Record<Language, Record<string, string>> = {
     'team.role.technician': 'Technician',
     'team.role.super_admin': 'Super Admin',
     'team.disabledFree': 'Team management available on Pro and Garage plans.',
+
+    'shop.select': 'Select workshop',
+    'shop.unnamed': 'Unnamed workshop',
+    'shop.createNew': 'Create new workshop',
+    'nav.chat': 'Chat',
+
+    'chat.title': 'Chat',
+    'chat.subtitle': 'Communicate with clients and team',
+    'chat.empty': 'No messages. Start a conversation!',
+    'chat.placeholder': 'Type a message...',
+    'chat.allConversations': 'All conversations',
+    'chat.general': 'General',
+    'chat.disabledPlan': 'Chat available on Garage plan only.',
   },
 
   es: {
@@ -1071,5 +1099,18 @@ export const translations: Record<Language, Record<string, string>> = {
     'team.role.technician': 'Técnico',
     'team.role.super_admin': 'Super Admin',
     'team.disabledFree': 'Gestión de equipo disponible en los planes Pro y Garage.',
+
+    'shop.select': 'Seleccionar taller',
+    'shop.unnamed': 'Taller sin nombre',
+    'shop.createNew': 'Crear nuevo taller',
+    'nav.chat': 'Chat',
+
+    'chat.title': 'Chat',
+    'chat.subtitle': 'Comunica con clientes y equipo',
+    'chat.empty': 'Sin mensajes. ¡Inicia una conversación!',
+    'chat.placeholder': 'Escribe un mensaje...',
+    'chat.allConversations': 'Todas las conversaciones',
+    'chat.general': 'General',
+    'chat.disabledPlan': 'Chat disponible solo en el plan Garage.',
   },
 };

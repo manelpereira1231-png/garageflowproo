@@ -10,17 +10,25 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+function getInitialLanguage(): Language {
+  const stored = localStorage.getItem('garageflow_language');
+  if (stored && ['pt', 'en', 'es'].includes(stored)) return stored as Language;
+  const browserLang = navigator.language.slice(0, 2);
+  if (['pt', 'en', 'es'].includes(browserLang)) return browserLang as Language;
+  return 'pt';
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('pt');
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
 
   useEffect(() => {
-    // Load language from shop settings
     const loadLanguage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
       if (shop?.language && ['pt', 'en', 'es'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
+        localStorage.setItem('garageflow_language', shop.language);
       }
     };
     loadLanguage();
@@ -28,7 +36,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
-    // Persist to DB
+    localStorage.setItem('garageflow_language', lang);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from("shops").update({ language: lang }).eq("user_id", user.id);

@@ -636,6 +636,14 @@ export type Database = {
     Functions: {
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_is_shop_member: {
+        Args: { _shop_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_shop: {
+        Args: { _shop_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -23,6 +23,7 @@ import ServiceForm from "@/pages/ServiceForm";
 import SettingsPage from "@/pages/Settings";
 import Billing from "@/pages/Billing";
 import Alerts from "@/pages/Alerts";
+import Team from "@/pages/Team";
 import NotFound from "@/pages/NotFound";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminShops from "@/pages/admin/AdminShops";
@@ -110,6 +111,7 @@ function AuthenticatedRoutes() {
       <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
       <Route path="/billing" element={<Layout><Billing /></Layout>} />
       <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+      <Route path="/team" element={<Layout><Team /></Layout>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

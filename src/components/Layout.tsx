@@ -2,15 +2,12 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
-  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle
+  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useShopContext } from "@/hooks/useShopContext";
-import ShopSwitcher from "@/components/ShopSwitcher";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
@@ -20,8 +17,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature, limits } = useSubscription();
-  const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
 
   useEffect(() => {
     const loadAlertCount = async () => {
@@ -49,7 +44,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/services", label: t('nav.services'), icon: Wrench },
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
-    ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
   ];
@@ -110,17 +104,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Painel Admin
             </Link>
           </div>
-        )}
-
-        {/* Shop Switcher (GARAGE plan multi-shop) */}
-        {(hasMultipleShops || canUseFeature('multiShop')) && (
-          <ShopSwitcher
-            shops={shops}
-            activeShopId={activeShopId}
-            onSwitch={switchShop}
-            showCreate={canUseFeature('multiShop')}
-            onCreateNew={() => window.location.href = '/settings?tab=shops'}
-          />
         )}
 
         {/* Language Selector */}

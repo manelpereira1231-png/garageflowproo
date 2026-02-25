@@ -19,12 +19,8 @@ export type Database = {
           client_id: string | null
           created_at: string
           due_date: string | null
-          follow_up_count: number
           id: string
-          last_follow_up_at: string | null
           message: string
-          next_follow_up_at: string | null
-          priority: string
           shop_id: string
           status: string
           title: string
@@ -35,12 +31,8 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           due_date?: string | null
-          follow_up_count?: number
           id?: string
-          last_follow_up_at?: string | null
           message: string
-          next_follow_up_at?: string | null
-          priority?: string
           shop_id: string
           status?: string
           title: string
@@ -51,12 +43,8 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           due_date?: string | null
-          follow_up_count?: number
           id?: string
-          last_follow_up_at?: string | null
           message?: string
-          next_follow_up_at?: string | null
-          priority?: string
           shop_id?: string
           status?: string
           title?: string
@@ -117,39 +105,6 @@ export type Database = {
           id?: string
           ip_address?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      chat_messages: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          id: string
-          message: string
-          read: boolean
-          sender_id: string | null
-          sender_type: string
-          shop_id: string
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          id?: string
-          message: string
-          read?: boolean
-          sender_id?: string | null
-          sender_type?: string
-          shop_id: string
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          id?: string
-          message?: string
-          read?: boolean
-          sender_id?: string | null
-          sender_type?: string
-          shop_id?: string
         }
         Relationships: []
       }

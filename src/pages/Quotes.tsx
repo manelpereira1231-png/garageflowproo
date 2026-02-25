@@ -94,10 +94,29 @@ export default function Quotes() {
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
       });
       await sendEmail({ to: clientEmail, subject, html });
+      // Log email send
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      if (activeId) {
+        await supabase.from("email_logs").insert({
+          shop_id: activeId, to_email: clientEmail, subject, status: 'sent',
+          entity_type: 'quote', entity_id: q.id,
+        });
+      }
       if (q.status === 'draft') await supabase.from("quotes").update({ status: 'sent' }).eq("id", q.id);
       toast.success(t('quotes.emailSent'));
       fetchQuotes();
-    } catch (err: any) { console.error('Email error:', err); toast.error(t('quotes.emailError')); }
+    } catch (err: any) {
+      console.error('Email error:', err);
+      // Log email failure
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      if (activeId) {
+        await supabase.from("email_logs").insert({
+          shop_id: activeId, to_email: clientEmail, subject: `${q.number} — email failed`, status: 'failed',
+          error_message: err.message, entity_type: 'quote', entity_id: q.id,
+        });
+      }
+      toast.error(t('quotes.emailError'));
+    }
     finally { setSendingEmail(null); }
   };
 

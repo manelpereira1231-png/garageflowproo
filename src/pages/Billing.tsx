@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Zap, Building2, Clock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 export default function Billing() {
   const { t } = useLanguage();
@@ -14,18 +14,21 @@ export default function Billing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [upgrading, setUpgrading] = useState(false);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Handle return from Stripe
+  // Handle return from Stripe — show toast then clean URL
   useEffect(() => {
-    if (searchParams.get('success') === 'true') {
+    const success = searchParams.get('success');
+    const canceled = searchParams.get('canceled');
+    if (success === 'true') {
       toast.success(t('billing.paymentSuccess'));
-      // Trigger subscription check
       supabase.functions.invoke('check-subscription');
-    }
-    if (searchParams.get('canceled') === 'true') {
+      navigate('/billing', { replace: true });
+    } else if (canceled === 'true') {
       toast.info(t('billing.paymentCanceled'));
+      navigate('/billing', { replace: true });
     }
-  }, [searchParams, t]);
+  }, [searchParams, t, navigate]);
 
   if (loading) {
     return (

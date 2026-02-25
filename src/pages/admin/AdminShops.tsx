@@ -9,12 +9,17 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Power, PowerOff, RotateCcw, Search, Bell } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
+import { Power, PowerOff, RotateCcw, Search, Bell, Download, Eye, Trash2, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 interface ShopRow {
   id: string;
   name: string;
+  email: string;
   country: string;
   currency: string;
   timezone: string;
@@ -24,6 +29,7 @@ interface ShopRow {
   clientCount: number;
   workOrderCount: number;
   alertCount: number;
+  revenue: number;
 }
 
 export default function AdminShops() {
@@ -31,25 +37,30 @@ export default function AdminShops() {
   const [loading, setLoading] = useState(true);
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterCountry, setFilterCountry] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [deleteShop, setDeleteShop] = useState<ShopRow | null>(null);
+  const [planDialog, setPlanDialog] = useState<{ shop: ShopRow; newPlan: string } | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchShops = async () => {
     setLoading(true);
-
     const [shopsRes, subsRes, clientsRes, woRes, alertsRes] = await Promise.all([
-      supabase.from("shops").select("id, name, country, currency, timezone, status, created_at"),
+      supabase.from("shops").select("id, name, email, country, currency, timezone, status, created_at"),
       supabase.from("subscriptions").select("shop_id, plan, status, trial_end"),
       supabase.from("clients").select("id, shop_id"),
-      supabase.from("work_orders").select("id, shop_id"),
+      supabase.from("work_orders").select("id, shop_id, total, status"),
       supabase.from("alerts").select("id, shop_id, status").eq("status", "pending"),
     ]);
 
     const subsMap = new Map<string, string>();
     (subsRes.data || []).forEach(s => subsMap.set(s.shop_id, s.plan));
 
-    const countBy = (arr: any[] | null, shopId: string) =>
-      (arr || []).filter(r => r.shop_id === shopId).length;
+    const countBy = (arr: any[] | null, shopId: string) => (arr || []).filter(r => r.shop_id === shopId).length;
+    const revenueBy = (shopId: string) => (woRes.data || [])
+      .filter(r => r.shop_id === shopId && (r.status === 'completed' || r.status === 'delivered'))
+      .reduce((sum, r) => sum + Number(r.total || 0), 0);
 
     const rows: ShopRow[] = (shopsRes.data || []).map(s => ({
       ...s,
@@ -57,6 +68,7 @@ export default function AdminShops() {
       clientCount: countBy(clientsRes.data, s.id),
       workOrderCount: countBy(woRes.data, s.id),
       alertCount: countBy(alertsRes.data, s.id),
+      revenue: revenueBy(s.id),
     }));
 
     setShops(rows);
@@ -114,6 +126,63 @@ export default function AdminShops() {
     }
   };
 
+  const changePlan = async () => {
+    if (!planDialog) return;
+    const { shop, newPlan } = planDialog;
+    const { error } = await supabase.from("subscriptions")
+      .update({ plan: newPlan })
+      .eq("shop_id", shop.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      await logAction("plan_changed", "subscription", shop.id, { name: shop.name, from: shop.plan, to: newPlan });
+      toast({ title: `Plano alterado para ${newPlan.toUpperCase()}` });
+      fetchShops();
+    }
+    setPlanDialog(null);
+  };
+
+  const handleDeleteShop = async () => {
+    if (!deleteShop) return;
+    // Delete all related data
+    await Promise.all([
+      supabase.from("alerts").delete().eq("shop_id", deleteShop.id),
+      supabase.from("notifications").delete().eq("shop_id", deleteShop.id),
+      supabase.from("work_orders").delete().eq("shop_id", deleteShop.id),
+      supabase.from("quotes").delete().eq("shop_id", deleteShop.id),
+      supabase.from("vehicles").delete().eq("shop_id", deleteShop.id),
+      supabase.from("clients").delete().eq("shop_id", deleteShop.id),
+      supabase.from("subscriptions").delete().eq("shop_id", deleteShop.id),
+      supabase.from("shop_users").delete().eq("shop_id", deleteShop.id),
+    ]);
+    const { error } = await supabase.from("shops").delete().eq("id", deleteShop.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      await logAction("shop_deleted", "shop", deleteShop.id, { name: deleteShop.name });
+      toast({ title: "Oficina eliminada permanentemente" });
+      fetchShops();
+    }
+    setDeleteShop(null);
+  };
+
+  const exportCSV = () => {
+    const headers = ["Nome", "Email", "País", "Plano", "Estado", "Clientes", "Serviços", "Faturação", "Criada em"];
+    const rows = filtered.map(s => [
+      s.name, s.email, s.country, s.plan.toUpperCase(), s.status,
+      s.clientCount, s.workOrderCount, `€${s.revenue.toFixed(2)}`,
+      new Date(s.created_at).toLocaleDateString("pt-PT"),
+    ]);
+    const csv = [headers.join(";"), ...rows.map(r => r.map(c => `"${c}"`).join(";"))].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `oficinas_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const planBadge = (plan: string) => {
     const colors: Record<string, string> = {
       free: "bg-muted text-muted-foreground",
@@ -134,7 +203,11 @@ export default function AdminShops() {
   const filtered = shops.filter(s => {
     if (filterPlan !== "all" && s.plan !== filterPlan) return false;
     if (filterCountry !== "all" && s.country !== filterCountry) return false;
-    if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterStatus !== "all" && s.status !== filterStatus) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!s.name.toLowerCase().includes(q) && !s.email.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -148,17 +221,21 @@ export default function AdminShops() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-title">Oficinas</h1>
-        <p className="text-sm text-muted-foreground">Gerir todas as oficinas do sistema</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="page-title">Oficinas</h1>
+          <p className="text-sm text-muted-foreground">Gerir todas as oficinas do sistema ({shops.length} total)</p>
+        </div>
+        <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" /> Exportar CSV
+        </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar oficina..." value={search} onChange={e => setSearch(e.target.value)}
-            className="pl-9" />
+          <Input placeholder="Pesquisar nome, email, ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterPlan} onValueChange={setFilterPlan}>
           <SelectTrigger className="w-[130px]"><SelectValue placeholder="Plano" /></SelectTrigger>
@@ -167,6 +244,14 @@ export default function AdminShops() {
             <SelectItem value="free">Free</SelectItem>
             <SelectItem value="pro">Pro</SelectItem>
             <SelectItem value="garage">Garage</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Ativa</SelectItem>
+            <SelectItem value="suspended">Suspensa</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterCountry} onValueChange={setFilterCountry}>
@@ -184,12 +269,14 @@ export default function AdminShops() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>País</TableHead>
               <TableHead>Plano</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-center">Clientes</TableHead>
               <TableHead className="text-center">Serviços</TableHead>
-              <TableHead className="text-center">Alertas</TableHead>
+              <TableHead className="text-right">Faturação</TableHead>
+              <TableHead>Criada</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -197,14 +284,25 @@ export default function AdminShops() {
             {filtered.map(shop => (
               <TableRow key={shop.id}>
                 <TableCell className="font-medium">{shop.name || "—"}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{shop.email || "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{shop.country}</TableCell>
-                <TableCell>{planBadge(shop.plan)}</TableCell>
+                <TableCell>
+                  <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan })}>
+                    {planBadge(shop.plan)}
+                  </button>
+                </TableCell>
                 <TableCell>{statusBadge(shop.status)}</TableCell>
                 <TableCell className="text-center mono">{shop.clientCount}</TableCell>
                 <TableCell className="text-center mono">{shop.workOrderCount}</TableCell>
-                <TableCell className="text-center mono">{shop.alertCount}</TableCell>
+                <TableCell className="text-right mono">€{shop.revenue.toFixed(2)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                  {new Date(shop.created_at).toLocaleDateString("pt-PT")}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/shops/${shop.id}`)} title="Ver detalhes">
+                      <Eye className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => toggleStatus(shop)}
                       title={shop.status === "active" ? "Suspender" : "Ativar"}>
                       {shop.status === "active"
@@ -218,13 +316,16 @@ export default function AdminShops() {
                     <Button variant="ghost" size="icon" onClick={() => resetAlerts(shop)} title="Reset Alertas">
                       <Bell className="w-4 h-4 text-warning" />
                     </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteShop(shop)} title="Eliminar oficina">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   Nenhuma oficina encontrada
                 </TableCell>
               </TableRow>
@@ -232,6 +333,45 @@ export default function AdminShops() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Change Plan Dialog */}
+      <Dialog open={!!planDialog} onOpenChange={() => setPlanDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Plano - {planDialog?.shop.name}</DialogTitle>
+            <DialogDescription>Selecione o novo plano para esta oficina.</DialogDescription>
+          </DialogHeader>
+          <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="free">Free</SelectItem>
+              <SelectItem value="pro">Pro</SelectItem>
+              <SelectItem value="garage">Garage</SelectItem>
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanDialog(null)}>Cancelar</Button>
+            <Button onClick={changePlan}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Shop Dialog */}
+      <Dialog open={!!deleteShop} onOpenChange={() => setDeleteShop(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar Oficina</DialogTitle>
+            <DialogDescription>
+              Tem a certeza que deseja eliminar permanentemente a oficina "{deleteShop?.name}"?
+              Todos os dados (clientes, veículos, orçamentos, serviços) serão apagados.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteShop(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteShop}>Eliminar Permanentemente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

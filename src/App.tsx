@@ -25,11 +25,28 @@ import Alerts from "@/pages/Alerts";
 import NotFound from "@/pages/NotFound";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminShops from "@/pages/admin/AdminShops";
+import AdminShopDetail from "@/pages/admin/AdminShopDetail";
 import AdminLogs from "@/pages/admin/AdminLogs";
 import AdminReports from "@/pages/admin/AdminReports";
+import AdminBilling from "@/pages/admin/AdminBilling";
+import AdminAlerts from "@/pages/admin/AdminAlerts";
+import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminUsers from "@/pages/admin/AdminUsers";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
 const queryClient = new QueryClient();
+
+const adminRoutes = [
+  { path: "/admin", element: <AdminDashboard /> },
+  { path: "/admin/shops", element: <AdminShops /> },
+  { path: "/admin/shops/:id", element: <AdminShopDetail /> },
+  { path: "/admin/billing", element: <AdminBilling /> },
+  { path: "/admin/alerts", element: <AdminAlerts /> },
+  { path: "/admin/reports", element: <AdminReports /> },
+  { path: "/admin/settings", element: <AdminSettings /> },
+  { path: "/admin/logs", element: <AdminLogs /> },
+  { path: "/admin/users", element: <AdminUsers /> },
+];
 
 function AuthenticatedRoutes() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -53,11 +70,10 @@ function AuthenticatedRoutes() {
   if (!adminLoading && isSuperAdmin && needsOnboarding) {
     return (
       <Routes>
-        <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
-          <Route path="/admin/logs" element={<AdminLayout><AdminLogs /></AdminLayout>} />
-          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+        {adminRoutes.map(r => (
+          <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
+        ))}
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
   }
@@ -69,14 +85,9 @@ function AuthenticatedRoutes() {
   return (
     <Routes>
       {/* Admin routes - only for super_admin */}
-      {isSuperAdmin && (
-        <>
-          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
-          <Route path="/admin/logs" element={<AdminLayout><AdminLogs /></AdminLayout>} />
-          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
-        </>
-      )}
+      {isSuperAdmin && adminRoutes.map(r => (
+        <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
+      ))}
 
       {/* Shop routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -12,6 +12,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Auth from "@/pages/Auth";
 import OnboardingWizard from "@/pages/OnboardingWizard";
 import ResetPassword from "@/pages/ResetPassword";
+import QuoteApproval from "@/pages/QuoteApproval";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import Vehicles from "@/pages/Vehicles";
@@ -140,6 +141,7 @@ function AppRoutes() {
   if (!session) {
     return (
       <Routes>
+        <Route path="/quote/:token" element={<QuoteApproval />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Auth />} />
       </Routes>

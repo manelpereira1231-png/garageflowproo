@@ -8,6 +8,7 @@ interface AdminStats {
   totalClients: number;
   totalWorkOrders: number;
   totalRevenue: number;
+  avgTicket: number;
   pendingAlerts: number;
   planBreakdown: { free: number; pro: number; garage: number };
 }
@@ -15,7 +16,7 @@ interface AdminStats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats>({
     totalShops: 0, activeShops: 0, totalClients: 0, totalWorkOrders: 0,
-    totalRevenue: 0, pendingAlerts: 0, planBreakdown: { free: 0, pro: 0, garage: 0 },
+    totalRevenue: 0, avgTicket: 0, pendingAlerts: 0, planBreakdown: { free: 0, pro: 0, garage: 0 },
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,9 +30,10 @@ export default function AdminDashboard() {
         supabase.from("subscriptions").select("plan, status"),
       ]);
 
-      const totalRevenue = (workOrders.data || [])
-        .filter(wo => wo.status === 'completed' || wo.status === 'delivered')
-        .reduce((sum, wo) => sum + Number(wo.total || 0), 0);
+      const completedOrders = (workOrders.data || [])
+        .filter(wo => wo.status === 'completed' || wo.status === 'delivered');
+      const totalRevenue = completedOrders.reduce((sum, wo) => sum + Number(wo.total || 0), 0);
+      const avgTicket = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
 
       const planBreakdown = { free: 0, pro: 0, garage: 0 };
       (subscriptions.data || []).forEach(s => {
@@ -45,7 +47,7 @@ export default function AdminDashboard() {
         activeShops: (shops.data || []).filter(s => s.status === 'active').length,
         totalClients: clients.data?.length || 0,
         totalWorkOrders: workOrders.data?.length || 0,
-        totalRevenue,
+        totalRevenue, avgTicket,
         pendingAlerts: alerts.data?.length || 0,
         planBreakdown,
       });
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
     { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-info" },
     { label: "Ordens de Serviço", value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
     { label: "Faturação Total", value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
+    { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
     { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning" },
   ];
 

@@ -166,7 +166,7 @@ function AuthenticatedRoutes() {
         <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
         <Route path="/team" element={<Layout><Team /></Layout>} />
         <Route path="/chat" element={<Layout><Chat /></Layout>} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
   );

@@ -69,6 +69,8 @@ const PLAN_PRICES = {
   garage: { monthly: 99, yearly: 990 },
 };
 
+const STORAGE_KEY = "garageflow_active_shop";
+
 export function useSubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,19 +81,39 @@ export function useSubscription() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Use the active shop from context, or fall back to first owned shop
+      const activeId = localStorage.getItem(STORAGE_KEY);
+      
+      let resolvedShopId: string | null = null;
 
-      if (!shop) { setLoading(false); return; }
-      setShopId(shop.id);
+      if (activeId) {
+        // Verify user has access to this shop
+        const { data: shop } = await supabase
+          .from("shops")
+          .select("id")
+          .eq("id", activeId)
+          .maybeSingle();
+        if (shop) resolvedShopId = shop.id;
+      }
+
+      if (!resolvedShopId) {
+        // Fallback to first owned shop
+        const { data: shop } = await supabase
+          .from("shops")
+          .select("id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle();
+        if (shop) resolvedShopId = shop.id;
+      }
+
+      if (!resolvedShopId) { setLoading(false); return; }
+      setShopId(resolvedShopId);
 
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*")
-        .eq("shop_id", shop.id)
+        .eq("shop_id", resolvedShopId)
         .maybeSingle();
 
       if (sub) {
@@ -100,6 +122,13 @@ export function useSubscription() {
       setLoading(false);
     };
     load();
+
+    // Re-load when active shop changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) load();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const plan: Plan = subscription?.plan as Plan || 'free';

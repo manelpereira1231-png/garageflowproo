@@ -126,9 +126,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <ShopSwitcher
             shops={shops}
             activeShopId={activeShopId}
-            onSwitch={switchShop}
+            onSwitch={(id) => {
+              switchShop(id);
+              // Force reload to refresh all shop-dependent data
+              setTimeout(() => window.location.reload(), 100);
+            }}
             showCreate={canUseFeature('multiShop')}
-            onCreateNew={() => window.location.href = '/settings?tab=shops'}
           />
         )}
 

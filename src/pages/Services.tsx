@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, ChevronRight, Pencil } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
@@ -25,6 +24,7 @@ const statusColors: Record<ServiceStatus, string> = {
 };
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
+const PAGE_SIZE = 25;
 
 export default function Services() {
   const { t } = useLanguage();
@@ -32,6 +32,8 @@ export default function Services() {
   const [services, setServices] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [shop, setShop] = useState<any>(null);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchServices = async () => {
     const activeId = localStorage.getItem("garageflow_active_shop");
@@ -39,14 +41,18 @@ export default function Services() {
     const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
     if (shopData) setShop(shopData);
 
-    const { data } = await supabase
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, count } = await supabase
       .from("work_orders")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
-      .order("created_at", { ascending: false });
+      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
     if (data) setServices(data);
+    if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchServices(); }, []);
+  useEffect(() => { fetchServices(); }, [page]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);
@@ -55,7 +61,6 @@ export default function Services() {
     const updates: any = { status: nextStatus };
     if (nextStatus === 'completed') updates.completed_at = new Date().toISOString();
     if (nextStatus === 'delivered') updates.delivered_at = new Date().toISOString();
-
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
     if (error) toast.error(error.message);
     else { toast.success(`${t(`service.${nextStatus}`)}`); fetchServices(); }
@@ -71,37 +76,25 @@ export default function Services() {
     if (!shop) return;
     const lines = (Array.isArray(s.lines) ? s.lines : []) as any[];
     const doc = await generatePdf({
-      type: 'service',
-      number: s.number,
-      date: new Date(s.created_at).toLocaleDateString('pt-PT'),
+      type: 'service', number: s.number, date: new Date(s.created_at).toLocaleDateString('pt-PT'),
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
-      shopNif: (shop as any).nif, shopAddress: (shop as any).address, shopLogoUrl: (shop as any).logo_url,
-      clientName: (s.clients as any)?.name || '',
-      clientEmail: (s.clients as any)?.email,
-      clientPhone: (s.clients as any)?.phone,
-      clientNif: (s.clients as any)?.nif,
-      vehicleMake: (s.vehicles as any)?.make || '',
-      vehicleModel: (s.vehicles as any)?.model || '',
-      vehiclePlate: (s.vehicles as any)?.plate || '',
-      lines, subtotal: s.subtotal, vatTotal: s.vat_total, total: s.total, profit: s.profit,
-      notes: s.notes, technician: s.technician, diagnosis: s.diagnosis, laborHours: s.labor_hours,
-      currency: shop.currency || 'EUR',
-      plan: plan,
+      shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
+      clientName: (s.clients as any)?.name || '', clientEmail: (s.clients as any)?.email,
+      clientPhone: (s.clients as any)?.phone, clientNif: (s.clients as any)?.nif,
+      vehicleMake: (s.vehicles as any)?.make || '', vehicleModel: (s.vehicles as any)?.model || '',
+      vehiclePlate: (s.vehicles as any)?.plate || '', lines, subtotal: s.subtotal, vatTotal: s.vat_total,
+      total: s.total, profit: s.profit, notes: s.notes, technician: s.technician, diagnosis: s.diagnosis,
+      laborHours: s.labor_hours, currency: shop.currency || 'EUR', plan: plan,
     }, limits.pdfWatermark);
     doc.save(`${s.number}.pdf`);
   };
 
   const handleExportCsv = () => {
     const csvData = services.map(s => ({
-      Número: s.number,
-      Cliente: (s.clients as any)?.name,
+      Número: s.number, Cliente: (s.clients as any)?.name,
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
-      Matrícula: (s.vehicles as any)?.plate,
-      Status: s.status,
-      Subtotal: s.subtotal,
-      IVA: s.vat_total,
-      Total: s.total,
-      Lucro: s.profit,
+      Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
+      IVA: s.vat_total, Total: s.total, Lucro: s.profit,
       Data: new Date(s.created_at).toLocaleDateString('pt-PT'),
     }));
     exportToCsv(csvData, 'servicos');
@@ -113,12 +106,14 @@ export default function Services() {
     (s.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('services.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{services.length} {t('services.title').toLowerCase()}</p>
+          <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('services.title').toLowerCase()}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
@@ -152,7 +147,7 @@ export default function Services() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {services.length === 0 ? t('services.empty') : t('services.noResults')}
+                  {totalCount === 0 ? t('services.empty') : t('services.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(s => (
@@ -172,23 +167,18 @@ export default function Services() {
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
                         <Button variant="ghost" size="sm" className="text-xs">
-                          <Pencil className="w-3.5 h-3.5 mr-1" />
-                          {t('common.edit')}
+                          <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
                         </Button>
                       </Link>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">
-                      PDF
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">PDF</Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <>
                         <Button variant="ghost" size="sm" onClick={() => advanceStatus(s)} className="text-xs">
-                          <ChevronRight className="w-3.5 h-3.5 mr-0.5" />
+                          <ChevronRightIcon className="w-3.5 h-3.5 mr-0.5" />
                           {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => cancelService(s.id)} className="text-xs text-destructive">
-                          ✕
-                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => cancelService(s.id)} className="text-xs text-destructive">✕</Button>
                       </>
                     )}
                   </div>
@@ -198,6 +188,22 @@ export default function Services() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} de {totalCount}
+          </p>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

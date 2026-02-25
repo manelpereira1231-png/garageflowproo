@@ -229,6 +229,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.sessionExpired': 'Sessão expirada',
     'common.configureShop': 'Configure a oficina primeiro',
     'common.required': 'Obrigatório',
+    'common.confirmDelete': 'Tem a certeza?',
+
+    'clients.updated': 'Cliente atualizado',
+    'clients.deleted': 'Cliente eliminado',
+    'clients.deleteWarning': 'Esta ação irá eliminar o cliente e não pode ser revertida. Veículos e orçamentos associados poderão ficar órfãos.',
+
+    'vehicles.updated': 'Veículo atualizado',
+    'vehicles.deleted': 'Veículo eliminado',
+    'vehicles.deleteWarning': 'Esta ação irá eliminar o veículo e não pode ser revertida.',
 
     // Fuel
     'fuel.gasoline': 'Gasolina',
@@ -601,6 +610,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.sessionExpired': 'Session expired',
     'common.configureShop': 'Configure your workshop first',
     'common.required': 'Required',
+    'common.confirmDelete': 'Are you sure?',
+
+    'clients.updated': 'Client updated',
+    'clients.deleted': 'Client deleted',
+    'clients.deleteWarning': 'This will permanently delete the client. Associated vehicles and quotes may become orphaned.',
+
+    'vehicles.updated': 'Vehicle updated',
+    'vehicles.deleted': 'Vehicle deleted',
+    'vehicles.deleteWarning': 'This will permanently delete the vehicle.',
 
     'fuel.gasoline': 'Gasoline',
     'fuel.diesel': 'Diesel',
@@ -964,6 +982,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.sessionExpired': 'Sesión expirada',
     'common.configureShop': 'Configura tu taller primero',
     'common.required': 'Obligatorio',
+    'common.confirmDelete': '¿Estás seguro?',
+
+    'clients.updated': 'Cliente actualizado',
+    'clients.deleted': 'Cliente eliminado',
+    'clients.deleteWarning': 'Esta acción eliminará el cliente permanentemente. Los vehículos y presupuestos asociados podrían quedar huérfanos.',
+
+    'vehicles.updated': 'Vehículo actualizado',
+    'vehicles.deleted': 'Vehículo eliminado',
+    'vehicles.deleteWarning': 'Esta acción eliminará el vehículo permanentemente.',
 
     'fuel.gasoline': 'Gasolina',
     'fuel.diesel': 'Diésel',

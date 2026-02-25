@@ -289,6 +289,8 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string
+          status: string
+          timezone: string
           user_id: string
           vat_rate: number
         }
@@ -303,6 +305,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string
+          status?: string
+          timezone?: string
           user_id: string
           vat_rate?: number
         }
@@ -317,6 +321,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string
+          status?: string
+          timezone?: string
           user_id?: string
           vat_rate?: number
         }

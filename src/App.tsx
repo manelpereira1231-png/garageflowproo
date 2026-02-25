@@ -96,6 +96,7 @@ function AuthenticatedRoutes() {
       )}
 
       {/* Shop routes */}
+      <Route path="/quote/:token" element={<QuoteApproval />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
       <Route path="/clients" element={<Layout><Clients /></Layout>} />

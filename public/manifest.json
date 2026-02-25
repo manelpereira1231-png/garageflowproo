@@ -1,0 +1,16 @@
+{
+  "name": "GarageFlow Pro - Software de Gestão de Oficinas",
+  "short_name": "GarageFlow",
+  "description": "Software SaaS de gestão de oficinas automóvel. Orçamentos, serviços, clientes e faturação numa única plataforma.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1d27",
+  "theme_color": "#e8930c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

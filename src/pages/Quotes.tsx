@@ -32,9 +32,9 @@ export default function Quotes() {
   const [shop, setShop] = useState<any>(null);
 
   const fetchQuotes = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+    const activeId = localStorage.getItem("garageflow_active_shop");
+    if (!activeId) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
     if (shopData) setShop(shopData);
 
     const { data } = await supabase
@@ -50,16 +50,14 @@ export default function Quotes() {
     if (quote.status === 'converted') return;
     setConverting(quote.id);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setConverting(null); return; }
-    const { data: shopData } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    if (!shopData) { toast.error(t('common.configureShop')); setConverting(null); return; }
+    const shopId = localStorage.getItem("garageflow_active_shop");
+    if (!shopId) { toast.error(t('common.configureShop')); setConverting(null); return; }
 
-    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopData.id);
+    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopId);
     const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
 
     const { error: insertError } = await supabase.from("work_orders").insert({
-      shop_id: shopData.id, number: num, origin: 'quote', quote_id: quote.id,
+      shop_id: shopId, number: num, origin: 'quote', quote_id: quote.id,
       client_id: quote.client_id, vehicle_id: quote.vehicle_id, entry_mileage: 0,
       lines: quote.lines, labor_hours: 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
       total: quote.total, cost_total: quote.cost_total, profit: quote.profit, status: 'approved', notes: quote.notes,

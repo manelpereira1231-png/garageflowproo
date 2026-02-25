@@ -37,13 +37,11 @@ export default function Vehicles() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    const shopId = localStorage.getItem("garageflow_active_shop");
+    if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
     const { error } = await supabase.from("vehicles").insert({
-      shop_id: shop.id, client_id: form.client_id, make: form.make, model: form.model,
+      shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
       year: parseInt(form.year), plate: form.plate.toUpperCase(), vin: form.vin || null,
       mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     });

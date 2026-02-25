@@ -27,9 +27,26 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      if (!activeId) {
+        // Fallback for owner
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+        if (data) {
+          setShopId(data.id);
+          setForm({
+            name: data.name || "", email: data.email || "", phone: data.phone || "",
+            country: data.country || "Portugal", currency: data.currency || "EUR",
+            vat_rate: String(data.vat_rate ?? 23), labor_rate: String(data.labor_rate ?? 35),
+            language: data.language || "pt",
+            nif: (data as any).nif || "", address: (data as any).address || "",
+          });
+          if (data.logo_url) setLogoPreview(data.logo_url);
+        }
+        return;
+      }
+      const { data } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
       if (data) {
         setShopId(data.id);
         setForm({

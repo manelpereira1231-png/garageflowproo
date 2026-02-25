@@ -69,8 +69,10 @@ export default function AdminSettings() {
     for (const u of updates) {
       const { error } = await supabase
         .from("platform_settings")
-        .update({ value: u.value as any, updated_at: new Date().toISOString(), updated_by: user?.id })
-        .eq("key", u.key);
+        .upsert(
+          { key: u.key, value: u.value as any, updated_at: new Date().toISOString(), updated_by: user?.id },
+          { onConflict: "key" }
+        );
       if (error) hasError = true;
     }
 

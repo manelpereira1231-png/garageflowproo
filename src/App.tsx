@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,34 +10,54 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
 import Auth from "@/pages/Auth";
-import OnboardingWizard from "@/pages/OnboardingWizard";
 import ResetPassword from "@/pages/ResetPassword";
 import QuoteApproval from "@/pages/QuoteApproval";
-import Dashboard from "@/pages/Dashboard";
-import Clients from "@/pages/Clients";
-import Vehicles from "@/pages/Vehicles";
-import Quotes from "@/pages/Quotes";
-import QuoteForm from "@/pages/QuoteForm";
-import Services from "@/pages/Services";
-import ServiceForm from "@/pages/ServiceForm";
-import SettingsPage from "@/pages/Settings";
-import Billing from "@/pages/Billing";
-import Alerts from "@/pages/Alerts";
-import Team from "@/pages/Team";
-import Chat from "@/pages/Chat";
 import NotFound from "@/pages/NotFound";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminShops from "@/pages/admin/AdminShops";
-import AdminShopDetail from "@/pages/admin/AdminShopDetail";
-import AdminLogs from "@/pages/admin/AdminLogs";
-import AdminReports from "@/pages/admin/AdminReports";
-import AdminBilling from "@/pages/admin/AdminBilling";
-import AdminAlerts from "@/pages/admin/AdminAlerts";
-import AdminSettings from "@/pages/admin/AdminSettings";
-import AdminUsers from "@/pages/admin/AdminUsers";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
-const queryClient = new QueryClient();
+// Lazy-loaded pages for code splitting & performance at scale
+const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Clients = lazy(() => import("@/pages/Clients"));
+const Vehicles = lazy(() => import("@/pages/Vehicles"));
+const Quotes = lazy(() => import("@/pages/Quotes"));
+const QuoteForm = lazy(() => import("@/pages/QuoteForm"));
+const Services = lazy(() => import("@/pages/Services"));
+const ServiceForm = lazy(() => import("@/pages/ServiceForm"));
+const SettingsPage = lazy(() => import("@/pages/Settings"));
+const Billing = lazy(() => import("@/pages/Billing"));
+const Alerts = lazy(() => import("@/pages/Alerts"));
+const Team = lazy(() => import("@/pages/Team"));
+const Chat = lazy(() => import("@/pages/Chat"));
+
+// Admin pages
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminShops = lazy(() => import("@/pages/admin/AdminShops"));
+const AdminShopDetail = lazy(() => import("@/pages/admin/AdminShopDetail"));
+const AdminLogs = lazy(() => import("@/pages/admin/AdminLogs"));
+const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const AdminBilling = lazy(() => import("@/pages/admin/AdminBilling"));
+const AdminAlerts = lazy(() => import("@/pages/admin/AdminAlerts"));
+const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+
+// Optimized QueryClient for scale (staleTime, gcTime, retries)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2, // 2 min stale
+      gcTime: 1000 * 60 * 10,   // 10 min garbage collection
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const adminRoutes = [
   { path: "/admin", element: <AdminDashboard /> },
@@ -59,7 +79,6 @@ function AuthenticatedRoutes() {
     const checkShop = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setNeedsOnboarding(false); return; }
-      // Retry up to 3 times to handle race condition with trigger creating the shop
       for (let i = 0; i < 3; i++) {
         const { data: shop } = await supabase
           .from("shops")
@@ -70,7 +89,6 @@ function AuthenticatedRoutes() {
           setNeedsOnboarding(!shop.name || shop.name.trim() === '');
           return;
         }
-        // Wait before retry
         await new Promise(r => setTimeout(r, 1000));
       }
       setNeedsOnboarding(true);
@@ -78,7 +96,6 @@ function AuthenticatedRoutes() {
     checkShop();
   }, []);
 
-  // Show loading while checking
   if (adminLoading || needsOnboarding === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -87,15 +104,49 @@ function AuthenticatedRoutes() {
     );
   }
 
-  // Super admin NEVER sees onboarding - always goes to admin panel
   if (isSuperAdmin) {
     return (
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {adminRoutes.map(r => (
+            <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
+          ))}
+          <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+          <Route path="/clients" element={<Layout><Clients /></Layout>} />
+          <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
+          <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
+          <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
+          <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
+          <Route path="/services" element={<Layout><Services /></Layout>} />
+          <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
+          <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
+          <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+          <Route path="/billing" element={<Layout><Billing /></Layout>} />
+          <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+          <Route path="/team" element={<Layout><Team /></Layout>} />
+          <Route path="/chat" element={<Layout><Chat /></Layout>} />
+          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<PageLoader />}>
       <Routes>
-        {adminRoutes.map(r => (
-          <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
-        ))}
-        {/* Also allow access to shop routes if super admin has a shop */}
+        <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
         <Route path="/quote/:token" element={<QuoteApproval />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
@@ -110,40 +161,9 @@ function AuthenticatedRoutes() {
         <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
         <Route path="/team" element={<Layout><Team /></Layout>} />
         <Route path="/chat" element={<Layout><Chat /></Layout>} />
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    );
-  }
-
-  if (needsOnboarding) {
-    return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;
-  }
-
-  return (
-    <Routes>
-      {/* Redirect non-admin users away from /admin routes */}
-      <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
-
-      {/* Shop routes */}
-      <Route path="/quote/:token" element={<QuoteApproval />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-      <Route path="/clients" element={<Layout><Clients /></Layout>} />
-      <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
-      <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
-      <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
-      <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
-      <Route path="/services" element={<Layout><Services /></Layout>} />
-      <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
-      <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
-      <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-      <Route path="/billing" element={<Layout><Billing /></Layout>} />
-      <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-      <Route path="/team" element={<Layout><Team /></Layout>} />
-      <Route path="/chat" element={<Layout><Chat /></Layout>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    </Suspense>
   );
 }
 
@@ -158,7 +178,6 @@ function AppRoutes() {
     });
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error && error.message?.includes('session_not_found')) {
-        // Session expired - sign out gracefully
         supabase.auth.signOut();
         setSession(null);
       } else {

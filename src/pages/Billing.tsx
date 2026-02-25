@@ -22,7 +22,7 @@ export default function Billing() {
     const canceled = searchParams.get('canceled');
     if (success === 'true') {
       toast.success(t('billing.paymentSuccess'));
-      supabase.functions.invoke('check-subscription');
+      supabase.functions.invoke('check-subscription').catch(() => {});
       navigate('/billing', { replace: true });
     } else if (canceled === 'true') {
       toast.info(t('billing.paymentCanceled'));
@@ -95,7 +95,7 @@ export default function Billing() {
         window.location.href = data.url;
       }
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao criar checkout');
+      toast.error(t('billing.errorCheckout'));
     } finally {
       setUpgrading(false);
     }
@@ -109,7 +109,7 @@ export default function Billing() {
         window.location.href = data.url;
       }
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao abrir portal');
+      toast.error(t('billing.errorPortal'));
     }
   };
 

@@ -281,6 +281,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.trial30': 'Trial de 30 dias incluído',
     'billing.paymentSuccess': 'Pagamento confirmado! O seu plano foi atualizado.',
     'billing.paymentCanceled': 'Pagamento cancelado.',
+    'billing.errorCheckout': 'Erro ao criar checkout. Tente novamente.',
+    'billing.errorPortal': 'Erro ao abrir portal de subscrição.',
+    'billing.errorGeneric': 'Ocorreu um erro. Tente novamente.',
+
+    // Errors
+    'error.maxFileSize': 'Ficheiro demasiado grande. Máximo 2MB.',
+    'error.shopNotFound': 'Oficina não encontrada.',
+    'error.generic': 'Ocorreu um erro. Tente novamente.',
 
     // Notifications
     'nav.notifications': 'Notificações',
@@ -579,8 +587,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.trial30': '30-day free trial included',
     'billing.paymentSuccess': 'Payment confirmed! Your plan has been updated.',
     'billing.paymentCanceled': 'Payment canceled.',
+    'billing.errorCheckout': 'Error creating checkout. Please try again.',
+    'billing.errorPortal': 'Error opening subscription portal.',
+    'billing.errorGeneric': 'An error occurred. Please try again.',
 
-    'nav.notifications': 'Notifications',
+    // Errors
+    'error.maxFileSize': 'File too large. Maximum 2MB.',
+    'error.shopNotFound': 'Workshop not found.',
+    'error.generic': 'An error occurred. Please try again.',
+
     'nav.alerts': 'Alerts',
 
     'alerts.title': 'Alerts',
@@ -874,8 +889,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.trial30': 'Prueba gratuita de 30 días incluida',
     'billing.paymentSuccess': '¡Pago confirmado! Tu plan ha sido actualizado.',
     'billing.paymentCanceled': 'Pago cancelado.',
+    'billing.errorCheckout': 'Error al crear el checkout. Inténtalo de nuevo.',
+    'billing.errorPortal': 'Error al abrir el portal de suscripción.',
+    'billing.errorGeneric': 'Ocurrió un error. Inténtalo de nuevo.',
 
-    'nav.notifications': 'Notificaciones',
+    // Errors
+    'error.maxFileSize': 'Archivo demasiado grande. Máximo 2MB.',
+    'error.shopNotFound': 'Taller no encontrado.',
+    'error.generic': 'Ocurrió un error. Inténtalo de nuevo.',
+
     'nav.alerts': 'Alertas',
 
     'alerts.title': 'Alertas',

@@ -13,6 +13,10 @@ const PRODUCT_TO_PLAN: Record<string, string> = {
   "prod_U1qvDO5egIyQ3W": "garage",
   "prod_U1qz5Zuk431eAk": "pro",
   "prod_U1qzCQc94eTGPu": "garage",
+  "prod_U2DfDsTHVDY9ru": "pro",
+  "prod_U2DgNSwHyjaLqO": "garage",
+  "prod_U2dRNFrdA8YtSC": "pro",
+  "prod_U2dRNRSfwGewdT": "garage",
 };
 
 serve(async (req) => {

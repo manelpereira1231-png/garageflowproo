@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast.error("Máximo 2MB"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error(t('error.maxFileSize')); return; }
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
   };

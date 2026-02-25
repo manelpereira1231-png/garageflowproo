@@ -3,9 +3,8 @@ import { Resend } from "npm:resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-// Sandbox mode: all emails go to the account owner.
-// Once you verify a domain on Resend, set this to "" to disable redirect.
-const SANDBOX_REDIRECT = "manelpereira11@gmail.com";
+// Sandbox mode disabled – emails go to the real recipient.
+const SANDBOX_REDIRECT = "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

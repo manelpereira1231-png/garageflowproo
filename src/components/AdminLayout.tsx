@@ -2,27 +2,35 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
+  CreditCard, Bell, Settings, Users, Search, Globe,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/shops", label: "Oficinas", icon: Building2 },
-  { path: "/admin/logs", label: "Logs", icon: FileText },
+  { path: "/admin/billing", label: "Planos & Billing", icon: CreditCard },
+  { path: "/admin/alerts", label: "Alertas", icon: Bell },
   { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
+  { path: "/admin/settings", label: "Configurações", icon: Settings },
+  { path: "/admin/logs", label: "Logs / Auditoria", icon: FileText },
+  { path: "/admin/users", label: "Usuários Admin", icon: Users },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
   const location = useLocation();
+  const { language, setLanguage } = useLanguage();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-  };
-
-  const goToShopApp = () => {
-    window.location.href = "/dashboard";
   };
 
   return (
@@ -47,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-1">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -63,8 +71,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
+        {/* Admin profile */}
+        <div className="px-3 py-2 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">Super Admin</p>
+              <p className="text-[10px] text-muted-foreground truncate">manelpereira11@gmail.com</p>
+            </div>
+          </div>
+        </div>
+
         <div className="px-3 pb-2">
-          <button onClick={goToShopApp}
+          <button onClick={() => window.location.href = "/dashboard"}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all">
             <Building2 className="w-4.5 h-4.5" />
             Ir para Oficina
@@ -81,13 +102,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <main className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+        <header className="h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
           <Button variant="ghost" size="icon" className="lg:hidden mr-2" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">Painel de Administração</span>
+          
+          {/* Global search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Pesquisar oficinas, emails, IDs..." 
+              value={globalSearch} 
+              onChange={e => setGlobalSearch(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            {/* Language selector */}
+            <Select value={language} onValueChange={(v: 'pt' | 'en' | 'es') => setLanguage(v)}>
+              <SelectTrigger className="w-[70px] h-9">
+                <Globe className="w-3.5 h-3.5 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pt">PT</SelectItem>
+                <SelectItem value="en">EN</SelectItem>
+                <SelectItem value="es">ES</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Painel de Administração</span>
+            </div>
           </div>
         </header>
         <div className="flex-1 p-4 lg:p-6 animate-fade-in">

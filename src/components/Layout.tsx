@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
-  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell
+  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
@@ -14,6 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
+  const { isSuperAdmin } = useSuperAdmin();
 
   const navItems = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },
@@ -66,6 +68,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Admin Link */}
+        {isSuperAdmin && (
+          <div className="px-3 pb-1">
+            <Link to="/admin" onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all">
+              <Shield className="w-4.5 h-4.5" />
+              Painel Admin
+            </Link>
+          </div>
+        )}
 
         {/* Language Selector */}
         <div className="px-3 pb-2">

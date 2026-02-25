@@ -303,6 +303,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'error.maxFileSize': 'Ficheiro demasiado grande. Máximo 2MB.',
     'error.shopNotFound': 'Oficina não encontrada.',
     'error.generic': 'Ocorreu um erro. Tente novamente.',
+    'notFound.message': 'Página não encontrada.',
+    'notFound.backToDashboard': 'Voltar ao Dashboard',
 
     // Notifications
     'nav.notifications': 'Notificações',
@@ -681,6 +683,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'error.maxFileSize': 'File too large. Maximum 2MB.',
     'error.shopNotFound': 'Workshop not found.',
     'error.generic': 'An error occurred. Please try again.',
+    'notFound.message': 'Page not found.',
+    'notFound.backToDashboard': 'Back to Dashboard',
 
     'nav.alerts': 'Alerts',
 
@@ -1053,6 +1057,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'error.maxFileSize': 'Archivo demasiado grande. Máximo 2MB.',
     'error.shopNotFound': 'Taller no encontrado.',
     'error.generic': 'Ocurrió un error. Inténtalo de nuevo.',
+    'notFound.message': 'Página no encontrada.',
+    'notFound.backToDashboard': 'Volver al Dashboard',
 
     'nav.alerts': 'Alertas',
 

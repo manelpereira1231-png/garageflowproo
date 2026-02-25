@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ const navItems = [
   { path: "/admin/billing", label: "Planos & Billing", icon: CreditCard },
   { path: "/admin/alerts", label: "Alertas", icon: Bell },
   { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
+  { path: "/admin/emails", label: "Email Logs", icon: Mail },
+  { path: "/admin/adoption", label: "Feature Adoption", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
   { path: "/admin/logs", label: "Logs / Auditoria", icon: FileText },
   { path: "/admin/users", label: "Usuários Admin", icon: Users },

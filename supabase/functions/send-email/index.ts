@@ -3,6 +3,10 @@ import { Resend } from "npm:resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// In Resend sandbox mode, emails can ONLY be sent to the account owner's email.
+// Set this to your Resend account email. Once you verify a domain, remove this.
+const SANDBOX_OWNER_EMAIL = "manelpereira11@gmail.com";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -22,7 +26,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, subject, html, from }: SendEmailRequest = await req.json();
+    const { to, subject, html }: SendEmailRequest = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -31,15 +35,19 @@ serve(async (req: Request) => {
       );
     }
 
-    const toArray = Array.isArray(to) ? to : [to];
+    // In sandbox mode:
+    // 1. "from" MUST be "onboarding@resend.dev"
+    // 2. "to" MUST be the Resend account owner's email
+    const senderAddress = "GarageFlow <onboarding@resend.dev>";
+    const recipientList = [SANDBOX_OWNER_EMAIL];
 
-    // In sandbox mode, from MUST be onboarding@resend.dev
-    const senderAddress = from || "GarageFlow <onboarding@resend.dev>";
+    const originalTo = Array.isArray(to) ? to.join(", ") : to;
+    console.log(`Sandbox mode: redirecting email from [${originalTo}] to [${SANDBOX_OWNER_EMAIL}]`);
 
     const { data, error } = await resend.emails.send({
       from: senderAddress,
-      to: toArray,
-      subject,
+      to: recipientList,
+      subject: `[Para: ${originalTo}] ${subject}`,
       html,
     });
 

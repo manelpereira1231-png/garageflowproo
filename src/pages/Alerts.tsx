@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, Search, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -16,16 +18,33 @@ const alertTypeIcons: Record<string, any> = {
   warranty: AlertTriangle,
   inactive_client: Bell,
   expired_quote: Clock,
+  payment_failed: AlertTriangle,
+  service_due: Clock,
+  quote_pending: Clock,
 };
 
-const alertStatusColors: Record<string, string> = {
-  pending: "bg-warning/10 text-warning",
-  resolved: "bg-success/10 text-success",
-  dismissed: "bg-muted text-muted-foreground",
+const alertStatusStyles: Record<string, string> = {
+  pending: "bg-warning/10 text-warning border-warning/30",
+  sent: "bg-info/10 text-info border-info/30",
+  resolved: "bg-success/10 text-success border-success/30",
+  dismissed: "bg-muted text-muted-foreground border-border",
+};
+
+const alertTypeColors: Record<string, string> = {
+  payment_failed: "text-destructive",
+  warranty: "text-destructive",
+  expired_quote: "text-warning",
+  revision: "text-warning",
+  oil: "text-warning",
+  service_due: "text-warning",
+  quote_pending: "text-warning",
+  inspection: "text-info",
+  inactive_client: "text-info",
 };
 
 export default function Alerts() {
   const { t } = useLanguage();
+  const { plan } = useSubscription();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -53,6 +72,27 @@ export default function Alerts() {
     else fetchAlerts();
   };
 
+  const exportCSV = () => {
+    const headers = [t('alerts.typeCol'), t('alerts.titleCol'), t('alerts.clientCol'), t('alerts.vehicleCol'), t('alerts.dateCol'), t('alerts.statusCol')];
+    const rows = filtered.map(a => [
+      t(`alerts.type.${a.type}`),
+      a.title,
+      (a.clients as any)?.name || '',
+      (a.vehicles as any) ? `${(a.vehicles as any).make} ${(a.vehicles as any).model}` : '',
+      a.due_date || new Date(a.created_at).toLocaleDateString(),
+      t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `alertas_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(t('common.exported'));
+  };
+
   const filtered = alerts.filter(a => {
     const matchSearch = a.title?.toLowerCase().includes(search.toLowerCase()) ||
       (a.clients as any)?.name?.toLowerCase().includes(search.toLowerCase());
@@ -61,17 +101,39 @@ export default function Alerts() {
     return matchSearch && matchType && matchStatus;
   });
 
-  const alertTypes = ['revision', 'oil', 'inspection', 'warranty', 'inactive_client', 'expired_quote'];
+  const alertTypes = ['revision', 'oil', 'inspection', 'warranty', 'inactive_client', 'expired_quote', 'payment_failed', 'service_due', 'quote_pending'];
+
+  // FREE plan: show upgrade message
+  if (plan === 'free') {
+    return (
+      <div>
+        <div className="page-header">
+          <h1 className="page-title">{t('alerts.title')}</h1>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <p className="text-muted-foreground mb-4">{t('alerts.disabledFree')}</p>
+          <Link to="/billing">
+            <Button>{t('nav.billing')}</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">{t('alerts.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {alerts.filter(a => a.status === 'pending').length} {t('alerts.pending')}
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+          <Download className="w-4 h-4" />
+          {t('alerts.export')}
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -93,6 +155,7 @@ export default function Alerts() {
           <SelectContent>
             <SelectItem value="all">{t('alerts.allStatus')}</SelectItem>
             <SelectItem value="pending">{t('alerts.statusPending')}</SelectItem>
+            <SelectItem value="sent">{t('alerts.statusSent')}</SelectItem>
             <SelectItem value="resolved">{t('alerts.statusResolved')}</SelectItem>
             <SelectItem value="dismissed">{t('alerts.statusDismissed')}</SelectItem>
           </SelectContent>
@@ -121,11 +184,12 @@ export default function Alerts() {
               </TableRow>
             ) : filtered.map(a => {
               const Icon = alertTypeIcons[a.type] || Bell;
+              const typeColor = alertTypeColors[a.type] || 'text-warning';
               return (
                 <TableRow key={a.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-muted-foreground" />
+                      <Icon className={`w-4 h-4 ${typeColor}`} />
                       <span className="text-xs">{t(`alerts.type.${a.type}`)}</span>
                     </div>
                   </TableCell>
@@ -135,10 +199,13 @@ export default function Alerts() {
                     {(a.vehicles as any) ? `${(a.vehicles as any).make} ${(a.vehicles as any).model}` : '—'}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {a.due_date || new Date(a.created_at).toLocaleDateString('pt-PT')}
+                    {a.due_date || new Date(a.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className={alertStatusColors[a.status] || ''}>
+                    <Badge variant="outline" className={alertStatusStyles[a.status] || ''}>
+                      {a.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                      {a.status === 'sent' && <Info className="w-3 h-3 mr-1" />}
+                      {a.status === 'resolved' && <CheckCircle className="w-3 h-3 mr-1" />}
                       {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
                     </Badge>
                   </TableCell>

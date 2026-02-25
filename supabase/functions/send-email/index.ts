@@ -41,7 +41,7 @@ serve(async (req: Request) => {
     const finalTo = useSandbox ? [SANDBOX_REDIRECT] : originalTo;
     const finalSubject = useSandbox ? `[Para: ${originalTo.join(", ")}] ${subject}` : subject;
     // In sandbox: from MUST be onboarding@resend.dev
-    const finalFrom = useSandbox ? "GarageFlow <onboarding@resend.dev>" : (from || "GarageFlow <onboarding@resend.dev>");
+    const finalFrom = useSandbox ? "GarageFlow <onboarding@resend.dev>" : (from || "GarageFlow <noreply@garageflow.pt>");
 
     console.log(`Sending email | to: ${finalTo.join(",")} | original: ${originalTo.join(",")} | subject: ${finalSubject}`);
 

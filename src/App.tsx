@@ -12,6 +12,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import QuoteApproval from "@/pages/QuoteApproval";
+import LandingPage from "@/pages/LandingPage";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
@@ -40,6 +41,8 @@ const AdminBilling = lazy(() => import("@/pages/admin/AdminBilling"));
 const AdminAlerts = lazy(() => import("@/pages/admin/AdminAlerts"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
+const AdminFeatureAdoption = lazy(() => import("@/pages/admin/AdminFeatureAdoption"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -66,6 +69,8 @@ const adminRoutes = [
   { path: "/admin/billing", element: <AdminBilling /> },
   { path: "/admin/alerts", element: <AdminAlerts /> },
   { path: "/admin/reports", element: <AdminReports /> },
+  { path: "/admin/emails", element: <AdminEmailLogs /> },
+  { path: "/admin/adoption", element: <AdminFeatureAdoption /> },
   { path: "/admin/settings", element: <AdminSettings /> },
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
@@ -199,9 +204,11 @@ function AppRoutes() {
   if (!session) {
     return (
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/quote/:token" element={<QuoteApproval />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<Auth />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     );
   }

@@ -89,6 +89,11 @@ function AuthenticatedRoutes() {
         <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
       ))}
 
+      {/* Redirect non-admin users away from /admin routes */}
+      {!isSuperAdmin && (
+        <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
+      )}
+
       {/* Shop routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />

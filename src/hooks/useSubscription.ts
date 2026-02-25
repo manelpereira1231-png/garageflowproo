@@ -83,7 +83,7 @@ export function useSubscription() {
         .from("shops")
         .select("id")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .single();
 
       if (!shop) { setLoading(false); return; }
       setShopId(shop.id);
@@ -92,7 +92,7 @@ export function useSubscription() {
         .from("subscriptions")
         .select("*")
         .eq("shop_id", shop.id)
-        .maybeSingle();
+        .single();
 
       if (sub) {
         setSubscription(sub as unknown as Subscription);

@@ -63,7 +63,7 @@ function AuthenticatedRoutes() {
         .from("shops")
         .select("name")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .single();
       setNeedsOnboarding(!shop?.name || shop.name.trim() === '');
     };
     checkShop();

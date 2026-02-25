@@ -34,7 +34,7 @@ export default function Quotes() {
   const fetchQuotes = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).single();
     if (shopData) setShop(shopData);
 
     const { data } = await supabase
@@ -52,7 +52,7 @@ export default function Quotes() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setConverting(null); return; }
-    const { data: shopData } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+    const { data: shopData } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
     if (!shopData) { toast.error(t('common.configureShop')); setConverting(null); return; }
 
     const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopData.id);

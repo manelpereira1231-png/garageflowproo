@@ -36,7 +36,7 @@ export default function Services() {
   const fetchServices = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+    const { data: shopData } = await supabase.from("shops").select("*").eq("user_id", user.id).single();
     if (shopData) setShop(shopData);
 
     const { data } = await supabase

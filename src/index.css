@@ -133,11 +133,11 @@
   }
 
   .page-header {
-    @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 sm:mb-6;
+    @apply flex items-center justify-between mb-6;
   }
 
   .page-title {
-    @apply text-xl sm:text-2xl font-bold text-foreground;
+    @apply text-2xl font-bold text-foreground;
   }
 
   .mono {

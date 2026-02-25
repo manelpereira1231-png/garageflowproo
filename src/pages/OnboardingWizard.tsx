@@ -68,7 +68,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
 
     // Get shop id first
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
     if (!shop) { toast.error(t('error.shopNotFound')); setLoading(false); return; }
 
     // Upload logo if provided

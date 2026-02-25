@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Shield, Search, Trash2 } from "lucide-react";
+import { Users, Shield, Search, Trash2, MailCheck, Loader2 } from "lucide-react";
 
 interface ShopUserRow {
   id: string;
@@ -32,6 +32,7 @@ export default function AdminUsers() {
   const [filterRole, setFilterRole] = useState("all");
   const [roleDialog, setRoleDialog] = useState<{ user: ShopUserRow; newRole: string } | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<ShopUserRow | null>(null);
+  const [confirmingEmail, setConfirmingEmail] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchUsers = async () => {
@@ -89,6 +90,33 @@ export default function AdminUsers() {
       fetchUsers();
     }
     setDeleteDialog(null);
+  };
+
+  const handleConfirmEmail = async (userId: string, email: string) => {
+    setConfirmingEmail(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-confirm-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
+      const result = await res.json();
+      if (result.error) {
+        toast({ title: "Erro", description: result.error, variant: "destructive" });
+      } else {
+        toast({ title: "Email confirmado", description: `O email ${email} foi confirmado com sucesso.` });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+    setConfirmingEmail(null);
   };
 
   const roleBadge = (role: string) => {
@@ -196,6 +224,20 @@ export default function AdminUsers() {
                       <>
                         <Button variant="ghost" size="sm" onClick={() => setRoleDialog({ user, newRole: user.role })}>
                           Alterar Role
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleConfirmEmail(user.user_id, user.email)}
+                          disabled={confirmingEmail === user.user_id}
+                          title="Confirmar email deste utilizador"
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          {confirmingEmail === user.user_id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <MailCheck className="w-4 h-4" />
+                          )}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteDialog(user)} title="Remover">
                           <Trash2 className="w-4 h-4 text-destructive" />

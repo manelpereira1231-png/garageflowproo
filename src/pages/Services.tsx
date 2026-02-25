@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, ChevronRight } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight, Pencil } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
@@ -169,6 +169,14 @@ export default function Services() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    {!['delivered', 'cancelled'].includes(s.status) && (
+                      <Link to={`/services/edit/${s.id}`}>
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          <Pencil className="w-3.5 h-3.5 mr-1" />
+                          {t('common.edit')}
+                        </Button>
+                      </Link>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">
                       PDF
                     </Button>

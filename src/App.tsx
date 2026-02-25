@@ -101,8 +101,10 @@ function AuthenticatedRoutes() {
       <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
       <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
       <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
+      <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
       <Route path="/services" element={<Layout><Services /></Layout>} />
       <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
+      <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
       <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
       <Route path="/billing" element={<Layout><Billing /></Layout>} />
       <Route path="/alerts" element={<Layout><Alerts /></Layout>} />

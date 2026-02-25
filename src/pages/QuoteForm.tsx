@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface LineItem {
@@ -17,8 +17,10 @@ interface LineItem {
 
 export default function QuoteForm() {
   const navigate = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!editId);
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
@@ -27,6 +29,7 @@ export default function QuoteForm() {
   const [validityDays, setValidityDays] = useState("30");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
+  const [quoteStatus, setQuoteStatus] = useState("draft");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,14 +37,45 @@ export default function QuoteForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").order("make");
       if (v) setVehicles(v);
+
+      // Load existing quote for editing
+      if (editId) {
+        const { data: quote } = await supabase.from("quotes").select("*").eq("id", editId).single();
+        if (quote) {
+          setClientId(quote.client_id);
+          setVehicleId(quote.vehicle_id);
+          setNotes(quote.notes || "");
+          setQuoteStatus(quote.status);
+          const quoteLines = Array.isArray(quote.lines) ? quote.lines : [];
+          setLines(quoteLines.map((l: any) => ({
+            id: l.id || crypto.randomUUID(),
+            type: l.type || 'service',
+            name: l.name || '',
+            quantity: l.quantity || 1,
+            unit_price: l.unit_price || 0,
+            unit_cost: l.unit_cost || 0,
+            vat_rate: l.vat_rate ?? 23,
+          })));
+          // Calculate validity days from dates
+          if (quote.date && quote.validity_date) {
+            const diff = Math.round((new Date(quote.validity_date).getTime() - new Date(quote.date).getTime()) / (1000 * 60 * 60 * 24));
+            setValidityDays(String(diff > 0 ? diff : 30));
+          }
+        }
+        setLoadingData(false);
+      }
     };
     fetchData();
-  }, []);
+  }, [editId]);
 
   useEffect(() => {
-    setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
-    setVehicleId("");
-  }, [clientId, vehicles]);
+    if (!editId) {
+      setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
+      setVehicleId("");
+    } else {
+      setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
+    }
+  }, [clientId, vehicles, editId]);
 
   const addLine = () => {
     setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 23 }]);
@@ -71,23 +105,49 @@ export default function QuoteForm() {
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
     if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
-    const now = new Date();
-    const validity = new Date(now);
-    validity.setDate(validity.getDate() + parseInt(validityDays));
-    const { data: countData } = await supabase.from("quotes").select("id", { count: "exact" }).eq("shop_id", shop.id);
-    const num = `ORC-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+    if (editId) {
+      // Update existing quote
+      const now = new Date();
+      const validity = new Date(now);
+      validity.setDate(validity.getDate() + parseInt(validityDays));
 
-    const { error } = await supabase.from("quotes").insert({
-      shop_id: shop.id, number: num, date: now.toISOString().split('T')[0],
-      validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
-      lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
-      status: 'draft', notes: notes || null, token: crypto.randomUUID(),
-    });
+      const { error } = await supabase.from("quotes").update({
+        client_id: clientId, vehicle_id: vehicleId,
+        validity_date: validity.toISOString().split('T')[0],
+        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        notes: notes || null,
+      }).eq("id", editId);
 
-    if (error) toast.error(error.message);
-    else { toast.success(t('quotes.created')); navigate("/quotes"); }
+      if (error) toast.error(error.message);
+      else { toast.success(t('quotes.updated')); navigate("/quotes"); }
+    } else {
+      // Create new quote
+      const now = new Date();
+      const validity = new Date(now);
+      validity.setDate(validity.getDate() + parseInt(validityDays));
+      const { data: countData } = await supabase.from("quotes").select("id", { count: "exact" }).eq("shop_id", shop.id);
+      const num = `ORC-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+
+      const { error } = await supabase.from("quotes").insert({
+        shop_id: shop.id, number: num, date: now.toISOString().split('T')[0],
+        validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
+        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        status: 'draft', notes: notes || null, token: crypto.randomUUID(),
+      });
+
+      if (error) toast.error(error.message);
+      else { toast.success(t('quotes.created')); navigate("/quotes"); }
+    }
     setLoading(false);
   };
+
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl">
@@ -96,7 +156,7 @@ export default function QuoteForm() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/quotes")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="page-title">{t('quotes.new')}</h1>
+          <h1 className="page-title">{editId ? t('quotes.edit') : t('quotes.new')}</h1>
         </div>
       </div>
 
@@ -171,7 +231,7 @@ export default function QuoteForm() {
         </div>
 
         <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
-          {loading ? t('quotes.creating') : t('quotes.create')}
+          {loading ? (editId ? t('quotes.saving') : t('quotes.creating')) : (editId ? t('quotes.save') : t('quotes.create'))}
         </Button>
       </form>
     </div>

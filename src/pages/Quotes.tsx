@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
@@ -176,6 +176,14 @@ export default function Quotes() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    {!['converted'].includes(q.status) && (
+                      <Link to={`/quotes/edit/${q.id}`}>
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          <Pencil className="w-3.5 h-3.5 mr-1" />
+                          {t('common.edit')}
+                        </Button>
+                      </Link>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs">
                       PDF
                     </Button>

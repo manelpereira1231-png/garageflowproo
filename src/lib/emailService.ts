@@ -8,16 +8,27 @@ interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, html, from }: SendEmailParams) {
-  const { data, error } = await supabase.functions.invoke("send-email", {
-    body: { to, subject, html, from },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke("send-email", {
+      body: { to, subject, html, from },
+    });
 
-  if (error) {
-    console.error("Failed to send email:", error);
-    throw new Error(`Email send failed: ${error.message}`);
+    if (error) {
+      console.error("Failed to send email:", error);
+      throw new Error(error.message || "Email send failed");
+    }
+
+    // Check if the edge function returned an error in the response body
+    if (data && data.error) {
+      console.error("Email service error:", data.error);
+      throw new Error(data.error);
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error("sendEmail error:", err);
+    throw err;
   }
-
-  return data;
 }
 
 // --- Email Templates ---

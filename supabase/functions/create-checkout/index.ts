@@ -9,12 +9,12 @@ const corsHeaders = {
 
 const PRICES: Record<string, Record<string, string>> = {
   pro: {
-    monthly: "price_1T3nByE1zL2Sl1ZTPfnqfg9l",
-    yearly: "price_1T3nHUE1zL2Sl1ZThlOZYAHz",
+    monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",   // €49/mês
+    yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",     // €490/ano
   },
   garage: {
-    monthly: "price_1T3nE3E1zL2Sl1ZTPhT2qI9x",
-    yearly: "price_1T3nHlE1zL2Sl1ZT1mIhRIqW",
+    monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",   // €99/mês
+    yearly: "price_1T49EnE1zL2Sl1ZTs0crtbLM",     // €990/ano
   },
 };
 

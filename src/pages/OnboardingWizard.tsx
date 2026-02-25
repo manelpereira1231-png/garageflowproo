@@ -67,9 +67,31 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
 
-    // Get shop id first
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    if (!shop) { toast.error(t('error.shopNotFound')); setLoading(false); return; }
+    // Get shop id - retry up to 5 times to handle trigger race condition
+    let shop: { id: string } | null = null;
+    for (let i = 0; i < 5; i++) {
+      const { data, error } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+      if (data) { shop = data; break; }
+      console.log(`Shop lookup attempt ${i + 1}: data=${JSON.stringify(data)}, error=${JSON.stringify(error)}`);
+      await new Promise(r => setTimeout(r, 1500));
+    }
+
+    // If shop still not found, create it as fallback
+    if (!shop) {
+      console.log("Shop not found after retries, creating fallback shop");
+      const { data: newShop, error: createError } = await supabase
+        .from("shops")
+        .insert({ user_id: user.id, name: form.name, email: form.email || user.email || '' })
+        .select("id")
+        .single();
+      if (createError || !newShop) {
+        console.error("Failed to create fallback shop:", createError);
+        toast.error(t('error.shopNotFound'));
+        setLoading(false);
+        return;
+      }
+      shop = newShop;
+    }
 
     // Upload logo if provided
     const logoUrl = await uploadLogo(shop.id);

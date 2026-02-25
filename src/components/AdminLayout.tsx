@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
@@ -26,8 +26,15 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setAdminEmail(user.email);
+    });
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -79,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-foreground truncate">Super Admin</p>
-              <p className="text-[10px] text-muted-foreground truncate">manelpereira11@gmail.com</p>
+              <p className="text-[10px] text-muted-foreground truncate">{adminEmail || "admin"}</p>
             </div>
           </div>
         </div>

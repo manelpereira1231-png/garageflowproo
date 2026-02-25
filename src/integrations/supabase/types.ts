@@ -241,6 +241,30 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           client_id: string
@@ -634,6 +658,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_emails_for_admin: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       user_is_shop_member: {

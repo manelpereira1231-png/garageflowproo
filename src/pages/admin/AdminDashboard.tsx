@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Plus, Bell } from "lucide-react";
+import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { useNavigate } from "react-router-dom";
@@ -8,15 +8,21 @@ import { useNavigate } from "react-router-dom";
 interface AdminStats {
   totalShops: number;
   activeShops: number;
+  suspendedShops: number;
   totalClients: number;
+  totalVehicles: number;
   totalWorkOrders: number;
+  totalQuotes: number;
+  totalAlerts: number;
   totalRevenue: number;
   avgTicket: number;
   pendingAlerts: number;
   openQuotes: number;
   approvedQuotes: number;
+  newShopsThisMonth: number;
   planBreakdown: { free: number; pro: number; garage: number };
   monthlyRevenue: { month: string; revenue: number }[];
+  monthlyNewShops: { month: string; shops: number }[];
   topShops: { name: string; clients: number }[];
 }
 
@@ -29,11 +35,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [shops, clients, workOrders, alerts, subscriptions, quotes] = await Promise.all([
-        supabase.from("shops").select("id, name, status"),
+      const [shops, clients, vehicles, workOrders, alerts, subscriptions, quotes] = await Promise.all([
+        supabase.from("shops").select("id, name, status, created_at"),
         supabase.from("clients").select("id, shop_id"),
+        supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
-        supabase.from("alerts").select("id, status").eq("status", "pending"),
+        supabase.from("alerts").select("id, status"),
         supabase.from("subscriptions").select("plan, status"),
         supabase.from("quotes").select("id, status"),
       ]);
@@ -49,9 +56,13 @@ export default function AdminDashboard() {
         else if (s.plan === 'garage') planBreakdown.garage++;
       });
 
-      // Monthly revenue (last 6 months)
       const now = new Date();
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const newShopsThisMonth = (shops.data || []).filter(s => new Date(s.created_at) >= thisMonthStart).length;
+
+      // Monthly revenue & new shops (last 6 months)
       const monthlyRevenue: { month: string; revenue: number }[] = [];
+      const monthlyNewShops: { month: string; shops: number }[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthStr = d.toLocaleDateString("pt-PT", { month: "short", year: "2-digit" });
@@ -63,6 +74,12 @@ export default function AdminDashboard() {
           })
           .reduce((sum, wo) => sum + Number(wo.total || 0), 0);
         monthlyRevenue.push({ month: monthStr, revenue: Math.round(revenue * 100) / 100 });
+
+        const newShops = (shops.data || []).filter(s => {
+          const sd = new Date(s.created_at);
+          return sd.getMonth() === d.getMonth() && sd.getFullYear() === d.getFullYear();
+        }).length;
+        monthlyNewShops.push({ month: monthStr, shops: newShops });
       }
 
       // Top shops by clients
@@ -77,16 +94,21 @@ export default function AdminDashboard() {
 
       const openQuotes = (quotes.data || []).filter(q => q.status === 'draft' || q.status === 'sent').length;
       const approvedQuotes = (quotes.data || []).filter(q => q.status === 'approved').length;
+      const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
       setStats({
         totalShops: shops.data?.length || 0,
         activeShops: (shops.data || []).filter(s => s.status === 'active').length,
+        suspendedShops: (shops.data || []).filter(s => s.status === 'suspended').length,
         totalClients: clients.data?.length || 0,
+        totalVehicles: vehicles.data?.length || 0,
         totalWorkOrders: workOrders.data?.length || 0,
+        totalQuotes: quotes.data?.length || 0,
+        totalAlerts: alerts.data?.length || 0,
         totalRevenue, avgTicket,
-        pendingAlerts: alerts.data?.length || 0,
-        openQuotes, approvedQuotes,
-        planBreakdown, monthlyRevenue, topShops,
+        pendingAlerts, openQuotes, approvedQuotes,
+        newShopsThisMonth,
+        planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
       });
       setLoading(false);
     };
@@ -99,8 +121,13 @@ export default function AdminDashboard() {
       "Métrica;Valor",
       `Oficinas Totais;${stats.totalShops}`,
       `Oficinas Ativas;${stats.activeShops}`,
+      `Oficinas Suspensas;${stats.suspendedShops}`,
+      `Novas Este Mês;${stats.newShopsThisMonth}`,
       `Clientes Totais;${stats.totalClients}`,
+      `Veículos Totais;${stats.totalVehicles}`,
       `Ordens de Serviço;${stats.totalWorkOrders}`,
+      `Orçamentos Totais;${stats.totalQuotes}`,
+      `Alertas Totais;${stats.totalAlerts}`,
       `Faturação Total;€${stats.totalRevenue.toFixed(2)}`,
       `Ticket Médio;€${stats.avgTicket.toFixed(2)}`,
       `Alertas Pendentes;${stats.pendingAlerts}`,
@@ -129,13 +156,16 @@ export default function AdminDashboard() {
   const kpiCards = [
     { label: "Oficinas Totais", value: stats.totalShops, icon: Building2, color: "text-primary" },
     { label: "Oficinas Ativas", value: stats.activeShops, icon: Building2, color: "text-success" },
-    { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-info" },
+    { label: "Suspensas", value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
+    { label: "Novas Este Mês", value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
+    { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-primary" },
+    { label: "Veículos Totais", value: stats.totalVehicles, icon: Car, color: "text-primary" },
     { label: "Ordens de Serviço", value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
+    { label: "Orçamentos Totais", value: stats.totalQuotes, icon: FileText, color: "text-primary" },
     { label: "Faturação Total", value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
     { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
     { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning" },
-    { label: "Orçamentos Abertos", value: stats.openQuotes, icon: TrendingUp, color: "text-muted-foreground" },
-    { label: "Orçamentos Aprovados", value: stats.approvedQuotes, icon: TrendingUp, color: "text-success" },
+    { label: "Alertas Totais", value: stats.totalAlerts, icon: AlertTriangle, color: "text-muted-foreground" },
   ];
 
   const planPieData = [
@@ -151,7 +181,6 @@ export default function AdminDashboard() {
           <h1 className="page-title">Dashboard Admin</h1>
           <p className="text-sm text-muted-foreground">Visão global do sistema GarageFlow</p>
         </div>
-        {/* Action widgets */}
         <div className="flex gap-2 flex-wrap">
           <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" /> Exportar CSV
@@ -160,7 +189,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {kpiCards.map((kpi) => (
           <div key={kpi.label} className="stat-card flex items-center gap-4">
             <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${kpi.color}`}>
@@ -210,6 +239,22 @@ export default function AdminDashboard() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Growth chart */}
+      <div className="stat-card">
+        <h2 className="text-lg font-semibold mb-4">Crescimento - Novas Oficinas/Mês</h2>
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.monthlyNewShops}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="month" className="text-xs" />
+              <YAxis className="text-xs" allowDecimals={false} />
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+              <Bar dataKey="shops" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Novas Oficinas" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

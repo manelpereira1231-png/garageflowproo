@@ -29,12 +29,6 @@ const plans = [
   },
 ];
 
-const stats = [
-  { value: "500+", label: "Oficinas ativas" },
-  { value: "98%", label: "Uptime garantido" },
-  { value: "50k+", label: "Orçamentos criados" },
-  { value: "4.9★", label: "Avaliação média" },
-];
 
 export default function LandingPage() {
   return (
@@ -99,17 +93,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Social proof */}
-      <section className="py-12 border-y border-border bg-muted/30">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {stats.map(s => (
-            <div key={s.label}>
-              <p className="text-3xl font-bold text-primary mono">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Features */}
       <section id="features" className="py-20 px-4">

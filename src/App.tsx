@@ -31,7 +31,7 @@ const queryClient = new QueryClient();
 
 function AuthenticatedRoutes() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const { isSuperAdmin } = useSuperAdmin();
+  const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
   useEffect(() => {
     const checkShop = async () => {
@@ -46,6 +46,17 @@ function AuthenticatedRoutes() {
     };
     checkShop();
   }, []);
+
+  // Super admin skips onboarding and goes straight to admin panel
+  if (!adminLoading && isSuperAdmin && needsOnboarding) {
+    return (
+      <Routes>
+        <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+        <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    );
+  }
 
   if (needsOnboarding) {
     return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;

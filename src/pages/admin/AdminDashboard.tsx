@@ -24,6 +24,15 @@ interface AdminStats {
   monthlyRevenue: { month: string; revenue: number }[];
   monthlyNewShops: { month: string; shops: number }[];
   topShops: { name: string; clients: number }[];
+  // SaaS Metrics
+  mrr: number;
+  arr: number;
+  arpu: number;
+  ltv: number;
+  churnRate: number;
+  trialCount: number;
+  paidCount: number;
+  conversionRate: number;
 }
 
 const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--success))"];
@@ -96,6 +105,25 @@ export default function AdminDashboard() {
       const approvedQuotes = (quotes.data || []).filter(q => q.status === 'approved').length;
       const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
+      // SaaS Metrics
+      const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+      const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active');
+      const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+      const arr = mrr * 12;
+      const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
+      const arpu = paidCount > 0 ? mrr / paidCount : 0;
+      // Simplified LTV: ARPU / churn (assume 5% churn if none)
+      const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
+      const totalSubCount = (subscriptions.data || []).length;
+      const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
+      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24; // 24 months if no churn
+      const trialSubs = activeSubs.filter(s => {
+        const sub = s as any;
+        return sub.trial_end && new Date(sub.trial_end) > new Date() && s.plan === 'free';
+      });
+      const trialCount = trialSubs.length;
+      const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
+
       setStats({
         totalShops: shops.data?.length || 0,
         activeShops: (shops.data || []).filter(s => s.status === 'active').length,
@@ -109,6 +137,7 @@ export default function AdminDashboard() {
         pendingAlerts, openQuotes, approvedQuotes,
         newShopsThisMonth,
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
+        mrr, arr, arpu, ltv, churnRate, trialCount, paidCount, conversionRate,
       });
       setLoading(false);
     };
@@ -130,6 +159,12 @@ export default function AdminDashboard() {
       `Alertas Totais;${stats.totalAlerts}`,
       `Faturação Total;€${stats.totalRevenue.toFixed(2)}`,
       `Ticket Médio;€${stats.avgTicket.toFixed(2)}`,
+      `MRR;€${stats.mrr.toFixed(2)}`,
+      `ARR;€${stats.arr.toFixed(2)}`,
+      `ARPU;€${stats.arpu.toFixed(2)}`,
+      `LTV Estimado;€${stats.ltv.toFixed(2)}`,
+      `Churn Rate;${stats.churnRate.toFixed(1)}%`,
+      `Conversão Trial→Pago;${stats.conversionRate.toFixed(1)}%`,
       `Alertas Pendentes;${stats.pendingAlerts}`,
       `Plano Free;${stats.planBreakdown.free}`,
       `Plano Pro;${stats.planBreakdown.pro}`,
@@ -158,14 +193,18 @@ export default function AdminDashboard() {
     { label: "Oficinas Ativas", value: stats.activeShops, icon: Building2, color: "text-success" },
     { label: "Suspensas", value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
     { label: "Novas Este Mês", value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
+    { label: "MRR", value: `€${stats.mrr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "ARPU", value: `€${stats.arpu.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
+    { label: "LTV Estimado", value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
+    { label: "Churn Rate", value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
+    { label: "Trial→Pago", value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
     { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-primary" },
     { label: "Veículos Totais", value: stats.totalVehicles, icon: Car, color: "text-primary" },
     { label: "Ordens de Serviço", value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
-    { label: "Orçamentos Totais", value: stats.totalQuotes, icon: FileText, color: "text-primary" },
     { label: "Faturação Total", value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
     { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
     { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning" },
-    { label: "Alertas Totais", value: stats.totalAlerts, icon: AlertTriangle, color: "text-muted-foreground" },
   ];
 
   const planPieData = [

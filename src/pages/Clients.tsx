@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, Building2 } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -14,22 +14,33 @@ interface ClientRow {
   company: string | null; nif: string | null; notes: string | null; created_at: string;
 }
 
+const PAGE_SIZE = 25;
+
 export default function Clients() {
   const { t } = useLanguage();
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
 
+  const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
+
   const fetchClients = async () => {
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, count } = await supabase
+      .from("clients")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
     if (data) setClients(data);
+    if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchClients(); }, []);
-
-  const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
+  useEffect(() => { fetchClients(); }, [page]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +58,7 @@ export default function Clients() {
       toast.success(t('clients.created'));
       setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
       setOpen(false);
+      setPage(0);
       fetchClients();
     }
     setLoading(false);
@@ -58,12 +70,14 @@ export default function Clients() {
     (c.nif && c.nif.includes(search))
   );
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('clients.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{clients.length} {t('clients.title').toLowerCase()}</p>
+          <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('clients.title').toLowerCase()}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -115,7 +129,7 @@ export default function Clients() {
       <div className="sm:hidden space-y-2">
         {filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
-            {clients.length === 0 ? t('clients.empty') : t('clients.noResults')}
+            {totalCount === 0 ? t('clients.empty') : t('clients.noResults')}
           </div>
         ) : filtered.map(client => (
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
@@ -147,7 +161,7 @@ export default function Clients() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  {clients.length === 0 ? t('clients.empty') : t('clients.noResults')}
+                  {totalCount === 0 ? t('clients.empty') : t('clients.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(client => (
@@ -168,6 +182,23 @@ export default function Clients() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} de {totalCount}
+          </p>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -18,19 +18,22 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
+  const [shopName, setShopName] = useState("");
+  const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("id, currency").eq("user_id", user.id).single();
+      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("user_id", user.id).single();
       if (!shop) return;
       setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
+      setShopName(shop.name || '');
+      setShopLogoUrl(shop.logo_url || null);
 
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Work orders this month
       const { data: orders } = await supabase.from("work_orders")
         .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
         .eq("shop_id", shop.id)
@@ -41,13 +44,11 @@ export default function Dashboard() {
       const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
       const profit = delivered.reduce((s, o) => s + (o.profit || 0), 0);
 
-      // Open quotes
       const { count: openQuotes } = await supabase.from("quotes")
         .select("id", { count: "exact", head: true })
         .eq("shop_id", shop.id)
         .in("status", ['draft', 'sent']);
 
-      // Active clients (with services this month)
       const { data: clientsData } = await supabase.from("work_orders")
         .select("client_id")
         .eq("shop_id", shop.id)
@@ -80,9 +81,19 @@ export default function Dashboard() {
   return (
     <div>
       <div className="page-header">
-        <div>
-          <h1 className="page-title">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t('dashboard.subtitle')}</p>
+        <div className="flex items-center gap-4">
+          {/* Shop Logo */}
+          {shopLogoUrl ? (
+            <img src={shopLogoUrl} alt={shopName} className="w-12 h-12 rounded-xl object-contain border border-border bg-background" />
+          ) : (
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+              <Wrench className="w-6 h-6 text-primary-foreground" />
+            </div>
+          )}
+          <div>
+            <h1 className="page-title">{shopName || t('dashboard.title')}</h1>
+            <p className="text-muted-foreground text-sm mt-1">{t('dashboard.subtitle')}</p>
+          </div>
         </div>
       </div>
 

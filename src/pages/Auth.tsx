@@ -42,6 +42,7 @@ export default function Auth() {
           email, password,
           options: {
             data: {
+              owner_name: name,
               name: shopName || name,
               shop_country: country,
               shop_nif: nif,

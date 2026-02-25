@@ -28,7 +28,7 @@ const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'a
 
 export default function Services() {
   const { t } = useLanguage();
-  const { limits } = useSubscription();
+  const { limits, plan } = useSubscription();
   const [services, setServices] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [shop, setShop] = useState<any>(null);
@@ -67,14 +67,15 @@ export default function Services() {
     else { toast.success(t('service.cancelled')); fetchServices(); }
   };
 
-  const downloadPdf = (s: any) => {
+  const downloadPdf = async (s: any) => {
     if (!shop) return;
     const lines = (Array.isArray(s.lines) ? s.lines : []) as any[];
-    const doc = generatePdf({
+    const doc = await generatePdf({
       type: 'service',
       number: s.number,
       date: new Date(s.created_at).toLocaleDateString('pt-PT'),
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+      shopNif: (shop as any).nif, shopAddress: (shop as any).address, shopLogoUrl: (shop as any).logo_url,
       clientName: (s.clients as any)?.name || '',
       clientEmail: (s.clients as any)?.email,
       clientPhone: (s.clients as any)?.phone,
@@ -85,6 +86,7 @@ export default function Services() {
       lines, subtotal: s.subtotal, vatTotal: s.vat_total, total: s.total, profit: s.profit,
       notes: s.notes, technician: s.technician, diagnosis: s.diagnosis, laborHours: s.labor_hours,
       currency: shop.currency || 'EUR',
+      plan: plan,
     }, limits.pdfWatermark);
     doc.save(`${s.number}.pdf`);
   };

@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { Building2, ChevronDown, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Shop {
   id: string;
@@ -15,12 +21,50 @@ interface ShopSwitcherProps {
   onSwitch: (id: string) => void;
   onCreateNew?: () => void;
   showCreate?: boolean;
+  onShopCreated?: () => void;
 }
 
-export default function ShopSwitcher({ shops, activeShopId, onSwitch, onCreateNew, showCreate }: ShopSwitcherProps) {
+export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate, onShopCreated }: ShopSwitcherProps) {
   const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newShopName, setNewShopName] = useState("");
+  const [newShopEmail, setNewShopEmail] = useState("");
 
   if (shops.length <= 1 && !showCreate) return null;
+
+  const handleCreateShop = async () => {
+    if (!newShopName.trim()) return;
+    setCreating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error(t('common.sessionExpired')); return; }
+
+      const { data: shop, error } = await supabase.from("shops").insert({
+        user_id: user.id,
+        name: newShopName.trim(),
+        email: newShopEmail.trim() || user.email || "",
+      }).select().single();
+
+      if (error) { toast.error(error.message); return; }
+      
+      toast.success(`${newShopName.trim()} criada com sucesso!`);
+      setNewShopName("");
+      setNewShopEmail("");
+      setOpen(false);
+      
+      // Switch to new shop and reload
+      if (shop) {
+        onSwitch(shop.id);
+        localStorage.setItem("garageflow_active_shop", shop.id);
+      }
+      onShopCreated?.();
+      // Reload the page to refresh all contexts
+      setTimeout(() => window.location.reload(), 300);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="px-3 pb-2">
@@ -45,10 +89,46 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, onCreateNe
             ))}
           </SelectContent>
         </Select>
-        {showCreate && onCreateNew && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={onCreateNew} title={t('shop.createNew')}>
-            <Plus className="w-4 h-4" />
-          </Button>
+        {showCreate && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>{t('shop.createNew')}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-1.5">
+                  <Label>{t('settings.shopName')} *</Label>
+                  <Input
+                    value={newShopName}
+                    onChange={e => setNewShopName(e.target.value)}
+                    placeholder="Ex: Oficina Norte"
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('settings.email')}</Label>
+                  <Input
+                    type="email"
+                    value={newShopEmail}
+                    onChange={e => setNewShopEmail(e.target.value)}
+                    placeholder="oficina@exemplo.com"
+                  />
+                </div>
+                <Button
+                  onClick={handleCreateShop}
+                  disabled={!newShopName.trim() || creating}
+                  className="w-full"
+                >
+                  {creating ? t('common.loading') : t('shop.createNew')}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </div>

@@ -44,21 +44,23 @@ const alertTypeColors: Record<string, string> = {
 
 export default function Alerts() {
   const { t } = useLanguage();
-  const { plan } = useSubscription();
+  const { plan, shopId } = useSubscription();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
   const fetchAlerts = async () => {
+    if (!shopId) return;
     const { data } = await supabase
       .from("alerts")
       .select("*, clients(name), vehicles(make, model, plate)")
+      .eq("shop_id", shopId)
       .order("created_at", { ascending: false });
     if (data) setAlerts(data);
   };
 
-  useEffect(() => { fetchAlerts(); }, []);
+  useEffect(() => { if (shopId) fetchAlerts(); }, [shopId]);
 
   const resolveAlert = async (id: string) => {
     const { error } = await supabase.from("alerts").update({ status: 'resolved' }).eq("id", id);

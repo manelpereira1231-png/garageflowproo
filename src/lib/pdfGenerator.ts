@@ -38,27 +38,66 @@ interface PdfData {
   diagnosis?: string;
   laborHours?: number;
   currency: string;
+  plan?: 'free' | 'pro' | 'garage';
 }
 
-export function generatePdf(data: PdfData, watermark: boolean): jsPDF {
+async function loadImage(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function generatePdf(data: PdfData, watermark: boolean): Promise<jsPDF> {
   const doc = new jsPDF();
   const cur = data.currency === 'EUR' ? '€' : data.currency;
   const pageW = doc.internal.pageSize.getWidth();
+  const isFree = watermark || data.plan === 'free';
 
   // Header bar
   doc.setFillColor(38, 38, 38);
   doc.rect(0, 0, pageW, 40, 'F');
 
-  // Brand
+  // Try to load and place shop logo
+  let logoLoaded = false;
+  if (data.shopLogoUrl) {
+    const imgData = await loadImage(data.shopLogoUrl);
+    if (imgData) {
+      try {
+        doc.addImage(imgData, 'PNG', 14, 6, 28, 28);
+        logoLoaded = true;
+      } catch {
+        // fallback to text
+      }
+    }
+  }
+
+  // Shop info (offset if logo loaded)
+  const infoX = logoLoaded ? 48 : 14;
+  
   doc.setTextColor(255, 180, 30);
-  doc.setFontSize(22);
+  doc.setFontSize(logoLoaded ? 16 : 22);
   doc.setFont("helvetica", "bold");
-  doc.text("GarageFlow", 14, 20);
+  doc.text(data.shopName, infoX, 16);
 
   doc.setTextColor(180, 180, 180);
-  doc.setFontSize(9);
-  doc.text(data.shopName, 14, 28);
-  doc.text(`${data.shopEmail} | ${data.shopPhone}`, 14, 34);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  if (data.shopNif) {
+    doc.text(`NIF: ${data.shopNif}`, infoX, 22);
+  }
+  if (data.shopAddress) {
+    doc.text(data.shopAddress, infoX, data.shopNif ? 27 : 22);
+  }
+  doc.text(`${data.shopEmail} | ${data.shopPhone}`, infoX, data.shopNif && data.shopAddress ? 32 : data.shopNif || data.shopAddress ? 27 : 22);
 
   // Document type + number
   doc.setTextColor(255, 255, 255);
@@ -138,6 +177,7 @@ export function generatePdf(data: PdfData, watermark: boolean): jsPDF {
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
+  doc.setTextColor(38, 38, 38);
   doc.text(`Subtotal: ${cur}${data.subtotal.toFixed(2)}`, totalsX, finalY, { align: "right" });
   doc.text(`IVA: ${cur}${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
 
@@ -148,7 +188,7 @@ export function generatePdf(data: PdfData, watermark: boolean): jsPDF {
   doc.setFont("helvetica", "bold");
   doc.text(`TOTAL: ${cur}${data.total.toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
 
-  // Diagnosis (for services)
+  // Diagnosis
   if (data.type === 'service' && data.diagnosis) {
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
@@ -171,30 +211,39 @@ export function generatePdf(data: PdfData, watermark: boolean): jsPDF {
     doc.text(noteLines, 14, notesY + 6);
   }
 
-  // Watermark for free plan
-  if (watermark) {
+  // Watermark for FREE plan only
+  if (isFree) {
     doc.setTextColor(200, 200, 200);
     doc.setFontSize(50);
     doc.setFont("helvetica", "bold");
-    // Rotate and center
     const centerX = pageW / 2;
     const centerY = doc.internal.pageSize.getHeight() / 2;
     doc.saveGraphicsState();
-    doc.text("GarageFlow", centerX, centerY, {
+    doc.text("GarageFlow FREE", centerX, centerY, {
       align: "center",
       angle: 45,
     });
     doc.restoreGraphicsState();
   }
 
-  // Footer with fiscal info
+  // Footer
   const pageH = doc.internal.pageSize.getHeight();
   doc.setTextColor(150, 150, 150);
   doc.setFontSize(7);
-  const footerParts = [`Gerado por GarageFlow — ${data.shopName}`];
-  if (data.shopNif) footerParts.push(`NIF: ${data.shopNif}`);
-  if (data.shopAddress) footerParts.push(data.shopAddress);
-  doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
+  
+  if (isFree) {
+    // FREE: footer includes GarageFlow branding
+    const footerParts = [`${data.shopName} — Powered by GarageFlow`];
+    if (data.shopNif) footerParts.push(`NIF: ${data.shopNif}`);
+    if (data.shopAddress) footerParts.push(data.shopAddress);
+    doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
+  } else {
+    // PRO/GARAGE: only shop info, no GarageFlow
+    const footerParts = [data.shopName];
+    if (data.shopNif) footerParts.push(`NIF: ${data.shopNif}`);
+    if (data.shopAddress) footerParts.push(data.shopAddress);
+    doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
+  }
 
   return doc;
 }

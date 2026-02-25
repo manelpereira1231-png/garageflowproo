@@ -23,7 +23,7 @@ const statusColors: Record<QuoteStatus, string> = {
 
 export default function Quotes() {
   const { t } = useLanguage();
-  const { limits } = useSubscription();
+  const { limits, plan } = useSubscription();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
@@ -71,15 +71,16 @@ export default function Quotes() {
     fetchQuotes();
   };
 
-  const downloadPdf = (q: any) => {
+  const downloadPdf = async (q: any) => {
     if (!shop) return;
     const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
-    const doc = generatePdf({
+    const doc = await generatePdf({
       type: 'quote',
       number: q.number,
       date: q.date || new Date(q.created_at).toLocaleDateString('pt-PT'),
       validityDate: q.validity_date,
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+      shopNif: (shop as any).nif, shopAddress: (shop as any).address, shopLogoUrl: (shop as any).logo_url,
       clientName: (q.clients as any)?.name || '',
       clientEmail: (q.clients as any)?.email,
       clientPhone: (q.clients as any)?.phone,
@@ -89,6 +90,7 @@ export default function Quotes() {
       vehiclePlate: (q.vehicles as any)?.plate || '',
       lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total, profit: q.profit,
       notes: q.notes, currency: shop.currency || 'EUR',
+      plan: plan,
     }, limits.pdfWatermark);
     doc.save(`${q.number}.pdf`);
   };

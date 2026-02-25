@@ -40,7 +40,7 @@ export default function AdminShops() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [deleteShop, setDeleteShop] = useState<ShopRow | null>(null);
-  const [planDialog, setPlanDialog] = useState<{ shop: ShopRow; newPlan: string } | null>(null);
+  const [planDialog, setPlanDialog] = useState<{ shop: ShopRow; newPlan: string; durationType: string; durationValue: number } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -128,15 +128,33 @@ export default function AdminShops() {
 
   const changePlan = async () => {
     if (!planDialog) return;
-    const { shop, newPlan } = planDialog;
+    const { shop, newPlan, durationType, durationValue } = planDialog;
+
+    let currentPeriodEnd: string | null = null;
+    if (durationType === "days") {
+      const d = new Date(); d.setDate(d.getDate() + durationValue);
+      currentPeriodEnd = d.toISOString();
+    } else if (durationType === "months") {
+      const d = new Date(); d.setMonth(d.getMonth() + durationValue);
+      currentPeriodEnd = d.toISOString();
+    }
+    // "unlimited" → null (sem data de fim)
+
+    const updateData: Record<string, any> = {
+      plan: newPlan,
+      status: "active",
+      current_period_end: currentPeriodEnd,
+    };
+
     const { error } = await supabase.from("subscriptions")
-      .update({ plan: newPlan })
+      .update(updateData)
       .eq("shop_id", shop.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      await logAction("plan_changed", "subscription", shop.id, { name: shop.name, from: shop.plan, to: newPlan });
-      toast({ title: `Plano alterado para ${newPlan.toUpperCase()}` });
+      const durationLabel = durationType === "unlimited" ? "ilimitado" : `${durationValue} ${durationType === "days" ? "dias" : "meses"}`;
+      await logAction("plan_changed", "subscription", shop.id, { name: shop.name, from: shop.plan, to: newPlan, duration: durationLabel });
+      toast({ title: `Plano ${newPlan.toUpperCase()} atribuído (${durationLabel})` });
       fetchShops();
     }
     setPlanDialog(null);
@@ -288,7 +306,7 @@ export default function AdminShops() {
                 <TableCell className="text-sm text-muted-foreground">{shop.email || "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{shop.country}</TableCell>
                 <TableCell>
-                  <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan })}>
+                  <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan, durationType: "months", durationValue: 1 })}>
                     {planBadge(shop.plan)}
                   </button>
                 </TableCell>
@@ -340,16 +358,46 @@ export default function AdminShops() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Alterar Plano - {planDialog?.shop.name}</DialogTitle>
-            <DialogDescription>Selecione o novo plano para esta oficina.</DialogDescription>
+            <DialogDescription>Selecione o plano e a duração a oferecer.</DialogDescription>
           </DialogHeader>
-          <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="free">Free</SelectItem>
-              <SelectItem value="pro">Pro</SelectItem>
-              <SelectItem value="garage">Garage</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Plano</label>
+              <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="pro">Pro (€49/mês)</SelectItem>
+                  <SelectItem value="garage">Garage (€99/mês)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Duração</label>
+              <Select value={planDialog?.durationType || "months"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, durationType: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="days">Dias</SelectItem>
+                  <SelectItem value="months">Meses</SelectItem>
+                  <SelectItem value="unlimited">Ilimitado (sem expiração)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {planDialog?.durationType !== "unlimited" && (
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Quantidade ({planDialog?.durationType === "days" ? "dias" : "meses"})
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={planDialog?.durationType === "days" ? 3650 : 120}
+                  value={planDialog?.durationValue || 1}
+                  onChange={e => planDialog && setPlanDialog({ ...planDialog, durationValue: Math.max(1, parseInt(e.target.value) || 1) })}
+                />
+              </div>
+            )}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPlanDialog(null)}>Cancelar</Button>
             <Button onClick={changePlan}>Confirmar</Button>

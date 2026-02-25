@@ -10,11 +10,13 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
-// All pages lazy-loaded for maximum code splitting
-const Auth = lazy(() => import("@/pages/Auth"));
+// Critical path - eagerly loaded for instant navigation
+import Auth from "@/pages/Auth";
+import LandingPage from "@/pages/LandingPage";
+
+// Non-critical lazy-loaded
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const QuoteApproval = lazy(() => import("@/pages/QuoteApproval"));
-const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const Layout = lazy(() => import("@/components/Layout"));
 const AdminLayout = lazy(() => import("@/components/AdminLayout"));
 
@@ -206,13 +208,15 @@ function AppRoutes() {
 
   if (!session) {
     return (
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/quote/:token" element={<QuoteApproval />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="*" element={<LandingPage />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </Suspense>
     );
   }
 

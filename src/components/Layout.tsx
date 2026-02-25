@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
@@ -13,9 +13,28 @@ import type { Language } from "@/i18n/translations";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
+
+  useEffect(() => {
+    const loadAlertCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
+      if (!shop) return;
+      const { count } = await supabase
+        .from("alerts")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", shop.id)
+        .eq("status", "pending");
+      setPendingAlertCount(count || 0);
+    };
+    loadAlertCount();
+    const interval = setInterval(loadAlertCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },
@@ -23,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/vehicles", label: t('nav.vehicles'), icon: Car },
     { path: "/quotes", label: t('nav.quotes'), icon: FileText },
     { path: "/services", label: t('nav.services'), icon: Wrench },
-    { path: "/alerts", label: t('nav.alerts'), icon: Bell },
+    { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
   ];
@@ -63,7 +82,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 }`}>
                 <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
                 {item.label}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                {'badge' in item && item.badge && item.badge > 0 ? (
+                  <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                ) : isActive ? (
+                  <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                ) : null}
               </Link>
             );
           })}

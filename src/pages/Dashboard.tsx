@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3 } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 interface KPIData {
   revenue: number;
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState("€");
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
+  const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,40 +36,60 @@ export default function Dashboard() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const { data: orders } = await supabase.from("work_orders")
-        .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
-        .eq("shop_id", shop.id)
-        .gte("created_at", monthStart)
-        .order("created_at", { ascending: false });
+      const [ordersRes, quotesRes, clientsRes, alertsRes] = await Promise.all([
+        supabase.from("work_orders")
+          .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
+          .eq("shop_id", shop.id)
+          .gte("created_at", monthStart)
+          .order("created_at", { ascending: false }),
+        supabase.from("quotes")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", shop.id)
+          .in("status", ['draft', 'sent']),
+        supabase.from("work_orders")
+          .select("client_id")
+          .eq("shop_id", shop.id)
+          .gte("created_at", monthStart),
+        supabase.from("alerts")
+          .select("id, title, type, status, due_date, created_at")
+          .eq("shop_id", shop.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
 
-      const delivered = (orders || []).filter(o => ['completed', 'delivered'].includes(o.status));
+      const orders = ordersRes.data || [];
+      const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
       const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
       const profit = delivered.reduce((s, o) => s + (o.profit || 0), 0);
-
-      const { count: openQuotes } = await supabase.from("quotes")
-        .select("id", { count: "exact", head: true })
-        .eq("shop_id", shop.id)
-        .in("status", ['draft', 'sent']);
-
-      const { data: clientsData } = await supabase.from("work_orders")
-        .select("client_id")
-        .eq("shop_id", shop.id)
-        .gte("created_at", monthStart);
-      const uniqueClients = new Set((clientsData || []).map(c => c.client_id));
+      const uniqueClients = new Set((clientsRes.data || []).map(c => c.client_id));
 
       setKpis({
         revenue,
         profit,
-        serviceCount: (orders || []).length,
+        serviceCount: orders.length,
         avgTicket: delivered.length > 0 ? revenue / delivered.length : 0,
-        openQuotes: openQuotes || 0,
+        openQuotes: quotesRes.count || 0,
         activeClients: uniqueClients.size,
       });
 
-      setRecentServices((orders || []).slice(0, 5));
+      setRecentServices(orders.slice(0, 5));
+      setPendingAlerts(alertsRes.data || []);
     };
     loadData();
   }, []);
+
+  const alertTypeColors: Record<string, string> = {
+    payment_failed: "text-destructive",
+    expired_quote: "text-warning",
+    revision: "text-warning",
+    oil: "text-warning",
+    inspection: "text-info",
+    warranty: "text-destructive",
+    inactive_client: "text-info",
+    service_due: "text-warning",
+    quote_pending: "text-warning",
+  };
 
   const stats = [
     { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign },
@@ -82,7 +104,6 @@ export default function Dashboard() {
     <div>
       <div className="page-header">
         <div className="flex items-center gap-4">
-          {/* Shop Logo */}
           {shopLogoUrl ? (
             <img src={shopLogoUrl} alt={shopName} className="w-12 h-12 rounded-xl object-contain border border-border bg-background" />
           ) : (
@@ -111,6 +132,45 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Alerts Widget */}
+      {pendingAlerts.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Bell className="w-4.5 h-4.5 text-warning" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">{t('alerts.widget.title')}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {pendingAlerts.length} {t('alerts.widget.pendingAlerts')}
+                </p>
+              </div>
+            </div>
+            <Link to="/alerts" className="text-sm text-primary hover:underline font-medium">
+              {t('alerts.widget.viewAll')} →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {pendingAlerts.map(alert => (
+              <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{alert.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t(`alerts.type.${alert.type}`)} · {alert.due_date ? new Date(alert.due_date).toLocaleDateString() : new Date(alert.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {t('alerts.statusPending')}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="bg-card border border-border rounded-xl p-5 mb-6">

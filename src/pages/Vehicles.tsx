@@ -39,7 +39,7 @@ export default function Vehicles() {
   const fetchData = async () => {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).order("created_at", { ascending: false }).range(from, to);
+    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
     if (v) setVehicles(v);
     if (count !== null) setTotalCount(count);
     const { data: c } = await supabase.from("clients").select("id, name").order("name");
@@ -86,7 +86,7 @@ export default function Vehicles() {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase.from("vehicles").delete().eq("id", deleteId);
+    const { error } = await supabase.from("vehicles").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success(t('vehicles.deleted')); fetchData(); }
     setDeleteId(null);

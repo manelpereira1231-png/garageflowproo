@@ -157,6 +157,7 @@ export type Database = {
         Row: {
           company: string | null
           created_at: string
+          deleted_at: string | null
           email: string
           id: string
           name: string
@@ -168,6 +169,7 @@ export type Database = {
         Insert: {
           company?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string
           id?: string
           name: string
@@ -179,6 +181,7 @@ export type Database = {
         Update: {
           company?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string
           id?: string
           name?: string
@@ -196,6 +199,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_logs: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          shop_id: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          shop_id: string
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          shop_id?: string
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -490,6 +529,7 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
+          deleted_at: string | null
           fuel: string
           id: string
           make: string
@@ -504,6 +544,7 @@ export type Database = {
         Insert: {
           client_id: string
           created_at?: string
+          deleted_at?: string | null
           fuel?: string
           id?: string
           make: string
@@ -518,6 +559,7 @@ export type Database = {
         Update: {
           client_id?: string
           created_at?: string
+          deleted_at?: string | null
           fuel?: string
           id?: string
           make?: string

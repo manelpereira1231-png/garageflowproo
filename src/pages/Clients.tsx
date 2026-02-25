@@ -39,6 +39,7 @@ export default function Clients() {
     const { data, count } = await supabase
       .from("clients")
       .select("*", { count: "exact" })
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) setClients(data);
@@ -82,7 +83,7 @@ export default function Clients() {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase.from("clients").delete().eq("id", deleteId);
+    const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success(t('clients.deleted')); fetchClients(); }
     setDeleteId(null);

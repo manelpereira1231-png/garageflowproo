@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Download, ArrowUpDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface SubRow {
   id: string;
@@ -31,7 +32,7 @@ export default function AdminBilling() {
   const [loading, setLoading] = useState(true);
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [planDialog, setPlanDialog] = useState<{ sub: SubRow; newPlan: string } | null>(null);
+  const [planDialog, setPlanDialog] = useState<{ sub: SubRow; newPlan: string; durationType: string; durationValue: number } | null>(null);
   const { toast } = useToast();
 
   const fetchSubs = async () => {
@@ -62,13 +63,26 @@ export default function AdminBilling() {
 
   const changePlan = async () => {
     if (!planDialog) return;
-    const { sub, newPlan } = planDialog;
-    const { error } = await supabase.from("subscriptions").update({ plan: newPlan }).eq("id", sub.id);
+    const { sub, newPlan, durationType, durationValue } = planDialog;
+
+    let currentPeriodEnd: string | null = null;
+    if (durationType === "days") {
+      const d = new Date(); d.setDate(d.getDate() + durationValue);
+      currentPeriodEnd = d.toISOString();
+    } else if (durationType === "months") {
+      const d = new Date(); d.setMonth(d.getMonth() + durationValue);
+      currentPeriodEnd = d.toISOString();
+    }
+
+    const { error } = await supabase.from("subscriptions").update({
+      plan: newPlan, status: "active", current_period_end: currentPeriodEnd,
+    }).eq("id", sub.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      await logAction("plan_changed", "subscription", sub.shop_id, { shop: sub.shop_name, from: sub.plan, to: newPlan });
-      toast({ title: `Plano alterado para ${newPlan.toUpperCase()}` });
+      const durationLabel = durationType === "unlimited" ? "ilimitado" : `${durationValue} ${durationType === "days" ? "dias" : "meses"}`;
+      await logAction("plan_changed", "subscription", sub.shop_id, { shop: sub.shop_name, from: sub.plan, to: newPlan, duration: durationLabel });
+      toast({ title: `Plano ${newPlan.toUpperCase()} atribuído (${durationLabel})` });
       fetchSubs();
     }
     setPlanDialog(null);
@@ -148,7 +162,7 @@ export default function AdminBilling() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
             <SelectItem value="trialing">Trial</SelectItem>
-            <SelectItem value="cancelled">Cancelado</SelectItem>
+            <SelectItem value="canceled">Cancelado</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -171,7 +185,7 @@ export default function AdminBilling() {
               <TableRow key={sub.id}>
                 <TableCell className="font-medium">{sub.shop_name}</TableCell>
                 <TableCell>
-                  <button onClick={() => setPlanDialog({ sub, newPlan: sub.plan })}>
+                  <button onClick={() => setPlanDialog({ sub, newPlan: sub.plan, durationType: "months", durationValue: 1 })}>
                     <Badge variant="outline" className={sub.plan === 'garage' ? 'bg-success/15 text-success' : sub.plan === 'pro' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}>
                       {sub.plan.toUpperCase()}
                     </Badge>
@@ -193,10 +207,10 @@ export default function AdminBilling() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setPlanDialog({ sub, newPlan: sub.plan })}>
+                    <Button variant="ghost" size="sm" onClick={() => setPlanDialog({ sub, newPlan: sub.plan, durationType: "months", durationValue: 1 })}>
                       <ArrowUpDown className="w-4 h-4 mr-1" /> Plano
                     </Button>
-                    {sub.status !== 'cancelled' && (
+                    {sub.status !== 'canceled' && (
                       <Button variant="ghost" size="sm" className="text-destructive" onClick={() => cancelSub(sub)}>
                         Cancelar
                       </Button>
@@ -216,14 +230,44 @@ export default function AdminBilling() {
             <DialogTitle>Alterar Plano - {planDialog?.sub.shop_name}</DialogTitle>
             <DialogDescription>Upgrade ou downgrade do plano desta oficina.</DialogDescription>
           </DialogHeader>
-          <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="free">Free</SelectItem>
-              <SelectItem value="pro">Pro</SelectItem>
-              <SelectItem value="garage">Garage</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Plano</label>
+              <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="pro">Pro (€49/mês)</SelectItem>
+                  <SelectItem value="garage">Garage (€99/mês)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Duração</label>
+              <Select value={planDialog?.durationType || "months"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, durationType: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="days">Dias</SelectItem>
+                  <SelectItem value="months">Meses</SelectItem>
+                  <SelectItem value="unlimited">Ilimitado (sem expiração)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {planDialog?.durationType !== "unlimited" && (
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Quantidade ({planDialog?.durationType === "days" ? "dias" : "meses"})
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={planDialog?.durationType === "days" ? 3650 : 120}
+                  value={planDialog?.durationValue || 1}
+                  onChange={e => planDialog && setPlanDialog({ ...planDialog, durationValue: Math.max(1, parseInt(e.target.value) || 1) })}
+                />
+              </div>
+            )}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPlanDialog(null)}>Cancelar</Button>
             <Button onClick={changePlan}>Confirmar</Button>

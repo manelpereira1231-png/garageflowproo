@@ -25,10 +25,15 @@ const ACTION_LABELS: Record<string, string> = {
   shop_created: "Oficina criada",
   shop_suspended: "Oficina suspensa",
   shop_activated: "Oficina ativada",
+  shop_deleted: "Oficina eliminada",
   plan_changed: "Plano alterado",
   trial_reset: "Trial reiniciado",
   role_changed: "Role alterado",
   alerts_reset: "Alertas resetados",
+  subscription_cancelled: "Subscrição cancelada",
+  user_removed: "Utilizador removido",
+  user_invited: "Utilizador convidado",
+  settings_updated: "Configurações atualizadas",
 };
 
 export default function AdminLogs() {

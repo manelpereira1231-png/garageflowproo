@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe,
@@ -26,9 +26,39 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<{id: string; name: string; email: string}[]>([]);
+  const [showResults, setShowResults] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  useEffect(() => {
+    if (!globalSearch || globalSearch.length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      const q = globalSearch.toLowerCase();
+      const { data } = await supabase.from("shops").select("id, name, email").limit(10);
+      const filtered = (data || []).filter(s =>
+        s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
+      );
+      setSearchResults(filtered);
+      setShowResults(true);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [globalSearch]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -115,14 +145,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Button>
           
           {/* Global search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md" ref={searchRef}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Pesquisar oficinas, emails, IDs..." 
               value={globalSearch} 
               onChange={e => setGlobalSearch(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowResults(true)}
               className="pl-9 h-9 text-sm"
             />
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                {searchResults.map(s => (
+                  <button key={s.id} onClick={() => { navigate(`/admin/shops/${s.id}`); setGlobalSearch(""); setShowResults(false); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-accent text-sm flex flex-col gap-0.5 border-b border-border last:border-0">
+                    <span className="font-medium">{s.name || "Sem nome"}</span>
+                    <span className="text-xs text-muted-foreground">{s.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showResults && globalSearch.length >= 2 && searchResults.length === 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 px-4 py-3 text-sm text-muted-foreground">
+                Nenhum resultado encontrado
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex items-center gap-2">

@@ -144,10 +144,11 @@ export default function AdminShops() {
 
   const handleDeleteShop = async () => {
     if (!deleteShop) return;
-    // Delete all related data
+    // Delete all related data (including chat_messages)
     await Promise.all([
       supabase.from("alerts").delete().eq("shop_id", deleteShop.id),
       supabase.from("notifications").delete().eq("shop_id", deleteShop.id),
+      supabase.from("chat_messages").delete().eq("shop_id", deleteShop.id),
       supabase.from("work_orders").delete().eq("shop_id", deleteShop.id),
       supabase.from("quotes").delete().eq("shop_id", deleteShop.id),
       supabase.from("vehicles").delete().eq("shop_id", deleteShop.id),

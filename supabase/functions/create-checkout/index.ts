@@ -57,7 +57,11 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    const origin = req.headers.get("origin") || "https://garageflow.pt";
+    // Always use the published domain so users don't land on preview/Lovable URLs
+    const rawOrigin = req.headers.get("origin") || "";
+    const origin = rawOrigin.includes("lovable.app") || rawOrigin.includes("lovableproject.com") || !rawOrigin
+      ? "https://garageflow-pt.lovable.app"
+      : rawOrigin;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

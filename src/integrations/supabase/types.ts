@@ -589,6 +589,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import Layout from "@/components/Layout";
+import AdminLayout from "@/components/AdminLayout";
 import Auth from "@/pages/Auth";
 import OnboardingWizard from "@/pages/OnboardingWizard";
 import ResetPassword from "@/pages/ResetPassword";
@@ -22,13 +23,64 @@ import SettingsPage from "@/pages/Settings";
 import Billing from "@/pages/Billing";
 import Alerts from "@/pages/Alerts";
 import NotFound from "@/pages/NotFound";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminShops from "@/pages/admin/AdminShops";
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
 const queryClient = new QueryClient();
+
+function AuthenticatedRoutes() {
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const { isSuperAdmin } = useSuperAdmin();
+
+  useEffect(() => {
+    const checkShop = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+      setNeedsOnboarding(!shop?.name || shop.name.trim() === '');
+    };
+    checkShop();
+  }, []);
+
+  if (needsOnboarding) {
+    return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;
+  }
+
+  return (
+    <Routes>
+      {/* Admin routes - only for super_admin */}
+      {isSuperAdmin && (
+        <>
+          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+          <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
+        </>
+      )}
+
+      {/* Shop routes */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+      <Route path="/clients" element={<Layout><Clients /></Layout>} />
+      <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
+      <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
+      <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
+      <Route path="/services" element={<Layout><Services /></Layout>} />
+      <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
+      <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+      <Route path="/billing" element={<Layout><Billing /></Layout>} />
+      <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 function AppRoutes() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -41,21 +93,6 @@ function AppRoutes() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  // Check if shop is configured
-  useEffect(() => {
-    if (!session) return;
-    const checkShop = async () => {
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("name")
-        .eq("user_id", session.user.id)
-        .single();
-      // If shop name is empty, needs onboarding
-      setNeedsOnboarding(!shop?.name || shop.name.trim() === '');
-    };
-    checkShop();
-  }, [session]);
 
   if (loading) {
     return (
@@ -74,28 +111,7 @@ function AppRoutes() {
     );
   }
 
-  if (needsOnboarding) {
-    return <OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />;
-  }
-
-  return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/clients" element={<Clients />} />
-        <Route path="/vehicles" element={<Vehicles />} />
-        <Route path="/quotes" element={<Quotes />} />
-        <Route path="/quotes/new" element={<QuoteForm />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/services/new" element={<ServiceForm />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/alerts" element={<Alerts />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
-  );
+  return <AuthenticatedRoutes />;
 }
 
 const App = () => (

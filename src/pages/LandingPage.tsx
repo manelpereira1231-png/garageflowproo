@@ -13,19 +13,22 @@ const features = [
 
 const plans = [
   {
-    name: "Free", price: "0€", period: "/mês",
-    features: ["10 orçamentos/mês", "1 utilizador", "Dashboard básico", "Gestão de clientes"],
+    name: "Free", price: "0€", period: "",
+    subtitle: null,
+    features: ["10 orçamentos/mês", "1 utilizador", "Dashboard básico", "PDFs com marca d'água"],
     cta: "Começar Grátis", highlighted: false,
   },
   {
     name: "Pro", price: "49€", period: "/mês",
-    features: ["Orçamentos ilimitados", "Até 5 utilizadores", "Alertas inteligentes", "Relatórios avançados", "Emails com branding", "30 dias grátis"],
+    subtitle: "Trial de 30 dias incluído",
+    features: ["Orçamentos ilimitados", "Até 5 utilizadores", "Dashboard completo", "PDFs profissionais", "Alertas básicos", "Emails automáticos", "Exportação de dados"],
     cta: "Experimentar Pro", highlighted: true,
   },
   {
     name: "Garage", price: "99€", period: "/mês",
-    features: ["Tudo do Pro", "Utilizadores ilimitados", "Multi-oficina", "API & Webhooks", "Suporte prioritário", "White-label"],
-    cta: "Contactar Vendas", highlighted: false,
+    subtitle: "Trial de 30 dias incluído",
+    features: ["Orçamentos ilimitados", "Utilizadores ilimitados", "Dashboard avançado", "PDFs profissionais", "Alertas avançados", "Automações completas", "Relatórios avançados", "Multi-oficina", "Chatbot", "API & Integrações"],
+    cta: "Experimentar Garage", highlighted: false,
   },
 ];
 
@@ -138,10 +141,14 @@ export default function LandingPage() {
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">Mais Popular</div>
                 )}
                 <h3 className="text-xl font-bold">{plan.name}</h3>
-                <div className="mt-2 mb-6">
+                <div className="mt-2 mb-2">
                   <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm">{plan.period}</span>
+                  {plan.period && <span className="text-muted-foreground text-sm">{plan.period}</span>}
                 </div>
+                {plan.subtitle && (
+                  <p className="text-xs text-muted-foreground mb-6">{plan.subtitle}</p>
+                )}
+                {!plan.subtitle && <div className="mb-6" />}
                 <ul className="space-y-3 mb-8">
                   {plan.features.map(f => (
                     <li key={f} className="flex items-center gap-2 text-sm">

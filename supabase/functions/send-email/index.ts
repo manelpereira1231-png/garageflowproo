@@ -3,10 +3,6 @@ import { Resend } from "npm:resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-// In Resend sandbox mode, emails can ONLY be sent to the account owner's email.
-// Set this to your Resend account email. Once you verify a domain, remove this.
-const SANDBOX_OWNER_EMAIL = "manelpereira11@gmail.com";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -26,7 +22,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, subject, html }: SendEmailRequest = await req.json();
+    const { to, subject, html, from }: SendEmailRequest = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -35,31 +31,29 @@ serve(async (req: Request) => {
       );
     }
 
-    // In sandbox mode:
-    // 1. "from" MUST be "onboarding@resend.dev"
-    // 2. "to" MUST be the Resend account owner's email
-    const senderAddress = "GarageFlow <onboarding@resend.dev>";
-    const recipientList = [SANDBOX_OWNER_EMAIL];
+    const toArray = Array.isArray(to) ? to : [to];
+    // Use provided 'from' or default to onboarding@resend.dev
+    // Once you have a verified domain, pass from: "GarageFlow <noreply@yourdomain.com>"
+    const senderAddress = from || "GarageFlow <onboarding@resend.dev>";
 
-    const originalTo = Array.isArray(to) ? to.join(", ") : to;
-    console.log(`Sandbox mode: redirecting email from [${originalTo}] to [${SANDBOX_OWNER_EMAIL}]`);
+    console.log(`Sending email to [${toArray.join(", ")}] from [${senderAddress}] subject: ${subject}`);
 
     const { data, error } = await resend.emails.send({
       from: senderAddress,
-      to: recipientList,
-      subject: `[Para: ${originalTo}] ${subject}`,
+      to: toArray,
+      subject,
       html,
     });
 
     if (error) {
-      console.error("Resend error:", error);
+      console.error("Resend error:", JSON.stringify(error));
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("Email sent successfully:", data);
+    console.log("Email sent successfully:", JSON.stringify(data));
     return new Response(
       JSON.stringify({ success: true, data }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

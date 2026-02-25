@@ -137,9 +137,9 @@ async function sendAlertEmail(shopEmail: string, title: string, message: string,
   if (!shopEmail) return;
   try {
     await resend.emails.send({
-      from: `GarageFlow <noreply@resend.dev>`,
-      to: [shopEmail],
-      subject: `⚠️ ${title}`,
+      from: "GarageFlow <onboarding@resend.dev>",
+      to: ["manelpereira11@gmail.com"],
+      subject: `[Para: ${shopEmail}] ⚠️ ${title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-bottom: 20px;">

@@ -25,6 +25,8 @@ import Alerts from "@/pages/Alerts";
 import NotFound from "@/pages/NotFound";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminShops from "@/pages/admin/AdminShops";
+import AdminLogs from "@/pages/admin/AdminLogs";
+import AdminReports from "@/pages/admin/AdminReports";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 
 const queryClient = new QueryClient();
@@ -52,8 +54,10 @@ function AuthenticatedRoutes() {
     return (
       <Routes>
         <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-        <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
+          <Route path="/admin/logs" element={<AdminLayout><AdminLogs /></AdminLayout>} />
+          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
   }
@@ -69,6 +73,8 @@ function AuthenticatedRoutes() {
         <>
           <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
           <Route path="/admin/shops" element={<AdminLayout><AdminShops /></AdminLayout>} />
+          <Route path="/admin/logs" element={<AdminLayout><AdminLogs /></AdminLayout>} />
+          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
         </>
       )}
 

@@ -9,7 +9,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Power, PowerOff, RotateCcw, Search } from "lucide-react";
+import { Power, PowerOff, RotateCcw, Search, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface ShopRow {
@@ -65,12 +65,21 @@ export default function AdminShops() {
 
   useEffect(() => { fetchShops(); }, []);
 
+  const logAction = async (action: string, entityType: string, entityId: string, details: Record<string, any> = {}) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("audit_logs").insert({
+      action, entity_type: entityType, entity_id: entityId,
+      user_id: user?.id, details,
+    });
+  };
+
   const toggleStatus = async (shop: ShopRow) => {
     const newStatus = shop.status === "active" ? "suspended" : "active";
     const { error } = await supabase.from("shops").update({ status: newStatus }).eq("id", shop.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
+      await logAction(newStatus === "active" ? "shop_activated" : "shop_suspended", "shop", shop.id, { name: shop.name });
       toast({ title: `Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}` });
       fetchShops();
     }
@@ -85,7 +94,22 @@ export default function AdminShops() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
+      await logAction("trial_reset", "subscription", shop.id, { name: shop.name });
       toast({ title: "Trial reiniciado (30 dias)" });
+      fetchShops();
+    }
+  };
+
+  const resetAlerts = async (shop: ShopRow) => {
+    const { error } = await supabase.from("alerts")
+      .update({ status: "resolved" })
+      .eq("shop_id", shop.id)
+      .eq("status", "pending");
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      await logAction("alerts_reset", "alerts", shop.id, { name: shop.name });
+      toast({ title: "Alertas resetados" });
       fetchShops();
     }
   };
@@ -190,6 +214,9 @@ export default function AdminShops() {
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => resetTrial(shop)} title="Reset Trial">
                       <RotateCcw className="w-4 h-4 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => resetAlerts(shop)} title="Reset Alertas">
+                      <Bell className="w-4 h-4 text-warning" />
                     </Button>
                   </div>
                 </TableCell>

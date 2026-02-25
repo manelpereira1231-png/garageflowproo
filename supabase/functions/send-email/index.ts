@@ -33,8 +33,11 @@ serve(async (req: Request) => {
 
     const toArray = Array.isArray(to) ? to : [to];
 
+    // In sandbox mode, from MUST be onboarding@resend.dev
+    const senderAddress = from || "GarageFlow <onboarding@resend.dev>";
+
     const { data, error } = await resend.emails.send({
-      from: from || "GarageFlow <noreply@resend.dev>",
+      from: senderAddress,
       to: toArray,
       subject,
       html,

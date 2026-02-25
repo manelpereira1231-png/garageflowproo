@@ -312,6 +312,7 @@ export type Database = {
       }
       shops: {
         Row: {
+          address: string | null
           country: string
           created_at: string
           currency: string
@@ -321,6 +322,7 @@ export type Database = {
           language: string
           logo_url: string | null
           name: string
+          nif: string | null
           phone: string
           status: string
           timezone: string
@@ -328,6 +330,7 @@ export type Database = {
           vat_rate: number
         }
         Insert: {
+          address?: string | null
           country?: string
           created_at?: string
           currency?: string
@@ -337,6 +340,7 @@ export type Database = {
           language?: string
           logo_url?: string | null
           name?: string
+          nif?: string | null
           phone?: string
           status?: string
           timezone?: string
@@ -344,6 +348,7 @@ export type Database = {
           vat_rate?: number
         }
         Update: {
+          address?: string | null
           country?: string
           created_at?: string
           currency?: string
@@ -353,6 +358,7 @@ export type Database = {
           language?: string
           logo_url?: string | null
           name?: string
+          nif?: string | null
           phone?: string
           status?: string
           timezone?: string

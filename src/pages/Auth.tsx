@@ -3,9 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wrench, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Wrench, Mail, Lock, User, ArrowLeft, Building2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { VAT_RATES } from "@/types/garage";
+
+const countries = Object.keys(VAT_RATES);
 
 export default function Auth() {
   const { t } = useLanguage();
@@ -14,6 +18,9 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [shopName, setShopName] = useState("");
+  const [country, setCountry] = useState("Portugal");
+  const [nif, setNif] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +40,14 @@ export default function Auth() {
       } else {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { name }, emailRedirectTo: window.location.origin }
+          options: {
+            data: {
+              name: shopName || name,
+              shop_country: country,
+              shop_nif: nif,
+            },
+            emailRedirectTo: window.location.origin,
+          }
         });
         if (error) throw error;
         toast.success(t('auth.accountCreated'));
@@ -47,7 +61,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Wrench className="w-7 h-7 text-primary-foreground" />
@@ -72,13 +86,38 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div className="space-y-1.5">
-                <Label htmlFor="name">{t('auth.shopName')}</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input id="name" placeholder="Auto Centro Lisboa" value={name} onChange={e => setName(e.target.value)} className="pl-9" required />
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ownerName">{t('auth.ownerName') || 'Nome completo'}</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="ownerName" placeholder="Manuel Pereira" value={name} onChange={e => setName(e.target.value)} className="pl-9" required />
+                  </div>
                 </div>
-              </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="shopName">{t('auth.shopName')}</Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="shopName" placeholder="Auto Centro Lisboa" value={shopName} onChange={e => setShopName(e.target.value)} className="pl-9" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t('settings.country') || 'País'}</Label>
+                    <Select value={country} onValueChange={setCountry}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="nif">NIF / VAT</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input id="nif" placeholder="123456789" value={nif} onChange={e => setNif(e.target.value)} className="pl-9" />
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>

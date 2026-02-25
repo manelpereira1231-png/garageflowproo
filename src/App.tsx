@@ -7,14 +7,16 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import Layout from "@/components/Layout";
-import AdminLayout from "@/components/AdminLayout";
-import Auth from "@/pages/Auth";
-import ResetPassword from "@/pages/ResetPassword";
-import QuoteApproval from "@/pages/QuoteApproval";
-import LandingPage from "@/pages/LandingPage";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+
+// All pages lazy-loaded for maximum code splitting
+const Auth = lazy(() => import("@/pages/Auth"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const QuoteApproval = lazy(() => import("@/pages/QuoteApproval"));
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
+const Layout = lazy(() => import("@/components/Layout"));
+const AdminLayout = lazy(() => import("@/components/AdminLayout"));
 
 // Lazy-loaded pages for code splitting & performance at scale
 const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));

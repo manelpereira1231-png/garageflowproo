@@ -162,19 +162,8 @@ export default function AdminShops() {
 
   const handleDeleteShop = async () => {
     if (!deleteShop) return;
-    // Delete all related data (including chat_messages)
-    await Promise.all([
-      supabase.from("alerts").delete().eq("shop_id", deleteShop.id),
-      supabase.from("notifications").delete().eq("shop_id", deleteShop.id),
-      supabase.from("chat_messages").delete().eq("shop_id", deleteShop.id),
-      supabase.from("work_orders").delete().eq("shop_id", deleteShop.id),
-      supabase.from("quotes").delete().eq("shop_id", deleteShop.id),
-      supabase.from("vehicles").delete().eq("shop_id", deleteShop.id),
-      supabase.from("clients").delete().eq("shop_id", deleteShop.id),
-      supabase.from("subscriptions").delete().eq("shop_id", deleteShop.id),
-      supabase.from("shop_users").delete().eq("shop_id", deleteShop.id),
-    ]);
-    const { error } = await supabase.from("shops").delete().eq("id", deleteShop.id);
+    // Use server-side cascade delete function
+    const { error } = await supabase.rpc('cascade_delete_shop', { _shop_id: deleteShop.id });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {

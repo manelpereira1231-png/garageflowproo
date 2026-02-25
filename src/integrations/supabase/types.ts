@@ -658,6 +658,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
       get_user_emails_for_admin: {
         Args: never
         Returns: {
@@ -667,6 +668,10 @@ export type Database = {
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      next_number: {
+        Args: { _prefix: string; _shop_id: string }
+        Returns: string
+      }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean

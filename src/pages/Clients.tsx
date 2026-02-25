@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -24,7 +25,11 @@ export default function Clients() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
+
+  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
 
   const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
 
@@ -42,26 +47,45 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, [page]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
-    const { error } = await supabase.from("clients").insert({
+    const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
-    });
+    };
+
+    const { error } = editingId
+      ? await supabase.from("clients").update(payload).eq("id", editingId)
+      : await supabase.from("clients").insert(payload);
 
     if (error) toast.error(error.message);
     else {
-      toast.success(t('clients.created'));
-      setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
+      toast.success(editingId ? t('clients.updated') : t('clients.created'));
       setOpen(false);
+      setEditingId(null);
+      resetForm();
       setPage(0);
       fetchClients();
     }
     setLoading(false);
+  };
+
+  const openEdit = (c: ClientRow) => {
+    setEditingId(c.id);
+    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "" });
+    setOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("clients").delete().eq("id", deleteId);
+    if (error) toast.error(error.message);
+    else { toast.success(t('clients.deleted')); fetchClients(); }
+    setDeleteId(null);
   };
 
   const filtered = clients.filter(c =>
@@ -79,13 +103,13 @@ export default function Clients() {
           <h1 className="page-title">{t('clients.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('clients.title').toLowerCase()}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingId(null); resetForm(); } }}>
           <DialogTrigger asChild>
             <Button size="sm" className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" />{t('clients.new')}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-[95vw] sm:max-w-lg">
-            <DialogHeader><DialogTitle>{t('clients.new')}</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
+            <DialogHeader><DialogTitle>{editingId ? t('common.edit') : t('clients.new')}</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t('clients.name')} *</Label>
@@ -113,7 +137,7 @@ export default function Clients() {
                 <Input value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('clients.creating') : t('clients.create')}
+                {loading ? t('clients.creating') : (editingId ? t('common.save') : t('clients.create'))}
               </Button>
             </form>
           </DialogContent>
@@ -135,7 +159,10 @@ export default function Clients() {
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">{client.name}</span>
-              {client.nif && <span className="mono text-xs text-muted-foreground">{client.nif}</span>}
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
@@ -155,12 +182,13 @@ export default function Clients() {
               <TableHead>{t('clients.contact')}</TableHead>
               <TableHead>{t('clients.company')}</TableHead>
               <TableHead>{t('clients.nif')}</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0 ? t('clients.empty') : t('clients.noResults')}
                 </TableCell>
               </TableRow>
@@ -177,6 +205,16 @@ export default function Clients() {
                   {client.company && <span className="flex items-center gap-1.5"><Building2 className="w-3 h-3 text-muted-foreground" />{client.company}</span>}
                 </TableCell>
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">
+                      <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="text-xs text-destructive">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -199,6 +237,19 @@ export default function Clients() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('clients.deleteWarning')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">{t('common.delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

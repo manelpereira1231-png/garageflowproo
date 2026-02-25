@@ -29,7 +29,7 @@ export default function SettingsPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).single();
+      const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
       if (data) {
         setShopId(data.id);
         setForm({

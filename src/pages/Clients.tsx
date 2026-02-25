@@ -34,7 +34,7 @@ export default function Clients() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
+    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
     if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
     const { error } = await supabase.from("clients").insert({
@@ -67,13 +67,13 @@ export default function Clients() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />{t('clients.new')}</Button>
+            <Button size="sm" className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" />{t('clients.new')}</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
             <DialogHeader><DialogTitle>{t('clients.new')}</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5 col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t('clients.name')} *</Label>
                   <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
                 </div>
@@ -111,7 +111,29 @@ export default function Clients() {
         <Input placeholder={t('clients.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: Card view */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
+            {clients.length === 0 ? t('clients.empty') : t('clients.noResults')}
+          </div>
+        ) : filtered.map(client => (
+          <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm">{client.name}</span>
+              {client.nif && <span className="mono text-xs text-muted-foreground">{client.nif}</span>}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+              {client.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>}
+              {client.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{client.company}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

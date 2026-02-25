@@ -39,7 +39,7 @@ export default function Vehicles() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
+    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
     if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
     const { error } = await supabase.from("vehicles").insert({

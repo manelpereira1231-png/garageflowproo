@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Mail, Lock, User, ArrowLeft, Building2, MapPin } from "lucide-react";
+import { Wrench, Mail, Lock, User, ArrowLeft, Building2, MapPin, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
@@ -12,7 +12,7 @@ import { VAT_RATES } from "@/types/garage";
 const countries = Object.keys(VAT_RATES);
 
 export default function Auth() {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -60,7 +60,20 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <Globe className="w-4 h-4 text-muted-foreground" />
+        <Select value={language} onValueChange={(v: 'pt' | 'en' | 'es') => setLanguage(v)}>
+          <SelectTrigger className="w-[100px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pt">Português</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="es">Español</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg">

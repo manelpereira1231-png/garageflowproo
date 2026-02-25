@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface LineItem {
@@ -17,8 +17,10 @@ interface LineItem {
 
 export default function ServiceForm() {
   const navigate = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!editId);
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
@@ -38,14 +40,44 @@ export default function ServiceForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").order("make");
       if (v) setVehicles(v);
+
+      // Load existing service for editing
+      if (editId) {
+        const { data: service } = await supabase.from("work_orders").select("*").eq("id", editId).single();
+        if (service) {
+          setClientId(service.client_id);
+          setVehicleId(service.vehicle_id);
+          setEntryMileage(String(service.entry_mileage || 0));
+          setClientDescription(service.client_description || "");
+          setDiagnosis(service.diagnosis || "");
+          setLaborHours(String(service.labor_hours || 0));
+          setTechnician(service.technician || "");
+          setNotes(service.notes || "");
+          const svcLines = Array.isArray(service.lines) ? service.lines : [];
+          setLines(svcLines.map((l: any) => ({
+            id: l.id || crypto.randomUUID(),
+            type: l.type || 'service',
+            name: l.name || '',
+            quantity: l.quantity || 1,
+            unit_price: l.unit_price || 0,
+            unit_cost: l.unit_cost || 0,
+            vat_rate: l.vat_rate ?? 23,
+          })));
+        }
+        setLoadingData(false);
+      }
     };
     fetchData();
-  }, []);
+  }, [editId]);
 
   useEffect(() => {
-    setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
-    setVehicleId("");
-  }, [clientId, vehicles]);
+    if (!editId) {
+      setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
+      setVehicleId("");
+    } else {
+      setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
+    }
+  }, [clientId, vehicles, editId]);
 
   const addLine = () => {
     setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 23 }]);
@@ -70,28 +102,51 @@ export default function ServiceForm() {
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
     if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
-    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shop.id);
-    const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+    if (editId) {
+      // Update existing service
+      const { error } = await supabase.from("work_orders").update({
+        client_id: clientId, vehicle_id: vehicleId,
+        entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
+        technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
+        profit, notes: notes || null,
+      }).eq("id", editId);
 
-    const { error } = await supabase.from("work_orders").insert({
-      shop_id: shop.id, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
-      entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-      diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
-      technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
-      profit, status: 'open', notes: notes || null,
-    });
+      if (error) toast.error(error.message);
+      else { toast.success(t('services.updated')); navigate("/services"); }
+    } else {
+      // Create new service
+      const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shop.id);
+      const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
 
-    if (error) toast.error(error.message);
-    else { toast.success(t('services.created')); navigate("/services"); }
+      const { error } = await supabase.from("work_orders").insert({
+        shop_id: shop.id, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
+        entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
+        technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
+        profit, status: 'open', notes: notes || null,
+      });
+
+      if (error) toast.error(error.message);
+      else { toast.success(t('services.created')); navigate("/services"); }
+    }
     setLoading(false);
   };
+
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl">
       <div className="page-header">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/services")}><ArrowLeft className="w-4 h-4" /></Button>
-          <h1 className="page-title">{t('services.new')}</h1>
+          <h1 className="page-title">{editId ? t('services.edit') : t('services.new')}</h1>
         </div>
       </div>
 
@@ -161,7 +216,7 @@ export default function ServiceForm() {
         <div className="space-y-1.5"><Label>{t('quotes.notes')}</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} /></div>
 
         <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
-          {loading ? t('services.creating') : t('services.create')}
+          {loading ? (editId ? t('services.saving') : t('services.creating')) : (editId ? t('services.save') : t('services.create'))}
         </Button>
       </form>
     </div>

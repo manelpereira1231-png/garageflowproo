@@ -7,17 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Map Stripe product IDs to plan names
-const PRODUCT_TO_PLAN: Record<string, string> = {
-  "prod_U1qtELk15j9qK8": "pro",
-  "prod_U1qvDO5egIyQ3W": "garage",
-  "prod_U1qz5Zuk431eAk": "pro",
-  "prod_U1qzCQc94eTGPu": "garage",
-  "prod_U2DfDsTHVDY9ru": "pro",
-  "prod_U2DgNSwHyjaLqO": "garage",
-  "prod_U2dRNFrdA8YtSC": "pro",
-  "prod_U2dRNRSfwGewdT": "garage",
-};
+const log = (msg: string, data?: any) =>
+  console.log(`[CHECK-SUB] ${msg}`, data ? JSON.stringify(data) : "");
+
+function resolvePlan(amount: number): string {
+  if (amount >= 9900) return "garage";
+  if (amount >= 4900) return "pro";
+  return "free";
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,8 +41,36 @@ serve(async (req) => {
     const user = userData.user;
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
+    // Find Stripe customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    
+    // Find user's shop
+    const { data: shop } = await supabaseClient
+      .from("shops")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+
+    if (!shop) {
+      log("No shop found for user", { userId: user.id });
+      return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (customers.data.length === 0) {
+      // No Stripe customer — ensure DB reflects free plan
+      await supabaseClient.from("subscriptions").update({
+        plan: "free",
+        status: "active",
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        trial_end: null,
+        current_period_end: null,
+        updated_at: new Date().toISOString(),
+      }).eq("shop_id", shop.id);
+
       return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -57,52 +82,57 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "all",
-      limit: 5,
+      limit: 10,
     });
 
     const activeSub = subscriptions.data.find(s => ["active", "trialing"].includes(s.status));
 
     if (!activeSub) {
-      // Update local DB to free
-      const { data: shop } = await supabaseClient.from("shops").select("id").eq("user_id", user.id).single();
-      if (shop) {
-        await supabaseClient.from("subscriptions").update({
-          plan: "free",
-          status: "active",
-          stripe_customer_id: customerId,
-          stripe_subscription_id: null,
-          trial_end: null,
-          current_period_end: null,
-        }).eq("shop_id", shop.id);
-      }
+      // No active subscription — downgrade to free
+      await supabaseClient.from("subscriptions").update({
+        plan: "free",
+        status: "active",
+        stripe_customer_id: customerId,
+        stripe_subscription_id: null,
+        trial_end: null,
+        current_period_end: null,
+        updated_at: new Date().toISOString(),
+      }).eq("shop_id", shop.id);
+
+      log("No active Stripe sub — synced to free", { customerId });
 
       return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const productId = activeSub.items.data[0].price.product as string;
-    const plan = PRODUCT_TO_PLAN[productId] || "pro";
+    // Active subscription found — sync to DB
+    const amount = activeSub.items.data[0]?.price?.unit_amount || 0;
+    const plan = resolvePlan(amount);
+    const interval = activeSub.items.data[0]?.price?.recurring?.interval;
+    const billingCycle = interval === "year" ? "yearly" : "monthly";
     const subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
     const trialEnd = activeSub.trial_end ? new Date(activeSub.trial_end * 1000).toISOString() : null;
+    const status = activeSub.status === "trialing" ? "trialing" : "active";
 
-    // Sync to local DB
-    const { data: shop } = await supabaseClient.from("shops").select("id").eq("user_id", user.id).single();
-    if (shop) {
-      await supabaseClient.from("subscriptions").update({
-        plan,
-        status: activeSub.status === "trialing" ? "trialing" : "active",
-        stripe_customer_id: customerId,
-        stripe_subscription_id: activeSub.id,
-        trial_end: trialEnd,
-        current_period_end: subscriptionEnd,
-      }).eq("shop_id", shop.id);
-    }
+    await supabaseClient.from("subscriptions").update({
+      plan,
+      billing_cycle: billingCycle,
+      status,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: activeSub.id,
+      trial_end: trialEnd,
+      current_period_end: subscriptionEnd,
+      updated_at: new Date().toISOString(),
+    }).eq("shop_id", shop.id);
+
+    log("Synced subscription", { customerId, plan, status, billingCycle });
 
     return new Response(JSON.stringify({
       subscribed: true,
       plan,
-      status: activeSub.status,
+      status,
+      billing_cycle: billingCycle,
       subscription_end: subscriptionEnd,
       trial_end: trialEnd,
     }), {
@@ -110,6 +140,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    log("ERROR", { message: msg });
     return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

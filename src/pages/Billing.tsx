@@ -10,7 +10,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 
 export default function Billing() {
   const { t } = useLanguage();
-  const { subscription, plan, prices, isTrialing, trialDaysLeft, loading } = useSubscription();
+  const { subscription, plan, prices, isTrialing, trialDaysLeft, loading, syncWithStripe } = useSubscription();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [upgrading, setUpgrading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -22,7 +22,7 @@ export default function Billing() {
     const canceled = searchParams.get('canceled');
     if (success === 'true') {
       toast.success(t('billing.paymentSuccess'));
-      supabase.functions.invoke('check-subscription').catch(() => {});
+      syncWithStripe();
       navigate('/billing', { replace: true });
     } else if (canceled === 'true') {
       toast.info(t('billing.paymentCanceled'));

@@ -85,6 +85,13 @@ function AuthenticatedRoutes() {
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
   useEffect(() => {
+    // Super admin NEVER needs onboarding — skip shop check entirely
+    if (isSuperAdmin) {
+      setNeedsOnboarding(false);
+      return;
+    }
+    if (adminLoading) return; // wait for admin check first
+
     const checkShop = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setNeedsOnboarding(false); return; }
@@ -103,7 +110,7 @@ function AuthenticatedRoutes() {
       setNeedsOnboarding(true);
     };
     checkShop();
-  }, []);
+  }, [isSuperAdmin, adminLoading]);
 
   if (adminLoading || needsOnboarding === null) {
     return (

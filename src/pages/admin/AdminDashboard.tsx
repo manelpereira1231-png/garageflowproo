@@ -180,10 +180,26 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="page-title">Dashboard Admin</h1>
+          <p className="text-sm text-muted-foreground">Visão global do sistema GarageFlow</p>
+        </div>
+        <div className="stat-card p-8 text-center">
+          <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+          <p className="text-lg font-medium">Sem dados disponíveis</p>
+          <p className="text-sm text-muted-foreground mt-1">O sistema está a funcionar. Ainda não existem oficinas registadas.</p>
+        </div>
       </div>
     );
   }

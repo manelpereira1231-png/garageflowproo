@@ -5,10 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
@@ -19,6 +23,8 @@ export default function QuoteForm() {
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const { t } = useLanguage();
+  const { plan, limits, checkQuoteLimit } = useSubscription();
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!editId);
   const [clients, setClients] = useState<any[]>([]);
@@ -104,6 +110,16 @@ export default function QuoteForm() {
     if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
     if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
+
+    // Check quote limit for new quotes on Free plan
+    if (!editId && plan === 'free') {
+      const canCreate = await checkQuoteLimit();
+      if (!canCreate) {
+        setShowLimitModal(true);
+        setLoading(false);
+        return;
+      }
+    }
 
     if (editId) {
       // Update existing quote
@@ -234,6 +250,25 @@ export default function QuoteForm() {
           {loading ? (editId ? t('quotes.saving') : t('quotes.creating')) : (editId ? t('quotes.save') : t('quotes.create'))}
         </Button>
       </form>
+
+      {/* Upgrade Modal */}
+      <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              {t('quotes.limitReached')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('quotes.limitMessage').replace('{limit}', String(limits.maxQuotesPerMonth))}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLimitModal(false)}>{t('common.cancel')}</Button>
+            <Button onClick={() => { setShowLimitModal(false); navigate("/billing"); }}>{t('quotes.upgrade')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

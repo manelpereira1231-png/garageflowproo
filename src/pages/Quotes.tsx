@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -26,7 +29,8 @@ const PAGE_SIZE = 25;
 
 export default function Quotes() {
   const { t } = useLanguage();
-  const { limits, plan } = useSubscription();
+  const navigate = useNavigate();
+  const { limits, plan, shopId, checkQuoteLimit } = useSubscription();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
@@ -34,6 +38,8 @@ export default function Quotes() {
   const [shop, setShop] = useState<any>(null);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [monthlyUsed, setMonthlyUsed] = useState(0);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   const fetchQuotes = async () => {
     const activeId = localStorage.getItem("garageflow_active_shop");
@@ -50,9 +56,34 @@ export default function Quotes() {
       .range(from, to);
     if (data) setQuotes(data);
     if (count !== null) setTotalCount(count);
+
+    // Count monthly quotes for limit display
+    if (limits.maxQuotesPerMonth !== Infinity) {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count: monthCount } = await supabase
+        .from("quotes")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeId)
+        .gte("created_at", monthStart);
+      setMonthlyUsed(monthCount || 0);
+    }
   };
 
-  useEffect(() => { fetchQuotes(); }, [page]);
+  useEffect(() => { fetchQuotes(); }, [page, limits.maxQuotesPerMonth]);
+
+  const isLimitReached = plan === 'free' && monthlyUsed >= limits.maxQuotesPerMonth;
+
+  const handleNewQuote = async () => {
+    if (plan === 'free') {
+      const canCreate = await checkQuoteLimit();
+      if (!canCreate) {
+        setShowLimitModal(true);
+        return;
+      }
+    }
+    navigate("/quotes/new");
+  };
 
   const convertToService = async (quote: any) => {
     if (quote.status === 'converted') return;
@@ -162,15 +193,34 @@ export default function Quotes() {
           <h1 className="page-title">{t('quotes.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('quotes.title').toLowerCase()}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {plan === 'free' && limits.maxQuotesPerMonth !== Infinity && (
+            <Badge variant="outline" className={isLimitReached ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-muted text-muted-foreground"}>
+              {t('quotes.quotesUsed').replace('{used}', String(monthlyUsed)).replace('{limit}', String(limits.maxQuotesPerMonth))}
+            </Badge>
+          )}
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
             <FileDown className="w-4 h-4 mr-1" />CSV
           </Button>
-          <Link to="/quotes/new">
-            <Button><Plus className="w-4 h-4 mr-2" />{t('quotes.new')}</Button>
-          </Link>
+          <Button onClick={handleNewQuote} disabled={isLimitReached}>
+            <Plus className="w-4 h-4 mr-2" />{t('quotes.new')}
+          </Button>
         </div>
       </div>
+
+      {/* Limit reached banner */}
+      {isLimitReached && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 mb-4">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-destructive">{t('quotes.limitReached')}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('quotes.limitMessage').replace('{limit}', String(limits.maxQuotesPerMonth))}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => navigate("/billing")}>{t('quotes.upgrade')}</Button>
+        </div>
+      )}
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -254,6 +304,25 @@ export default function Quotes() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              {t('quotes.limitReached')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('quotes.limitMessage').replace('{limit}', String(limits.maxQuotesPerMonth))}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLimitModal(false)}>{t('common.cancel')}</Button>
+            <Button onClick={() => { setShowLimitModal(false); navigate("/billing"); }}>{t('quotes.upgrade')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

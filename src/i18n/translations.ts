@@ -131,6 +131,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailSent': 'Orçamento enviado por email!',
     'quotes.emailError': 'Erro ao enviar email.',
     'quotes.noClientEmail': 'Cliente não tem email definido.',
+    'quotes.limitReached': 'Limite de orçamentos atingido!',
+    'quotes.limitMessage': 'O plano Free permite apenas {limit} orçamentos por mês. Faça upgrade para Pro para orçamentos ilimitados.',
+    'quotes.quotesUsed': '{used} de {limit} orçamentos este mês',
+    'quotes.upgrade': 'Fazer Upgrade',
+    'quotes.limitBlocked': 'Limite de {limit} orçamentos/mês atingido. Faça upgrade para continuar.',
 
     // Quote Status
     'status.draft': 'Rascunho',
@@ -589,6 +594,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailSent': 'Quote sent by email!',
     'quotes.emailError': 'Error sending email.',
     'quotes.noClientEmail': 'Client has no email address.',
+    'quotes.limitReached': 'Quote limit reached!',
+    'quotes.limitMessage': 'The Free plan allows only {limit} quotes per month. Upgrade to Pro for unlimited quotes.',
+    'quotes.quotesUsed': '{used} of {limit} quotes this month',
+    'quotes.upgrade': 'Upgrade',
+    'quotes.limitBlocked': 'Limit of {limit} quotes/month reached. Upgrade to continue.',
 
     'status.draft': 'Draft',
     'status.sent': 'Sent',
@@ -1030,6 +1040,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailSent': '¡Presupuesto enviado por email!',
     'quotes.emailError': 'Error al enviar email.',
     'quotes.noClientEmail': 'El cliente no tiene email.',
+    'quotes.limitReached': '¡Límite de presupuestos alcanzado!',
+    'quotes.limitMessage': 'El plan Free permite solo {limit} presupuestos por mes. Actualiza a Pro para presupuestos ilimitados.',
+    'quotes.quotesUsed': '{used} de {limit} presupuestos este mes',
+    'quotes.upgrade': 'Actualizar',
+    'quotes.limitBlocked': 'Límite de {limit} presupuestos/mes alcanzado. Actualiza para continuar.',
 
     'status.draft': 'Borrador',
     'status.sent': 'Enviado',

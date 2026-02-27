@@ -52,7 +52,19 @@ export default function AdminBilling() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchSubs(); }, []);
+  useEffect(() => {
+    fetchSubs();
+
+    // Realtime: auto-refresh on subscription changes
+    const channel = supabase
+      .channel("admin-billing-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => {
+        fetchSubs();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const logAction = async (action: string, entityType: string, entityId: string, details: Record<string, any> = {}) => {
     const { data: { user } } = await supabase.auth.getUser();

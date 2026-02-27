@@ -94,7 +94,19 @@ export default function AdminAlerts() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchAlerts(); }, []);
+  useEffect(() => {
+    fetchAlerts();
+
+    // Realtime: auto-refresh on alert changes
+    const channel = supabase
+      .channel("admin-alerts-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, () => {
+        fetchAlerts();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const updateStatus = async (alertId: string, status: string) => {
     const { error } = await supabase.from("alerts").update({ status }).eq("id", alertId);
@@ -308,6 +320,9 @@ export default function AdminAlerts() {
           <span className="text-sm font-medium">{selectedIds.size} selecionados</span>
           <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('resolved')} className="gap-1">
             <CheckCircle className="w-3.5 h-3.5" /> Resolver
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('pending')} className="gap-1">
+            <Clock className="w-3.5 h-3.5" /> Reabrir
           </Button>
           <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('dismissed')} className="gap-1">
             <XCircle className="w-3.5 h-3.5" /> Ignorar

@@ -124,7 +124,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div className="px-3 pb-2">
-          <button onClick={() => window.location.href = "/dashboard"}
+          <button onClick={async () => {
+            // Ensure super admin has an active shop set before navigating
+            const stored = localStorage.getItem("garageflow_active_shop");
+            if (!stored) {
+              const { data: shops } = await supabase.from("shops").select("id").limit(1);
+              if (shops && shops.length > 0) {
+                localStorage.setItem("garageflow_active_shop", shops[0].id);
+              }
+            }
+            window.location.href = "/dashboard";
+          }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all">
             <Building2 className="w-4.5 h-4.5" />
             Ir para Oficina

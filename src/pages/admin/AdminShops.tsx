@@ -75,7 +75,19 @@ export default function AdminShops() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchShops(); }, []);
+  useEffect(() => {
+    fetchShops();
+
+    // Realtime: auto-refresh on shop changes
+    const channel = supabase
+      .channel("admin-shops-list-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => {
+        fetchShops();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const logAction = async (action: string, entityType: string, entityId: string, details: Record<string, any> = {}) => {
     const { data: { user } } = await supabase.auth.getUser();

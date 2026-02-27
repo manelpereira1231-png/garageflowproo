@@ -42,8 +42,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchStats = async () => {
+  const fetchStats = async () => {
+    try {
       const [shops, clients, vehicles, workOrders, alerts, subscriptions, quotes] = await Promise.all([
         supabase.from("shops").select("id, name, status, created_at"),
         supabase.from("clients").select("id, shop_id"),
@@ -69,7 +69,6 @@ export default function AdminDashboard() {
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const newShopsThisMonth = (shops.data || []).filter(s => new Date(s.created_at) >= thisMonthStart).length;
 
-      // Monthly revenue & new shops (last 6 months)
       const monthlyRevenue: { month: string; revenue: number }[] = [];
       const monthlyNewShops: { month: string; shops: number }[] = [];
       for (let i = 5; i >= 0; i--) {
@@ -91,7 +90,6 @@ export default function AdminDashboard() {
         monthlyNewShops.push({ month: monthStr, shops: newShops });
       }
 
-      // Top shops by clients
       const shopClientCount = new Map<string, number>();
       (clients.data || []).forEach(c => {
         shopClientCount.set(c.shop_id, (shopClientCount.get(c.shop_id) || 0) + 1);
@@ -105,18 +103,16 @@ export default function AdminDashboard() {
       const approvedQuotes = (quotes.data || []).filter(q => q.status === 'approved').length;
       const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
-      // SaaS Metrics
       const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active');
       const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
       const arr = mrr * 12;
       const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
       const arpu = paidCount > 0 ? mrr / paidCount : 0;
-      // Simplified LTV: ARPU / churn (assume 5% churn if none)
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
-      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24; // 24 months if no churn
+      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24;
       const trialSubs = activeSubs.filter(s => {
         const sub = s as any;
         return sub.trial_end && new Date(sub.trial_end) > new Date() && s.plan === 'free';
@@ -139,9 +135,35 @@ export default function AdminDashboard() {
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
         mrr, arr, arpu, ltv, churnRate, trialCount, paidCount, conversionRate,
       });
-      setLoading(false);
-    };
+    } catch (err) {
+      console.error("Failed to fetch admin stats:", err);
+      // Set empty stats so UI doesn't hang
+      setStats({
+        totalShops: 0, activeShops: 0, suspendedShops: 0, totalClients: 0,
+        totalVehicles: 0, totalWorkOrders: 0, totalQuotes: 0, totalAlerts: 0,
+        totalRevenue: 0, avgTicket: 0, pendingAlerts: 0, openQuotes: 0,
+        approvedQuotes: 0, newShopsThisMonth: 0,
+        planBreakdown: { free: 0, pro: 0, garage: 0 },
+        monthlyRevenue: [], monthlyNewShops: [], topShops: [],
+        mrr: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
+        paidCount: 0, conversionRate: 0,
+      });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchStats();
+
+    // Realtime: refresh stats on any shop change
+    const channel = supabase
+      .channel("admin-shops-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => {
+        fetchStats();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const exportGlobalCSV = () => {

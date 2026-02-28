@@ -34,11 +34,14 @@ export default function Clients() {
   const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
 
   const fetchClients = async () => {
+    const shopId = getActiveShopId();
+    if (!shopId) return;
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, count } = await supabase
       .from("clients")
       .select("*", { count: "exact" })
+      .eq("shop_id", shopId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .range(from, to);

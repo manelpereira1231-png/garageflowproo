@@ -52,6 +52,7 @@ export default function Quotes() {
     const { data, count } = await supabase
       .from("quotes")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+      .eq("shop_id", activeId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) setQuotes(data);

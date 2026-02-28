@@ -37,11 +37,14 @@ export default function QuoteForm() {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [quoteStatus, setQuoteStatus] = useState("draft");
 
+  const activeShopId = localStorage.getItem("garageflow_active_shop");
+
   useEffect(() => {
     const fetchData = async () => {
-      const { data: c } = await supabase.from("clients").select("id, name").order("name");
+      if (!activeShopId) return;
+      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
-      const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").order("make");
+      const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
 
       // Load existing quote for editing
@@ -106,10 +109,8 @@ export default function QuoteForm() {
       return;
     }
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    if (!activeShopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    const shopId = activeShopId;
 
     // Check quote limit for new quotes on Free plan
     if (!editId && plan === 'free') {
@@ -141,11 +142,11 @@ export default function QuoteForm() {
       const now = new Date();
       const validity = new Date(now);
       validity.setDate(validity.getDate() + parseInt(validityDays));
-      const { data: countData } = await supabase.from("quotes").select("id", { count: "exact" }).eq("shop_id", shop.id);
-      const num = `ORC-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+      const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "ORC" });
+      const num = numData || `ORC-${Date.now()}`;
 
       const { error } = await supabase.from("quotes").insert({
-        shop_id: shop.id, number: num, date: now.toISOString().split('T')[0],
+        shop_id: shopId, number: num, date: now.toISOString().split('T')[0],
         validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
         lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),

@@ -34,11 +34,14 @@ export default function ServiceForm() {
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
 
+  const activeShopId = localStorage.getItem("garageflow_active_shop");
+
   useEffect(() => {
     const fetchData = async () => {
-      const { data: c } = await supabase.from("clients").select("id, name").order("name");
+      if (!activeShopId) return;
+      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
-      const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").order("make");
+      const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
 
       // Load existing service for editing
@@ -97,10 +100,8 @@ export default function ServiceForm() {
     e.preventDefault();
     if (!clientId || !vehicleId) { toast.error(t('services.fillRequired')); return; }
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).single();
-    if (!shop) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    if (!activeShopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    const shopId = activeShopId;
 
     if (editId) {
       // Update existing service
@@ -116,11 +117,11 @@ export default function ServiceForm() {
       else { toast.success(t('services.updated')); navigate("/services"); }
     } else {
       // Create new service
-      const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shop.id);
-      const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+      const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "SRV" });
+      const num = numData || `SRV-${Date.now()}`;
 
       const { error } = await supabase.from("work_orders").insert({
-        shop_id: shop.id, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
+        shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,

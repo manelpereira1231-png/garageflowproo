@@ -46,6 +46,7 @@ export default function Services() {
     const { data, count } = await supabase
       .from("work_orders")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+      .eq("shop_id", activeId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) setServices(data);

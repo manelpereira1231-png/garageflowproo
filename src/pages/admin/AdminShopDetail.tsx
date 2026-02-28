@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -79,6 +80,20 @@ export default function AdminShopDetail() {
 
   useEffect(() => { fetchAll(); }, [id]);
 
+  const handleChangePlan = async (newPlan: string) => {
+    if (!id || newPlan === plan) return;
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ plan: newPlan, updated_at: new Date().toISOString() })
+      .eq("shop_id", id);
+    if (error) {
+      toast.error("Erro ao alterar plano: " + error.message);
+    } else {
+      setPlan(newPlan);
+      toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
+    }
+  };
+
   const openEditDialog = () => {
     if (!shop) return;
     setEditForm({
@@ -136,7 +151,16 @@ export default function AdminShopDetail() {
             <Badge variant="outline" className={shop.status === 'active' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}>
               {shop.status === 'active' ? 'Ativa' : 'Suspensa'}
             </Badge>
-            <Badge variant="outline" className={`${planColor}`}>{plan.toUpperCase()}</Badge>
+            <Select value={plan} onValueChange={handleChangePlan}>
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">FREE</SelectItem>
+                <SelectItem value="pro">PRO</SelectItem>
+                <SelectItem value="garage">GARAGE</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

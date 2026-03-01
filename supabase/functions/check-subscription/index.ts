@@ -41,9 +41,6 @@ serve(async (req) => {
     const user = userData.user;
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Find Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
     // Find user's shop
     const { data: shop } = await supabaseClient
       .from("shops")
@@ -59,17 +56,45 @@ serve(async (req) => {
       });
     }
 
+    // CRITICAL: Check if this subscription is Stripe-managed.
+    // If no stripe_subscription_id exists, the plan was set manually by admin — DO NOT overwrite.
+    const { data: existingSub } = await supabaseClient
+      .from("subscriptions")
+      .select("stripe_subscription_id, plan, status")
+      .eq("shop_id", shop.id)
+      .maybeSingle();
+
+    if (existingSub && !existingSub.stripe_subscription_id) {
+      log("Subscription is admin-managed (no stripe_subscription_id), skipping sync", {
+        shopId: shop.id,
+        plan: existingSub.plan,
+      });
+      return new Response(JSON.stringify({
+        subscribed: existingSub.plan !== "free",
+        plan: existingSub.plan,
+        status: existingSub.status,
+        admin_managed: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Find Stripe customer
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+
     if (customers.data.length === 0) {
-      // No Stripe customer — ensure DB reflects free plan
-      await supabaseClient.from("subscriptions").update({
-        plan: "free",
-        status: "active",
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-        trial_end: null,
-        current_period_end: null,
-        updated_at: new Date().toISOString(),
-      }).eq("shop_id", shop.id);
+      // No Stripe customer — only downgrade if subscription was Stripe-managed
+      if (existingSub?.stripe_subscription_id) {
+        await supabaseClient.from("subscriptions").update({
+          plan: "free",
+          status: "active",
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+          trial_end: null,
+          current_period_end: null,
+          updated_at: new Date().toISOString(),
+        }).eq("shop_id", shop.id);
+      }
 
       return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

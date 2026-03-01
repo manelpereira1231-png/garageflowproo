@@ -62,6 +62,23 @@ export default function Alerts() {
 
   useEffect(() => { if (shopId) fetchAlerts(); }, [shopId]);
 
+  // Realtime: live updates for alerts
+  useEffect(() => {
+    if (!shopId) return;
+    const channel = supabase
+      .channel(`alerts-${shopId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'alerts',
+        filter: `shop_id=eq.${shopId}`,
+      }, () => {
+        fetchAlerts();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [shopId]);
+
   const resolveAlert = async (id: string) => {
     const { error } = await supabase.from("alerts").update({ status: 'resolved' }).eq("id", id);
     if (error) toast.error(error.message);

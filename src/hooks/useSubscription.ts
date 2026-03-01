@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Plan = 'free' | 'pro' | 'garage';
@@ -75,98 +75,145 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  const loadSubscription = useCallback(async () => {
+  // Resolve active shop ID
+  const resolveShopId = useCallback(async (): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    if (!user) return null;
 
     const activeId = localStorage.getItem(STORAGE_KEY);
-    let resolvedShopId: string | null = null;
-
     if (activeId) {
       const { data: shop } = await supabase
         .from("shops")
         .select("id")
         .eq("id", activeId)
         .maybeSingle();
-      if (shop) resolvedShopId = shop.id;
+      if (shop) return shop.id;
     }
 
-    if (!resolvedShopId) {
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("id")
-        .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle();
-      if (shop) resolvedShopId = shop.id;
-    }
+    const { data: shop } = await supabase
+      .from("shops")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+    return shop?.id || null;
+  }, []);
 
-    if (!resolvedShopId) { setLoading(false); return; }
-    setShopId(resolvedShopId);
+  // Load subscription from DB only (source of truth)
+  const loadSubscription = useCallback(async (resolvedShopId?: string) => {
+    const sid = resolvedShopId || await resolveShopId();
+    if (!sid) { setLoading(false); return; }
+    setShopId(sid);
 
     const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
-      .eq("shop_id", resolvedShopId)
+      .eq("shop_id", sid)
       .maybeSingle();
 
     if (sub) {
       setSubscription(sub as unknown as Subscription);
+    } else {
+      setSubscription(null);
     }
     setLoading(false);
-  }, []);
+  }, [resolveShopId]);
 
-  // Sync with Stripe on mount (calls check-subscription edge function)
+  // Sync with Stripe (only for Stripe-managed subscriptions, not admin overrides)
   const syncWithStripe = useCallback(async () => {
     try {
       await supabase.functions.invoke('check-subscription');
-      // After sync, reload from DB
       await loadSubscription();
     } catch (e) {
       console.warn("Failed to sync subscription with Stripe:", e);
     }
   }, [loadSubscription]);
 
-  useEffect(() => {
-    // Load from DB first (fast), then sync with Stripe in background
-    loadSubscription().then(() => {
-      supabase.functions.invoke('check-subscription').then(() => {
-        loadSubscription();
-      }).catch(() => {});
-    });
+  // Setup Realtime channel filtered by shop_id
+  const setupRealtime = useCallback((sid: string) => {
+    // Cleanup previous channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    // Listen for storage changes (shop switch)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) loadSubscription();
-    };
-    window.addEventListener('storage', handleStorageChange);
-
-    // Realtime subscription on the subscriptions table
     const channel = supabase
-      .channel('subscription-changes')
+      .channel(`subscription-${sid}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'subscriptions',
+          filter: `shop_id=eq.${sid}`,
         },
-        (payload) => {
-          // Reload subscription data when any change happens
-          loadSubscription();
+        () => {
+          // Reload from DB on any change — this is the instant update path
+          loadSubscription(sid);
         }
       )
       .subscribe();
 
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      supabase.removeChannel(channel);
-    };
+    channelRef.current = channel;
   }, [loadSubscription]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      const sid = await resolveShopId();
+      if (!mounted) return;
+      if (!sid) { setLoading(false); return; }
+
+      // Load from DB (fast)
+      await loadSubscription(sid);
+
+      // Setup Realtime for this specific shop
+      setupRealtime(sid);
+
+      // Background Stripe sync — only if shop has stripe_subscription_id
+      // This prevents overwriting admin-set plans for non-Stripe shops
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id")
+        .eq("shop_id", sid)
+        .maybeSingle();
+      
+      if (sub?.stripe_subscription_id) {
+        supabase.functions.invoke('check-subscription').then(() => {
+          if (mounted) loadSubscription(sid);
+        }).catch(() => {});
+      }
+    };
+
+    init();
+
+    // Listen for shop switch via localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setLoading(true);
+        resolveShopId().then(sid => {
+          if (!mounted || !sid) return;
+          loadSubscription(sid);
+          setupRealtime(sid);
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('storage', handleStorageChange);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [resolveShopId, loadSubscription, setupRealtime]);
+
   const plan: Plan = subscription?.plan as Plan || 'free';
-  // If status is canceled or past_due, treat as free
   const effectivePlan: Plan = 
     subscription?.status === 'canceled' || subscription?.status === 'past_due'
       ? 'free'

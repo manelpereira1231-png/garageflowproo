@@ -82,10 +82,25 @@ export default function AdminShopDetail() {
 
   const handleChangePlan = async (newPlan: string) => {
     if (!id || newPlan === plan) return;
-    const { error } = await supabase
+    // Upsert: update if exists, insert if not
+    const { data: existing } = await supabase
       .from("subscriptions")
-      .update({ plan: newPlan, updated_at: new Date().toISOString() })
-      .eq("shop_id", id);
+      .select("id")
+      .eq("shop_id", id)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await supabase
+        .from("subscriptions")
+        .update({ plan: newPlan, status: 'active', updated_at: new Date().toISOString() })
+        .eq("shop_id", id));
+    } else {
+      ({ error } = await supabase
+        .from("subscriptions")
+        .insert({ shop_id: id, plan: newPlan, status: 'active' }));
+    }
+
     if (error) {
       toast.error("Erro ao alterar plano: " + error.message);
     } else {

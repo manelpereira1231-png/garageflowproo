@@ -124,12 +124,27 @@ export function useSubscription() {
   // Sync with Stripe (only for Stripe-managed subscriptions, not admin overrides)
   const syncWithStripe = useCallback(async () => {
     try {
+      // Only call check-subscription if the subscription is Stripe-managed
+      const sid = shopId || await resolveShopId();
+      if (sid) {
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("stripe_subscription_id")
+          .eq("shop_id", sid)
+          .maybeSingle();
+        
+        // Skip sync if no stripe_subscription_id (admin-managed plan)
+        if (!sub?.stripe_subscription_id) {
+          console.log("[useSubscription] Skipping Stripe sync — admin-managed plan");
+          return;
+        }
+      }
       await supabase.functions.invoke('check-subscription');
       await loadSubscription();
     } catch (e) {
       console.warn("Failed to sync subscription with Stripe:", e);
     }
-  }, [loadSubscription]);
+  }, [loadSubscription, shopId, resolveShopId]);
 
   // Setup Realtime channel filtered by shop_id
   const setupRealtime = useCallback((sid: string) => {

@@ -91,9 +91,15 @@ export default function AdminShopDetail() {
 
     let error;
     if (existing) {
+      // Clear stripe_subscription_id so Stripe sync won't overwrite admin-set plan
       ({ error } = await supabase
         .from("subscriptions")
-        .update({ plan: newPlan, status: 'active', updated_at: new Date().toISOString() })
+        .update({
+          plan: newPlan,
+          status: 'active',
+          stripe_subscription_id: null,
+          updated_at: new Date().toISOString(),
+        })
         .eq("shop_id", id));
     } else {
       ({ error } = await supabase

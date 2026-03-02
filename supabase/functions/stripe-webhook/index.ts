@@ -45,10 +45,10 @@ async function findSubByCustomer(customerId: string) {
 
 // If no subscription found by customer_id, try to find by user email → shop
 async function findSubByEmail(email: string) {
-  // Find user by email in auth
-  const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-  const user = users?.users?.find(u => u.email === email);
-  if (!user) return null;
+  // Find user by email in auth — use targeted lookup instead of listing all users
+  const { data: usersRes } = await supabaseAdmin.auth.admin.listUsers({ filter: email, perPage: 1 });
+  const user = usersRes?.users?.[0];
+  if (!user || user.email !== email) return null;
   
   const { data: shop } = await supabaseAdmin
     .from("shops")

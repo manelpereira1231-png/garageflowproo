@@ -40,6 +40,14 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('common.sessionExpired')); return; }
 
+      // Backend validation: check shop creation limit
+      const { data: canCreate, error: limitError } = await supabase.rpc('check_shop_creation_limit', { _user_id: user.id });
+      if (limitError) { toast.error(limitError.message); return; }
+      if (!canCreate) {
+        toast.error("Limite de oficinas atingido. Atualize para um plano superior.");
+        return;
+      }
+
       const { data: shop, error } = await supabase.from("shops").insert({
         user_id: user.id,
         name: newShopName.trim(),

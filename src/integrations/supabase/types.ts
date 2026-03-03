@@ -701,6 +701,10 @@ export type Database = {
     }
     Functions: {
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
+      check_shop_creation_limit: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       get_user_emails_for_admin: {
         Args: never
         Returns: {

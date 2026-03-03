@@ -148,7 +148,7 @@ export default function Billing() {
             </div>
           </div>
           <div className="flex gap-2">
-            {plan !== 'free' && (
+            {plan !== 'free' && subscription?.stripe_subscription_id && (
               <Button variant="outline" size="sm" onClick={handleManageSubscription}>
                 <ExternalLink className="w-4 h-4 mr-2" />
                 {t('billing.manage')}

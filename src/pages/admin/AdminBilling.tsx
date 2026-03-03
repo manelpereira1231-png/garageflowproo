@@ -88,6 +88,7 @@ export default function AdminBilling() {
 
     const { error } = await supabase.from("subscriptions").update({
       plan: newPlan, status: "active", current_period_end: currentPeriodEnd,
+      stripe_subscription_id: null,
     }).eq("id", sub.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });

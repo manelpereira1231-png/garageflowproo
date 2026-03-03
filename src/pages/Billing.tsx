@@ -4,19 +4,29 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Building2, Clock, ExternalLink } from "lucide-react";
+import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, prices, isTrialing, trialDaysLeft, loading, syncWithStripe } = useSubscription();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [upgrading, setUpgrading] = useState(false);
+  const [managingPortal, setManagingPortal] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Handle return from Stripe — show toast then clean URL
+  // Handle return from Stripe
   useEffect(() => {
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
@@ -37,6 +47,10 @@ export default function Billing() {
       </div>
     );
   }
+
+  const isAdminManaged = subscription && !subscription.stripe_subscription_id && plan !== 'free';
+  const hasStripe = !!subscription?.stripe_subscription_id;
+  const isCanceled = subscription?.status === 'canceled' || subscription?.status === 'cancelled';
 
   const plans: { key: Plan; icon: React.ElementType; color: string; features: string[] }[] = [
     {
@@ -102,6 +116,7 @@ export default function Billing() {
   };
 
   const handleManageSubscription = async () => {
+    setManagingPortal(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
       if (error) throw error;
@@ -110,7 +125,46 @@ export default function Billing() {
       }
     } catch (err: any) {
       toast.error(t('billing.errorPortal'));
+    } finally {
+      setManagingPortal(false);
     }
+  };
+
+  const handleCancelSubscription = async () => {
+    setCanceling(true);
+    try {
+      if (hasStripe) {
+        // Cancel via Stripe portal
+        const { data, error } = await supabase.functions.invoke('customer-portal');
+        if (error) throw error;
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+      // For admin-managed plans or fallback — downgrade to free locally
+      const shopId = subscription?.shop_id;
+      if (shopId) {
+        const { error } = await supabase.from("subscriptions").update({
+          plan: 'free',
+          status: 'canceled',
+          current_period_end: new Date().toISOString(),
+        }).eq("shop_id", shopId);
+        if (error) throw error;
+        toast.success(t('billing.cancelSuccess'));
+      }
+    } catch (err: any) {
+      toast.error(t('billing.errorGeneric'));
+    } finally {
+      setCanceling(false);
+      setCancelDialogOpen(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      day: '2-digit', month: 'long', year: 'numeric',
+    });
   };
 
   return (
@@ -126,11 +180,13 @@ export default function Billing() {
       <div className="bg-card border border-border rounded-xl p-5 mb-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-              <Crown className="w-5 h-5 text-primary-foreground" />
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              isCanceled ? 'bg-destructive/10' : 'gradient-primary'
+            }`}>
+              {isCanceled ? <XCircle className="w-5 h-5 text-destructive" /> : <Crown className="w-5 h-5 text-primary-foreground" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-lg">{t(`billing.plan.${plan}`)}</span>
                 {isTrialing && (
                   <Badge variant="secondary" className="bg-warning/10 text-warning">
@@ -138,23 +194,50 @@ export default function Billing() {
                     Trial — {trialDaysLeft} {t('billing.daysLeft')}
                   </Badge>
                 )}
+                {isCanceled && (
+                  <Badge variant="secondary" className="bg-destructive/10 text-destructive">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    {t('billing.statusCanceled')}
+                  </Badge>
+                )}
+                {isAdminManaged && !isCanceled && (
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    <Shield className="w-3 h-3 mr-1" />
+                    {t('billing.managedPlan')}
+                  </Badge>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {subscription?.current_period_end
-                  ? `${t('billing.renewsOn')} ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                {isCanceled
+                  ? t('billing.planCanceledDesc')
+                  : subscription?.current_period_end
+                  ? `${t('billing.renewsOn')} ${formatDate(subscription.current_period_end)}`
                   : t('billing.freePlanActive')
                 }
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            {plan !== 'free' && subscription?.stripe_subscription_id && (
-              <Button variant="outline" size="sm" onClick={handleManageSubscription}>
-                <ExternalLink className="w-4 h-4 mr-2" />
+          <div className="flex gap-2 flex-wrap">
+            {/* Stripe-managed: show portal button */}
+            {hasStripe && !isCanceled && (
+              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={managingPortal}>
+                {managingPortal ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
                 {t('billing.manage')}
               </Button>
             )}
-            {plan === 'free' && (
+            {/* Cancel button for paid plans */}
+            {plan !== 'free' && !isCanceled && (
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={() => setCancelDialogOpen(true)}>
+                <XCircle className="w-4 h-4 mr-2" />
+                {t('billing.cancelSubscription')}
+              </Button>
+            )}
+            {/* Reactivate / upgrade for free or canceled */}
+            {(plan === 'free' || isCanceled) && (
               <Button onClick={() => handleUpgrade('pro')} disabled={upgrading} className="gradient-primary text-primary-foreground">
                 <Crown className="w-4 h-4 mr-2" />
                 {t('billing.tryPro')}
@@ -162,6 +245,28 @@ export default function Billing() {
             )}
           </div>
         </div>
+
+        {/* Subscription details row */}
+        {plan !== 'free' && !isCanceled && (
+          <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-6 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarDays className="w-4 h-4" />
+              <span>{t('billing.billingCycleLabel')}: <strong className="text-foreground capitalize">{subscription?.billing_cycle || 'monthly'}</strong></span>
+            </div>
+            {subscription?.current_period_end && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span>{t('billing.nextRenewal')}: <strong className="text-foreground">{formatDate(subscription.current_period_end)}</strong></span>
+              </div>
+            )}
+            {isAdminManaged && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Shield className="w-4 h-4" />
+                <span>{t('billing.adminManagedNote')}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Billing Cycle Toggle */}
@@ -260,6 +365,26 @@ export default function Billing() {
           );
         })}
       </div>
+
+      {/* Cancel Subscription Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('billing.cancelTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('billing.cancelDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              disabled={canceling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {canceling ? t('common.loading') : t('billing.confirmCancel')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

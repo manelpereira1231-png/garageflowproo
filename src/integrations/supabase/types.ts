@@ -726,6 +726,10 @@ export type Database = {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
       }
+      validate_plan_limit: {
+        Args: { _action_type: string; _shop_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

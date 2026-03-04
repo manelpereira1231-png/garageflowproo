@@ -210,9 +210,13 @@ export default function Billing() {
               <p className="text-sm text-muted-foreground">
                 {isCanceled
                   ? t('billing.planCanceledDesc')
+                  : isAdminManaged
+                  ? t('billing.adminManagedNote')
                   : subscription?.current_period_end
                   ? `${t('billing.renewsOn')} ${formatDate(subscription.current_period_end)}`
-                  : t('billing.freePlanActive')
+                  : plan === 'free'
+                  ? t('billing.freePlanActive')
+                  : t(`billing.plan.${plan}`)
                 }
               </p>
             </div>

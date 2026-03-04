@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -21,6 +24,7 @@ const alertTypeIcons: Record<string, any> = {
   payment_failed: AlertTriangle,
   service_due: Clock,
   quote_pending: Clock,
+  custom: Bell,
 };
 
 const alertStatusStyles: Record<string, string> = {
@@ -40,15 +44,24 @@ const alertTypeColors: Record<string, string> = {
   quote_pending: "text-warning",
   inspection: "text-info",
   inactive_client: "text-info",
+  custom: "text-primary",
 };
 
 export default function Alerts() {
   const { t } = useLanguage();
-  const { plan, shopId } = useSubscription();
+  const { plan, shopId, loading: subLoading, validatePlanAction } = useSubscription();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newAlert, setNewAlert] = useState({
+    title: "",
+    message: "",
+    type: "custom",
+    priority: "medium",
+  });
 
   const fetchAlerts = async () => {
     if (!shopId) return;
@@ -91,6 +104,39 @@ export default function Alerts() {
     else fetchAlerts();
   };
 
+  const handleCreateAlert = async () => {
+    if (!shopId || !newAlert.title.trim() || !newAlert.message.trim()) return;
+    setCreating(true);
+    try {
+      // Backend validation
+      const canCreate = await validatePlanAction('create_basic_alert');
+      if (!canCreate) {
+        toast.error(t('alerts.planLimitReached'));
+        return;
+      }
+
+      const { error } = await supabase.from("alerts").insert({
+        shop_id: shopId,
+        title: newAlert.title.trim(),
+        message: newAlert.message.trim(),
+        type: newAlert.type,
+        priority: newAlert.priority,
+        status: "pending",
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(t('alerts.created'));
+        setCreateOpen(false);
+        setNewAlert({ title: "", message: "", type: "custom", priority: "medium" });
+        fetchAlerts();
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const exportCSV = () => {
     const headers = [t('alerts.typeCol'), t('alerts.titleCol'), t('alerts.clientCol'), t('alerts.vehicleCol'), t('alerts.dateCol'), t('alerts.statusCol')];
     const rows = filtered.map(a => [
@@ -120,7 +166,15 @@ export default function Alerts() {
     return matchSearch && matchType && matchStatus;
   });
 
-  const alertTypes = ['revision', 'oil', 'inspection', 'warranty', 'inactive_client', 'expired_quote', 'payment_failed', 'service_due', 'quote_pending'];
+  const alertTypes = ['revision', 'oil', 'inspection', 'warranty', 'inactive_client', 'expired_quote', 'payment_failed', 'service_due', 'quote_pending', 'custom'];
+
+  if (subLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // FREE plan: show upgrade message
   if (plan === 'free') {
@@ -149,10 +203,16 @@ export default function Alerts() {
             {alerts.filter(a => a.status === 'pending').length} {t('alerts.pending')}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
-          <Download className="w-4 h-4" />
-          {t('alerts.export')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+            <Download className="w-4 h-4" />
+            {t('alerts.export')}
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            {t('alerts.create')}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -247,6 +307,66 @@ export default function Alerts() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Create Alert Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>{t('alerts.create')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t('alerts.titleCol')} *</Label>
+              <Input
+                value={newAlert.title}
+                onChange={e => setNewAlert(p => ({ ...p, title: e.target.value }))}
+                placeholder={t('alerts.titlePlaceholder')}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('alerts.messageLabel')} *</Label>
+              <Textarea
+                value={newAlert.message}
+                onChange={e => setNewAlert(p => ({ ...p, message: e.target.value }))}
+                placeholder={t('alerts.messagePlaceholder')}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t('alerts.typeCol')}</Label>
+                <Select value={newAlert.type} onValueChange={v => setNewAlert(p => ({ ...p, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">{t('alerts.type.custom')}</SelectItem>
+                    <SelectItem value="revision">{t('alerts.type.revision')}</SelectItem>
+                    <SelectItem value="service_due">{t('alerts.type.service_due')}</SelectItem>
+                    <SelectItem value="inspection">{t('alerts.type.inspection')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('alerts.priorityLabel')}</Label>
+                <Select value={newAlert.priority} onValueChange={v => setNewAlert(p => ({ ...p, priority: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">{t('alerts.priorityLow')}</SelectItem>
+                    <SelectItem value="medium">{t('alerts.priorityMedium')}</SelectItem>
+                    <SelectItem value="high">{t('alerts.priorityHigh')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleCreateAlert} disabled={!newAlert.title.trim() || !newAlert.message.trim() || creating}>
+              {creating ? t('common.loading') : t('alerts.create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

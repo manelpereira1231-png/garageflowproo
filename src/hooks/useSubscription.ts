@@ -75,6 +75,7 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
+  const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Resolve active shop ID
@@ -104,7 +105,7 @@ export function useSubscription() {
   // Load subscription from DB only (source of truth)
   const loadSubscription = useCallback(async (resolvedShopId?: string) => {
     const sid = resolvedShopId || await resolveShopId();
-    if (!sid) { setLoading(false); return; }
+    if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
     setShopId(sid);
 
     const { data: sub } = await supabase
@@ -114,17 +115,24 @@ export function useSubscription() {
       .maybeSingle();
 
     if (sub) {
+      console.log("[useSubscription] Loaded from DB:", {
+        plan: sub.plan,
+        status: sub.status,
+        stripe_subscription_id: sub.stripe_subscription_id,
+        shop_id: sid,
+      });
       setSubscription(sub as unknown as Subscription);
     } else {
+      console.log("[useSubscription] No subscription found for shop:", sid);
       setSubscription(null);
     }
+    setSubscriptionLoaded(true);
     setLoading(false);
   }, [resolveShopId]);
 
   // Sync with Stripe (only for Stripe-managed subscriptions, not admin overrides)
   const syncWithStripe = useCallback(async () => {
     try {
-      // Only call check-subscription if the subscription is Stripe-managed
       const sid = shopId || await resolveShopId();
       if (sid) {
         const { data: sub } = await supabase
@@ -133,9 +141,9 @@ export function useSubscription() {
           .eq("shop_id", sid)
           .maybeSingle();
         
-        // Skip sync if no stripe_subscription_id (admin-managed plan)
+        // CRITICAL: Skip sync if no stripe_subscription_id (admin-managed plan)
         if (!sub?.stripe_subscription_id) {
-          console.log("[useSubscription] Skipping Stripe sync — admin-managed plan");
+          console.log("[useSubscription] Skipping Stripe sync — no stripe_subscription_id (admin-managed)");
           return;
         }
       }
@@ -148,7 +156,6 @@ export function useSubscription() {
 
   // Setup Realtime channel filtered by shop_id
   const setupRealtime = useCallback((sid: string) => {
-    // Cleanup previous channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
@@ -165,7 +172,7 @@ export function useSubscription() {
           filter: `shop_id=eq.${sid}`,
         },
         () => {
-          // Reload from DB on any change — this is the instant update path
+          console.log("[useSubscription] Realtime update received for shop:", sid);
           loadSubscription(sid);
         }
       )
@@ -180,7 +187,7 @@ export function useSubscription() {
     const init = async () => {
       const sid = await resolveShopId();
       if (!mounted) return;
-      if (!sid) { setLoading(false); return; }
+      if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
 
       // Load from DB (fast)
       await loadSubscription(sid);
@@ -189,7 +196,6 @@ export function useSubscription() {
       setupRealtime(sid);
 
       // Background Stripe sync — only if shop has stripe_subscription_id
-      // This prevents overwriting admin-set plans for non-Stripe shops
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("stripe_subscription_id")
@@ -205,10 +211,10 @@ export function useSubscription() {
 
     init();
 
-    // Listen for shop switch via localStorage
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) {
         setLoading(true);
+        setSubscriptionLoaded(false);
         resolveShopId().then(sid => {
           if (!mounted || !sid) return;
           loadSubscription(sid);
@@ -228,11 +234,16 @@ export function useSubscription() {
     };
   }, [resolveShopId, loadSubscription, setupRealtime]);
 
-  const plan: Plan = subscription?.plan as Plan || 'free';
-  const effectivePlan: Plan = 
-    subscription?.status === 'canceled' || subscription?.status === 'past_due'
+  // CRITICAL: Calculate effectivePlan correctly
+  // - While loading, don't calculate (loading state prevents UI from rendering wrong plan)
+  // - Only downgrade to free if status is explicitly canceled/past_due
+  // - NEVER fallback to free silently for admin-managed plans
+  const rawPlan: Plan = (subscription?.plan as Plan) || 'free';
+  const effectivePlan: Plan = !subscriptionLoaded
+    ? 'free' // Will be hidden by loading state
+    : subscription?.status === 'canceled' || subscription?.status === 'cancelled' || subscription?.status === 'past_due'
       ? 'free'
-      : plan;
+      : rawPlan;
   
   const limits = PLAN_LIMITS[effectivePlan];
   const prices = PLAN_PRICES;
@@ -249,15 +260,22 @@ export function useSubscription() {
     if (limits.maxQuotesPerMonth === Infinity) return true;
     if (!shopId) return false;
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const { count } = await supabase
-      .from("quotes")
-      .select("id", { count: "exact", head: true })
-      .eq("shop_id", shopId)
-      .gte("created_at", monthStart);
+    // Use backend validation
+    const { data: canCreate } = await supabase.rpc('validate_plan_limit', {
+      _action_type: 'create_quote',
+      _shop_id: shopId,
+    });
+    return !!canCreate;
+  };
 
-    return (count || 0) < limits.maxQuotesPerMonth;
+  // Backend-validated feature check
+  const validatePlanAction = async (actionType: string): Promise<boolean> => {
+    if (!shopId) return false;
+    const { data } = await supabase.rpc('validate_plan_limit', {
+      _action_type: actionType,
+      _shop_id: shopId,
+    });
+    return !!data;
   };
 
   return {
@@ -272,5 +290,7 @@ export function useSubscription() {
     canUseFeature,
     checkQuoteLimit,
     syncWithStripe,
+    subscriptionLoaded,
+    validatePlanAction,
   };
 }

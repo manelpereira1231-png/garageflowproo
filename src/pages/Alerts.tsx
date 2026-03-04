@@ -108,8 +108,20 @@ export default function Alerts() {
     if (!shopId || !newAlert.title.trim() || !newAlert.message.trim()) return;
     setCreating(true);
     try {
-      // Backend validation
-      const canCreate = await validatePlanAction('create_basic_alert');
+      // Backend validation via RPC
+      const { data: canCreate, error: rpcError } = await supabase.rpc('validate_plan_limit', {
+        _action_type: 'create_basic_alert',
+        _shop_id: shopId,
+      });
+      
+      console.log("[Alerts] validate_plan_limit result:", { canCreate, rpcError, shopId });
+      
+      if (rpcError) {
+        console.error("[Alerts] RPC error:", rpcError);
+        toast.error(rpcError.message);
+        return;
+      }
+      
       if (!canCreate) {
         toast.error(t('alerts.planLimitReached'));
         return;
@@ -125,6 +137,7 @@ export default function Alerts() {
       });
 
       if (error) {
+        console.error("[Alerts] Insert error:", error);
         toast.error(error.message);
       } else {
         toast.success(t('alerts.created'));

@@ -37,7 +37,7 @@ const roleBadgeStyles: Record<string, string> = {
 
 export default function Team() {
   const { t } = useLanguage();
-  const { plan, limits, shopId } = useSubscription();
+  const { plan, limits, shopId, loading: subLoading } = useSubscription();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -132,6 +132,15 @@ export default function Team() {
       fetchMembers();
     }
   };
+
+  // Show spinner while subscription is loading to prevent flash of upgrade screen
+  if (subLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Free plan: show upgrade message
   if (plan === 'free') {

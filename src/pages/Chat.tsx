@@ -28,7 +28,7 @@ interface Client {
 
 export default function Chat() {
   const { t } = useLanguage();
-  const { plan, shopId, canUseFeature } = useSubscription();
+  const { plan, shopId, canUseFeature, loading: subLoading } = useSubscription();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("all");
@@ -176,6 +176,14 @@ export default function Chat() {
     setNewMessage("");
     setSending(false);
   };
+
+  if (subLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!canUseFeature('chatbot')) {
     return (

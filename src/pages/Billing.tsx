@@ -4,7 +4,8 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
@@ -17,7 +18,10 @@ import {
 
 export default function Billing() {
   const { t } = useLanguage();
-  const { subscription, plan, prices, isTrialing, trialDaysLeft, loading, syncWithStripe } = useSubscription();
+  const { subscription, plan, prices, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const [monthlyQuotes, setMonthlyQuotes] = useState(0);
+  const [teamCount, setTeamCount] = useState(0);
+  const [shopCount, setShopCount] = useState(0);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [upgrading, setUpgrading] = useState(false);
   const [managingPortal, setManagingPortal] = useState(false);
@@ -39,6 +43,24 @@ export default function Billing() {
       navigate('/billing', { replace: true });
     }
   }, [searchParams, t, navigate]);
+
+  // Load usage stats
+  useEffect(() => {
+    if (!shopId) return;
+    const loadUsage = async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const [quotesRes, teamRes, shopsRes] = await Promise.all([
+        supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId).gte("created_at", monthStart),
+        supabase.from("shop_users").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+        supabase.from("shops").select("id", { count: "exact", head: true }),
+      ]);
+      setMonthlyQuotes(quotesRes.count || 0);
+      setTeamCount(teamRes.count || 0);
+      setShopCount(shopsRes.count || 0);
+    };
+    loadUsage();
+  }, [shopId]);
 
   if (loading) {
     return (
@@ -271,6 +293,74 @@ export default function Billing() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Plan Limits & Quotas */}
+      <div className="bg-card border border-border rounded-xl p-5 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Gauge className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold">{t('billing.limitsTitle')}</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Quotes */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('billing.limitsQuotes')}</span>
+              <span className="font-medium mono">
+                {monthlyQuotes}/{limits.maxQuotesPerMonth === Infinity ? '∞' : limits.maxQuotesPerMonth}
+              </span>
+            </div>
+            <Progress
+              value={limits.maxQuotesPerMonth === Infinity ? 0 : (monthlyQuotes / limits.maxQuotesPerMonth) * 100}
+              className="h-2"
+            />
+          </div>
+          {/* Team */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('billing.limitsUsers')}</span>
+              <span className="font-medium mono">
+                {teamCount}/{limits.maxUsers === Infinity ? '∞' : limits.maxUsers}
+              </span>
+            </div>
+            <Progress
+              value={limits.maxUsers === Infinity ? 0 : (teamCount / limits.maxUsers) * 100}
+              className="h-2"
+            />
+          </div>
+          {/* Shops */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('billing.limitsShops')}</span>
+              <span className="font-medium mono">
+                {shopCount}/{limits.multiShop ? 5 : 1}
+              </span>
+            </div>
+            <Progress
+              value={(shopCount / (limits.multiShop ? 5 : 1)) * 100}
+              className="h-2"
+            />
+          </div>
+        </div>
+        {/* Feature flags */}
+        <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-3">
+          {[
+            { key: 'advancedAlerts', label: t('billing.feature.advancedAlerts') },
+            { key: 'automations', label: t('billing.feature.automations') },
+            { key: 'chatbot', label: t('billing.feature.chatbot') },
+            { key: 'api', label: t('billing.feature.api') },
+            { key: 'multiShop', label: t('billing.feature.multiShop') },
+          ].map(f => (
+            <Badge key={f.key} variant="outline" className={
+              (limits as any)[f.key]
+                ? 'bg-success/10 text-success border-success/30'
+                : 'bg-muted text-muted-foreground'
+            }>
+              {(limits as any)[f.key] ? <Check className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+              {f.label}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Billing Cycle Toggle */}

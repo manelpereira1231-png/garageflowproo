@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { exportToCsv } from "@/lib/pdfGenerator";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -102,6 +103,22 @@ export default function Vehicles() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  const handleExportCsv = () => {
+    const csvData = vehicles.map(v => ({
+      [t('vehicles.make')]: v.make,
+      [t('vehicles.model')]: v.model,
+      [t('vehicles.year')]: v.year,
+      [t('vehicles.plate')]: v.plate,
+      VIN: v.vin || '',
+      [t('vehicles.mileage')]: v.mileage,
+      [t('vehicles.fuel')]: v.fuel,
+      [t('vehicles.client')]: (v.clients as any)?.name || '',
+      [t('vehicles.notes') || 'Notas']: v.notes || '',
+    }));
+    exportToCsv(csvData, 'veiculos');
+    toast.success(t('common.exported'));
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -109,10 +126,14 @@ export default function Vehicles() {
           <h1 className="page-title">{t('vehicles.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('vehicles.title').toLowerCase()}</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingId(null); resetForm(); } }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <FileDown className="w-4 h-4 mr-1" />CSV
+          </Button>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingId(null); resetForm(); } }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? t('common.edit') : t('vehicles.new')}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +166,8 @@ export default function Vehicles() {
               </Button>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="relative mb-4">

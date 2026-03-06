@@ -207,13 +207,18 @@ export default function Alerts() {
     );
   }
 
+  const pendingCount = alerts.filter(a => a.status === 'pending').length;
+  const resolvedCount = alerts.filter(a => a.status === 'resolved').length;
+  const sentCount = alerts.filter(a => a.status === 'sent').length;
+  const dismissedCount = alerts.filter(a => a.status === 'dismissed').length;
+
   return (
     <div>
       <div className="page-header flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">{t('alerts.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {alerts.filter(a => a.status === 'pending').length} {t('alerts.pending')}
+            {pendingCount} {t('alerts.pending')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -225,6 +230,26 @@ export default function Alerts() {
             <Plus className="w-4 h-4" />
             {t('alerts.create')}
           </Button>
+        </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="bg-card border border-border rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-warning">{pendingCount}</p>
+          <p className="text-xs text-muted-foreground">{t('alerts.statusPending')}</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-info">{sentCount}</p>
+          <p className="text-xs text-muted-foreground">{t('alerts.statusSent')}</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-success">{resolvedCount}</p>
+          <p className="text-xs text-muted-foreground">{t('alerts.statusResolved')}</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-muted-foreground">{dismissedCount}</p>
+          <p className="text-xs text-muted-foreground">{t('alerts.statusDismissed')}</p>
         </div>
       </div>
 

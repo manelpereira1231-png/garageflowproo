@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Copy } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
@@ -84,6 +84,24 @@ export default function Quotes() {
       }
     }
     navigate("/quotes/new");
+  };
+
+  const duplicateQuote = async (q: any) => {
+    if (plan === 'free') {
+      const canCreate = await checkQuoteLimit();
+      if (!canCreate) { setShowLimitModal(true); return; }
+    }
+    const shopId = localStorage.getItem("garageflow_active_shop");
+    if (!shopId) return;
+    const { data: nextNum } = await supabase.rpc('next_number', { _shop_id: shopId, _prefix: 'ORC' });
+    const { error } = await supabase.from("quotes").insert({
+      shop_id: shopId, number: nextNum || `ORC-COPY`, client_id: q.client_id, vehicle_id: q.vehicle_id,
+      lines: q.lines, notes: q.notes, subtotal: q.subtotal, vat_total: q.vat_total,
+      total: q.total, cost_total: q.cost_total, profit: q.profit, status: 'draft',
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('quotes.duplicated'));
+    fetchQuotes();
   };
 
   const convertToService = async (quote: any) => {
@@ -282,6 +300,9 @@ export default function Quotes() {
                         {converting === q.id ? t('quotes.converting') : t('quotes.convert')}
                       </Button>
                     )}
+                    <Button variant="ghost" size="sm" onClick={() => duplicateQuote(q)} className="text-xs" title={t('quotes.duplicate')}>
+                      <Copy className="w-3.5 h-3.5 mr-1" />{t('quotes.duplicate')}
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

@@ -1,0 +1,195 @@
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+interface InvoicePdfData {
+  invoice: any;
+  items: any[];
+  shop: any;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientNif?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehiclePlate?: string;
+  totalPaid: number;
+}
+
+async function loadImage(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
+  const doc = new jsPDF();
+  const { invoice, items, shop } = data;
+  const cur = shop.currency === 'EUR' ? '€' : shop.currency;
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Header bar
+  doc.setFillColor(38, 38, 38);
+  doc.rect(0, 0, pageW, 40, 'F');
+
+  // Logo
+  let logoLoaded = false;
+  if (shop.logo_url) {
+    const imgData = await loadImage(shop.logo_url);
+    if (imgData) {
+      try { doc.addImage(imgData, 'PNG', 14, 6, 28, 28); logoLoaded = true; } catch { /* fallback */ }
+    }
+  }
+
+  const infoX = logoLoaded ? 48 : 14;
+  doc.setTextColor(255, 180, 30);
+  doc.setFontSize(logoLoaded ? 16 : 22);
+  doc.setFont("helvetica", "bold");
+  doc.text(shop.name, infoX, 16);
+
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  if (shop.nif) doc.text(`NIF: ${shop.nif}`, infoX, 22);
+  if (shop.address) doc.text(shop.address, infoX, shop.nif ? 27 : 22);
+  doc.text(`${shop.email} | ${shop.phone}`, infoX, shop.nif && shop.address ? 32 : shop.nif || shop.address ? 27 : 22);
+
+  // Invoice type + number
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("FATURA", pageW - 14, 18, { align: "right" });
+  doc.setFontSize(11);
+  doc.text(invoice.number, pageW - 14, 26, { align: "right" });
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Data: ${new Date(invoice.created_at).toLocaleDateString('pt-PT')}`, pageW - 14, 34, { align: "right" });
+
+  // Client info
+  let y = 50;
+  doc.setTextColor(38, 38, 38);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("CLIENTE", 14, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  y += 6;
+  doc.text(data.clientName, 14, y);
+  if (data.clientNif) { y += 5; doc.text(`NIF: ${data.clientNif}`, 14, y); }
+  if (data.clientEmail) { y += 5; doc.text(data.clientEmail, 14, y); }
+  if (data.clientPhone) { y += 5; doc.text(data.clientPhone, 14, y); }
+
+  // Vehicle
+  if (data.vehicleMake) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("VEÍCULO", pageW / 2, 50);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`${data.vehicleMake} ${data.vehicleModel || ''}`, pageW / 2, 56);
+    if (data.vehiclePlate) doc.text(`Matrícula: ${data.vehiclePlate}`, pageW / 2, 61);
+  }
+
+  if (invoice.due_date) {
+    doc.text(`Vencimento: ${invoice.due_date}`, pageW / 2, data.vehicleMake ? 66 : 56);
+  }
+
+  // Items table
+  const tableY = Math.max(y + 12, 82);
+  const tableData = items.map(i => [
+    i.description,
+    String(i.quantity),
+    `${cur}${Number(i.unit_price).toFixed(2)}`,
+    `${i.vat_rate}%`,
+    `${cur}${Number(i.total).toFixed(2)}`,
+  ]);
+
+  autoTable(doc, {
+    startY: tableY,
+    head: [['Descrição', 'Qtd', 'Preço', 'IVA', 'Total']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [38, 38, 38], textColor: [255, 180, 30], fontStyle: 'bold', fontSize: 8 },
+    bodyStyles: { fontSize: 8 },
+    columnStyles: {
+      1: { cellWidth: 16, halign: 'center' },
+      2: { cellWidth: 26, halign: 'right' },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 28, halign: 'right' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // Totals
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  const totalsX = pageW - 14;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(38, 38, 38);
+  doc.text(`Subtotal: ${cur}${Number(invoice.subtotal).toFixed(2)}`, totalsX, finalY, { align: "right" });
+  doc.text(`IVA: ${cur}${Number(invoice.vat_total).toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
+
+  doc.setFillColor(38, 38, 38);
+  doc.rect(pageW - 80, finalY + 9, 66, 10, 'F');
+  doc.setTextColor(255, 180, 30);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(`TOTAL: ${cur}${Number(invoice.total).toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
+
+  // Payment status
+  if (data.totalPaid > 0) {
+    doc.setTextColor(38, 38, 38);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Pago: ${cur}${data.totalPaid.toFixed(2)}`, totalsX, finalY + 26, { align: "right" });
+    const remaining = Number(invoice.total) - data.totalPaid;
+    if (remaining > 0) {
+      doc.setTextColor(200, 50, 50);
+      doc.text(`Em falta: ${cur}${remaining.toFixed(2)}`, totalsX, finalY + 32, { align: "right" });
+    }
+  }
+
+  // Notes
+  if (invoice.notes) {
+    const notesY = data.totalPaid > 0 ? finalY + 42 : finalY + 28;
+    doc.setTextColor(38, 38, 38);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("NOTAS", 14, notesY);
+    doc.setFont("helvetica", "normal");
+    const noteLines = doc.splitTextToSize(invoice.notes, pageW - 28);
+    doc.text(noteLines, 14, notesY + 6);
+  }
+
+  // Legal disclaimer
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(245, 245, 245);
+  doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+  doc.setTextColor(120, 120, 120);
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "italic");
+  doc.text(
+    "Documento gerado por sistema de gestão. Deve ser comunicado à Autoridade Tributária através de software certificado.",
+    pageW / 2, pageH - 22, { align: "center" }
+  );
+
+  // Footer
+  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  const footerParts = [shop.name];
+  if (shop.nif) footerParts.push(`NIF: ${shop.nif}`);
+  if (shop.address) footerParts.push(shop.address);
+  doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
+
+  return doc;
+}

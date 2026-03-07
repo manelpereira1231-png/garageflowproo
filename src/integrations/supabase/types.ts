@@ -236,6 +236,137 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          total: number
+          unit_price: number
+          vat_rate: number
+        }
+        Insert: {
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_id: string
+          created_at: string
+          currency: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          number: string
+          quote_id: string | null
+          shop_id: string
+          status: string
+          subtotal: number
+          total: number
+          type: string
+          vat_total: number
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          number: string
+          quote_id?: string | null
+          shop_id: string
+          status?: string
+          subtotal?: number
+          total?: number
+          type?: string
+          vat_total?: number
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          number?: string
+          quote_id?: string | null
+          shop_id?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          type?: string
+          vat_total?: number
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -273,6 +404,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          method: string
+          paid_at: string
+          reference: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          method?: string
+          paid_at?: string
+          reference?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          method?: string
+          paid_at?: string
+          reference?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -714,6 +893,7 @@ export type Database = {
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      next_invoice_number: { Args: { _shop_id: string }; Returns: string }
       next_number: {
         Args: { _prefix: string; _shop_id: string }
         Returns: string

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
-  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle
+  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
+  Receipt, ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [activeShopId]);
 
+  const [financialOpen, setFinancialOpen] = useState(
+    location.pathname.startsWith('/invoices') || location.pathname.startsWith('/financial')
+  );
+
   const navItems = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: "/clients", label: t('nav.clients'), icon: Users },
@@ -53,6 +58,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
+  ];
+
+  const financialSubItems = [
+    { path: "/invoices", label: t('nav.invoices') },
+    { path: "/financial/reports", label: t('nav.financialReports') },
   ];
 
   const handleLogout = async () => {

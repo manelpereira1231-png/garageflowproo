@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Copy } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Copy, Receipt } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
@@ -303,6 +303,11 @@ export default function Quotes() {
                     <Button variant="ghost" size="sm" onClick={() => duplicateQuote(q)} className="text-xs" title={t('quotes.duplicate')}>
                       <Copy className="w-3.5 h-3.5 mr-1" />{t('quotes.duplicate')}
                     </Button>
+                    {['approved', 'converted'].includes(q.status) && (
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/invoices/new?from_quote=${q.id}`)} className="text-xs">
+                        <Receipt className="w-3.5 h-3.5 mr-1" />{t('invoices.convertToInvoice')}
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

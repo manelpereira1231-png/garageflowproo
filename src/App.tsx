@@ -34,6 +34,10 @@ const Billing = lazy(() => import("@/pages/Billing"));
 const Alerts = lazy(() => import("@/pages/Alerts"));
 const Team = lazy(() => import("@/pages/Team"));
 const Chat = lazy(() => import("@/pages/Chat"));
+const Invoices = lazy(() => import("@/pages/Invoices"));
+const InvoiceForm = lazy(() => import("@/pages/InvoiceForm"));
+const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
+const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));

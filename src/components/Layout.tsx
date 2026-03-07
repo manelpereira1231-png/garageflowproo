@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
-  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle
+  Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
+  Receipt, ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [activeShopId]);
 
+  const [financialOpen, setFinancialOpen] = useState(
+    location.pathname.startsWith('/invoices') || location.pathname.startsWith('/financial')
+  );
+
   const navItems = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: "/clients", label: t('nav.clients'), icon: Users },
@@ -53,6 +58,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
+  ];
+
+  const financialSubItems = [
+    { path: "/invoices", label: t('nav.invoices') },
+    { path: "/financial/reports", label: t('nav.financialReports') },
   ];
 
   const handleLogout = async () => {
@@ -89,9 +99,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
-          {navItems.map((item) => {
+          {navItems.map((item, idx) => {
             const isActive = location.pathname === item.path;
-            return (
+            const navLink = (
               <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                   isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
@@ -107,6 +117,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ) : null}
               </Link>
             );
+
+            // Insert Financial submenu before Alerts
+            if (item.path === "/alerts") {
+              const finActive = location.pathname.startsWith('/invoices') || location.pathname.startsWith('/financial');
+              return (
+                <div key="fin-group">
+                  <button
+                    onClick={() => setFinancialOpen(!financialOpen)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full ${
+                      finActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    }`}>
+                    <Receipt className="w-[18px] h-[18px] shrink-0" />
+                    <span className="truncate">{t('nav.financial')}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform ${financialOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {financialOpen && (
+                    <div className="ml-7 mt-0.5 space-y-0.5">
+                      {financialSubItems.map(fi => {
+                        const fiActive = location.pathname === fi.path;
+                        return (
+                          <Link key={fi.path} to={fi.path} onClick={() => setSidebarOpen(false)}
+                            className={`block px-3 py-2 rounded-lg text-sm transition-all ${
+                              fiActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                            }`}>
+                            {fi.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {navLink}
+                </div>
+              );
+            }
+            return navLink;
           })}
         </nav>
 

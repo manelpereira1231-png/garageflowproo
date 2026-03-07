@@ -34,6 +34,10 @@ const Billing = lazy(() => import("@/pages/Billing"));
 const Alerts = lazy(() => import("@/pages/Alerts"));
 const Team = lazy(() => import("@/pages/Team"));
 const Chat = lazy(() => import("@/pages/Chat"));
+const Invoices = lazy(() => import("@/pages/Invoices"));
+const InvoiceForm = lazy(() => import("@/pages/InvoiceForm"));
+const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
+const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -142,6 +146,10 @@ function AuthenticatedRoutes() {
           <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
           <Route path="/team" element={<Layout><Team /></Layout>} />
           <Route path="/chat" element={<Layout><Chat /></Layout>} />
+          <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
+          <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
+          <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
+          <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
@@ -178,6 +186,10 @@ function AuthenticatedRoutes() {
         <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
         <Route path="/team" element={<Layout><Team /></Layout>} />
         <Route path="/chat" element={<Layout><Chat /></Layout>} />
+        <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
+        <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
+        <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
+        <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

@@ -638,6 +638,77 @@ export type Database = {
           },
         ]
       }
+      service_reminders: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          next_service_date: string | null
+          next_service_km: number | null
+          notified_at: string | null
+          service_type: string
+          shop_id: string
+          status: string
+          vehicle_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          next_service_date?: string | null
+          next_service_km?: number | null
+          notified_at?: string | null
+          service_type?: string
+          shop_id: string
+          status?: string
+          vehicle_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          next_service_date?: string | null
+          next_service_km?: number | null
+          notified_at?: string | null
+          service_type?: string
+          shop_id?: string
+          status?: string
+          vehicle_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reminders_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_users: {
         Row: {
           created_at: string

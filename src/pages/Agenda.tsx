@@ -152,7 +152,8 @@ export default function Agenda() {
   const getDayAppCount = (day: Date) =>
     appointments.filter(a => isSameDay(new Date(a.date), day)).length;
 
-  const bookingUrl = shopSlug ? `${window.location.origin}/book/${shopSlug}` : "";
+  const publicDomain = "https://garageflow.pt";
+  const bookingUrl = shopSlug ? `${publicDomain}/book/${shopSlug}` : "";
 
   const clientVehicles = form.client_id ? vehicles.filter(v => v.client_id === form.client_id) : vehicles;
 

@@ -97,6 +97,9 @@ export default function Loyalty() {
   };
 
   const totalPoints = members.reduce((s, m) => s + m.points, 0);
+  const totalEarned = members.reduce((s, m) => s + (m.total_earned || 0), 0);
+  const totalRedeemed = members.reduce((s, m) => s + (m.total_redeemed || 0), 0);
+  const redemptionRate = totalEarned > 0 ? ((totalRedeemed / totalEarned) * 100).toFixed(1) : '0';
   const filtered = members.filter(m =>
     (m.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
   );

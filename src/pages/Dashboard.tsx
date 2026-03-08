@@ -147,7 +147,30 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Alerts Widget */}
+      {/* Plan Banner */}
+      {(plan === 'free' || isTrialing) && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Star className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {isTrialing
+                  ? `${t('dashboard.trialBanner')} — ${trialDaysLeft} ${t('dashboard.daysLeft')}`
+                  : t('dashboard.freeBanner')}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.upgradeBenefits')}</p>
+            </div>
+          </div>
+          <Link to="/billing">
+            <Button size="sm" className="shrink-0">
+              <CreditCard className="w-4 h-4 mr-1" />{t('dashboard.upgrade')}
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {pendingAlerts.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">

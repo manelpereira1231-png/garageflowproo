@@ -61,6 +61,7 @@ export default function Inspections() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewChecklist, setViewChecklist] = useState<Checklist | null>(null);
   const [selectedWO, setSelectedWO] = useState("");
+  const DEFAULT_ITEMS: ChecklistItem[] = DEFAULT_ITEM_KEYS.map(key => ({ name: t(key), status: "na", notes: "" }));
   const [items, setItems] = useState<ChecklistItem[]>([...DEFAULT_ITEMS]);
   const [technician, setTechnician] = useState("");
 

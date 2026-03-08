@@ -38,6 +38,8 @@ const Invoices = lazy(() => import("@/pages/Invoices"));
 const InvoiceForm = lazy(() => import("@/pages/InvoiceForm"));
 const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
+const Agenda = lazy(() => import("@/pages/Agenda"));
+const PublicBooking = lazy(() => import("@/pages/PublicBooking"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -150,6 +152,8 @@ function AuthenticatedRoutes() {
           <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
           <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
           <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
+          <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
@@ -190,6 +194,7 @@ function AuthenticatedRoutes() {
         <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
         <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
         <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
+        <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
@@ -233,6 +238,7 @@ function AppRoutes() {
           <Route path="/quote/:token" element={<QuoteApproval />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>
       </Suspense>

@@ -87,6 +87,79 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          client_email: string | null
+          client_id: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string
+          date: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          service_type: string
+          shop_id: string
+          status: string
+          time: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          date: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          service_type?: string
+          shop_id: string
+          status?: string
+          time: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          service_type?: string
+          shop_id?: string
+          status?: string
+          time?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -611,6 +684,7 @@ export type Database = {
           name: string
           nif: string | null
           phone: string
+          slug: string | null
           status: string
           timezone: string
           user_id: string
@@ -629,6 +703,7 @@ export type Database = {
           name?: string
           nif?: string | null
           phone?: string
+          slug?: string | null
           status?: string
           timezone?: string
           user_id: string
@@ -647,6 +722,7 @@ export type Database = {
           name?: string
           nif?: string | null
           phone?: string
+          slug?: string | null
           status?: string
           timezone?: string
           user_id?: string

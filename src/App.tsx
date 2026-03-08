@@ -40,6 +40,9 @@ const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
 const Agenda = lazy(() => import("@/pages/Agenda"));
 const PublicBooking = lazy(() => import("@/pages/PublicBooking"));
+const ServiceCatalog = lazy(() => import("@/pages/ServiceCatalog"));
+const Stock = lazy(() => import("@/pages/Stock"));
+const Inspections = lazy(() => import("@/pages/Inspections"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));

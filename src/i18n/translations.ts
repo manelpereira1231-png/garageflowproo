@@ -38,6 +38,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.services': 'Serviços',
     'nav.settings': 'Definições',
     'nav.agenda': 'Agenda',
+    'nav.catalog': 'Catálogo',
+    'nav.stock': 'Stock',
+    'nav.inspections': 'Inspeções',
 
     // Agenda
     'agenda.title': 'Agenda',

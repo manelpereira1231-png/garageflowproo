@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const rawOrigin = req.headers.get("origin") || "";
     const origin = rawOrigin.includes("lovable.app") || rawOrigin.includes("lovableproject.com") || !rawOrigin
-      ? "https://garageflow-pt.lovable.app"
+      ? "https://garageflow.pt"
       : rawOrigin;
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customers.data[0].id,

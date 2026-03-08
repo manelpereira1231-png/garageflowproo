@@ -844,6 +844,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Recent Services',
     'dashboard.noServices': 'No services this month',
     'dashboard.vsLastMonth': 'vs last month',
+    'dashboard.freeBanner': 'You are on the Free plan',
+    'dashboard.trialBanner': 'Trial period active',
+    'dashboard.daysLeft': 'days left',
+    'dashboard.upgradeBenefits': 'Unlock alerts, advanced reports, marketing and more.',
+    'dashboard.upgrade': 'View Plans',
 
     'clients.title': 'Clients',
     'clients.new': 'New Client',

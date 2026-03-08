@@ -68,11 +68,88 @@ export default function Marketing() {
 
   const sendCampaign = async (campaign: any) => {
     if (!shopId) return;
-    // Mark as sent (actual email sending would be via edge function)
+
+    // Filter recipients by segment
+    let recipients = clients.filter(c => c.email);
+    if (campaign.target_segment === 'new') {
+      recipients = recipients.slice(0, Math.ceil(recipients.length * 0.3));
+    } else if (campaign.target_segment === 'inactive') {
+      recipients = recipients.slice(-Math.ceil(recipients.length * 0.3));
+    } else if (campaign.target_segment === 'frequent') {
+      recipients = recipients.slice(0, Math.ceil(recipients.length * 0.5));
+    }
+
+    if (recipients.length === 0) {
+      toast.error(t('marketing.noRecipients'));
+      return;
+    }
+
+    // Mark as sending
+    await supabase.from("campaigns").update({ status: 'sending' } as any).eq("id", campaign.id);
+    toast.info(`${t('marketing.sending')} (${recipients.length})...`);
+    load();
+
+    let successCount = 0;
+    let failCount = 0;
+
+    // Send in batches of 5
+    const batchSize = 5;
+    for (let i = 0; i < recipients.length; i += batchSize) {
+      const batch = recipients.slice(i, i + batchSize);
+      const promises = batch.map(async (client) => {
+        try {
+          const { data, error } = await supabase.functions.invoke("send-email", {
+            body: {
+              to: client.email,
+              subject: campaign.subject || campaign.name,
+              html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                <h2 style="color:#1a1a1a;">${campaign.subject || campaign.name}</h2>
+                <div style="color:#333;line-height:1.6;white-space:pre-wrap;">${campaign.content || ''}</div>
+                <hr style="margin:20px 0;border:none;border-top:1px solid #eee;"/>
+                <p style="color:#999;font-size:12px;">Enviado via GarageFlow</p>
+              </div>`,
+            },
+          });
+          if (error) throw error;
+          successCount++;
+
+          // Log email
+          await supabase.from("email_logs").insert({
+            shop_id: shopId,
+            to_email: client.email,
+            subject: campaign.subject || campaign.name,
+            status: 'sent',
+            entity_type: 'campaign',
+            entity_id: campaign.id,
+          });
+        } catch (err: any) {
+          failCount++;
+          await supabase.from("email_logs").insert({
+            shop_id: shopId,
+            to_email: client.email,
+            subject: campaign.subject || campaign.name,
+            status: 'failed',
+            error_message: err?.message || 'Unknown error',
+            entity_type: 'campaign',
+            entity_id: campaign.id,
+          });
+        }
+      });
+      await Promise.all(promises);
+    }
+
+    // Update campaign status
     await supabase.from("campaigns").update({
-      status: 'sent', sent_at: new Date().toISOString(),
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      recipients_count: successCount,
     } as any).eq("id", campaign.id);
-    toast.success(t('marketing.sent'));
+
+    if (failCount > 0) {
+      toast.warning(`${successCount} ${t('marketing.emailsSent')}, ${failCount} ${t('marketing.emailsFailed')}`);
+    } else {
+      toast.success(`${successCount} ${t('marketing.emailsSent')}!`);
+    }
     load();
   };
 

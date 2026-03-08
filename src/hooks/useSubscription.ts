@@ -72,7 +72,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     api: false,
     marketing: false,
     loyalty: false,
-    quoteApproval: false,
+    quoteApproval: true,
     fullUploads: false,
     fullInspections: true,
     csvExport: true,

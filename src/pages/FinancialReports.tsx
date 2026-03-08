@@ -166,6 +166,24 @@ export default function FinancialReports() {
     );
   };
 
+  if (!canUseFeature('basicReports')) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-primary" />{t('financial.reports')}
+          </h1>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <Lock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">{t('financial.reports')}</h3>
+          <p className="text-muted-foreground mb-4">{t('financial.disabledPlan')}</p>
+          <Link to="/billing"><Button>{t('nav.billing')}</Button></Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

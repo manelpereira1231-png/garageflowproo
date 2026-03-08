@@ -2225,5 +2225,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.st_sending': 'Enviando',
     'marketing.st_sent': 'Enviada',
     'marketing.st_cancelled': 'Cancelada',
+    'planGate.title': 'Funcionalidad Premium',
+    'planGate.description': 'Esta funcionalidad solo está disponible en el plan {plan}.',
+    'planGate.upgrade': 'Ver Planes',
   },
 };

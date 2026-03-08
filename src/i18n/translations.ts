@@ -671,6 +671,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'stock.stockValue': 'Valor Stock (Venda)',
     'stock.stockCost': 'Custo Stock',
     'stock.stockMargin': 'Margem Stock',
+    'stock.allSuppliers': 'Todos os fornecedores',
+    'stock.allStock': 'Todo o stock',
+    'stock.lowOnly': 'Apenas stock baixo',
+    'stock.okOnly': 'Stock OK',
+
+    // Services extra
+    'services.timeline': 'Progresso',
+    'services.allStatuses': 'Todos',
 
     // Inspections
     'inspections.title': 'Inspeções',
@@ -1423,6 +1431,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'stock.stockValue': 'Stock Value (Sale)',
     'stock.stockCost': 'Stock Cost',
     'stock.stockMargin': 'Stock Margin',
+    'stock.allSuppliers': 'All suppliers',
+    'stock.allStock': 'All stock',
+    'stock.lowOnly': 'Low stock only',
+    'stock.okOnly': 'Stock OK',
+
+    // Services extra
+    'services.timeline': 'Progress',
+    'services.allStatuses': 'All',
 
     // Inspections
     'inspections.title': 'Inspections',
@@ -2175,6 +2191,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'stock.stockValue': 'Valor Stock (Venta)',
     'stock.stockCost': 'Coste Stock',
     'stock.stockMargin': 'Margen Stock',
+    'stock.allSuppliers': 'Todos los proveedores',
+    'stock.allStock': 'Todo el stock',
+    'stock.lowOnly': 'Solo stock bajo',
+    'stock.okOnly': 'Stock OK',
+
+    // Services extra
+    'services.timeline': 'Progreso',
+    'services.allStatuses': 'Todos',
 
     // Inspections
     'inspections.title': 'Inspecciones',

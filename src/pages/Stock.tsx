@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -22,6 +24,7 @@ interface Part {
 
 interface StockMovement {
   id: string; part_id: string; type: string; quantity: number; reason: string | null; created_at: string;
+  work_order_id: string | null;
 }
 
 const emptyForm = {
@@ -39,6 +42,8 @@ export default function Stock() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [movForm, setMovForm] = useState({ type: "in", quantity: 1, reason: "" });
+  const [supplierFilter, setSupplierFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
 
   const shopId = localStorage.getItem("garageflow_active_shop");
 
@@ -46,7 +51,7 @@ export default function Stock() {
     if (!shopId) return;
     const [partsRes, movRes] = await Promise.all([
       supabase.from("parts").select("*").eq("shop_id", shopId).order("name"),
-      supabase.from("stock_movements").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(100),
+      supabase.from("stock_movements").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
     ]);
     if (partsRes.data) setParts(partsRes.data as Part[]);
     if (movRes.data) setMovements(movRes.data as StockMovement[]);
@@ -54,7 +59,17 @@ export default function Stock() {
 
   useEffect(() => { load(); }, [shopId]);
 
-  const filtered = parts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || (p.reference || "").toLowerCase().includes(search.toLowerCase()));
+  const suppliers = [...new Set(parts.map(p => p.supplier).filter(Boolean))] as string[];
+
+  const filtered = parts.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.reference || "").toLowerCase().includes(search.toLowerCase());
+    const matchSupplier = supplierFilter === "all" || p.supplier === supplierFilter;
+    const matchStock = stockFilter === "all" || 
+      (stockFilter === "low" && p.active && p.stock_quantity <= p.min_stock) ||
+      (stockFilter === "ok" && p.stock_quantity > p.min_stock);
+    return matchSearch && matchSupplier && matchStock;
+  });
+
   const lowStock = parts.filter(p => p.active && p.stock_quantity <= p.min_stock);
   const totalStockValue = parts.reduce((s, p) => s + (p.stock_quantity * p.sale_price), 0);
   const totalStockCost = parts.reduce((s, p) => s + (p.stock_quantity * p.internal_cost), 0);
@@ -150,19 +165,50 @@ export default function Stock() {
         </Dialog>
       </div>
 
-      {/* Stock Value Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.totalParts')}</p><p className="text-xl font-bold">{parts.length}</p></CardContent></Card>
-        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockValue')}</p><p className="text-xl font-bold text-primary">€{totalStockValue.toFixed(2)}</p></CardContent></Card>
-        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockCost')}</p><p className="text-xl font-bold">€{totalStockCost.toFixed(2)}</p></CardContent></Card>
-        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockMargin')}</p><p className="text-xl font-bold text-success">€{totalMargin.toFixed(2)}</p></CardContent></Card>
+      {/* Stock KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground">{t('stock.totalParts')}</p>
+          <p className="text-xl font-bold">{parts.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">{parts.filter(p => p.active).length} {t('catalog.active').toLowerCase()}</p>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground">{t('stock.stockValue')}</p>
+          <p className="text-xl font-bold text-primary">€{totalStockValue.toFixed(2)}</p>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground">{t('stock.stockCost')}</p>
+          <p className="text-xl font-bold">€{totalStockCost.toFixed(2)}</p>
+        </CardContent></Card>
+        <Card className={lowStock.length > 0 ? "border-warning/40" : ""}><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground">{t('stock.lowStockAlert')}</p>
+          <p className={`text-xl font-bold ${lowStock.length > 0 ? 'text-warning' : 'text-success'}`}>{lowStock.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('stock.stockMargin')}: €{totalMargin.toFixed(0)}</p>
+        </CardContent></Card>
       </div>
 
+      {/* Low Stock Warning with details */}
       {lowStock.length > 0 && (
         <Card className="border-warning/30 bg-warning/5">
-          <CardContent className="py-3 px-4 flex items-center gap-3 text-sm">
-            <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-            <span className="text-warning font-medium">{t('stock.lowStockAlert')}: {lowStock.map(p => p.name).join(", ")}</span>
+          <CardContent className="py-4 px-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+              <AlertTriangle className="w-4 h-4" />
+              {t('stock.lowStockAlert')} ({lowStock.length})
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {lowStock.map(p => (
+                <div key={p.id} className="flex items-center justify-between bg-background rounded-lg px-3 py-2 border border-warning/20">
+                  <div>
+                    <p className="text-sm font-medium">{p.name}</p>
+                    {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="destructive" className="text-xs">{p.stock_quantity}/{p.min_stock}</Badge>
+                    <Progress value={p.min_stock > 0 ? Math.min((p.stock_quantity / p.min_stock) * 100, 100) : 0} className="w-16 h-1.5 mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -170,13 +216,32 @@ export default function Stock() {
       <Tabs defaultValue="parts">
         <TabsList>
           <TabsTrigger value="parts">{t('stock.parts')} ({parts.length})</TabsTrigger>
-          <TabsTrigger value="movements">{t('stock.movements')}</TabsTrigger>
+          <TabsTrigger value="movements">{t('stock.movements')} ({movements.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="parts" className="space-y-3">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('stock.search')} className="pl-9" />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('stock.search')} className="pl-9" />
+            </div>
+            {suppliers.length > 0 && (
+              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <SelectTrigger className="w-[180px]"><Filter className="w-3 h-3 mr-1" /><SelectValue placeholder={t('stock.supplier')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('stock.allSuppliers')}</SelectItem>
+                  {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={stockFilter} onValueChange={setStockFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('stock.allStock')}</SelectItem>
+                <SelectItem value="low">{t('stock.lowOnly')}</SelectItem>
+                <SelectItem value="ok">{t('stock.okOnly')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Card>
             <CardContent className="p-0">
@@ -185,6 +250,7 @@ export default function Stock() {
                   <TableRow>
                     <TableHead>{t('stock.partName')}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t('stock.reference')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('stock.supplier')}</TableHead>
                     <TableHead>{t('stock.currentStock')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('stock.costPrice')}</TableHead>
                     <TableHead>{t('stock.salePrice')}</TableHead>
@@ -193,19 +259,26 @@ export default function Stock() {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('stock.empty')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.empty')}</TableCell></TableRow>
                   ) : filtered.map(p => (
                     <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
                       <TableCell>
                         <div className="font-medium">{p.name}</div>
-                        {p.supplier && <div className="text-xs text-muted-foreground">{p.supplier}</div>}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">{p.reference || "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{p.supplier || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>
-                          {p.stock_quantity}
-                        </Badge>
-                        {p.min_stock > 0 && <span className="text-xs text-muted-foreground ml-1">/ min {p.min_stock}</span>}
+                        <div className="flex items-center gap-2">
+                          <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>
+                            {p.stock_quantity}
+                          </Badge>
+                          {p.min_stock > 0 && (
+                            <span className="text-xs text-muted-foreground">/ min {p.min_stock}</span>
+                          )}
+                          {p.stock_quantity <= p.min_stock && p.active && (
+                            <TrendingDown className="w-3 h-3 text-destructive" />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">€{p.internal_cost.toFixed(2)}</TableCell>
                       <TableCell className="font-medium">€{p.sale_price.toFixed(2)}</TableCell>
@@ -256,7 +329,9 @@ export default function Stock() {
                             {m.type === "in" ? t('stock.typeIn') : m.type === "out" ? t('stock.typeOut') : t('stock.typeAdjustment')}
                           </Badge>
                         </TableCell>
-                        <TableCell>{m.type === "out" ? `-${m.quantity}` : `+${m.quantity}`}</TableCell>
+                        <TableCell className={m.type === "out" ? "text-destructive font-medium" : "text-success font-medium"}>
+                          {m.type === "out" ? `-${m.quantity}` : `+${m.quantity}`}
+                        </TableCell>
                         <TableCell className="hidden sm:table-cell text-muted-foreground">{m.reason || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{format(new Date(m.created_at), "dd/MM HH:mm")}</TableCell>
                       </TableRow>
@@ -274,6 +349,14 @@ export default function Stock() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{t('stock.addMovement')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {movementDialog && (
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                <span className="font-medium">{parts.find(p => p.id === movementDialog)?.name}</span>
+                <span className="text-muted-foreground ml-2">
+                  ({t('stock.currentStock')}: {parts.find(p => p.id === movementDialog)?.stock_quantity})
+                </span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{t('stock.movementType')}</Label>

@@ -57,10 +57,10 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Always use the published domain so users don't land on preview/Lovable URLs
+    // Always use the custom domain so users don't land on preview URLs
     const rawOrigin = req.headers.get("origin") || "";
     const origin = rawOrigin.includes("lovable.app") || rawOrigin.includes("lovableproject.com") || !rawOrigin
-      ? "https://garageflow-pt.lovable.app"
+      ? "https://garageflow.pt"
       : rawOrigin;
 
     const session = await stripe.checkout.sessions.create({

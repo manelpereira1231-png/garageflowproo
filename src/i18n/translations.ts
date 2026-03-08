@@ -713,6 +713,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.services': 'Services',
     'nav.settings': 'Settings',
     'nav.agenda': 'Schedule',
+    'nav.catalog': 'Catalog',
+    'nav.stock': 'Stock',
+    'nav.inspections': 'Inspections',
 
     // Agenda
     'agenda.title': 'Schedule',

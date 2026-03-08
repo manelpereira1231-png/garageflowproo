@@ -1613,6 +1613,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.daysLeft': 'días restantes',
     'dashboard.upgradeBenefits': 'Desbloquee alertas, informes avanzados, marketing y más.',
     'dashboard.upgrade': 'Ver Planes',
+    'dashboard.revenueChart': 'Facturación Mensual',
+    'dashboard.statusChart': 'Servicios por Estado',
+    'dashboard.noData': 'Sin datos disponibles',
 
     'clients.title': 'Clientes',
     'clients.new': 'Nuevo Cliente',

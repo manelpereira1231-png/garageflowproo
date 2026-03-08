@@ -12,6 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--info))"];
 
 export default function FinancialReports() {
+  const { canUseFeature, plan } = useSubscription();
   const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalRevenue: 0, totalVat: 0, invoiceCount: 0,

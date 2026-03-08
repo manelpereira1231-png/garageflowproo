@@ -87,7 +87,7 @@ export default function Inspections() {
     } as any);
     if (error) { toast.error(error.message); return; }
     toast.success(t('inspections.created'));
-    setDialogOpen(false); setItems([...DEFAULT_ITEMS]); setSelectedWO(""); setTechnician(""); load();
+    setDialogOpen(false); setItems(DEFAULT_ITEM_KEYS.map(key => ({ name: t(key), status: "na" as const, notes: "" }))); setSelectedWO(""); setTechnician(""); load();
   };
 
   const handleComplete = async (id: string) => {

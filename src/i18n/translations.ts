@@ -84,6 +84,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Serviços Recentes',
     'dashboard.noServices': 'Sem serviços este mês',
     'dashboard.vsLastMonth': 'vs mês anterior',
+    'dashboard.freeBanner': 'Está a usar o plano Free',
+    'dashboard.trialBanner': 'Período de teste ativo',
+    'dashboard.daysLeft': 'dias restantes',
+    'dashboard.upgradeBenefits': 'Desbloqueie alertas, relatórios avançados, marketing e muito mais.',
+    'dashboard.upgrade': 'Ver Planos',
 
     // Clients
     'clients.title': 'Clientes',
@@ -839,6 +844,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Recent Services',
     'dashboard.noServices': 'No services this month',
     'dashboard.vsLastMonth': 'vs last month',
+    'dashboard.freeBanner': 'You are on the Free plan',
+    'dashboard.trialBanner': 'Trial period active',
+    'dashboard.daysLeft': 'days left',
+    'dashboard.upgradeBenefits': 'Unlock alerts, advanced reports, marketing and more.',
+    'dashboard.upgrade': 'View Plans',
 
     'clients.title': 'Clients',
     'clients.new': 'New Client',
@@ -1574,6 +1584,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Servicios Recientes',
     'dashboard.noServices': 'Sin servicios este mes',
     'dashboard.vsLastMonth': 'vs mes anterior',
+    'dashboard.freeBanner': 'Está en el plan Free',
+    'dashboard.trialBanner': 'Período de prueba activo',
+    'dashboard.daysLeft': 'días restantes',
+    'dashboard.upgradeBenefits': 'Desbloquee alertas, informes avanzados, marketing y más.',
+    'dashboard.upgrade': 'Ver Planes',
 
     'clients.title': 'Clientes',
     'clients.new': 'Nuevo Cliente',

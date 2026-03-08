@@ -30,7 +30,7 @@ const PAGE_SIZE = 25;
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { limits, plan, shopId, checkQuoteLimit } = useSubscription();
+  const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
@@ -132,7 +132,7 @@ export default function Quotes() {
     try {
       const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
       const vehicleInfo = `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model} — ${(q.vehicles as any)?.plate}`;
-      const approvalUrl = q.token ? `https://garageflow.pt/quote/${q.token}` : undefined;
+      const approvalUrl = q.token && canUseFeature('quoteApproval') ? `https://garageflow.pt/quote/${q.token}` : undefined;
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
       const subject = `${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;

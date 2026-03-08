@@ -2,15 +2,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, FileText, CheckCircle, Clock, AlertTriangle, FileDown, Users, Wrench } from "lucide-react";
+import { TrendingUp, FileText, CheckCircle, Clock, AlertTriangle, FileDown, Users, Wrench, Lock } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--info))"];
 
 export default function FinancialReports() {
+  const { canUseFeature, plan } = useSubscription();
   const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalRevenue: 0, totalVat: 0, invoiceCount: 0,
@@ -109,6 +111,10 @@ export default function FinancialReports() {
   }, []);
 
   const handleExport = () => {
+    if (!canUseFeature('csvExport')) {
+      toast.error(t('planGate.description').replace('{plan}', 'Pro'));
+      return;
+    }
     exportToCsv(stats.monthlyData.map(m => ({
       Mês: m.month, 'Receita Paga': m.revenue.toFixed(2),
       'IVA': m.vat.toFixed(2), 'Faturas': m.count,
@@ -123,8 +129,9 @@ export default function FinancialReports() {
           <h1 className="page-title">{t('financial.reports')}</h1>
           <p className="text-muted-foreground text-sm">{t('financial.reportsDescription')}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <FileDown className="w-4 h-4 mr-1" />CSV
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={!canUseFeature('csvExport')}>
+          {canUseFeature('csvExport') ? <FileDown className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
+          CSV {!canUseFeature('csvExport') && <span className="text-xs ml-1">(Pro+)</span>}
         </Button>
       </div>
 

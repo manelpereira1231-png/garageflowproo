@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface KPIData {
   revenue: number;
@@ -16,6 +18,7 @@ interface KPIData {
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const { plan, isTrialing, trialDaysLeft, limits } = useSubscription();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
@@ -144,7 +147,30 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Alerts Widget */}
+      {/* Plan Banner */}
+      {(plan === 'free' || isTrialing) && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Star className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {isTrialing
+                  ? `${t('dashboard.trialBanner')} — ${trialDaysLeft} ${t('dashboard.daysLeft')}`
+                  : t('dashboard.freeBanner')}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.upgradeBenefits')}</p>
+            </div>
+          </div>
+          <Link to="/billing">
+            <Button size="sm" className="shrink-0">
+              <CreditCard className="w-4 h-4 mr-1" />{t('dashboard.upgrade')}
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {pendingAlerts.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">

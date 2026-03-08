@@ -160,6 +160,8 @@ export default function Marketing() {
 
   const totalSent = campaigns.filter(c => c.status === 'sent').length;
   const totalRecipients = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.recipients_count || 0), 0);
+  const totalOpened = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.opened_count || 0), 0);
+  const openRate = totalRecipients > 0 ? ((totalOpened / totalRecipients) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-6">

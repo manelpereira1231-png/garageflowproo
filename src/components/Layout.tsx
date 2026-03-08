@@ -57,6 +57,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t('nav.catalog'), icon: BookOpen },
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
+    { path: "/loyalty", label: t('nav.loyalty'), icon: Star },
+    { path: "/marketing", label: t('nav.marketing'), icon: Megaphone },
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),

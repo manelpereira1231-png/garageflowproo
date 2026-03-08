@@ -706,6 +706,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'loyalty.totalMembers': 'Total Membros',
     'loyalty.totalPoints': 'Pontos em Circulação',
     'loyalty.activeTiers': 'Níveis Ativos',
+    'loyalty.totalRedeemed': 'Total Resgatado',
+    'loyalty.redemptionRate': 'Taxa Resgate',
     'loyalty.search': 'Pesquisar membros...',
     'loyalty.client': 'Cliente',
     'loyalty.points': 'Pontos',

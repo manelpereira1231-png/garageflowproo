@@ -237,6 +237,8 @@ export default function Marketing() {
                     <SelectItem value="inactive">{t('marketing.seg_inactive')}</SelectItem>
                     <SelectItem value="frequent">{t('marketing.seg_frequent')}</SelectItem>
                     <SelectItem value="new">{t('marketing.seg_new')}</SelectItem>
+                    <SelectItem value="vip">{t('marketing.seg_vip')}</SelectItem>
+                    <SelectItem value="revision_due">{t('marketing.seg_revision_due')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

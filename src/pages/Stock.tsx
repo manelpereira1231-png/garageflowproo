@@ -150,6 +150,14 @@ export default function Stock() {
         </Dialog>
       </div>
 
+      {/* Stock Value Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.totalParts')}</p><p className="text-xl font-bold">{parts.length}</p></CardContent></Card>
+        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockValue')}</p><p className="text-xl font-bold text-primary">€{totalStockValue.toFixed(2)}</p></CardContent></Card>
+        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockCost')}</p><p className="text-xl font-bold">€{totalStockCost.toFixed(2)}</p></CardContent></Card>
+        <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">{t('stock.stockMargin')}</p><p className="text-xl font-bold text-success">€{totalMargin.toFixed(2)}</p></CardContent></Card>
+      </div>
+
       {lowStock.length > 0 && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="py-3 px-4 flex items-center gap-3 text-sm">

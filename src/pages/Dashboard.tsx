@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface KPIData {
   revenue: number;
@@ -16,6 +17,15 @@ interface KPIData {
   activeClients: number;
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  open: 'hsl(210, 80%, 55%)',
+  diagnosis: 'hsl(45, 90%, 50%)',
+  in_progress: 'hsl(260, 70%, 60%)',
+  completed: 'hsl(145, 65%, 45%)',
+  delivered: 'hsl(210, 15%, 60%)',
+  cancelled: 'hsl(0, 70%, 55%)',
+};
+
 export default function Dashboard() {
   const { t } = useLanguage();
   const { plan, isTrialing, trialDaysLeft, limits } = useSubscription();
@@ -25,12 +35,12 @@ export default function Dashboard() {
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; profit: number }[]>([]);
+  const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
 
-  // Get activeShopId from localStorage (set by useShopContext/ShopSwitcher)
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");
     if (stored) return stored;
-    // Fallback: get first shop user has access to
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
@@ -49,8 +59,9 @@ export default function Dashboard() {
 
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      const [ordersRes, quotesRes, clientsRes, alertsRes] = await Promise.all([
+      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes] = await Promise.all([
         supabase.from("work_orders")
           .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
           .eq("shop_id", shop.id)
@@ -70,6 +81,12 @@ export default function Dashboard() {
           .eq("status", "pending")
           .order("created_at", { ascending: false })
           .limit(5),
+        // Last 6 months for chart
+        supabase.from("work_orders")
+          .select("total, profit, status, created_at")
+          .eq("shop_id", shop.id)
+          .gte("created_at", sixMonthsAgo)
+          .in("status", ['completed', 'delivered']),
       ]);
 
       const orders = ordersRes.data || [];
@@ -89,6 +106,44 @@ export default function Dashboard() {
 
       setRecentServices(orders.slice(0, 5));
       setPendingAlerts(alertsRes.data || []);
+
+      // Build monthly revenue chart data
+      const allOrders = allOrdersRes.data || [];
+      const monthMap = new Map<string, { revenue: number; profit: number }>();
+      const monthNames = { pt: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'], en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], es: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] };
+      const names = monthNames[plan ? 'pt' : 'pt']; // use stored language if available
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        monthMap.set(key, { revenue: 0, profit: 0 });
+      }
+
+      allOrders.forEach(o => {
+        const d = new Date(o.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const entry = monthMap.get(key);
+        if (entry) {
+          entry.revenue += o.total || 0;
+          entry.profit += o.profit || 0;
+        }
+      });
+
+      setMonthlyRevenue(
+        Array.from(monthMap.entries()).map(([key, val]) => {
+          const [y, m] = key.split('-');
+          return { month: names[parseInt(m) - 1] || m, revenue: Math.round(val.revenue), profit: Math.round(val.profit) };
+        })
+      );
+
+      // Build status distribution
+      const statusCounts = new Map<string, number>();
+      orders.forEach(o => { statusCounts.set(o.status, (statusCounts.get(o.status) || 0) + 1); });
+      setStatusDistribution(
+        Array.from(statusCounts.entries())
+          .filter(([, v]) => v > 0)
+          .map(([name, value]) => ({ name: t(`service.${name}`), value, color: STATUS_COLORS[name] || '#888' }))
+      );
     };
     loadData();
   }, []);
@@ -168,6 +223,67 @@ export default function Dashboard() {
               <CreditCard className="w-4 h-4 mr-1" />{t('dashboard.upgrade')}
             </Button>
           </Link>
+        </div>
+      )}
+
+      {/* Charts Row */}
+      {plan !== 'free' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* Monthly Revenue Chart */}
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-primary" />
+              {t('dashboard.revenueChart')}
+            </h2>
+            {monthlyRevenue.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={monthlyRevenue} barGap={4}>
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={60} tickFormatter={v => `${currency}${v}`} />
+                  <Tooltip
+                    formatter={(value: number) => [`${currency}${value}`, '']}
+                    contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
+                  />
+                  <Bar dataKey="revenue" name={t('dashboard.revenueMonth')} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="profit" name={t('dashboard.profitMonth')} fill="hsl(var(--primary) / 0.4)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">{t('dashboard.noData')}</div>
+            )}
+          </div>
+
+          {/* Status Distribution Pie */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-primary" />
+              {t('dashboard.statusChart')}
+            </h2>
+            {statusDistribution.length > 0 ? (
+              <div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <PieChart>
+                    <Pie data={statusDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={2}>
+                      {statusDistribution.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {statusDistribution.map((s, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-xs">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="text-muted-foreground">{s.name} ({s.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[160px] text-muted-foreground text-sm">{t('dashboard.noData')}</div>
+            )}
+          </div>
         </div>
       )}
 

@@ -160,6 +160,8 @@ export default function Marketing() {
 
   const totalSent = campaigns.filter(c => c.status === 'sent').length;
   const totalRecipients = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.recipients_count || 0), 0);
+  const totalOpened = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.opened_count || 0), 0);
+  const openRate = totalRecipients > 0 ? ((totalOpened / totalRecipients) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-6">
@@ -171,10 +173,11 @@ export default function Marketing() {
         <Button onClick={() => setDialogOpen(true)}><Plus className="w-4 h-4 mr-2" />{t('marketing.newCampaign')}</Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Send className="w-5 h-5 text-primary" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalCampaigns')}</p><p className="text-2xl font-bold">{campaigns.length}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Mail className="w-5 h-5 text-success" /><div><p className="text-xs text-muted-foreground">{t('marketing.sentCampaigns')}</p><p className="text-2xl font-bold">{totalSent}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Users className="w-5 h-5 text-info" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalReached')}</p><p className="text-2xl font-bold">{totalRecipients}</p></div></div></CardContent></Card>
+        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-warning" /><div><p className="text-xs text-muted-foreground">{t('marketing.openRate')}</p><p className="text-2xl font-bold">{openRate}%</p></div></div></CardContent></Card>
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -237,6 +240,8 @@ export default function Marketing() {
                     <SelectItem value="inactive">{t('marketing.seg_inactive')}</SelectItem>
                     <SelectItem value="frequent">{t('marketing.seg_frequent')}</SelectItem>
                     <SelectItem value="new">{t('marketing.seg_new')}</SelectItem>
+                    <SelectItem value="vip">{t('marketing.seg_vip')}</SelectItem>
+                    <SelectItem value="revision_due">{t('marketing.seg_revision_due')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

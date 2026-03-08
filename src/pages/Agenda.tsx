@@ -320,7 +320,7 @@ export default function Agenda() {
                   {String(hour).padStart(2, "0")}:00
                 </div>
                 {weekDays.map((day, di) => {
-                  const apps = getAppsForDayHour(day, hour);
+                  const apps = getFilteredAppsForDayHour(day, hour);
                   const isToday = isSameDay(day, new Date());
                   return (
                     <div key={di} className={`border-l border-border/50 p-0.5 ${isToday ? 'bg-primary/[0.02]' : ''}`}>

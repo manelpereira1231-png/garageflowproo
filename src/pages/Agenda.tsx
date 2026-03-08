@@ -275,6 +275,16 @@ export default function Agenda() {
         </div>
       </div>
 
+      {/* Status filter tabs */}
+      <Tabs value={statusFilterTab} onValueChange={setStatusFilterTab}>
+        <TabsList className="h-8">
+          <TabsTrigger value="all" className="text-xs px-3 h-7">{t('common.all')} ({totalWeek})</TabsTrigger>
+          <TabsTrigger value="scheduled" className="text-xs px-3 h-7">{t('agenda.scheduled')} ({scheduledCount})</TabsTrigger>
+          <TabsTrigger value="confirmed" className="text-xs px-3 h-7">{t('agenda.confirmed')} ({confirmedCount})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs px-3 h-7">{t('agenda.completed')} ({completedCount})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Status legend */}
       <div className="flex flex-wrap gap-3 text-xs">
         {[["scheduled", t('agenda.scheduled')], ["confirmed", t('agenda.confirmed')], ["completed", t('agenda.completed')], ["cancelled", t('agenda.cancelled')]].map(([s, label]) => (

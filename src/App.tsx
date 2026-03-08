@@ -9,6 +9,7 @@ import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+const PlanGate = lazy(() => import("@/components/PlanGate"));
 
 // Critical path - eagerly loaded for instant navigation
 import Auth from "@/pages/Auth";

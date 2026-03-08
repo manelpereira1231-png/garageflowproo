@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -194,6 +195,16 @@ export default function Agenda() {
   const bookingUrl = shopSlug ? `${publicDomain}/book/${shopSlug}` : "";
   const clientVehicles = form.client_id ? vehicles.filter(v => v.client_id === form.client_id) : vehicles;
 
+  const [statusFilterTab, setStatusFilterTab] = useState("all");
+
+  const filteredAppointments = useMemo(() => {
+    if (statusFilterTab === "all") return appointments;
+    return appointments.filter(a => a.status === statusFilterTab);
+  }, [appointments, statusFilterTab]);
+
+  const getFilteredAppsForDayHour = (day: Date, hour: number) =>
+    filteredAppointments.filter(a => isSameDay(new Date(a.date), day) && parseInt(a.time.split(":")[0]) === hour);
+
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* Header */}
@@ -264,6 +275,16 @@ export default function Agenda() {
         </div>
       </div>
 
+      {/* Status filter tabs */}
+      <Tabs value={statusFilterTab} onValueChange={setStatusFilterTab}>
+        <TabsList className="h-8">
+          <TabsTrigger value="all" className="text-xs px-3 h-7">{t('common.all')} ({totalWeek})</TabsTrigger>
+          <TabsTrigger value="scheduled" className="text-xs px-3 h-7">{t('agenda.scheduled')} ({scheduledCount})</TabsTrigger>
+          <TabsTrigger value="confirmed" className="text-xs px-3 h-7">{t('agenda.confirmed')} ({confirmedCount})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs px-3 h-7">{t('agenda.completed')} ({completedCount})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Status legend */}
       <div className="flex flex-wrap gap-3 text-xs">
         {[["scheduled", t('agenda.scheduled')], ["confirmed", t('agenda.confirmed')], ["completed", t('agenda.completed')], ["cancelled", t('agenda.cancelled')]].map(([s, label]) => (
@@ -299,7 +320,7 @@ export default function Agenda() {
                   {String(hour).padStart(2, "0")}:00
                 </div>
                 {weekDays.map((day, di) => {
-                  const apps = getAppsForDayHour(day, hour);
+                  const apps = getFilteredAppsForDayHour(day, hour);
                   const isToday = isSameDay(day, new Date());
                   return (
                     <div key={di} className={`border-l border-border/50 p-0.5 ${isToday ? 'bg-primary/[0.02]' : ''}`}>

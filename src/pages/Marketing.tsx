@@ -9,50 +9,57 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, Plus, Send, Mail, Users, TrendingUp, Clock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Megaphone, Plus, Send, Mail, Users, TrendingUp, Clock, Trash2, Eye, Search, Lock } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useShopContext } from "@/hooks/useShopContext";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
-  scheduled: "bg-info/10 text-info",
-  sending: "bg-warning/10 text-warning",
-  sent: "bg-success/10 text-success",
+  scheduled: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  sending: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+  sent: "bg-green-500/10 text-green-700 dark:text-green-400",
   cancelled: "bg-destructive/10 text-destructive",
 };
 
 export default function Marketing() {
   const { t } = useLanguage();
+  const { canUseFeature, loading: subLoading } = useSubscription();
+  const { activeShopId } = useShopContext();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailCampaign, setDetailCampaign] = useState<any | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState({
     name: "", type: "email", subject: "", content: "",
     target_segment: "all", scheduled_at: "",
   });
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
-
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const [campRes, clientRes] = await Promise.all([
-      supabase.from("campaigns").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, email").eq("shop_id", shopId).is("deleted_at", null).neq("email", ""),
+      supabase.from("campaigns").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+      supabase.from("clients").select("id, email, name").eq("shop_id", activeShopId).is("deleted_at", null).neq("email", ""),
     ]);
     if (campRes.data) setCampaigns(campRes.data);
     if (clientRes.data) setClients(clientRes.data);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const createCampaign = async () => {
-    if (!shopId || !form.name || !form.subject) {
+    if (!activeShopId || !form.name || !form.subject) {
       toast.error(t('marketing.fillRequired'));
       return;
     }
     const recipientsCount = form.target_segment === 'all' ? clients.length : Math.ceil(clients.length * 0.3);
     const { error } = await supabase.from("campaigns").insert({
-      shop_id: shopId, name: form.name, type: form.type,
+      shop_id: activeShopId, name: form.name, type: form.type,
       subject: form.subject, content: form.content,
       target_segment: form.target_segment,
       recipients_count: recipientsCount,
@@ -67,9 +74,8 @@ export default function Marketing() {
   };
 
   const sendCampaign = async (campaign: any) => {
-    if (!shopId) return;
+    if (!activeShopId) return;
 
-    // Filter recipients by segment
     let recipients = clients.filter(c => c.email);
     if (campaign.target_segment === 'new') {
       recipients = recipients.slice(0, Math.ceil(recipients.length * 0.3));
@@ -84,7 +90,6 @@ export default function Marketing() {
       return;
     }
 
-    // Mark as sending
     await supabase.from("campaigns").update({ status: 'sending' } as any).eq("id", campaign.id);
     toast.info(`${t('marketing.sending')} (${recipients.length})...`);
     load();
@@ -92,7 +97,6 @@ export default function Marketing() {
     let successCount = 0;
     let failCount = 0;
 
-    // Send in batches of 5
     const batchSize = 5;
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
@@ -112,37 +116,26 @@ export default function Marketing() {
           });
           if (error) throw error;
           successCount++;
-
-          // Log email
           await supabase.from("email_logs").insert({
-            shop_id: shopId,
-            to_email: client.email,
+            shop_id: activeShopId, to_email: client.email,
             subject: campaign.subject || campaign.name,
-            status: 'sent',
-            entity_type: 'campaign',
-            entity_id: campaign.id,
+            status: 'sent', entity_type: 'campaign', entity_id: campaign.id,
           });
         } catch (err: any) {
           failCount++;
           await supabase.from("email_logs").insert({
-            shop_id: shopId,
-            to_email: client.email,
+            shop_id: activeShopId, to_email: client.email,
             subject: campaign.subject || campaign.name,
-            status: 'failed',
-            error_message: err?.message || 'Unknown error',
-            entity_type: 'campaign',
-            entity_id: campaign.id,
+            status: 'failed', error_message: err?.message || 'Unknown error',
+            entity_type: 'campaign', entity_id: campaign.id,
           });
         }
       });
       await Promise.all(promises);
     }
 
-    // Update campaign status
     await supabase.from("campaigns").update({
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-      recipients_count: successCount,
+      status: 'sent', sent_at: new Date().toISOString(), recipients_count: successCount,
     } as any).eq("id", campaign.id);
 
     if (failCount > 0) {
@@ -155,72 +148,194 @@ export default function Marketing() {
 
   const cancelCampaign = async (id: string) => {
     await supabase.from("campaigns").update({ status: 'cancelled' } as any).eq("id", id);
+    toast.success(t('marketing.campaignCancelled'));
     load();
   };
+
+  const deleteCampaign = async (id: string) => {
+    await supabase.from("campaigns").delete().eq("id", id);
+    toast.success(t('common.deleted'));
+    load();
+  };
+
+  if (subLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!canUseFeature('marketing')) {
+    return (
+      <div>
+        <div className="page-header"><h1 className="page-title flex items-center gap-2"><Megaphone className="w-6 h-6 text-primary" />{t('marketing.title')}</h1></div>
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <Lock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">{t('marketing.title')}</h3>
+          <p className="text-muted-foreground mb-4">{t('marketing.disabledPlan')}</p>
+          <Link to="/billing"><Button>{t('nav.billing')}</Button></Link>
+        </div>
+      </div>
+    );
+  }
 
   const totalSent = campaigns.filter(c => c.status === 'sent').length;
   const totalRecipients = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.recipients_count || 0), 0);
   const totalOpened = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.opened_count || 0), 0);
   const openRate = totalRecipients > 0 ? ((totalOpened / totalRecipients) * 100).toFixed(1) : '0';
 
+  const filteredCampaigns = campaigns
+    .filter(c => statusFilter === 'all' || c.status === statusFilter)
+    .filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()) || (c.subject || '').toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
     <div className="space-y-6">
-      <div className="page-header">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="page-title flex items-center gap-2"><Megaphone className="w-6 h-6 text-primary" />{t('marketing.title')}</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Megaphone className="w-6 h-6 text-primary" />{t('marketing.title')}
+          </h1>
           <p className="text-muted-foreground text-sm">{t('marketing.subtitle')}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="w-4 h-4 mr-2" />{t('marketing.newCampaign')}</Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Send className="w-5 h-5 text-primary" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalCampaigns')}</p><p className="text-2xl font-bold">{campaigns.length}</p></div></div></CardContent></Card>
-        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Mail className="w-5 h-5 text-success" /><div><p className="text-xs text-muted-foreground">{t('marketing.sentCampaigns')}</p><p className="text-2xl font-bold">{totalSent}</p></div></div></CardContent></Card>
-        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Users className="w-5 h-5 text-info" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalReached')}</p><p className="text-2xl font-bold">{totalRecipients}</p></div></div></CardContent></Card>
-        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-warning" /><div><p className="text-xs text-muted-foreground">{t('marketing.openRate')}</p><p className="text-2xl font-bold">{openRate}%</p></div></div></CardContent></Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: t('marketing.totalCampaigns'), value: campaigns.length, icon: Send, color: "text-primary" },
+          { label: t('marketing.sentCampaigns'), value: totalSent, icon: Mail, color: "text-green-500" },
+          { label: t('marketing.totalReached'), value: totalRecipients, icon: Users, color: "text-blue-500" },
+          { label: t('marketing.openRate'), value: `${openRate}%`, icon: TrendingUp, color: "text-yellow-500" },
+        ].map((kpi, i) => (
+          <Card key={i}>
+            <CardContent className="pt-3 pb-2 px-4">
+              <div className="flex items-center gap-2 mb-1">
+                <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
+                <p className="text-[11px] text-muted-foreground truncate">{kpi.label}</p>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader><TableRow>
-            <TableHead>{t('marketing.campaignName')}</TableHead>
-            <TableHead>{t('marketing.type')}</TableHead>
-            <TableHead>{t('marketing.segment')}</TableHead>
-            <TableHead className="text-center">{t('marketing.recipients')}</TableHead>
-            <TableHead>{t('marketing.status')}</TableHead>
-            <TableHead></TableHead>
-          </TableRow></TableHeader>
-          <TableBody>
-            {campaigns.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('marketing.empty')}</TableCell></TableRow>
-            ) : campaigns.map(c => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.name}</TableCell>
-                <TableCell><Badge variant="outline">{c.type}</Badge></TableCell>
-                <TableCell className="text-sm">{t(`marketing.seg_${c.target_segment}`)}</TableCell>
-                <TableCell className="text-center">{c.recipients_count}</TableCell>
-                <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{t(`marketing.st_${c.status}`)}</Badge></TableCell>
-                <TableCell>
-                  <div className="flex gap-1 justify-end">
-                    {['draft', 'scheduled'].includes(c.status) && (
-                      <>
-                        <Button variant="outline" size="sm" className="text-xs" onClick={() => sendCampaign(c)}><Send className="w-3 h-3 mr-1" />{t('marketing.send')}</Button>
-                        <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => cancelCampaign(c.id)}>✕</Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full sm:w-auto">
+          <TabsList className="h-8">
+            <TabsTrigger value="all" className="text-xs px-3 h-7">{t('common.all')}</TabsTrigger>
+            <TabsTrigger value="draft" className="text-xs px-3 h-7">{t('marketing.st_draft')}</TabsTrigger>
+            <TabsTrigger value="scheduled" className="text-xs px-3 h-7">{t('marketing.st_scheduled')}</TabsTrigger>
+            <TabsTrigger value="sent" className="text-xs px-3 h-7">{t('marketing.st_sent')}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="relative flex-1 max-w-xs">
+          <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={t('common.search')}
+            className="pl-8 h-9 text-sm"
+          />
+        </div>
       </div>
 
+      {/* Campaigns Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>{t('marketing.campaignName')}</TableHead>
+              <TableHead>{t('marketing.type')}</TableHead>
+              <TableHead>{t('marketing.segment')}</TableHead>
+              <TableHead className="text-center">{t('marketing.recipients')}</TableHead>
+              <TableHead>{t('marketing.status')}</TableHead>
+              <TableHead className="text-right">{t('common.actions')}</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {filteredCampaigns.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('marketing.empty')}</TableCell></TableRow>
+              ) : filteredCampaigns.map(c => (
+                <TableRow key={c.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{c.name}</p>
+                      {c.subject && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{c.subject}</p>}
+                    </div>
+                  </TableCell>
+                  <TableCell><Badge variant="outline" className="capitalize">{c.type}</Badge></TableCell>
+                  <TableCell className="text-sm">{t(`marketing.seg_${c.target_segment}`)}</TableCell>
+                  <TableCell className="text-center font-medium">{c.recipients_count}</TableCell>
+                  <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{t(`marketing.st_${c.status}`)}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 justify-end">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailCampaign(c)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      {['draft', 'scheduled'].includes(c.status) && (
+                        <>
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => sendCampaign(c)}>
+                            <Send className="w-3 h-3 mr-1" />{t('marketing.send')}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => cancelCampaign(c.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      )}
+                      {['cancelled', 'sent'].includes(c.status) && (
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteCampaign(c.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Campaign detail dialog */}
+      <Dialog open={!!detailCampaign} onOpenChange={() => setDetailCampaign(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{detailCampaign?.name}</DialogTitle></DialogHeader>
+          {detailCampaign && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">{t('marketing.type')}:</span> <Badge variant="outline" className="ml-1 capitalize">{detailCampaign.type}</Badge></div>
+                <div><span className="text-muted-foreground">{t('marketing.segment')}:</span> <span className="ml-1 font-medium">{t(`marketing.seg_${detailCampaign.target_segment}`)}</span></div>
+                <div><span className="text-muted-foreground">{t('marketing.recipients')}:</span> <span className="ml-1 font-bold">{detailCampaign.recipients_count}</span></div>
+                <div><span className="text-muted-foreground">{t('marketing.status')}:</span> <Badge className={`ml-1 ${STATUS_COLORS[detailCampaign.status]}`}>{t(`marketing.st_${detailCampaign.status}`)}</Badge></div>
+              </div>
+              {detailCampaign.subject && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t('marketing.subject')}</p>
+                  <p className="text-sm font-medium">{detailCampaign.subject}</p>
+                </div>
+              )}
+              {detailCampaign.content && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t('marketing.content')}</p>
+                  <div className="bg-muted rounded-lg p-3 text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">{detailCampaign.content}</div>
+                </div>
+              )}
+              {detailCampaign.sent_at && (
+                <p className="text-xs text-muted-foreground">{t('marketing.sentAt')}: {new Date(detailCampaign.sent_at).toLocaleString()}</p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create campaign dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{t('marketing.newCampaign')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{t('marketing.campaignName')}</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t('marketing.namePlaceholder')} /></div>
+            <div><Label>{t('marketing.campaignName')} *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t('marketing.namePlaceholder')} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('marketing.type')}</Label>
                 <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
@@ -246,7 +361,7 @@ export default function Marketing() {
                 </Select>
               </div>
             </div>
-            <div><Label>{t('marketing.subject')}</Label><Input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder={t('marketing.subjectPlaceholder')} /></div>
+            <div><Label>{t('marketing.subject')} *</Label><Input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder={t('marketing.subjectPlaceholder')} /></div>
             <div><Label>{t('marketing.content')}</Label><Textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={4} placeholder={t('marketing.contentPlaceholder')} /></div>
             <div><Label>{t('marketing.scheduleAt')}</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} /></div>
             <p className="text-xs text-muted-foreground"><Users className="w-3 h-3 inline mr-1" />{clients.length} {t('marketing.eligibleClients')}</p>

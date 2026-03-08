@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";

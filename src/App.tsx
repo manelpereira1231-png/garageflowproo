@@ -162,8 +162,8 @@ function AuthenticatedRoutes() {
           <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
           <Route path="/stock" element={<Layout><Stock /></Layout>} />
           <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
-          <Route path="/loyalty" element={<Layout><Loyalty /></Layout>} />
-          <Route path="/marketing" element={<Layout><Marketing /></Layout>} />
+          <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
+          <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />

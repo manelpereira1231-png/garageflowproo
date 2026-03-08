@@ -43,6 +43,8 @@ const PublicBooking = lazy(() => import("@/pages/PublicBooking"));
 const ServiceCatalog = lazy(() => import("@/pages/ServiceCatalog"));
 const Stock = lazy(() => import("@/pages/Stock"));
 const Inspections = lazy(() => import("@/pages/Inspections"));
+const Loyalty = lazy(() => import("@/pages/Loyalty"));
+const Marketing = lazy(() => import("@/pages/Marketing"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -159,6 +161,8 @@ function AuthenticatedRoutes() {
           <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
           <Route path="/stock" element={<Layout><Stock /></Layout>} />
           <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
+          <Route path="/loyalty" element={<Layout><Loyalty /></Layout>} />
+          <Route path="/marketing" element={<Layout><Marketing /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -204,6 +208,8 @@ function AuthenticatedRoutes() {
         <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
         <Route path="/stock" element={<Layout><Stock /></Layout>} />
         <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
+        <Route path="/loyalty" element={<Layout><Loyalty /></Layout>} />
+        <Route path="/marketing" element={<Layout><Marketing /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

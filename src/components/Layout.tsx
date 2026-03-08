@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
   Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
-  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck
+  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t('nav.catalog'), icon: BookOpen },
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
+    { path: "/loyalty", label: t('nav.loyalty'), icon: Star },
+    { path: "/marketing", label: t('nav.marketing'), icon: Megaphone },
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),

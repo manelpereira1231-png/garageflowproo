@@ -193,6 +193,62 @@ export type Database = {
         }
         Relationships: []
       }
+      campaigns: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          name: string
+          opened_count: number
+          recipients_count: number
+          scheduled_at: string | null
+          sent_at: string | null
+          shop_id: string
+          status: string
+          subject: string | null
+          target_segment: string
+          type: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          opened_count?: number
+          recipients_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          shop_id: string
+          status?: string
+          subject?: string | null
+          target_segment?: string
+          type?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          opened_count?: number
+          recipients_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          shop_id?: string
+          status?: string
+          subject?: string | null
+          target_segment?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           client_id: string | null
@@ -481,6 +537,105 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_points: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          points: number
+          shop_id: string
+          tier: string
+          total_earned: number
+          total_redeemed: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          points?: number
+          shop_id: string
+          tier?: string
+          total_earned?: number
+          total_redeemed?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          points?: number
+          shop_id?: string
+          tier?: string
+          total_earned?: number
+          total_redeemed?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_points_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_transactions: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          reference_id: string | null
+          shop_id: string
+          type: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points: number
+          reference_id?: string | null
+          shop_id: string
+          type?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          reference_id?: string | null
+          shop_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]

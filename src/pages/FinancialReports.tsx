@@ -111,6 +111,10 @@ export default function FinancialReports() {
   }, []);
 
   const handleExport = () => {
+    if (!canUseFeature('csvExport')) {
+      toast.error(t('planGate.description').replace('{plan}', 'Pro'));
+      return;
+    }
     exportToCsv(stats.monthlyData.map(m => ({
       Mês: m.month, 'Receita Paga': m.revenue.toFixed(2),
       'IVA': m.vat.toFixed(2), 'Faturas': m.count,

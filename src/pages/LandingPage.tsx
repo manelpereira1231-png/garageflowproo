@@ -120,6 +120,23 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Stats counter */}
+      <section className="py-12 px-4 border-b border-border bg-muted/20">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { value: '500+', labelKey: 'landing.statsShops' },
+            { value: '10K+', labelKey: 'landing.statsVehicles' },
+            { value: '50K+', labelKey: 'landing.statsQuotes' },
+            { value: '99.9%', labelKey: 'landing.statsUptime' },
+          ].map((stat, i) => (
+            <div key={i}>
+              <p className="text-3xl sm:text-4xl font-bold text-primary">{stat.value}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t(stat.labelKey)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">

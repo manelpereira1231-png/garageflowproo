@@ -114,10 +114,11 @@ export default function Loyalty() {
         <Button onClick={() => setAddDialog(true)}><Plus className="w-4 h-4 mr-2" />{t('loyalty.addMember')}</Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Users className="w-5 h-5 text-primary" /><div><p className="text-xs text-muted-foreground">{t('loyalty.totalMembers')}</p><p className="text-2xl font-bold">{members.length}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Star className="w-5 h-5 text-yellow-500" /><div><p className="text-xs text-muted-foreground">{t('loyalty.totalPoints')}</p><p className="text-2xl font-bold">{totalPoints.toLocaleString()}</p></div></div></CardContent></Card>
-        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-success" /><div><p className="text-xs text-muted-foreground">{t('loyalty.activeTiers')}</p><div className="flex gap-1 mt-1">{['bronze','silver','gold','platinum'].map(tier => { const c = members.filter(m => getTier(m.points) === tier).length; return c > 0 ? <Badge key={tier} variant="outline" className={`text-[10px] ${TIER_COLORS[tier]}`}>{tier} ({c})</Badge> : null; })}</div></div></div></CardContent></Card>
+        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Gift className="w-5 h-5 text-success" /><div><p className="text-xs text-muted-foreground">{t('loyalty.totalRedeemed')}</p><p className="text-2xl font-bold">{totalRedeemed.toLocaleString()}</p></div></div></CardContent></Card>
+        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-info" /><div><p className="text-xs text-muted-foreground">{t('loyalty.redemptionRate')}</p><p className="text-2xl font-bold">{redemptionRate}%</p></div></div></CardContent></Card>
       </div>
 
       <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder={t('loyalty.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" /></div>

@@ -129,8 +129,9 @@ export default function FinancialReports() {
           <h1 className="page-title">{t('financial.reports')}</h1>
           <p className="text-muted-foreground text-sm">{t('financial.reportsDescription')}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <FileDown className="w-4 h-4 mr-1" />CSV
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={!canUseFeature('csvExport')}>
+          {canUseFeature('csvExport') ? <FileDown className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
+          CSV {!canUseFeature('csvExport') && <span className="text-xs ml-1">(Pro+)</span>}
         </Button>
       </div>
 

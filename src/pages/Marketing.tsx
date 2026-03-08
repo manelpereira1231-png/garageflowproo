@@ -177,6 +177,7 @@ export default function Marketing() {
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Send className="w-5 h-5 text-primary" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalCampaigns')}</p><p className="text-2xl font-bold">{campaigns.length}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Mail className="w-5 h-5 text-success" /><div><p className="text-xs text-muted-foreground">{t('marketing.sentCampaigns')}</p><p className="text-2xl font-bold">{totalSent}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><Users className="w-5 h-5 text-info" /><div><p className="text-xs text-muted-foreground">{t('marketing.totalReached')}</p><p className="text-2xl font-bold">{totalRecipients}</p></div></div></CardContent></Card>
+        <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5 text-warning" /><div><p className="text-xs text-muted-foreground">{t('marketing.openRate')}</p><p className="text-2xl font-bold">{openRate}%</p></div></div></CardContent></Card>
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">

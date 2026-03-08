@@ -2210,6 +2210,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'loyalty.totalMembers': 'Total Miembros',
     'loyalty.totalPoints': 'Puntos en Circulación',
     'loyalty.activeTiers': 'Niveles Activos',
+    'loyalty.totalRedeemed': 'Total Canjeado',
+    'loyalty.redemptionRate': 'Tasa Canje',
     'loyalty.search': 'Buscar miembros...',
     'loyalty.client': 'Cliente',
     'loyalty.points': 'Puntos',

@@ -309,6 +309,51 @@ export type Database = {
         }
         Relationships: []
       }
+      inspection_checklists: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          items: Json
+          shop_id: string
+          technician: string | null
+          work_order_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          shop_id: string
+          technician?: string | null
+          work_order_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          shop_id?: string
+          technician?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_checklists_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_checklists_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           description: string
@@ -484,6 +529,59 @@ export type Database = {
           },
         ]
       }
+      parts: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          internal_cost: number
+          min_stock: number
+          name: string
+          reference: string | null
+          sale_price: number
+          shop_id: string
+          stock_quantity: number
+          supplier: string | null
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          internal_cost?: number
+          min_stock?: number
+          name: string
+          reference?: string | null
+          sale_price?: number
+          shop_id: string
+          stock_quantity?: number
+          supplier?: string | null
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          internal_cost?: number
+          min_stock?: number
+          name?: string
+          reference?: string | null
+          sale_price?: number
+          shop_id?: string
+          stock_quantity?: number
+          supplier?: string | null
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -634,6 +732,59 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_catalog: {
+        Row: {
+          active: boolean
+          created_at: string
+          default_price: number
+          default_time: number
+          description: string | null
+          id: string
+          internal_cost: number
+          name: string
+          recurrence_km: number | null
+          recurrence_months: number | null
+          shop_id: string
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          default_price?: number
+          default_time?: number
+          description?: string | null
+          id?: string
+          internal_cost?: number
+          name: string
+          recurrence_km?: number | null
+          recurrence_months?: number | null
+          shop_id: string
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          default_price?: number
+          default_time?: number
+          description?: string | null
+          id?: string
+          internal_cost?: number
+          name?: string
+          recurrence_km?: number | null
+          recurrence_months?: number | null
+          shop_id?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_catalog_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -801,6 +952,61 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          part_id: string
+          quantity: number
+          reason: string | null
+          shop_id: string
+          type: string
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          part_id: string
+          quantity: number
+          reason?: string | null
+          shop_id: string
+          type?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          part_id?: string
+          quantity?: number
+          reason?: string | null
+          shop_id?: string
+          type?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           billing_cycle: string
@@ -910,6 +1116,54 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          shop_id: string
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number
+          file_type?: string
+          file_url: string
+          id?: string
+          shop_id: string
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          shop_id?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_attachments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_attachments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]

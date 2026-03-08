@@ -1168,6 +1168,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'financial.month': 'Month',
     'financial.invoicesIssued': 'Invoices',
     'financial.revenuePaid': 'Revenue Paid',
+
+    // Reminders
+    'reminders.scheduleTitle': 'Schedule Next Service',
+    'reminders.scheduleDescription': 'Would you like to schedule a service reminder for this vehicle?',
+    'reminders.nextDate': 'Next service date',
+    'reminders.nextKm': 'Next service mileage',
+    'reminders.skipReminder': 'Complete without reminder',
+    'reminders.createReminder': 'Schedule reminder',
+    'reminders.created': 'Service reminder scheduled!',
   },
 
   es: {

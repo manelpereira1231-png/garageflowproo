@@ -812,6 +812,7 @@ export type Database = {
       quotes: {
         Row: {
           client_id: string
+          client_notes: string | null
           cost_total: number
           created_at: string
           date: string
@@ -831,6 +832,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          client_notes?: string | null
           cost_total?: number
           created_at?: string
           date?: string
@@ -850,6 +852,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          client_notes?: string | null
           cost_total?: number
           created_at?: string
           date?: string

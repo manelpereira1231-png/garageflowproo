@@ -56,7 +56,13 @@ export default function Team() {
       .select("id, user_id, role, created_at")
       .eq("shop_id", shopId)
       .order("created_at", { ascending: true });
-    if (data) setMembers(data);
+    if (!data) { setLoading(false); return; }
+
+    // Resolve emails via RPC
+    const { data: emailData } = await supabase.rpc("get_shop_member_emails", { _shop_id: shopId });
+    const emailMap = new Map((emailData || []).map((e: any) => [e.user_id, e.email]));
+    
+    setMembers(data.map(m => ({ ...m, email: emailMap.get(m.user_id) || undefined })));
     setLoading(false);
   };
 
@@ -251,8 +257,8 @@ export default function Team() {
                           }`} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium font-mono">
-                            {m.user_id.slice(0, 8)}...
+                          <p className="text-sm font-medium">
+                            {m.email || `${m.user_id.slice(0, 8)}...`}
                           </p>
                           {isCurrentUser && <Badge variant="outline" className="text-[9px] px-1 py-0 mt-0.5">{t('team.you')}</Badge>}
                         </div>

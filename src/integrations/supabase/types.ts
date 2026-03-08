@@ -1443,6 +1443,13 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      get_shop_member_emails: {
+        Args: { _shop_id: string }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       get_user_emails_for_admin: {
         Args: never
         Returns: {

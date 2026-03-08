@@ -19,27 +19,27 @@ interface ChecklistItem {
   notes: string;
 }
 
-const DEFAULT_ITEMS: ChecklistItem[] = [
-  { name: "Travões dianteiros", status: "na", notes: "" },
-  { name: "Travões traseiros", status: "na", notes: "" },
-  { name: "Discos de travão", status: "na", notes: "" },
-  { name: "Pneu dianteiro esquerdo", status: "na", notes: "" },
-  { name: "Pneu dianteiro direito", status: "na", notes: "" },
-  { name: "Pneu traseiro esquerdo", status: "na", notes: "" },
-  { name: "Pneu traseiro direito", status: "na", notes: "" },
-  { name: "Óleo motor", status: "na", notes: "" },
-  { name: "Filtro de ar", status: "na", notes: "" },
-  { name: "Filtro de óleo", status: "na", notes: "" },
-  { name: "Filtro de habitáculo", status: "na", notes: "" },
-  { name: "Suspensão dianteira", status: "na", notes: "" },
-  { name: "Suspensão traseira", status: "na", notes: "" },
-  { name: "Bateria", status: "na", notes: "" },
-  { name: "Correias", status: "na", notes: "" },
-  { name: "Líquido refrigerante", status: "na", notes: "" },
-  { name: "Escape", status: "na", notes: "" },
-  { name: "Luzes", status: "na", notes: "" },
-  { name: "Limpa-brisas", status: "na", notes: "" },
-  { name: "Nível líquido travões", status: "na", notes: "" },
+const DEFAULT_ITEM_KEYS = [
+  'inspections.item.frontBrakes',
+  'inspections.item.rearBrakes',
+  'inspections.item.brakeDiscs',
+  'inspections.item.frontLeftTire',
+  'inspections.item.frontRightTire',
+  'inspections.item.rearLeftTire',
+  'inspections.item.rearRightTire',
+  'inspections.item.engineOil',
+  'inspections.item.airFilter',
+  'inspections.item.oilFilter',
+  'inspections.item.cabinFilter',
+  'inspections.item.frontSuspension',
+  'inspections.item.rearSuspension',
+  'inspections.item.battery',
+  'inspections.item.belts',
+  'inspections.item.coolant',
+  'inspections.item.exhaust',
+  'inspections.item.lights',
+  'inspections.item.wipers',
+  'inspections.item.brakeFluid',
 ];
 
 interface Checklist {
@@ -61,6 +61,7 @@ export default function Inspections() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewChecklist, setViewChecklist] = useState<Checklist | null>(null);
   const [selectedWO, setSelectedWO] = useState("");
+  const DEFAULT_ITEMS: ChecklistItem[] = DEFAULT_ITEM_KEYS.map(key => ({ name: t(key), status: "na", notes: "" }));
   const [items, setItems] = useState<ChecklistItem[]>([...DEFAULT_ITEMS]);
   const [technician, setTechnician] = useState("");
 
@@ -86,7 +87,7 @@ export default function Inspections() {
     } as any);
     if (error) { toast.error(error.message); return; }
     toast.success(t('inspections.created'));
-    setDialogOpen(false); setItems([...DEFAULT_ITEMS]); setSelectedWO(""); setTechnician(""); load();
+    setDialogOpen(false); setItems(DEFAULT_ITEM_KEYS.map(key => ({ name: t(key), status: "na" as const, notes: "" }))); setSelectedWO(""); setTechnician(""); load();
   };
 
   const handleComplete = async (id: string) => {

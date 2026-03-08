@@ -2171,6 +2171,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'stock.typeAdjustment': 'Ajuste',
     'stock.noMovements': 'Sin movimientos registrados.',
     'stock.lowStockAlert': 'Stock bajo',
+    'stock.totalParts': 'Total Piezas',
+    'stock.stockValue': 'Valor Stock (Venta)',
+    'stock.stockCost': 'Coste Stock',
+    'stock.stockMargin': 'Margen Stock',
 
     // Inspections
     'inspections.title': 'Inspecciones',

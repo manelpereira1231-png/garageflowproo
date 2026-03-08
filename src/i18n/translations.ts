@@ -755,6 +755,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.st_sending': 'A enviar',
     'marketing.st_sent': 'Enviada',
     'marketing.st_cancelled': 'Cancelada',
+    'planGate.title': 'Funcionalidade Premium',
+    'planGate.description': 'Esta funcionalidade está disponível apenas no plano {plan}.',
+    'planGate.upgrade': 'Ver Planos',
   },
 
   en: {
@@ -1487,6 +1490,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.st_sending': 'Sending',
     'marketing.st_sent': 'Sent',
     'marketing.st_cancelled': 'Cancelled',
+    'planGate.title': 'Premium Feature',
+    'planGate.description': 'This feature is only available on the {plan} plan.',
+    'planGate.upgrade': 'View Plans',
   },
 
   es: {
@@ -2219,5 +2225,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.st_sending': 'Enviando',
     'marketing.st_sent': 'Enviada',
     'marketing.st_cancelled': 'Cancelada',
+    'planGate.title': 'Funcionalidad Premium',
+    'planGate.description': 'Esta funcionalidad solo está disponible en el plan {plan}.',
+    'planGate.upgrade': 'Ver Planes',
   },
 };

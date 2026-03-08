@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature } = useSubscription();
+  const { canUseFeature, plan, subscriptionLoaded } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
 
   useEffect(() => {
@@ -57,8 +57,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t('nav.catalog'), icon: BookOpen },
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
-    { path: "/loyalty", label: t('nav.loyalty'), icon: Star },
-    { path: "/marketing", label: t('nav.marketing'), icon: Megaphone },
+    ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
+    ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),

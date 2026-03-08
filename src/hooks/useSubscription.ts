@@ -20,11 +20,20 @@ export interface PlanLimits {
   maxUsers: number;
   pdfWatermark: boolean;
   advancedAlerts: boolean;
+  basicAlerts: boolean;
   automations: boolean;
+  basicAutomations: boolean;
   advancedReports: boolean;
+  basicReports: boolean;
   multiShop: boolean;
   chatbot: boolean;
   api: boolean;
+  marketing: boolean;
+  loyalty: boolean;
+  quoteApproval: boolean;
+  fullUploads: boolean;
+  fullInspections: boolean;
+  csvExport: boolean;
 }
 
 const PLAN_LIMITS: Record<Plan, PlanLimits> = {
@@ -33,33 +42,60 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     maxUsers: 1,
     pdfWatermark: true,
     advancedAlerts: false,
+    basicAlerts: false,
     automations: false,
+    basicAutomations: false,
     advancedReports: false,
+    basicReports: false,
     multiShop: false,
     chatbot: false,
     api: false,
+    marketing: false,
+    loyalty: false,
+    quoteApproval: false,
+    fullUploads: false,
+    fullInspections: false,
+    csvExport: false,
   },
   pro: {
     maxQuotesPerMonth: Infinity,
     maxUsers: 5,
     pdfWatermark: false,
     advancedAlerts: true,
+    basicAlerts: true,
     automations: false,
+    basicAutomations: true,
     advancedReports: false,
+    basicReports: true,
     multiShop: false,
     chatbot: false,
     api: false,
+    marketing: false,
+    loyalty: false,
+    quoteApproval: false,
+    fullUploads: false,
+    fullInspections: true,
+    csvExport: true,
   },
   garage: {
     maxQuotesPerMonth: Infinity,
     maxUsers: Infinity,
     pdfWatermark: false,
     advancedAlerts: true,
+    basicAlerts: true,
     automations: true,
+    basicAutomations: true,
     advancedReports: true,
+    basicReports: true,
     multiShop: true,
     chatbot: true,
     api: true,
+    marketing: true,
+    loyalty: true,
+    quoteApproval: true,
+    fullUploads: true,
+    fullInspections: true,
+    csvExport: true,
   },
 };
 

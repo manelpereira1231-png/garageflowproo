@@ -30,7 +30,7 @@ const PAGE_SIZE = 25;
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { limits, plan, shopId, checkQuoteLimit } = useSubscription();
+  const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);

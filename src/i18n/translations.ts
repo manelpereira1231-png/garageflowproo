@@ -275,6 +275,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.configureShop': 'Configure a oficina primeiro',
     'common.required': 'Obrigatório',
     'common.confirmDelete': 'Tem a certeza?',
+    'common.all': 'Todos',
+    'common.actions': 'Ações',
+    'common.deleted': 'Eliminado com sucesso',
+    'common.status': 'Estado',
+    'common.date': 'Data',
+    'common.error': 'Ocorreu um erro',
+    'common.noData': 'Sem dados',
 
     'clients.updated': 'Cliente atualizado',
     'clients.deleted': 'Cliente eliminado',

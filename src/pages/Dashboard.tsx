@@ -18,6 +18,7 @@ interface KPIData {
 
 export default function Dashboard() {
   const { t } = useLanguage();
+  const { plan, isTrialing, trialDaysLeft, limits } = useSubscription();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");

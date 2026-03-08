@@ -591,6 +591,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'financial.month': 'Mês',
     'financial.invoicesIssued': 'Faturas',
     'financial.revenuePaid': 'Receita Paga',
+
+    // Reminders
+    'reminders.scheduleTitle': 'Agendar Próxima Revisão',
+    'reminders.scheduleDescription': 'Deseja agendar um lembrete de revisão para este veículo?',
+    'reminders.nextDate': 'Data da próxima revisão',
+    'reminders.nextKm': 'Quilometragem da próxima revisão',
+    'reminders.skipReminder': 'Concluir sem lembrete',
+    'reminders.createReminder': 'Agendar lembrete',
+    'reminders.created': 'Lembrete de revisão agendado!',
   },
 
   en: {
@@ -1159,6 +1168,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'financial.month': 'Month',
     'financial.invoicesIssued': 'Invoices',
     'financial.revenuePaid': 'Revenue Paid',
+
+    // Reminders
+    'reminders.scheduleTitle': 'Schedule Next Service',
+    'reminders.scheduleDescription': 'Would you like to schedule a service reminder for this vehicle?',
+    'reminders.nextDate': 'Next service date',
+    'reminders.nextKm': 'Next service mileage',
+    'reminders.skipReminder': 'Complete without reminder',
+    'reminders.createReminder': 'Schedule reminder',
+    'reminders.created': 'Service reminder scheduled!',
   },
 
   es: {
@@ -1727,5 +1745,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'financial.month': 'Mes',
     'financial.invoicesIssued': 'Facturas',
     'financial.revenuePaid': 'Ingresos Pagados',
+
+    // Reminders
+    'reminders.scheduleTitle': 'Programar Próxima Revisión',
+    'reminders.scheduleDescription': '¿Desea programar un recordatorio de revisión para este vehículo?',
+    'reminders.nextDate': 'Fecha de la próxima revisión',
+    'reminders.nextKm': 'Kilometraje de la próxima revisión',
+    'reminders.skipReminder': 'Completar sin recordatorio',
+    'reminders.createReminder': 'Programar recordatorio',
+    'reminders.created': '¡Recordatorio de revisión programado!',
   },
 };

@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
@@ -34,6 +36,9 @@ export default function Services() {
   const [shop, setShop] = useState<any>(null);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [reminderDialog, setReminderDialog] = useState<any>(null);
+  const [reminderDate, setReminderDate] = useState("");
+  const [reminderKm, setReminderKm] = useState("");
 
   const fetchServices = async () => {
     const activeId = localStorage.getItem("garageflow_active_shop");
@@ -59,12 +64,47 @@ export default function Services() {
     const currentIdx = statusFlow.indexOf(service.status);
     if (currentIdx === -1 || currentIdx >= statusFlow.length - 1) return;
     const nextStatus = statusFlow[currentIdx + 1];
+
+    // If completing, show reminder dialog first
+    if (nextStatus === 'completed') {
+      setReminderDialog(service);
+      const defaultDate = new Date();
+      defaultDate.setMonth(defaultDate.getMonth() + 6);
+      setReminderDate(defaultDate.toISOString().split('T')[0]);
+      setReminderKm("");
+      return;
+    }
+
     const updates: any = { status: nextStatus };
-    if (nextStatus === 'completed') updates.completed_at = new Date().toISOString();
     if (nextStatus === 'delivered') updates.delivered_at = new Date().toISOString();
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
     if (error) toast.error(error.message);
     else { toast.success(`${t(`service.${nextStatus}`)}`); fetchServices(); }
+  };
+
+  const completeWithReminder = async (createReminder: boolean) => {
+    if (!reminderDialog) return;
+    const service = reminderDialog;
+    const updates: any = { status: 'completed', completed_at: new Date().toISOString() };
+    const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
+    if (error) { toast.error(error.message); return; }
+
+    if (createReminder && reminderDate) {
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      await supabase.from("service_reminders").insert({
+        shop_id: activeId,
+        vehicle_id: service.vehicle_id,
+        client_id: service.client_id,
+        work_order_id: service.id,
+        next_service_date: reminderDate,
+        next_service_km: reminderKm ? parseInt(reminderKm) : null,
+      } as any);
+      toast.success(t('reminders.created'));
+    } else {
+      toast.success(t('service.completed'));
+    }
+    setReminderDialog(null);
+    fetchServices();
   };
 
   const cancelService = async (id: string) => {
@@ -205,6 +245,38 @@ export default function Services() {
           </div>
         </div>
       )}
+
+      {/* Reminder Dialog */}
+      <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && setReminderDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="w-5 h-5 text-primary" />
+              {t('reminders.scheduleTitle')}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('reminders.scheduleDescription')}</p>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>{t('reminders.nextDate')}</Label>
+              <Input type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>{t('reminders.nextKm')}</Label>
+              <Input type="number" placeholder="ex: 120000" value={reminderKm} onChange={e => setReminderKm(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => completeWithReminder(false)}>
+              {t('reminders.skipReminder')}
+            </Button>
+            <Button onClick={() => completeWithReminder(true)} disabled={!reminderDate}>
+              <CalendarClock className="w-4 h-4 mr-2" />
+              {t('reminders.createReminder')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

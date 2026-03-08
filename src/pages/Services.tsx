@@ -245,6 +245,38 @@ export default function Services() {
           </div>
         </div>
       )}
+
+      {/* Reminder Dialog */}
+      <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && setReminderDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="w-5 h-5 text-primary" />
+              {t('reminders.scheduleTitle')}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('reminders.scheduleDescription')}</p>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>{t('reminders.nextDate')}</Label>
+              <Input type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>{t('reminders.nextKm')}</Label>
+              <Input type="number" placeholder="ex: 120000" value={reminderKm} onChange={e => setReminderKm(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => completeWithReminder(false)}>
+              {t('reminders.skipReminder')}
+            </Button>
+            <Button onClick={() => completeWithReminder(true)} disabled={!reminderDate}>
+              <CalendarClock className="w-4 h-4 mr-2" />
+              {t('reminders.createReminder')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

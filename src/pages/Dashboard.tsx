@@ -61,7 +61,7 @@ export default function Dashboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes] = await Promise.all([
+      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes] = await Promise.all([
         supabase.from("work_orders")
           .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
           .eq("shop_id", shop.id)
@@ -87,6 +87,17 @@ export default function Dashboard() {
           .eq("shop_id", shop.id)
           .gte("created_at", sixMonthsAgo)
           .in("status", ['completed', 'delivered']),
+        // Low stock parts
+        supabase.from("parts")
+          .select("id, name, stock_quantity, min_stock")
+          .eq("shop_id", shop.id)
+          .eq("active", true),
+        // Overdue invoices
+        supabase.from("invoices")
+          .select("id, number, total, due_date, clients(name)")
+          .eq("shop_id", shop.id)
+          .in("status", ['issued', 'partial'])
+          .lt("due_date", new Date().toISOString().slice(0, 10)),
       ]);
 
       const orders = ordersRes.data || [];

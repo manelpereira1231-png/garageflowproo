@@ -1602,6 +1602,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'financial.last3m': 'Last 3 months',
     'financial.last6m': 'Last 6 months',
     'financial.last12m': 'Last 12 months',
+    'financial.disabledPlan': 'Financial reports are available on Pro and Garage plans.',
     'chat.searchClients': 'Search clients...',
     'chat.teamChat': 'Team',
     'team.totalMembers': 'Total Members',

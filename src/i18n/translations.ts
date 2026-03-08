@@ -1490,6 +1490,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.st_sending': 'Sending',
     'marketing.st_sent': 'Sent',
     'marketing.st_cancelled': 'Cancelled',
+    'planGate.title': 'Premium Feature',
+    'planGate.description': 'This feature is only available on the {plan} plan.',
+    'planGate.upgrade': 'View Plans',
   },
 
   es: {

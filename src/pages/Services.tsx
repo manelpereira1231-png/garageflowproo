@@ -6,13 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
+import { format } from "date-fns";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -25,8 +27,50 @@ const statusColors: Record<ServiceStatus, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+const statusIcons: Record<ServiceStatus, any> = {
+  open: Wrench,
+  diagnosis: Stethoscope,
+  waiting_approval: Clock,
+  approved: ThumbsUp,
+  in_progress: Play,
+  completed: CheckCircle,
+  delivered: Truck,
+  cancelled: XCircle,
+};
+
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 const PAGE_SIZE = 25;
+
+function RepairTimeline({ status }: { status: ServiceStatus }) {
+  const currentIdx = statusFlow.indexOf(status);
+  
+  return (
+    <div className="flex items-center gap-0.5 overflow-x-auto py-1">
+      {statusFlow.map((s, i) => {
+        const Icon = statusIcons[s];
+        const isActive = i === currentIdx;
+        const isDone = i < currentIdx;
+        const isCancelled = status === 'cancelled';
+        
+        return (
+          <div key={s} className="flex items-center">
+            <div className={`flex items-center justify-center w-7 h-7 rounded-full border-2 transition-all shrink-0
+              ${isCancelled ? 'border-destructive/30 bg-destructive/5' :
+                isActive ? 'border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/20' :
+                isDone ? 'border-success bg-success/10 text-success' :
+                'border-border bg-muted/30 text-muted-foreground/40'}`}
+            >
+              <Icon className="w-3 h-3" />
+            </div>
+            {i < statusFlow.length - 1 && (
+              <div className={`w-3 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Services() {
   const { t } = useLanguage();
@@ -39,6 +83,7 @@ export default function Services() {
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const fetchServices = async () => {
     const activeId = localStorage.getItem("garageflow_active_shop");
@@ -48,24 +93,29 @@ export default function Services() {
 
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
+    let query = supabase
       .from("work_orders")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
       .eq("shop_id", activeId)
       .order("created_at", { ascending: false })
       .range(from, to);
+    
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data, count } = await query;
     if (data) setServices(data);
     if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchServices(); }, [page]);
+  useEffect(() => { fetchServices(); }, [page, statusFilter]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);
     if (currentIdx === -1 || currentIdx >= statusFlow.length - 1) return;
     const nextStatus = statusFlow[currentIdx + 1];
 
-    // If completing, show reminder dialog first
     if (nextStatus === 'completed') {
       setReminderDialog(service);
       const defaultDate = new Date();
@@ -149,6 +199,10 @@ export default function Services() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  // Status counts for tabs
+  const statusCounts: Record<string, number> = {};
+  services.forEach(s => { statusCounts[s.status] = (statusCounts[s.status] || 0) + 1; });
+
   return (
     <div>
       <div className="page-header">
@@ -166,6 +220,33 @@ export default function Services() {
         </div>
       </div>
 
+      {/* Status Filter Tabs */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <Button
+          variant={statusFilter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setStatusFilter("all"); setPage(0); }}
+          className="text-xs shrink-0"
+        >
+          {t('services.allStatuses') || 'Todos'} ({totalCount})
+        </Button>
+        {statusFlow.filter(s => s !== 'cancelled').map(s => {
+          const Icon = statusIcons[s];
+          return (
+            <Button
+              key={s}
+              variant={statusFilter === s ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setStatusFilter(s); setPage(0); }}
+              className="text-xs shrink-0 gap-1"
+            >
+              <Icon className="w-3 h-3" />
+              {t(`service.${s}`)}
+            </Button>
+          );
+        })}
+      </div>
+
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input placeholder={t('services.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -177,9 +258,9 @@ export default function Services() {
             <TableRow>
               <TableHead>{t('quotes.number')}</TableHead>
               <TableHead>{t('quotes.client')}</TableHead>
-              <TableHead>{t('quotes.vehicle')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('quotes.vehicle')}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t('services.timeline')}</TableHead>
               <TableHead>{t('quotes.total')}</TableHead>
-              <TableHead>{t('quotes.profit')}</TableHead>
               <TableHead>{t('quotes.status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -193,11 +274,26 @@ export default function Services() {
               </TableRow>
             ) : filtered.map(s => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium mono">{s.number}</TableCell>
-                <TableCell>{(s.clients as any)?.name}</TableCell>
-                <TableCell>{(s.vehicles as any)?.make} {(s.vehicles as any)?.model} — <span className="mono">{(s.vehicles as any)?.plate}</span></TableCell>
+                <TableCell>
+                  <div>
+                    <span className="font-medium mono">{s.number}</span>
+                    <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <span className="font-medium">{(s.clients as any)?.name}</span>
+                    {s.technician && <p className="text-xs text-muted-foreground">🔧 {s.technician}</p>}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <span>{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
+                  <span className="mono text-xs text-muted-foreground ml-1">({(s.vehicles as any)?.plate})</span>
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  <RepairTimeline status={s.status as ServiceStatus} />
+                </TableCell>
                 <TableCell className="font-semibold mono">€{s.total?.toFixed(2)}</TableCell>
-                <TableCell className="mono text-success">€{s.profit?.toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
                     {t(`service.${s.status}`)}
@@ -215,8 +311,8 @@ export default function Services() {
                     <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">PDF</Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <>
-                        <Button variant="ghost" size="sm" onClick={() => advanceStatus(s)} className="text-xs">
-                          <ChevronRightIcon className="w-3.5 h-3.5 mr-0.5" />
+                        <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs gap-1">
+                          <ChevronRightIcon className="w-3.5 h-3.5" />
                           {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => cancelService(s.id)} className="text-xs text-destructive">✕</Button>

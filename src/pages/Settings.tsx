@@ -3,60 +3,68 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Upload, Settings, Building2, Globe, FileText, Palette, AlertTriangle, Copy, ExternalLink, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const countries = Object.keys(VAT_RATES);
 
+const TIMEZONES = [
+  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
+  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
+  "Africa/Luanda", "Africa/Maputo",
+];
+
 export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
+  const { plan, shopId: subShopId } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [shopSlug, setShopSlug] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: "", email: "", phone: "", country: "Portugal",
     currency: "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
-    nif: "", address: "",
+    nif: "", address: "", timezone: "Europe/Lisbon",
   });
 
   useEffect(() => {
     const load = async () => {
       const activeId = localStorage.getItem("garageflow_active_shop");
-      if (!activeId) {
-        // Fallback for owner
+      const id = activeId || null;
+
+      let shopData: any = null;
+      if (id) {
+        const { data } = await supabase.from("shops").select("*").eq("id", id).maybeSingle();
+        shopData = data;
+      } else {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
-        if (data) {
-          setShopId(data.id);
-          setForm({
-            name: data.name || "", email: data.email || "", phone: data.phone || "",
-            country: data.country || "Portugal", currency: data.currency || "EUR",
-            vat_rate: String(data.vat_rate ?? 23), labor_rate: String(data.labor_rate ?? 35),
-            language: data.language || "pt",
-            nif: (data as any).nif || "", address: (data as any).address || "",
-          });
-          if (data.logo_url) setLogoPreview(data.logo_url);
-        }
-        return;
+        shopData = data;
       }
-      const { data } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
-      if (data) {
-        setShopId(data.id);
+
+      if (shopData) {
+        setShopId(shopData.id);
+        setShopSlug(shopData.slug || "");
         setForm({
-          name: data.name || "", email: data.email || "", phone: data.phone || "",
-          country: data.country || "Portugal", currency: data.currency || "EUR",
-          vat_rate: String(data.vat_rate ?? 23), labor_rate: String(data.labor_rate ?? 35),
-          language: data.language || "pt",
-          nif: (data as any).nif || "", address: (data as any).address || "",
+          name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
+          country: shopData.country || "Portugal", currency: shopData.currency || "EUR",
+          vat_rate: String(shopData.vat_rate ?? 23), labor_rate: String(shopData.labor_rate ?? 35),
+          language: shopData.language || "pt",
+          nif: shopData.nif || "", address: shopData.address || "",
+          timezone: shopData.timezone || "Europe/Lisbon",
         });
-        if (data.logo_url) setLogoPreview(data.logo_url);
+        if (shopData.logo_url) setLogoPreview(shopData.logo_url);
       }
     };
     load();
@@ -91,7 +99,7 @@ export default function SettingsPage() {
       user_id: user.id, name: form.name, email: form.email, phone: form.phone,
       country: form.country, currency: form.currency, vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
-      nif: form.nif, address: form.address,
+      nif: form.nif, address: form.address, timezone: form.timezone,
     };
     if (logoUrl) payload.logo_url = logoUrl;
 
@@ -114,87 +122,181 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
+  const bookingUrl = shopSlug ? `https://garageflow.pt/book/${shopSlug}` : "";
+
   return (
-    <div className="max-w-xl">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{t('settings.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t('settings.subtitle')}</p>
-        </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+          <Settings className="w-6 h-6 text-primary" />
+          {t('settings.title')}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">{t('settings.subtitle')}</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* Logo */}
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold">Logo & Branding</h3>
-          <div className="flex items-center gap-4">
-            <div
-              className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden bg-muted/30"
-              onClick={() => fileRef.current?.click()}
-            >
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <Upload className="w-6 h-6 text-muted-foreground" />
-              )}
+      <form onSubmit={handleSave} className="space-y-5">
+        {/* Logo & Branding */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Palette className="w-4 h-4" /> Logo & Branding
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div
+                className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden bg-muted/30"
+                onClick={() => fileRef.current?.click()}
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <Upload className="w-6 h-6 text-muted-foreground" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium">{t('settings.shopLogo')}</p>
+                <p className="text-xs text-muted-foreground">{t('settings.logoDescription')}</p>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium">Logo da oficina</p>
-              <p className="text-xs text-muted-foreground">Aparece nos PDFs, dashboard e emails</p>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+            <div className="mt-4 flex items-center gap-2">
+              <Badge variant="outline" className="capitalize">{plan}</Badge>
+              <span className="text-xs text-muted-foreground">
+                {plan === 'free' ? t('settings.watermarkInfo') : t('settings.noWatermark')}
+              </span>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold">{t('settings.shopInfo')}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5 col-span-2">
-              <Label>{t('settings.shopName')} *</Label>
-              <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+        {/* Shop Info */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Building2 className="w-4 h-4" /> {t('settings.shopInfo')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 col-span-2">
+                <Label>{t('settings.shopName')} *</Label>
+                <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.email')}</Label>
+                <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.phone')}</Label>
+                <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>{t('settings.address')}</Label>
+                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
+              </div>
             </div>
-            <div className="space-y-1.5"><Label>{t('settings.email')}</Label><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
-            <div className="space-y-1.5"><Label>{t('settings.phone')}</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold">{t('settings.fiscal')}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>NIF / VAT</Label>
-              <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder="123456789" />
+        {/* Fiscal */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4" /> {t('settings.fiscal')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>NIF / VAT</Label>
+                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder="123456789" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.country')}</Label>
+                <Select value={form.country} onValueChange={v => setForm({...form, country: v, vat_rate: String(VAT_RATES[v] || 23)})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.vatRate')} (%)</Label>
+                <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.laborRate')} (€/h)</Label>
+                <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('settings.currency')}</Label>
+                <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="BRL">BRL (R$)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label>Morada</Label>
-              <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('settings.country')}</Label>
-              <Select value={form.country} onValueChange={v => setForm({...form, country: v, vat_rate: String(VAT_RATES[v] || 23)})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5"><Label>{t('settings.vatRate')}</Label><Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} /></div>
-            <div className="space-y-1.5"><Label>{t('settings.laborRate')}</Label><Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} /></div>
-            <div className="space-y-1.5"><Label>{t('settings.currency')}</Label><Input value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} /></div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold">{t('settings.language')}</h3>
-          <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pt">Português</SelectItem>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Regional */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Globe className="w-4 h-4" /> {t('settings.regional')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>{t('settings.language')}</Label>
+                <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="es">🇪🇸 Español</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> {t('settings.timezone')}
+                </Label>
+                <Select value={form.timezone} onValueChange={v => setForm({...form, timezone: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        {/* Public booking link */}
+        {bookingUrl && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-4 px-5">
+              <div className="flex items-center gap-2 mb-2">
+                <ExternalLink className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">{t('settings.publicBooking')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input value={bookingUrl} readOnly className="bg-background text-sm" />
+                <Button type="button" variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(bookingUrl); toast.success(t('agenda.linkCopied')); }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">{t('settings.bookingDescription')}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? t('settings.saving') : t('settings.save')}
         </Button>
       </form>

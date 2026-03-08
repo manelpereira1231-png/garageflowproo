@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature } = useSubscription();
+  const { canUseFeature, plan, subscriptionLoaded } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
 
   useEffect(() => {

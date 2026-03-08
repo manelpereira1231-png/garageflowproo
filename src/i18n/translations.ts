@@ -2191,6 +2191,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'stock.stockValue': 'Valor Stock (Venta)',
     'stock.stockCost': 'Coste Stock',
     'stock.stockMargin': 'Margen Stock',
+    'stock.allSuppliers': 'Todos los proveedores',
+    'stock.allStock': 'Todo el stock',
+    'stock.lowOnly': 'Solo stock bajo',
+    'stock.okOnly': 'Stock OK',
+
+    // Services extra
+    'services.timeline': 'Progreso',
+    'services.allStatuses': 'Todos',
 
     // Inspections
     'inspections.title': 'Inspecciones',

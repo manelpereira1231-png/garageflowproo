@@ -4,13 +4,13 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2 } from "lucide-react";
 import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "date-fns";
 import { pt, enUS, es } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -33,8 +33,8 @@ interface Appointment {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  scheduled: "bg-blue-500/15 text-blue-700 border-blue-300",
-  confirmed: "bg-green-500/15 text-green-700 border-green-300",
+  scheduled: "bg-blue-500/15 text-blue-700 border-blue-300 dark:text-blue-400",
+  confirmed: "bg-green-500/15 text-green-700 border-green-300 dark:text-green-400",
   completed: "bg-muted text-muted-foreground border-border",
   cancelled: "bg-destructive/15 text-destructive border-destructive/30",
 };
@@ -46,7 +46,7 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: "bg-destructive",
 };
 
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8:00 - 19:00
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
 
 export default function Agenda() {
   const { activeShopId } = useShopContext();
@@ -56,21 +56,17 @@ export default function Agenda() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAppt, setEditingAppt] = useState<Appointment | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; make: string; model: string; client_id: string }[]>([]);
   const [shopSlug, setShopSlug] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Form state
   const [form, setForm] = useState({
-    client_id: "",
-    vehicle_id: "",
-    service_type: "",
-    date: format(new Date(), "yyyy-MM-dd"),
-    time: "09:00",
-    duration_minutes: 60,
-    notes: "",
-    status: "scheduled",
+    client_id: "", vehicle_id: "", service_type: "",
+    date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
+    duration_minutes: 60, notes: "", status: "scheduled",
   });
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
@@ -84,7 +80,7 @@ export default function Agenda() {
     if (!activeShopId) return;
     setLoading(true);
     const weekEnd = addDays(weekStart, 6);
-    
+
     const [apptRes, clientRes, vehicleRes, shopRes] = await Promise.all([
       supabase.from("appointments").select("*")
         .eq("shop_id", activeShopId)
@@ -103,13 +99,40 @@ export default function Agenda() {
     setLoading(false);
   };
 
-  const handleCreate = async () => {
+  const resetForm = () => setForm({
+    client_id: "", vehicle_id: "", service_type: "",
+    date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
+    duration_minutes: 60, notes: "", status: "scheduled",
+  });
+
+  const openEdit = (appt: Appointment) => {
+    setEditingAppt(appt);
+    setForm({
+      client_id: appt.client_id || "",
+      vehicle_id: appt.vehicle_id || "",
+      service_type: appt.service_type,
+      date: appt.date,
+      time: appt.time.slice(0, 5),
+      duration_minutes: appt.duration_minutes,
+      notes: appt.notes || "",
+      status: appt.status,
+    });
+    setDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingAppt(null);
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
     if (!activeShopId || !form.date || !form.time || !form.service_type) {
       toast({ title: t('agenda.fillRequired'), variant: "destructive" });
       return;
     }
 
-    const { error } = await supabase.from("appointments").insert({
+    const payload = {
       shop_id: activeShopId,
       client_id: form.client_id || null,
       vehicle_id: form.vehicle_id || null,
@@ -119,25 +142,34 @@ export default function Agenda() {
       duration_minutes: form.duration_minutes,
       notes: form.notes || null,
       status: form.status,
-    } as any);
+    } as any;
 
-    if (error) {
-      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
-      return;
+    if (editingAppt) {
+      const { error } = await supabase.from("appointments").update(payload).eq("id", editingAppt.id);
+      if (error) { toast({ title: t('common.error'), description: error.message, variant: "destructive" }); return; }
+      toast({ title: t('agenda.updated') });
+    } else {
+      const { error } = await supabase.from("appointments").insert(payload);
+      if (error) { toast({ title: t('common.error'), description: error.message, variant: "destructive" }); return; }
+      await supabase.from("alerts").insert({
+        shop_id: activeShopId, type: "appointment",
+        title: t('agenda.newAppointmentAlert'),
+        message: `${form.service_type} - ${form.date} ${form.time}`,
+        priority: "low",
+      } as any);
+      toast({ title: t('agenda.created') });
     }
 
-    // Create internal alert
-    await supabase.from("alerts").insert({
-      shop_id: activeShopId,
-      type: "appointment",
-      title: t('agenda.newAppointmentAlert'),
-      message: `${form.service_type} - ${form.date} ${form.time}`,
-      priority: "low",
-    } as any);
-
-    toast({ title: t('agenda.created') });
     setDialogOpen(false);
-    setForm({ client_id: "", vehicle_id: "", service_type: "", date: format(new Date(), "yyyy-MM-dd"), time: "09:00", duration_minutes: 60, notes: "", status: "scheduled" });
+    setEditingAppt(null);
+    resetForm();
+    loadData();
+  };
+
+  const handleDelete = async (id: string) => {
+    await supabase.from("appointments").delete().eq("id", id);
+    setDeleteConfirm(null);
+    toast({ title: t('agenda.deleted') });
     loadData();
   };
 
@@ -152,9 +184,14 @@ export default function Agenda() {
   const getDayAppCount = (day: Date) =>
     appointments.filter(a => isSameDay(new Date(a.date), day)).length;
 
+  // Summary KPIs
+  const totalWeek = appointments.length;
+  const scheduledCount = appointments.filter(a => a.status === 'scheduled').length;
+  const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
+  const completedCount = appointments.filter(a => a.status === 'completed').length;
+
   const publicDomain = "https://garageflow.pt";
   const bookingUrl = shopSlug ? `${publicDomain}/book/${shopSlug}` : "";
-
   const clientVehicles = form.client_id ? vehicles.filter(v => v.client_id === form.client_id) : vehicles;
 
   return (
@@ -174,70 +211,28 @@ export default function Agenda() {
               <Copy className="w-4 h-4 mr-1" /> {t('agenda.copyLink')}
             </Button>
           )}
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="w-4 h-4 mr-1" /> {t('agenda.new')}</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader><DialogTitle>{t('agenda.new')}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>{t('agenda.serviceType')}</Label>
-                  <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value })} placeholder={t('agenda.serviceTypePlaceholder')} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>{t('agenda.date')}</Label>
-                    <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>{t('agenda.time')}</Label>
-                    <Input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <Label>{t('agenda.duration')}</Label>
-                  <Select value={String(form.duration_minutes)} onValueChange={v => setForm({ ...form, duration_minutes: Number(v) })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="60">1h</SelectItem>
-                      <SelectItem value="90">1h30</SelectItem>
-                      <SelectItem value="120">2h</SelectItem>
-                      <SelectItem value="180">3h</SelectItem>
-                      <SelectItem value="240">4h</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('clients.title')}</Label>
-                  <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v, vehicle_id: "" })}>
-                    <SelectTrigger><SelectValue placeholder={t('agenda.selectClient')} /></SelectTrigger>
-                    <SelectContent>
-                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {clientVehicles.length > 0 && (
-                  <div>
-                    <Label>{t('vehicles.title')}</Label>
-                    <Select value={form.vehicle_id} onValueChange={v => setForm({ ...form, vehicle_id: v })}>
-                      <SelectTrigger><SelectValue placeholder={t('agenda.selectVehicle')} /></SelectTrigger>
-                      <SelectContent>
-                        {clientVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate} - {v.make} {v.model}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div>
-                  <Label>{t('agenda.notes')}</Label>
-                  <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
-                </div>
-                <Button onClick={handleCreate} className="w-full">{t('agenda.create')}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 mr-1" /> {t('agenda.new')}</Button>
         </div>
+      </div>
+
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: t('agenda.totalWeek'), value: totalWeek, icon: CalendarClock, color: "text-primary" },
+          { label: t('agenda.scheduled'), value: scheduledCount, icon: CalendarClock, color: "text-blue-500" },
+          { label: t('agenda.confirmed'), value: confirmedCount, icon: CalendarCheck, color: "text-green-500" },
+          { label: t('agenda.completed'), value: completedCount, icon: CheckCircle2, color: "text-muted-foreground" },
+        ].map((kpi, i) => (
+          <Card key={i}>
+            <CardContent className="pt-3 pb-2 px-4">
+              <div className="flex items-center gap-2 mb-1">
+                <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
+                <p className="text-[11px] text-muted-foreground truncate">{kpi.label}</p>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Booking link info */}
@@ -283,7 +278,6 @@ export default function Agenda() {
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           <div className="min-w-[700px]">
-            {/* Header row */}
             <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
               <div className="p-2 text-xs text-muted-foreground" />
               {weekDays.map((day, i) => {
@@ -299,7 +293,6 @@ export default function Agenda() {
               })}
             </div>
 
-            {/* Time slots */}
             {HOURS.map(hour => (
               <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/50 min-h-[60px]">
                 <div className="p-2 text-xs text-muted-foreground text-right pr-3 pt-1">
@@ -317,6 +310,7 @@ export default function Agenda() {
                           <div className="flex items-center gap-1 text-[10px] opacity-75">
                             <Clock className="w-3 h-3" />
                             {app.time.slice(0, 5)}
+                            {app.duration_minutes > 0 && <span>({app.duration_minutes}m)</span>}
                             {app.client_name && <span>· {app.client_name}</span>}
                           </div>
                           <div className="flex gap-1 mt-0.5">
@@ -324,11 +318,14 @@ export default function Agenda() {
                               <button onClick={() => updateStatus(app.id, "confirmed")} className="text-[9px] bg-green-500/20 text-green-700 px-1 rounded hover:bg-green-500/30">✓</button>
                             )}
                             {(app.status === "scheduled" || app.status === "confirmed") && (
-                              <>
-                                <button onClick={() => updateStatus(app.id, "completed")} className="text-[9px] bg-muted px-1 rounded hover:bg-muted/80">✔</button>
-                                <button onClick={() => updateStatus(app.id, "cancelled")} className="text-[9px] bg-destructive/20 text-destructive px-1 rounded hover:bg-destructive/30">✕</button>
-                              </>
+                              <button onClick={() => updateStatus(app.id, "completed")} className="text-[9px] bg-muted px-1 rounded hover:bg-muted/80">✔</button>
                             )}
+                            <button onClick={() => openEdit(app)} className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">
+                              <Edit className="w-2.5 h-2.5 inline" />
+                            </button>
+                            <button onClick={() => setDeleteConfirm(app.id)} className="text-[9px] bg-destructive/10 text-destructive px-1 rounded hover:bg-destructive/20">
+                              <Trash2 className="w-2.5 h-2.5 inline" />
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -340,6 +337,92 @@ export default function Agenda() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) { setEditingAppt(null); resetForm(); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingAppt ? t('agenda.editAppointment') : t('agenda.new')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>{t('agenda.serviceType')} *</Label>
+              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value })} placeholder={t('agenda.serviceTypePlaceholder')} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t('agenda.date')}</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
+              <div><Label>{t('agenda.time')}</Label><Input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t('agenda.duration')}</Label>
+                <Select value={String(form.duration_minutes)} onValueChange={v => setForm({ ...form, duration_minutes: Number(v) })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="60">1h</SelectItem>
+                    <SelectItem value="90">1h30</SelectItem>
+                    <SelectItem value="120">2h</SelectItem>
+                    <SelectItem value="180">3h</SelectItem>
+                    <SelectItem value="240">4h</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editingAppt && (
+                <div>
+                  <Label>{t('agenda.status')}</Label>
+                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled">{t('agenda.scheduled')}</SelectItem>
+                      <SelectItem value="confirmed">{t('agenda.confirmed')}</SelectItem>
+                      <SelectItem value="completed">{t('agenda.completed')}</SelectItem>
+                      <SelectItem value="cancelled">{t('agenda.cancelled')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <div>
+              <Label>{t('clients.title')}</Label>
+              <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v, vehicle_id: "" })}>
+                <SelectTrigger><SelectValue placeholder={t('agenda.selectClient')} /></SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {clientVehicles.length > 0 && (
+              <div>
+                <Label>{t('vehicles.title')}</Label>
+                <Select value={form.vehicle_id} onValueChange={v => setForm({ ...form, vehicle_id: v })}>
+                  <SelectTrigger><SelectValue placeholder={t('agenda.selectVehicle')} /></SelectTrigger>
+                  <SelectContent>
+                    {clientVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate} - {v.make} {v.model}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label>{t('agenda.notes')}</Label>
+              <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+            <Button onClick={handleSave} className="w-full">
+              {editingAppt ? t('common.save') : t('agenda.create')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t('agenda.deleteConfirm')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('agenda.deleteConfirmMsg')}</p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>{t('common.delete')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

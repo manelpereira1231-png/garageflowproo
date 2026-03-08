@@ -1093,6 +1093,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.configureShop': 'Configure your workshop first',
     'common.required': 'Required',
     'common.confirmDelete': 'Are you sure?',
+    'common.all': 'All',
+    'common.actions': 'Actions',
+    'common.deleted': 'Deleted successfully',
+    'common.status': 'Status',
+    'common.date': 'Date',
+    'common.error': 'An error occurred',
+    'common.noData': 'No data',
 
     'clients.updated': 'Client updated',
     'clients.deleted': 'Client deleted',

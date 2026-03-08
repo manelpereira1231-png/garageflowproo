@@ -257,8 +257,8 @@ export default function Team() {
                           }`} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium font-mono">
-                            {m.user_id.slice(0, 8)}...
+                          <p className="text-sm font-medium">
+                            {m.email || `${m.user_id.slice(0, 8)}...`}
                           </p>
                           {isCurrentUser && <Badge variant="outline" className="text-[9px] px-1 py-0 mt-0.5">{t('team.you')}</Badge>}
                         </div>

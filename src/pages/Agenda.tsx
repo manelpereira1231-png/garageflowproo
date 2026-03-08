@@ -194,6 +194,16 @@ export default function Agenda() {
   const bookingUrl = shopSlug ? `${publicDomain}/book/${shopSlug}` : "";
   const clientVehicles = form.client_id ? vehicles.filter(v => v.client_id === form.client_id) : vehicles;
 
+  const [statusFilterTab, setStatusFilterTab] = useState("all");
+
+  const filteredAppointments = useMemo(() => {
+    if (statusFilterTab === "all") return appointments;
+    return appointments.filter(a => a.status === statusFilterTab);
+  }, [appointments, statusFilterTab]);
+
+  const getFilteredAppsForDayHour = (day: Date, hour: number) =>
+    filteredAppointments.filter(a => isSameDay(new Date(a.date), day) && parseInt(a.time.split(":")[0]) === hour);
+
   return (
     <div className="space-y-4 lg:space-y-6">
       {/* Header */}

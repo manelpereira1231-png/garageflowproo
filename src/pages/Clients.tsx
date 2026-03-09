@@ -13,9 +13,17 @@ import { useLanguage } from "@/i18n/LanguageContext";
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
+  portal_token: string | null;
 }
 
 const PAGE_SIZE = 25;
+
+const copyPortalLink = (portalToken: string | null) => {
+  if (!portalToken) return;
+  const url = `${window.location.origin}/portal/${portalToken}`;
+  navigator.clipboard.writeText(url);
+  toast.success("Link do portal copiado!");
+};
 
 export default function Clients() {
   const { t } = useLanguage();

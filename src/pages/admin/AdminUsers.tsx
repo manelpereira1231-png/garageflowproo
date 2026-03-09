@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Shield, Search, Trash2, MailCheck, Loader2 } from "lucide-react";
+import { Users, Shield, Search, Trash2, MailCheck, Loader2, Download, Building2, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ShopUserRow {
   id: string;
@@ -34,8 +35,9 @@ export default function AdminUsers() {
   const [deleteDialog, setDeleteDialog] = useState<ShopUserRow | null>(null);
   const [confirmingEmail, setConfirmingEmail] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     const [usersRes, shopsRes, emailsRes] = await Promise.all([
       supabase.from("shop_users").select("*").order("created_at", { ascending: false }),
@@ -54,9 +56,19 @@ export default function AdminUsers() {
       email: emailMap.get(u.user_id) || "—",
     })));
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+
+    // Realtime: auto-refresh on shop_users changes
+    const channel = supabase
+      .channel("admin-users-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shop_users" }, () => fetchUsers())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchUsers]);
 
   const logAction = async (action: string, entityType: string, entityId: string, details: Record<string, any> = {}) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -74,7 +86,6 @@ export default function AdminUsers() {
     } else {
       await logAction("role_changed", "shop_user", user.id, { shop: user.shop_name, email: user.email, from: user.role, to: newRole });
       toast({ title: `Role alterado para ${newRole}` });
-      fetchUsers();
     }
     setRoleDialog(null);
   };
@@ -87,7 +98,6 @@ export default function AdminUsers() {
     } else {
       await logAction("user_removed", "shop_user", deleteDialog.id, { shop: deleteDialog.shop_name, email: deleteDialog.email, role: deleteDialog.role });
       toast({ title: "Utilizador removido da oficina" });
-      fetchUsers();
     }
     setDeleteDialog(null);
   };
@@ -119,6 +129,22 @@ export default function AdminUsers() {
     setConfirmingEmail(null);
   };
 
+  const exportCSV = () => {
+    const headers = ["Email", "Oficina", "Role", "User ID", "Criado em"];
+    const rows = filtered.map(u => [
+      u.email, u.shop_name, u.role, u.user_id,
+      new Date(u.created_at).toLocaleDateString("pt-PT"),
+    ]);
+    const csv = [headers.join(";"), ...rows.map(r => r.map(c => `"${c}"`).join(";"))].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const roleBadge = (role: string) => {
     const colors: Record<string, string> = {
       super_admin: "bg-destructive/15 text-destructive border-destructive/30",
@@ -143,6 +169,12 @@ export default function AdminUsers() {
   const multiShopUsers = [...new Set(users.filter(u => {
     return users.filter(u2 => u2.user_id === u.user_id).length > 1;
   }).map(u => u.user_id))];
+  const roleBreakdown = {
+    owners: users.filter(u => u.role === 'owner').length,
+    managers: users.filter(u => u.role === 'manager').length,
+    technicians: users.filter(u => u.role === 'technician').length,
+    superAdmins: users.filter(u => u.role === 'super_admin').length,
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -150,32 +182,58 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-title">Utilizadores & Roles</h1>
-        <p className="text-sm text-muted-foreground">Gerir utilizadores e permissões em todas as oficinas ({users.length} registos, {uniqueUserIds.size} utilizadores únicos)</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="page-title">Utilizadores & Roles</h1>
+          <p className="text-sm text-muted-foreground">Gerir utilizadores em todas as oficinas · {users.length} registos · {uniqueUserIds.size} únicos · Tempo real</p>
+        </div>
+        <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" /> Exportar CSV
+        </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="stat-card flex items-center gap-3">
-          <Users className="w-5 h-5 text-primary" />
+          <Users className="w-5 h-5 text-primary flex-shrink-0" />
           <div>
-            <p className="text-sm text-muted-foreground">Total Utilizadores</p>
-            <p className="text-xl font-bold mono">{uniqueUserIds.size}</p>
+            <p className="text-[10px] text-muted-foreground">Total Únicos</p>
+            <p className="text-lg font-bold mono">{uniqueUserIds.size}</p>
           </div>
         </div>
         <div className="stat-card flex items-center gap-3">
-          <Shield className="w-5 h-5 text-primary" />
+          <Shield className="w-5 h-5 text-destructive flex-shrink-0" />
           <div>
-            <p className="text-sm text-muted-foreground">Admins / Owners</p>
-            <p className="text-xl font-bold mono">{users.filter(u => u.role === 'owner' || u.role === 'super_admin').length}</p>
+            <p className="text-[10px] text-muted-foreground">Super Admins</p>
+            <p className="text-lg font-bold mono">{roleBreakdown.superAdmins}</p>
           </div>
         </div>
         <div className="stat-card flex items-center gap-3">
-          <Users className="w-5 h-5 text-warning" />
+          <Shield className="w-5 h-5 text-primary flex-shrink-0" />
           <div>
-            <p className="text-sm text-muted-foreground">Multi-oficina</p>
-            <p className="text-xl font-bold mono">{multiShopUsers.length}</p>
+            <p className="text-[10px] text-muted-foreground">Owners</p>
+            <p className="text-lg font-bold mono">{roleBreakdown.owners}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Users className="w-5 h-5 text-success flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Managers</p>
+            <p className="text-lg font-bold mono">{roleBreakdown.managers}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Users className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Technicians</p>
+            <p className="text-lg font-bold mono">{roleBreakdown.technicians}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Building2 className="w-5 h-5 text-warning flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Multi-oficina</p>
+            <p className="text-lg font-bold mono">{multiShopUsers.length}</p>
           </div>
         </div>
       </div>
@@ -184,7 +242,7 @@ export default function AdminUsers() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar email, oficina..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Pesquisar email, oficina, ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="Role" /></SelectTrigger>
@@ -205,6 +263,7 @@ export default function AdminUsers() {
               <TableHead>Email</TableHead>
               <TableHead>Oficina</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead>Criado</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -213,8 +272,16 @@ export default function AdminUsers() {
             {filtered.map(user => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium text-sm">{user.email}</TableCell>
-                <TableCell className="text-sm">{user.shop_name}</TableCell>
+                <TableCell>
+                  <button
+                    onClick={() => navigate(`/admin/shops/${user.shop_id}`)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {user.shop_name}
+                  </button>
+                </TableCell>
                 <TableCell>{roleBadge(user.role)}</TableCell>
+                <TableCell className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">{user.user_id}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(user.created_at).toLocaleDateString("pt-PT")}
                 </TableCell>
@@ -250,7 +317,7 @@ export default function AdminUsers() {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Nenhum utilizador encontrado
                 </TableCell>
               </TableRow>

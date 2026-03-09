@@ -12,8 +12,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Download, ArrowUpDown } from "lucide-react";
+import { Download, ArrowUpDown, DollarSign, TrendingUp, Users, Clock, CreditCard, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 interface SubRow {
   id: string;
@@ -24,16 +25,21 @@ interface SubRow {
   billing_cycle: string;
   trial_end: string | null;
   current_period_end: string | null;
+  stripe_subscription_id: string | null;
   created_at: string;
 }
+
+const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 export default function AdminBilling() {
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [search, setSearch] = useState("");
   const [planDialog, setPlanDialog] = useState<{ sub: SubRow; newPlan: string; durationType: string; durationValue: number } | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchSubs = async () => {
     setLoading(true);
@@ -48,6 +54,7 @@ export default function AdminBilling() {
       ...s,
       shop_name: shopMap.get(s.shop_id) || "—",
     }));
+    rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setSubs(rows);
     setLoading(false);
   };
@@ -55,7 +62,6 @@ export default function AdminBilling() {
   useEffect(() => {
     fetchSubs();
 
-    // Realtime: auto-refresh on subscription changes
     const channel = supabase
       .channel("admin-billing-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => {
@@ -113,9 +119,10 @@ export default function AdminBilling() {
   };
 
   const exportCSV = () => {
-    const headers = ["Oficina", "Plano", "Estado", "Ciclo", "Trial Fim", "Período Fim", "Criada"];
+    const headers = ["Oficina", "Plano", "Estado", "Ciclo", "Stripe", "Trial Fim", "Período Fim", "Criada"];
     const rows = filtered.map(s => [
       s.shop_name, s.plan.toUpperCase(), s.status, s.billing_cycle,
+      s.stripe_subscription_id ? "Sim" : "Manual",
       s.trial_end ? new Date(s.trial_end).toLocaleDateString("pt-PT") : "—",
       s.current_period_end ? new Date(s.current_period_end).toLocaleDateString("pt-PT") : "—",
       new Date(s.created_at).toLocaleDateString("pt-PT"),
@@ -133,6 +140,10 @@ export default function AdminBilling() {
   const filtered = subs.filter(s => {
     if (filterPlan !== "all" && s.plan !== filterPlan) return false;
     if (filterStatus !== "all" && s.status !== filterStatus) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!s.shop_name.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -143,6 +154,16 @@ export default function AdminBilling() {
     return `${Math.ceil(diff / (1000 * 60 * 60 * 24))} dias`;
   };
 
+  // KPI calculations
+  const activeSubs = subs.filter(s => s.status === 'active' || s.status === 'trialing');
+  const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+  const arr = mrr * 12;
+  const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
+  const arpu = paidCount > 0 ? mrr / paidCount : 0;
+  const trialCount = subs.filter(s => s.status === 'trialing').length;
+  const stripeManaged = subs.filter(s => s.stripe_subscription_id).length;
+  const manualManaged = subs.length - stripeManaged;
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }
@@ -152,14 +173,72 @@ export default function AdminBilling() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">Planos & Billing</h1>
-          <p className="text-sm text-muted-foreground">Gestão de subscrições de todas as oficinas</p>
+          <p className="text-sm text-muted-foreground">Gestão de subscrições · {subs.length} total · Tempo real</p>
         </div>
         <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" /> Exportar CSV
         </Button>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <div className="stat-card flex items-center gap-3">
+          <DollarSign className="w-5 h-5 text-success flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">MRR</p>
+            <p className="text-lg font-bold mono">€{mrr}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <TrendingUp className="w-5 h-5 text-success flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">ARR</p>
+            <p className="text-lg font-bold mono">€{arr}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <DollarSign className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">ARPU</p>
+            <p className="text-lg font-bold mono">€{arpu.toFixed(0)}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Users className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Pagantes</p>
+            <p className="text-lg font-bold mono">{paidCount}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Clock className="w-5 h-5 text-warning flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Em Trial</p>
+            <p className="text-lg font-bold mono">{trialCount}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Stripe</p>
+            <p className="text-lg font-bold mono">{stripeManaged}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <CreditCard className="w-5 h-5 text-warning flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Manual</p>
+            <p className="text-lg font-bold mono">{manualManaged}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
       <div className="flex gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Pesquisar oficina..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
         <Select value={filterPlan} onValueChange={setFilterPlan}>
           <SelectTrigger className="w-[130px]"><SelectValue placeholder="Plano" /></SelectTrigger>
           <SelectContent>
@@ -188,6 +267,7 @@ export default function AdminBilling() {
               <TableHead>Plano</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Ciclo</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead>Trial Restante</TableHead>
               <TableHead>Período Fim</TableHead>
               <TableHead>Ações</TableHead>
@@ -196,7 +276,14 @@ export default function AdminBilling() {
           <TableBody>
             {filtered.map(sub => (
               <TableRow key={sub.id}>
-                <TableCell className="font-medium">{sub.shop_name}</TableCell>
+                <TableCell>
+                  <button
+                    onClick={() => navigate(`/admin/shops/${sub.shop_id}`)}
+                    className="font-medium text-sm text-primary hover:underline"
+                  >
+                    {sub.shop_name}
+                  </button>
+                </TableCell>
                 <TableCell>
                   <button onClick={() => setPlanDialog({ sub, newPlan: sub.plan, durationType: "months", durationValue: 1 })}>
                     <Badge variant="outline" className={sub.plan === 'garage' ? 'bg-success/15 text-success' : sub.plan === 'pro' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}>
@@ -214,6 +301,11 @@ export default function AdminBilling() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm">{sub.billing_cycle}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`text-[10px] ${sub.stripe_subscription_id ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'}`}>
+                    {sub.stripe_subscription_id ? 'Stripe' : 'Manual'}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-sm mono">{trialRemaining(sub.trial_end)}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("pt-PT") : "—"}

@@ -246,15 +246,66 @@ export default function Quotes() {
         <Input placeholder={t('quotes.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: Card view */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
+            {totalCount === 0 ? t('quotes.empty') : t('quotes.noResults')}
+          </div>
+        ) : filtered.map(q => (
+          <div key={q.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium mono text-sm">{q.number}</span>
+              <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
+                {getStatusLabel(q.status as QuoteStatus)}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{(q.clients as any)?.name}</p>
+              <p className="text-xs text-muted-foreground">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — {(q.vehicles as any)?.plate}</p>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4">
+                <span className="text-sm font-semibold mono">€{q.total?.toFixed(2)}</span>
+                <span className="text-sm mono text-success">+€{q.profit?.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
+              {!['converted'].includes(q.status) && (
+                <Link to={`/quotes/edit/${q.id}`}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3 mr-1" />{t('common.edit')}</Button>
+                </Link>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs h-7">PDF</Button>
+              {!['converted', 'rejected', 'expired'].includes(q.status) && (
+                <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs h-7">
+                  {sendingEmail === q.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
+                  Email
+                </Button>
+              )}
+              {['draft', 'sent', 'approved'].includes(q.status) && (
+                <Button variant="ghost" size="sm" onClick={() => convertToService(q)} disabled={converting === q.id} className="text-xs h-7">
+                  <ArrowRightLeft className="w-3 h-3 mr-1" />{t('quotes.convert')}
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => duplicateQuote(q)} className="text-xs h-7">
+                <Copy className="w-3 h-3 mr-1" />{t('quotes.duplicate')}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>{t('quotes.number')}</TableHead>
               <TableHead>{t('quotes.client')}</TableHead>
-              <TableHead>{t('quotes.vehicle')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('quotes.vehicle')}</TableHead>
               <TableHead>{t('quotes.total')}</TableHead>
-              <TableHead>{t('quotes.profit')}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t('quotes.profit')}</TableHead>
               <TableHead>{t('quotes.status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -270,9 +321,9 @@ export default function Quotes() {
               <TableRow key={q.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium mono">{q.number}</TableCell>
                 <TableCell>{(q.clients as any)?.name}</TableCell>
-                <TableCell>{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
+                <TableCell className="hidden md:table-cell">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
                 <TableCell className="font-semibold mono">€{q.total?.toFixed(2)}</TableCell>
-                <TableCell className="mono text-success">€{q.profit?.toFixed(2)}</TableCell>
+                <TableCell className="hidden lg:table-cell mono text-success">€{q.profit?.toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}

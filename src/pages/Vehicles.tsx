@@ -175,7 +175,36 @@ export default function Vehicles() {
         <Input placeholder={t('vehicles.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: Card view */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
+            {totalCount === 0 ? t('vehicles.empty') : t('vehicles.noResults')}
+          </div>
+        ) : filtered.map(v => (
+          <div key={v.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Car className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">{v.make} {v.model} <span className="text-muted-foreground">({v.year})</span></span>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => openEdit(v)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(v.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="mono font-medium text-foreground">{v.plate}</span>
+              <span>{v.mileage.toLocaleString()} km</span>
+              <span>{v.fuel}</span>
+              {(v.clients as any)?.name && <span>👤 {(v.clients as any).name}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

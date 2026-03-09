@@ -252,7 +252,54 @@ export default function Services() {
         <Input placeholder={t('services.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: Card view */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
+            {totalCount === 0 ? t('services.empty') : t('services.noResults')}
+          </div>
+        ) : filtered.map(s => (
+          <div key={s.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-medium mono text-sm">{s.number}</span>
+                <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
+              </div>
+              <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
+                {t(`service.${s.status}`)}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{(s.clients as any)?.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {(s.vehicles as any)?.make} {(s.vehicles as any)?.model} — {(s.vehicles as any)?.plate}
+                {s.technician && <span> · 🔧 {s.technician}</span>}
+              </p>
+            </div>
+            <RepairTimeline status={s.status as ServiceStatus} />
+            <div className="flex items-center justify-between pt-1 border-t border-border">
+              <span className="text-sm font-semibold mono">€{s.total?.toFixed(2)}</span>
+              <div className="flex gap-1">
+                {!['delivered', 'cancelled'].includes(s.status) && (
+                  <Link to={`/services/edit/${s.id}`}>
+                    <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>
+                  </Link>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>
+                {!['delivered', 'cancelled'].includes(s.status) && (
+                  <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
+                    <ChevronRightIcon className="w-3 h-3" />
+                    {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

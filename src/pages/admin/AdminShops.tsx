@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Power, PowerOff, RotateCcw, Search, Bell, Download, Eye, Trash2, ArrowUpDown } from "lucide-react";
+import { Power, PowerOff, RotateCcw, Search, Bell, Download, Eye, Trash2, LogIn, Building2, Clock, Users, Wrench, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 
@@ -20,12 +20,17 @@ interface ShopRow {
   id: string;
   name: string;
   email: string;
+  phone: string;
   country: string;
   currency: string;
   timezone: string;
   status: string;
   created_at: string;
   plan: string;
+  subStatus: string;
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
+  stripeManaged: boolean;
   clientCount: number;
   workOrderCount: number;
   alertCount: number;
@@ -44,50 +49,57 @@ export default function AdminShops() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchShops = async () => {
+  const fetchShops = useCallback(async () => {
     setLoading(true);
     const [shopsRes, subsRes, clientsRes, woRes, alertsRes] = await Promise.all([
-      supabase.from("shops").select("id, name, email, country, currency, timezone, status, created_at"),
-      supabase.from("subscriptions").select("shop_id, plan, status, trial_end"),
+      supabase.from("shops").select("id, name, email, phone, country, currency, timezone, status, created_at"),
+      supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id"),
       supabase.from("clients").select("id, shop_id"),
       supabase.from("work_orders").select("id, shop_id, total, status"),
       supabase.from("alerts").select("id, shop_id, status").eq("status", "pending"),
     ]);
 
-    const subsMap = new Map<string, string>();
-    (subsRes.data || []).forEach(s => subsMap.set(s.shop_id, s.plan));
+    const subsMap = new Map<string, { plan: string; status: string; trial_end: string | null; current_period_end: string | null; stripe_subscription_id: string | null }>();
+    (subsRes.data || []).forEach(s => subsMap.set(s.shop_id, s));
 
     const countBy = (arr: any[] | null, shopId: string) => (arr || []).filter(r => r.shop_id === shopId).length;
     const revenueBy = (shopId: string) => (woRes.data || [])
       .filter(r => r.shop_id === shopId && (r.status === 'completed' || r.status === 'delivered'))
       .reduce((sum, r) => sum + Number(r.total || 0), 0);
 
-    const rows: ShopRow[] = (shopsRes.data || []).map(s => ({
-      ...s,
-      plan: subsMap.get(s.id) || "free",
-      clientCount: countBy(clientsRes.data, s.id),
-      workOrderCount: countBy(woRes.data, s.id),
-      alertCount: countBy(alertsRes.data, s.id),
-      revenue: revenueBy(s.id),
-    }));
+    const rows: ShopRow[] = (shopsRes.data || []).map(s => {
+      const sub = subsMap.get(s.id);
+      return {
+        ...s,
+        plan: sub?.plan || "free",
+        subStatus: sub?.status || "active",
+        trialEnd: sub?.trial_end || null,
+        currentPeriodEnd: sub?.current_period_end || null,
+        stripeManaged: !!sub?.stripe_subscription_id,
+        clientCount: countBy(clientsRes.data, s.id),
+        workOrderCount: countBy(woRes.data, s.id),
+        alertCount: countBy(alertsRes.data, s.id),
+        revenue: revenueBy(s.id),
+      };
+    });
 
+    // Sort by created_at DESC
+    rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setShops(rows);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchShops();
 
-    // Realtime: auto-refresh on shop changes
     const channel = supabase
       .channel("admin-shops-list-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => {
-        fetchShops();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => fetchShops())
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => fetchShops())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchShops]);
 
   const logAction = async (action: string, entityType: string, entityId: string, details: Record<string, any> = {}) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -105,7 +117,6 @@ export default function AdminShops() {
     } else {
       await logAction(newStatus === "active" ? "shop_activated" : "shop_suspended", "shop", shop.id, { name: shop.name });
       toast({ title: `Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}` });
-      fetchShops();
     }
   };
 
@@ -120,7 +131,6 @@ export default function AdminShops() {
     } else {
       await logAction("trial_reset", "subscription", shop.id, { name: shop.name });
       toast({ title: "Trial reiniciado (30 dias)" });
-      fetchShops();
     }
   };
 
@@ -134,8 +144,12 @@ export default function AdminShops() {
     } else {
       await logAction("alerts_reset", "alerts", shop.id, { name: shop.name });
       toast({ title: "Alertas resetados" });
-      fetchShops();
     }
+  };
+
+  const impersonateShop = (shop: ShopRow) => {
+    localStorage.setItem("garageflow_active_shop", shop.id);
+    window.location.href = "/dashboard";
   };
 
   const changePlan = async () => {
@@ -150,12 +164,13 @@ export default function AdminShops() {
       const d = new Date(); d.setMonth(d.getMonth() + durationValue);
       currentPeriodEnd = d.toISOString();
     }
-    // "unlimited" → null (sem data de fim)
 
     const updateData: Record<string, any> = {
       plan: newPlan,
       status: "active",
       current_period_end: currentPeriodEnd,
+      stripe_subscription_id: null,
+      updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase.from("subscriptions")
@@ -167,30 +182,30 @@ export default function AdminShops() {
       const durationLabel = durationType === "unlimited" ? "ilimitado" : `${durationValue} ${durationType === "days" ? "dias" : "meses"}`;
       await logAction("plan_changed", "subscription", shop.id, { name: shop.name, from: shop.plan, to: newPlan, duration: durationLabel });
       toast({ title: `Plano ${newPlan.toUpperCase()} atribuído (${durationLabel})` });
-      fetchShops();
     }
     setPlanDialog(null);
   };
 
   const handleDeleteShop = async () => {
     if (!deleteShop) return;
-    // Use server-side cascade delete function
     const { error } = await supabase.rpc('cascade_delete_shop', { _shop_id: deleteShop.id });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
       await logAction("shop_deleted", "shop", deleteShop.id, { name: deleteShop.name });
       toast({ title: "Oficina eliminada permanentemente" });
-      fetchShops();
     }
     setDeleteShop(null);
   };
 
   const exportCSV = () => {
-    const headers = ["Nome", "Email", "País", "Plano", "Estado", "Clientes", "Serviços", "Faturação", "Criada em"];
+    const headers = ["Nome", "Email", "Telefone", "País", "Plano", "Estado Sub.", "Stripe", "Estado Oficina", "Clientes", "Serviços", "Faturação", "Trial Fim", "Período Fim", "Criada em"];
     const rows = filtered.map(s => [
-      s.name, s.email, s.country, s.plan.toUpperCase(), s.status,
+      s.name, s.email, s.phone, s.country, s.plan.toUpperCase(), s.subStatus,
+      s.stripeManaged ? "Sim" : "Manual", s.status,
       s.clientCount, s.workOrderCount, `€${s.revenue.toFixed(2)}`,
+      s.trialEnd ? new Date(s.trialEnd).toLocaleDateString("pt-PT") : "—",
+      s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString("pt-PT") : "—",
       new Date(s.created_at).toLocaleDateString("pt-PT"),
     ]);
     const csv = [headers.join(";"), ...rows.map(r => r.map(c => `"${c}"`).join(";"))].join("\n");
@@ -212,6 +227,18 @@ export default function AdminShops() {
     return <Badge variant="outline" className={colors[plan] || ""}>{plan.toUpperCase()}</Badge>;
   };
 
+  const subStatusBadge = (status: string, stripeManaged: boolean) => {
+    const label = stripeManaged ? `${status} (Stripe)` : `${status} (Manual)`;
+    const colors: Record<string, string> = {
+      active: "bg-success/10 text-success",
+      trialing: "bg-warning/10 text-warning",
+      canceled: "bg-destructive/10 text-destructive",
+      cancelled: "bg-destructive/10 text-destructive",
+      past_due: "bg-destructive/10 text-destructive",
+    };
+    return <Badge variant="outline" className={`text-[10px] ${colors[status] || "bg-muted"}`}>{label}</Badge>;
+  };
+
   const statusBadge = (status: string) => {
     return status === "active"
       ? <Badge variant="outline" className="bg-success/15 text-success border-success/30">Ativa</Badge>
@@ -226,10 +253,15 @@ export default function AdminShops() {
     if (filterStatus !== "all" && s.status !== filterStatus) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!s.name.toLowerCase().includes(q) && !s.email.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q)) return false;
+      if (!s.name.toLowerCase().includes(q) && !s.email.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q) && !s.phone.toLowerCase().includes(q)) return false;
     }
     return true;
   });
+
+  // Summary stats
+  const totalRevenue = filtered.reduce((s, sh) => s + sh.revenue, 0);
+  const totalClients = filtered.reduce((s, sh) => s + sh.clientCount, 0);
+  const totalWO = filtered.reduce((s, sh) => s + sh.workOrderCount, 0);
 
   if (loading) {
     return (
@@ -244,18 +276,52 @@ export default function AdminShops() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">Oficinas</h1>
-          <p className="text-sm text-muted-foreground">Gerir todas as oficinas do sistema ({shops.length} total)</p>
+          <p className="text-sm text-muted-foreground">
+            Gerir todas as oficinas · {shops.length} total · Atualização em tempo real
+          </p>
         </div>
         <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" /> Exportar CSV
         </Button>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="stat-card flex items-center gap-3">
+          <Building2 className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-xs text-muted-foreground">Filtradas</p>
+            <p className="text-lg font-bold mono">{filtered.length}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Users className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-xs text-muted-foreground">Clientes</p>
+            <p className="text-lg font-bold mono">{totalClients}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <Wrench className="w-5 h-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-xs text-muted-foreground">Serviços</p>
+            <p className="text-lg font-bold mono">{totalWO}</p>
+          </div>
+        </div>
+        <div className="stat-card flex items-center gap-3">
+          <DollarSign className="w-5 h-5 text-success flex-shrink-0" />
+          <div>
+            <p className="text-xs text-muted-foreground">Faturação</p>
+            <p className="text-lg font-bold mono">€{totalRevenue.toFixed(0)}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar nome, email, ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Pesquisar nome, email, telefone, ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterPlan} onValueChange={setFilterPlan}>
           <SelectTrigger className="w-[130px]"><SelectValue placeholder="Plano" /></SelectTrigger>
@@ -288,13 +354,13 @@ export default function AdminShops() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>País</TableHead>
+              <TableHead>Oficina</TableHead>
               <TableHead>Plano</TableHead>
+              <TableHead>Subscrição</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-center">Clientes</TableHead>
               <TableHead className="text-center">Serviços</TableHead>
+              <TableHead className="text-center">Alertas</TableHead>
               <TableHead className="text-right">Faturação</TableHead>
               <TableHead>Criada</TableHead>
               <TableHead>Ações</TableHead>
@@ -302,42 +368,72 @@ export default function AdminShops() {
           </TableHeader>
           <TableBody>
             {filtered.map(shop => (
-              <TableRow key={shop.id}>
-                <TableCell className="font-medium">{shop.name || "—"}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{shop.email || "—"}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{shop.country}</TableCell>
+              <TableRow key={shop.id} className="group">
+                <TableCell>
+                  <div>
+                    <p className="font-medium text-sm">{shop.name || "—"}</p>
+                    <p className="text-[11px] text-muted-foreground">{shop.email}</p>
+                    {shop.phone && <p className="text-[10px] text-muted-foreground">{shop.phone}</p>}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan, durationType: "months", durationValue: 1 })}>
                     {planBadge(shop.plan)}
                   </button>
                 </TableCell>
+                <TableCell>
+                  <div className="space-y-0.5">
+                    {subStatusBadge(shop.subStatus, shop.stripeManaged)}
+                    {shop.trialEnd && new Date(shop.trialEnd) > new Date() && (
+                      <p className="text-[10px] text-warning flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5" />
+                        Trial: {Math.ceil((new Date(shop.trialEnd).getTime() - Date.now()) / 86400000)}d
+                      </p>
+                    )}
+                    {shop.currentPeriodEnd && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Até: {new Date(shop.currentPeriodEnd).toLocaleDateString("pt-PT")}
+                      </p>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>{statusBadge(shop.status)}</TableCell>
-                <TableCell className="text-center mono">{shop.clientCount}</TableCell>
-                <TableCell className="text-center mono">{shop.workOrderCount}</TableCell>
-                <TableCell className="text-right mono">€{shop.revenue.toFixed(2)}</TableCell>
-                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                <TableCell className="text-center mono text-sm">{shop.clientCount}</TableCell>
+                <TableCell className="text-center mono text-sm">{shop.workOrderCount}</TableCell>
+                <TableCell className="text-center">
+                  {shop.alertCount > 0 ? (
+                    <Badge variant="outline" className="bg-warning/10 text-warning text-xs">{shop.alertCount}</Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">0</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right mono text-sm">€{shop.revenue.toFixed(0)}</TableCell>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(shop.created_at).toLocaleDateString("pt-PT")}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/shops/${shop.id}`)} title="Ver detalhes">
-                      <Eye className="w-4 h-4" />
+                  <div className="flex gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/shops/${shop.id}`)} title="Ver detalhes">
+                      <Eye className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => toggleStatus(shop)}
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => impersonateShop(shop)} title="Entrar como oficina">
+                      <LogIn className="w-3.5 h-3.5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus(shop)}
                       title={shop.status === "active" ? "Suspender" : "Ativar"}>
                       {shop.status === "active"
-                        ? <PowerOff className="w-4 h-4 text-destructive" />
-                        : <Power className="w-4 h-4 text-success" />
+                        ? <PowerOff className="w-3.5 h-3.5 text-destructive" />
+                        : <Power className="w-3.5 h-3.5 text-success" />
                       }
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => resetTrial(shop)} title="Reset Trial">
-                      <RotateCcw className="w-4 h-4 text-primary" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => resetTrial(shop)} title="Reset Trial">
+                      <RotateCcw className="w-3.5 h-3.5 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => resetAlerts(shop)} title="Reset Alertas">
-                      <Bell className="w-4 h-4 text-warning" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => resetAlerts(shop)} title="Reset Alertas">
+                      <Bell className="w-3.5 h-3.5 text-warning" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteShop(shop)} title="Eliminar oficina">
-                      <Trash2 className="w-4 h-4 text-destructive" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteShop(shop)} title="Eliminar oficina">
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
                 </TableCell>
@@ -359,7 +455,10 @@ export default function AdminShops() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Alterar Plano - {planDialog?.shop.name}</DialogTitle>
-            <DialogDescription>Selecione o plano e a duração a oferecer.</DialogDescription>
+            <DialogDescription>
+              Plano atual: <strong>{planDialog?.shop.plan.toUpperCase()}</strong>
+              {planDialog?.shop.stripeManaged && " (Gerido pelo Stripe — será convertido para manual)"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -367,7 +466,7 @@ export default function AdminShops() {
               <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="free">Free (€0/mês)</SelectItem>
                   <SelectItem value="pro">Pro (€49/mês)</SelectItem>
                   <SelectItem value="garage">Garage (€99/mês)</SelectItem>
                 </SelectContent>

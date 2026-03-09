@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText } from "lucide-react";
+import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { useNavigate } from "react-router-dom";
 
@@ -23,8 +24,7 @@ interface AdminStats {
   planBreakdown: { free: number; pro: number; garage: number };
   monthlyRevenue: { month: string; revenue: number }[];
   monthlyNewShops: { month: string; shops: number }[];
-  topShops: { name: string; clients: number }[];
-  // SaaS Metrics
+  topShops: { name: string; clients: number; id: string }[];
   mrr: number;
   arr: number;
   arpu: number;
@@ -35,22 +35,33 @@ interface AdminStats {
   conversionRate: number;
 }
 
+interface RecentActivity {
+  id: string;
+  type: 'shop_created' | 'plan_changed' | 'subscription_updated' | 'shop_suspended';
+  label: string;
+  detail: string;
+  time: string;
+  shopId?: string;
+}
+
 const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--success))"];
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [recentShops, setRecentShops] = useState<{ id: string; name: string; email: string; plan: string; status: string; created_at: string }[]>([]);
   const navigate = useNavigate();
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const [shops, clients, vehicles, workOrders, alerts, subscriptions, quotes] = await Promise.all([
-        supabase.from("shops").select("id, name, status, created_at"),
+        supabase.from("shops").select("id, name, email, status, created_at"),
         supabase.from("clients").select("id, shop_id"),
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
         supabase.from("alerts").select("id, status"),
-        supabase.from("subscriptions").select("plan, status"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at"),
         supabase.from("quotes").select("id, status"),
       ]);
 
@@ -59,10 +70,12 @@ export default function AdminDashboard() {
       const avgTicket = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
 
       const planBreakdown = { free: 0, pro: 0, garage: 0 };
+      const subsMap = new Map<string, string>();
       (subscriptions.data || []).forEach(s => {
         if (s.plan === 'free') planBreakdown.free++;
         else if (s.plan === 'pro') planBreakdown.pro++;
         else if (s.plan === 'garage') planBreakdown.garage++;
+        subsMap.set(s.shop_id, s.plan);
       });
 
       const now = new Date();
@@ -95,7 +108,7 @@ export default function AdminDashboard() {
         shopClientCount.set(c.shop_id, (shopClientCount.get(c.shop_id) || 0) + 1);
       });
       const topShops = (shops.data || [])
-        .map(s => ({ name: s.name || "Sem nome", clients: shopClientCount.get(s.id) || 0 }))
+        .map(s => ({ name: s.name || "Sem nome", clients: shopClientCount.get(s.id) || 0, id: s.id }))
         .sort((a, b) => b.clients - a.clients)
         .slice(0, 5);
 
@@ -104,7 +117,7 @@ export default function AdminDashboard() {
       const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
       const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
-      const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active');
+      const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
       const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
       const arr = mrr * 12;
       const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
@@ -113,12 +126,15 @@ export default function AdminDashboard() {
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
       const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24;
-      const trialSubs = activeSubs.filter(s => {
-        const sub = s as any;
-        return sub.trial_end && new Date(sub.trial_end) > new Date() && s.plan === 'free';
-      });
-      const trialCount = trialSubs.length;
+      const trialCount = activeSubs.filter(s => s.status === 'trialing').length;
       const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
+
+      // Recent shops (last 10)
+      const sortedShops = [...(shops.data || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+      setRecentShops(sortedShops.map(s => ({
+        ...s,
+        plan: subsMap.get(s.id) || 'free',
+      })));
 
       setStats({
         totalShops: shops.data?.length || 0,
@@ -137,7 +153,6 @@ export default function AdminDashboard() {
       });
     } catch (err) {
       console.error("Failed to fetch admin stats:", err);
-      // Set empty stats so UI doesn't hang
       setStats({
         totalShops: 0, activeShops: 0, suspendedShops: 0, totalClients: 0,
         totalVehicles: 0, totalWorkOrders: 0, totalQuotes: 0, totalAlerts: 0,
@@ -150,21 +165,71 @@ export default function AdminDashboard() {
       });
     }
     setLoading(false);
-  };
+  }, []);
+
+  const fetchActivity = useCallback(async () => {
+    const { data: logs } = await supabase
+      .from("audit_logs")
+      .select("id, action, entity_type, entity_id, details, created_at")
+      .order("created_at", { ascending: false })
+      .limit(15);
+
+    if (logs) {
+      setRecentActivity(logs.map(l => {
+        const det = l.details as any || {};
+        let label = l.action;
+        let detail = det.name || det.email || l.entity_type || '';
+        if (l.action === 'plan_changed') {
+          label = `Plano alterado: ${(det.from || '').toUpperCase()} → ${(det.to || '').toUpperCase()}`;
+          detail = det.name || '';
+        } else if (l.action === 'shop_activated') {
+          label = 'Oficina ativada';
+          detail = det.name || '';
+        } else if (l.action === 'shop_suspended') {
+          label = 'Oficina suspensa';
+          detail = det.name || '';
+        } else if (l.action === 'trial_reset') {
+          label = 'Trial reiniciado';
+          detail = det.name || '';
+        } else if (l.action === 'shop_deleted') {
+          label = 'Oficina eliminada';
+          detail = det.name || '';
+        } else if (l.action === 'settings_updated') {
+          label = 'Configurações atualizadas';
+          detail = 'Plataforma';
+        }
+
+        return {
+          id: l.id,
+          type: 'plan_changed' as const,
+          label,
+          detail,
+          time: new Date(l.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+          shopId: l.entity_id || undefined,
+        };
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     fetchStats();
+    fetchActivity();
 
-    // Realtime: refresh stats on any shop change
+    // Realtime: refresh on shop or subscription changes
     const channel = supabase
-      .channel("admin-shops-realtime")
+      .channel("admin-dashboard-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => {
         fetchStats();
+        fetchActivity();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => {
+        fetchStats();
+        fetchActivity();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchStats, fetchActivity]);
 
   const exportGlobalCSV = () => {
     if (!stats) return;
@@ -202,6 +267,15 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const planBadge = (plan: string) => {
+    const colors: Record<string, string> = {
+      free: "bg-muted text-muted-foreground",
+      pro: "bg-primary/15 text-primary border-primary/30",
+      garage: "bg-success/15 text-success border-success/30",
+    };
+    return <Badge variant="outline" className={colors[plan] || ""}>{plan.toUpperCase()}</Badge>;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -227,7 +301,7 @@ export default function AdminDashboard() {
   }
 
   const kpiCards = [
-    { label: "Oficinas Totais", value: stats.totalShops, icon: Building2, color: "text-primary" },
+    { label: "Oficinas Totais", value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
     { label: "Oficinas Ativas", value: stats.activeShops, icon: Building2, color: "text-success" },
     { label: "Suspensas", value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
     { label: "Novas Este Mês", value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
@@ -237,12 +311,14 @@ export default function AdminDashboard() {
     { label: "LTV Estimado", value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
     { label: "Churn Rate", value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
     { label: "Trial→Pago", value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
+    { label: "Em Trial", value: stats.trialCount, icon: Clock, color: "text-warning" },
+    { label: "Pagantes", value: stats.paidCount, icon: DollarSign, color: "text-success" },
     { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-primary" },
     { label: "Veículos Totais", value: stats.totalVehicles, icon: Car, color: "text-primary" },
     { label: "Ordens de Serviço", value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
     { label: "Faturação Total", value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
     { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
-    { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning" },
+    { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning", link: "/admin/alerts" },
   ];
 
   const planPieData = [
@@ -256,25 +332,35 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground">Visão global do sistema GarageFlow</p>
+          <p className="text-sm text-muted-foreground">Visão global em tempo real · Auto-atualiza com novas oficinas e planos</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" /> Exportar CSV
           </Button>
+          <Button onClick={() => navigate("/admin/shops")} size="sm" className="gap-2">
+            <Building2 className="w-4 h-4" /> Gerir Oficinas
+          </Button>
+          <Button onClick={() => navigate("/admin/settings")} variant="outline" size="sm" className="gap-2">
+            <Zap className="w-4 h-4" /> Configurações
+          </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
         {kpiCards.map((kpi) => (
-          <div key={kpi.label} className="stat-card flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${kpi.color}`}>
-              <kpi.icon className="w-5 h-5" />
+          <div
+            key={kpi.label}
+            className={`stat-card flex items-center gap-3 ${kpi.link ? 'cursor-pointer hover:border-primary/30 transition-colors' : ''}`}
+            onClick={() => kpi.link && navigate(kpi.link)}
+          >
+            <div className={`w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
+              <kpi.icon className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{kpi.label}</p>
-              <p className="text-xl font-bold mono">{kpi.value}</p>
+            <div className="min-w-0">
+              <p className="text-[11px] text-muted-foreground truncate">{kpi.label}</p>
+              <p className="text-lg font-bold mono leading-tight">{kpi.value}</p>
             </div>
           </div>
         ))}
@@ -283,8 +369,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <div className="stat-card lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">Faturação Mensal</h2>
-          <div className="h-[300px]">
+          <h2 className="text-lg font-semibold mb-4">Faturação Mensal (Oficinas)</h2>
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.monthlyRevenue}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -303,10 +389,10 @@ export default function AdminDashboard() {
         {/* Plan Distribution Pie */}
         <div className="stat-card">
           <h2 className="text-lg font-semibold mb-4">Distribuição de Planos</h2>
-          <div className="h-[300px] flex items-center justify-center">
+          <div className="h-[280px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={planPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value"
+                <Pie data={planPieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}>
                   {planPieData.map((_, index) => (
                     <Cell key={index} fill={PLAN_COLORS[index % PLAN_COLORS.length]} />
@@ -315,6 +401,84 @@ export default function AdminDashboard() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-4 mt-2">
+            {planPieData.map((p, i) => (
+              <div key={p.name} className="flex items-center gap-1.5 text-xs">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: PLAN_COLORS[i] }} />
+                <span className="text-muted-foreground">{p.name}: <span className="font-medium text-foreground">{p.value}</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity Feed */}
+        <div className="stat-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Atividade Recente
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/logs")} className="text-xs gap-1">
+              Ver todos <ArrowRight className="w-3 h-3" />
+            </Button>
+          </div>
+          <div className="space-y-1 max-h-[350px] overflow-y-auto">
+            {recentActivity.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">Sem atividade registada</p>
+            )}
+            {recentActivity.map(a => (
+              <div
+                key={a.id}
+                className={`flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 transition-colors ${a.shopId ? 'cursor-pointer' : ''}`}
+                onClick={() => a.shopId && navigate(`/admin/shops/${a.shopId}`)}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{a.label}</p>
+                  <p className="text-xs text-muted-foreground truncate">{a.detail}</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground whitespace-nowrap ml-3">{a.time}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Shops */}
+        <div className="stat-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" /> Últimas Oficinas
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/shops")} className="text-xs gap-1">
+              Ver todas <ArrowRight className="w-3 h-3" />
+            </Button>
+          </div>
+          <div className="space-y-1 max-h-[350px] overflow-y-auto">
+            {recentShops.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">Sem oficinas registadas</p>
+            )}
+            {recentShops.map(s => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => navigate(`/admin/shops/${s.id}`)}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{s.name || "Sem nome"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                </div>
+                <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                  {planBadge(s.plan)}
+                  <Badge variant="outline" className={`text-[10px] ${s.status === 'active' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                    {s.status === 'active' ? 'Ativa' : 'Suspensa'}
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {new Date(s.created_at).toLocaleDateString("pt-PT")}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -335,7 +499,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Top shops histogram */}
+      {/* Top shops */}
       {stats.topShops.length > 0 && (
         <div className="stat-card">
           <h2 className="text-lg font-semibold mb-4">Oficinas com Mais Clientes</h2>
@@ -346,7 +510,10 @@ export default function AdminDashboard() {
                 <XAxis dataKey="name" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                <Bar dataKey="clients" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="clients" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}
+                  onClick={(data: any) => data?.id && navigate(`/admin/shops/${data.id}`)}
+                  className="cursor-pointer"
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil,
+  LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield,
+} from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 
@@ -15,37 +20,65 @@ interface ShopDetail {
   id: string; name: string; email: string; phone: string; country: string;
   currency: string; timezone: string; status: string; created_at: string;
   logo_url: string | null; vat_rate: number; labor_rate: number;
-  nif: string | null; address: string | null;
+  nif: string | null; address: string | null; language: string; slug: string | null;
+}
+
+interface SubDetail {
+  plan: string; status: string; billing_cycle: string;
+  trial_end: string | null; current_period_end: string | null;
+  stripe_customer_id: string | null; stripe_subscription_id: string | null;
 }
 
 export default function AdminShopDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [shop, setShop] = useState<ShopDetail | null>(null);
-  const [plan, setPlan] = useState("free");
-  const [stats, setStats] = useState({ clients: 0, vehicles: 0, quotes: 0, workOrders: 0, revenue: 0, avgTicket: 0, pendingAlerts: 0 });
+  const [sub, setSub] = useState<SubDetail | null>(null);
+  const [stats, setStats] = useState({ clients: 0, vehicles: 0, quotes: 0, workOrders: 0, invoices: 0, revenue: 0, avgTicket: 0, pendingAlerts: 0, teamMembers: 0 });
   const [monthlyData, setMonthlyData] = useState<{ month: string; revenue: number; orders: number }[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", nif: "", address: "", vat_rate: "23", labor_rate: "35" });
   const [saving, setSaving] = useState(false);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     if (!id) return;
-    const [shopRes, subRes, clientsRes, vehiclesRes, quotesRes, woRes, alertsRes, logsRes] = await Promise.all([
+    const [shopRes, subRes, clientsRes, vehiclesRes, quotesRes, woRes, alertsRes, logsRes, teamRes, invoicesRes, servicesRes] = await Promise.all([
       supabase.from("shops").select("*").eq("id", id).single(),
-      supabase.from("subscriptions").select("plan").eq("shop_id", id).single(),
-      supabase.from("clients").select("id").eq("shop_id", id),
-      supabase.from("vehicles").select("id").eq("shop_id", id),
-      supabase.from("quotes").select("id").eq("shop_id", id),
-      supabase.from("work_orders").select("id, total, status, created_at").eq("shop_id", id),
+      supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id").eq("shop_id", id).maybeSingle(),
+      supabase.from("clients").select("id, name, email, phone, created_at").eq("shop_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(50),
+      supabase.from("vehicles").select("id").eq("shop_id", id).is("deleted_at", null),
+      supabase.from("quotes").select("id, number, status, total, created_at, client_id").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("work_orders").select("id, number, total, status, created_at, technician").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
       supabase.from("alerts").select("id, status").eq("shop_id", id).eq("status", "pending"),
-      supabase.from("audit_logs").select("*").eq("entity_id", id).order("created_at", { ascending: false }).limit(10),
+      supabase.from("audit_logs").select("*").eq("entity_id", id).order("created_at", { ascending: false }).limit(15),
+      supabase.rpc("get_shop_member_emails", { _shop_id: id }),
+      supabase.from("invoices").select("id, number, status, total, created_at").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("service_catalog").select("id, name, default_price, active").eq("shop_id", id),
     ]);
 
     if (shopRes.data) setShop(shopRes.data as ShopDetail);
-    setPlan(subRes.data?.plan || "free");
+    if (subRes.data) setSub(subRes.data as SubDetail);
+
+    // Team with roles
+    const { data: shopUsers } = await supabase.from("shop_users").select("user_id, role, created_at").eq("shop_id", id);
+    const emailMap = new Map<string, string>();
+    ((teamRes.data || []) as any[]).forEach((e: any) => emailMap.set(e.user_id, e.email));
+    setTeamMembers((shopUsers || []).map(su => ({
+      ...su,
+      email: emailMap.get(su.user_id) || "—",
+    })));
+
+    setClients(clientsRes.data || []);
+    setQuotes(quotesRes.data || []);
+    setInvoices(invoicesRes.data || []);
+    setServices(servicesRes.data || []);
 
     const completed = (woRes.data || []).filter(wo => wo.status === 'completed' || wo.status === 'delivered');
     const revenue = completed.reduce((s, wo) => s + Number(wo.total || 0), 0);
@@ -55,9 +88,11 @@ export default function AdminShopDetail() {
       vehicles: vehiclesRes.data?.length || 0,
       quotes: quotesRes.data?.length || 0,
       workOrders: woRes.data?.length || 0,
+      invoices: invoicesRes.data?.length || 0,
       revenue,
       avgTicket: completed.length > 0 ? revenue / completed.length : 0,
       pendingAlerts: alertsRes.data?.length || 0,
+      teamMembers: shopUsers?.length || 0,
     });
 
     const now = new Date();
@@ -76,43 +111,61 @@ export default function AdminShopDetail() {
     setMonthlyData(md);
     setRecentLogs(logsRes.data || []);
     setLoading(false);
-  };
+  }, [id]);
 
-  useEffect(() => { fetchAll(); }, [id]);
+  useEffect(() => {
+    fetchAll();
+    if (!id) return;
+
+    const channel = supabase
+      .channel(`admin-shop-detail-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `shop_id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "shops", filter: `id=eq.${id}` }, () => fetchAll())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [id, fetchAll]);
 
   const handleChangePlan = async (newPlan: string) => {
-    if (!id || newPlan === plan) return;
-    // Upsert: update if exists, insert if not
-    const { data: existing } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("shop_id", id)
-      .maybeSingle();
+    if (!id || newPlan === sub?.plan) return;
+    const { data: existing } = await supabase.from("subscriptions").select("id").eq("shop_id", id).maybeSingle();
 
     let error;
     if (existing) {
-      // Clear stripe_subscription_id so Stripe sync won't overwrite admin-set plan
-      ({ error } = await supabase
-        .from("subscriptions")
-        .update({
-          plan: newPlan,
-          status: 'active',
-          stripe_subscription_id: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("shop_id", id));
+      ({ error } = await supabase.from("subscriptions").update({
+        plan: newPlan, status: 'active', stripe_subscription_id: null, updated_at: new Date().toISOString(),
+      }).eq("shop_id", id));
     } else {
-      ({ error } = await supabase
-        .from("subscriptions")
-        .insert({ shop_id: id, plan: newPlan, status: 'active' }));
+      ({ error } = await supabase.from("subscriptions").insert({ shop_id: id, plan: newPlan, status: 'active' }));
     }
 
-    if (error) {
-      toast.error("Erro ao alterar plano: " + error.message);
-    } else {
-      setPlan(newPlan);
-      toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
-    }
+    if (error) toast.error("Erro ao alterar plano: " + error.message);
+    else toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
+  };
+
+  const toggleShopStatus = async () => {
+    if (!shop || !id) return;
+    const newStatus = shop.status === 'active' ? 'suspended' : 'active';
+    const { error } = await supabase.from("shops").update({ status: newStatus }).eq("id", id);
+    if (error) toast.error(error.message);
+    else toast.success(`Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}`);
+  };
+
+  const resetTrial = async () => {
+    if (!id) return;
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 30);
+    const { error } = await supabase.from("subscriptions")
+      .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
+      .eq("shop_id", id);
+    if (error) toast.error(error.message);
+    else toast.success("Trial reiniciado (30 dias)");
+  };
+
+  const impersonateShop = () => {
+    if (!id) return;
+    localStorage.setItem("garageflow_active_shop", id);
+    window.location.href = "/dashboard";
   };
 
   const openEditDialog = () => {
@@ -135,8 +188,20 @@ export default function AdminShopDetail() {
       vat_rate: parseFloat(editForm.vat_rate), labor_rate: parseFloat(editForm.labor_rate),
     }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Oficina atualizada"); setEditOpen(false); fetchAll(); }
+    else { toast.success("Oficina atualizada"); setEditOpen(false); }
     setSaving(false);
+  };
+
+  const statusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      draft: "bg-muted text-muted-foreground", sent: "bg-info/15 text-info",
+      approved: "bg-success/15 text-success", rejected: "bg-destructive/15 text-destructive",
+      open: "bg-primary/15 text-primary", in_progress: "bg-warning/15 text-warning",
+      completed: "bg-success/15 text-success", delivered: "bg-success/15 text-success",
+      paid: "bg-success/15 text-success", pending: "bg-warning/15 text-warning",
+      overdue: "bg-destructive/15 text-destructive",
+    };
+    return <Badge variant="outline" className={`text-[10px] ${colors[status] || "bg-muted"}`}>{status}</Badge>;
   };
 
   if (loading || !shop) {
@@ -147,7 +212,9 @@ export default function AdminShopDetail() {
     );
   }
 
-  const planColor = plan === 'garage' ? 'text-success' : plan === 'pro' ? 'text-primary' : 'text-muted-foreground';
+  const plan = sub?.plan || 'free';
+  const trialDays = sub?.trial_end && new Date(sub.trial_end) > new Date()
+    ? Math.ceil((new Date(sub.trial_end).getTime() - Date.now()) / 86400000) : 0;
 
   return (
     <div className="space-y-6">
@@ -161,19 +228,31 @@ export default function AdminShopDetail() {
           <div>
             <h1 className="text-2xl font-bold">{shop.name || "Sem nome"}</h1>
             <p className="text-sm text-muted-foreground">{shop.email} · {shop.phone}</p>
-            <p className="text-sm text-muted-foreground">{shop.country} · {shop.currency} · {shop.timezone}</p>
+            <p className="text-sm text-muted-foreground">{shop.country} · {shop.currency} · {shop.timezone} · {shop.language.toUpperCase()}</p>
             {shop.nif && <p className="text-sm text-muted-foreground">NIF: {shop.nif}</p>}
             {shop.address && <p className="text-sm text-muted-foreground">{shop.address}</p>}
+            {shop.slug && <p className="text-xs text-muted-foreground">Slug: {shop.slug}</p>}
+            <p className="text-xs text-muted-foreground mt-1">IVA: {shop.vat_rate}% · Mão de obra: €{shop.labor_rate}/h</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={openEditDialog}>
-              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openEditDialog} className="gap-1">
+              <Pencil className="w-3 h-3" /> Editar
+            </Button>
+            <Button variant="outline" size="sm" onClick={impersonateShop} className="gap-1">
+              <LogIn className="w-3 h-3" /> Entrar
+            </Button>
+            <Button variant="outline" size="sm" onClick={toggleShopStatus} className="gap-1">
+              {shop.status === 'active' ? <PowerOff className="w-3 h-3 text-destructive" /> : <Power className="w-3 h-3 text-success" />}
+              {shop.status === 'active' ? 'Suspender' : 'Ativar'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetTrial} className="gap-1">
+              <RotateCcw className="w-3 h-3" /> Reset Trial
             </Button>
             <Badge variant="outline" className={shop.status === 'active' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}>
               {shop.status === 'active' ? 'Ativa' : 'Suspensa'}
             </Badge>
             <Select value={plan} onValueChange={handleChangePlan}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-[130px] h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -184,61 +263,258 @@ export default function AdminShopDetail() {
             </Select>
           </div>
         </div>
+
+        {/* Subscription details */}
+        {sub && (
+          <div className="mt-4 pt-3 border-t border-border">
+            <div className="flex flex-wrap gap-4 text-xs">
+              <span>Estado: <strong>{sub.status}</strong></span>
+              <span>Ciclo: <strong>{sub.billing_cycle}</strong></span>
+              {sub.stripe_subscription_id && <span className="text-primary">Stripe: {sub.stripe_subscription_id.slice(0, 20)}…</span>}
+              {!sub.stripe_subscription_id && <span className="text-warning">Plano Manual (sem Stripe)</span>}
+              {trialDays > 0 && <span className="text-warning flex items-center gap-1"><Clock className="w-3 h-3" /> Trial: {trialDays} dias restantes</span>}
+              {sub.current_period_end && <span>Expira: {new Date(sub.current_period_end).toLocaleDateString("pt-PT")}</span>}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
         {[
+          { label: "Equipa", value: stats.teamMembers, icon: Shield },
           { label: "Clientes", value: stats.clients, icon: Users },
           { label: "Veículos", value: stats.vehicles, icon: Car },
           { label: "Orçamentos", value: stats.quotes, icon: FileText },
           { label: "Serviços", value: stats.workOrders, icon: Wrench },
+          { label: "Faturas", value: stats.invoices, icon: FileText },
           { label: "Faturação", value: `€${stats.revenue.toFixed(0)}`, icon: DollarSign },
           { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(0)}`, icon: TrendingUp },
           { label: "Alertas", value: stats.pendingAlerts, icon: AlertTriangle },
         ].map(s => (
-          <div key={s.label} className="stat-card text-center">
-            <s.icon className="w-4 h-4 mx-auto mb-1 text-primary" />
-            <p className="text-lg font-bold mono">{s.value}</p>
-            <p className="text-[10px] text-muted-foreground">{s.label}</p>
+          <div key={s.label} className="stat-card text-center py-2">
+            <s.icon className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
+            <p className="text-base font-bold mono leading-tight">{s.value}</p>
+            <p className="text-[9px] text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Revenue Chart */}
-      <div className="stat-card">
-        <h2 className="text-lg font-semibold mb-4">Faturação vs Serviços (6 meses)</h2>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="month" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-              <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Faturação (€)" />
-              <Bar dataKey="orders" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} name="Serviços" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsTrigger value="overview">Resumo</TabsTrigger>
+          <TabsTrigger value="team">Equipa ({stats.teamMembers})</TabsTrigger>
+          <TabsTrigger value="clients">Clientes ({stats.clients})</TabsTrigger>
+          <TabsTrigger value="quotes">Orçamentos ({stats.quotes})</TabsTrigger>
+          <TabsTrigger value="services">Serviços ({stats.workOrders})</TabsTrigger>
+          <TabsTrigger value="invoices">Faturas ({stats.invoices})</TabsTrigger>
+          <TabsTrigger value="catalog">Catálogo ({services.length})</TabsTrigger>
+          <TabsTrigger value="logs">Logs</TabsTrigger>
+        </TabsList>
 
-      {/* Recent Logs */}
-      {recentLogs.length > 0 && (
-        <div className="stat-card">
-          <h2 className="text-lg font-semibold mb-4">Histórico de Ações</h2>
-          <div className="space-y-2">
-            {recentLogs.map((log: any) => (
-              <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div>
-                  <p className="text-sm font-medium">{log.action}</p>
-                  <p className="text-xs text-muted-foreground">{log.entity_type}</p>
-                </div>
-                <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString("pt-PT")}</p>
-              </div>
-            ))}
+        <TabsContent value="overview">
+          <div className="stat-card">
+            <h2 className="text-lg font-semibold mb-4">Faturação vs Serviços (6 meses)</h2>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="month" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Faturação (€)" />
+                  <Bar dataKey="orders" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} name="Serviços" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+
+        <TabsContent value="team">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Desde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teamMembers.map((m, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm">{m.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        m.role === 'owner' ? 'bg-primary/15 text-primary' :
+                        m.role === 'manager' ? 'bg-success/15 text-success' : 'bg-muted'
+                      }>{m.role}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString("pt-PT")}</TableCell>
+                  </TableRow>
+                ))}
+                {teamMembers.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">Sem membros</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Registado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clients.map(c => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium text-sm">{c.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{c.email || "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{c.phone || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-PT")}</TableCell>
+                  </TableRow>
+                ))}
+                {clients.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Sem clientes</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="quotes">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nº</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quotes.map(q => (
+                  <TableRow key={q.id}>
+                    <TableCell className="font-medium text-sm">{q.number}</TableCell>
+                    <TableCell>{statusBadge(q.status)}</TableCell>
+                    <TableCell className="text-right mono text-sm">€{Number(q.total).toFixed(2)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(q.created_at).toLocaleDateString("pt-PT")}</TableCell>
+                  </TableRow>
+                ))}
+                {quotes.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Sem orçamentos</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="services">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nº</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Técnico</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quotes.length === 0 && services.length === 0 ? null : null}
+                {/* Use work orders from fetch */}
+              </TableBody>
+            </Table>
+            {/* Workaround: re-fetch for this tab */}
+            <WorkOrdersTab shopId={id!} statusBadge={statusBadge} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="invoices">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nº</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map(inv => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium text-sm">{inv.number}</TableCell>
+                    <TableCell>{statusBadge(inv.status)}</TableCell>
+                    <TableCell className="text-right mono text-sm">€{Number(inv.total).toFixed(2)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(inv.created_at).toLocaleDateString("pt-PT")}</TableCell>
+                  </TableRow>
+                ))}
+                {invoices.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Sem faturas</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="catalog">
+          <div className="stat-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead className="text-right">Preço</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {services.map(s => (
+                  <TableRow key={s.id}>
+                    <TableCell className="font-medium text-sm">{s.name}</TableCell>
+                    <TableCell className="text-right mono text-sm">€{Number(s.default_price).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={s.active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}>
+                        {s.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {services.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">Sem serviços no catálogo</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <div className="stat-card">
+            {recentLogs.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Sem logs registados</p>}
+            <div className="space-y-2">
+              {recentLogs.map((log: any) => (
+                <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">{log.action}</p>
+                    <p className="text-xs text-muted-foreground">{log.entity_type}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString("pt-PT")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Shop Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -282,5 +558,48 @@ export default function AdminShopDetail() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Sub-component to display work orders in services tab
+function WorkOrdersTab({ shopId, statusBadge }: { shopId: string; statusBadge: (s: string) => JSX.Element }) {
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("work_orders")
+      .select("id, number, total, status, created_at, technician")
+      .eq("shop_id", shopId)
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => setWorkOrders(data || []));
+  }, [shopId]);
+
+  if (workOrders.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-6">Sem ordens de serviço</p>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nº</TableHead>
+          <TableHead>Estado</TableHead>
+          <TableHead>Técnico</TableHead>
+          <TableHead className="text-right">Total</TableHead>
+          <TableHead>Data</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {workOrders.map(wo => (
+          <TableRow key={wo.id}>
+            <TableCell className="font-medium text-sm">{wo.number}</TableCell>
+            <TableCell>{statusBadge(wo.status)}</TableCell>
+            <TableCell className="text-sm text-muted-foreground">{wo.technician || "—"}</TableCell>
+            <TableCell className="text-right mono text-sm">€{Number(wo.total).toFixed(2)}</TableCell>
+            <TableCell className="text-xs text-muted-foreground">{new Date(wo.created_at).toLocaleDateString("pt-PT")}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

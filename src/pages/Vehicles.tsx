@@ -134,7 +134,7 @@ export default function Vehicles() {
             <DialogTrigger asChild>
               <Button><Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}</Button>
             </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
             <DialogHeader><DialogTitle>{editingId ? t('common.edit') : t('vehicles.new')}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">

@@ -188,6 +188,7 @@ function AuthenticatedRoutes() {
         <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
         <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
         <Route path="/quote/:token" element={<QuoteApproval />} />
+        <Route path="/portal/:token" element={<ClientPortal />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />

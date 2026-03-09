@@ -6,16 +6,24 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
+  portal_token: string | null;
 }
 
 const PAGE_SIZE = 25;
+
+const copyPortalLink = (portalToken: string | null) => {
+  if (!portalToken) return;
+  const url = `${window.location.origin}/portal/${portalToken}`;
+  navigator.clipboard.writeText(url);
+  toast.success("Link do portal copiado!");
+};
 
 export default function Clients() {
   const { t } = useLanguage();
@@ -164,6 +172,7 @@ export default function Clients() {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token)} className="h-7 w-7 p-0" title="Portal"><Link2 className="w-3.5 h-3.5 text-primary" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
@@ -211,6 +220,9 @@ export default function Clients() {
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token)} className="text-xs text-primary" title="Portal">
+                      <Link2 className="w-3.5 h-3.5 mr-1" />Portal
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">
                       <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
                     </Button>

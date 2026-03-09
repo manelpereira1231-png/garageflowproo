@@ -41,6 +41,7 @@ const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
 const Agenda = lazy(() => import("@/pages/Agenda"));
 const PublicBooking = lazy(() => import("@/pages/PublicBooking"));
+const ClientPortal = lazy(() => import("@/pages/ClientPortal"));
 const ServiceCatalog = lazy(() => import("@/pages/ServiceCatalog"));
 const Stock = lazy(() => import("@/pages/Stock"));
 const Inspections = lazy(() => import("@/pages/Inspections"));
@@ -140,6 +141,7 @@ function AuthenticatedRoutes() {
             <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
           ))}
           <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
@@ -186,6 +188,7 @@ function AuthenticatedRoutes() {
         <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
         <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
         <Route path="/quote/:token" element={<QuoteApproval />} />
+        <Route path="/portal/:token" element={<ClientPortal />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
@@ -252,6 +255,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/book/:slug" element={<PublicBooking />} />

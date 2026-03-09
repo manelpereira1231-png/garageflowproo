@@ -293,6 +293,7 @@ export type Database = {
           nif: string | null
           notes: string | null
           phone: string
+          portal_token: string | null
           shop_id: string
         }
         Insert: {
@@ -305,6 +306,7 @@ export type Database = {
           nif?: string | null
           notes?: string | null
           phone?: string
+          portal_token?: string | null
           shop_id: string
         }
         Update: {
@@ -317,6 +319,7 @@ export type Database = {
           nif?: string | null
           notes?: string | null
           phone?: string
+          portal_token?: string | null
           shop_id?: string
         }
         Relationships: [

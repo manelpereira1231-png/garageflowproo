@@ -89,15 +89,41 @@ export default function Invoices() {
         <Input placeholder={t('invoices.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: Card view */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
+            {totalCount === 0 ? t('invoices.empty') : t('invoices.noResults')}
+          </div>
+        ) : filtered.map(inv => (
+          <Link key={inv.id} to={`/invoices/${inv.id}`} className="block">
+            <div className="bg-card border border-border rounded-xl p-4 space-y-2 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="font-medium mono text-sm">{inv.number}</span>
+                <Badge variant="secondary" className={statusColors[inv.status] || ''}>
+                  {t(`invoices.status_${inv.status}`)}
+                </Badge>
+              </div>
+              <p className="text-sm font-semibold">{(inv.clients as any)?.name}</p>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="text-sm font-semibold mono text-foreground">{cur}{inv.total?.toFixed(2)}</span>
+                <span>{inv.due_date || '—'}</span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>{t('invoices.number')}</TableHead>
               <TableHead>{t('invoices.client')}</TableHead>
-              <TableHead>{t('invoices.vehicle')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('invoices.vehicle')}</TableHead>
               <TableHead>{t('invoices.total')}</TableHead>
-              <TableHead>{t('invoices.dueDate')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('invoices.dueDate')}</TableHead>
               <TableHead>{t('invoices.status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -113,11 +139,11 @@ export default function Invoices() {
               <TableRow key={inv.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium mono">{inv.number}</TableCell>
                 <TableCell>{(inv.clients as any)?.name}</TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   {(inv.vehicles as any) ? `${(inv.vehicles as any)?.make} ${(inv.vehicles as any)?.model} — ${(inv.vehicles as any)?.plate}` : '—'}
                 </TableCell>
                 <TableCell className="font-semibold mono">{cur}{inv.total?.toFixed(2)}</TableCell>
-                <TableCell>{inv.due_date || '—'}</TableCell>
+                <TableCell className="hidden md:table-cell">{inv.due_date || '—'}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={statusColors[inv.status] || ''}>
                     {t(`invoices.status_${inv.status}`)}

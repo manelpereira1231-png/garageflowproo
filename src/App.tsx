@@ -253,6 +253,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/book/:slug" element={<PublicBooking />} />

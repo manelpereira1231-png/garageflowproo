@@ -141,6 +141,7 @@ function AuthenticatedRoutes() {
             <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
           ))}
           <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />

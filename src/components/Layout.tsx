@@ -57,6 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t('nav.catalog'), icon: BookOpen },
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
+    { path: "/workshop", label: language === 'pt' ? 'Modo Oficina' : language === 'es' ? 'Modo Taller' : 'Workshop', icon: HardHat },
     ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },

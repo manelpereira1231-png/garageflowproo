@@ -48,6 +48,8 @@ const Inspections = lazy(() => import("@/pages/Inspections"));
 const Loyalty = lazy(() => import("@/pages/Loyalty"));
 const Marketing = lazy(() => import("@/pages/Marketing"));
 const Workshop = lazy(() => import("@/pages/Workshop"));
+const Automations = lazy(() => import("@/pages/Automations"));
+const Developers = lazy(() => import("@/pages/Developers"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));

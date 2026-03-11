@@ -20,6 +20,7 @@ const navItems = [
   { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
   { path: "/admin/emails", label: "Email Logs", icon: Mail },
   { path: "/admin/adoption", label: "Feature Adoption", icon: Activity },
+  { path: "/admin/system-health", label: "System Health", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
   { path: "/admin/logs", label: "Logs / Auditoria", icon: FileText },
   { path: "/admin/users", label: "Usuários Admin", icon: Users },

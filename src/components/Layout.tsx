@@ -60,6 +60,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/workshop", label: language === 'pt' ? 'Modo Oficina' : language === 'es' ? 'Modo Taller' : 'Workshop', icon: HardHat },
     ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
+    ...(canUseFeature('automations') ? [{ path: "/automations", label: language === 'pt' ? 'Automações' : language === 'es' ? 'Automatizaciones' : 'Automations', icon: Zap, planBadge: 'Garage' as const }] : []),
+    ...(canUseFeature('api') ? [{ path: "/developers", label: "API", icon: Code, planBadge: 'Garage' as const }] : []),
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),

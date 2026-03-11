@@ -289,6 +289,7 @@ const App = () => (
         <BrowserRouter>
           <AppRoutes />
         </BrowserRouter>
+        <PWAInstallPrompt />
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>

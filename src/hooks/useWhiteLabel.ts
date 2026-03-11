@@ -19,10 +19,10 @@ export function useWhiteLabel() {
     const load = async () => {
       const activeId = localStorage.getItem("garageflow_active_shop");
       if (!activeId) return;
-      const { data } = await supabase.from("shops").select("name, logo_url").eq("id", activeId).maybeSingle();
+      const { data } = await supabase.from("shops").select("name, logo_url, primary_color").eq("id", activeId).maybeSingle();
       if (data) {
         setConfig({
-          primaryColor: null, // Future: read from shop config
+          primaryColor: (data as any).primary_color || null,
           logoUrl: data.logo_url,
           shopName: data.name || "GarageFlow",
         });

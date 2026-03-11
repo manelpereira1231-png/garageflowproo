@@ -2,6 +2,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,8 @@ const Inspections = lazy(() => import("@/pages/Inspections"));
 const Loyalty = lazy(() => import("@/pages/Loyalty"));
 const Marketing = lazy(() => import("@/pages/Marketing"));
 const Workshop = lazy(() => import("@/pages/Workshop"));
+const Automations = lazy(() => import("@/pages/Automations"));
+const Developers = lazy(() => import("@/pages/Developers"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -61,6 +64,7 @@ const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazy(() => import("@/pages/admin/AdminFeatureAdoption"));
+const AdminSystemHealth = lazy(() => import("@/pages/admin/AdminSystemHealth"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -92,6 +96,7 @@ const adminRoutes = [
   { path: "/admin/settings", element: <AdminSettings /> },
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
+  { path: "/admin/system-health", element: <AdminSystemHealth /> },
 ];
 
 function AuthenticatedRoutes() {
@@ -168,6 +173,8 @@ function AuthenticatedRoutes() {
           <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
           <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
           <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
+          <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
+          <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -217,6 +224,8 @@ function AuthenticatedRoutes() {
         <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
         <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
         <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
+        <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
+        <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
@@ -280,6 +289,7 @@ const App = () => (
         <BrowserRouter>
           <AppRoutes />
         </BrowserRouter>
+        <PWAInstallPrompt />
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>

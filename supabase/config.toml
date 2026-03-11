@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.check-reminders]
 verify_jwt = false
+
+[functions.garageflow-api]
+verify_jwt = false
+
+[functions.run-automations]
+verify_jwt = false

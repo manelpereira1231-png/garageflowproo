@@ -87,6 +87,56 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          rate_limit: number
+          request_count: number
+          scopes: string[]
+          shop_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          rate_limit?: number
+          request_count?: number
+          scopes?: string[]
+          shop_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          rate_limit?: number
+          request_count?: number
+          scopes?: string[]
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           client_email: string | null
@@ -192,6 +242,104 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      automation_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          rule_id: string | null
+          shop_id: string
+          status: string
+          trigger_type: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          rule_id?: string | null
+          shop_id: string
+          status?: string
+          trigger_type: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          rule_id?: string | null
+          shop_id?: string
+          status?: string
+          trigger_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          action_config: Json
+          action_type: string
+          active: boolean
+          conditions: Json
+          created_at: string
+          id: string
+          last_run_at: string | null
+          name: string
+          run_count: number
+          shop_id: string
+          trigger_type: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type?: string
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          name: string
+          run_count?: number
+          shop_id: string
+          trigger_type?: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          run_count?: number
+          shop_id?: string
+          trigger_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaigns: {
         Row: {
@@ -595,6 +743,50 @@ export type Database = {
           },
         ]
       }
+      loyalty_rewards: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          points_cost: number
+          reward_type: string
+          reward_value: number
+          shop_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          points_cost?: number
+          reward_type?: string
+          reward_value?: number
+          shop_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          points_cost?: number
+          reward_type?: string
+          reward_value?: number
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_rewards_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_transactions: {
         Row: {
           client_id: string
@@ -747,9 +939,11 @@ export type Database = {
           id: string
           invoice_id: string
           method: string
+          notes: string | null
           paid_at: string
           reference: string | null
           shop_id: string
+          type: string
         }
         Insert: {
           amount?: number
@@ -757,9 +951,11 @@ export type Database = {
           id?: string
           invoice_id: string
           method?: string
+          notes?: string | null
           paid_at?: string
           reference?: string | null
           shop_id: string
+          type?: string
         }
         Update: {
           amount?: number
@@ -767,9 +963,11 @@ export type Database = {
           id?: string
           invoice_id?: string
           method?: string
+          notes?: string | null
           paid_at?: string
           reference?: string | null
           shop_id?: string
+          type?: string
         }
         Relationships: [
           {
@@ -1067,6 +1265,7 @@ export type Database = {
           name: string
           nif: string | null
           phone: string
+          primary_color: string | null
           slug: string | null
           status: string
           timezone: string
@@ -1086,6 +1285,7 @@ export type Database = {
           name?: string
           nif?: string | null
           phone?: string
+          primary_color?: string | null
           slug?: string | null
           status?: string
           timezone?: string
@@ -1105,6 +1305,7 @@ export type Database = {
           name?: string
           nif?: string | null
           phone?: string
+          primary_color?: string | null
           slug?: string | null
           status?: string
           timezone?: string

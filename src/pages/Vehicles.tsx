@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown } from "lucide-react";
+import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown, ScrollText } from "lucide-react";
 import { toast } from "sonner";
+import VehiclePassport from "@/components/VehiclePassport";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 
@@ -17,7 +18,7 @@ const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
 const PAGE_SIZE = 25;
 
 export default function Vehicles() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -27,6 +28,7 @@ export default function Vehicles() {
   const [totalCount, setTotalCount] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [passportId, setPassportId] = useState<string | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
@@ -189,6 +191,7 @@ export default function Vehicles() {
                 <span className="font-semibold text-sm">{v.make} {v.model} <span className="text-muted-foreground">({v.year})</span></span>
               </div>
               <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => setPassportId(v.id)} className="h-7 w-7 p-0 text-primary" title="Vehicle Passport"><ScrollText className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(v)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(v.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
@@ -237,6 +240,9 @@ export default function Vehicles() {
                 <TableCell>{v.fuel}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setPassportId(v.id)} className="text-xs text-primary" title="Vehicle Passport">
+                      <ScrollText className="w-3.5 h-3.5 mr-1" />{language === 'pt' ? 'Passaporte' : 'Passport'}
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(v)} className="text-xs">
                       <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
                     </Button>
@@ -279,6 +285,15 @@ export default function Vehicles() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Vehicle Passport Dialog */}
+      {passportId && (
+        <VehiclePassport
+          vehicleId={passportId}
+          open={!!passportId}
+          onClose={() => setPassportId(null)}
+        />
+      )}
     </div>
   );
 }

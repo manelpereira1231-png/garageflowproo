@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
-import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight } from "lucide-react";
+import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
 import type { ServiceStatus } from "@/types/garage";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
@@ -322,6 +323,22 @@ export default function Workshop() {
                     rows={3}
                   />
                 </div>
+              )}
+
+              {/* AI Diagnosis Panel */}
+              {(selected.status === 'open' || selected.status === 'diagnosis') && activeShopId && (
+                <AIDiagnosisPanel
+                  vehicle={selected.vehicles ? {
+                    make: (selected.vehicles as any).make,
+                    model: (selected.vehicles as any).model,
+                    year: (selected.vehicles as any).year || 2024,
+                    fuel: (selected.vehicles as any).fuel || 'Gasolina',
+                    mileage: selected.entry_mileage || 0,
+                  } : undefined}
+                  clientDescription={selected.client_description || ''}
+                  shopId={activeShopId}
+                  onApplyDiagnosis={(text) => setDiagnosisText(prev => prev ? `${prev}\n\n${text}` : text)}
+                />
               )}
 
               {/* Existing diagnosis */}

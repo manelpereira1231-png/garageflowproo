@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.run-automations]
 verify_jwt = false
+
+[functions.ai-diagnosis]
+verify_jwt = false
+
+[functions.smart-reminders]
+verify_jwt = false

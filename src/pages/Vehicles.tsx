@@ -191,6 +191,7 @@ export default function Vehicles() {
                 <span className="font-semibold text-sm">{v.make} {v.model} <span className="text-muted-foreground">({v.year})</span></span>
               </div>
               <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => setPassportId(v.id)} className="h-7 w-7 p-0 text-primary" title="Vehicle Passport"><ScrollText className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(v)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(v.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>

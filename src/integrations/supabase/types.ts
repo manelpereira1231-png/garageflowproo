@@ -1419,6 +1419,66 @@ export type Database = {
           },
         ]
       }
+      vehicle_global_history: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          mileage: number | null
+          parts_replaced: Json | null
+          reference_id: string | null
+          reference_type: string | null
+          shop_id: string
+          title: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          mileage?: number | null
+          parts_replaced?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id: string
+          title: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          mileage?: number | null
+          parts_replaced?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string
+          title?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_global_history_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_global_history_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           client_id: string

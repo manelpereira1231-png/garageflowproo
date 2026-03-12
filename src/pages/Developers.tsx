@@ -13,10 +13,17 @@ import { toast } from "sonner";
 
 const API_DOCS = [
   { method: "GET", path: "/clients", desc: "Listar todos os clientes" },
+  { method: "GET", path: "/clients/:id", desc: "Obter cliente por ID" },
   { method: "POST", path: "/clients", desc: "Criar novo cliente" },
+  { method: "PUT", path: "/clients/:id", desc: "Atualizar cliente" },
+  { method: "DELETE", path: "/clients/:id", desc: "Eliminar cliente (soft delete)" },
   { method: "GET", path: "/vehicles", desc: "Listar veículos" },
+  { method: "GET", path: "/vehicles/:id", desc: "Obter veículo por ID" },
   { method: "POST", path: "/vehicles", desc: "Criar veículo" },
+  { method: "PUT", path: "/vehicles/:id", desc: "Atualizar veículo" },
   { method: "GET", path: "/quotes", desc: "Listar orçamentos" },
+  { method: "GET", path: "/services", desc: "Listar catálogo de serviços" },
+  { method: "POST", path: "/services", desc: "Criar serviço no catálogo" },
   { method: "GET", path: "/work-orders", desc: "Listar ordens de serviço" },
   { method: "GET", path: "/invoices", desc: "Listar faturas" },
   { method: "GET", path: "/appointments", desc: "Listar agendamentos" },

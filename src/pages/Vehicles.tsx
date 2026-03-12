@@ -285,6 +285,15 @@ export default function Vehicles() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Vehicle Passport Dialog */}
+      {passportId && (
+        <VehiclePassport
+          vehicleId={passportId}
+          open={!!passportId}
+          onClose={() => setPassportId(null)}
+        />
+      )}
     </div>
   );
 }

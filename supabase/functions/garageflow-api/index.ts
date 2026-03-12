@@ -58,58 +58,98 @@ Deno.serve(async (req) => {
     const json = (data: any, status = 200) =>
       new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Helper: extract ID from path like "clients/uuid"
+    const pathParts = path.split("/");
+    const resource = pathParts[0];
+    const resourceId = pathParts[1] || null;
+
     // CLIENTS
-    if (path === "clients" && method === "GET") {
+    if (resource === "clients" && method === "GET" && !resourceId) {
       const { data, error } = await supabase.from("clients").select("*").eq("shop_id", shopId).is("deleted_at", null).order("name").limit(100);
       return json({ data, error: error?.message });
     }
-    if (path === "clients" && method === "POST") {
+    if (resource === "clients" && method === "GET" && resourceId) {
+      const { data, error } = await supabase.from("clients").select("*").eq("id", resourceId).eq("shop_id", shopId).single();
+      return json({ data, error: error?.message }, error ? 404 : 200);
+    }
+    if (resource === "clients" && method === "POST") {
       const body = await req.json();
       const { data, error } = await supabase.from("clients").insert({ ...body, shop_id: shopId }).select().single();
       return json({ data, error: error?.message }, error ? 400 : 201);
     }
+    if (resource === "clients" && method === "PUT" && resourceId) {
+      const body = await req.json();
+      delete body.shop_id; delete body.id;
+      const { data, error } = await supabase.from("clients").update(body).eq("id", resourceId).eq("shop_id", shopId).select().single();
+      return json({ data, error: error?.message }, error ? 400 : 200);
+    }
+    if (resource === "clients" && method === "DELETE" && resourceId) {
+      const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", resourceId).eq("shop_id", shopId);
+      return json({ success: !error, error: error?.message }, error ? 400 : 200);
+    }
 
     // VEHICLES
-    if (path === "vehicles" && method === "GET") {
+    if (resource === "vehicles" && method === "GET" && !resourceId) {
       const { data, error } = await supabase.from("vehicles").select("*, clients(name)").eq("shop_id", shopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(100);
       return json({ data, error: error?.message });
     }
-    if (path === "vehicles" && method === "POST") {
+    if (resource === "vehicles" && method === "GET" && resourceId) {
+      const { data, error } = await supabase.from("vehicles").select("*, clients(name)").eq("id", resourceId).eq("shop_id", shopId).single();
+      return json({ data, error: error?.message }, error ? 404 : 200);
+    }
+    if (resource === "vehicles" && method === "POST") {
       const body = await req.json();
       const { data, error } = await supabase.from("vehicles").insert({ ...body, shop_id: shopId }).select().single();
       return json({ data, error: error?.message }, error ? 400 : 201);
     }
+    if (resource === "vehicles" && method === "PUT" && resourceId) {
+      const body = await req.json();
+      delete body.shop_id; delete body.id;
+      const { data, error } = await supabase.from("vehicles").update(body).eq("id", resourceId).eq("shop_id", shopId).select().single();
+      return json({ data, error: error?.message }, error ? 400 : 200);
+    }
 
     // QUOTES
-    if (path === "quotes" && method === "GET") {
+    if (resource === "quotes" && method === "GET") {
       const { data, error } = await supabase.from("quotes").select("*, clients(name), vehicles(make, model, plate)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(100);
       return json({ data, error: error?.message });
     }
 
+    // SERVICES (service catalog)
+    if (resource === "services" && method === "GET") {
+      const { data, error } = await supabase.from("service_catalog").select("*").eq("shop_id", shopId).eq("active", true).order("name");
+      return json({ data, error: error?.message });
+    }
+    if (resource === "services" && method === "POST") {
+      const body = await req.json();
+      const { data, error } = await supabase.from("service_catalog").insert({ ...body, shop_id: shopId }).select().single();
+      return json({ data, error: error?.message }, error ? 400 : 201);
+    }
+
     // WORK ORDERS
-    if (path === "work-orders" && method === "GET") {
+    if (resource === "work-orders" && method === "GET") {
       const { data, error } = await supabase.from("work_orders").select("*, clients(name), vehicles(make, model, plate)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(100);
       return json({ data, error: error?.message });
     }
 
     // INVOICES
-    if (path === "invoices" && method === "GET") {
+    if (resource === "invoices" && method === "GET") {
       const { data, error } = await supabase.from("invoices").select("*, clients(name)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(100);
       return json({ data, error: error?.message });
     }
 
     // APPOINTMENTS
-    if (path === "appointments" && method === "GET") {
+    if (resource === "appointments" && method === "GET") {
       const { data, error } = await supabase.from("appointments").select("*").eq("shop_id", shopId).order("date", { ascending: false }).limit(100);
       return json({ data, error: error?.message });
     }
-    if (path === "appointments" && method === "POST") {
+    if (resource === "appointments" && method === "POST") {
       const body = await req.json();
       const { data, error } = await supabase.from("appointments").insert({ ...body, shop_id: shopId }).select().single();
       return json({ data, error: error?.message }, error ? 400 : 201);
     }
 
-    return json({ error: "Not found", available: ["/clients", "/vehicles", "/quotes", "/work-orders", "/invoices", "/appointments"] }, 404);
+    return json({ error: "Not found", available: ["/clients", "/clients/:id", "/vehicles", "/vehicles/:id", "/quotes", "/services", "/work-orders", "/invoices", "/appointments"] }, 404);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

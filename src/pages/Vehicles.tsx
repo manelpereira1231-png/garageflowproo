@@ -28,6 +28,7 @@ export default function Vehicles() {
   const [totalCount, setTotalCount] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [passportId, setPassportId] = useState<string | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""

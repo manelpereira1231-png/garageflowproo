@@ -51,6 +51,7 @@ const Marketing = lazy(() => import("@/pages/Marketing"));
 const Workshop = lazy(() => import("@/pages/Workshop"));
 const Automations = lazy(() => import("@/pages/Automations"));
 const Developers = lazy(() => import("@/pages/Developers"));
+const Suppliers = lazy(() => import("@/pages/Suppliers"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));

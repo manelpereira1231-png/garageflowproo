@@ -51,6 +51,7 @@ const Marketing = lazy(() => import("@/pages/Marketing"));
 const Workshop = lazy(() => import("@/pages/Workshop"));
 const Automations = lazy(() => import("@/pages/Automations"));
 const Developers = lazy(() => import("@/pages/Developers"));
+const Suppliers = lazy(() => import("@/pages/Suppliers"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -175,6 +176,7 @@ function AuthenticatedRoutes() {
           <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
           <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
           <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
+          <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -226,6 +228,7 @@ function AuthenticatedRoutes() {
         <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
         <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
+        <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

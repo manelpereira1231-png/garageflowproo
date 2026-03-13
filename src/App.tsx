@@ -100,6 +100,7 @@ const adminRoutes = [
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
+  { path: "/admin/partners", element: <AdminPartners /> },
 ];
 
 function AuthenticatedRoutes() {

@@ -52,6 +52,7 @@ const Workshop = lazy(() => import("@/pages/Workshop"));
 const Automations = lazy(() => import("@/pages/Automations"));
 const Developers = lazy(() => import("@/pages/Developers"));
 const Suppliers = lazy(() => import("@/pages/Suppliers"));
+const PartnersPortal = lazy(() => import("@/pages/PartnersPortal"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -66,6 +67,7 @@ const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazy(() => import("@/pages/admin/AdminFeatureAdoption"));
 const AdminSystemHealth = lazy(() => import("@/pages/admin/AdminSystemHealth"));
+const AdminPartners = lazy(() => import("@/pages/admin/AdminPartners"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -98,6 +100,7 @@ const adminRoutes = [
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
+  { path: "/admin/partners", element: <AdminPartners /> },
 ];
 
 function AuthenticatedRoutes() {
@@ -177,6 +180,7 @@ function AuthenticatedRoutes() {
           <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
           <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
           <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
+          <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -229,6 +233,7 @@ function AuthenticatedRoutes() {
         <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
+        <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

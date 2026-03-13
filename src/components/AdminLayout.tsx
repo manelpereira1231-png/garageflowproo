@@ -24,6 +24,7 @@ const navItems = [
   { path: "/admin/settings", label: "Configurações", icon: Settings },
   { path: "/admin/logs", label: "Logs / Auditoria", icon: FileText },
   { path: "/admin/users", label: "Usuários Admin", icon: Users },
+  { path: "/admin/partners", label: "Parceiros", icon: Users },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

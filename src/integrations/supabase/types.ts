@@ -879,6 +879,309 @@ export type Database = {
           },
         ]
       }
+      partner_commissions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          partner_id: string
+          period_end: string | null
+          period_start: string | null
+          referral_id: string | null
+          shop_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          partner_id: string
+          period_end?: string | null
+          period_start?: string | null
+          referral_id?: string | null
+          shop_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          partner_id?: string
+          period_end?: string | null
+          period_start?: string | null
+          referral_id?: string | null
+          shop_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_commissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "partner_referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_commissions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          discount_percent: number
+          id: string
+          invite_token: string
+          last_reminder_at: string | null
+          partner_id: string
+          plan_offer: string
+          reminder_count: number
+          sent_at: string | null
+          shop_id: string | null
+          status: string
+          trial_days: number
+          workshop_email: string
+          workshop_name: string
+          workshop_phone: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          invite_token?: string
+          last_reminder_at?: string | null
+          partner_id: string
+          plan_offer?: string
+          reminder_count?: number
+          sent_at?: string | null
+          shop_id?: string | null
+          status?: string
+          trial_days?: number
+          workshop_email: string
+          workshop_name?: string
+          workshop_phone?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          invite_token?: string
+          last_reminder_at?: string | null
+          partner_id?: string
+          plan_offer?: string
+          reminder_count?: number
+          sent_at?: string | null
+          shop_id?: string | null
+          status?: string
+          trial_days?: number
+          workshop_email?: string
+          workshop_name?: string
+          workshop_phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invites_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invites_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          partner_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          partner_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          partner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_logs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          partner_id: string
+          status: string
+          stripe_transfer_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          partner_id: string
+          status?: string
+          stripe_transfer_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          partner_id?: string
+          status?: string
+          stripe_transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_referrals: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          id: string
+          partner_id: string
+          shop_id: string
+          subscription_id: string | null
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          partner_id: string
+          shop_id: string
+          subscription_id?: string | null
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          partner_id?: string
+          shop_id?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_referrals_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_referrals_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          api_key: string | null
+          commission_percentage: number
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          discount_percentage: number
+          id: string
+          name: string
+          payout_method: string
+          status: string
+          stripe_account_id: string | null
+          type: string
+        }
+        Insert: {
+          api_key?: string | null
+          commission_percentage?: number
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          name: string
+          payout_method?: string
+          status?: string
+          stripe_account_id?: string | null
+          type?: string
+        }
+        Update: {
+          api_key?: string | null
+          commission_percentage?: number
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          name?: string
+          payout_method?: string
+          status?: string
+          stripe_account_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       parts: {
         Row: {
           active: boolean
@@ -928,6 +1231,76 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parts_orders: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          id: string
+          notes: string | null
+          part_name: string
+          part_reference: string | null
+          quantity: number
+          shop_id: string
+          status: string
+          supplier_id: string | null
+          total: number
+          unit_price: number
+          work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          part_name: string
+          part_reference?: string | null
+          quantity?: number
+          shop_id: string
+          status?: string
+          supplier_id?: string | null
+          total?: number
+          unit_price?: number
+          work_order_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          part_name?: string
+          part_reference?: string | null
+          quantity?: number
+          shop_id?: string
+          status?: string
+          supplier_id?: string | null
+          total?: number
+          unit_price?: number
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_orders_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]

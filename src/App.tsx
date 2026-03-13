@@ -67,6 +67,7 @@ const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazy(() => import("@/pages/admin/AdminFeatureAdoption"));
 const AdminSystemHealth = lazy(() => import("@/pages/admin/AdminSystemHealth"));
+const AdminPartners = lazy(() => import("@/pages/admin/AdminPartners"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({

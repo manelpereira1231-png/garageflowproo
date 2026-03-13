@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.supplier-automation]
 verify_jwt = false
+
+[functions.partner-automation]
+verify_jwt = false

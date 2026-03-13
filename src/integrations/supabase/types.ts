@@ -1419,6 +1419,114 @@ export type Database = {
           },
         ]
       }
+      supplier_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          discount_percent: number
+          id: string
+          invite_token: string
+          last_reminder_at: string | null
+          plan_offer: string
+          reminder_count: number
+          sent_at: string | null
+          shop_email: string
+          shop_id: string | null
+          shop_name: string
+          shop_phone: string
+          status: string
+          supplier_id: string
+          trial_days: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          invite_token?: string
+          last_reminder_at?: string | null
+          plan_offer?: string
+          reminder_count?: number
+          sent_at?: string | null
+          shop_email: string
+          shop_id?: string | null
+          shop_name?: string
+          shop_phone?: string
+          status?: string
+          supplier_id: string
+          trial_days?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          invite_token?: string
+          last_reminder_at?: string | null
+          plan_offer?: string
+          reminder_count?: number
+          sent_at?: string | null
+          shop_email?: string
+          shop_id?: string | null
+          shop_name?: string
+          shop_phone?: string
+          status?: string
+          supplier_id?: string
+          trial_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_invites_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invites_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          discount_percent: number
+          id: string
+          integration_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          integration_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          integration_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vehicle_global_history: {
         Row: {
           created_at: string

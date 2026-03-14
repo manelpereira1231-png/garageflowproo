@@ -236,6 +236,7 @@ function AuthenticatedRoutes() {
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
         <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
+        <Route path="/suppliers/dashboard" element={<Layout><SupplierDashboard /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

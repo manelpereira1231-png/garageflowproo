@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.partner-automation]
 verify_jwt = false
+
+[functions.send-parts-order]
+verify_jwt = false

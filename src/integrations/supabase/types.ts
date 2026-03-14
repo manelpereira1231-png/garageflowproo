@@ -1235,6 +1235,54 @@ export type Database = {
           },
         ]
       }
+      parts_order_items: {
+        Row: {
+          id: string
+          order_id: string
+          part_name: string
+          part_number: string
+          quantity: number
+          supplier_part_id: string | null
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          part_name: string
+          part_number?: string
+          quantity?: number
+          supplier_part_id?: string | null
+          total?: number
+          unit_price?: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          part_name?: string
+          part_number?: string
+          quantity?: number
+          supplier_part_id?: string | null
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "parts_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_order_items_supplier_part_id_fkey"
+            columns: ["supplier_part_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parts_orders: {
         Row: {
           created_at: string
@@ -1857,6 +1905,50 @@ export type Database = {
           },
           {
             foreignKeyName: "supplier_invites_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_parts: {
+        Row: {
+          brand: string
+          category: string
+          id: string
+          name: string
+          part_number: string
+          price: number
+          stock_available: number
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string
+          category?: string
+          id?: string
+          name: string
+          part_number?: string
+          price?: number
+          stock_available?: number
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          category?: string
+          id?: string
+          name?: string
+          part_number?: string
+          price?: number
+          stock_available?: number
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_parts_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"

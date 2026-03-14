@@ -400,6 +400,18 @@ export default function Workshop() {
                 </div>
               )}
 
+              {/* Order Parts Button */}
+              {activeShopId && ['open', 'diagnosis', 'approved', 'in_progress'].includes(selected.status) && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setPartsSearchOpen(true)}
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  {isPt ? "Encomendar Peças" : "Order Parts"}
+                </Button>
+              )}
+
               {/* Action button */}
               {getNextAction(selected.status) && (
                 <Button
@@ -414,6 +426,17 @@ export default function Workshop() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Supplier Parts Search */}
+      {selected && activeShopId && (
+        <SupplierPartsSearch
+          open={partsSearchOpen}
+          onClose={() => setPartsSearchOpen(false)}
+          workOrderId={selected.id}
+          shopId={activeShopId}
+          onOrderPlaced={fetchOrders}
+        />
+      )}
     </div>
   );
 }

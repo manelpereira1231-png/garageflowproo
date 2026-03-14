@@ -44,6 +44,7 @@ export default function Workshop() {
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [partsSearchOpen, setPartsSearchOpen] = useState(false);
 
   const isPt = language === 'pt';
 

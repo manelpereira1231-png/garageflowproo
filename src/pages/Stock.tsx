@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter } from "lucide-react";
+import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -20,6 +20,13 @@ interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
   internal_cost: number; sale_price: number; vat_rate: number; stock_quantity: number;
   min_stock: number; active: boolean; created_at: string;
+}
+
+interface PartsOrder {
+  id: string; shop_id: string; supplier_id: string | null; work_order_id: string | null;
+  part_name: string; part_reference: string | null; quantity: number; unit_price: number;
+  total: number; status: string; notes: string | null; created_at: string; delivered_at: string | null;
+  suppliers?: { name: string } | null;
 }
 
 interface StockMovement {
@@ -33,9 +40,10 @@ const emptyForm = {
 };
 
 export default function Stock() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [parts, setParts] = useState<Part[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [orders, setOrders] = useState<PartsOrder[]>([]);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);
@@ -49,12 +57,14 @@ export default function Stock() {
 
   const load = async () => {
     if (!shopId) return;
-    const [partsRes, movRes] = await Promise.all([
+    const [partsRes, movRes, ordersRes] = await Promise.all([
       supabase.from("parts").select("*").eq("shop_id", shopId).order("name"),
       supabase.from("stock_movements").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
     ]);
     if (partsRes.data) setParts(partsRes.data as Part[]);
     if (movRes.data) setMovements(movRes.data as StockMovement[]);
+    if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
   };
 
   useEffect(() => { load(); }, [shopId]);
@@ -216,6 +226,10 @@ export default function Stock() {
       <Tabs defaultValue="parts">
         <TabsList>
           <TabsTrigger value="parts">{t('stock.parts')} ({parts.length})</TabsTrigger>
+          <TabsTrigger value="orders" className="gap-1">
+            <ShoppingCart className="w-3 h-3" />
+            {language === 'pt' ? 'Encomendas' : 'Orders'} ({orders.length})
+          </TabsTrigger>
           <TabsTrigger value="movements">{t('stock.movements')} ({movements.length})</TabsTrigger>
         </TabsList>
 
@@ -294,6 +308,69 @@ export default function Stock() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{language === 'pt' ? 'Peça' : 'Part'}</TableHead>
+                    <TableHead>{language === 'pt' ? 'Fornecedor' : 'Supplier'}</TableHead>
+                    <TableHead>{language === 'pt' ? 'Qtd' : 'Qty'}</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>{language === 'pt' ? 'Estado' : 'Status'}</TableHead>
+                    <TableHead>{language === 'pt' ? 'Data' : 'Date'}</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {language === 'pt' ? 'Nenhuma encomenda registada' : 'No orders registered'}
+                      </TableCell>
+                    </TableRow>
+                  ) : orders.map(o => (
+                    <TableRow key={o.id}>
+                      <TableCell className="font-medium">{o.part_name}</TableCell>
+                      <TableCell className="text-muted-foreground">{(o.suppliers as any)?.name || '—'}</TableCell>
+                      <TableCell>{o.quantity}</TableCell>
+                      <TableCell className="font-semibold">€{(o.total || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
+                          {o.status === 'pending' ? (language === 'pt' ? 'Pendente' : 'Pending') :
+                           o.status === 'sent' ? (language === 'pt' ? 'Enviado' : 'Sent') :
+                           o.status === 'delivered' ? (language === 'pt' ? 'Entregue' : 'Delivered') :
+                           o.status === 'cancelled' ? (language === 'pt' ? 'Cancelado' : 'Cancelled') : o.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        {o.status !== 'delivered' && o.status !== 'cancelled' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            onClick={async () => {
+                              const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
+                              if (error) { toast.error(error.message); return; }
+                              toast.success(language === 'pt' ? 'Entrega confirmada! Stock atualizado automaticamente.' : 'Delivery confirmed! Stock updated automatically.');
+                              load();
+                            }}
+                          >
+                            <Truck className="w-3.5 h-3.5" />
+                            {language === 'pt' ? 'Confirmar Entrega' : 'Confirm Delivery'}
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

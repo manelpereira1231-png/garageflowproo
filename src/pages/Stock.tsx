@@ -380,6 +380,7 @@ export default function Stock() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="movements">
           <Card>
             <CardContent className="p-0">
               <Table>

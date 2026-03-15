@@ -57,12 +57,14 @@ export default function Stock() {
 
   const load = async () => {
     if (!shopId) return;
-    const [partsRes, movRes] = await Promise.all([
+    const [partsRes, movRes, ordersRes] = await Promise.all([
       supabase.from("parts").select("*").eq("shop_id", shopId).order("name"),
       supabase.from("stock_movements").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
     ]);
     if (partsRes.data) setParts(partsRes.data as Part[]);
     if (movRes.data) setMovements(movRes.data as StockMovement[]);
+    if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
   };
 
   useEffect(() => { load(); }, [shopId]);

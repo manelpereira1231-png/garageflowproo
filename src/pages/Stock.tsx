@@ -40,7 +40,7 @@ const emptyForm = {
 };
 
 export default function Stock() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [parts, setParts] = useState<Part[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [orders, setOrders] = useState<PartsOrder[]>([]);

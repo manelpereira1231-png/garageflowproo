@@ -43,6 +43,7 @@ export default function Stock() {
   const { t } = useLanguage();
   const [parts, setParts] = useState<Part[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [orders, setOrders] = useState<PartsOrder[]>([]);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);

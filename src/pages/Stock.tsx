@@ -226,6 +226,10 @@ export default function Stock() {
       <Tabs defaultValue="parts">
         <TabsList>
           <TabsTrigger value="parts">{t('stock.parts')} ({parts.length})</TabsTrigger>
+          <TabsTrigger value="orders" className="gap-1">
+            <ShoppingCart className="w-3 h-3" />
+            {language === 'pt' ? 'Encomendas' : 'Orders'} ({orders.length})
+          </TabsTrigger>
           <TabsTrigger value="movements">{t('stock.movements')} ({movements.length})</TabsTrigger>
         </TabsList>
 

@@ -22,6 +22,13 @@ interface Part {
   min_stock: number; active: boolean; created_at: string;
 }
 
+interface PartsOrder {
+  id: string; shop_id: string; supplier_id: string | null; work_order_id: string | null;
+  part_name: string; part_reference: string | null; quantity: number; unit_price: number;
+  total: number; status: string; notes: string | null; created_at: string; delivered_at: string | null;
+  suppliers?: { name: string } | null;
+}
+
 interface StockMovement {
   id: string; part_id: string; type: string; quantity: number; reason: string | null; created_at: string;
   work_order_id: string | null;

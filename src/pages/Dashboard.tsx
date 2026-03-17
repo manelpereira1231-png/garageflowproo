@@ -258,6 +258,22 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* CMD+K hint */}
+      <div className="flex items-center justify-between mb-6">
+        <div />
+        <button
+          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
+        >
+          <Search className="w-3.5 h-3.5" />
+          {t('dashboard.search') || 'Pesquisar'}
+          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
+        </button>
+      </div>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (

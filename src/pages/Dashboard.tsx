@@ -374,6 +374,42 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Conversion Rate + Top Parts */}
+      {plan !== 'free' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              {language === 'pt' ? 'Taxa Conversão Orçamentos' : 'Quote Conversion Rate'}
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl font-bold text-primary">{conversionRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'pt' ? 'Últimos 6 meses' : 'Last 6 months'}
+              </p>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              {language === 'pt' ? 'Peças Mais Usadas' : 'Top Parts Used'}
+            </h2>
+            {topParts.length > 0 ? (
+              <div className="space-y-2">
+                {topParts.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{p.name}</span>
+                    <span className="mono font-medium text-muted-foreground">{p.count}x</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('dashboard.noData')}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {pendingAlerts.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">

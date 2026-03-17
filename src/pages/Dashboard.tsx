@@ -195,6 +195,26 @@ export default function Dashboard() {
           .filter(([, v]) => v > 0)
           .map(([name, value]) => ({ name: t(`service.${name}`), value, color: STATUS_COLORS[name] || '#888' }))
       );
+
+      // Conversion rate
+      const allQuotes = allQuotesRes.data || [];
+      if (allQuotes.length > 0) {
+        const approved = allQuotes.filter(q => ['approved', 'converted'].includes(q.status)).length;
+        setConversionRate(Math.round((approved / allQuotes.length) * 100));
+      }
+
+      // Top parts
+      const partsMap = new Map<string, number>();
+      (partsUsedRes.data || []).forEach((m: any) => {
+        const name = (m.parts as any)?.name;
+        if (name) partsMap.set(name, (partsMap.get(name) || 0) + (m.quantity || 0));
+      });
+      setTopParts(
+        Array.from(partsMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([name, count]) => ({ name, count }))
+      );
     };
     loadData();
   }, []);

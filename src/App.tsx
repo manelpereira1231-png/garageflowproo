@@ -293,6 +293,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <CommandPalette />
           <AppRoutes />
         </BrowserRouter>
         <PWAInstallPrompt />

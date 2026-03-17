@@ -240,6 +240,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
           </button>
 
+          {/* Spacer */}
+          <div className="flex-1" />
+
           {/* Alerts shortcut */}
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1">

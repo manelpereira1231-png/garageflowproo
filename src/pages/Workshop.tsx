@@ -414,16 +414,6 @@ export default function Workshop() {
         </DialogContent>
       </Dialog>
 
-      {/* Supplier Parts Search */}
-      {selected && activeShopId && (
-        <SupplierPartsSearch
-          open={partsSearchOpen}
-          onClose={() => setPartsSearchOpen(false)}
-          workOrderId={selected.id}
-          shopId={activeShopId}
-          onOrderPlaced={fetchOrders}
-        />
-      )}
     </div>
   );
 }

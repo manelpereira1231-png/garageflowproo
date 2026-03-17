@@ -12,7 +12,6 @@ import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, Thumbs
 import { format } from "date-fns";
 import { toast } from "sonner";
 import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
-import SupplierPartsSearch from "@/components/SupplierPartsSearch";
 import type { ServiceStatus } from "@/types/garage";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
@@ -44,7 +43,7 @@ export default function Workshop() {
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [partsSearchOpen, setPartsSearchOpen] = useState(false);
+  
 
   const isPt = language === 'pt';
 
@@ -400,18 +399,6 @@ export default function Workshop() {
                 </div>
               )}
 
-              {/* Order Parts Button */}
-              {activeShopId && ['open', 'diagnosis', 'approved', 'in_progress'].includes(selected.status) && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setPartsSearchOpen(true)}
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  {isPt ? "Encomendar Peças" : "Order Parts"}
-                </Button>
-              )}
-
               {/* Action button */}
               {getNextAction(selected.status) && (
                 <Button
@@ -427,16 +414,6 @@ export default function Workshop() {
         </DialogContent>
       </Dialog>
 
-      {/* Supplier Parts Search */}
-      {selected && activeShopId && (
-        <SupplierPartsSearch
-          open={partsSearchOpen}
-          onClose={() => setPartsSearchOpen(false)}
-          workOrderId={selected.id}
-          shopId={activeShopId}
-          onOrderPlaced={fetchOrders}
-        />
-      )}
     </div>
   );
 }

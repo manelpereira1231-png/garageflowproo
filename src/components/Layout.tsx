@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
   Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
-  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code, Handshake
+  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('automations') ? [{ path: "/automations", label: language === 'pt' ? 'Automações' : language === 'es' ? 'Automatizaciones' : 'Automations', icon: Zap, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('api') ? [{ path: "/developers", label: "API", icon: Code, planBadge: 'Garage' as const }] : []),
-    { path: "/suppliers", label: language === 'pt' ? 'Fornecedores' : language === 'es' ? 'Proveedores' : 'Suppliers', icon: Handshake },
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),

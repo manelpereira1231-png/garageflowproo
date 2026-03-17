@@ -230,8 +230,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Desktop: show shop name */}
           <span className="text-sm font-medium text-muted-foreground hidden lg:block truncate">{shopName}</span>
           
-          {/* Spacer */}
-          <div className="flex-1" />
+          {/* CMD+K Search shortcut */}
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+            className="hidden lg:flex items-center gap-2 ml-4 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
+          >
+            <Search className="w-3.5 h-3.5" />
+            {language === 'pt' ? 'Pesquisar...' : 'Search...'}
+            <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
+          </button>
 
           {/* Alerts shortcut */}
           {pendingAlertCount > 0 && (

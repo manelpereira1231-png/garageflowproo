@@ -38,6 +38,8 @@ export default function Dashboard() {
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; profit: number }[]>([]);
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [conversionRate, setConversionRate] = useState(0);
+  const [topParts, setTopParts] = useState<{ name: string; count: number }[]>([]);
 
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");

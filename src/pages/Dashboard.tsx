@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import OnboardingChecklist from "@/components/OnboardingChecklist";
 
 interface KPIData {
   revenue: number;
@@ -27,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { plan, isTrialing, trialDaysLeft, limits } = useSubscription();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -37,6 +38,8 @@ export default function Dashboard() {
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; profit: number }[]>([]);
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [conversionRate, setConversionRate] = useState(0);
+  const [topParts, setTopParts] = useState<{ name: string; count: number }[]>([]);
 
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");
@@ -61,7 +64,7 @@ export default function Dashboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes] = await Promise.all([
+      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes] = await Promise.all([
         supabase.from("work_orders")
           .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
           .eq("shop_id", shop.id)
@@ -81,23 +84,32 @@ export default function Dashboard() {
           .eq("status", "pending")
           .order("created_at", { ascending: false })
           .limit(5),
-        // Last 6 months for chart
         supabase.from("work_orders")
           .select("total, profit, status, created_at")
           .eq("shop_id", shop.id)
           .gte("created_at", sixMonthsAgo)
           .in("status", ['completed', 'delivered']),
-        // Low stock parts
         supabase.from("parts")
           .select("id, name, stock_quantity, min_stock")
           .eq("shop_id", shop.id)
           .eq("active", true),
-        // Overdue invoices
         supabase.from("invoices")
           .select("id, number, total, due_date, clients(name)")
           .eq("shop_id", shop.id)
           .in("status", ['issued', 'partial'])
           .lt("due_date", new Date().toISOString().slice(0, 10)),
+        // All quotes for conversion rate
+        supabase.from("quotes")
+          .select("id, status")
+          .eq("shop_id", shop.id)
+          .gte("created_at", sixMonthsAgo),
+        // Parts used in stock movements
+        supabase.from("stock_movements")
+          .select("quantity, parts(name)")
+          .eq("shop_id", shop.id)
+          .eq("type", "out")
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
 
       const orders = ordersRes.data || [];
@@ -183,6 +195,26 @@ export default function Dashboard() {
           .filter(([, v]) => v > 0)
           .map(([name, value]) => ({ name: t(`service.${name}`), value, color: STATUS_COLORS[name] || '#888' }))
       );
+
+      // Conversion rate
+      const allQuotes = allQuotesRes.data || [];
+      if (allQuotes.length > 0) {
+        const approved = allQuotes.filter(q => ['approved', 'converted'].includes(q.status)).length;
+        setConversionRate(Math.round((approved / allQuotes.length) * 100));
+      }
+
+      // Top parts
+      const partsMap = new Map<string, number>();
+      (partsUsedRes.data || []).forEach((m: any) => {
+        const name = (m.parts as any)?.name;
+        if (name) partsMap.set(name, (partsMap.get(name) || 0) + (m.quantity || 0));
+      });
+      setTopParts(
+        Array.from(partsMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([name, count]) => ({ name, count }))
+      );
     };
     loadData();
   }, []);
@@ -225,6 +257,22 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* CMD+K hint */}
+      <div className="flex items-center justify-between mb-6">
+        <div />
+        <button
+          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
+        >
+          <Search className="w-3.5 h-3.5" />
+          {t('dashboard.search') || 'Pesquisar'}
+          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
+        </button>
+      </div>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -321,6 +369,42 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-[160px] text-muted-foreground text-sm">{t('dashboard.noData')}</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conversion Rate + Top Parts */}
+      {plan !== 'free' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              {language === 'pt' ? 'Taxa Conversão Orçamentos' : 'Quote Conversion Rate'}
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl font-bold text-primary">{conversionRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'pt' ? 'Últimos 6 meses' : 'Last 6 months'}
+              </p>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              {language === 'pt' ? 'Peças Mais Usadas' : 'Top Parts Used'}
+            </h2>
+            {topParts.length > 0 ? (
+              <div className="space-y-2">
+                {topParts.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{p.name}</span>
+                    <span className="mono font-medium text-muted-foreground">{p.count}x</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('dashboard.noData')}</p>
             )}
           </div>
         </div>

@@ -12,6 +12,7 @@ import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, Thumbs
 import { format } from "date-fns";
 import { toast } from "sonner";
 import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
+import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
@@ -239,17 +240,13 @@ export default function Workshop() {
                 </p>
               )}
 
-              {/* Timeline */}
-              <div className="flex items-center gap-0.5">
-                {statusFlow.map((s, i) => {
-                  const si = statusFlow.indexOf(wo.status as ServiceStatus);
-                  return (
-                    <div key={s} className="flex items-center gap-0.5 flex-1">
-                      <div className={`h-1.5 flex-1 rounded-full ${i <= si ? 'bg-primary' : 'bg-muted-foreground/20'}`} />
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Visual Timeline */}
+              <WorkshopTimeline
+                currentStatus={wo.status}
+                createdAt={wo.created_at}
+                completedAt={wo.completed_at}
+                deliveredAt={wo.delivered_at}
+              />
 
               {/* Actions */}
               <div className="flex gap-2">

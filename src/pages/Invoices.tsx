@@ -9,7 +9,6 @@ import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { openWhatsApp } from "@/lib/whatsapp";
 import { exportToCsv } from "@/lib/pdfGenerator";
 
 const statusColors: Record<string, string> = {

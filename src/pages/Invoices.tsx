@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
+import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle } from "lucide-react";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -96,8 +97,8 @@ export default function Invoices() {
             {totalCount === 0 ? t('invoices.empty') : t('invoices.noResults')}
           </div>
         ) : filtered.map(inv => (
-          <Link key={inv.id} to={`/invoices/${inv.id}`} className="block">
-            <div className="bg-card border border-border rounded-xl p-4 space-y-2 hover:border-primary/30 transition-colors">
+          <div key={inv.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+            <Link to={`/invoices/${inv.id}`} className="block">
               <div className="flex items-center justify-between">
                 <span className="font-medium mono text-sm">{inv.number}</span>
                 <Badge variant="secondary" className={statusColors[inv.status] || ''}>
@@ -109,8 +110,20 @@ export default function Invoices() {
                 <span className="text-sm font-semibold mono text-foreground">{cur}{inv.total?.toFixed(2)}</span>
                 <span>{inv.due_date || '—'}</span>
               </div>
+            </Link>
+            <div className="flex gap-1 pt-1 border-t border-border">
+              <Link to={`/invoices/${inv.id}`} className="flex-1">
+                <Button variant="ghost" size="sm" className="w-full text-xs h-7"><Eye className="w-3 h-3 mr-1" />{t('common.view')}</Button>
+              </Link>
+              <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
+                const phone = (inv.clients as any)?.phone;
+                if (!phone) { toast.error('Cliente sem telefone'); return; }
+                openWhatsApp({ phone, clientName: (inv.clients as any)?.name, type: 'invoice', number: inv.number, plate: (inv.vehicles as any)?.plate });
+              }}>
+                <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+              </Button>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 
@@ -156,6 +169,14 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                       </Button>
                     </Link>
+                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={(e) => {
+                      e.preventDefault();
+                      const phone = (inv.clients as any)?.phone;
+                      if (!phone) { toast.error('Cliente sem telefone'); return; }
+                      openWhatsApp({ phone, clientName: (inv.clients as any)?.name, type: 'invoice', number: inv.number, plate: (inv.vehicles as any)?.plate });
+                    }}>
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

@@ -279,10 +279,20 @@ export default function Quotes() {
               )}
               <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs h-7">PDF</Button>
               {!['converted', 'rejected', 'expired'].includes(q.status) && (
-                <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs h-7">
-                  {sendingEmail === q.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
-                  Email
-                </Button>
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs h-7">
+                    {sendingEmail === q.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
+                    Email
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
+                    const phone = (q.clients as any)?.phone;
+                    if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+                    const approvalUrl = q.token ? `https://garageflow.pt/quote/${q.token}` : undefined;
+                    openWhatsApp({ phone, clientName: (q.clients as any)?.name, type: 'quote', number: q.number, plate: (q.vehicles as any)?.plate, link: approvalUrl });
+                  }}>
+                    <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+                  </Button>
+                </>
               )}
               {['draft', 'sent', 'approved'].includes(q.status) && (
                 <Button variant="ghost" size="sm" onClick={() => convertToService(q)} disabled={converting === q.id} className="text-xs h-7">

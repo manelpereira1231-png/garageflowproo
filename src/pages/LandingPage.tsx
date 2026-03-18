@@ -98,25 +98,26 @@ export default function LandingPage() {
             {t('landing.badge')}
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-tight">
-            {t('landing.heroTitle1')}
+            Software de gestão
             <br />
-            <span className="text-primary">{t('landing.heroTitle2')}</span>
+            <span className="text-primary">para oficinas automóveis</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/auth">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-8">
-                {t('landing.cta')} <ArrowRight className="w-4 h-4 ml-2" />
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold">
+                🚀 Testar grátis <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <a href="#features">
-              <Button size="lg" variant="outline" className="text-base px-8">
+              <Button size="lg" variant="outline" className="text-base px-8 h-14">
                 {t('landing.ctaFeatures')}
               </Button>
             </a>
           </div>
+          <p className="text-xs text-muted-foreground mt-4">Sem cartão de crédito · Configuração em 2 minutos</p>
         </div>
       </header>
 

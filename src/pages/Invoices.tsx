@@ -157,6 +157,14 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                       </Button>
                     </Link>
+                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={(e) => {
+                      e.preventDefault();
+                      const phone = (inv.clients as any)?.phone;
+                      if (!phone) { toast.error('Cliente sem telefone'); return; }
+                      openWhatsApp({ phone, clientName: (inv.clients as any)?.name, type: 'invoice', number: inv.number, plate: (inv.vehicles as any)?.plate });
+                    }}>
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

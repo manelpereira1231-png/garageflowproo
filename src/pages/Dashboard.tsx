@@ -448,28 +448,24 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <h2 className="text-lg font-semibold mb-4">{t('dashboard.quickActions')}</h2>
+      {/* Quick Actions — prominent large buttons */}
+      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl p-6 mb-6">
+        <h2 className="text-lg font-bold mb-4">{t('dashboard.quickActions')}</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: t('dashboard.newClient'), icon: Users, href: "/clients" },
-            { label: t('dashboard.newVehicle'), icon: "🚗", href: "/vehicles" },
-            { label: t('dashboard.newQuote'), icon: FileText, href: "/quotes/new" },
-            { label: t('dashboard.newService'), icon: Wrench, href: "/services/new" },
+            { label: t('dashboard.newClient'), icon: Users, href: "/clients", emoji: "👤" },
+            { label: t('dashboard.newVehicle'), icon: Users, href: "/vehicles", emoji: "🚗" },
+            { label: t('dashboard.newQuote'), icon: FileText, href: "/quotes/new", emoji: "📋" },
+            { label: t('dashboard.newService'), icon: Wrench, href: "/services/new", emoji: "🔧" },
           ].map((action) => (
             <Link
               key={action.label}
               to={action.href}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border 
-                hover:border-primary/30 hover:bg-primary/5 transition-all text-center group"
+              className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-card border-2 border-border
+                hover:border-primary hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 transition-all text-center group"
             >
-              {typeof action.icon === 'string' ? (
-                <span className="text-2xl">{action.icon}</span>
-              ) : (
-                <action.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              )}
-              <span className="text-sm font-medium">{action.label}</span>
+              <span className="text-3xl">{action.emoji}</span>
+              <span className="text-sm font-semibold group-hover:text-primary transition-colors">{action.label}</span>
             </Link>
           ))}
         </div>

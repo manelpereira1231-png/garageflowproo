@@ -217,17 +217,18 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 text-center">
+      <section className="py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h2>
           <p className="text-muted-foreground text-lg mb-8">
             {t('landing.ctaSubtitle')}
           </p>
           <Link to="/auth">
-            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10">
-              {t('landing.ctaButton')} <ArrowRight className="w-4 h-4 ml-2" />
+            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-lg px-12 h-14 font-bold">
+              🚀 Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
+          <p className="text-xs text-muted-foreground mt-4">Sem cartão de crédito · 30 dias grátis</p>
         </div>
       </section>
 

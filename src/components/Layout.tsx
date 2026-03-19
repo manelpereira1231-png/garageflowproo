@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
   Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
-  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code, Search
+  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code, Search, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";

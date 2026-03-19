@@ -53,6 +53,7 @@ const Workshop = lazy(() => import("@/pages/Workshop"));
 const Automations = lazy(() => import("@/pages/Automations"));
 const Developers = lazy(() => import("@/pages/Developers"));
 const PartnersPortal = lazy(() => import("@/pages/PartnersPortal"));
+const Referrals = lazy(() => import("@/pages/Referrals"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -165,7 +166,7 @@ function AuthenticatedRoutes() {
           <Route path="/billing" element={<Layout><Billing /></Layout>} />
           <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
           <Route path="/team" element={<Layout><Team /></Layout>} />
-          <Route path="/chat" element={<Layout><Chat /></Layout>} />
+          <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
           <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
           <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
           <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
@@ -180,6 +181,7 @@ function AuthenticatedRoutes() {
           <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
           <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
           <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
+          <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -217,7 +219,7 @@ function AuthenticatedRoutes() {
         <Route path="/billing" element={<Layout><Billing /></Layout>} />
         <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
         <Route path="/team" element={<Layout><Team /></Layout>} />
-        <Route path="/chat" element={<Layout><Chat /></Layout>} />
+        <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
         <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
         <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
         <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
@@ -232,6 +234,7 @@ function AuthenticatedRoutes() {
         <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
+        <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

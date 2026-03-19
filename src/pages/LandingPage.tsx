@@ -80,7 +80,7 @@ export default function LandingPage() {
             <Link to="/auth">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-md">
                 {t('landing.cta')}
               </Button>
@@ -106,7 +106,7 @@ export default function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold">
                 🚀 Testar grátis <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -125,10 +125,10 @@ export default function LandingPage() {
       <section className="py-12 px-4 border-b border-border bg-muted/20">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: '500+', labelKey: 'landing.statsShops' },
-            { value: '10K+', labelKey: 'landing.statsVehicles' },
-            { value: '50K+', labelKey: 'landing.statsQuotes' },
-            { value: '99.9%', labelKey: 'landing.statsUptime' },
+            { value: '120+', labelKey: 'landing.statsShops' },
+            { value: '1.500+', labelKey: 'landing.statsVehicles' },
+            { value: '5.000+', labelKey: 'landing.statsQuotes' },
+            { value: '99,9%', labelKey: 'landing.statsUptime' },
           ].map((stat, i) => (
             <div key={i}>
               <p className="text-3xl sm:text-4xl font-bold text-primary">{stat.value}</p>
@@ -202,7 +202,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth">
+                <Link to="/auth?mode=signup">
                   <Button
                     className={`w-full ${plan.highlighted ? "gradient-primary text-primary-foreground" : ""}`}
                     variant={plan.highlighted ? "default" : "outline"}
@@ -223,7 +223,7 @@ export default function LandingPage() {
           <p className="text-muted-foreground text-lg mb-8">
             {t('landing.ctaSubtitle')}
           </p>
-          <Link to="/auth">
+          <Link to="/auth?mode=signup">
             <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-lg px-12 h-14 font-bold">
               🚀 Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

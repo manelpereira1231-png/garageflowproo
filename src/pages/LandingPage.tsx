@@ -202,7 +202,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth">
+                <Link to="/auth?mode=signup">
                   <Button
                     className={`w-full ${plan.highlighted ? "gradient-primary text-primary-foreground" : ""}`}
                     variant={plan.highlighted ? "default" : "outline"}

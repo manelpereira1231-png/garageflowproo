@@ -106,7 +106,7 @@ export default function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold">
                 🚀 Testar grátis <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

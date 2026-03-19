@@ -125,10 +125,10 @@ export default function LandingPage() {
       <section className="py-12 px-4 border-b border-border bg-muted/20">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: '500+', labelKey: 'landing.statsShops' },
-            { value: '10K+', labelKey: 'landing.statsVehicles' },
-            { value: '50K+', labelKey: 'landing.statsQuotes' },
-            { value: '99.9%', labelKey: 'landing.statsUptime' },
+            { value: '120+', labelKey: 'landing.statsShops' },
+            { value: '1.500+', labelKey: 'landing.statsVehicles' },
+            { value: '5.000+', labelKey: 'landing.statsQuotes' },
+            { value: '99,9%', labelKey: 'landing.statsUptime' },
           ].map((stat, i) => (
             <div key={i}>
               <p className="text-3xl sm:text-4xl font-bold text-primary">{stat.value}</p>

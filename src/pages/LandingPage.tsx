@@ -223,7 +223,7 @@ export default function LandingPage() {
           <p className="text-muted-foreground text-lg mb-8">
             {t('landing.ctaSubtitle')}
           </p>
-          <Link to="/auth">
+          <Link to="/auth?mode=signup">
             <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-lg px-12 h-14 font-bold">
               🚀 Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

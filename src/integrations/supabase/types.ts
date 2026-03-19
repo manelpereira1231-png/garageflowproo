@@ -1516,6 +1516,104 @@ export type Database = {
           },
         ]
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          free_months_balance: number
+          id: string
+          paid_referrals_count: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          free_months_balance?: number
+          id?: string
+          paid_referrals_count?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          free_months_balance?: number
+          id?: string
+          paid_referrals_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          months_earned: number
+          reward_type: string
+          source_referral_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          months_earned?: number
+          reward_type?: string
+          source_referral_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          months_earned?: number
+          reward_type?: string
+          source_referral_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_source_referral_id_fkey"
+            columns: ["source_referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          payment_confirmed: boolean
+          plan: string | null
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_given: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_confirmed?: boolean
+          plan?: string | null
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_given?: boolean
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_confirmed?: boolean
+          plan?: string | null
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_given?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
       service_catalog: {
         Row: {
           active: boolean

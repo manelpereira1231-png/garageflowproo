@@ -41,7 +41,8 @@ export default function Auth() {
         if (error) throw error;
         toast.success(t('auth.welcomeBack'));
       } else {
-        const { error } = await supabase.auth.signUp({
+        const refCode = searchParams.get('ref') || '';
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email, password,
           options: {
             data: {
@@ -49,11 +50,36 @@ export default function Auth() {
               name: shopName || name,
               shop_country: country,
               shop_nif: nif,
+              referral_code: refCode || undefined,
             },
             emailRedirectTo: window.location.origin,
           }
         });
         if (error) throw error;
+
+        // If signup had a referral code, create the referral record
+        if (refCode && signUpData?.user) {
+          try {
+            // Find the referrer by code
+            const { data: codeData } = await supabase
+              .from("referral_codes")
+              .select("user_id, code")
+              .eq("code", refCode)
+              .maybeSingle();
+
+            if (codeData && codeData.user_id !== signUpData.user.id) {
+              await supabase.from("referrals").insert({
+                referrer_user_id: codeData.user_id,
+                referred_user_id: signUpData.user.id,
+                referral_code: refCode,
+                status: 'pending',
+              });
+            }
+          } catch (refErr) {
+            console.warn("Referral tracking failed:", refErr);
+          }
+        }
+
         // Sign out after signup so user must log in explicitly
         await supabase.auth.signOut();
         toast.success(t('auth.accountCreated'));

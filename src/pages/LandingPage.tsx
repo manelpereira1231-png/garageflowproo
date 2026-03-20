@@ -225,10 +225,10 @@ export default function LandingPage() {
           </p>
           <Link to="/auth?mode=signup">
             <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-lg px-12 h-14 font-bold">
-              🚀 Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
+              🚀 {t('landing.ctaButton')} <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
-          <p className="text-xs text-muted-foreground mt-4">Sem cartão de crédito · 30 dias grátis</p>
+          <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </section>
 

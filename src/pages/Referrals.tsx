@@ -43,7 +43,6 @@ export default function Referrals() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get or create referral code
     let { data: codeData } = await supabase
       .from("referral_codes")
       .select("*")
@@ -62,7 +61,6 @@ export default function Referrals() {
 
     if (codeData) setReferralCode(codeData as unknown as ReferralCode);
 
-    // Load referrals
     const { data: refs } = await supabase
       .from("referrals")
       .select("*")
@@ -79,18 +77,18 @@ export default function Referrals() {
     if (!referralCode) return;
     const link = `${window.location.origin}/auth?mode=signup&ref=${referralCode.code}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link copiado!");
+    toast.success(t('referrals.linkCopied'));
   };
 
   const paidCount = referralCode?.paid_referrals_count || 0;
   const bonusProgress = Math.min((paidCount / 5) * 100, 100);
   const freeMonths = referralCode?.free_months_balance || 0;
 
-  const statusConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-    pending: { icon: <Clock className="w-3.5 h-3.5" />, color: "bg-muted text-muted-foreground", label: "Pendente" },
-    trial: { icon: <Clock className="w-3.5 h-3.5" />, color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400", label: "Trial" },
-    paid: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", label: "Pago" },
-    rejected: { icon: <XCircle className="w-3.5 h-3.5" />, color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", label: "Rejeitado" },
+  const statusConfig: Record<string, { icon: React.ReactNode; color: string; labelKey: string }> = {
+    pending: { icon: <Clock className="w-3.5 h-3.5" />, color: "bg-muted text-muted-foreground", labelKey: "referrals.statusPending" },
+    trial: { icon: <Clock className="w-3.5 h-3.5" />, color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400", labelKey: "referrals.statusTrial" },
+    paid: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", labelKey: "referrals.statusPaid" },
+    rejected: { icon: <XCircle className="w-3.5 h-3.5" />, color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", labelKey: "referrals.statusRejected" },
   };
 
   if (loading) {
@@ -104,8 +102,8 @@ export default function Referrals() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">🎁 Programa de Referências</h1>
-        <p className="text-muted-foreground">Ganhe 1 mês grátis por cada oficina que se torne cliente pago</p>
+        <h1 className="text-2xl font-bold">🎁 {t('referrals.title')}</h1>
+        <p className="text-muted-foreground">{t('referrals.subtitle')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -114,21 +112,21 @@ export default function Referrals() {
           <CardContent className="pt-6 text-center">
             <Gift className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-3xl font-bold">{freeMonths}</p>
-            <p className="text-sm text-muted-foreground">Meses grátis disponíveis</p>
+            <p className="text-sm text-muted-foreground">{t('referrals.freeMonths')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
             <Users className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-3xl font-bold">{paidCount}</p>
-            <p className="text-sm text-muted-foreground">Referências pagas</p>
+            <p className="text-sm text-muted-foreground">{t('referrals.paidReferrals')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
             <CheckCircle className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-3xl font-bold">{referrals.length}</p>
-            <p className="text-sm text-muted-foreground">Total de convites</p>
+            <p className="text-sm text-muted-foreground">{t('referrals.totalInvites')}</p>
           </CardContent>
         </Card>
       </div>
@@ -136,7 +134,7 @@ export default function Referrals() {
       {/* Share Link */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">O seu link de referência</CardTitle>
+          <CardTitle className="text-lg">{t('referrals.yourLink')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
@@ -144,11 +142,11 @@ export default function Referrals() {
               {referralCode ? `${window.location.origin}/auth?mode=signup&ref=${referralCode.code}` : '...'}
             </code>
             <Button onClick={copyLink} size="sm" className="shrink-0">
-              <Copy className="w-4 h-4 mr-1" /> Copiar
+              <Copy className="w-4 h-4 mr-1" /> {t('referrals.copy')}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Partilhe este link com outras oficinas. Quando se registarem e pagarem um plano Pro ou Garage, ganha 1 mês grátis.
+            {t('referrals.shareDescription')}
           </p>
         </CardContent>
       </Card>
@@ -156,14 +154,14 @@ export default function Referrals() {
       {/* Bonus Progress */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">🔥 Bónus: 5 referências = +3 meses grátis</CardTitle>
+          <CardTitle className="text-lg">🔥 {t('referrals.bonusTitle')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Progress value={bonusProgress} className="h-3" />
-          <p className="text-sm text-muted-foreground">{paidCount}/5 referências pagas</p>
+          <p className="text-sm text-muted-foreground">{paidCount}/5 {t('referrals.paidReferrals')}</p>
           {paidCount >= 5 && (
             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-              ✅ Bónus desbloqueado!
+              ✅ {t('referrals.bonusUnlocked')}
             </Badge>
           )}
         </CardContent>
@@ -172,12 +170,12 @@ export default function Referrals() {
       {/* Referral List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Histórico de convites</CardTitle>
+          <CardTitle className="text-lg">{t('referrals.history')}</CardTitle>
         </CardHeader>
         <CardContent>
           {referrals.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Ainda não tem referências. Partilhe o seu link!
+              {t('referrals.empty')}
             </p>
           ) : (
             <div className="space-y-3">
@@ -190,15 +188,15 @@ export default function Referrals() {
                         <Users className="w-4 h-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">Convite #{ref.id.slice(0, 8)}</p>
+                        <p className="text-sm font-medium">{t('referrals.invite')} #{ref.id.slice(0, 8)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(ref.created_at).toLocaleDateString('pt-PT')}
-                          {ref.plan && ref.plan !== 'Free' && ` · Plano ${ref.plan}`}
+                          {new Date(ref.created_at).toLocaleDateString()}
+                          {ref.plan && ref.plan !== 'Free' && ` · ${t('referrals.plan')} ${ref.plan}`}
                         </p>
                       </div>
                     </div>
                     <Badge className={`${cfg.color} gap-1`}>
-                      {cfg.icon} {cfg.label}
+                      {cfg.icon} {t(cfg.labelKey)}
                     </Badge>
                   </div>
                 );

@@ -65,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
     ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),
-    { path: "/referrals", label: language === 'pt' ? 'Referências' : language === 'es' ? 'Referencias' : 'Referrals', icon: Gift },
+    { path: "/referrals", label: t('nav.referrals'), icon: Gift },
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
   ];

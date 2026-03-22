@@ -258,8 +258,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* CMD+K hint */}
-      <div className="flex items-center justify-between mb-6">
+      {/* CMD+K hint - hidden on mobile (already in header) */}
+      <div className="hidden sm:flex items-center justify-between mb-6">
         <div />
         <button
           onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
@@ -449,23 +449,23 @@ export default function Dashboard() {
       )}
 
       {/* Quick Actions — prominent large buttons */}
-      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl p-6 mb-6">
-        <h2 className="text-lg font-bold mb-4">{t('dashboard.quickActions')}</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6">
+        <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           {[
-            { label: t('dashboard.newClient'), icon: Users, href: "/clients", emoji: "👤" },
-            { label: t('dashboard.newVehicle'), icon: Users, href: "/vehicles", emoji: "🚗" },
-            { label: t('dashboard.newQuote'), icon: FileText, href: "/quotes/new", emoji: "📋" },
-            { label: t('dashboard.newService'), icon: Wrench, href: "/services/new", emoji: "🔧" },
+            { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },
+            { label: t('dashboard.newVehicle'), href: "/vehicles", emoji: "🚗" },
+            { label: t('dashboard.newQuote'), href: "/quotes/new", emoji: "📋" },
+            { label: t('dashboard.newService'), href: "/services/new", emoji: "🔧" },
           ].map((action) => (
             <Link
               key={action.label}
               to={action.href}
-              className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-card border-2 border-border
-                hover:border-primary hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 transition-all text-center group"
+              className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-3 sm:p-5 rounded-xl bg-card border-2 border-border
+                hover:border-primary hover:shadow-lg hover:shadow-primary/10 active:scale-95 sm:hover:-translate-y-0.5 transition-all text-center group"
             >
-              <span className="text-3xl">{action.emoji}</span>
-              <span className="text-sm font-semibold group-hover:text-primary transition-colors">{action.label}</span>
+              <span className="text-2xl sm:text-3xl">{action.emoji}</span>
+              <span className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors leading-tight">{action.label}</span>
             </Link>
           ))}
         </div>

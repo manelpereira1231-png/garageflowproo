@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 
 interface KPIData {
@@ -27,9 +27,15 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'hsl(0, 70%, 55%)',
 };
 
+const MONTH_NAMES: Record<string, string[]> = {
+  pt: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  es: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+};
+
 export default function Dashboard() {
   const { t, language } = useLanguage();
-  const { plan, isTrialing, trialDaysLeft, limits } = useSubscription();
+  const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
@@ -98,12 +104,10 @@ export default function Dashboard() {
           .eq("shop_id", shop.id)
           .in("status", ['issued', 'partial'])
           .lt("due_date", new Date().toISOString().slice(0, 10)),
-        // All quotes for conversion rate
         supabase.from("quotes")
           .select("id, status")
           .eq("shop_id", shop.id)
           .gte("created_at", sixMonthsAgo),
-        // Parts used in stock movements
         supabase.from("stock_movements")
           .select("quantity, parts(name)")
           .eq("shop_id", shop.id)
@@ -129,7 +133,7 @@ export default function Dashboard() {
 
       setRecentServices(orders.slice(0, 5));
 
-      // Combine DB alerts with auto-generated alerts for low stock & overdue invoices
+      // Auto-generated alerts
       const dbAlerts = alertsRes.data || [];
       const autoAlerts: any[] = [];
       
@@ -137,7 +141,7 @@ export default function Dashboard() {
       if (lowStockParts.length > 0) {
         autoAlerts.push({
           id: 'auto-low-stock',
-          title: `${lowStockParts.length} ${lowStockParts.length === 1 ? 'peça com stock baixo' : 'peças com stock baixo'}`,
+          title: `${lowStockParts.length} ${lowStockParts.length === 1 ? t('dashboard.lowStockSingle') || 'peça com stock baixo' : t('dashboard.lowStockPlural') || 'peças com stock baixo'}`,
           type: 'stock_low',
           status: 'pending',
           created_at: new Date().toISOString(),
@@ -149,7 +153,7 @@ export default function Dashboard() {
         const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
         autoAlerts.push({
           id: 'auto-overdue',
-          title: `${overdueInvoices.length} faturas vencidas (€${overdueTotal.toFixed(0)})`,
+          title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${currency}${overdueTotal.toFixed(0)})`,
           type: 'payment_failed',
           status: 'pending',
           created_at: new Date().toISOString(),
@@ -158,11 +162,10 @@ export default function Dashboard() {
 
       setPendingAlerts([...autoAlerts, ...dbAlerts].slice(0, 8));
 
-      // Build monthly revenue chart data
+      // Monthly revenue chart
       const allOrders = allOrdersRes.data || [];
       const monthMap = new Map<string, { revenue: number; profit: number }>();
-      const monthNames = { pt: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'], en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], es: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] };
-      const names = monthNames[plan ? 'pt' : 'pt']; // use stored language if available
+      const names = MONTH_NAMES[language] || MONTH_NAMES.pt;
 
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -182,12 +185,12 @@ export default function Dashboard() {
 
       setMonthlyRevenue(
         Array.from(monthMap.entries()).map(([key, val]) => {
-          const [y, m] = key.split('-');
+          const [, m] = key.split('-');
           return { month: names[parseInt(m) - 1] || m, revenue: Math.round(val.revenue), profit: Math.round(val.profit) };
         })
       );
 
-      // Build status distribution
+      // Status distribution
       const statusCounts = new Map<string, number>();
       orders.forEach(o => { statusCounts.set(o.status, (statusCounts.get(o.status) || 0) + 1); });
       setStatusDistribution(
@@ -217,7 +220,7 @@ export default function Dashboard() {
       );
     };
     loadData();
-  }, []);
+  }, [language]);
 
   const alertTypeColors: Record<string, string> = {
     payment_failed: "text-destructive",
@@ -229,19 +232,21 @@ export default function Dashboard() {
     inactive_client: "text-info",
     service_due: "text-warning",
     quote_pending: "text-warning",
+    stock_low: "text-warning",
   };
 
   const stats = [
-    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign },
-    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp },
-    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench },
-    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3 },
-    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText },
-    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users },
+    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
+    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
+    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500' },
+    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500' },
+    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500' },
+    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500' },
   ];
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Header */}
       <div className="page-header">
         <div className="flex items-center gap-4">
           {shopLogoUrl ? (
@@ -253,17 +258,13 @@ export default function Dashboard() {
           )}
           <div>
             <h1 className="page-title">{shopName || t('dashboard.title')}</h1>
-            <p className="text-muted-foreground text-sm mt-1">{t('dashboard.subtitle')}</p>
+            <p className="text-muted-foreground text-sm mt-0.5">{t('dashboard.subtitle')}</p>
           </div>
         </div>
-      </div>
-
-      {/* CMD+K hint - hidden on mobile (already in header) */}
-      <div className="hidden sm:flex items-center justify-between mb-6">
-        <div />
+        {/* CMD+K hint - desktop only */}
         <button
           onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
         >
           <Search className="w-3.5 h-3.5" />
           {t('dashboard.search') || 'Pesquisar'}
@@ -271,27 +272,35 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Onboarding Checklist */}
+      {/* Onboarding */}
       <OnboardingChecklist />
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="stat-card">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <stat.icon className="w-4.5 h-4.5 text-primary" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold mono">{stat.value}</div>
-          </div>
-        ))}
+      {/* Quick Actions — TOP for maximum visibility */}
+      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          {[
+            { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },
+            { label: t('dashboard.newVehicle'), href: "/vehicles", emoji: "🚗" },
+            { label: t('dashboard.newQuote'), href: "/quotes/new", emoji: "📋" },
+            { label: t('dashboard.newService'), href: "/services/new", emoji: "🔧" },
+          ].map((action) => (
+            <Link
+              key={action.label}
+              to={action.href}
+              className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-3 sm:p-5 rounded-xl bg-card border-2 border-border
+                hover:border-primary hover:shadow-lg hover:shadow-primary/10 active:scale-95 sm:hover:-translate-y-0.5 transition-all text-center group"
+            >
+              <span className="text-2xl sm:text-3xl">{action.emoji}</span>
+              <span className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors leading-tight">{action.label}</span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Plan Banner */}
       {(plan === 'free' || isTrialing) && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Star className="w-5 h-5 text-primary" />
@@ -313,9 +322,24 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat-card group hover:shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.label}</span>
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                <stat.icon className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold mono">{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
       {/* Charts Row */}
       {plan !== 'free' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Monthly Revenue Chart */}
           <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5">
             <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -376,23 +400,21 @@ export default function Dashboard() {
 
       {/* Conversion Rate + Top Parts */}
       {plan !== 'free' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-xl p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              {language === 'pt' ? 'Taxa Conversão Orçamentos' : 'Quote Conversion Rate'}
+              {t('dashboard.quoteConversion')}
             </h2>
             <div className="flex items-center gap-4">
               <div className="text-4xl font-bold text-primary">{conversionRate}%</div>
-              <p className="text-xs text-muted-foreground">
-                {language === 'pt' ? 'Últimos 6 meses' : 'Last 6 months'}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.last6months')}</p>
             </div>
           </div>
           <div className="bg-card border border-border rounded-xl p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
-              {language === 'pt' ? 'Peças Mais Usadas' : 'Top Parts Used'}
+              {t('dashboard.topParts')}
             </h2>
             {topParts.length > 0 ? (
               <div className="space-y-2">
@@ -410,12 +432,13 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Alerts */}
       {pendingAlerts.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5 mb-6">
+        <div className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Bell className="w-4.5 h-4.5 text-warning" />
+                <Bell className="w-4 h-4 text-warning" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold">{t('alerts.widget.title')}</h2>
@@ -438,7 +461,7 @@ export default function Dashboard() {
                     {t(`alerts.type.${alert.type}`)} · {alert.due_date ? new Date(alert.due_date).toLocaleDateString() : new Date(alert.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
+                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs hidden sm:flex">
                   <Clock className="w-3 h-3 mr-1" />
                   {t('alerts.statusPending')}
                 </Badge>
@@ -447,29 +470,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Quick Actions — prominent large buttons */}
-      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6">
-        <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          {[
-            { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },
-            { label: t('dashboard.newVehicle'), href: "/vehicles", emoji: "🚗" },
-            { label: t('dashboard.newQuote'), href: "/quotes/new", emoji: "📋" },
-            { label: t('dashboard.newService'), href: "/services/new", emoji: "🔧" },
-          ].map((action) => (
-            <Link
-              key={action.label}
-              to={action.href}
-              className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-3 sm:p-5 rounded-xl bg-card border-2 border-border
-                hover:border-primary hover:shadow-lg hover:shadow-primary/10 active:scale-95 sm:hover:-translate-y-0.5 transition-all text-center group"
-            >
-              <span className="text-2xl sm:text-3xl">{action.emoji}</span>
-              <span className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors leading-tight">{action.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
 
       {/* Recent Services */}
       <div className="bg-card border border-border rounded-xl p-5">
@@ -480,11 +480,11 @@ export default function Dashboard() {
           <div className="space-y-3">
             {recentServices.map(s => (
               <div key={s.number} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div>
+                <div className="min-w-0">
                   <span className="mono text-sm font-medium">{s.number}</span>
-                  <span className="text-muted-foreground text-sm ml-2">{(s.clients as any)?.name}</span>
+                  <span className="text-muted-foreground text-sm ml-2 truncate">{(s.clients as any)?.name}</span>
                 </div>
-                <span className="mono font-semibold">{currency}{(s.total || 0).toFixed(2)}</span>
+                <span className="mono font-semibold shrink-0">{currency}{(s.total || 0).toFixed(2)}</span>
               </div>
             ))}
           </div>

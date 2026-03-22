@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
@@ -198,6 +198,42 @@ export default function LandingPage() {
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12 sm:mb-14">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.testimonialsTitle')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              {t('landing.testimonialsSubtitle')}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-card border border-border rounded-xl p-5 sm:p-6 relative">
+                <Quote className="w-8 h-8 text-primary/15 absolute top-4 right-4" />
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
+                  "{t(`landing.testimonial${i}Text`)}"
+                </p>
+                <div className="flex items-center gap-3 pt-3 border-t border-border">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+                    {t(`landing.testimonial${i}Name`).charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{t(`landing.testimonial${i}Name`)}</p>
+                    <p className="text-xs text-muted-foreground">{t(`landing.testimonial${i}Role`)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

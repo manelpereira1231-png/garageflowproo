@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";

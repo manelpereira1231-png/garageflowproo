@@ -258,8 +258,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* CMD+K hint */}
-      <div className="flex items-center justify-between mb-6">
+      {/* CMD+K hint - hidden on mobile (already in header) */}
+      <div className="hidden sm:flex items-center justify-between mb-6">
         <div />
         <button
           onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}

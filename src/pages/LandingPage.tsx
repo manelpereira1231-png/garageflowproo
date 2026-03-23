@@ -298,13 +298,22 @@ export default function LandingPage() {
             {t('landing.ctaSubtitle')}
           </p>
           <Link to="/auth?mode=signup">
-            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto">
+            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
               🚀 {t('landing.ctaButton')} <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </section>
+
+      {/* Sticky Mobile CTA */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
+        <Link to="/auth?mode=signup">
+          <Button className="w-full gradient-primary text-primary-foreground h-12 text-base font-bold btn-interactive">
+            🚀 {t('landing.cta')} <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30">

@@ -337,6 +337,28 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Referral Widget */}
+      {(freeMonths > 0 || paidReferrals > 0) && (
+        <Link to="/referrals" className="block">
+          <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/30 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-all btn-interactive">
+            <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center shrink-0">
+              <Gift className="w-5 h-5 text-success" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">
+                🎉 {language === 'pt' ? `Já ganhou ${freeMonths} ${freeMonths === 1 ? 'mês grátis' : 'meses grátis'}` :
+                     language === 'es' ? `Ya ganó ${freeMonths} ${freeMonths === 1 ? 'mes gratis' : 'meses gratis'}` :
+                     `You earned ${freeMonths} free ${freeMonths === 1 ? 'month' : 'months'}`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {paidReferrals}/5 {language === 'pt' ? 'referências pagas' : language === 'es' ? 'referencias pagadas' : 'paid referrals'}
+                {paidReferrals < 5 && ` — ${language === 'pt' ? 'traga mais' : language === 'es' ? 'traiga más' : 'bring more'} ${5 - paidReferrals} ${language === 'pt' ? 'para bónus +3 meses' : language === 'es' ? 'para bono +3 meses' : 'for +3 months bonus'}`}
+              </p>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {stats.map((stat) => (

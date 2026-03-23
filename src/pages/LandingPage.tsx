@@ -145,12 +145,12 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
             <Link to="/auth?mode=signup" className="w-full sm:w-auto">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto">
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
                 🚀 {t('landing.cta')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <a href="#features" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto btn-interactive">
                 {t('landing.ctaFeatures')}
               </Button>
             </a>
@@ -298,7 +298,7 @@ export default function LandingPage() {
             {t('landing.ctaSubtitle')}
           </p>
           <Link to="/auth?mode=signup">
-            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto">
+            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
               🚀 {t('landing.ctaButton')} <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
@@ -306,8 +306,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Sticky Mobile CTA */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
+        <Link to="/auth?mode=signup">
+          <Button className="w-full gradient-primary text-primary-foreground h-12 text-base font-bold btn-interactive">
+            🚀 {t('landing.cta')} <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
+      </div>
+
       {/* Footer */}
-      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30">
+      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30 pb-20 sm:pb-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">

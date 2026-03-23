@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,8 @@ export default function Dashboard() {
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
   const [conversionRate, setConversionRate] = useState(0);
   const [topParts, setTopParts] = useState<{ name: string; count: number }[]>([]);
+  const [freeMonths, setFreeMonths] = useState(0);
+  const [paidReferrals, setPaidReferrals] = useState(0);
 
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");
@@ -218,6 +220,19 @@ export default function Dashboard() {
           .slice(0, 5)
           .map(([name, count]) => ({ name, count }))
       );
+      // Load referral data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: refCode } = await supabase
+          .from("referral_codes")
+          .select("free_months_balance, paid_referrals_count")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (refCode) {
+          setFreeMonths(refCode.free_months_balance || 0);
+          setPaidReferrals(refCode.paid_referrals_count || 0);
+        }
+      }
     };
     loadData();
   }, [language]);
@@ -320,6 +335,28 @@ export default function Dashboard() {
             </Button>
           </Link>
         </div>
+      )}
+
+      {/* Referral Widget */}
+      {(freeMonths > 0 || paidReferrals > 0) && (
+        <Link to="/referrals" className="block">
+          <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/30 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-all btn-interactive">
+            <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center shrink-0">
+              <Gift className="w-5 h-5 text-success" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">
+                🎉 {language === 'pt' ? `Já ganhou ${freeMonths} ${freeMonths === 1 ? 'mês grátis' : 'meses grátis'}` :
+                     language === 'es' ? `Ya ganó ${freeMonths} ${freeMonths === 1 ? 'mes gratis' : 'meses gratis'}` :
+                     `You earned ${freeMonths} free ${freeMonths === 1 ? 'month' : 'months'}`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {paidReferrals}/5 {language === 'pt' ? 'referências pagas' : language === 'es' ? 'referencias pagadas' : 'paid referrals'}
+                {paidReferrals < 5 && ` — ${language === 'pt' ? 'traga mais' : language === 'es' ? 'traiga más' : 'bring more'} ${5 - paidReferrals} ${language === 'pt' ? 'para bónus +3 meses' : language === 'es' ? 'para bono +3 meses' : 'for +3 months bonus'}`}
+              </p>
+            </div>
+          </div>
+        </Link>
       )}
 
       {/* KPIs */}

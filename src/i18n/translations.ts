@@ -892,6 +892,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Morada',
     'settings.publicBooking': 'Link Público de Marcações',
     'settings.bookingDescription': 'Partilhe este link para clientes agendarem marcações online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Pesquisar',
+    'dashboard.lowStockSingle': 'peça com stock baixo',
+    'dashboard.lowStockPlural': 'peças com stock baixo',
+    'dashboard.overdueInvoices': 'faturas vencidas',
+
+    // Quotes extras  
+    'quotes.noClientPhone': 'Cliente sem telefone',
+
+    // Billing extras
+    'billing.referralRewards': 'Recompensas de Referências',
+    'billing.viewReferrals': 'Ver Referências',
+    'billing.freeMonthsApplied': 'Meses grátis serão aplicados na próxima renovação',
   },
 
   en: {

@@ -287,6 +287,13 @@ export default function Services() {
                   </Link>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>
+                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
+                  const phone = (s.clients as any)?.phone;
+                  if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+                  openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
+                }}>
+                  <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+                </Button>
                 {!['delivered', 'cancelled'].includes(s.status) && (
                   <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
                     <ChevronRightIcon className="w-3 h-3" />

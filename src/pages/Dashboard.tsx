@@ -46,6 +46,8 @@ export default function Dashboard() {
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
   const [conversionRate, setConversionRate] = useState(0);
   const [topParts, setTopParts] = useState<{ name: string; count: number }[]>([]);
+  const [freeMonths, setFreeMonths] = useState(0);
+  const [paidReferrals, setPaidReferrals] = useState(0);
 
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");

@@ -501,9 +501,9 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Landing Page
     'landing.badge': 'Software #1 para Oficinas Automóvel',
-    'landing.heroTitle1': 'Gestão de oficina',
-    'landing.heroTitle2': 'simples e poderosa',
-    'landing.heroSubtitle': 'Orçamentos, serviços, clientes e faturação numa única plataforma SaaS. Automatize a sua oficina e foque no que importa.',
+    'landing.heroTitle1': 'Poupe tempo e aumente',
+    'landing.heroTitle2': 'os lucros da sua oficina',
+    'landing.heroSubtitle': 'Orçamentos em 30 segundos, faturação automática e clientes que voltam. Tudo numa plataforma simples e profissional.',
     'landing.cta': 'Começar Grátis',
     'landing.ctaFeatures': 'Ver Funcionalidades',
     'landing.featuresTitle': 'Tudo o que a sua oficina precisa',

@@ -2658,5 +2658,19 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Dirección',
     'settings.publicBooking': 'Enlace Público de Citas',
     'settings.bookingDescription': 'Comparta este enlace para que los clientes reserven citas online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Buscar',
+    'dashboard.lowStockSingle': 'pieza con stock bajo',
+    'dashboard.lowStockPlural': 'piezas con stock bajo',
+    'dashboard.overdueInvoices': 'facturas vencidas',
+
+    // Quotes extras
+    'quotes.noClientPhone': 'Cliente sin teléfono',
+
+    // Billing extras
+    'billing.referralRewards': 'Recompensas de Referencias',
+    'billing.viewReferrals': 'Ver Referencias',
+    'billing.freeMonthsApplied': 'Meses gratis se aplicarán en la próxima renovación',
   },
 };

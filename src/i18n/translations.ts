@@ -1384,9 +1384,9 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Landing Page
     'landing.badge': '#1 Auto Workshop Software',
-    'landing.heroTitle1': 'Workshop management',
-    'landing.heroTitle2': 'simple and powerful',
-    'landing.heroSubtitle': 'Quotes, services, clients and billing in one SaaS platform. Automate your workshop and focus on what matters.',
+    'landing.heroTitle1': 'Save time and boost',
+    'landing.heroTitle2': 'your workshop profits',
+    'landing.heroSubtitle': 'Quotes in 30 seconds, automatic invoicing and customers that come back. All in one simple, professional platform.',
     'landing.cta': 'Start Free',
     'landing.ctaFeatures': 'See Features',
     'landing.featuresTitle': 'Everything your workshop needs',

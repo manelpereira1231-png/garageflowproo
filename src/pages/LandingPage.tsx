@@ -316,7 +316,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30">
+      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30 pb-20 sm:pb-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">

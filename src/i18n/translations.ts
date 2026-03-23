@@ -892,6 +892,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Morada',
     'settings.publicBooking': 'Link Público de Marcações',
     'settings.bookingDescription': 'Partilhe este link para clientes agendarem marcações online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Pesquisar',
+    'dashboard.lowStockSingle': 'peça com stock baixo',
+    'dashboard.lowStockPlural': 'peças com stock baixo',
+    'dashboard.overdueInvoices': 'faturas vencidas',
+
+    // Quotes extras  
+    'quotes.noClientPhone': 'Cliente sem telefone',
+
+    // Billing extras
+    'billing.referralRewards': 'Recompensas de Referências',
+    'billing.viewReferrals': 'Ver Referências',
+    'billing.freeMonthsApplied': 'Meses grátis serão aplicados na próxima renovação',
   },
 
   en: {
@@ -1761,6 +1775,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Address',
     'settings.publicBooking': 'Public Booking Link',
     'settings.bookingDescription': 'Share this link so clients can book appointments online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Search',
+    'dashboard.lowStockSingle': 'part with low stock',
+    'dashboard.lowStockPlural': 'parts with low stock',
+    'dashboard.overdueInvoices': 'overdue invoices',
+
+    // Quotes extras
+    'quotes.noClientPhone': 'Client has no phone number',
+
+    // Billing extras
+    'billing.referralRewards': 'Referral Rewards',
+    'billing.viewReferrals': 'View Referrals',
+    'billing.freeMonthsApplied': 'Free months will be applied on next renewal',
   },
 
   es: {
@@ -2630,5 +2658,19 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Dirección',
     'settings.publicBooking': 'Enlace Público de Citas',
     'settings.bookingDescription': 'Comparta este enlace para que los clientes reserven citas online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Buscar',
+    'dashboard.lowStockSingle': 'pieza con stock bajo',
+    'dashboard.lowStockPlural': 'piezas con stock bajo',
+    'dashboard.overdueInvoices': 'facturas vencidas',
+
+    // Quotes extras
+    'quotes.noClientPhone': 'Cliente sin teléfono',
+
+    // Billing extras
+    'billing.referralRewards': 'Recompensas de Referencias',
+    'billing.viewReferrals': 'Ver Referencias',
+    'billing.freeMonthsApplied': 'Meses gratis se aplicarán en la próxima renovación',
   },
 };

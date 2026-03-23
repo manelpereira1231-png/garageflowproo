@@ -5,9 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge } from "lucide-react";
+import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge, Gift } from "lucide-react";
 import { toast } from "sonner";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -15,6 +15,61 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+function ReferralFreeMonths() {
+  const { t } = useLanguage();
+  const [freeMonths, setFreeMonths] = useState(0);
+  const [paidCount, setPaidCount] = useState(0);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("referral_codes")
+        .select("free_months_balance, paid_referrals_count")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setFreeMonths(data.free_months_balance || 0);
+        setPaidCount(data.paid_referrals_count || 0);
+      }
+    };
+    load();
+  }, []);
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Gift className="w-5 h-5 text-primary" />
+        <h3 className="font-semibold">{t('billing.referralRewards') || 'Recompensas de Referências'}</h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <p className="text-3xl font-bold text-primary">{freeMonths}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('referrals.freeMonths')}</p>
+        </div>
+        <div className="text-center p-4 bg-muted/50 rounded-lg">
+          <p className="text-3xl font-bold">{paidCount}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('referrals.paidReferrals')}</p>
+        </div>
+        <div className="flex items-center justify-center">
+          <Link to="/referrals">
+            <Button variant="outline" size="sm">
+              <Gift className="w-4 h-4 mr-2" />
+              {t('billing.viewReferrals') || 'Ver Referências'}
+            </Button>
+          </Link>
+        </div>
+      </div>
+      {freeMonths > 0 && (
+        <p className="text-xs text-success mt-3">
+          ✅ {t('billing.freeMonthsApplied') || `${freeMonths} mês(es) grátis serão aplicados na próxima renovação`}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Billing() {
   const { t } = useLanguage();
@@ -294,6 +349,10 @@ export default function Billing() {
           </div>
         )}
       </div>
+
+      {/* Referral Free Months */}
+      <ReferralFreeMonths />
+
 
       {/* Plan Limits & Quotas */}
       <div className="bg-card border border-border rounded-xl p-5 mb-6">

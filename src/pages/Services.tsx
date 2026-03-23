@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle } from "lucide-react";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
@@ -286,6 +287,13 @@ export default function Services() {
                   </Link>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>
+                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
+                  const phone = (s.clients as any)?.phone;
+                  if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+                  openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
+                }}>
+                  <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+                </Button>
                 {!['delivered', 'cancelled'].includes(s.status) && (
                   <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
                     <ChevronRightIcon className="w-3 h-3" />
@@ -356,6 +364,13 @@ export default function Services() {
                       </Link>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">PDF</Button>
+                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => {
+                      const phone = (s.clients as any)?.phone;
+                      if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+                      openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
+                    }}>
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                    </Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <>
                         <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs gap-1">

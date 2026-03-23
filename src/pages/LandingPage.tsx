@@ -145,12 +145,12 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
             <Link to="/auth?mode=signup" className="w-full sm:w-auto">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto">
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
                 🚀 {t('landing.cta')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <a href="#features" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto btn-interactive">
                 {t('landing.ctaFeatures')}
               </Button>
             </a>

@@ -220,6 +220,19 @@ export default function Dashboard() {
           .slice(0, 5)
           .map(([name, count]) => ({ name, count }))
       );
+      // Load referral data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: refCode } = await supabase
+          .from("referral_codes")
+          .select("free_months_balance, paid_referrals_count")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (refCode) {
+          setFreeMonths(refCode.free_months_balance || 0);
+          setPaidReferrals(refCode.paid_referrals_count || 0);
+        }
+      }
     };
     loadData();
   }, [language]);

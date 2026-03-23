@@ -1775,6 +1775,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.address': 'Address',
     'settings.publicBooking': 'Public Booking Link',
     'settings.bookingDescription': 'Share this link so clients can book appointments online.',
+
+    // Dashboard extras
+    'dashboard.search': 'Search',
+    'dashboard.lowStockSingle': 'part with low stock',
+    'dashboard.lowStockPlural': 'parts with low stock',
+    'dashboard.overdueInvoices': 'overdue invoices',
+
+    // Quotes extras
+    'quotes.noClientPhone': 'Client has no phone number',
+
+    // Billing extras
+    'billing.referralRewards': 'Referral Rewards',
+    'billing.viewReferrals': 'View Referrals',
+    'billing.freeMonthsApplied': 'Free months will be applied on next renewal',
   },
 
   es: {

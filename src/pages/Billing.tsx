@@ -295,6 +295,10 @@ export default function Billing() {
         )}
       </div>
 
+      {/* Referral Free Months */}
+      <ReferralFreeMonths />
+
+
       {/* Plan Limits & Quotas */}
       <div className="bg-card border border-border rounded-xl p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">

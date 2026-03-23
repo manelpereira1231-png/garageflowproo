@@ -2267,9 +2267,9 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Landing Page
     'landing.badge': 'Software #1 para Talleres Mecánicos',
-    'landing.heroTitle1': 'Gestión de taller',
-    'landing.heroTitle2': 'simple y potente',
-    'landing.heroSubtitle': 'Presupuestos, servicios, clientes y facturación en una sola plataforma SaaS. Automatiza tu taller y céntrate en lo que importa.',
+    'landing.heroTitle1': 'Ahorre tiempo y aumente',
+    'landing.heroTitle2': 'los beneficios de su taller',
+    'landing.heroSubtitle': 'Presupuestos en 30 segundos, facturación automática y clientes que vuelven. Todo en una plataforma simple y profesional.',
     'landing.cta': 'Empezar Gratis',
     'landing.ctaFeatures': 'Ver Funcionalidades',
     'landing.featuresTitle': 'Todo lo que tu taller necesita',

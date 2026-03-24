@@ -77,7 +77,7 @@ export default function Referrals() {
     if (!referralCode) return;
     const link = `${window.location.origin}/auth?mode=signup&ref=${referralCode.code}`;
     navigator.clipboard.writeText(link);
-    toast.success(t('referrals.linkCopied'));
+    toast.success(t('referrals.linkCopiedFeedback'));
   };
 
   const paidCount = referralCode?.paid_referrals_count || 0;

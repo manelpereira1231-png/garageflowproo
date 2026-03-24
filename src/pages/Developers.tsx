@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Code, Key, Plus, Copy, Trash2, Shield, Zap, ExternalLink } from "lucide-react";
 import { useShopContext } from "@/hooks/useShopContext";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 
 const API_DOCS = [
@@ -39,6 +40,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function Developers() {
   const { activeShopId } = useShopContext();
+  const { t } = useLanguage();
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [createDialog, setCreateDialog] = useState(false);
   const [newKeyName, setNewKeyName] = useState("Default API Key");
@@ -80,19 +82,19 @@ export default function Developers() {
 
     if (error) { toast.error(error.message); return; }
     setGeneratedKey(key);
-    toast.success("API Key criada com sucesso!");
+    toast.success(t('developers.keyCreated'));
     load();
   };
 
   const deleteKey = async (id: string) => {
     await supabase.from("api_keys").delete().eq("id", id);
-    toast.success("API Key removida.");
+    toast.success(t('developers.keyDeleted'));
     load();
   };
 
   const copyKey = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado!");
+    toast.success(t('common.copied'));
   };
 
   const baseUrl = `${window.location.origin}/functions/v1/garageflow-api`;

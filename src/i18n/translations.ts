@@ -449,6 +449,14 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Common extras
     'common.exported': 'Exportado com sucesso!',
+    'common.copied': 'Copiado!',
+
+    // Developers
+    'developers.keyCreated': 'API Key criada com sucesso!',
+    'developers.keyDeleted': 'API Key removida.',
+
+    // Shops
+    'shops.limitReached': 'Limite de oficinas atingido. Atualize para um plano superior.',
 
     // Team
     'nav.team': 'Equipa',
@@ -1348,6 +1356,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'alerts.disabledFree': 'Automatic alerts available on Pro and Garage plans.',
 
     'common.exported': 'Exported successfully!',
+    'common.copied': 'Copied!',
+    'developers.keyCreated': 'API Key created successfully!',
+    'developers.keyDeleted': 'API Key removed.',
+    'shops.limitReached': 'Workshop limit reached. Upgrade to a higher plan.',
 
     // Team
     'nav.team': 'Team',
@@ -2245,6 +2257,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'alerts.disabledFree': 'Alertas automáticas disponibles en los planes Pro y Garage.',
 
     'common.exported': '¡Exportado con éxito!',
+    'common.copied': '¡Copiado!',
+    'developers.keyCreated': '¡API Key creada con éxito!',
+    'developers.keyDeleted': 'API Key eliminada.',
+    'shops.limitReached': 'Límite de talleres alcanzado. Actualice a un plan superior.',
 
     // Team
     'nav.team': 'Equipo',

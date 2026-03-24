@@ -22,7 +22,7 @@ const copyPortalLink = (portalToken: string | null) => {
   if (!portalToken) return;
   const url = `${window.location.origin}/portal/${portalToken}`;
   navigator.clipboard.writeText(url);
-  toast.success("Link do portal copiado!");
+  toast.success("Portal link copied!");
 };
 
 export default function Clients() {

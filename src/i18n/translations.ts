@@ -2700,5 +2700,19 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Recompensas de Referencias',
     'billing.viewReferrals': 'Ver Referencias',
     'billing.freeMonthsApplied': 'Meses gratis se aplicarán en la próxima renovación',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Datos guardados automáticamente',
+    'dashboard.lastUpdate': 'Actualizado ahora',
+    'dashboard.usageNudge': 'Está usando {percent}% del límite mensual de presupuestos',
+    'dashboard.upgradeNudge': 'Actualice para seguir creciendo',
+    'dashboard.valueTitle': 'Su mes en números',
+    'dashboard.valueBilled': 'Facturó',
+    'dashboard.valueQuotes': 'Presupuestos creados',
+    'dashboard.valueSent': 'Mensajes enviados',
+    'dashboard.workshopsSave': 'Talleres como el suyo ahorran 2h/día con GarageFlow',
+    'referrals.inviteOneFree': 'Invite 1 taller = 1 mes gratis',
+    'referrals.copyLink': 'Copiar enlace',
+    'referrals.linkCopiedFeedback': '¡Enlace copiado! Compártalo con otro taller.',
   },
 };

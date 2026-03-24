@@ -906,6 +906,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Recompensas de Referências',
     'billing.viewReferrals': 'Ver Referências',
     'billing.freeMonthsApplied': 'Meses grátis serão aplicados na próxima renovação',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Dados guardados automaticamente',
+    'dashboard.lastUpdate': 'Atualizado agora',
+    'dashboard.usageNudge': 'Está a usar {percent}% do limite mensal de orçamentos',
+    'dashboard.upgradeNudge': 'Faça upgrade para continuar a crescer',
+    'dashboard.valueTitle': 'O seu mês em números',
+    'dashboard.valueBilled': 'Faturou',
+    'dashboard.valueQuotes': 'Orçamentos criados',
+    'dashboard.valueSent': 'Mensagens enviadas',
+    'dashboard.workshopsSave': 'Oficinas como a sua poupam 2h/dia com GarageFlow',
+    'referrals.inviteOneFree': 'Convide 1 oficina = 1 mês grátis',
+    'referrals.copyLink': 'Copiar link',
+    'referrals.linkCopiedFeedback': 'Link copiado! Partilhe com outra oficina.',
   },
 
   en: {

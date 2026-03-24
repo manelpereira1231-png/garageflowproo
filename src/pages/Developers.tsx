@@ -92,7 +92,7 @@ export default function Developers() {
 
   const copyKey = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado!");
+    toast.success(t('common.copied'));
   };
 
   const baseUrl = `${window.location.origin}/functions/v1/garageflow-api`;

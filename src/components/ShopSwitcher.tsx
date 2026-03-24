@@ -44,7 +44,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       const { data: canCreate, error: limitError } = await supabase.rpc('check_shop_creation_limit', { _user_id: user.id });
       if (limitError) { toast.error(limitError.message); return; }
       if (!canCreate) {
-        toast.error("Limite de oficinas atingido. Atualize para um plano superior.");
+        toast.error(t('shops.limitReached'));
         return;
       }
 

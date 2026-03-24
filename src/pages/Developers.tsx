@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Code, Key, Plus, Copy, Trash2, Shield, Zap, ExternalLink } from "lucide-react";
 import { useShopContext } from "@/hooks/useShopContext";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 
 const API_DOCS = [

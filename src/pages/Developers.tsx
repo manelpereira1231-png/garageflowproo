@@ -40,6 +40,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function Developers() {
   const { activeShopId } = useShopContext();
+  const { t } = useLanguage();
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [createDialog, setCreateDialog] = useState(false);
   const [newKeyName, setNewKeyName] = useState("Default API Key");

@@ -234,7 +234,18 @@ export default function Dashboard() {
           setFreeMonths(refCode.free_months_balance || 0);
           setPaidReferrals(refCode.paid_referrals_count || 0);
         }
+        // Monthly quote count for usage nudge
+        if (plan === 'free') {
+          const monthStart2 = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          const { count: qCount } = await supabase
+            .from("quotes")
+            .select("id", { count: "exact", head: true })
+            .eq("shop_id", shop.id)
+            .gte("created_at", monthStart2);
+          setMonthlyQuoteCount(qCount || 0);
+        }
       }
+      setDataLoaded(true);
     };
     loadData();
   }, [language]);

@@ -449,6 +449,14 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Common extras
     'common.exported': 'Exportado com sucesso!',
+    'common.copied': 'Copiado!',
+
+    // Developers
+    'developers.keyCreated': 'API Key criada com sucesso!',
+    'developers.keyDeleted': 'API Key removida.',
+
+    // Shops
+    'shops.limitReached': 'Limite de oficinas atingido. Atualize para um plano superior.',
 
     // Team
     'nav.team': 'Equipa',

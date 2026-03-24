@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,8 @@ export default function Dashboard() {
   const [topParts, setTopParts] = useState<{ name: string; count: number }[]>([]);
   const [freeMonths, setFreeMonths] = useState(0);
   const [paidReferrals, setPaidReferrals] = useState(0);
+  const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const getActiveShopId = async (): Promise<string | null> => {
     const stored = localStorage.getItem("garageflow_active_shop");
@@ -232,7 +234,18 @@ export default function Dashboard() {
           setFreeMonths(refCode.free_months_balance || 0);
           setPaidReferrals(refCode.paid_referrals_count || 0);
         }
+        // Monthly quote count for usage nudge
+        if (plan === 'free') {
+          const monthStart2 = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          const { count: qCount } = await supabase
+            .from("quotes")
+            .select("id", { count: "exact", head: true })
+            .eq("shop_id", shop.id)
+            .gte("created_at", monthStart2);
+          setMonthlyQuoteCount(qCount || 0);
+        }
       }
+      setDataLoaded(true);
     };
     loadData();
   }, [language]);
@@ -287,6 +300,16 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {/* Trust Signal */}
+      {dataLoaded && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-3.5 h-3.5 text-success" />
+          <span>{t('dashboard.dataSaved')}</span>
+          <span className="text-muted-foreground/50">·</span>
+          <span>{t('dashboard.lastUpdate')}</span>
+        </div>
+      )}
+
       {/* Onboarding */}
       <OnboardingChecklist />
 
@@ -337,7 +360,30 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Referral Widget */}
+      {/* Usage Nudge for Free users */}
+      {plan === 'free' && monthlyQuoteCount > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                {t('dashboard.usageNudge').replace('{percent}', String(Math.round((monthlyQuoteCount / 10) * 100)))}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.workshopsSave')}</p>
+            </div>
+          </div>
+          {monthlyQuoteCount >= 7 && (
+            <Link to="/billing">
+              <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 shrink-0">
+                {t('dashboard.upgradeNudge')} →
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
+
       {(freeMonths > 0 || paidReferrals > 0) && (
         <Link to="/referrals" className="block">
           <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/30 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-all btn-interactive">

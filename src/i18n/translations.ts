@@ -906,6 +906,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Recompensas de Referências',
     'billing.viewReferrals': 'Ver Referências',
     'billing.freeMonthsApplied': 'Meses grátis serão aplicados na próxima renovação',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Dados guardados automaticamente',
+    'dashboard.lastUpdate': 'Atualizado agora',
+    'dashboard.usageNudge': 'Está a usar {percent}% do limite mensal de orçamentos',
+    'dashboard.upgradeNudge': 'Faça upgrade para continuar a crescer',
+    'dashboard.valueTitle': 'O seu mês em números',
+    'dashboard.valueBilled': 'Faturou',
+    'dashboard.valueQuotes': 'Orçamentos criados',
+    'dashboard.valueSent': 'Mensagens enviadas',
+    'dashboard.workshopsSave': 'Oficinas como a sua poupam 2h/dia com GarageFlow',
+    'referrals.inviteOneFree': 'Convide 1 oficina = 1 mês grátis',
+    'referrals.copyLink': 'Copiar link',
+    'referrals.linkCopiedFeedback': 'Link copiado! Partilhe com outra oficina.',
   },
 
   en: {
@@ -1789,6 +1803,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Referral Rewards',
     'billing.viewReferrals': 'View Referrals',
     'billing.freeMonthsApplied': 'Free months will be applied on next renewal',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Data saved automatically',
+    'dashboard.lastUpdate': 'Updated just now',
+    'dashboard.usageNudge': 'You\'re using {percent}% of your monthly quote limit',
+    'dashboard.upgradeNudge': 'Upgrade to keep growing',
+    'dashboard.valueTitle': 'Your month in numbers',
+    'dashboard.valueBilled': 'Billed',
+    'dashboard.valueQuotes': 'Quotes created',
+    'dashboard.valueSent': 'Messages sent',
+    'dashboard.workshopsSave': 'Workshops like yours save 2h/day with GarageFlow',
+    'referrals.inviteOneFree': 'Invite 1 workshop = 1 free month',
+    'referrals.copyLink': 'Copy link',
+    'referrals.linkCopiedFeedback': 'Link copied! Share it with another workshop.',
   },
 
   es: {
@@ -2672,5 +2700,19 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Recompensas de Referencias',
     'billing.viewReferrals': 'Ver Referencias',
     'billing.freeMonthsApplied': 'Meses gratis se aplicarán en la próxima renovación',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Datos guardados automáticamente',
+    'dashboard.lastUpdate': 'Actualizado ahora',
+    'dashboard.usageNudge': 'Está usando {percent}% del límite mensual de presupuestos',
+    'dashboard.upgradeNudge': 'Actualice para seguir creciendo',
+    'dashboard.valueTitle': 'Su mes en números',
+    'dashboard.valueBilled': 'Facturó',
+    'dashboard.valueQuotes': 'Presupuestos creados',
+    'dashboard.valueSent': 'Mensajes enviados',
+    'dashboard.workshopsSave': 'Talleres como el suyo ahorran 2h/día con GarageFlow',
+    'referrals.inviteOneFree': 'Invite 1 taller = 1 mes gratis',
+    'referrals.copyLink': 'Copiar enlace',
+    'referrals.linkCopiedFeedback': '¡Enlace copiado! Compártalo con otro taller.',
   },
 };

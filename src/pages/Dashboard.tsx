@@ -360,7 +360,30 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Referral Widget */}
+      {/* Usage Nudge for Free users */}
+      {plan === 'free' && monthlyQuoteCount > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                {t('dashboard.usageNudge').replace('{percent}', String(Math.round((monthlyQuoteCount / 10) * 100)))}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.workshopsSave')}</p>
+            </div>
+          </div>
+          {monthlyQuoteCount >= 7 && (
+            <Link to="/billing">
+              <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 shrink-0">
+                {t('dashboard.upgradeNudge')} →
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
+
       {(freeMonths > 0 || paidReferrals > 0) && (
         <Link to="/referrals" className="block">
           <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/30 rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-all btn-interactive">

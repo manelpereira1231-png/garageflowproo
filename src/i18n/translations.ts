@@ -1803,6 +1803,20 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.referralRewards': 'Referral Rewards',
     'billing.viewReferrals': 'View Referrals',
     'billing.freeMonthsApplied': 'Free months will be applied on next renewal',
+
+    // Trust & Conversion
+    'dashboard.dataSaved': 'Data saved automatically',
+    'dashboard.lastUpdate': 'Updated just now',
+    'dashboard.usageNudge': 'You\'re using {percent}% of your monthly quote limit',
+    'dashboard.upgradeNudge': 'Upgrade to keep growing',
+    'dashboard.valueTitle': 'Your month in numbers',
+    'dashboard.valueBilled': 'Billed',
+    'dashboard.valueQuotes': 'Quotes created',
+    'dashboard.valueSent': 'Messages sent',
+    'dashboard.workshopsSave': 'Workshops like yours save 2h/day with GarageFlow',
+    'referrals.inviteOneFree': 'Invite 1 workshop = 1 free month',
+    'referrals.copyLink': 'Copy link',
+    'referrals.linkCopiedFeedback': 'Link copied! Share it with another workshop.',
   },
 
   es: {

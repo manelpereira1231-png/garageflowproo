@@ -80,7 +80,7 @@ export default function Developers() {
 
     if (error) { toast.error(error.message); return; }
     setGeneratedKey(key);
-    toast.success("API Key criada com sucesso!");
+    toast.success(t('developers.keyCreated'));
     load();
   };
 

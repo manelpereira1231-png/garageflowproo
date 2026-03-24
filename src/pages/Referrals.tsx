@@ -135,14 +135,15 @@ export default function Referrals() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">{t('referrals.yourLink')}</CardTitle>
+          <p className="text-sm text-primary font-medium">🎁 {t('referrals.inviteOneFree')}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
             <code className="flex-1 bg-muted px-4 py-3 rounded-lg text-sm font-mono break-all">
               {referralCode ? `${window.location.origin}/auth?mode=signup&ref=${referralCode.code}` : '...'}
             </code>
-            <Button onClick={copyLink} size="sm" className="shrink-0">
-              <Copy className="w-4 h-4 mr-1" /> {t('referrals.copy')}
+            <Button onClick={copyLink} size="default" className="shrink-0 btn-interactive">
+              <Copy className="w-4 h-4 mr-2" /> {t('referrals.copyLink')}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">

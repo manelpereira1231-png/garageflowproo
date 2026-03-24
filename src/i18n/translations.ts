@@ -1356,6 +1356,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'alerts.disabledFree': 'Automatic alerts available on Pro and Garage plans.',
 
     'common.exported': 'Exported successfully!',
+    'common.copied': 'Copied!',
+    'developers.keyCreated': 'API Key created successfully!',
+    'developers.keyDeleted': 'API Key removed.',
+    'shops.limitReached': 'Workshop limit reached. Upgrade to a higher plan.',
 
     // Team
     'nav.team': 'Team',

@@ -86,7 +86,7 @@ export default function Developers() {
 
   const deleteKey = async (id: string) => {
     await supabase.from("api_keys").delete().eq("id", id);
-    toast.success("API Key removida.");
+    toast.success(t('developers.keyDeleted'));
     load();
   };
 

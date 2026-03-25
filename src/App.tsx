@@ -222,14 +222,18 @@ function AuthenticatedRoutes() {
     );
   }
 
+  const defaultRoute = isAffiliate ? "/affiliate-dashboard" : "/dashboard";
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
+        <Route path="/auth" element={<Navigate to={defaultRoute} replace />} />
         <Route path="/quote/:token" element={<QuoteApproval />} />
         <Route path="/portal/:token" element={<ClientPortal />} />
         <Route path="/" element={<LandingPage />} />
+        <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+        <Route path="/book/:slug" element={<PublicBooking />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
@@ -260,7 +264,7 @@ function AuthenticatedRoutes() {
         <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
         <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
         <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to={defaultRoute} replace />} />
       </Routes>
     </Suspense>
   );

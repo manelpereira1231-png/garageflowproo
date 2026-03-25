@@ -161,7 +161,7 @@ export default function Auth() {
             {mode === 'forgot' ? t('auth.resetPassword') : mode === 'login' ? t('auth.login') : t('auth.signup')}
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : t('auth.accountCreated').split('!')[0]}
+            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : t('auth.signupSubtitle')}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

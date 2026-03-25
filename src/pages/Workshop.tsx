@@ -139,7 +139,7 @@ export default function Workshop() {
         technician: selected?.technician || null,
       });
     }
-    toast.success(isPt ? "Checklist guardado" : "Checklist saved");
+    toast.success(t('workshop.checklistSaved'));
     setActionLoading(false);
   };
 

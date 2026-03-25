@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import {
   Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
   Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone

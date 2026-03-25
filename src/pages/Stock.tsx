@@ -229,7 +229,7 @@ export default function Stock() {
           <TabsTrigger value="parts">{t('stock.parts')} ({parts.length})</TabsTrigger>
           <TabsTrigger value="orders" className="gap-1">
             <ShoppingCart className="w-3 h-3" />
-            {language === 'pt' ? 'Encomendas' : 'Orders'} ({orders.length})
+            {t('stock.orders')} ({orders.length})
           </TabsTrigger>
           <TabsTrigger value="movements">{t('stock.movements')} ({movements.length})</TabsTrigger>
         </TabsList>
@@ -324,12 +324,12 @@ export default function Stock() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{language === 'pt' ? 'Peça' : 'Part'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Fornecedor' : 'Supplier'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Qtd' : 'Qty'}</TableHead>
+                    <TableHead>{t('stock.orders.part')}</TableHead>
+                    <TableHead>{t('stock.orders.supplier')}</TableHead>
+                    <TableHead>{t('stock.orders.qty')}</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>{language === 'pt' ? 'Estado' : 'Status'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Data' : 'Date'}</TableHead>
+                    <TableHead>{t('stock.orders.status')}</TableHead>
+                    <TableHead>{t('stock.orders.date')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -337,7 +337,7 @@ export default function Stock() {
                   {orders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {language === 'pt' ? 'Nenhuma encomenda registada' : 'No orders registered'}
+                        {t('stock.orders.empty')}
                       </TableCell>
                     </TableRow>
                   ) : orders.map(o => (
@@ -348,10 +348,7 @@ export default function Stock() {
                       <TableCell className="font-semibold">€{(o.total || 0).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
-                          {o.status === 'pending' ? (language === 'pt' ? 'Pendente' : 'Pending') :
-                           o.status === 'sent' ? (language === 'pt' ? 'Enviado' : 'Sent') :
-                           o.status === 'delivered' ? (language === 'pt' ? 'Entregue' : 'Delivered') :
-                           o.status === 'cancelled' ? (language === 'pt' ? 'Cancelado' : 'Cancelled') : o.status}
+                          {t(`stock.orders.${o.status}`) || o.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>
@@ -364,12 +361,12 @@ export default function Stock() {
                             onClick={async () => {
                               const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
                               if (error) { toast.error(error.message); return; }
-                              toast.success(language === 'pt' ? 'Entrega confirmada! Stock atualizado automaticamente.' : 'Delivery confirmed! Stock updated automatically.');
+                              toast.success(t('stock.orders.deliveryConfirmed'));
                               load();
                             }}
                           >
                             <Truck className="w-3.5 h-3.5" />
-                            {language === 'pt' ? 'Confirmar Entrega' : 'Confirm Delivery'}
+                            {t('stock.orders.confirmDelivery')}
                           </Button>
                         )}
                       </TableCell>

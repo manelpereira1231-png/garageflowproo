@@ -313,11 +313,11 @@ export default function Workshop() {
               {/* Diagnosis input for 'open' status */}
               {selected.status === 'open' && (
                 <div className="space-y-2">
-                  <Label>{isPt ? "Diagnóstico" : "Diagnosis"}</Label>
+                  <Label>{t('workshop.diagnosis')}</Label>
                   <Textarea
                     value={diagnosisText}
                     onChange={e => setDiagnosisText(e.target.value)}
-                    placeholder={isPt ? "Descreva o diagnóstico..." : "Describe the diagnosis..."}
+                    placeholder={t('workshop.diagnosisPlaceholder')}
                     rows={3}
                   />
                 </div>

@@ -143,7 +143,7 @@ export default function FinancialReports() {
       });
     };
     load();
-  }, [period]);
+  }, [period, activeShopId]);
 
   const handleExport = () => {
     if (!canUseFeature('csvExport')) {

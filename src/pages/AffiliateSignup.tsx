@@ -17,7 +17,6 @@ import LandingLayout from "@/components/LandingLayout";
 const PRODUCTION_DOMAIN = "https://garageflow.pt";
 
 export default function AffiliateSignup() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState<{ id: string; code: string; link: string } | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);

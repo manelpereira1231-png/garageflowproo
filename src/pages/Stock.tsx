@@ -362,7 +362,7 @@ export default function Stock() {
                             onClick={async () => {
                               const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
                               if (error) { toast.error(error.message); return; }
-                              toast.success(language === 'pt' ? 'Entrega confirmada! Stock atualizado automaticamente.' : 'Delivery confirmed! Stock updated automatically.');
+                              toast.success(t('stock.orders.deliveryConfirmed'));
                               load();
                             }}
                           >

@@ -12,9 +12,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem('garageflow_language');
-  if (stored && ['pt', 'en', 'es'].includes(stored)) return stored as Language;
-  const browserLang = navigator.language.slice(0, 2);
-  if (['pt', 'en', 'es'].includes(browserLang)) return browserLang as Language;
+  if (stored && ['pt', 'pt-BR', 'en', 'es'].includes(stored)) return stored as Language;
+  const browserLang = navigator.language;
+  if (browserLang === 'pt-BR') return 'pt-BR';
+  const shortLang = browserLang.slice(0, 2);
+  if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
   return 'pt';
 }
 

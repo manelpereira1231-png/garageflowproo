@@ -17,25 +17,25 @@ import type { ServiceStatus } from "@/types/garage";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 
-const statusConfig: Record<string, { label: string; labelPt: string; icon: any; color: string; bg: string }> = {
-  open: { label: "Open", labelPt: "Aberto", icon: Wrench, color: "text-info", bg: "bg-info/10" },
-  diagnosis: { label: "Diagnosis", labelPt: "Diagnóstico", icon: Stethoscope, color: "text-warning", bg: "bg-warning/10" },
-  waiting_approval: { label: "Waiting", labelPt: "Aguardando", icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
-  approved: { label: "Approved", labelPt: "Aprovado", icon: ThumbsUp, color: "text-success", bg: "bg-success/10" },
-  in_progress: { label: "In Progress", labelPt: "Em Execução", icon: Play, color: "text-primary", bg: "bg-primary/10" },
-  completed: { label: "Completed", labelPt: "Concluído", icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
-  delivered: { label: "Delivered", labelPt: "Entregue", icon: Truck, color: "text-muted-foreground", bg: "bg-muted" },
-};
-
-const filterTabs = [
-  { key: 'active', label: 'Ativos', labelEn: 'Active' },
-  { key: 'completed', label: 'Concluídos', labelEn: 'Completed' },
-  { key: 'all', label: 'Todos', labelEn: 'All' },
-];
+const getStatusConfig = (t: (key: string) => string) => ({
+  open: { label: t('workshop.status.open'), icon: Wrench, color: "text-info", bg: "bg-info/10" },
+  diagnosis: { label: t('workshop.status.diagnosis'), icon: Stethoscope, color: "text-warning", bg: "bg-warning/10" },
+  waiting_approval: { label: t('workshop.status.waiting'), icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+  approved: { label: t('workshop.status.approved'), icon: ThumbsUp, color: "text-success", bg: "bg-success/10" },
+  in_progress: { label: t('workshop.status.inProgress'), icon: Play, color: "text-primary", bg: "bg-primary/10" },
+  completed: { label: t('workshop.status.completed'), icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+  delivered: { label: t('workshop.status.delivered'), icon: Truck, color: "text-muted-foreground", bg: "bg-muted" },
+});
 
 export default function Workshop() {
   const { language, t } = useLanguage();
   const { activeShopId } = useShopContext();
+  const statusConfig = getStatusConfig(t);
+  const filterTabs = [
+    { key: 'active', label: t('workshop.filterActive') },
+    { key: 'completed', label: t('workshop.filterCompleted') },
+    { key: 'all', label: t('workshop.filterAll') },
+  ];
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
@@ -83,9 +83,9 @@ export default function Workshop() {
 
     const { error } = await supabase.from("work_orders").update(updates).eq("id", wo.id);
     if (error) {
-      toast.error(isPt ? "Erro ao atualizar" : "Error updating");
+      toast.error(t('workshop.errorUpdating'));
     } else {
-      toast.success(`${wo.number} → ${statusConfig[nextStatus]?.labelPt || nextStatus}`);
+      toast.success(`${wo.number} → ${statusConfig[nextStatus]?.label || nextStatus}`);
       fetchOrders();
       if (selected?.id === wo.id) setSelected({ ...wo, ...updates });
     }
@@ -105,18 +105,18 @@ export default function Workshop() {
     } else {
       // Create default checklist
       const defaultItems = [
-        { label: isPt ? "Óleo Motor" : "Engine Oil", status: "pending" },
-        { label: isPt ? "Filtro Ar" : "Air Filter", status: "pending" },
-        { label: isPt ? "Filtro Óleo" : "Oil Filter", status: "pending" },
-        { label: isPt ? "Travões Frente" : "Front Brakes", status: "pending" },
-        { label: isPt ? "Travões Trás" : "Rear Brakes", status: "pending" },
-        { label: isPt ? "Pneus Frente" : "Front Tires", status: "pending" },
-        { label: isPt ? "Pneus Trás" : "Rear Tires", status: "pending" },
-        { label: isPt ? "Suspensão" : "Suspension", status: "pending" },
-        { label: isPt ? "Bateria" : "Battery", status: "pending" },
-        { label: isPt ? "Luzes" : "Lights", status: "pending" },
-        { label: isPt ? "Limpa-Vidros" : "Wipers", status: "pending" },
-        { label: isPt ? "Nível Líquidos" : "Fluid Levels", status: "pending" },
+        { label: t('workshop.checklist.engineOil'), status: "pending" },
+        { label: t('workshop.checklist.airFilter'), status: "pending" },
+        { label: t('workshop.checklist.oilFilter'), status: "pending" },
+        { label: t('workshop.checklist.frontBrakes'), status: "pending" },
+        { label: t('workshop.checklist.rearBrakes'), status: "pending" },
+        { label: t('workshop.checklist.frontTires'), status: "pending" },
+        { label: t('workshop.checklist.rearTires'), status: "pending" },
+        { label: t('workshop.checklist.suspension'), status: "pending" },
+        { label: t('workshop.checklist.battery'), status: "pending" },
+        { label: t('workshop.checklist.lights'), status: "pending" },
+        { label: t('workshop.checklist.wipers'), status: "pending" },
+        { label: t('workshop.checklist.fluidLevels'), status: "pending" },
       ];
       setChecklist(null);
       setChecklistItems(defaultItems);
@@ -139,18 +139,18 @@ export default function Workshop() {
         technician: selected?.technician || null,
       });
     }
-    toast.success(isPt ? "Checklist guardado" : "Checklist saved");
+    toast.success(t('workshop.checklistSaved'));
     setActionLoading(false);
   };
 
   const getNextAction = (status: string) => {
     const map: Record<string, { label: string; icon: any; color: string }> = {
-      open: { label: isPt ? "Iniciar Diagnóstico" : "Start Diagnosis", icon: Stethoscope, color: "bg-warning text-warning-foreground" },
-      diagnosis: { label: isPt ? "Enviar p/ Aprovação" : "Send for Approval", icon: Clock, color: "bg-muted text-muted-foreground" },
-      waiting_approval: { label: isPt ? "Marcar Aprovado" : "Mark Approved", icon: ThumbsUp, color: "bg-success text-success-foreground" },
-      approved: { label: isPt ? "Iniciar Trabalho" : "Start Work", icon: Play, color: "bg-primary text-primary-foreground" },
-      in_progress: { label: isPt ? "Concluir" : "Complete", icon: CheckCircle, color: "bg-success text-success-foreground" },
-      completed: { label: isPt ? "Entregar" : "Deliver", icon: Truck, color: "bg-muted text-foreground" },
+      open: { label: t('workshop.startDiagnosis'), icon: Stethoscope, color: "bg-warning text-warning-foreground" },
+      diagnosis: { label: t('workshop.sendApproval'), icon: Clock, color: "bg-muted text-muted-foreground" },
+      waiting_approval: { label: t('workshop.markApproved'), icon: ThumbsUp, color: "bg-success text-success-foreground" },
+      approved: { label: t('workshop.startWork'), icon: Play, color: "bg-primary text-primary-foreground" },
+      in_progress: { label: t('workshop.complete'), icon: CheckCircle, color: "bg-success text-success-foreground" },
+      completed: { label: t('workshop.deliver'), icon: Truck, color: "bg-muted text-foreground" },
     };
     return map[status] || null;
   };
@@ -172,7 +172,7 @@ export default function Workshop() {
                 filter === ft.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
-              {isPt ? ft.label : ft.labelEn}
+              {ft.label}
             </button>
           ))}
         </div>
@@ -186,7 +186,7 @@ export default function Workshop() {
           </div>
         ) : workOrders.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground">
-            {isPt ? "Sem ordens de serviço." : "No work orders."}
+            {t('workshop.noOrders')}
           </div>
         ) : workOrders.map(wo => {
           const cfg = statusConfig[wo.status] || statusConfig.open;
@@ -208,7 +208,7 @@ export default function Workshop() {
                   </div>
                 </div>
                 <Badge variant="secondary" className={`${cfg.bg} ${cfg.color}`}>
-                  {isPt ? cfg.labelPt : cfg.label}
+                  {cfg.label}
                 </Badge>
               </div>
 
@@ -289,7 +289,7 @@ export default function Workshop() {
               <span className="font-mono">{selected?.number}</span>
               {selected && (
                 <Badge variant="secondary" className={`${statusConfig[selected.status]?.bg} ${statusConfig[selected.status]?.color}`}>
-                  {isPt ? statusConfig[selected.status]?.labelPt : statusConfig[selected.status]?.label}
+                  {statusConfig[selected.status]?.label}
                 </Badge>
               )}
             </DialogTitle>
@@ -313,11 +313,11 @@ export default function Workshop() {
               {/* Diagnosis input for 'open' status */}
               {selected.status === 'open' && (
                 <div className="space-y-2">
-                  <Label>{isPt ? "Diagnóstico" : "Diagnosis"}</Label>
+                  <Label>{t('workshop.diagnosis')}</Label>
                   <Textarea
                     value={diagnosisText}
                     onChange={e => setDiagnosisText(e.target.value)}
-                    placeholder={isPt ? "Descreva o diagnóstico..." : "Describe the diagnosis..."}
+                    placeholder={t('workshop.diagnosisPlaceholder')}
                     rows={3}
                   />
                 </div>
@@ -342,7 +342,7 @@ export default function Workshop() {
               {/* Existing diagnosis */}
               {selected.diagnosis && selected.status !== 'open' && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">{isPt ? "Diagnóstico" : "Diagnosis"}</Label>
+                  <Label className="text-xs text-muted-foreground">{t('workshop.diagnosis')}</Label>
                   <p className="text-sm bg-muted rounded-lg p-3 mt-1">{selected.diagnosis}</p>
                 </div>
               )}
@@ -353,7 +353,7 @@ export default function Workshop() {
                   <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-1">
                       <ClipboardCheck className="w-4 h-4" />
-                      {isPt ? "Checklist de Inspeção" : "Inspection Checklist"}
+                      {t('workshop.inspectionChecklist')}
                     </Label>
                     <span className="text-xs text-muted-foreground">
                       {checklistItems.filter(i => i.status === 'pass').length}/{checklistItems.length} OK
@@ -391,7 +391,7 @@ export default function Workshop() {
                     onClick={() => saveChecklist(selected.id)}
                     disabled={actionLoading}
                   >
-                    {isPt ? "Guardar Checklist" : "Save Checklist"}
+                    {t('workshop.saveChecklist')}
                   </Button>
                 </div>
               )}

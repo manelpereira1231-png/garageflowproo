@@ -108,6 +108,7 @@ const adminRoutes = [
 
 function AuthenticatedRoutes() {
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const [isAffiliate, setIsAffiliate] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
   useEffect(() => {
@@ -121,6 +122,20 @@ function AuthenticatedRoutes() {
     const checkShop = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setNeedsOnboarding(false); return; }
+
+      // Check if user is an affiliate — affiliates skip onboarding
+      const { data: partnerData } = await supabase
+        .from("partners")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (partnerData) {
+        setIsAffiliate(true);
+        setNeedsOnboarding(false);
+        return;
+      }
+
       for (let i = 0; i < 3; i++) {
         const { data: shop } = await supabase
           .from("shops")
@@ -128,7 +143,6 @@ function AuthenticatedRoutes() {
           .eq("user_id", user.id)
           .maybeSingle();
         if (shop) {
-          // Show onboarding if critical fields are missing (name, phone, or address)
           const incomplete = !shop.name || shop.name.trim() === '' || !shop.phone || shop.phone.trim() === '';
           setNeedsOnboarding(incomplete);
           return;

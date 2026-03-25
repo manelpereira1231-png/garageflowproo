@@ -149,7 +149,7 @@ export default function Inspections() {
   };
 
   const StatusButton = ({ status, currentStatus, onClick }: { status: ChecklistItem["status"]; currentStatus: string; onClick: () => void }) => {
-    const cfg = STATUS_CONFIG[status];
+    const cfg = STATUS_CONFIG_KEYS[status];
     const isActive = currentStatus === status;
     return (
       <button
@@ -159,7 +159,7 @@ export default function Inspections() {
         }`}
       >
         {cfg.icon && <cfg.icon className="w-3.5 h-3.5" />}
-        {cfg.label}
+        {t(cfg.labelKey)}
       </button>
     );
   };

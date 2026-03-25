@@ -238,6 +238,7 @@ function AuthenticatedRoutes() {
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
         <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
+        <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

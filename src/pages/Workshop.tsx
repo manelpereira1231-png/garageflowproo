@@ -145,12 +145,12 @@ export default function Workshop() {
 
   const getNextAction = (status: string) => {
     const map: Record<string, { label: string; icon: any; color: string }> = {
-      open: { label: isPt ? "Iniciar Diagnóstico" : "Start Diagnosis", icon: Stethoscope, color: "bg-warning text-warning-foreground" },
-      diagnosis: { label: isPt ? "Enviar p/ Aprovação" : "Send for Approval", icon: Clock, color: "bg-muted text-muted-foreground" },
-      waiting_approval: { label: isPt ? "Marcar Aprovado" : "Mark Approved", icon: ThumbsUp, color: "bg-success text-success-foreground" },
-      approved: { label: isPt ? "Iniciar Trabalho" : "Start Work", icon: Play, color: "bg-primary text-primary-foreground" },
-      in_progress: { label: isPt ? "Concluir" : "Complete", icon: CheckCircle, color: "bg-success text-success-foreground" },
-      completed: { label: isPt ? "Entregar" : "Deliver", icon: Truck, color: "bg-muted text-foreground" },
+      open: { label: t('workshop.startDiagnosis'), icon: Stethoscope, color: "bg-warning text-warning-foreground" },
+      diagnosis: { label: t('workshop.sendApproval'), icon: Clock, color: "bg-muted text-muted-foreground" },
+      waiting_approval: { label: t('workshop.markApproved'), icon: ThumbsUp, color: "bg-success text-success-foreground" },
+      approved: { label: t('workshop.startWork'), icon: Play, color: "bg-primary text-primary-foreground" },
+      in_progress: { label: t('workshop.complete'), icon: CheckCircle, color: "bg-success text-success-foreground" },
+      completed: { label: t('workshop.deliver'), icon: Truck, color: "bg-muted text-foreground" },
     };
     return map[status] || null;
   };

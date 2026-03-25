@@ -103,6 +103,7 @@ export default function LandingPage() {
           <div className="sm:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
+            <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>
             <div className="flex items-center gap-1 py-2">
               {languages.map(lang => (
                 <button

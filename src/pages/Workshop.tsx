@@ -186,7 +186,7 @@ export default function Workshop() {
           </div>
         ) : workOrders.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground">
-            {isPt ? "Sem ordens de serviço." : "No work orders."}
+            {t('workshop.noOrders')}
           </div>
         ) : workOrders.map(wo => {
           const cfg = statusConfig[wo.status] || statusConfig.open;

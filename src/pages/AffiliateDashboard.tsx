@@ -112,7 +112,7 @@ export default function AffiliateDashboard() {
     }).eq("id", partner.id);
 
     if (error) {
-      toast.error("Erro ao guardar dados de pagamento");
+      toast.error(t('affiliate.payoutError') || "Erro ao guardar dados de pagamento");
     } else {
       toast.success(t('affiliate.payoutSaved') || "Dados de pagamento atualizados ✅");
       setEditingPayout(false);

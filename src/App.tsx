@@ -188,7 +188,7 @@ function AuthenticatedRoutes() {
           <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </Suspense>

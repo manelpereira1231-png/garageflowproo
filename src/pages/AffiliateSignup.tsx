@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
-  Wrench, Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
-  Rocket, Award, Sparkles, BarChart3, Eye, Zap, Heart, CreditCard, Smartphone
+  Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
+  Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone
 } from "lucide-react";
+import LandingLayout from "@/components/LandingLayout";
 
 const PRODUCTION_DOMAIN = "https://garageflow.pt";
 

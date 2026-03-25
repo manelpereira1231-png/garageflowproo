@@ -337,7 +337,7 @@ export default function Stock() {
                   {orders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {language === 'pt' ? 'Nenhuma encomenda registada' : 'No orders registered'}
+                        {t('stock.orders.empty')}
                       </TableCell>
                     </TableRow>
                   ) : orders.map(o => (

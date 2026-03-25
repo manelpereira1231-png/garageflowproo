@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { name, email, phone, company, city } = body;
+    const { name, email, phone, company, city, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank } = body;
 
     // Validate required fields
     if (!name?.trim() || !email?.trim()) {
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Generate unique affiliate code: AF-XXXX (4 random alphanumeric)
+    // Generate unique affiliate code: AF-XXXXX (5 random alphanumeric)
     let affiliateCode = "";
     let codeExists = true;
     while (codeExists) {
@@ -68,7 +68,6 @@ Deno.serve(async (req) => {
       }
       affiliateCode = code;
 
-      // Check uniqueness via api_key field (repurposed as affiliate code storage)
       const { data: codeCheck } = await supabase
         .from("partners")
         .select("id")
@@ -77,7 +76,7 @@ Deno.serve(async (req) => {
       codeExists = !!codeCheck;
     }
 
-    // Create the affiliate
+    // Create the affiliate with payment data
     const { data: partner, error: insertError } = await supabase.from("partners").insert({
       name: name.trim(),
       contact_email: cleanEmail,
@@ -85,7 +84,11 @@ Deno.serve(async (req) => {
       type: "affiliate",
       commission_percentage: 10,
       discount_percentage: 0,
-      payout_method: "bank_transfer",
+      payout_method: payout_method || "bank_transfer",
+      payout_holder_name: payout_holder_name?.trim() || "",
+      payout_iban: payout_iban?.trim() || "",
+      payout_mbway_phone: payout_mbway_phone?.trim() || "",
+      payout_bank: payout_bank?.trim() || "",
       status: "active",
       api_key: affiliateCode,
     }).select().single();
@@ -108,6 +111,7 @@ Deno.serve(async (req) => {
         company: company?.trim() || null,
         city: city?.trim() || null,
         affiliate_code: affiliateCode,
+        payout_method: payout_method || "bank_transfer",
         source: "public_signup",
         ip: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown",
       },

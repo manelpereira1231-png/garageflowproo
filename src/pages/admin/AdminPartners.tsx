@@ -13,13 +13,16 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/auditLog";
 import {
   Plus, Users, TrendingUp, DollarSign, Send, CreditCard, Copy, Shield, AlertTriangle,
-  CheckCircle, Clock, XCircle, BarChart3, Trophy, Eye, Ban, Download
+  CheckCircle, Clock, XCircle, BarChart3, Trophy, Eye, Ban, Download, Smartphone, Banknote
 } from "lucide-react";
+
+const PRODUCTION_DOMAIN = "https://garageflow.pt";
 
 interface Partner {
   id: string; name: string; type: string; contact_email: string; contact_phone: string;
   commission_percentage: number; discount_percentage: number; payout_method: string;
   status: string; created_at: string; api_key: string | null;
+  payout_holder_name?: string; payout_iban?: string; payout_mbway_phone?: string; payout_bank?: string;
 }
 interface PartnerInvite {
   id: string; partner_id: string; workshop_email: string; workshop_name: string;
@@ -155,16 +158,29 @@ export default function AdminPartners() {
   };
 
   const copyAffiliateLink = (partner: Partner) => {
-    const link = `${window.location.origin}/auth?mode=signup&partner=${partner.id}`;
+    const link = `${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${partner.id}`;
     navigator.clipboard.writeText(link);
     toast.success("Link copiado 📋");
   };
 
+  const getPaymentInfo = (partner: Partner) => {
+    const method = partner.payout_method;
+    if (method === "mbway" && partner.payout_mbway_phone) {
+      return { method: "MB WAY", detail: partner.payout_mbway_phone, holder: partner.payout_holder_name };
+    }
+    if (partner.payout_iban) {
+      return { method: "IBAN", detail: partner.payout_iban, holder: partner.payout_holder_name, bank: partner.payout_bank };
+    }
+    return null;
+  };
+
   const exportCSV = () => {
-    const headers = ["Parceiro", "Valor", "Moeda", "Status", "Criado", "Pago em"];
+    const headers = ["Parceiro", "Valor", "Moeda", "Status", "Método Pagamento", "IBAN/MBWAY", "Criado", "Pago em"];
     const rows = commissions.map(c => {
       const p = partners.find(p2 => p2.id === c.partner_id);
+      const pay = p ? getPaymentInfo(p) : null;
       return [p?.name || "—", Number(c.amount).toFixed(2), c.currency, c.status,
+        pay?.method || "—", pay?.detail || "—",
         new Date(c.created_at).toLocaleDateString(), c.paid_at ? new Date(c.paid_at).toLocaleDateString() : "—"];
     });
     const csv = [headers, ...rows].map(r => r.join(";")).join("\n");
@@ -303,21 +319,35 @@ export default function AdminPartners() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead><TableHead>Parceiro</TableHead><TableHead>Código</TableHead>
-                  <TableHead>Oficinas</TableHead><TableHead>Total Ganho</TableHead><TableHead>Pendente</TableHead><TableHead>Status</TableHead>
+                  <TableHead>Oficinas</TableHead><TableHead>Total Ganho</TableHead><TableHead>Pendente</TableHead>
+                  <TableHead>Pagamento</TableHead><TableHead>Status</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {rankings.map((p, i) => (
-                    <TableRow key={p.id} className={i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
-                      <TableCell className="font-bold text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}</TableCell>
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell><Badge variant="outline" className="font-mono text-xs">{p.api_key || "—"}</Badge></TableCell>
-                      <TableCell className="font-semibold text-green-600">{p.refCount}</TableCell>
-                      <TableCell className="font-semibold">{p.totalEarned.toFixed(2)}€</TableCell>
-                      <TableCell className={p.pendingAmt > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}>{p.pendingAmt.toFixed(2)}€</TableCell>
-                      <TableCell><Badge variant={statusBadge(p.status)}>{p.status}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                  {rankings.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum parceiro</TableCell></TableRow>}
+                  {rankings.map((p, i) => {
+                    const pay = getPaymentInfo(p);
+                    return (
+                      <TableRow key={p.id} className={i < 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
+                        <TableCell className="font-bold text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}</TableCell>
+                        <TableCell className="font-medium">{p.name}</TableCell>
+                        <TableCell><Badge variant="outline" className="font-mono text-xs">{p.api_key || "—"}</Badge></TableCell>
+                        <TableCell className="font-semibold text-green-600">{p.refCount}</TableCell>
+                        <TableCell className="font-semibold">{p.totalEarned.toFixed(2)}€</TableCell>
+                        <TableCell className={p.pendingAmt > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}>{p.pendingAmt.toFixed(2)}€</TableCell>
+                        <TableCell>
+                          {pay ? (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                              {pay.method === "MB WAY" ? <Smartphone className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                              {pay.method}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell><Badge variant={statusBadge(p.status)}>{p.status}</Badge></TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {rankings.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum parceiro</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -331,17 +361,31 @@ export default function AdminPartners() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Nome</TableHead><TableHead>Código</TableHead><TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead><TableHead>Oficinas</TableHead><TableHead>Status</TableHead><TableHead>Ações</TableHead>
+                  <TableHead>Telefone</TableHead><TableHead>Pagamento</TableHead><TableHead>Oficinas</TableHead><TableHead>Status</TableHead><TableHead>Ações</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {partners.map(p => {
                     const refs = referrals.filter(r => r.partner_id === p.id).length;
+                    const pay = getPaymentInfo(p);
                     return (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell><Badge variant="outline" className="font-mono text-xs">{p.api_key || "—"}</Badge></TableCell>
                         <TableCell className="text-sm">{p.contact_email}</TableCell>
                         <TableCell className="text-sm">{p.contact_phone || "—"}</TableCell>
+                        <TableCell>
+                          {pay ? (
+                            <div className="text-xs">
+                              <Badge variant="outline" className="gap-1 mb-0.5">
+                                {pay.method === "MB WAY" ? <Smartphone className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                                {pay.method}
+                              </Badge>
+                              <p className="text-muted-foreground font-mono truncate max-w-[120px]">{pay.detail}</p>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Sem dados</span>
+                          )}
+                        </TableCell>
                         <TableCell className="font-semibold">{refs}</TableCell>
                         <TableCell><Badge variant={statusBadge(p.status)}>{p.status}</Badge></TableCell>
                         <TableCell>
@@ -359,7 +403,7 @@ export default function AdminPartners() {
                       </TableRow>
                     );
                   })}
-                  {partners.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum parceiro</TableCell></TableRow>}
+                  {partners.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum parceiro</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -401,7 +445,7 @@ export default function AdminPartners() {
           </Card>
         </TabsContent>
 
-        {/* Commissions */}
+        {/* Commissions - Now with payment info */}
         <TabsContent value="commissions">
           <Card>
             <CardHeader>
@@ -417,16 +461,34 @@ export default function AdminPartners() {
             <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Parceiro</TableHead><TableHead>Valor</TableHead><TableHead>Status</TableHead>
+                  <TableHead>Parceiro</TableHead><TableHead>Valor</TableHead><TableHead>Método</TableHead>
+                  <TableHead>Dados Pagamento</TableHead><TableHead>Status</TableHead>
                   <TableHead>Data</TableHead><TableHead>Pago em</TableHead><TableHead>Ação</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {commissions.map(c => {
                     const partner = partners.find(p => p.id === c.partner_id);
+                    const pay = partner ? getPaymentInfo(partner) : null;
                     return (
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{partner?.name || "—"}</TableCell>
                         <TableCell className="font-semibold">{Number(c.amount).toFixed(2)}€</TableCell>
+                        <TableCell>
+                          {pay ? (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                              {pay.method === "MB WAY" ? <Smartphone className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                              {pay.method}
+                            </Badge>
+                          ) : <span className="text-xs text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono max-w-[150px] truncate">
+                          {pay ? (
+                            <div>
+                              <p>{pay.detail}</p>
+                              {pay.holder && <p className="text-muted-foreground">{pay.holder}</p>}
+                            </div>
+                          ) : <span className="text-muted-foreground">Sem dados</span>}
+                        </TableCell>
                         <TableCell><Badge variant={statusBadge(c.status)} className="gap-1">{c.status === "paid" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}{c.status}</Badge></TableCell>
                         <TableCell className="text-sm">{new Date(c.created_at).toLocaleDateString()}</TableCell>
                         <TableCell className="text-sm">{c.paid_at ? new Date(c.paid_at).toLocaleDateString() : "—"}</TableCell>
@@ -434,7 +496,7 @@ export default function AdminPartners() {
                       </TableRow>
                     );
                   })}
-                  {commissions.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhuma comissão</TableCell></TableRow>}
+                  {commissions.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma comissão</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -536,7 +598,7 @@ export default function AdminPartners() {
         </DialogContent>
       </Dialog>
 
-      {/* Partner Detail Dialog */}
+      {/* Partner Detail Dialog - Now with payment info */}
       <Dialog open={!!detailPartner} onOpenChange={() => setDetailPartner(null)}>
         <DialogContent className="max-w-lg">
           {detailPartner && (() => {
@@ -546,6 +608,7 @@ export default function AdminPartners() {
             const pPaid = pComm.filter(c => c.status === "paid").reduce((s, c) => s + Number(c.amount), 0);
             const pLogs = logs.filter(l => l.partner_id === detailPartner.id);
             const suspiciousLogs = pLogs.filter(l => l.action?.includes("suspicious") || l.action?.includes("blocked") || l.action?.includes("duplicate"));
+            const pay = getPaymentInfo(detailPartner);
             return (
               <>
                 <DialogHeader>
@@ -562,6 +625,30 @@ export default function AdminPartners() {
                     <div><span className="text-muted-foreground">Telefone:</span> <strong>{detailPartner.contact_phone || "—"}</strong></div>
                     <div><span className="text-muted-foreground">Desde:</span> <strong>{new Date(detailPartner.created_at).toLocaleDateString()}</strong></div>
                   </div>
+
+                  {/* Payment Info Section */}
+                  <div className="border rounded-lg p-3 bg-muted/30">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-primary" />
+                      Dados de Pagamento
+                    </p>
+                    {pay ? (
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="gap-1">
+                            {pay.method === "MB WAY" ? <Smartphone className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                            {pay.method}
+                          </Badge>
+                        </div>
+                        {pay.holder && <p><span className="text-muted-foreground">Titular:</span> <strong>{pay.holder}</strong></p>}
+                        <p><span className="text-muted-foreground">{pay.method === "MB WAY" ? "Nº:" : "IBAN:"}</span> <strong className="font-mono">{pay.detail}</strong></p>
+                        {(pay as any).bank && <p><span className="text-muted-foreground">Banco:</span> <strong>{(pay as any).bank}</strong></p>}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Sem dados de pagamento registados</p>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <Card><CardContent className="pt-4 text-center"><p className="text-xl font-bold text-green-600">{pRefs.length}</p><p className="text-xs text-muted-foreground">Oficinas vinculadas</p></CardContent></Card>
                     <Card><CardContent className="pt-4 text-center"><p className="text-xl font-bold">{pComm.length}</p><p className="text-xs text-muted-foreground">Comissões</p></CardContent></Card>
@@ -571,7 +658,7 @@ export default function AdminPartners() {
                   <div className="bg-muted/50 rounded-lg p-3">
                     <Label className="text-xs text-muted-foreground mb-1 block">Link de afiliado</Label>
                     <div className="flex items-center gap-2">
-                      <Input readOnly value={`${window.location.origin}/auth?mode=signup&partner=${detailPartner.id}`} className="text-xs font-mono" />
+                      <Input readOnly value={`${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${detailPartner.id}`} className="text-xs font-mono" />
                       <Button size="icon" variant="outline" onClick={() => copyAffiliateLink(detailPartner)}><Copy className="w-3 h-3" /></Button>
                     </div>
                   </div>

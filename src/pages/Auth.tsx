@@ -60,7 +60,6 @@ export default function Auth() {
         // If signup had a referral code, create the referral record
         if (refCode && signUpData?.user) {
           try {
-            // Find the referrer by code
             const { data: codeData } = await supabase
               .from("referral_codes")
               .select("user_id, code")
@@ -77,6 +76,20 @@ export default function Auth() {
             }
           } catch (refErr) {
             console.warn("Referral tracking failed:", refErr);
+          }
+        }
+
+        // Track affiliate partner signup
+        const partnerId = searchParams.get('partner');
+        if (partnerId && signUpData?.user) {
+          try {
+            await supabase.from("partner_logs").insert({
+              partner_id: partnerId,
+              action: "workshop_signed_up",
+              details: { user_id: signUpData.user.id, email, source: "affiliate_link" },
+            } as any);
+          } catch (partnerErr) {
+            console.warn("Partner tracking failed:", partnerErr);
           }
         }
 

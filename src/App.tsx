@@ -16,6 +16,7 @@ const PlanGate = lazy(() => import("@/components/PlanGate"));
 // Critical path - eagerly loaded for instant navigation
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
+const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 
 // Non-critical lazy-loaded
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -279,6 +280,7 @@ function AppRoutes() {
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>

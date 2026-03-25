@@ -17,21 +17,15 @@ import type { ServiceStatus } from "@/types/garage";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 
-const statusConfig: Record<string, { label: string; labelPt: string; icon: any; color: string; bg: string }> = {
-  open: { label: "Open", labelPt: "Aberto", icon: Wrench, color: "text-info", bg: "bg-info/10" },
-  diagnosis: { label: "Diagnosis", labelPt: "Diagnóstico", icon: Stethoscope, color: "text-warning", bg: "bg-warning/10" },
-  waiting_approval: { label: "Waiting", labelPt: "Aguardando", icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
-  approved: { label: "Approved", labelPt: "Aprovado", icon: ThumbsUp, color: "text-success", bg: "bg-success/10" },
-  in_progress: { label: "In Progress", labelPt: "Em Execução", icon: Play, color: "text-primary", bg: "bg-primary/10" },
-  completed: { label: "Completed", labelPt: "Concluído", icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
-  delivered: { label: "Delivered", labelPt: "Entregue", icon: Truck, color: "text-muted-foreground", bg: "bg-muted" },
-};
-
-const filterTabs = [
-  { key: 'active', label: 'Ativos', labelEn: 'Active' },
-  { key: 'completed', label: 'Concluídos', labelEn: 'Completed' },
-  { key: 'all', label: 'Todos', labelEn: 'All' },
-];
+const getStatusConfig = (t: (key: string) => string) => ({
+  open: { label: t('workshop.status.open'), icon: Wrench, color: "text-info", bg: "bg-info/10" },
+  diagnosis: { label: t('workshop.status.diagnosis'), icon: Stethoscope, color: "text-warning", bg: "bg-warning/10" },
+  waiting_approval: { label: t('workshop.status.waiting'), icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+  approved: { label: t('workshop.status.approved'), icon: ThumbsUp, color: "text-success", bg: "bg-success/10" },
+  in_progress: { label: t('workshop.status.inProgress'), icon: Play, color: "text-primary", bg: "bg-primary/10" },
+  completed: { label: t('workshop.status.completed'), icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+  delivered: { label: t('workshop.status.delivered'), icon: Truck, color: "text-muted-foreground", bg: "bg-muted" },
+});
 
 export default function Workshop() {
   const { language, t } = useLanguage();

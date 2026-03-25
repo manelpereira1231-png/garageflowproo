@@ -254,6 +254,7 @@ export default function AffiliateDashboard() {
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="invites">{t('affiliate.tabInvites') || "Convites"} ({totalInvites})</TabsTrigger>
             <TabsTrigger value="commissions">{t('affiliate.tabCommissions') || "Comissões"} ({commissions.length})</TabsTrigger>
+            <TabsTrigger value="rankings">{t('affiliate.tabRankings') || "Rankings"}</TabsTrigger>
             <TabsTrigger value="payments">{t('affiliate.tabPayments') || "Pagamentos"}</TabsTrigger>
             <TabsTrigger value="activity">{t('affiliate.tabActivity') || "Atividade"}</TabsTrigger>
           </TabsList>

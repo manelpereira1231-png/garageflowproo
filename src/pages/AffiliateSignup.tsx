@@ -418,11 +418,12 @@ export default function AffiliateSignup() {
         {!created && (
           <div className="mt-16 text-center pb-8">
             <Button size="lg" onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })} className="gap-2">
-              <Heart className="w-5 h-5" /> Quero ser Afiliado — É grátis
+              <Rocket className="w-5 h-5" /> Quero ser Afiliado — É grátis
             </Button>
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </LandingLayout>
   );
 }

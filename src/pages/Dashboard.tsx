@@ -313,6 +313,7 @@ export default function Dashboard() {
 
       {/* Onboarding */}
       <OnboardingChecklist />
+      <ShopCompleteness />
 
       {/* Quick Actions — TOP for maximum visibility */}
       <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">

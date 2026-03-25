@@ -1839,6 +1839,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Invite 1 workshop = 1 free month',
     'referrals.copyLink': 'Copy link',
     'referrals.linkCopiedFeedback': 'Link copied! Share it with another workshop.',
+
+    'auth.partnerInviteActive': 'Partner invite active',
+    'auth.signupSubtitle': 'Create your account to get started',
+    'common.optional': 'Optional',
+    'nav.workshop': 'Workshop',
+    'nav.automations': 'Automations',
   },
 
   es: {

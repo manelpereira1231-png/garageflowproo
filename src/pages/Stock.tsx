@@ -348,10 +348,8 @@ export default function Stock() {
                       <TableCell className="font-semibold">€{(o.total || 0).toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
-                          {o.status === 'pending' ? (language === 'pt' ? 'Pendente' : 'Pending') :
-                           o.status === 'sent' ? (language === 'pt' ? 'Enviado' : 'Sent') :
-                           o.status === 'delivered' ? (language === 'pt' ? 'Entregue' : 'Delivered') :
-                           o.status === 'cancelled' ? (language === 'pt' ? 'Cancelado' : 'Cancelled') : o.status}
+                          {t(`stock.orders.${o.status}`) || o.status}
+                        </Badge>
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>

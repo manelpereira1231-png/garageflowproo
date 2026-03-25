@@ -182,7 +182,7 @@ export default function CommandPalette() {
     { label: isPt ? "Catálogo" : "Catalog", icon: BookOpen, path: "/catalog" },
     { label: "Stock", icon: Package, path: "/stock" },
     { label: isPt ? "Inspeções" : "Inspections", icon: ClipboardCheck, path: "/inspections" },
-    { label: isPt ? "Modo Oficina" : "Workshop", icon: HardHat, path: "/workshop" },
+    { label: isPt ? "Modo Oficina" : language === 'es' ? "Modo Taller" : "Workshop", icon: HardHat, path: "/workshop" },
     { label: isPt ? "Faturas" : "Invoices", icon: Receipt, path: "/invoices" },
     { label: isPt ? "Alertas" : "Alerts", icon: Bell, path: "/alerts" },
     { label: isPt ? "Equipa" : "Team", icon: UserPlus, path: "/team" },

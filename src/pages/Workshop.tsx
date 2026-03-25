@@ -83,9 +83,9 @@ export default function Workshop() {
 
     const { error } = await supabase.from("work_orders").update(updates).eq("id", wo.id);
     if (error) {
-      toast.error(isPt ? "Erro ao atualizar" : "Error updating");
+      toast.error(t('workshop.errorUpdating'));
     } else {
-      toast.success(`${wo.number} → ${statusConfig[nextStatus]?.labelPt || nextStatus}`);
+      toast.success(`${wo.number} → ${statusConfig[nextStatus]?.label || nextStatus}`);
       fetchOrders();
       if (selected?.id === wo.id) setSelected({ ...wo, ...updates });
     }

@@ -10,7 +10,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.login': 'Entrar',
     'auth.signup': 'Criar conta',
     'auth.email': 'Email',
-    'auth.password': 'Password',
+     'auth.password': 'Palavra-passe',
     'auth.ownerName': 'Nome completo',
     'auth.shopName': 'Nome da oficina',
     'auth.processing': 'A processar...',

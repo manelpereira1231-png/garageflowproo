@@ -79,15 +79,18 @@ export default function Auth() {
           }
         }
 
-        // Track affiliate partner signup
+        // Track affiliate partner signup via edge function (bypasses RLS)
         const partnerId = searchParams.get('partner');
         if (partnerId && signUpData?.user) {
           try {
-            await supabase.from("partner_logs").insert({
-              partner_id: partnerId,
-              action: "workshop_signed_up",
-              details: { user_id: signUpData.user.id, email, source: "affiliate_link" },
-            } as any);
+            await supabase.functions.invoke("track-affiliate-signup", {
+              body: {
+                partner_id: partnerId,
+                user_id: signUpData.user.id,
+                email,
+                shop_name: shopName,
+              },
+            });
           } catch (partnerErr) {
             console.warn("Partner tracking failed:", partnerErr);
           }

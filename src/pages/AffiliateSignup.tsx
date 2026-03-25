@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,15 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
-  Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone
+  Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone, Eye, EyeOff
 } from "lucide-react";
 import LandingLayout from "@/components/LandingLayout";
+import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const PRODUCTION_DOMAIN = "https://garageflow.pt";
 
 export default function AffiliateSignup() {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const [created, setCreated] = useState<{ id: string; code: string; link: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -25,6 +30,7 @@ export default function AffiliateSignup() {
     phone: "",
     company: "",
     city: "",
+    password: "",
   });
   const [payoutMethod, setPayoutMethod] = useState<"iban" | "mbway">("iban");
   const [payoutData, setPayoutData] = useState({
@@ -37,25 +43,27 @@ export default function AffiliateSignup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) {
-      toast.error("Nome e email são obrigatórios");
+      toast.error(t('affiliate.nameEmailRequired') || "Nome e email são obrigatórios");
       return;
     }
     if (!form.phone.trim()) {
-      toast.error("Telefone é obrigatório");
+      toast.error(t('affiliate.phoneRequired') || "Telefone é obrigatório");
+      return;
+    }
+    if (!form.password || form.password.length < 6) {
+      toast.error(t('affiliate.passwordMinLength') || "Password deve ter pelo menos 6 caracteres");
       return;
     }
     if (!acceptedTerms) {
-      toast.error("Tem de aceitar os termos para continuar");
+      toast.error(t('affiliate.acceptTerms') || "Tem de aceitar os termos para continuar");
       return;
     }
-
-    // Validate payment data
     if (payoutMethod === "iban" && !payoutData.iban.trim()) {
-      toast.error("IBAN é obrigatório para receber pagamentos");
+      toast.error(t('affiliate.ibanRequired') || "IBAN é obrigatório para receber pagamentos");
       return;
     }
     if (payoutMethod === "mbway" && !payoutData.mbway_phone.trim()) {
-      toast.error("Número MB WAY é obrigatório para receber pagamentos");
+      toast.error(t('affiliate.mbwayRequired') || "Número MB WAY é obrigatório para receber pagamentos");
       return;
     }
 
@@ -76,6 +84,7 @@ export default function AffiliateSignup() {
           phone: form.phone,
           company: form.company,
           city: form.city,
+          password: form.password,
           payout_method: payoutMethod === "iban" ? "bank_transfer" : "mbway",
           payout_holder_name: payoutData.holder_name,
           payout_iban: payoutData.iban,
@@ -90,23 +99,22 @@ export default function AffiliateSignup() {
         throw new Error(data?.error || "Erro ao registar. Tente novamente.");
       }
 
-      const partnerId = data.id;
-      const affiliateCode = data.code;
-      const link = `${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${partnerId}`;
-
-      setCreated({ id: partnerId, code: affiliateCode, link });
-      toast.success("Registo concluído com sucesso! 🎉");
+      // Auto-login with returned session
+      if (data.session?.access_token && data.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        toast.success(t('affiliate.registrationSuccess') || "Registo concluído com sucesso! 🎉 A entrar no painel...");
+        // Navigate to affiliate dashboard
+        setTimeout(() => navigate("/affiliate-dashboard"), 500);
+      } else {
+        toast.success(t('affiliate.registrationSuccess') || "Registo concluído com sucesso! 🎉");
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao registar. Tente novamente.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const copyLink = () => {
-    if (created?.link) {
-      navigator.clipboard.writeText(created.link);
-      toast.success("Link copiado com sucesso! 📋");
     }
   };
 
@@ -117,13 +125,13 @@ export default function AffiliateSignup() {
         {/* Hero */}
         <div className="text-center mb-10">
           <Badge variant="secondary" className="mb-4 gap-1 px-3 py-1">
-            <Sparkles className="w-3.5 h-3.5" /> Programa de Afiliados
+            <Sparkles className="w-3.5 h-3.5" /> {t('affiliate.programBadge') || "Programa de Afiliados"}
           </Badge>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            Torne-se parceiro <span className="text-primary">GarageFlow</span> e ganhe comissões
+            {t('affiliate.heroTitle') || "Torne-se parceiro"} <span className="text-primary">GarageFlow</span> {t('affiliate.heroTitleSuffix') || "e ganhe comissões"}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ganhe comissões automáticas por cada oficina que se registar e pagar um plano através do seu link exclusivo.
+            {t('affiliate.heroSubtitle') || "Ganhe comissões automáticas por cada oficina que se registar e pagar um plano através do seu link exclusivo."}
           </p>
         </div>
 
@@ -132,15 +140,15 @@ export default function AffiliateSignup() {
           <Card className="text-center border-2 border-primary/20 bg-primary/5">
             <CardContent className="pt-6 pb-4">
               <p className="text-3xl font-black text-primary">10%</p>
-              <p className="text-sm font-semibold mt-1">Plano Pro</p>
-              <p className="text-xs text-muted-foreground">49€/mês → 4,90€/mês para si</p>
+              <p className="text-sm font-semibold mt-1">{t('affiliate.planPro') || "Plano Pro"}</p>
+              <p className="text-xs text-muted-foreground">49€/mês → 4,90€/mês</p>
             </CardContent>
           </Card>
           <Card className="text-center border-2 border-primary/20 bg-primary/5">
             <CardContent className="pt-6 pb-4">
               <p className="text-3xl font-black text-primary">20%</p>
-              <p className="text-sm font-semibold mt-1">Plano Garage</p>
-              <p className="text-xs text-muted-foreground">99€/mês → 19,80€/mês para si</p>
+              <p className="text-sm font-semibold mt-1">{t('affiliate.planGarage') || "Plano Garage"}</p>
+              <p className="text-xs text-muted-foreground">99€/mês → 19,80€/mês</p>
             </CardContent>
           </Card>
         </div>
@@ -148,10 +156,10 @@ export default function AffiliateSignup() {
         {/* Benefits */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {[
-            { icon: DollarSign, color: "text-primary", title: "Sem investimento", desc: "Cadastre-se grátis e comece imediatamente" },
-            { icon: Zap, color: "text-amber-500", title: "Link automático", desc: "Receba o seu link exclusivo na hora" },
-            { icon: BarChart3, color: "text-blue-500", title: "Rastreio total", desc: "Veja em tempo real quem entrou pelo seu link" },
-            { icon: Shield, color: "text-green-500", title: "Pagamentos seguros", desc: "IBAN ou MB WAY — receba de forma simples" },
+            { icon: DollarSign, color: "text-primary", title: t('affiliate.benefit1Title') || "Sem investimento", desc: t('affiliate.benefit1Desc') || "Cadastre-se grátis e comece imediatamente" },
+            { icon: Zap, color: "text-amber-500", title: t('affiliate.benefit2Title') || "Link automático", desc: t('affiliate.benefit2Desc') || "Receba o seu link exclusivo na hora" },
+            { icon: BarChart3, color: "text-blue-500", title: t('affiliate.benefit3Title') || "Rastreio total", desc: t('affiliate.benefit3Desc') || "Veja em tempo real quem entrou pelo seu link" },
+            { icon: Shield, color: "text-green-500", title: t('affiliate.benefit4Title') || "Pagamentos seguros", desc: t('affiliate.benefit4Desc') || "IBAN ou MB WAY — receba de forma simples" },
           ].map(b => (
             <Card key={b.title} className="text-center hover:shadow-md transition-shadow">
               <CardContent className="pt-6 pb-4">
@@ -163,239 +171,221 @@ export default function AffiliateSignup() {
           ))}
         </div>
 
-        {/* Signup Form / Success */}
+        {/* Signup Form */}
         <div className="max-w-lg mx-auto">
-          {!created ? (
-            <Card className="border-2 shadow-lg" id="signup-form">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl flex items-center justify-center gap-2">
-                  <Rocket className="w-5 h-5 text-primary" />
-                  Quero ser Afiliado
-                </CardTitle>
-                <CardDescription>Preencha os dados abaixo e receba o seu link exclusivo</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="af-name">Nome Completo *</Label>
+          <Card className="border-2 shadow-lg" id="signup-form">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl flex items-center justify-center gap-2">
+                <Rocket className="w-5 h-5 text-primary" />
+                {t('affiliate.formTitle') || "Quero ser Afiliado"}
+              </CardTitle>
+              <CardDescription>{t('affiliate.formSubtitle') || "Preencha os dados abaixo e entre diretamente no seu painel"}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="af-name">{t('affiliate.fullName') || "Nome Completo"} *</Label>
+                  <Input
+                    id="af-name"
+                    placeholder="João Silva"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    required
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="af-email">Email *</Label>
+                  <Input
+                    id="af-email"
+                    type="email"
+                    placeholder="joao@exemplo.com"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    required
+                    maxLength={255}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="af-password">{t('affiliate.password') || "Password"} *</Label>
+                  <div className="relative">
                     <Input
-                      id="af-name"
-                      placeholder="João Silva"
-                      value={form.name}
-                      onChange={e => setForm({ ...form, name: e.target.value })}
+                      id="af-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={t('affiliate.passwordPlaceholder') || "Mínimo 6 caracteres"}
+                      value={form.password}
+                      onChange={e => setForm({ ...form, password: e.target.value })}
                       required
+                      minLength={6}
+                      maxLength={72}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="af-phone">{t('affiliate.phone') || "Telefone / WhatsApp"} *</Label>
+                  <Input
+                    id="af-phone"
+                    placeholder="+351 912 345 678"
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value })}
+                    required
+                    maxLength={20}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="af-company">{t('affiliate.company') || "Empresa / Profissão"}</Label>
+                    <Input
+                      id="af-company"
+                      placeholder={t('common.optional') || "Opcional"}
+                      value={form.company}
+                      onChange={e => setForm({ ...form, company: e.target.value })}
                       maxLength={100}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="af-email">Email *</Label>
+                    <Label htmlFor="af-city">{t('affiliate.city') || "Cidade / País"}</Label>
                     <Input
-                      id="af-email"
-                      type="email"
-                      placeholder="joao@exemplo.com"
-                      value={form.email}
-                      onChange={e => setForm({ ...form, email: e.target.value })}
-                      required
-                      maxLength={255}
+                      id="af-city"
+                      placeholder="Lisboa, PT"
+                      value={form.city}
+                      onChange={e => setForm({ ...form, city: e.target.value })}
+                      maxLength={100}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="af-phone">Telefone / WhatsApp *</Label>
-                    <Input
-                      id="af-phone"
-                      placeholder="+351 912 345 678"
-                      value={form.phone}
-                      onChange={e => setForm({ ...form, phone: e.target.value })}
-                      required
-                      maxLength={20}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                </div>
+
+                {/* Payment Method Section */}
+                <div className="border-t pt-4 mt-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    {t('affiliate.paymentData') || "Dados de Pagamento"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {t('affiliate.paymentDataDesc') || "Para recebermos as suas comissões, indique o método preferido."}
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <Select value={payoutMethod} onValueChange={(v: "iban" | "mbway") => setPayoutMethod(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="iban">
+                          <span className="flex items-center gap-2">
+                            <CreditCard className="w-3.5 h-3.5" /> {t('affiliate.bankTransfer') || "Transferência Bancária (IBAN)"}
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="mbway">
+                          <span className="flex items-center gap-2">
+                            <Smartphone className="w-3.5 h-3.5" /> MB WAY
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+
                     <div className="space-y-1.5">
-                      <Label htmlFor="af-company">Empresa / Profissão</Label>
+                      <Label>{t('affiliate.holderName') || "Nome do titular"} *</Label>
                       <Input
-                        id="af-company"
-                        placeholder="Opcional"
-                        value={form.company}
-                        onChange={e => setForm({ ...form, company: e.target.value })}
+                        placeholder={t('affiliate.holderNamePlaceholder') || "Nome completo do titular"}
+                        value={payoutData.holder_name}
+                        onChange={e => setPayoutData({ ...payoutData, holder_name: e.target.value })}
                         maxLength={100}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="af-city">Cidade / País</Label>
-                      <Input
-                        id="af-city"
-                        placeholder="Lisboa, PT"
-                        value={form.city}
-                        onChange={e => setForm({ ...form, city: e.target.value })}
-                        maxLength={100}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Payment Method Section */}
-                  <div className="border-t pt-4 mt-2">
-                    <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
-                      <CreditCard className="w-4 h-4 text-primary" />
-                      Dados de Pagamento
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Para recebermos as suas comissões, indique o método preferido.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      <Select value={payoutMethod} onValueChange={(v: "iban" | "mbway") => setPayoutMethod(v)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="iban">
-                            <span className="flex items-center gap-2">
-                              <CreditCard className="w-3.5 h-3.5" /> Transferência Bancária (IBAN)
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="mbway">
-                            <span className="flex items-center gap-2">
-                              <Smartphone className="w-3.5 h-3.5" /> MB WAY
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <div className="space-y-1.5">
-                        <Label>Nome do titular *</Label>
-                        <Input
-                          placeholder="Nome completo do titular"
-                          value={payoutData.holder_name}
-                          onChange={e => setPayoutData({ ...payoutData, holder_name: e.target.value })}
-                          maxLength={100}
-                        />
-                      </div>
-
-                      {payoutMethod === "iban" ? (
-                        <>
-                          <div className="space-y-1.5">
-                            <Label>IBAN *</Label>
-                            <Input
-                              placeholder="PT50 0000 0000 0000 0000 0000 0"
-                              value={payoutData.iban}
-                              onChange={e => setPayoutData({ ...payoutData, iban: e.target.value })}
-                              maxLength={34}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label>Banco (opcional)</Label>
-                            <Input
-                              placeholder="Ex: Millennium, CGD, Novo Banco..."
-                              value={payoutData.bank}
-                              onChange={e => setPayoutData({ ...payoutData, bank: e.target.value })}
-                              maxLength={50}
-                            />
-                          </div>
-                        </>
-                      ) : (
+                    {payoutMethod === "iban" ? (
+                      <>
                         <div className="space-y-1.5">
-                          <Label>Número MB WAY *</Label>
+                          <Label>IBAN *</Label>
                           <Input
-                            placeholder="912 345 678"
-                            value={payoutData.mbway_phone}
-                            onChange={e => setPayoutData({ ...payoutData, mbway_phone: e.target.value })}
-                            maxLength={15}
+                            placeholder="PT50 0000 0000 0000 0000 0000 0"
+                            value={payoutData.iban}
+                            onChange={e => setPayoutData({ ...payoutData, iban: e.target.value })}
+                            maxLength={34}
                           />
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 pt-2">
-                    <Checkbox
-                      id="af-terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(v) => setAcceptedTerms(v === true)}
-                    />
-                    <label htmlFor="af-terms" className="text-sm text-muted-foreground cursor-pointer leading-tight">
-                      Aceito os termos do programa de afiliados e confirmo que os dados são verdadeiros.
-                    </label>
-                  </div>
-
-                  <Button type="submit" className="w-full h-12 text-base" disabled={loading || !acceptedTerms}>
-                    {loading ? (
-                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Award className="w-5 h-5 mr-2" />
-                        Quero ser Afiliado
+                        <div className="space-y-1.5">
+                          <Label>{t('affiliate.bank') || "Banco"} ({t('common.optional') || "opcional"})</Label>
+                          <Input
+                            placeholder="Ex: Millennium, CGD, Novo Banco..."
+                            value={payoutData.bank}
+                            onChange={e => setPayoutData({ ...payoutData, bank: e.target.value })}
+                            maxLength={50}
+                          />
+                        </div>
                       </>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Label>{t('affiliate.mbwayNumber') || "Número MB WAY"} *</Label>
+                        <Input
+                          placeholder="912 345 678"
+                          value={payoutData.mbway_phone}
+                          onChange={e => setPayoutData({ ...payoutData, mbway_phone: e.target.value })}
+                          maxLength={15}
+                        />
+                      </div>
                     )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-2 border-green-500/30 shadow-lg">
-              <CardContent className="pt-8 pb-8 text-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Bem-vindo ao programa! 🎉</h2>
-                  <p className="text-muted-foreground">O seu registo foi concluído com sucesso.</p>
-                </div>
-
-                {/* Affiliate Code */}
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">O seu código de afiliado</p>
-                  <p className="text-2xl font-black text-primary tracking-wider">{created.code}</p>
-                </div>
-
-                {/* Affiliate Link */}
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <Label className="text-xs text-muted-foreground mb-2 block">O seu link exclusivo de afiliado</Label>
-                  <div className="flex items-center gap-2">
-                    <Input value={created.link} readOnly className="text-xs font-mono" />
-                    <Button onClick={copyLink} size="icon" variant="outline" className="shrink-0">
-                      <Copy className="w-4 h-4" />
-                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Partilhe este link. Cada oficina que se registar e pagar gera comissão automática para si.
-                  </p>
                 </div>
 
-                <Button onClick={copyLink} className="w-full gap-2" size="lg">
-                  <Copy className="w-4 h-4" /> Copiar o meu Link de Afiliado
+                <div className="flex items-start gap-2 pt-2">
+                  <Checkbox
+                    id="af-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(v) => setAcceptedTerms(v === true)}
+                  />
+                  <label htmlFor="af-terms" className="text-sm text-muted-foreground cursor-pointer leading-tight">
+                    {t('affiliate.termsAccept') || "Aceito os termos do programa de afiliados e confirmo que os dados são verdadeiros."}
+                  </label>
+                </div>
+
+                <Button type="submit" className="w-full h-12 text-base" disabled={loading || !acceptedTerms}>
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Award className="w-5 h-5 mr-2" />
+                      {t('affiliate.submitButton') || "Criar conta e entrar no painel"}
+                    </>
+                  )}
                 </Button>
 
-                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-lg p-4 text-left">
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2">📌 Próximos passos:</p>
-                  <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
-                    <li>1. Copie o seu link acima</li>
-                    <li>2. Partilhe com oficinas que conhece</li>
-                    <li>3. Quando pagarem um plano, recebe comissão automática</li>
-                    <li>4. Acompanhe tudo no painel de administrador</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                <p className="text-xs text-center text-muted-foreground">
+                  {t('affiliate.alreadyHaveAccount') || "Já tem conta?"}{" "}
+                  <a href="/auth" className="text-primary hover:underline font-medium">
+                    {t('affiliate.loginHere') || "Faça login aqui"}
+                  </a>
+                </p>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
         {/* How it works */}
         <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold mb-8">Como funciona?</h2>
+          <h2 className="text-2xl font-bold mb-8">{t('affiliate.howItWorks') || "Como funciona?"}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { step: "1", title: "Registe-se", desc: "Preencha o formulário acima — é grátis" },
-              { step: "2", title: "Receba o link", desc: "Link exclusivo gerado na hora" },
-              { step: "3", title: "Partilhe", desc: "Envie a oficinas que conhece" },
-              { step: "4", title: "Ganhe", desc: "Comissão automática por cada plano pago" },
-            ].map(item => (
-              <div key={item.step} className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                  {item.step}
+              { step: "1", title: t('affiliate.step1') || "Registe-se", desc: t('affiliate.step1Desc') || "Crie conta grátis — demora 2 minutos" },
+              { step: "2", title: t('affiliate.step2') || "Receba o link", desc: t('affiliate.step2Desc') || "Link exclusivo gerado na hora" },
+              { step: "3", title: t('affiliate.step3') || "Partilhe", desc: t('affiliate.step3Desc') || "Envie o link a oficinas que conhece" },
+              { step: "4", title: t('affiliate.step4') || "Ganhe", desc: t('affiliate.step4Desc') || "Comissão automática a cada pagamento" },
+            ].map(s => (
+              <div key={s.step} className="text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary font-black text-xl flex items-center justify-center mx-auto mb-3">
+                  {s.step}
                 </div>
-                <h3 className="font-semibold">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                <h3 className="font-bold mb-1">{s.title}</h3>
+                <p className="text-sm text-muted-foreground">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -403,33 +393,22 @@ export default function AffiliateSignup() {
 
         {/* FAQ */}
         <div className="mt-16 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-center">Perguntas frequentes</h2>
+          <h2 className="text-2xl font-bold text-center mb-8">{t('affiliate.faqTitle') || "Perguntas Frequentes"}</h2>
           <div className="space-y-4">
             {[
-              { q: "Preciso investir alguma coisa?", a: "Não. O programa é 100% gratuito. Basta registar-se e partilhar o link." },
-              { q: "Quando recebo as comissões?", a: "As comissões são calculadas automaticamente quando uma oficina paga um plano. São revistas e pagas mensalmente via IBAN ou MB WAY." },
-              { q: "Posso indicar qualquer oficina?", a: "Sim, desde que a oficina se registe através do seu link exclusivo e subscreva um plano pago (Pro ou Garage)." },
-              { q: "Como sei que a oficina foi atribuída a mim?", a: "O sistema rastreia automaticamente cada registo feito pelo seu link. Tudo é auditado e transparente." },
-              { q: "Posso alterar os dados de pagamento depois?", a: "Sim, entre em contacto com o suporte para atualizar os seus dados de pagamento a qualquer momento." },
-            ].map(faq => (
-              <Card key={faq.q} className="hover:shadow-sm transition-shadow">
-                <CardContent className="pt-4 pb-4">
-                  <p className="font-semibold text-sm mb-1">{faq.q}</p>
-                  <p className="text-sm text-muted-foreground">{faq.a}</p>
+              { q: t('affiliate.faq1Q') || "Quanto custa ser afiliado?", a: t('affiliate.faq1A') || "Nada! O registo é 100% gratuito." },
+              { q: t('affiliate.faq2Q') || "Quando recebo as comissões?", a: t('affiliate.faq2A') || "As comissões são calculadas automaticamente e pagas mensalmente via IBAN ou MB WAY." },
+              { q: t('affiliate.faq3Q') || "Posso ver quantas oficinas se registaram pelo meu link?", a: t('affiliate.faq3A') || "Sim! No seu painel de afiliado, tem acesso a todas as métricas em tempo real." },
+            ].map(f => (
+              <Card key={f.q} className="hover:shadow-sm transition-shadow">
+                <CardContent className="pt-5 pb-4">
+                  <h3 className="font-semibold text-sm mb-1">{f.q}</h3>
+                  <p className="text-sm text-muted-foreground">{f.a}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-
-        {/* Footer CTA */}
-        {!created && (
-          <div className="mt-16 text-center pb-8">
-            <Button size="lg" onClick={() => document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" })} className="gap-2">
-              <Rocket className="w-5 h-5" /> Quero ser Afiliado — É grátis
-            </Button>
-          </div>
-        )}
       </div>
       </div>
     </LandingLayout>

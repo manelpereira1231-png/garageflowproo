@@ -1140,6 +1140,7 @@ export type Database = {
       partners: {
         Row: {
           api_key: string | null
+          auth_user_id: string | null
           commission_percentage: number
           contact_email: string
           contact_phone: string
@@ -1158,6 +1159,7 @@ export type Database = {
         }
         Insert: {
           api_key?: string | null
+          auth_user_id?: string | null
           commission_percentage?: number
           contact_email?: string
           contact_phone?: string
@@ -1176,6 +1178,7 @@ export type Database = {
         }
         Update: {
           api_key?: string | null
+          auth_user_id?: string | null
           commission_percentage?: number
           contact_email?: string
           contact_phone?: string

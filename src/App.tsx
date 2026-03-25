@@ -17,6 +17,7 @@ const PlanGate = lazy(() => import("@/components/PlanGate"));
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
+const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
 // Non-critical lazy-loaded
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -184,6 +185,7 @@ function AuthenticatedRoutes() {
           <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
           <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
+          <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
@@ -236,6 +238,7 @@ function AuthenticatedRoutes() {
         <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
         <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
         <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
+        <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
@@ -281,6 +284,7 @@ function AppRoutes() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+          <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>

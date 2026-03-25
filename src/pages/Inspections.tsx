@@ -336,7 +336,7 @@ export default function Inspections() {
 
                 {/* Overall status banner */}
                 <div className={`text-sm font-semibold px-4 py-2.5 rounded-xl border-2 text-center ${overall.color}`}>
-                  {overall.label}
+                  {t(overall.labelKey)}
                 </div>
 
                 {/* Items */}

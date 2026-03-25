@@ -2748,6 +2748,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Invite 1 taller = 1 mes gratis',
     'referrals.copyLink': 'Copiar enlace',
     'referrals.linkCopiedFeedback': '¡Enlace copiado! Compártalo con otro taller.',
+
+    'auth.partnerInviteActive': 'Invitación de socio activa',
+    'auth.signupSubtitle': 'Crea tu cuenta para empezar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Taller',
+    'nav.automations': 'Automatizaciones',
   },
 
   'pt-BR': {

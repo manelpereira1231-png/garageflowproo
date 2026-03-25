@@ -254,6 +254,7 @@ export default function AffiliateDashboard() {
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="invites">{t('affiliate.tabInvites') || "Convites"} ({totalInvites})</TabsTrigger>
             <TabsTrigger value="commissions">{t('affiliate.tabCommissions') || "Comissões"} ({commissions.length})</TabsTrigger>
+            <TabsTrigger value="rankings">{t('affiliate.tabRankings') || "Rankings"}</TabsTrigger>
             <TabsTrigger value="payments">{t('affiliate.tabPayments') || "Pagamentos"}</TabsTrigger>
             <TabsTrigger value="activity">{t('affiliate.tabActivity') || "Atividade"}</TabsTrigger>
           </TabsList>
@@ -358,6 +359,105 @@ export default function AffiliateDashboard() {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Rankings Tab */}
+          <TabsContent value="rankings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-500" />
+                  {t('affiliate.rankingsTitle') || "Ranking de Afiliados"}
+                </CardTitle>
+                <CardDescription>{t('affiliate.rankingsDesc') || "A sua posição com base em conversões e comissões geradas."}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Your position */}
+                  <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-lg">
+                          {partner.name?.charAt(0)?.toUpperCase() || "A"}
+                        </div>
+                        <div>
+                          <p className="font-bold">{partner.name}</p>
+                          <p className="text-xs text-muted-foreground">{partner.api_key}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-primary">{acceptedInvites}</p>
+                        <p className="text-xs text-muted-foreground">{t('affiliate.conversions') || "conversões"}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-2 rounded bg-background">
+                        <p className="text-sm font-bold">{totalInvites}</p>
+                        <p className="text-xs text-muted-foreground">{t('affiliate.invited') || "Convidadas"}</p>
+                      </div>
+                      <div className="p-2 rounded bg-background">
+                        <p className="text-sm font-bold">{conversionRate}%</p>
+                        <p className="text-xs text-muted-foreground">{t('affiliate.conversionRate') || "Conversão"}</p>
+                      </div>
+                      <div className="p-2 rounded bg-background">
+                        <p className="text-sm font-bold">{(pendingCommission + paidCommission).toFixed(0)}€</p>
+                        <p className="text-xs text-muted-foreground">{t('affiliate.totalEarned') || "Total ganho"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Goals & Milestones */}
+                  <div>
+                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-primary" />
+                      {t('affiliate.milestones') || "Metas e Conquistas"}
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { target: 1, label: t('affiliate.milestone1') || "Primeira conversão", reward: "🏅" },
+                        { target: 5, label: t('affiliate.milestone5') || "5 oficinas convertidas", reward: "🥈" },
+                        { target: 10, label: t('affiliate.milestone10') || "10 oficinas convertidas", reward: "🥇" },
+                        { target: 25, label: t('affiliate.milestone25') || "25 oficinas — Afiliado Gold", reward: "🏆" },
+                        { target: 50, label: t('affiliate.milestone50') || "50 oficinas — Afiliado Diamond", reward: "💎" },
+                      ].map(m => {
+                        const reached = acceptedInvites >= m.target;
+                        const progress = Math.min((acceptedInvites / m.target) * 100, 100);
+                        return (
+                          <div key={m.target} className={`flex items-center gap-3 p-3 rounded-lg border ${reached ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/20'}`}>
+                            <span className="text-xl">{m.reward}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-sm font-medium ${reached ? 'text-primary' : ''}`}>{m.label}</span>
+                                <span className="text-xs text-muted-foreground">{Math.min(acceptedInvites, m.target)}/{m.target}</span>
+                              </div>
+                              <Progress value={progress} className="h-1.5" />
+                            </div>
+                            {reached && <CheckCircle className="w-4 h-4 text-primary shrink-0" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Commission Tiers Info */}
+                  <div className="p-4 rounded-lg bg-muted/30 border">
+                    <h3 className="font-semibold text-sm mb-2">{t('affiliate.commissionTiers') || "Tabela de Comissões"}</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded bg-background text-center">
+                        <p className="text-xl font-black text-primary">10%</p>
+                        <p className="text-xs font-medium">{t('affiliate.planPro') || "Plano Pro"}</p>
+                        <p className="text-xs text-muted-foreground">4,90€/{t('common.month') || "mês"}</p>
+                      </div>
+                      <div className="p-3 rounded bg-background text-center">
+                        <p className="text-xl font-black text-primary">20%</p>
+                        <p className="text-xs font-medium">{t('affiliate.planGarage') || "Plano Garage"}</p>
+                        <p className="text-xs text-muted-foreground">19,80€/{t('common.month') || "mês"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

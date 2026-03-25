@@ -103,19 +103,8 @@ export default function AffiliateSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Garage<span className="text-primary">Flow</span></span>
-          </button>
-        </div>
-      </header>
-
+    <LandingLayout>
+      <div className="bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
         {/* Hero */}
         <div className="text-center mb-10">

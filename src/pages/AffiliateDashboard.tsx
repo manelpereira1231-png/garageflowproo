@@ -121,7 +121,7 @@ export default function AffiliateDashboard() {
   };
 
   const exportCSV = (data: any[], filename: string) => {
-    if (!data.length) { toast.error("Sem dados para exportar"); return; }
+    if (!data.length) { toast.error(t('affiliate.noDataExport') || "Sem dados para exportar"); return; }
     const headers = Object.keys(data[0]).join(",");
     const rows = data.map(row => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([headers + "\n" + rows], { type: "text/csv" });

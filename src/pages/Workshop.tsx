@@ -391,7 +391,7 @@ export default function Workshop() {
                     onClick={() => saveChecklist(selected.id)}
                     disabled={actionLoading}
                   >
-                    {isPt ? "Guardar Checklist" : "Save Checklist"}
+                    {t('workshop.saveChecklist')}
                   </Button>
                 </div>
               )}

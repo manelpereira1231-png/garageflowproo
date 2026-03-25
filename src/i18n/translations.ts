@@ -3684,5 +3684,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Indique 1 oficina = 1 mês grátis',
     'referrals.copyLink': 'Copiar link',
     'referrals.linkCopiedFeedback': 'Link copiado! Compartilhe com outra oficina.',
+
+    'auth.partnerInviteActive': 'Convite de parceiro ativo',
+    'auth.signupSubtitle': 'Crie sua conta para começar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Oficina',
+    'nav.automations': 'Automações',
   },
 };

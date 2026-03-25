@@ -17,6 +17,7 @@ const PlanGate = lazy(() => import("@/components/PlanGate"));
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
+const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
 // Non-critical lazy-loaded
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));

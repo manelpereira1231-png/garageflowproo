@@ -61,6 +61,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
+            <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
           <div className="hidden sm:flex items-center gap-3">
             {/* Language Selector */}

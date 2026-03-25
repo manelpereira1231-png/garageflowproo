@@ -115,10 +115,7 @@ export default function Auth() {
           }
         }
 
-        // Sign out after signup so user must log in explicitly
-        await supabase.auth.signOut();
         toast.success(t('auth.accountCreated'));
-        setMode('login');
       }
     } catch (err: any) {
       toast.error(err.message);

@@ -87,8 +87,8 @@ export default function Stock() {
   const totalMargin = totalStockValue - totalStockCost;
 
   const handleSave = async () => {
-    if (!shopId || !form.name.trim()) { toast.error(t('stock.fillName')); return; }
-    const payload = { shop_id: shopId, ...form, reference: form.reference || null, supplier: form.supplier || null };
+    if (!activeShopId || !form.name.trim()) { toast.error(t('stock.fillName')); return; }
+    const payload = { shop_id: activeShopId, ...form, reference: form.reference || null, supplier: form.supplier || null };
     let error;
     if (editId) {
       ({ error } = await supabase.from("parts").update(payload as any).eq("id", editId));

@@ -199,9 +199,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pt">Português</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
+                <SelectItem value="en">🇬🇧 English</SelectItem>
+                <SelectItem value="es">🇪🇸 Español</SelectItem>
               </SelectContent>
             </Select>
           </div>

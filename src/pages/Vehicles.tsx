@@ -243,7 +243,7 @@ export default function Vehicles() {
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setPassportId(v.id)} className="text-xs text-primary" title="Vehicle Passport">
-                      <ScrollText className="w-3.5 h-3.5 mr-1" />{language === 'pt' ? 'Passaporte' : 'Passport'}
+                      <ScrollText className="w-3.5 h-3.5 mr-1" />{t('vehicles.passport')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(v)} className="text-xs">
                       <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}

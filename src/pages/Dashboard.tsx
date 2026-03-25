@@ -394,13 +394,13 @@ export default function Dashboard() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold">
-                🎉 {language === 'pt' ? `Já ganhou ${freeMonths} ${freeMonths === 1 ? 'mês grátis' : 'meses grátis'}` :
-                     language === 'es' ? `Ya ganó ${freeMonths} ${freeMonths === 1 ? 'mes gratis' : 'meses gratis'}` :
-                     `You earned ${freeMonths} free ${freeMonths === 1 ? 'month' : 'months'}`}
+                🎉 {t('dashboard.referrals.earned')
+                  .replace('{count}', String(freeMonths))
+                  .replace('{unit}', freeMonths === 1 ? t('dashboard.referrals.monthSingular') : t('dashboard.referrals.monthPlural'))}
               </p>
               <p className="text-xs text-muted-foreground">
-                {paidReferrals}/5 {language === 'pt' ? 'referências pagas' : language === 'es' ? 'referencias pagadas' : 'paid referrals'}
-                {paidReferrals < 5 && ` — ${language === 'pt' ? 'traga mais' : language === 'es' ? 'traiga más' : 'bring more'} ${5 - paidReferrals} ${language === 'pt' ? 'para bónus +3 meses' : language === 'es' ? 'para bono +3 meses' : 'for +3 months bonus'}`}
+                {paidReferrals}/5 {t('dashboard.referrals.paidReferrals')}
+                {paidReferrals < 5 && ` — ${t('dashboard.referrals.bringMore')} ${5 - paidReferrals} ${t('dashboard.referrals.forBonus')}`}
               </p>
             </div>
           </div>

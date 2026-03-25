@@ -34,7 +34,7 @@ const filterTabs = [
 ];
 
 export default function Workshop() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { activeShopId } = useShopContext();
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -367,7 +367,7 @@ export default function Stock() {
                             }}
                           >
                             <Truck className="w-3.5 h-3.5" />
-                            {language === 'pt' ? 'Confirmar Entrega' : 'Confirm Delivery'}
+                            {t('stock.orders.confirmDelivery')}
                           </Button>
                         )}
                       </TableCell>

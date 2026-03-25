@@ -172,7 +172,7 @@ export default function Workshop() {
                 filter === ft.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
-              {isPt ? ft.label : ft.labelEn}
+              {ft.label}
             </button>
           ))}
         </div>

@@ -256,7 +256,8 @@ export default function SettingsPage() {
                 <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                    <SelectItem value="pt">🇵🇹 Português (PT)</SelectItem>
+                    <SelectItem value="pt-BR">🇧🇷 Português (BR)</SelectItem>
                     <SelectItem value="en">🇬🇧 English</SelectItem>
                     <SelectItem value="es">🇪🇸 Español</SelectItem>
                   </SelectContent>

@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { name, email, phone, company, city, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank } = body;
+    const { name, email, phone, company, city, password, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank } = body;
 
     // Validate required fields
     if (!name?.trim() || !email?.trim()) {
@@ -25,11 +25,16 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (!password || password.length < 6) {
+      return new Response(JSON.stringify({ error: "Password deve ter pelo menos 6 caracteres" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanPhone = phone?.trim() || "";
 
-    // Anti-fraud: Check duplicate by email
+    // Anti-fraud: Check duplicate by email in partners
     const { data: existingEmail } = await supabase
       .from("partners")
       .select("id")
@@ -57,7 +62,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Generate unique affiliate code: AF-XXXXX (5 random alphanumeric)
+    // 1. Create auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: cleanEmail,
+      password: password,
+      email_confirm: true,
+      user_metadata: {
+        name: name.trim(),
+        is_affiliate: true,
+      },
+    });
+
+    if (authError) {
+      // Check if user already exists in auth
+      if (authError.message?.includes("already been registered") || authError.message?.includes("already exists")) {
+        return new Response(JSON.stringify({ error: "Este email já tem uma conta. Faça login." }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.error("Auth error:", authError);
+      return new Response(JSON.stringify({ error: "Erro ao criar conta. Tente novamente." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = authData.user.id;
+
+    // 2. Generate unique affiliate code: AF-XXXXX
     let affiliateCode = "";
     let codeExists = true;
     while (codeExists) {
@@ -76,7 +107,7 @@ Deno.serve(async (req) => {
       codeExists = !!codeCheck;
     }
 
-    // Create the affiliate with payment data
+    // 3. Create the partner record linked to auth user
     const { data: partner, error: insertError } = await supabase.from("partners").insert({
       name: name.trim(),
       contact_email: cleanEmail,
@@ -91,16 +122,19 @@ Deno.serve(async (req) => {
       payout_bank: payout_bank?.trim() || "",
       status: "active",
       api_key: affiliateCode,
+      auth_user_id: userId,
     }).select().single();
 
     if (insertError) {
       console.error("Insert error:", insertError);
+      // Clean up auth user if partner creation fails
+      await supabase.auth.admin.deleteUser(userId);
       return new Response(JSON.stringify({ error: "Erro ao criar afiliado. Tente novamente." }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Log the registration
+    // 4. Log the registration
     await supabase.from("partner_logs").insert({
       partner_id: partner.id,
       action: "affiliate_self_registered",
@@ -113,13 +147,30 @@ Deno.serve(async (req) => {
         affiliate_code: affiliateCode,
         payout_method: payout_method || "bank_transfer",
         source: "public_signup",
+        auth_user_id: userId,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown",
       },
+    });
+
+    // 5. Sign in to get session tokens for auto-login
+    // Use the admin API to generate a link which gives us access tokens
+    const supabaseAnonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!
+    );
+
+    const { data: signInData, error: signInError } = await supabaseAnonClient.auth.signInWithPassword({
+      email: cleanEmail,
+      password: password,
     });
 
     return new Response(JSON.stringify({
       id: partner.id,
       code: affiliateCode,
+      session: signInData?.session ? {
+        access_token: signInData.session.access_token,
+        refresh_token: signInData.session.refresh_token,
+      } : null,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

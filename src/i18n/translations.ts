@@ -2203,6 +2203,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'notFound.message': 'Página no encontrada.',
     'notFound.backToDashboard': 'Volver al Dashboard',
 
+    'nav.notifications': 'Notificaciones',
     'nav.alerts': 'Alertas',
 
     'alerts.title': 'Alertas',

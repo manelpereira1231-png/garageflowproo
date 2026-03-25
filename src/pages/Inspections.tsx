@@ -366,7 +366,7 @@ export default function Inspections() {
 
                 {!viewChecklist.completed_at && (
                   <p className="text-xs text-muted-foreground text-center italic">
-                    ✓ Auto-guardado automaticamente
+                    ✓ {t('inspections.autoSaved')}
                   </p>
                 )}
               </div>

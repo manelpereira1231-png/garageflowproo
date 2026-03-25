@@ -324,12 +324,12 @@ export default function Stock() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{language === 'pt' ? 'Peça' : 'Part'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Fornecedor' : 'Supplier'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Qtd' : 'Qty'}</TableHead>
+                    <TableHead>{t('stock.orders.part')}</TableHead>
+                    <TableHead>{t('stock.orders.supplier')}</TableHead>
+                    <TableHead>{t('stock.orders.qty')}</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>{language === 'pt' ? 'Estado' : 'Status'}</TableHead>
-                    <TableHead>{language === 'pt' ? 'Data' : 'Date'}</TableHead>
+                    <TableHead>{t('stock.orders.status')}</TableHead>
+                    <TableHead>{t('stock.orders.date')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>

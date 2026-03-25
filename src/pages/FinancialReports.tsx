@@ -33,11 +33,11 @@ export default function FinancialReports() {
     paymentMethods: [] as any[],
   });
   const [currency, setCurrency] = useState("€");
+  const activeShopId = useActiveShopId();
 
   useEffect(() => {
     const load = async () => {
-      const shopId = localStorage.getItem("garageflow_active_shop");
-      if (!shopId) return;
+      if (!activeShopId) return;
 
       const { data: shop } = await supabase.from("shops").select("currency").eq("id", shopId).maybeSingle();
       if (shop) setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);

@@ -131,7 +131,7 @@ export default function AffiliateDashboard() {
     a.download = `${filename}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exportado ✅");
+    toast.success(t('affiliate.csvExported') || "CSV exportado ✅");
   };
 
   // Calculate stats

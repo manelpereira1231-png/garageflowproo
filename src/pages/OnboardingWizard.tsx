@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,32 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     vat_rate: "23", labor_rate: "35", language: language as string,
     nif: "", address: "",
   });
+
+  // Pre-fill form with existing shop data (from signup metadata)
+  useEffect(() => {
+    const prefill = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: shop } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+      if (shop) {
+        setForm(prev => ({
+          ...prev,
+          name: shop.name || prev.name,
+          email: shop.email || user.email || prev.email,
+          phone: shop.phone || prev.phone,
+          country: shop.country || prev.country,
+          currency: shop.currency || prev.currency,
+          vat_rate: String(shop.vat_rate ?? prev.vat_rate),
+          labor_rate: String(shop.labor_rate ?? prev.labor_rate),
+          language: shop.language || prev.language,
+          nif: shop.nif || prev.nif,
+          address: shop.address || prev.address,
+        }));
+        if (shop.logo_url) setLogoPreview(shop.logo_url);
+      }
+    };
+    prefill();
+  }, []);
   const [alerts, setAlerts] = useState({
     pending_quotes: true,
     expired_quotes: true,

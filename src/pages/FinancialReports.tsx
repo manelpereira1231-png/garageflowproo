@@ -39,16 +39,16 @@ export default function FinancialReports() {
     const load = async () => {
       if (!activeShopId) return;
 
-      const { data: shop } = await supabase.from("shops").select("currency").eq("id", shopId).maybeSingle();
+      const { data: shop } = await supabase.from("shops").select("currency").eq("id", activeShopId).maybeSingle();
       if (shop) setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
 
       const monthCount = parseInt(period);
 
       const [invoicesRes, workOrdersRes, quotesRes, paymentsRes] = await Promise.all([
-        supabase.from("invoices").select("*").eq("shop_id", shopId).neq("status", "cancelled"),
-        supabase.from("work_orders").select("*, clients(name)").eq("shop_id", shopId),
-        supabase.from("quotes").select("id, status").eq("shop_id", shopId),
-        supabase.from("payments").select("*").eq("shop_id", shopId),
+        supabase.from("invoices").select("*").eq("shop_id", activeShopId).neq("status", "cancelled"),
+        supabase.from("work_orders").select("*, clients(name)").eq("shop_id", activeShopId),
+        supabase.from("quotes").select("id, status").eq("shop_id", activeShopId),
+        supabase.from("payments").select("*").eq("shop_id", activeShopId),
       ]);
 
       const invoices = invoicesRes.data || [];

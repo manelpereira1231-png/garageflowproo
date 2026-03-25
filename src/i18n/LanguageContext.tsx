@@ -12,9 +12,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem('garageflow_language');
-  if (stored && ['pt', 'en', 'es'].includes(stored)) return stored as Language;
-  const browserLang = navigator.language.slice(0, 2);
-  if (['pt', 'en', 'es'].includes(browserLang)) return browserLang as Language;
+  if (stored && ['pt', 'pt-BR', 'en', 'es'].includes(stored)) return stored as Language;
+  const browserLang = navigator.language;
+  if (browserLang === 'pt-BR') return 'pt-BR';
+  const shortLang = browserLang.slice(0, 2);
+  if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
   return 'pt';
 }
 
@@ -26,7 +28,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
-      if (shop?.language && ['pt', 'en', 'es'].includes(shop.language)) {
+      if (shop?.language && ['pt', 'pt-BR', 'en', 'es'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
         localStorage.setItem('garageflow_language', shop.language);
       }

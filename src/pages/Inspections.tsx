@@ -49,11 +49,11 @@ interface Checklist {
   technician: string | null; completed_at: string | null; created_at: string;
 }
 
-const STATUS_CONFIG = {
-  ok: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", border: "border-green-300 dark:border-green-700", label: "OK" },
-  attention: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-700", label: "Atenção" },
-  repair: { icon: XCircle, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", label: "Reparar" },
-  na: { icon: null, color: "text-muted-foreground", bg: "bg-muted", border: "border-border", label: "N/A" },
+const STATUS_CONFIG_KEYS = {
+  ok: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", border: "border-green-300 dark:border-green-700", labelKey: "inspections.status.ok" },
+  attention: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-700", labelKey: "inspections.status.attention" },
+  repair: { icon: XCircle, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", labelKey: "inspections.status.repair" },
+  na: { icon: null, color: "text-muted-foreground", bg: "bg-muted", border: "border-border", labelKey: "inspections.status.na" },
 };
 
 export default function Inspections() {
@@ -142,14 +142,14 @@ export default function Inspections() {
 
   const getOverallStatus = (items: ChecklistItem[]) => {
     const s = getSummary(items);
-    if (s.repair > 0) return { label: "Reparações necessárias", color: "bg-red-100 text-red-700 border-red-300" };
-    if (s.attention > 0) return { label: "Atenção recomendada", color: "bg-amber-100 text-amber-700 border-amber-300" };
-    if (s.pct === 100) return { label: "Tudo OK", color: "bg-green-100 text-green-700 border-green-300" };
-    return { label: "Em progresso", color: "bg-muted text-muted-foreground border-border" };
+    if (s.repair > 0) return { labelKey: "inspections.overall.repairsNeeded", color: "bg-red-100 text-red-700 border-red-300" };
+    if (s.attention > 0) return { labelKey: "inspections.overall.attentionRecommended", color: "bg-amber-100 text-amber-700 border-amber-300" };
+    if (s.pct === 100) return { labelKey: "inspections.overall.allOk", color: "bg-green-100 text-green-700 border-green-300" };
+    return { labelKey: "inspections.overall.inProgress", color: "bg-muted text-muted-foreground border-border" };
   };
 
   const StatusButton = ({ status, currentStatus, onClick }: { status: ChecklistItem["status"]; currentStatus: string; onClick: () => void }) => {
-    const cfg = STATUS_CONFIG[status];
+    const cfg = STATUS_CONFIG_KEYS[status];
     const isActive = currentStatus === status;
     return (
       <button
@@ -159,7 +159,7 @@ export default function Inspections() {
         }`}
       >
         {cfg.icon && <cfg.icon className="w-3.5 h-3.5" />}
-        {cfg.label}
+        {t(cfg.labelKey)}
       </button>
     );
   };
@@ -210,7 +210,7 @@ export default function Inspections() {
                 {/* Progress bar */}
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{s.checked}/{s.total} verificados</span>
+                    <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
                     <span className="font-semibold">{s.pct}%</span>
                   </div>
                   <Progress value={s.pct} className="h-2" />
@@ -231,7 +231,7 @@ export default function Inspections() {
 
                 {/* Overall status */}
                 <div className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border ${overall.color} text-center`}>
-                  {overall.label}
+                  {t(overall.labelKey)}
                 </div>
 
                 {/* Actions */}
@@ -282,7 +282,7 @@ export default function Inspections() {
               return (
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{s.checked}/{s.total} verificados</span>
+                    <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
                     <span className="font-bold text-sm">{s.pct}%</span>
                   </div>
                   <Progress value={s.pct} className="h-2.5" />
@@ -328,7 +328,7 @@ export default function Inspections() {
                 {/* Progress */}
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{s.checked}/{s.total} verificados</span>
+                    <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
                     <span className="font-bold text-sm">{s.pct}%</span>
                   </div>
                   <Progress value={s.pct} className="h-2.5" />
@@ -336,7 +336,7 @@ export default function Inspections() {
 
                 {/* Overall status banner */}
                 <div className={`text-sm font-semibold px-4 py-2.5 rounded-xl border-2 text-center ${overall.color}`}>
-                  {overall.label}
+                  {t(overall.labelKey)}
                 </div>
 
                 {/* Items */}
@@ -356,8 +356,8 @@ export default function Inspections() {
                           <StatusButton status="repair" currentStatus={item.status} onClick={() => updateViewItem(i, item.status === 'repair' ? 'na' : 'repair')} />
                         </div>
                       ) : (
-                        <span className={`text-xs font-semibold ${STATUS_CONFIG[item.status].color}`}>
-                          {STATUS_CONFIG[item.status].label}
+                        <span className={`text-xs font-semibold ${STATUS_CONFIG_KEYS[item.status].color}`}>
+                          {t(STATUS_CONFIG_KEYS[item.status].labelKey)}
                         </span>
                       )}
                     </div>
@@ -366,7 +366,7 @@ export default function Inspections() {
 
                 {!viewChecklist.completed_at && (
                   <p className="text-xs text-muted-foreground text-center italic">
-                    ✓ Auto-guardado automaticamente
+                    ✓ {t('inspections.autoSaved')}
                   </p>
                 )}
               </div>

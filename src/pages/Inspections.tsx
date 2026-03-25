@@ -231,7 +231,7 @@ export default function Inspections() {
 
                 {/* Overall status */}
                 <div className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border ${overall.color} text-center`}>
-                  {overall.label}
+                  {t(overall.labelKey)}
                 </div>
 
                 {/* Actions */}

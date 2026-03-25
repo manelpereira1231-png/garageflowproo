@@ -282,6 +282,7 @@ function AppRoutes() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+          <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>

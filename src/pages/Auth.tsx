@@ -185,7 +185,7 @@ export default function Auth() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm">NIF</Label>
-                    <Input value={nif} onChange={e => setNif(e.target.value)} maxLength={20} placeholder="Opcional" />
+                    <Input value={nif} onChange={e => setNif(e.target.value)} maxLength={20} placeholder={t('common.optional')} />
                   </div>
                 </div>
               </>

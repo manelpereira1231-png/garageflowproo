@@ -6,12 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Wrench, Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
-  Rocket, Award, Sparkles, BarChart3, Eye, Zap, Heart
+  Rocket, Award, Sparkles, BarChart3, Eye, Zap, Heart, CreditCard, Smartphone
 } from "lucide-react";
+
+const PRODUCTION_DOMAIN = "https://garageflow.pt";
 
 export default function AffiliateSignup() {
   const navigate = useNavigate();
@@ -25,6 +28,13 @@ export default function AffiliateSignup() {
     company: "",
     city: "",
   });
+  const [payoutMethod, setPayoutMethod] = useState<"iban" | "mbway">("iban");
+  const [payoutData, setPayoutData] = useState({
+    holder_name: "",
+    iban: "",
+    bank: "",
+    mbway_phone: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +42,22 @@ export default function AffiliateSignup() {
       toast.error("Nome e email são obrigatórios");
       return;
     }
+    if (!form.phone.trim()) {
+      toast.error("Telefone é obrigatório");
+      return;
+    }
     if (!acceptedTerms) {
       toast.error("Tem de aceitar os termos para continuar");
+      return;
+    }
+
+    // Validate payment data
+    if (payoutMethod === "iban" && !payoutData.iban.trim()) {
+      toast.error("IBAN é obrigatório para receber pagamentos");
+      return;
+    }
+    if (payoutMethod === "mbway" && !payoutData.mbway_phone.trim()) {
+      toast.error("Número MB WAY é obrigatório para receber pagamentos");
       return;
     }
 
@@ -46,6 +70,11 @@ export default function AffiliateSignup() {
           phone: form.phone,
           company: form.company,
           city: form.city,
+          payout_method: payoutMethod === "iban" ? "bank_transfer" : "mbway",
+          payout_holder_name: payoutData.holder_name,
+          payout_iban: payoutData.iban,
+          payout_mbway_phone: payoutData.mbway_phone,
+          payout_bank: payoutData.bank,
         },
       });
 
@@ -54,7 +83,7 @@ export default function AffiliateSignup() {
 
       const partnerId = data.id;
       const affiliateCode = data.code;
-      const link = `${window.location.origin}/auth?mode=signup&partner=${partnerId}`;
+      const link = `${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${partnerId}`;
 
       setCreated({ id: partnerId, code: affiliateCode, link });
       toast.success("Registo concluído com sucesso! 🎉");
@@ -124,7 +153,7 @@ export default function AffiliateSignup() {
             { icon: DollarSign, color: "text-primary", title: "Sem investimento", desc: "Cadastre-se grátis e comece imediatamente" },
             { icon: Zap, color: "text-amber-500", title: "Link automático", desc: "Receba o seu link exclusivo na hora" },
             { icon: BarChart3, color: "text-blue-500", title: "Rastreio total", desc: "Veja em tempo real quem entrou pelo seu link" },
-            { icon: Shield, color: "text-green-500", title: "Pagamentos seguros", desc: "Comissões auditadas e transparentes" },
+            { icon: Shield, color: "text-green-500", title: "Pagamentos seguros", desc: "IBAN ou MB WAY — receba de forma simples" },
           ].map(b => (
             <Card key={b.title} className="text-center hover:shadow-md transition-shadow">
               <CardContent className="pt-6 pb-4">
@@ -203,6 +232,80 @@ export default function AffiliateSignup() {
                         onChange={e => setForm({ ...form, city: e.target.value })}
                         maxLength={100}
                       />
+                    </div>
+                  </div>
+
+                  {/* Payment Method Section */}
+                  <div className="border-t pt-4 mt-2">
+                    <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                      Dados de Pagamento
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Para recebermos as suas comissões, indique o método preferido.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <Select value={payoutMethod} onValueChange={(v: "iban" | "mbway") => setPayoutMethod(v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="iban">
+                            <span className="flex items-center gap-2">
+                              <CreditCard className="w-3.5 h-3.5" /> Transferência Bancária (IBAN)
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="mbway">
+                            <span className="flex items-center gap-2">
+                              <Smartphone className="w-3.5 h-3.5" /> MB WAY
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="space-y-1.5">
+                        <Label>Nome do titular *</Label>
+                        <Input
+                          placeholder="Nome completo do titular"
+                          value={payoutData.holder_name}
+                          onChange={e => setPayoutData({ ...payoutData, holder_name: e.target.value })}
+                          maxLength={100}
+                        />
+                      </div>
+
+                      {payoutMethod === "iban" ? (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label>IBAN *</Label>
+                            <Input
+                              placeholder="PT50 0000 0000 0000 0000 0000 0"
+                              value={payoutData.iban}
+                              onChange={e => setPayoutData({ ...payoutData, iban: e.target.value })}
+                              maxLength={34}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>Banco (opcional)</Label>
+                            <Input
+                              placeholder="Ex: Millennium, CGD, Novo Banco..."
+                              value={payoutData.bank}
+                              onChange={e => setPayoutData({ ...payoutData, bank: e.target.value })}
+                              maxLength={50}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <Label>Número MB WAY *</Label>
+                          <Input
+                            placeholder="912 345 678"
+                            value={payoutData.mbway_phone}
+                            onChange={e => setPayoutData({ ...payoutData, mbway_phone: e.target.value })}
+                            maxLength={15}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -306,9 +409,10 @@ export default function AffiliateSignup() {
           <div className="space-y-4">
             {[
               { q: "Preciso investir alguma coisa?", a: "Não. O programa é 100% gratuito. Basta registar-se e partilhar o link." },
-              { q: "Quando recebo as comissões?", a: "As comissões são calculadas automaticamente quando uma oficina paga um plano. São revistas e pagas mensalmente." },
+              { q: "Quando recebo as comissões?", a: "As comissões são calculadas automaticamente quando uma oficina paga um plano. São revistas e pagas mensalmente via IBAN ou MB WAY." },
               { q: "Posso indicar qualquer oficina?", a: "Sim, desde que a oficina se registe através do seu link exclusivo e subscreva um plano pago (Pro ou Garage)." },
               { q: "Como sei que a oficina foi atribuída a mim?", a: "O sistema rastreia automaticamente cada registo feito pelo seu link. Tudo é auditado e transparente." },
+              { q: "Posso alterar os dados de pagamento depois?", a: "Sim, entre em contacto com o suporte para atualizar os seus dados de pagamento a qualquer momento." },
             ].map(faq => (
               <Card key={faq.q} className="hover:shadow-sm transition-shadow">
                 <CardContent className="pt-4 pb-4">

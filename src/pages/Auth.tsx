@@ -151,7 +151,7 @@ export default function Auth() {
           {getPartnerId() && mode === 'signup' && (
             <div className="mt-3 inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">
               <User className="w-3 h-3" />
-              Convite de parceiro ativo
+              {t('auth.partnerInviteActive')}
             </div>
           )}
         </div>

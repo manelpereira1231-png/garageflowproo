@@ -356,8 +356,8 @@ export default function Inspections() {
                           <StatusButton status="repair" currentStatus={item.status} onClick={() => updateViewItem(i, item.status === 'repair' ? 'na' : 'repair')} />
                         </div>
                       ) : (
-                        <span className={`text-xs font-semibold ${STATUS_CONFIG[item.status].color}`}>
-                          {STATUS_CONFIG[item.status].label}
+                        <span className={`text-xs font-semibold ${STATUS_CONFIG_KEYS[item.status].color}`}>
+                          {t(STATUS_CONFIG_KEYS[item.status].labelKey)}
                         </span>
                       )}
                     </div>

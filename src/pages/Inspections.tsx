@@ -142,10 +142,10 @@ export default function Inspections() {
 
   const getOverallStatus = (items: ChecklistItem[]) => {
     const s = getSummary(items);
-    if (s.repair > 0) return { label: "Reparações necessárias", color: "bg-red-100 text-red-700 border-red-300" };
-    if (s.attention > 0) return { label: "Atenção recomendada", color: "bg-amber-100 text-amber-700 border-amber-300" };
-    if (s.pct === 100) return { label: "Tudo OK", color: "bg-green-100 text-green-700 border-green-300" };
-    return { label: "Em progresso", color: "bg-muted text-muted-foreground border-border" };
+    if (s.repair > 0) return { labelKey: "inspections.overall.repairsNeeded", color: "bg-red-100 text-red-700 border-red-300" };
+    if (s.attention > 0) return { labelKey: "inspections.overall.attentionRecommended", color: "bg-amber-100 text-amber-700 border-amber-300" };
+    if (s.pct === 100) return { labelKey: "inspections.overall.allOk", color: "bg-green-100 text-green-700 border-green-300" };
+    return { labelKey: "inspections.overall.inProgress", color: "bg-muted text-muted-foreground border-border" };
   };
 
   const StatusButton = ({ status, currentStatus, onClick }: { status: ChecklistItem["status"]; currentStatus: string; onClick: () => void }) => {

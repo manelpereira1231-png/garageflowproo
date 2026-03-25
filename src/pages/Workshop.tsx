@@ -208,7 +208,7 @@ export default function Workshop() {
                   </div>
                 </div>
                 <Badge variant="secondary" className={`${cfg.bg} ${cfg.color}`}>
-                  {isPt ? cfg.labelPt : cfg.label}
+                  {cfg.label}
                 </Badge>
               </div>
 

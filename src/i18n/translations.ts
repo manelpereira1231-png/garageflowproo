@@ -929,6 +929,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Convide 1 oficina = 1 mês grátis',
     'referrals.copyLink': 'Copiar link',
     'referrals.linkCopiedFeedback': 'Link copiado! Partilhe com outra oficina.',
+
+    // Missing keys
+    'auth.partnerInviteActive': 'Convite de parceiro ativo',
+    'auth.signupSubtitle': 'Crie a sua conta para começar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Oficina',
+    'nav.automations': 'Automações',
   },
 
   en: {

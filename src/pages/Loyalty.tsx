@@ -37,21 +37,21 @@ export default function Loyalty() {
   const [pointsDialog, setPointsDialog] = useState<any>(null);
   const [form, setForm] = useState({ client_id: "", points: "100", type: "earn", description: "" });
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const [membersRes, clientsRes, txRes] = await Promise.all([
-      supabase.from("loyalty_points").select("*, clients(name, email, phone)").eq("shop_id", shopId).order("points", { ascending: false }),
-      supabase.from("clients").select("id, name").eq("shop_id", shopId).is("deleted_at", null).order("name"),
-      supabase.from("loyalty_transactions").select("*, clients(name)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("loyalty_points").select("*, clients(name, email, phone)").eq("shop_id", activeShopId).order("points", { ascending: false }),
+      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name"),
+      supabase.from("loyalty_transactions").select("*, clients(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(50),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (clientsRes.data) setClients(clientsRes.data);
     if (txRes.data) setTransactions(txRes.data);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const addMember = async () => {
     if (!shopId || !form.client_id) return;

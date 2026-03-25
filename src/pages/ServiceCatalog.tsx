@@ -43,20 +43,20 @@ export default function ServiceCatalog() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const { data } = await supabase
       .from("service_catalog")
       .select("*")
-      .eq("shop_id", shopId)
+      .eq("shop_id", activeShopId)
       .order("name");
     if (data) setServices(data as CatalogService[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [shopId]);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const filtered = services.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())

@@ -280,6 +280,7 @@ function AppRoutes() {
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>

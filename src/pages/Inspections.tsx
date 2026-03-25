@@ -282,7 +282,7 @@ export default function Inspections() {
               return (
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">{s.checked}/{s.total} verificados</span>
+                    <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
                     <span className="font-bold text-sm">{s.pct}%</span>
                   </div>
                   <Progress value={s.pct} className="h-2.5" />

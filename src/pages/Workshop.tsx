@@ -353,7 +353,7 @@ export default function Workshop() {
                   <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-1">
                       <ClipboardCheck className="w-4 h-4" />
-                      {isPt ? "Checklist de Inspeção" : "Inspection Checklist"}
+                      {t('workshop.inspectionChecklist')}
                     </Label>
                     <span className="text-xs text-muted-foreground">
                       {checklistItems.filter(i => i.status === 'pass').length}/{checklistItems.length} OK

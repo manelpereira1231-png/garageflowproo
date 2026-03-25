@@ -1840,6 +1840,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.item.lights': 'Lights',
     'inspections.item.wipers': 'Wipers',
     'inspections.item.brakeFluid': 'Brake fluid level',
+    'inspections.markComplete': 'Complete',
+    'inspections.checked': 'checked',
+    'inspections.status.ok': 'OK',
+    'inspections.status.attention': 'Attention',
+    'inspections.status.repair': 'Repair',
+    'inspections.status.na': 'N/A',
+    'inspections.overall.repairsNeeded': 'Repairs needed',
+    'inspections.overall.attentionRecommended': 'Attention recommended',
+    'inspections.overall.allOk': 'All OK',
+    'inspections.overall.inProgress': 'In progress',
+    'inspections.autoSaved': 'Auto-saved automatically',
 
     'nav.adminPanel': 'Admin Panel',
 

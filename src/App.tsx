@@ -124,11 +124,13 @@ function AuthenticatedRoutes() {
       for (let i = 0; i < 3; i++) {
         const { data: shop } = await supabase
           .from("shops")
-          .select("name")
+          .select("name, phone")
           .eq("user_id", user.id)
           .maybeSingle();
         if (shop) {
-          setNeedsOnboarding(!shop.name || shop.name.trim() === '');
+          // Show onboarding if critical fields are missing (name, phone, or address)
+          const incomplete = !shop.name || shop.name.trim() === '' || !shop.phone || shop.phone.trim() === '';
+          setNeedsOnboarding(incomplete);
           return;
         }
         await new Promise(r => setTimeout(r, 1000));

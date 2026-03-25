@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
+import ShopCompleteness from "@/components/ShopCompleteness";
 
 interface KPIData {
   revenue: number;
@@ -312,6 +313,7 @@ export default function Dashboard() {
 
       {/* Onboarding */}
       <OnboardingChecklist />
+      <ShopCompleteness />
 
       {/* Quick Actions — TOP for maximum visibility */}
       <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">

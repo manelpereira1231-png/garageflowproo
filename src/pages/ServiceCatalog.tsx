@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -42,33 +43,33 @@ export default function ServiceCatalog() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const { data } = await supabase
       .from("service_catalog")
       .select("*")
-      .eq("shop_id", shopId)
+      .eq("shop_id", activeShopId)
       .order("name");
     if (data) setServices(data as CatalogService[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [shopId]);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const filtered = services.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSave = async () => {
-    if (!shopId || !form.name.trim()) {
+    if (!activeShopId || !form.name.trim()) {
       toast.error(t('catalog.fillName'));
       return;
     }
 
     const payload = {
-      shop_id: shopId,
+      shop_id: activeShopId,
       name: form.name.trim(),
       description: form.description || null,
       default_time: form.default_time,

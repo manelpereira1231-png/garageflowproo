@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,22 +33,22 @@ export default function FinancialReports() {
     paymentMethods: [] as any[],
   });
   const [currency, setCurrency] = useState("€");
+  const activeShopId = useActiveShopId();
 
   useEffect(() => {
     const load = async () => {
-      const shopId = localStorage.getItem("garageflow_active_shop");
-      if (!shopId) return;
+      if (!activeShopId) return;
 
-      const { data: shop } = await supabase.from("shops").select("currency").eq("id", shopId).maybeSingle();
+      const { data: shop } = await supabase.from("shops").select("currency").eq("id", activeShopId).maybeSingle();
       if (shop) setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
 
       const monthCount = parseInt(period);
 
       const [invoicesRes, workOrdersRes, quotesRes, paymentsRes] = await Promise.all([
-        supabase.from("invoices").select("*").eq("shop_id", shopId).neq("status", "cancelled"),
-        supabase.from("work_orders").select("*, clients(name)").eq("shop_id", shopId),
-        supabase.from("quotes").select("id, status").eq("shop_id", shopId),
-        supabase.from("payments").select("*").eq("shop_id", shopId),
+        supabase.from("invoices").select("*").eq("shop_id", activeShopId).neq("status", "cancelled"),
+        supabase.from("work_orders").select("*, clients(name)").eq("shop_id", activeShopId),
+        supabase.from("quotes").select("id, status").eq("shop_id", activeShopId),
+        supabase.from("payments").select("*").eq("shop_id", activeShopId),
       ]);
 
       const invoices = invoicesRes.data || [];
@@ -142,7 +143,7 @@ export default function FinancialReports() {
       });
     };
     load();
-  }, [period]);
+  }, [period, activeShopId]);
 
   const handleExport = () => {
     if (!canUseFeature('csvExport')) {

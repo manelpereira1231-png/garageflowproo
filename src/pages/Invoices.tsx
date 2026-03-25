@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +31,11 @@ export default function Invoices() {
   const [totalCount, setTotalCount] = useState(0);
   const [shop, setShop] = useState<any>(null);
 
+  const activeShopId = useActiveShopId();
+
   const fetchInvoices = async () => {
-    const activeId = localStorage.getItem("garageflow_active_shop");
-    if (!activeId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
+    if (!activeShopId) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
     if (shopData) setShop(shopData);
 
     const from = page * PAGE_SIZE;
@@ -41,14 +43,14 @@ export default function Invoices() {
     const { data, count } = await supabase
       .from("invoices")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeId)
+      .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) setInvoices(data);
     if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchInvoices(); }, [page]);
+  useEffect(() => { fetchInvoices(); }, [page, activeShopId]);
 
   const filtered = invoices.filter(inv =>
     inv.number?.toLowerCase().includes(search.toLowerCase()) ||

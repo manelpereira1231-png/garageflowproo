@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,9 @@ export default function Clients() {
 
   const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
 
-  const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
+
+  const getActiveShopId = (): string | null => activeShopId;
 
   const fetchClients = async () => {
     const shopId = getActiveShopId();
@@ -57,7 +60,7 @@ export default function Clients() {
     if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchClients(); }, [page]);
+  useEffect(() => { fetchClients(); }, [page, activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

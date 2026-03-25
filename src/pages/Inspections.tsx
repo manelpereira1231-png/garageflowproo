@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -68,25 +69,25 @@ export default function Inspections() {
   const [saving, setSaving] = useState(false);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const [clRes, woRes] = await Promise.all([
-      supabase.from("inspection_checklists").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }),
-      supabase.from("work_orders").select("id, number, status, client_id, vehicles(make, model, plate)").eq("shop_id", shopId).in("status", ["open", "diagnosis", "in_progress", "approved"]).order("created_at", { ascending: false }),
+      supabase.from("inspection_checklists").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+      supabase.from("work_orders").select("id, number, status, client_id, vehicles(make, model, plate)").eq("shop_id", activeShopId).in("status", ["open", "diagnosis", "in_progress", "approved"]).order("created_at", { ascending: false }),
     ]);
     if (clRes.data) setChecklists(clRes.data.map((c: any) => ({ ...c, items: Array.isArray(c.items) ? c.items : JSON.parse(c.items) })) as Checklist[]);
     if (woRes.data) setWorkOrders(woRes.data);
   };
 
-  useEffect(() => { load(); }, [shopId]);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const handleCreate = async () => {
-    if (!shopId || !selectedWO) { toast.error(t('inspections.selectWO')); return; }
+    if (!activeShopId || !selectedWO) { toast.error(t('inspections.selectWO')); return; }
     setSaving(true);
     const { error } = await supabase.from("inspection_checklists").insert({
-      shop_id: shopId, work_order_id: selectedWO,
+      shop_id: activeShopId, work_order_id: selectedWO,
       items: JSON.stringify(items), technician: technician || null,
     } as any);
     if (error) { toast.error(error.message); setSaving(false); return; }

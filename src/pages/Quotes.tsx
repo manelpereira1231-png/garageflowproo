@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,10 +43,11 @@ export default function Quotes() {
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
+  const activeShopId = useActiveShopId();
+
   const fetchQuotes = async () => {
-    const activeId = localStorage.getItem("garageflow_active_shop");
-    if (!activeId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
+    if (!activeShopId) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
     if (shopData) setShop(shopData);
 
     const from = page * PAGE_SIZE;
@@ -53,7 +55,7 @@ export default function Quotes() {
     const { data, count } = await supabase
       .from("quotes")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeId)
+      .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) setQuotes(data);
@@ -66,13 +68,13 @@ export default function Quotes() {
       const { count: monthCount } = await supabase
         .from("quotes")
         .select("id", { count: "exact", head: true })
-        .eq("shop_id", activeId)
+        .eq("shop_id", activeShopId)
         .gte("created_at", monthStart);
       setMonthlyUsed(monthCount || 0);
     }
   };
 
-  useEffect(() => { fetchQuotes(); }, [page, limits.maxQuotesPerMonth]);
+  useEffect(() => { fetchQuotes(); }, [page, limits.maxQuotesPerMonth, activeShopId]);
 
   const isLimitReached = plan === 'free' && monthlyUsed >= limits.maxQuotesPerMonth;
 

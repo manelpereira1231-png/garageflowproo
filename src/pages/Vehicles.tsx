@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,19 +40,20 @@ export default function Vehicles() {
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
+  const activeShopId = useActiveShopId();
+
   const fetchData = async () => {
-    const shopId = localStorage.getItem("garageflow_active_shop");
-    if (!shopId) return;
+    if (!activeShopId) return;
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", shopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
+    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
     if (v) setVehicles(v);
     if (count !== null) setTotalCount(count);
-    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", shopId).is("deleted_at", null).order("name");
+    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
     if (c) setClients(c);
   };
 
-  useEffect(() => { fetchData(); }, [page]);
+  useEffect(() => { fetchData(); }, [page, activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

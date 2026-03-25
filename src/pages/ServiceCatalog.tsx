@@ -63,13 +63,13 @@ export default function ServiceCatalog() {
   );
 
   const handleSave = async () => {
-    if (!shopId || !form.name.trim()) {
+    if (!activeShopId || !form.name.trim()) {
       toast.error(t('catalog.fillName'));
       return;
     }
 
     const payload = {
-      shop_id: shopId,
+      shop_id: activeShopId,
       name: form.name.trim(),
       description: form.description || null,
       default_time: form.default_time,

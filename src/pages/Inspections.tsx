@@ -84,10 +84,10 @@ export default function Inspections() {
   useEffect(() => { load(); }, [activeShopId]);
 
   const handleCreate = async () => {
-    if (!shopId || !selectedWO) { toast.error(t('inspections.selectWO')); return; }
+    if (!activeShopId || !selectedWO) { toast.error(t('inspections.selectWO')); return; }
     setSaving(true);
     const { error } = await supabase.from("inspection_checklists").insert({
-      shop_id: shopId, work_order_id: selectedWO,
+      shop_id: activeShopId, work_order_id: selectedWO,
       items: JSON.stringify(items), technician: technician || null,
     } as any);
     if (error) { toast.error(error.message); setSaving(false); return; }

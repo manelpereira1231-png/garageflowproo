@@ -54,12 +54,12 @@ export default function Loyalty() {
   useEffect(() => { load(); }, [activeShopId]);
 
   const addMember = async () => {
-    if (!shopId || !form.client_id) return;
+    if (!activeShopId || !form.client_id) return;
     const existing = members.find(m => m.client_id === form.client_id);
     if (existing) { toast.error(t('loyalty.alreadyMember')); return; }
 
     await supabase.from("loyalty_points").insert({
-      shop_id: shopId, client_id: form.client_id, points: 0, tier: 'bronze',
+      shop_id: activeShopId, client_id: form.client_id, points: 0, tier: 'bronze',
     } as any);
     toast.success(t('loyalty.memberAdded'));
     setAddDialog(false);
@@ -67,7 +67,7 @@ export default function Loyalty() {
   };
 
   const addPoints = async () => {
-    if (!shopId || !pointsDialog) return;
+    if (!activeShopId || !pointsDialog) return;
     const pts = parseInt(form.points);
     if (!pts || pts <= 0) return;
 
@@ -86,7 +86,7 @@ export default function Loyalty() {
 
     await supabase.from("loyalty_points").update(updates).eq("id", member.id);
     await supabase.from("loyalty_transactions").insert({
-      shop_id: shopId, client_id: member.client_id,
+      shop_id: activeShopId, client_id: member.client_id,
       points: isRedeem ? -pts : pts, type: form.type,
       description: form.description || (isRedeem ? t('loyalty.redeemed') : t('loyalty.earned')),
     } as any);

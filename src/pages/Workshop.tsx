@@ -30,6 +30,12 @@ const getStatusConfig = (t: (key: string) => string) => ({
 export default function Workshop() {
   const { language, t } = useLanguage();
   const { activeShopId } = useShopContext();
+  const statusConfig = getStatusConfig(t);
+  const filterTabs = [
+    { key: 'active', label: t('workshop.filterActive') },
+    { key: 'completed', label: t('workshop.filterCompleted') },
+    { key: 'all', label: t('workshop.filterAll') },
+  ];
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');

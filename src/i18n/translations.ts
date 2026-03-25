@@ -1,4 +1,4 @@
-export type Language = 'pt' | 'en' | 'es';
+export type Language = 'pt' | 'pt-BR' | 'en' | 'es';
 
 export const translations: Record<Language, Record<string, string>> = {
   pt: {

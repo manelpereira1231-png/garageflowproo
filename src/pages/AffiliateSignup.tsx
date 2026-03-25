@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,8 +61,16 @@ export default function AffiliateSignup() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("affiliate-signup", {
-        body: {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/affiliate-signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({
           name: form.name,
           email: form.email,
           phone: form.phone,
@@ -74,27 +81,14 @@ export default function AffiliateSignup() {
           payout_iban: payoutData.iban,
           payout_mbway_phone: payoutData.mbway_phone,
           payout_bank: payoutData.bank,
-        },
+        }),
       });
 
-      // Handle edge function errors
-      if (error) {
-        // supabase.functions.invoke returns FunctionsHttpError on non-2xx
-        // The actual JSON body is in error.context.json() or we parse it
-        let errorMsg = "Erro ao registar. Tente novamente.";
-        try {
-          if (error.context && typeof error.context.json === 'function') {
-            const errBody = await error.context.json();
-            errorMsg = errBody?.error || errorMsg;
-          } else if (data?.error) {
-            errorMsg = data.error;
-          } else {
-            errorMsg = error.message || errorMsg;
-          }
-        } catch { /* use default */ }
-        throw new Error(errorMsg);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Erro ao registar. Tente novamente.");
       }
-      if (data?.error) throw new Error(data.error);
 
       const partnerId = data.id;
       const affiliateCode = data.code;

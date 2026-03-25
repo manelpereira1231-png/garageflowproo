@@ -177,7 +177,7 @@ export default function Auth() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1.5 text-sm"><MapPin className="w-3.5 h-3.5" />País</Label>
+                    <Label className="flex items-center gap-1.5 text-sm"><MapPin className="w-3.5 h-3.5" />{t('settings.country')}</Label>
                     <Select value={country} onValueChange={setCountry}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>

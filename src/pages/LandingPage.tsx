@@ -38,8 +38,8 @@ const planConfigs = [
   },
 ];
 
-const langLabels: Record<Language, string> = { pt: 'PT', en: 'EN', es: 'ES' };
-const languages: Language[] = ['pt', 'en', 'es'];
+const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES' };
+const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];
 
 export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();

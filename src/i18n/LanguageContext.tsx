@@ -28,7 +28,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
-      if (shop?.language && ['pt', 'en', 'es'].includes(shop.language)) {
+      if (shop?.language && ['pt', 'pt-BR', 'en', 'es'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
         localStorage.setItem('garageflow_language', shop.language);
       }

@@ -289,7 +289,7 @@ export default function Workshop() {
               <span className="font-mono">{selected?.number}</span>
               {selected && (
                 <Badge variant="secondary" className={`${statusConfig[selected.status]?.bg} ${statusConfig[selected.status]?.color}`}>
-                  {isPt ? statusConfig[selected.status]?.labelPt : statusConfig[selected.status]?.label}
+                  {statusConfig[selected.status]?.label}
                 </Badge>
               )}
             </DialogTitle>

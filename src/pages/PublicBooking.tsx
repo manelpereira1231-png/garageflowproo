@@ -7,23 +7,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CheckCircle, Wrench } from "lucide-react";
+import { Calendar, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-const SERVICE_OPTIONS = [
-  "Revisão geral",
-  "Mudança de óleo",
-  "Travões",
-  "Pneus",
-  "Diagnóstico",
-  "Inspeção",
-  "Ar condicionado",
-  "Eletricidade",
-  "Outro",
+const SERVICE_KEYS = [
+  'booking.service.revision',
+  'booking.service.oilChange',
+  'booking.service.brakes',
+  'booking.service.tires',
+  'booking.service.diagnosis',
+  'booking.service.inspection',
+  'booking.service.ac',
+  'booking.service.electrical',
+  'booking.service.other',
 ];
 
 export default function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
+  const { t } = useLanguage();
   const [shop, setShop] = useState<{ id: string; name: string; logo_url: string | null; phone: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
@@ -57,19 +59,12 @@ export default function PublicBooking() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shop || !form.client_name || !form.service_type || !form.date || !form.time) {
-      setError("Preencha todos os campos obrigatórios.");
+      setError(t('booking.fillRequired'));
       return;
     }
 
     setSubmitting(true);
     setError("");
-
-    // Try to find or create client
-    let clientId: string | null = null;
-    if (form.client_email || form.client_phone) {
-      // We can't query clients as anon due to RLS, so just pass the data
-      // The shop will see client_name/phone/email on the appointment
-    }
 
     const { error: insertError } = await supabase.from("appointments").insert({
       shop_id: shop.id,
@@ -86,7 +81,7 @@ export default function PublicBooking() {
     setSubmitting(false);
 
     if (insertError) {
-      setError("Erro ao criar marcação. Tente novamente.");
+      setError(t('booking.error'));
       return;
     }
 
@@ -106,7 +101,7 @@ export default function PublicBooking() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Oficina não encontrada.</p>
+            <p className="text-muted-foreground">{t('booking.shopNotFound')}</p>
           </CardContent>
         </Card>
       </div>
@@ -119,12 +114,12 @@ export default function PublicBooking() {
         <Card className="max-w-md w-full">
           <CardContent className="py-12 text-center space-y-4">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-            <h2 className="text-xl font-bold text-foreground">Marcação enviada!</h2>
+            <h2 className="text-xl font-bold text-foreground">{t('booking.success')}</h2>
             <p className="text-muted-foreground">
-              A sua marcação foi registada com sucesso. A oficina <strong>{shop.name}</strong> irá confirmar em breve.
+              {t('booking.successDesc').replace('{shop}', shop.name)}
             </p>
             <Button variant="outline" onClick={() => { setSubmitted(false); setForm({ client_name: "", client_phone: "", client_email: "", service_type: "", date: "", time: "09:00", notes: "" }); }}>
-              Nova marcação
+              {t('booking.newBooking')}
             </Button>
           </CardContent>
         </Card>
@@ -141,52 +136,52 @@ export default function PublicBooking() {
           )}
           <CardTitle className="text-xl flex items-center justify-center gap-2">
             <Calendar className="w-5 h-5 text-primary" />
-            Marcar revisão
+            {t('booking.title')}
           </CardTitle>
           <p className="text-sm text-muted-foreground">{shop.name}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>Nome *</Label>
-              <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="O seu nome" required />
+              <Label>{t('booking.name')} *</Label>
+              <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder={t('booking.namePlaceholder')} required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Telefone</Label>
+                <Label>{t('booking.phone')}</Label>
                 <Input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} placeholder="912 345 678" />
               </div>
               <div>
-                <Label>Email</Label>
+                <Label>{t('booking.email')}</Label>
                 <Input type="email" value={form.client_email} onChange={e => setForm({ ...form, client_email: e.target.value })} placeholder="email@exemplo.com" />
               </div>
             </div>
             <div>
-              <Label>Tipo de serviço *</Label>
+              <Label>{t('booking.serviceType')} *</Label>
               <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione o serviço" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('booking.selectService')} /></SelectTrigger>
                 <SelectContent>
-                  {SERVICE_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {SERVICE_KEYS.map(key => <SelectItem key={key} value={t(key)}>{t(key)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Data pretendida *</Label>
+                <Label>{t('booking.date')} *</Label>
                 <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} min={format(new Date(), "yyyy-MM-dd")} required />
               </div>
               <div>
-                <Label>Hora pretendida *</Label>
+                <Label>{t('booking.time')} *</Label>
                 <Input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} required />
               </div>
             </div>
             <div>
-              <Label>Observações</Label>
-              <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Descreva o problema ou serviço pretendido..." />
+              <Label>{t('booking.notes')}</Label>
+              <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder={t('booking.notesPlaceholder')} />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "A enviar..." : "Confirmar marcação"}
+              {submitting ? t('booking.submitting') : t('booking.submit')}
             </Button>
             <p className="text-[11px] text-muted-foreground text-center">
               Powered by <span className="font-semibold">GarageFlow</span>

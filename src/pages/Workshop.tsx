@@ -105,18 +105,18 @@ export default function Workshop() {
     } else {
       // Create default checklist
       const defaultItems = [
-        { label: isPt ? "Óleo Motor" : "Engine Oil", status: "pending" },
-        { label: isPt ? "Filtro Ar" : "Air Filter", status: "pending" },
-        { label: isPt ? "Filtro Óleo" : "Oil Filter", status: "pending" },
-        { label: isPt ? "Travões Frente" : "Front Brakes", status: "pending" },
-        { label: isPt ? "Travões Trás" : "Rear Brakes", status: "pending" },
-        { label: isPt ? "Pneus Frente" : "Front Tires", status: "pending" },
-        { label: isPt ? "Pneus Trás" : "Rear Tires", status: "pending" },
-        { label: isPt ? "Suspensão" : "Suspension", status: "pending" },
-        { label: isPt ? "Bateria" : "Battery", status: "pending" },
-        { label: isPt ? "Luzes" : "Lights", status: "pending" },
-        { label: isPt ? "Limpa-Vidros" : "Wipers", status: "pending" },
-        { label: isPt ? "Nível Líquidos" : "Fluid Levels", status: "pending" },
+        { label: t('workshop.checklist.engineOil'), status: "pending" },
+        { label: t('workshop.checklist.airFilter'), status: "pending" },
+        { label: t('workshop.checklist.oilFilter'), status: "pending" },
+        { label: t('workshop.checklist.frontBrakes'), status: "pending" },
+        { label: t('workshop.checklist.rearBrakes'), status: "pending" },
+        { label: t('workshop.checklist.frontTires'), status: "pending" },
+        { label: t('workshop.checklist.rearTires'), status: "pending" },
+        { label: t('workshop.checklist.suspension'), status: "pending" },
+        { label: t('workshop.checklist.battery'), status: "pending" },
+        { label: t('workshop.checklist.lights'), status: "pending" },
+        { label: t('workshop.checklist.wipers'), status: "pending" },
+        { label: t('workshop.checklist.fluidLevels'), status: "pending" },
       ];
       setChecklist(null);
       setChecklistItems(defaultItems);

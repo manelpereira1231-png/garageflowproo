@@ -342,7 +342,7 @@ export default function Workshop() {
               {/* Existing diagnosis */}
               {selected.diagnosis && selected.status !== 'open' && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">{isPt ? "Diagnóstico" : "Diagnosis"}</Label>
+                  <Label className="text-xs text-muted-foreground">{t('workshop.diagnosis')}</Label>
                   <p className="text-sm bg-muted rounded-lg p-3 mt-1">{selected.diagnosis}</p>
                 </div>
               )}

@@ -1300,6 +1300,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'notFound.message': 'Page not found.',
     'notFound.backToDashboard': 'Back to Dashboard',
 
+    'nav.notifications': 'Notifications',
     'nav.alerts': 'Alerts',
 
     'alerts.title': 'Alerts',

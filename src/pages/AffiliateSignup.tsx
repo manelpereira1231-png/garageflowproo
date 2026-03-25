@@ -77,10 +77,21 @@ export default function AffiliateSignup() {
         },
       });
 
-      // Handle edge function errors - data contains the JSON body even on non-2xx
+      // Handle edge function errors
       if (error) {
-        // Try to extract the actual error message from the response
-        const errorMsg = data?.error || error.message || "Erro ao registar";
+        // supabase.functions.invoke returns FunctionsHttpError on non-2xx
+        // The actual JSON body is in error.context.json() or we parse it
+        let errorMsg = "Erro ao registar. Tente novamente.";
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const errBody = await error.context.json();
+            errorMsg = errBody?.error || errorMsg;
+          } else if (data?.error) {
+            errorMsg = data.error;
+          } else {
+            errorMsg = error.message || errorMsg;
+          }
+        } catch { /* use default */ }
         throw new Error(errorMsg);
       }
       if (data?.error) throw new Error(data.error);

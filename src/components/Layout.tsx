@@ -57,10 +57,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t('nav.catalog'), icon: BookOpen },
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
-    { path: "/workshop", label: language === 'pt' ? 'Modo Oficina' : language === 'es' ? 'Modo Taller' : 'Workshop', icon: HardHat },
+    { path: "/workshop", label: t('nav.workshop'), icon: HardHat },
     ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
-    ...(canUseFeature('automations') ? [{ path: "/automations", label: language === 'pt' ? 'Automações' : language === 'es' ? 'Automatizaciones' : 'Automations', icon: Zap, planBadge: 'Garage' as const }] : []),
+    ...(canUseFeature('automations') ? [{ path: "/automations", label: t('nav.automations'), icon: Zap, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('api') ? [{ path: "/developers", label: "API", icon: Code, planBadge: 'Garage' as const }] : []),
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
     { path: "/team", label: t('nav.team'), icon: UserPlus },
@@ -238,7 +238,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="hidden lg:flex items-center gap-2 ml-4 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
           >
             <Search className="w-3.5 h-3.5" />
-            {language === 'pt' ? 'Pesquisar...' : 'Search...'}
+            {t('common.search')}...
             <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
           </button>
 

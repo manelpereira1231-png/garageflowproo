@@ -34,7 +34,7 @@ const filterTabs = [
 ];
 
 export default function Workshop() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { activeShopId } = useShopContext();
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +161,7 @@ export default function Workshop() {
       <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Wrench className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold">{isPt ? "Modo Oficina" : "Workshop Mode"}</h1>
+          <h1 className="text-lg font-bold">{t('nav.workshop')}</h1>
         </div>
         <div className="flex gap-1">
           {filterTabs.map(ft => (

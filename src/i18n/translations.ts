@@ -929,6 +929,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Convide 1 oficina = 1 mês grátis',
     'referrals.copyLink': 'Copiar link',
     'referrals.linkCopiedFeedback': 'Link copiado! Partilhe com outra oficina.',
+
+    // Missing keys
+    'auth.partnerInviteActive': 'Convite de parceiro ativo',
+    'auth.signupSubtitle': 'Crie a sua conta para começar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Oficina',
+    'nav.automations': 'Automações',
   },
 
   en: {
@@ -1832,6 +1839,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Invite 1 workshop = 1 free month',
     'referrals.copyLink': 'Copy link',
     'referrals.linkCopiedFeedback': 'Link copied! Share it with another workshop.',
+
+    'auth.partnerInviteActive': 'Partner invite active',
+    'auth.signupSubtitle': 'Create your account to get started',
+    'common.optional': 'Optional',
+    'nav.workshop': 'Workshop',
+    'nav.automations': 'Automations',
   },
 
   es: {
@@ -2735,6 +2748,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Invite 1 taller = 1 mes gratis',
     'referrals.copyLink': 'Copiar enlace',
     'referrals.linkCopiedFeedback': '¡Enlace copiado! Compártalo con otro taller.',
+
+    'auth.partnerInviteActive': 'Invitación de socio activa',
+    'auth.signupSubtitle': 'Crea tu cuenta para empezar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Taller',
+    'nav.automations': 'Automatizaciones',
   },
 
   'pt-BR': {
@@ -3665,5 +3684,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'referrals.inviteOneFree': 'Indique 1 oficina = 1 mês grátis',
     'referrals.copyLink': 'Copiar link',
     'referrals.linkCopiedFeedback': 'Link copiado! Compartilhe com outra oficina.',
+
+    'auth.partnerInviteActive': 'Convite de parceiro ativo',
+    'auth.signupSubtitle': 'Crie sua conta para começar',
+    'common.optional': 'Opcional',
+    'nav.workshop': 'Modo Oficina',
+    'nav.automations': 'Automações',
   },
 };

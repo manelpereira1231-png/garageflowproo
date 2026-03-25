@@ -151,7 +151,7 @@ export default function Auth() {
           {getPartnerId() && mode === 'signup' && (
             <div className="mt-3 inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">
               <User className="w-3 h-3" />
-              Convite de parceiro ativo
+              {t('auth.partnerInviteActive')}
             </div>
           )}
         </div>
@@ -161,7 +161,7 @@ export default function Auth() {
             {mode === 'forgot' ? t('auth.resetPassword') : mode === 'login' ? t('auth.login') : t('auth.signup')}
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : t('auth.accountCreated').split('!')[0]}
+            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : t('auth.signupSubtitle')}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -177,7 +177,7 @@ export default function Auth() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1.5 text-sm"><MapPin className="w-3.5 h-3.5" />País</Label>
+                    <Label className="flex items-center gap-1.5 text-sm"><MapPin className="w-3.5 h-3.5" />{t('settings.country')}</Label>
                     <Select value={country} onValueChange={setCountry}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -185,7 +185,7 @@ export default function Auth() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm">NIF</Label>
-                    <Input value={nif} onChange={e => setNif(e.target.value)} maxLength={20} placeholder="Opcional" />
+                    <Input value={nif} onChange={e => setNif(e.target.value)} maxLength={20} placeholder={t('common.optional')} />
                   </div>
                 </div>
               </>

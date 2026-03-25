@@ -2904,6 +2904,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.item.lights': 'Luces',
     'inspections.item.wipers': 'Limpiaparabrisas',
     'inspections.item.brakeFluid': 'Nivel líquido de frenos',
+    'inspections.markComplete': 'Completar',
+    'inspections.checked': 'verificados',
+    'inspections.status.ok': 'OK',
+    'inspections.status.attention': 'Atención',
+    'inspections.status.repair': 'Reparar',
+    'inspections.status.na': 'N/A',
+    'inspections.overall.repairsNeeded': 'Reparaciones necesarias',
+    'inspections.overall.attentionRecommended': 'Atención recomendada',
+    'inspections.overall.allOk': 'Todo OK',
+    'inspections.overall.inProgress': 'En progreso',
+    'inspections.autoSaved': 'Guardado automáticamente',
 
     'nav.adminPanel': 'Panel Admin',
 

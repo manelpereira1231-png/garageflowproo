@@ -107,11 +107,11 @@ export default function Stock() {
   };
 
   const handleMovement = async () => {
-    if (!shopId || !movementDialog) return;
+    if (!activeShopId || !movementDialog) return;
     const qty = movForm.type === "out" ? -Math.abs(movForm.quantity) : Math.abs(movForm.quantity);
     
     const { error } = await supabase.from("stock_movements").insert({
-      shop_id: shopId, part_id: movementDialog, type: movForm.type,
+      shop_id: activeShopId, part_id: movementDialog, type: movForm.type,
       quantity: Math.abs(movForm.quantity), reason: movForm.reason || null,
     } as any);
 

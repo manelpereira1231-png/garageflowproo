@@ -77,7 +77,12 @@ export default function AffiliateSignup() {
         },
       });
 
-      if (error) throw new Error(error.message || "Erro ao registar");
+      // Handle edge function errors - data contains the JSON body even on non-2xx
+      if (error) {
+        // Try to extract the actual error message from the response
+        const errorMsg = data?.error || error.message || "Erro ao registar";
+        throw new Error(errorMsg);
+      }
       if (data?.error) throw new Error(data.error);
 
       const partnerId = data.id;

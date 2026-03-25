@@ -216,6 +216,9 @@ function AuthenticatedRoutes() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
+          <Route path="/quote/:token" element={<QuoteApproval />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="*" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
         </Routes>
       </Suspense>

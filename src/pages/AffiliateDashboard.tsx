@@ -112,7 +112,7 @@ export default function AffiliateDashboard() {
     }).eq("id", partner.id);
 
     if (error) {
-      toast.error("Erro ao guardar dados de pagamento");
+      toast.error(t('affiliate.payoutError') || "Erro ao guardar dados de pagamento");
     } else {
       toast.success(t('affiliate.payoutSaved') || "Dados de pagamento atualizados ✅");
       setEditingPayout(false);
@@ -121,7 +121,7 @@ export default function AffiliateDashboard() {
   };
 
   const exportCSV = (data: any[], filename: string) => {
-    if (!data.length) { toast.error("Sem dados para exportar"); return; }
+    if (!data.length) { toast.error(t('affiliate.noDataExport') || "Sem dados para exportar"); return; }
     const headers = Object.keys(data[0]).join(",");
     const rows = data.map(row => Object.values(row).map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([headers + "\n" + rows], { type: "text/csv" });
@@ -131,7 +131,7 @@ export default function AffiliateDashboard() {
     a.download = `${filename}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exportado ✅");
+    toast.success(t('affiliate.csvExported') || "CSV exportado ✅");
   };
 
   // Calculate stats

@@ -1147,6 +1147,10 @@ export type Database = {
           discount_percentage: number
           id: string
           name: string
+          payout_bank: string | null
+          payout_holder_name: string | null
+          payout_iban: string | null
+          payout_mbway_phone: string | null
           payout_method: string
           status: string
           stripe_account_id: string | null
@@ -1161,6 +1165,10 @@ export type Database = {
           discount_percentage?: number
           id?: string
           name: string
+          payout_bank?: string | null
+          payout_holder_name?: string | null
+          payout_iban?: string | null
+          payout_mbway_phone?: string | null
           payout_method?: string
           status?: string
           stripe_account_id?: string | null
@@ -1175,6 +1183,10 @@ export type Database = {
           discount_percentage?: number
           id?: string
           name?: string
+          payout_bank?: string | null
+          payout_holder_name?: string | null
+          payout_iban?: string | null
+          payout_mbway_phone?: string | null
           payout_method?: string
           status?: string
           stripe_account_id?: string | null

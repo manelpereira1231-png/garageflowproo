@@ -60,7 +60,7 @@ export default function Clients() {
     if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchClients(); }, [page]);
+  useEffect(() => { fetchClients(); }, [page, activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

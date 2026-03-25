@@ -124,7 +124,7 @@ function AuthenticatedRoutes() {
       for (let i = 0; i < 3; i++) {
         const { data: shop } = await supabase
           .from("shops")
-          .select("name")
+          .select("name, phone")
           .eq("user_id", user.id)
           .maybeSingle();
         if (shop) {

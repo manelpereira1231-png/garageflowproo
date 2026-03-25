@@ -40,7 +40,9 @@ export default function Clients() {
 
   const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
 
-  const getActiveShopId = (): string | null => localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
+
+  const getActiveShopId = (): string | null => activeShopId;
 
   const fetchClients = async () => {
     const shopId = getActiveShopId();

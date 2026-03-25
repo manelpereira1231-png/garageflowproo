@@ -54,21 +54,21 @@ export default function Stock() {
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
 
-  const shopId = localStorage.getItem("garageflow_active_shop");
+  const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!shopId) return;
+    if (!activeShopId) return;
     const [partsRes, movRes, ordersRes] = await Promise.all([
-      supabase.from("parts").select("*").eq("shop_id", shopId).order("name"),
-      supabase.from("stock_movements").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
-      supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
+      supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
     ]);
     if (partsRes.data) setParts(partsRes.data as Part[]);
     if (movRes.data) setMovements(movRes.data as StockMovement[]);
     if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
   };
 
-  useEffect(() => { load(); }, [shopId]);
+  useEffect(() => { load(); }, [activeShopId]);
 
   const suppliers = [...new Set(parts.map(p => p.supplier).filter(Boolean))] as string[];
 

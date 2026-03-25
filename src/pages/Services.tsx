@@ -87,10 +87,11 @@ export default function Services() {
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  const activeShopId = useActiveShopId();
+
   const fetchServices = async () => {
-    const activeId = localStorage.getItem("garageflow_active_shop");
-    if (!activeId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeId).maybeSingle();
+    if (!activeShopId) return;
+    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
     if (shopData) setShop(shopData);
 
     const from = page * PAGE_SIZE;
@@ -98,7 +99,7 @@ export default function Services() {
     let query = supabase
       .from("work_orders")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeId)
+      .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .range(from, to);
     
@@ -111,7 +112,7 @@ export default function Services() {
     if (count !== null) setTotalCount(count);
   };
 
-  useEffect(() => { fetchServices(); }, [page, statusFilter]);
+  useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);

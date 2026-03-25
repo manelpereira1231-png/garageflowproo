@@ -49,11 +49,11 @@ interface Checklist {
   technician: string | null; completed_at: string | null; created_at: string;
 }
 
-const STATUS_CONFIG = {
-  ok: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", border: "border-green-300 dark:border-green-700", label: "OK" },
-  attention: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-700", label: "Atenção" },
-  repair: { icon: XCircle, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", label: "Reparar" },
-  na: { icon: null, color: "text-muted-foreground", bg: "bg-muted", border: "border-border", label: "N/A" },
+const STATUS_CONFIG_KEYS = {
+  ok: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", border: "border-green-300 dark:border-green-700", labelKey: "inspections.status.ok" },
+  attention: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-700", labelKey: "inspections.status.attention" },
+  repair: { icon: XCircle, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", labelKey: "inspections.status.repair" },
+  na: { icon: null, color: "text-muted-foreground", bg: "bg-muted", border: "border-border", labelKey: "inspections.status.na" },
 };
 
 export default function Inspections() {

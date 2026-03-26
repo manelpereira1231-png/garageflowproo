@@ -39,7 +39,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     name: "", email: "", phone: "",
     country: "Portugal", currency: "EUR",
     vat_rate: "23", labor_rate: "35", language: language as string,
-    nif: "", address: "",
+    nif: "", address: "", timezone: "Europe/Lisbon",
   });
 
   // Pre-fill form with existing shop data (from signup metadata)

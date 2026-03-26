@@ -324,26 +324,7 @@ export default function Dashboard() {
       <ShopCompleteness />
 
       {/* Trust Signal */}
-      {!dataLoaded ? (
-        <>
-          {/* Loading Skeletons */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-9 w-9 rounded-lg" />
-                </div>
-                <Skeleton className="h-7 w-32" />
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Skeleton className="lg:col-span-2 h-[280px] rounded-xl" />
-            <Skeleton className="h-[280px] rounded-xl" />
-          </div>
-        </>
-      ) : (
+      {dataLoaded && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Shield className="w-3.5 h-3.5 text-success" />
           <span>{t('dashboard.dataSaved')}</span>

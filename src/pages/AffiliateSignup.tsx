@@ -112,7 +112,7 @@ export default function AffiliateSignup() {
         toast.success(t('affiliate.registrationSuccess') || "Registo concluído com sucesso! 🎉");
       }
     } catch (err: any) {
-      toast.error(err.message || "Erro ao registar. Tente novamente.");
+      toast.error(err.message || t('error.generic'));
     } finally {
       setLoading(false);
     }

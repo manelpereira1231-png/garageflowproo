@@ -19,11 +19,11 @@ interface ClientRow {
 
 const PAGE_SIZE = 25;
 
-const copyPortalLink = (portalToken: string | null) => {
+const copyPortalLink = (portalToken: string | null, successMsg: string) => {
   if (!portalToken) return;
   const url = `${window.location.origin}/portal/${portalToken}`;
   navigator.clipboard.writeText(url);
-  toast.success("Portal link copied!");
+  toast.success(successMsg);
 };
 
 export default function Clients() {
@@ -175,7 +175,7 @@ export default function Clients() {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token)} className="h-7 w-7 p-0" title="Portal"><Link2 className="w-3.5 h-3.5 text-primary" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="h-7 w-7 p-0" title="Portal"><Link2 className="w-3.5 h-3.5 text-primary" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
@@ -223,7 +223,7 @@ export default function Clients() {
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token)} className="text-xs text-primary" title="Portal">
+                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />Portal
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">

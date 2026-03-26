@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/auditLog";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   Plus, Users, TrendingUp, DollarSign, Send, CreditCard, Copy, Shield, AlertTriangle,
   CheckCircle, Clock, XCircle, BarChart3, Trophy, Eye, Ban, Download, Smartphone, Banknote
@@ -45,6 +46,7 @@ interface Referral {
 }
 
 export default function AdminPartners() {
+  const { t } = useLanguage();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invites, setInvites] = useState<PartnerInvite[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
@@ -89,10 +91,10 @@ export default function AdminPartners() {
 
   const createPartner = async () => {
     if (!form.name.trim() || !form.contact_email.trim()) {
-      toast.error("Nome e email são obrigatórios"); return;
+      toast.error(t('admin.partners.nameEmailRequired')); return;
     }
     if (partners.some(p => p.contact_email.toLowerCase() === form.contact_email.toLowerCase())) {
-      toast.error("⚠️ Já existe um parceiro com este email"); return;
+      toast.error(t('admin.partners.duplicateEmail')); return;
     }
     const { data, error } = await supabase.from("partners").insert([{
       ...form, commission_percentage: form.type === "affiliate" ? 10 : form.commission_percentage,
@@ -105,19 +107,19 @@ export default function AdminPartners() {
       } as any);
       await logAudit({ action: "partner_created", entityType: "partner", entityId: (data as any).id, details: { name: form.name } });
     }
-    toast.success("Parceiro criado ✅");
+    toast.success(t('admin.partners.created'));
     setShowCreate(false);
     setForm({ name: "", type: "affiliate", contact_email: "", contact_phone: "", commission_percentage: 10, discount_percentage: 0, payout_method: "bank_transfer" });
     loadData();
   };
 
   const sendInvite = async () => {
-    if (!selectedPartner || !inviteForm.workshop_email.trim()) { toast.error("Email da oficina é obrigatório"); return; }
+    if (!selectedPartner || !inviteForm.workshop_email.trim()) { toast.error(t('admin.partners.inviteEmailRequired')); return; }
     const existing = invites.find(inv =>
       inv.partner_id === selectedPartner.id &&
       inv.workshop_email.toLowerCase() === inviteForm.workshop_email.toLowerCase()
     );
-    if (existing) { toast.error("⚠️ Já existe um convite para esta oficina"); return; }
+    if (existing) { toast.error(t('admin.partners.duplicateInvite')); return; }
     const { error } = await supabase.from("partner_invites").insert([{
       partner_id: selectedPartner.id, ...inviteForm,
     }] as any).select().single();
@@ -126,7 +128,7 @@ export default function AdminPartners() {
       partner_id: selectedPartner.id, action: "invite_sent_by_admin",
       details: { workshop_email: inviteForm.workshop_email, plan: inviteForm.plan_offer },
     } as any);
-    toast.success("Convite criado 📩");
+    toast.success(t('admin.partners.inviteCreated'));
     setShowInvite(false);
     setInviteForm({ workshop_email: "", workshop_name: "", workshop_phone: "", plan_offer: "pro", discount_percent: 0, trial_days: 30 });
     loadData();
@@ -153,14 +155,14 @@ export default function AdminPartners() {
       details: { amount: commission.amount, commission_id: commission.id, paid_by: "admin" },
     } as any);
     await logAudit({ action: "commission_paid", entityType: "partner_commission", entityId: commission.id, details: { amount: commission.amount } });
-    toast.success(`Comissão de ${Number(commission.amount).toFixed(2)}€ paga ✅`);
+    toast.success(t('admin.partners.commissionPaidMsg'));
     loadData();
   };
 
   const copyAffiliateLink = (partner: Partner) => {
     const link = `${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${partner.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link copiado 📋");
+    toast.success(t('admin.partners.linkCopied'));
   };
 
   const getPaymentInfo = (partner: Partner) => {
@@ -189,7 +191,7 @@ export default function AdminPartners() {
     const a = document.createElement("a");
     a.href = url; a.download = `comissoes_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
-    toast.success("CSV exportado 📊");
+    toast.success(t('admin.partners.csvExported'));
   };
 
   // KPIs

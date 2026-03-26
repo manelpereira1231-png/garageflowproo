@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface SubDetail {
 }
 
 export default function AdminShopDetail() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [shop, setShop] = useState<ShopDetail | null>(null);
@@ -159,7 +161,7 @@ export default function AdminShopDetail() {
       .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
       .eq("shop_id", id);
     if (error) toast.error(error.message);
-    else toast.success("Trial reiniciado (30 dias)");
+    else toast.success(t('admin.logs.trialReset'));
   };
 
   const impersonateShop = () => {
@@ -188,7 +190,7 @@ export default function AdminShopDetail() {
       vat_rate: parseFloat(editForm.vat_rate), labor_rate: parseFloat(editForm.labor_rate),
     }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Oficina atualizada"); setEditOpen(false); }
+    else { toast.success(t('settings.saved')); setEditOpen(false); }
     setSaving(false);
   };
 

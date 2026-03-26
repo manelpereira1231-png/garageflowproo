@@ -1260,6 +1260,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'IBAN é obrigatório para receber pagamentos',
     'affiliate.mbwayRequired': 'Número MB WAY é obrigatório para receber pagamentos',
     'affiliate.registrationSuccess': 'Registo concluído com sucesso! 🎉',
+
+    // Admin Partners
+    'admin.partners.nameEmailRequired': 'Nome e email são obrigatórios',
+    'admin.partners.duplicateEmail': 'Já existe um parceiro com este email',
+    'admin.partners.created': 'Parceiro criado ✅',
+    'admin.partners.inviteEmailRequired': 'Email da oficina é obrigatório',
+    'admin.partners.duplicateInvite': 'Já existe um convite para esta oficina',
+    'admin.partners.inviteCreated': 'Convite criado 📩',
+    'admin.partners.linkCopied': 'Link copiado 📋',
+    'admin.partners.csvExported': 'CSV exportado 📊',
+    'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
   },
 
   en: {
@@ -2493,6 +2504,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'IBAN is required to receive payments',
     'affiliate.mbwayRequired': 'MB WAY number is required to receive payments',
     'affiliate.registrationSuccess': 'Registration completed successfully! 🎉',
+
+    'admin.partners.nameEmailRequired': 'Name and email are required',
+    'admin.partners.duplicateEmail': 'A partner with this email already exists',
+    'admin.partners.created': 'Partner created ✅',
+    'admin.partners.inviteEmailRequired': 'Workshop email is required',
+    'admin.partners.duplicateInvite': 'An invite for this workshop already exists',
+    'admin.partners.inviteCreated': 'Invite created 📩',
+    'admin.partners.linkCopied': 'Link copied 📋',
+    'admin.partners.csvExported': 'CSV exported 📊',
+    'admin.partners.commissionPaidMsg': 'Commission paid ✅',
   },
 
   es: {
@@ -3726,6 +3747,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'El IBAN es obligatorio para recibir pagos',
     'affiliate.mbwayRequired': 'El número MB WAY es obligatorio para recibir pagos',
     'affiliate.registrationSuccess': '¡Registro completado con éxito! 🎉',
+
+    'admin.partners.nameEmailRequired': 'Nombre y email son obligatorios',
+    'admin.partners.duplicateEmail': 'Ya existe un socio con este email',
+    'admin.partners.created': 'Socio creado ✅',
+    'admin.partners.inviteEmailRequired': 'Email del taller es obligatorio',
+    'admin.partners.duplicateInvite': 'Ya existe una invitación para este taller',
+    'admin.partners.inviteCreated': 'Invitación creada 📩',
+    'admin.partners.linkCopied': 'Enlace copiado 📋',
+    'admin.partners.csvExported': 'CSV exportado 📊',
+    'admin.partners.commissionPaidMsg': 'Comisión pagada ✅',
   },
 
   'pt-BR': {
@@ -4986,5 +5017,15 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'IBAN é obrigatório para receber pagamentos',
     'affiliate.mbwayRequired': 'Número MB WAY é obrigatório para receber pagamentos',
     'affiliate.registrationSuccess': 'Cadastro concluído com sucesso! 🎉',
+
+    'admin.partners.nameEmailRequired': 'Nome e email são obrigatórios',
+    'admin.partners.duplicateEmail': 'Já existe um parceiro com este email',
+    'admin.partners.created': 'Parceiro criado ✅',
+    'admin.partners.inviteEmailRequired': 'Email da oficina é obrigatório',
+    'admin.partners.duplicateInvite': 'Já existe um convite para esta oficina',
+    'admin.partners.inviteCreated': 'Convite criado 📩',
+    'admin.partners.linkCopied': 'Link copiado 📋',
+    'admin.partners.csvExported': 'CSV exportado 📊',
+    'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
   },
 };

@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Users, TrendingUp, DollarSign, CreditCard, Building2, Trophy, Copy, 
   CheckCircle, Clock, Target, Sparkles, Link as LinkIcon, Download,
-  Smartphone, LogOut, ExternalLink
+  Smartphone, LogOut, Share2, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -31,6 +32,7 @@ export default function AffiliateDashboard() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPayout, setEditingPayout] = useState(false);
+  const [savingPayout, setSavingPayout] = useState(false);
   const [payoutForm, setPayoutForm] = useState({
     method: "bank_transfer",
     holder_name: "",
@@ -45,7 +47,6 @@ export default function AffiliateDashboard() {
 
   const loadData = async () => {
     try {
-      // Get current user's partner record
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
@@ -56,7 +57,6 @@ export default function AffiliateDashboard() {
         .maybeSingle();
 
       if (!partnerData) {
-        // Not an affiliate - redirect
         navigate("/dashboard");
         return;
       }
@@ -70,7 +70,6 @@ export default function AffiliateDashboard() {
         bank: partnerData.payout_bank || "",
       });
 
-      // Load related data in parallel
       const [invRes, comRes, payRes, logRes] = await Promise.all([
         supabase.from("partner_invites").select("*").eq("partner_id", partnerData.id).order("created_at", { ascending: false }),
         supabase.from("partner_commissions").select("*").eq("partner_id", partnerData.id).order("created_at", { ascending: false }),
@@ -96,6 +95,11 @@ export default function AffiliateDashboard() {
     toast.success(t('affiliate.linkCopied') || "Link copiado! 📋");
   };
 
+  const shareWhatsApp = () => {
+    const text = encodeURIComponent(`${t('affiliate.whatsappShare') || "Experimenta o GarageFlow para a tua oficina! Regista-te aqui:"} ${affiliateLink}`);
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -103,6 +107,7 @@ export default function AffiliateDashboard() {
 
   const savePayout = async () => {
     if (!partner) return;
+    setSavingPayout(true);
     const { error } = await supabase.from("partners").update({
       payout_method: payoutForm.method,
       payout_holder_name: payoutForm.holder_name,
@@ -118,6 +123,7 @@ export default function AffiliateDashboard() {
       setEditingPayout(false);
       loadData();
     }
+    setSavingPayout(false);
   };
 
   const exportCSV = (data: any[], filename: string) => {
@@ -134,7 +140,7 @@ export default function AffiliateDashboard() {
     toast.success(t('affiliate.csvExported') || "CSV exportado ✅");
   };
 
-  // Calculate stats
+  // Stats
   const totalInvites = invites.length;
   const acceptedInvites = invites.filter(i => i.status === "accepted").length;
   const pendingCommission = commissions.filter(c => c.status === "pending").reduce((s, c) => s + Number(c.amount), 0);
@@ -143,11 +149,32 @@ export default function AffiliateDashboard() {
   const goalTarget = 5;
   const goalProgress = Math.min(acceptedInvites, goalTarget);
 
+  // Premium Skeleton Loading
   if (loading) {
     return (
       <LandingLayout>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="container mx-auto px-4 py-6 md:py-10 max-w-6xl">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+            <Skeleton className="h-9 w-20" />
+          </div>
+          {/* Link card skeleton */}
+          <Skeleton className="h-28 w-full rounded-xl mb-6" />
+          {/* KPI skeletons */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </div>
+          {/* Goal skeleton */}
+          <Skeleton className="h-20 w-full rounded-xl mb-6" />
+          {/* Tabs skeleton */}
+          <Skeleton className="h-10 w-full max-w-lg mb-4" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </LandingLayout>
     );
@@ -166,8 +193,8 @@ export default function AffiliateDashboard() {
               {t('affiliate.dashboardTitle') || "Painel de Afiliado"}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {t('affiliate.welcome') || "Bem-vindo"}, <span className="font-semibold text-foreground">{partner.name}</span> — 
-              <Badge variant="outline" className="ml-2">{partner.api_key}</Badge>
+              {t('affiliate.welcome') || "Bem-vindo"}, <span className="font-semibold text-foreground">{partner.name}</span>
+              <Badge variant="outline" className="ml-2 text-xs">{partner.api_key}</Badge>
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
@@ -182,11 +209,16 @@ export default function AffiliateDashboard() {
               <LinkIcon className="w-4 h-4 text-primary" />
               {t('affiliate.yourLink') || "O seu link exclusivo de afiliado"}
             </Label>
-            <div className="flex items-center gap-2">
-              <Input value={affiliateLink} readOnly className="font-mono text-xs bg-background" />
-              <Button onClick={copyLink} size="icon" variant="default" className="shrink-0">
-                <Copy className="w-4 h-4" />
-              </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input value={affiliateLink} readOnly className="font-mono text-xs bg-background flex-1" />
+              <div className="flex gap-2">
+                <Button onClick={copyLink} size="sm" variant="default" className="gap-2 flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
+                  <Copy className="w-4 h-4" /> {t('affiliate.copyLink') || "Copiar"}
+                </Button>
+                <Button onClick={shareWhatsApp} size="sm" variant="outline" className="gap-2 flex-1 sm:flex-none min-h-[44px] sm:min-h-0">
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {t('affiliate.linkDesc') || "Partilhe este link. Cada oficina que se registar e pagar gera comissão automática para si."}
@@ -196,44 +228,30 @@ export default function AffiliateDashboard() {
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <Card><CardContent className="pt-5 text-center">
-            <Users className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold">{totalInvites}</p>
-            <p className="text-xs text-muted-foreground">{t('affiliate.invited') || "Convidadas"}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-5 text-center">
-            <Building2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{acceptedInvites}</p>
-            <p className="text-xs text-muted-foreground">{t('affiliate.converted') || "Convertidas"}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-5 text-center">
-            <TrendingUp className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{conversionRate}%</p>
-            <p className="text-xs text-muted-foreground">{t('affiliate.conversionRate') || "Conversão"}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-5 text-center">
-            <DollarSign className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{pendingCommission.toFixed(0)}€</p>
-            <p className="text-xs text-muted-foreground">{t('affiliate.pending') || "Pendente"}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-5 text-center">
-            <CreditCard className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{paidCommission.toFixed(0)}€</p>
-            <p className="text-xs text-muted-foreground">{t('affiliate.paid') || "Pago"}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-5 text-center">
-            <Trophy className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{(pendingCommission + paidCommission).toFixed(0)}€</p>
-            <p className="text-xs text-muted-foreground">Total</p>
-          </CardContent></Card>
+          {[
+            { icon: Users, color: "text-primary", value: totalInvites, label: t('affiliate.invited') || "Convidadas" },
+            { icon: Building2, color: "text-green-500", value: acceptedInvites, label: t('affiliate.converted') || "Convertidas" },
+            { icon: TrendingUp, color: "text-blue-500", value: `${conversionRate}%`, label: t('affiliate.conversionRate') || "Conversão" },
+            { icon: DollarSign, color: "text-amber-500", value: `${pendingCommission.toFixed(0)}€`, label: t('affiliate.pending') || "Pendente" },
+            { icon: CreditCard, color: "text-emerald-500", value: `${paidCommission.toFixed(0)}€`, label: t('affiliate.paid') || "Pago" },
+            { icon: Trophy, color: "text-amber-500", value: `${(pendingCommission + paidCommission).toFixed(0)}€`, label: "Total" },
+          ].map((kpi, i) => (
+            <Card key={i} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-5 pb-4 text-center">
+                <kpi.icon className={`w-5 h-5 ${kpi.color} mx-auto mb-1`} />
+                <p className="text-2xl font-bold">{kpi.value}</p>
+                <p className="text-xs text-muted-foreground">{kpi.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Goal Progress */}
         <Card className="mb-6 border border-primary/10">
           <CardContent className="pt-5">
             <div className="flex items-center gap-3 mb-3">
-              <Target className="w-5 h-5 text-primary" />
-              <div className="flex-1">
+              <Target className="w-5 h-5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-semibold">{t('affiliate.goal') || "Meta"}: {goalTarget} {t('affiliate.convertedShops') || "oficinas convertidas"}</span>
                   <span className="text-sm font-bold text-primary">{goalProgress}/{goalTarget}</span>
@@ -251,12 +269,22 @@ export default function AffiliateDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="invites" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="invites">{t('affiliate.tabInvites') || "Convites"} ({totalInvites})</TabsTrigger>
-            <TabsTrigger value="commissions">{t('affiliate.tabCommissions') || "Comissões"} ({commissions.length})</TabsTrigger>
-            <TabsTrigger value="rankings">{t('affiliate.tabRankings') || "Rankings"}</TabsTrigger>
-            <TabsTrigger value="payments">{t('affiliate.tabPayments') || "Pagamentos"}</TabsTrigger>
-            <TabsTrigger value="activity">{t('affiliate.tabActivity') || "Atividade"}</TabsTrigger>
+          <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="invites" className="flex-1 min-w-[100px] min-h-[44px] sm:min-h-0 text-xs sm:text-sm">
+              {t('affiliate.tabInvites') || "Convites"} ({totalInvites})
+            </TabsTrigger>
+            <TabsTrigger value="commissions" className="flex-1 min-w-[100px] min-h-[44px] sm:min-h-0 text-xs sm:text-sm">
+              {t('affiliate.tabCommissions') || "Comissões"} ({commissions.length})
+            </TabsTrigger>
+            <TabsTrigger value="rankings" className="flex-1 min-w-[80px] min-h-[44px] sm:min-h-0 text-xs sm:text-sm">
+              {t('affiliate.tabRankings') || "Rankings"}
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 min-w-[100px] min-h-[44px] sm:min-h-0 text-xs sm:text-sm">
+              {t('affiliate.tabPayments') || "Pagamentos"}
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex-1 min-w-[80px] min-h-[44px] sm:min-h-0 text-xs sm:text-sm">
+              {t('affiliate.tabActivity') || "Atividade"}
+            </TabsTrigger>
           </TabsList>
 
           {/* Invites Tab */}
@@ -268,41 +296,74 @@ export default function AffiliateDashboard() {
               <CardContent>
                 {invites.length === 0 ? (
                   <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground font-medium">{t('affiliate.noInvitesYet') || "Ainda sem convites"}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{t('affiliate.shareYourLink') || "Partilhe o seu link acima para começar a convidar oficinas!"}</p>
-                    <Button onClick={copyLink} className="mt-4 gap-2">
-                      <Copy className="w-4 h-4" /> {t('affiliate.copyLink') || "Copiar Link"}
-                    </Button>
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-primary/40" />
+                    </div>
+                    <p className="font-semibold text-foreground mb-1">{t('affiliate.noInvitesYet') || "Ainda sem convites"}</p>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+                      {t('affiliate.shareYourLink') || "Partilhe o seu link acima para começar a convidar oficinas!"}
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <Button onClick={copyLink} className="gap-2 min-h-[44px]">
+                        <Copy className="w-4 h-4" /> {t('affiliate.copyLink') || "Copiar Link"}
+                      </Button>
+                      <Button onClick={shareWhatsApp} variant="outline" className="gap-2 min-h-[44px]">
+                        <MessageCircle className="w-4 h-4" /> {t('affiliate.shareWhatsApp') || "Partilhar WhatsApp"}
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('affiliate.workshop') || "Oficina"}</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>{t('affiliate.plan') || "Plano"}</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>{t('affiliate.date') || "Data"}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    {/* Mobile cards */}
+                    <div className="space-y-3 md:hidden">
                       {invites.map(inv => (
-                        <TableRow key={inv.id}>
-                          <TableCell className="font-medium">{inv.workshop_name || "—"}</TableCell>
-                          <TableCell className="text-sm">{inv.workshop_email}</TableCell>
-                          <TableCell><Badge variant="outline">{inv.plan_offer?.toUpperCase()}</Badge></TableCell>
-                          <TableCell>
-                            <Badge variant={inv.status === "accepted" ? "default" : "secondary"} className="gap-1">
+                        <div key={inv.id} className="p-4 rounded-lg border bg-card">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-sm">{inv.workshop_name || "—"}</span>
+                            <Badge variant={inv.status === "accepted" ? "default" : "secondary"} className="gap-1 text-xs">
                               {inv.status === "accepted" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                               {inv.status === "accepted" ? (t('affiliate.statusAccepted') || "Aceite") : (t('affiliate.statusPending') || "Pendente")}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
-                        </TableRow>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-1">{inv.workshop_email}</p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">{inv.plan_offer?.toUpperCase()}</Badge>
+                            <span className="text-xs text-muted-foreground">{new Date(inv.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                    {/* Desktop table */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t('affiliate.workshop') || "Oficina"}</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>{t('affiliate.plan') || "Plano"}</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>{t('affiliate.date') || "Data"}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {invites.map(inv => (
+                            <TableRow key={inv.id}>
+                              <TableCell className="font-medium">{inv.workshop_name || "—"}</TableCell>
+                              <TableCell className="text-sm">{inv.workshop_email}</TableCell>
+                              <TableCell><Badge variant="outline">{inv.plan_offer?.toUpperCase()}</Badge></TableCell>
+                              <TableCell>
+                                <Badge variant={inv.status === "accepted" ? "default" : "secondary"} className="gap-1">
+                                  {inv.status === "accepted" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                  {inv.status === "accepted" ? (t('affiliate.statusAccepted') || "Aceite") : (t('affiliate.statusPending') || "Pendente")}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">{new Date(inv.created_at).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -312,13 +373,13 @@ export default function AffiliateDashboard() {
           <TabsContent value="commissions">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <CardTitle className="text-lg">{t('affiliate.tabCommissions') || "Comissões"}</CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" /> {t('affiliate.pending') || "Pendente"}: {pendingCommission.toFixed(2)}€</Badge>
                     <Badge variant="default" className="gap-1"><CheckCircle className="w-3 h-3" /> {t('affiliate.paid') || "Pago"}: {paidCommission.toFixed(2)}€</Badge>
                     {commissions.length > 0 && (
-                      <Button size="sm" variant="outline" onClick={() => exportCSV(commissions, "comissoes")} className="gap-1">
+                      <Button size="sm" variant="outline" onClick={() => exportCSV(commissions, "comissoes")} className="gap-1 min-h-[36px]">
                         <Download className="w-3 h-3" /> CSV
                       </Button>
                     )}
@@ -328,36 +389,60 @@ export default function AffiliateDashboard() {
               <CardContent>
                 {commissions.length === 0 ? (
                   <div className="text-center py-12">
-                    <DollarSign className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">{t('affiliate.noCommissions') || "Sem comissões ainda"}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{t('affiliate.commissionDesc') || "Quando uma oficina pagar um plano, a comissão aparece aqui automaticamente."}</p>
+                    <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+                      <DollarSign className="w-8 h-8 text-amber-500/40" />
+                    </div>
+                    <p className="font-semibold text-foreground mb-1">{t('affiliate.noCommissions') || "Sem comissões ainda"}</p>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                      {t('affiliate.commissionDesc') || "Quando uma oficina pagar um plano, a comissão aparece aqui automaticamente."}
+                    </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>{t('affiliate.date') || "Data"}</TableHead>
-                        <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    {/* Mobile cards */}
+                    <div className="space-y-3 md:hidden">
                       {commissions.map(c => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-semibold">{Number(c.amount).toFixed(2)}€</TableCell>
-                          <TableCell>
-                            <Badge variant={c.status === "paid" ? "default" : "secondary"} className="gap-1">
-                              {c.status === "paid" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                              {c.status === "paid" ? (t('affiliate.paid') || "Pago") : (t('affiliate.pending') || "Pendente")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">{new Date(c.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-sm">{c.paid_at ? new Date(c.paid_at).toLocaleDateString() : "—"}</TableCell>
-                        </TableRow>
+                        <div key={c.id} className="p-4 rounded-lg border bg-card flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-lg">{Number(c.amount).toFixed(2)}€</p>
+                            <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <Badge variant={c.status === "paid" ? "default" : "secondary"} className="gap-1">
+                            {c.status === "paid" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                            {c.status === "paid" ? (t('affiliate.paid') || "Pago") : (t('affiliate.pending') || "Pendente")}
+                          </Badge>
+                        </div>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                    {/* Desktop table */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>{t('affiliate.date') || "Data"}</TableHead>
+                            <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {commissions.map(c => (
+                            <TableRow key={c.id}>
+                              <TableCell className="font-semibold">{Number(c.amount).toFixed(2)}€</TableCell>
+                              <TableCell>
+                                <Badge variant={c.status === "paid" ? "default" : "secondary"} className="gap-1">
+                                  {c.status === "paid" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                  {c.status === "paid" ? (t('affiliate.paid') || "Pago") : (t('affiliate.pending') || "Pendente")}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-sm">{c.paid_at ? new Date(c.paid_at).toLocaleDateString() : "—"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -376,10 +461,10 @@ export default function AffiliateDashboard() {
               <CardContent>
                 <div className="space-y-6">
                   {/* Your position */}
-                  <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                  <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-lg">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-lg">
                           {partner.name?.charAt(0)?.toUpperCase() || "A"}
                         </div>
                         <div>
@@ -392,16 +477,16 @@ export default function AffiliateDashboard() {
                         <p className="text-xs text-muted-foreground">{t('affiliate.conversions') || "conversões"}</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-2 rounded bg-background">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+                      <div className="p-2 rounded-lg bg-background">
                         <p className="text-sm font-bold">{totalInvites}</p>
                         <p className="text-xs text-muted-foreground">{t('affiliate.invited') || "Convidadas"}</p>
                       </div>
-                      <div className="p-2 rounded bg-background">
+                      <div className="p-2 rounded-lg bg-background">
                         <p className="text-sm font-bold">{conversionRate}%</p>
                         <p className="text-xs text-muted-foreground">{t('affiliate.conversionRate') || "Conversão"}</p>
                       </div>
-                      <div className="p-2 rounded bg-background">
+                      <div className="p-2 rounded-lg bg-background">
                         <p className="text-sm font-bold">{(pendingCommission + paidCommission).toFixed(0)}€</p>
                         <p className="text-xs text-muted-foreground">{t('affiliate.totalEarned') || "Total ganho"}</p>
                       </div>
@@ -425,7 +510,7 @@ export default function AffiliateDashboard() {
                         const reached = acceptedInvites >= m.target;
                         const progress = Math.min((acceptedInvites / m.target) * 100, 100);
                         return (
-                          <div key={m.target} className={`flex items-center gap-3 p-3 rounded-lg border ${reached ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/20'}`}>
+                          <div key={m.target} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${reached ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/20'}`}>
                             <span className="text-xl">{m.reward}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
@@ -441,16 +526,16 @@ export default function AffiliateDashboard() {
                     </div>
                   </div>
 
-                  {/* Commission Tiers Info */}
-                  <div className="p-4 rounded-lg bg-muted/30 border">
-                    <h3 className="font-semibold text-sm mb-2">{t('affiliate.commissionTiers') || "Tabela de Comissões"}</h3>
+                  {/* Commission Tiers */}
+                  <div className="p-4 rounded-xl bg-muted/30 border">
+                    <h3 className="font-semibold text-sm mb-3">{t('affiliate.commissionTiers') || "Tabela de Comissões"}</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded bg-background text-center">
+                      <div className="p-3 rounded-lg bg-background text-center">
                         <p className="text-xl font-black text-primary">10%</p>
                         <p className="text-xs font-medium">{t('affiliate.planPro') || "Plano Pro"}</p>
                         <p className="text-xs text-muted-foreground">4,90€/{t('common.month') || "mês"}</p>
                       </div>
-                      <div className="p-3 rounded bg-background text-center">
+                      <div className="p-3 rounded-lg bg-background text-center">
                         <p className="text-xl font-black text-primary">20%</p>
                         <p className="text-xs font-medium">{t('affiliate.planGarage') || "Plano Garage"}</p>
                         <p className="text-xs text-muted-foreground">19,80€/{t('common.month') || "mês"}</p>
@@ -473,8 +558,16 @@ export default function AffiliateDashboard() {
                       <CreditCard className="w-5 h-5 text-primary" />
                       {t('affiliate.paymentMethod') || "Método de Pagamento"}
                     </CardTitle>
-                    <Button size="sm" variant={editingPayout ? "default" : "outline"} onClick={() => editingPayout ? savePayout() : setEditingPayout(true)}>
-                      {editingPayout ? (t('common.save') || "Guardar") : (t('common.edit') || "Editar")}
+                    <Button 
+                      size="sm" 
+                      variant={editingPayout ? "default" : "outline"} 
+                      onClick={() => editingPayout ? savePayout() : setEditingPayout(true)}
+                      disabled={savingPayout}
+                      className="min-h-[40px]"
+                    >
+                      {savingPayout ? (
+                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      ) : editingPayout ? (t('common.save') || "Guardar") : (t('common.edit') || "Editar")}
                     </Button>
                   </div>
                 </CardHeader>
@@ -482,21 +575,24 @@ export default function AffiliateDashboard() {
                   {editingPayout ? (
                     <div className="space-y-3 max-w-md">
                       <Select value={payoutForm.method === "mbway" ? "mbway" : "bank_transfer"} onValueChange={v => setPayoutForm({ ...payoutForm, method: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="bank_transfer">{t('affiliate.bankTransfer') || "Transferência Bancária (IBAN)"}</SelectItem>
                           <SelectItem value="mbway">MB WAY</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input placeholder={t('affiliate.holderName') || "Nome do titular"} value={payoutForm.holder_name} onChange={e => setPayoutForm({ ...payoutForm, holder_name: e.target.value })} />
+                      <Input placeholder={t('affiliate.holderName') || "Nome do titular"} value={payoutForm.holder_name} onChange={e => setPayoutForm({ ...payoutForm, holder_name: e.target.value })} className="min-h-[44px]" />
                       {payoutForm.method === "bank_transfer" ? (
                         <>
-                          <Input placeholder="IBAN" value={payoutForm.iban} onChange={e => setPayoutForm({ ...payoutForm, iban: e.target.value })} />
-                          <Input placeholder={t('affiliate.bank') || "Banco"} value={payoutForm.bank} onChange={e => setPayoutForm({ ...payoutForm, bank: e.target.value })} />
+                          <Input placeholder="IBAN" value={payoutForm.iban} onChange={e => setPayoutForm({ ...payoutForm, iban: e.target.value })} className="min-h-[44px]" />
+                          <Input placeholder={t('affiliate.bank') || "Banco"} value={payoutForm.bank} onChange={e => setPayoutForm({ ...payoutForm, bank: e.target.value })} className="min-h-[44px]" />
                         </>
                       ) : (
-                        <Input placeholder={t('affiliate.mbwayNumber') || "Número MB WAY"} value={payoutForm.mbway_phone} onChange={e => setPayoutForm({ ...payoutForm, mbway_phone: e.target.value })} />
+                        <Input placeholder={t('affiliate.mbwayNumber') || "Número MB WAY"} value={payoutForm.mbway_phone} onChange={e => setPayoutForm({ ...payoutForm, mbway_phone: e.target.value })} className="min-h-[44px]" />
                       )}
+                      <Button variant="ghost" size="sm" onClick={() => setEditingPayout(false)} className="min-h-[40px]">
+                        {t('common.cancel') || "Cancelar"}
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -518,6 +614,11 @@ export default function AffiliateDashboard() {
                           {partner.payout_bank && <p className="text-sm"><span className="text-muted-foreground">{t('affiliate.bank') || "Banco"}:</span> {partner.payout_bank}</p>}
                         </>
                       )}
+                      {!partner.payout_holder_name && !partner.payout_iban && !partner.payout_mbway_phone && (
+                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-400">
+                          ⚠️ {t('affiliate.noPayoutConfigured') || "Configure os seus dados de pagamento para receber comissões."}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -529,7 +630,7 @@ export default function AffiliateDashboard() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{t('affiliate.paymentHistory') || "Histórico de Pagamentos"}</CardTitle>
                     {payouts.length > 0 && (
-                      <Button size="sm" variant="outline" onClick={() => exportCSV(payouts, "pagamentos")} className="gap-1">
+                      <Button size="sm" variant="outline" onClick={() => exportCSV(payouts, "pagamentos")} className="gap-1 min-h-[36px]">
                         <Download className="w-3 h-3" /> CSV
                       </Button>
                     )}
@@ -537,28 +638,49 @@ export default function AffiliateDashboard() {
                 </CardHeader>
                 <CardContent>
                   {payouts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">{t('affiliate.noPayments') || "Sem pagamentos realizados"}</p>
+                    <div className="text-center py-10">
+                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                        <CreditCard className="w-7 h-7 text-muted-foreground/40" />
+                      </div>
+                      <p className="font-medium text-foreground mb-1">{t('affiliate.noPayments') || "Sem pagamentos realizados"}</p>
+                      <p className="text-xs text-muted-foreground">{t('affiliate.paymentsWillAppear') || "Os pagamentos aparecerão aqui quando forem processados."}</p>
+                    </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>{t('affiliate.date') || "Data"}</TableHead>
-                          <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <>
+                      <div className="space-y-3 md:hidden">
                         {payouts.map(p => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-semibold">{Number(p.amount).toFixed(2)}€</TableCell>
-                            <TableCell><Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge></TableCell>
-                            <TableCell className="text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-sm">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}</TableCell>
-                          </TableRow>
+                          <div key={p.id} className="p-4 rounded-lg border bg-card flex items-center justify-between">
+                            <div>
+                              <p className="font-bold text-lg">{Number(p.amount).toFixed(2)}€</p>
+                              <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status === "paid" ? (t('affiliate.paid') || "Pago") : (t('affiliate.pending') || "Pendente")}</Badge>
+                          </div>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </div>
+                      <div className="hidden md:block">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>{t('affiliate.date') || "Data"}</TableHead>
+                              <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {payouts.map(p => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-semibold">{Number(p.amount).toFixed(2)}€</TableCell>
+                                <TableCell><Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status === "paid" ? (t('affiliate.paid') || "Pago") : (t('affiliate.pending') || "Pendente")}</Badge></TableCell>
+                                <TableCell className="text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                                <TableCell className="text-sm">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -573,7 +695,13 @@ export default function AffiliateDashboard() {
               </CardHeader>
               <CardContent>
                 {logs.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">{t('affiliate.noActivity') || "Sem atividade registada"}</p>
+                  <div className="text-center py-10">
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                      <Clock className="w-7 h-7 text-muted-foreground/40" />
+                    </div>
+                    <p className="font-medium text-foreground mb-1">{t('affiliate.noActivity') || "Sem atividade registada"}</p>
+                    <p className="text-xs text-muted-foreground">{t('affiliate.activityWillAppear') || "As suas ações e eventos aparecerão aqui."}</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {logs.map(log => (

@@ -107,23 +107,18 @@ const adminRoutes = [
 ];
 
 function AuthenticatedRoutes() {
-  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const [isAffiliate, setIsAffiliate] = useState(false);
+  const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
   useEffect(() => {
-    // Super admin NEVER needs onboarding — skip shop check entirely
-    if (isSuperAdmin) {
-      setNeedsOnboarding(false);
-      return;
-    }
-    if (adminLoading) return; // wait for admin check first
+    if (adminLoading) return;
+    if (isSuperAdmin) { setReady(true); return; }
 
-    const checkShop = async () => {
+    const checkAffiliate = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setNeedsOnboarding(false); return; }
+      if (!user) { setReady(true); return; }
 
-      // Check if user is an affiliate — affiliates skip onboarding
       const { data: partnerData } = await supabase
         .from("partners")
         .select("id")
@@ -132,29 +127,13 @@ function AuthenticatedRoutes() {
 
       if (partnerData) {
         setIsAffiliate(true);
-        setNeedsOnboarding(false);
-        return;
       }
-
-      for (let i = 0; i < 3; i++) {
-        const { data: shop } = await supabase
-          .from("shops")
-          .select("name, phone")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (shop) {
-          const incomplete = !shop.name || shop.name.trim() === '' || !shop.phone || shop.phone.trim() === '';
-          setNeedsOnboarding(incomplete);
-          return;
-        }
-        await new Promise(r => setTimeout(r, 1000));
-      }
-      setNeedsOnboarding(true);
+      setReady(true);
     };
-    checkShop();
+    checkAffiliate();
   }, [isSuperAdmin, adminLoading]);
 
-  if (adminLoading || needsOnboarding === null) {
+  if (adminLoading || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -202,24 +181,9 @@ function AuthenticatedRoutes() {
           <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-
-  if (needsOnboarding) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
-          <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-          <Route path="/book/:slug" element={<PublicBooking />} />
-          <Route path="/quote/:token" element={<QuoteApproval />} />
-          <Route path="/portal/:token" element={<ClientPortal />} />
-          <Route path="*" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
         </Routes>
       </Suspense>
     );

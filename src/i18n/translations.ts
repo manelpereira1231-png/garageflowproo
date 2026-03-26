@@ -1413,6 +1413,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'vehicles.creating': 'Creating...',
     'vehicles.create': 'Create Vehicle',
     'vehicles.vehicle': 'Vehicle',
+    'vehicles.searchMake': 'Search make...',
+    'vehicles.searchModel': 'Search model...',
+    'vehicles.selectMakeFirst': 'Select make first',
 
     'quotes.title': 'Quotes',
     'quotes.new': 'New Quote',

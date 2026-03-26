@@ -31,6 +31,7 @@ interface SubDetail {
 }
 
 export default function AdminShopDetail() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [shop, setShop] = useState<ShopDetail | null>(null);

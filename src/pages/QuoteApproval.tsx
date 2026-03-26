@@ -536,12 +536,34 @@ export default function QuoteApproval() {
               />
             </div>
 
+            {/* Digital Signature */}
+            <SignaturePad
+              onSign={handleSignature}
+              disabled={submitting}
+              labels={{
+                title: t('signatureTitle'),
+                signerName: t('signerName'),
+                signerNamePlaceholder: t('signerNamePlaceholder'),
+                clear: t('signatureClear'),
+                confirm: t('signatureConfirm'),
+                drawHere: t('signatureDrawHere'),
+                required: t('signatureRequired'),
+              }}
+            />
+
+            {signatureData && (
+              <div className="flex items-center gap-2 text-sm text-success bg-success/10 rounded-lg p-3">
+                <CheckCircle className="w-4 h-4" />
+                <span>{t('signedBy')}: <strong>{signerName}</strong></span>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 className="flex-1 h-14 text-base font-semibold rounded-xl bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 transition-all"
                 onClick={() => handleAction('approved')}
-                disabled={submitting}
+                disabled={submitting || !signatureData || !signerName}
               >
                 {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <CheckCircle className="w-5 h-5 mr-2" />}
                 {t('approve')}

@@ -395,6 +395,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
                 <p>✅ <strong>{t('settings.address')}:</strong> {form.address || '—'}</p>
                 <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>
+                <p>✅ <strong>{t('settings.timezone')}:</strong> {form.timezone}</p>
                 <p>✅ <strong>Logo:</strong> {logoFile ? logoFile.name : t('onboarding.noLogo')}</p>
                 <p>✅ <strong>{t('onboarding.alertsLabel')}:</strong> {[alerts.pending_quotes && t('onboarding.alert.pendingQuotes'), alerts.expired_quotes && t('onboarding.alert.expiredQuotes'), alerts.completed_services && t('onboarding.alert.completedServices')].filter(Boolean).join(', ') || t('onboarding.noAlerts')}</p>
                 <p>✅ <strong>{t('onboarding.plan')}:</strong> FREE ({t('billing.trial30')})</p>

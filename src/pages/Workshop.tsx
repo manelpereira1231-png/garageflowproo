@@ -348,6 +348,15 @@ export default function Workshop() {
                 </div>
               )}
 
+              {/* Labor Timer */}
+              {activeShopId && selected.status !== 'delivered' && (
+                <LaborTimer
+                  workOrderId={selected.id}
+                  shopId={activeShopId}
+                  technicianName={selected.technician || ''}
+                />
+              )}
+
               {/* Checklist */}
               {checklistItems.length > 0 && (
                 <div>

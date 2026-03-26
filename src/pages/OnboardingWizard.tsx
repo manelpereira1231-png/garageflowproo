@@ -243,9 +243,10 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="pt">🇵🇹 Português (PT)</SelectItem>
+                      <SelectItem value="pt-BR">🇧🇷 Português (BR)</SelectItem>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                      <SelectItem value="es">🇪🇸 Español</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

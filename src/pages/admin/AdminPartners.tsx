@@ -191,7 +191,7 @@ export default function AdminPartners() {
     const a = document.createElement("a");
     a.href = url; a.download = `comissoes_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
-    toast.success("CSV exportado 📊");
+    toast.success(t('admin.partners.csvExported'));
   };
 
   // KPIs

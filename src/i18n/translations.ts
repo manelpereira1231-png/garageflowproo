@@ -5686,5 +5686,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.users.role': 'Função',
     'admin.users.joined': 'Desde',
     'admin.users.actions': 'Ações',
+    'pushNotifications': 'Notificações Push',
+    'pushDescription': 'Receba alertas de novas OS, faturas e inspeções.',
+    'pushNotSupported': 'Notificações push não suportadas',
+    'pushNotSupportedDesc': 'O seu navegador não suporta notificações push.',
+    'pushEnabled': 'Notificações ativadas!',
+    'pushDisabled': 'Notificações desativadas',
+    'pushDenied': 'Permissão negada. Ative nas configurações do navegador.',
+    'active': 'Ativo',
   },
 };

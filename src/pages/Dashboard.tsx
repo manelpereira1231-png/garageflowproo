@@ -457,8 +457,8 @@ export default function Dashboard() {
       {plan !== 'free' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Monthly Revenue Chart */}
-          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5">
-            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-3 sm:p-5">
+            <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
               {t('dashboard.revenueChart')}
             </h2>

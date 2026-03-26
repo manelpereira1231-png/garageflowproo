@@ -310,7 +310,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 {stepTitles[2]}
               </h2>
               <p className="text-sm text-muted-foreground">
-                O logo aparece em PDFs de orçamentos e serviços, no dashboard e emails enviados aos clientes.
+                {t('onboarding.brandingDesc')}
               </p>
               <div className="flex flex-col items-center gap-4">
                 <div 
@@ -327,14 +327,14 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   )}
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                <p className="text-xs text-muted-foreground">PNG, JPG ou SVG · máx. 2MB</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, SVG · max 2MB</p>
               </div>
               {/* PDF Preview hint */}
               <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-3">
                 <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground mb-1">Pré-visualização de PDF</p>
-                  <p>O seu logo será aplicado em todos os PDFs gerados. No plano FREE, os PDFs incluem marca d'água "GarageFlow". Nos planos PRO/GARAGE a marca d'água é removida.</p>
+                  <p className="font-medium text-foreground mb-1">{t('onboarding.pdfPreviewTitle')}</p>
+                  <p>{t('onboarding.pdfPreviewDesc')}</p>
                 </div>
               </div>
             </div>

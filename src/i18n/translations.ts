@@ -596,6 +596,7 @@ export const translations: Record<Language, Record<string, string>> = {
      'landing.navAffiliates': 'Afiliados',
     'landing.footer': 'Todos os direitos reservados.',
     'landing.perMonth': '/mês',
+    'landing.perYear': '/ano',
     'landing.noCreditCard': 'Sem cartão de crédito · Configuração em 2 minutos',
 
     // Referrals

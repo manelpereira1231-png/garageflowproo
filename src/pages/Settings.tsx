@@ -13,6 +13,7 @@ import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const countries = Object.keys(VAT_RATES);

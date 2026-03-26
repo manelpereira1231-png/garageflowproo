@@ -119,7 +119,7 @@ export default function AdminAlerts() {
   const deleteAlert = async (alertId: string) => {
     const { error } = await supabase.from("alerts").delete().eq("id", alertId);
     if (error) { toast.error(error.message); return; }
-    toast.success("Alerta eliminado");
+    toast.success(t('common.deleted'));
     setDeleteAlertId(null);
     fetchAlerts();
   };

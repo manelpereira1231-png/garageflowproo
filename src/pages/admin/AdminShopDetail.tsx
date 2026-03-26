@@ -188,7 +188,7 @@ export default function AdminShopDetail() {
       vat_rate: parseFloat(editForm.vat_rate), labor_rate: parseFloat(editForm.labor_rate),
     }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Oficina atualizada"); setEditOpen(false); }
+    else { toast.success(t('settings.saved')); setEditOpen(false); }
     setSaving(false);
   };
 

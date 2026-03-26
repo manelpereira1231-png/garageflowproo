@@ -3354,6 +3354,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'Todo OK',
     'inspections.overall.inProgress': 'En progreso',
     'inspections.autoSaved': 'Cambios guardados automáticamente',
+    'inspections.progress': 'Progreso',
+    'inspections.addPhoto': 'Añadir foto',
+    'inspections.changePhoto': 'Cambiar foto',
+    'inspections.photoAdded': 'Foto añadida',
+    'inspections.photoError': 'Error al subir foto',
+    'inspections.sendToWO': 'Enviar a OS',
+    'inspections.generatePDF': 'Generar PDF',
 
     'nav.adminPanel': 'Panel Admin',
 

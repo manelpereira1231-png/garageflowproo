@@ -59,7 +59,7 @@ export function PushNotificationToggle() {
       </div>
       <div className="flex items-center gap-2">
         {isSubscribed && (
-          <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+          <Badge variant="outline" className="text-xs text-primary border-primary/30">
             {t("active") || "Ativo"}
           </Badge>
         )}

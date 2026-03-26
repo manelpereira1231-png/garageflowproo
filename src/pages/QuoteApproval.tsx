@@ -215,13 +215,39 @@ export default function QuoteApproval() {
     load();
   }, [token]);
 
+  const generateHash = async (data: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handleSignature = (data: string, name: string) => {
+    setSignatureData(data);
+    setSignerName(name);
+  };
+
   const handleAction = async (action: 'approved' | 'rejected') => {
     if (!quote || !shop) return;
+    
+    // Require signature for approval
+    if (action === 'approved' && (!signatureData || !signerName)) return;
+    
     setSubmitting(true);
 
     const updateData: any = { status: action };
     if (clientComment.trim()) {
       updateData.client_notes = clientComment.trim();
+    }
+
+    // Add signature data for approvals
+    if (action === 'approved' && signatureData) {
+      const hashInput = `${quote.id}|${signerName}|${quote.total}|${new Date().toISOString()}`;
+      updateData.signature_data = signatureData;
+      updateData.signature_hash = await generateHash(hashInput);
+      updateData.signed_at = new Date().toISOString();
+      updateData.signer_name = signerName;
     }
 
     const { error: err } = await supabase

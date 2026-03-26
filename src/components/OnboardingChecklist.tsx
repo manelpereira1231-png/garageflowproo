@@ -244,8 +244,8 @@ export default function OnboardingChecklist() {
               className="text-xs btn-interactive">
               <Sparkles className="w-3.5 h-3.5 mr-1" />
               {seeding
-                ? tt("A criar...", "Creating...", "Creando...")
-                : tt("Dados Demo", "Demo Data", "Datos Demo")}
+                 ? tt("A criar...", "Creating...", "Creando...", "Criando...")
+                 : tt("Dados Demo", "Demo Data", "Datos Demo", "Dados Demo")}
             </Button>
           )}
           <button onClick={() => { localStorage.setItem(`garageflow_checklist_dismissed_${activeShopId}`, "true"); setDismissed(true); }}>

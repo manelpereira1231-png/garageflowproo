@@ -2923,6 +2923,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alertas',
     'onboarding.noAlerts': 'Ninguna',
     'onboarding.plan': 'Plan',
+    'onboarding.completeProfile': 'Complete el perfil del taller',
+    'onboarding.fieldsCompleted': 'campos completados',
 
     'common.save': 'Guardar',
     'common.cancel': 'Cancelar',

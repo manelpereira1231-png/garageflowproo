@@ -2,41 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
+import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
-
-const planConfigs = [
-  {
-    nameKey: 'landing.planFree',
-    price: '0€',
-    periodKey: '',
-    subtitleKey: '',
-    featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
-    ctaKey: 'landing.ctaFree',
-    highlighted: false,
-  },
-  {
-    nameKey: 'landing.planPro',
-    price: '49€',
-    periodKey: 'landing.perMonth',
-    subtitleKey: 'landing.trial30',
-    featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
-    ctaKey: 'landing.ctaPro',
-    highlighted: true,
-  },
-  {
-    nameKey: 'landing.planGarage',
-    price: '99€',
-    periodKey: 'landing.perMonth',
-    subtitleKey: 'landing.trial30',
-    featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
-    ctaKey: 'landing.ctaGarage',
-    highlighted: false,
-  },
-];
 
 const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES' };
 const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];

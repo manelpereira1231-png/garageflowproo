@@ -16,6 +16,39 @@ const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];
 export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const pricing = getRegionalPricing();
+  const isBR = pricing.currency === 'BRL';
+
+  const planConfigs = [
+    {
+      nameKey: 'landing.planFree',
+      price: formatPrice(0),
+      periodKey: '',
+      subtitleKey: '',
+      featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
+      ctaKey: 'landing.ctaFree',
+      highlighted: false,
+    },
+    {
+      nameKey: 'landing.planPro',
+      price: formatPrice(pricing.pro[billingCycle]),
+      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
+      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
+      ctaKey: 'landing.ctaPro',
+      highlighted: true,
+    },
+    {
+      nameKey: 'landing.planGarage',
+      price: formatPrice(pricing.garage[billingCycle]),
+      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
+      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
+      ctaKey: 'landing.ctaGarage',
+      highlighted: false,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">

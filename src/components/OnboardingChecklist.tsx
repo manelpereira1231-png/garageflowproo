@@ -226,13 +226,13 @@ export default function OnboardingChecklist() {
           </div>
           <div>
             <h2 className="text-base font-semibold">
-              {tt("Configure a sua oficina", "Set up your workshop", "Configure su taller")}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {doneCount}/{items.length} {tt("passos concluídos", "steps completed", "pasos completados")}
-              {nextItem && (
-                <span className="ml-1 text-primary font-medium">
-                  — {tt("Próximo", "Next", "Siguiente")}: {nextItem.label}
+               {tt("Configure a sua oficina", "Set up your workshop", "Configure su taller", "Configure sua oficina")}
+             </h2>
+             <p className="text-xs text-muted-foreground">
+               {doneCount}/{items.length} {tt("passos concluídos", "steps completed", "pasos completados", "passos concluídos")}
+               {nextItem && (
+                 <span className="ml-1 text-primary font-medium">
+                   — {tt("Próximo", "Next", "Siguiente", "Próximo")}: {nextItem.label}
                 </span>
               )}
             </p>

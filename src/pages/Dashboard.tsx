@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import ShopCompleteness from "@/components/ShopCompleteness";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 interface KPIData {
   revenue: number;
@@ -38,6 +39,7 @@ const MONTH_NAMES: Record<string, string[]> = {
 
 export default function Dashboard() {
   const { t, language } = useLanguage();
+  const { isReady, user } = useAuthReady();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
@@ -57,178 +59,188 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      let shopId = activeShopId;
-      if (!shopId) {
-        // Fallback: try to get from user's shops
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-        if (shop) {
-          shopId = shop.id;
-          localStorage.setItem("garageflow_active_shop", shop.id);
-        } else return;
+      if (!isReady) return;
+
+      if (!user) {
+        setDataLoaded(true);
+        return;
       }
-      const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
-      if (!shop) return;
-      setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
-      setShopName(shop.name || '');
-      setShopLogoUrl(shop.logo_url || null);
 
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
+      setDataLoaded(false);
 
-      const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes] = await Promise.all([
-        supabase.from("work_orders")
-          .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
-          .eq("shop_id", shop.id)
-          .gte("created_at", monthStart)
-          .order("created_at", { ascending: false }),
-        supabase.from("quotes")
-          .select("id", { count: "exact", head: true })
-          .eq("shop_id", shop.id)
-          .in("status", ['draft', 'sent']),
-        supabase.from("work_orders")
-          .select("client_id")
-          .eq("shop_id", shop.id)
-          .gte("created_at", monthStart),
-        supabase.from("alerts")
-          .select("id, title, type, status, due_date, created_at")
-          .eq("shop_id", shop.id)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase.from("work_orders")
-          .select("total, profit, status, created_at")
-          .eq("shop_id", shop.id)
-          .gte("created_at", sixMonthsAgo)
-          .in("status", ['completed', 'delivered']),
-        supabase.from("parts")
-          .select("id, name, stock_quantity, min_stock")
-          .eq("shop_id", shop.id)
-          .eq("active", true),
-        supabase.from("invoices")
-          .select("id, number, total, due_date, clients(name)")
-          .eq("shop_id", shop.id)
-          .in("status", ['issued', 'partial'])
-          .lt("due_date", new Date().toISOString().slice(0, 10)),
-        supabase.from("quotes")
-          .select("id, status")
-          .eq("shop_id", shop.id)
-          .gte("created_at", sixMonthsAgo),
-        supabase.from("stock_movements")
-          .select("quantity, parts(name)")
-          .eq("shop_id", shop.id)
-          .eq("type", "out")
-          .order("created_at", { ascending: false })
-          .limit(100),
-      ]);
+      try {
+        let shopId = activeShopId;
+        if (!shopId) {
+          // Fallback: try to get from user's shops
+          const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+          if (shop) {
+            shopId = shop.id;
+            localStorage.setItem("garageflow_active_shop", shop.id);
+          } else {
+            return;
+          }
+        }
+        const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
+        if (!shop) {
+          return;
+        }
+        setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
+        setShopName(shop.name || '');
+        setShopLogoUrl(shop.logo_url || null);
 
-      const orders = ordersRes.data || [];
-      const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-      const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
-      const profit = delivered.reduce((s, o) => s + (o.profit || 0), 0);
-      const uniqueClients = new Set((clientsRes.data || []).map(c => c.client_id));
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      setKpis({
-        revenue,
-        profit,
-        serviceCount: orders.length,
-        avgTicket: delivered.length > 0 ? revenue / delivered.length : 0,
-        openQuotes: quotesRes.count || 0,
-        activeClients: uniqueClients.size,
-      });
+        const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes] = await Promise.all([
+          supabase.from("work_orders")
+            .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
+            .eq("shop_id", shop.id)
+            .gte("created_at", monthStart)
+            .order("created_at", { ascending: false }),
+          supabase.from("quotes")
+            .select("id", { count: "exact", head: true })
+            .eq("shop_id", shop.id)
+            .in("status", ['draft', 'sent']),
+          supabase.from("work_orders")
+            .select("client_id")
+            .eq("shop_id", shop.id)
+            .gte("created_at", monthStart),
+          supabase.from("alerts")
+            .select("id, title, type, status, due_date, created_at")
+            .eq("shop_id", shop.id)
+            .eq("status", "pending")
+            .order("created_at", { ascending: false })
+            .limit(5),
+          supabase.from("work_orders")
+            .select("total, profit, status, created_at")
+            .eq("shop_id", shop.id)
+            .gte("created_at", sixMonthsAgo)
+            .in("status", ['completed', 'delivered']),
+          supabase.from("parts")
+            .select("id, name, stock_quantity, min_stock")
+            .eq("shop_id", shop.id)
+            .eq("active", true),
+          supabase.from("invoices")
+            .select("id, number, total, due_date, clients(name)")
+            .eq("shop_id", shop.id)
+            .in("status", ['issued', 'partial'])
+            .lt("due_date", new Date().toISOString().slice(0, 10)),
+          supabase.from("quotes")
+            .select("id, status")
+            .eq("shop_id", shop.id)
+            .gte("created_at", sixMonthsAgo),
+          supabase.from("stock_movements")
+            .select("quantity, parts(name)")
+            .eq("shop_id", shop.id)
+            .eq("type", "out")
+            .order("created_at", { ascending: false })
+            .limit(100),
+        ]);
 
-      setRecentServices(orders.slice(0, 5));
+        const orders = ordersRes.data || [];
+        const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+        const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
+        const profit = delivered.reduce((s, o) => s + (o.profit || 0), 0);
+        const uniqueClients = new Set((clientsRes.data || []).map(c => c.client_id));
+
+        setKpis({
+          revenue,
+          profit,
+          serviceCount: orders.length,
+          avgTicket: delivered.length > 0 ? revenue / delivered.length : 0,
+          openQuotes: quotesRes.count || 0,
+          activeClients: uniqueClients.size,
+        });
+
+        setRecentServices(orders.slice(0, 5));
 
       // Auto-generated alerts
-      const dbAlerts = alertsRes.data || [];
-      const autoAlerts: any[] = [];
+        const dbAlerts = alertsRes.data || [];
+        const autoAlerts: any[] = [];
       
-      const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
-      if (lowStockParts.length > 0) {
-        autoAlerts.push({
-          id: 'auto-low-stock',
-          title: `${lowStockParts.length} ${lowStockParts.length === 1 ? t('dashboard.lowStockSingle') || 'peça com stock baixo' : t('dashboard.lowStockPlural') || 'peças com stock baixo'}`,
-          type: 'stock_low',
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        });
-      }
+        const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
+        if (lowStockParts.length > 0) {
+          autoAlerts.push({
+            id: 'auto-low-stock',
+            title: `${lowStockParts.length} ${lowStockParts.length === 1 ? t('dashboard.lowStockSingle') || 'peça com stock baixo' : t('dashboard.lowStockPlural') || 'peças com stock baixo'}`,
+            type: 'stock_low',
+            status: 'pending',
+            created_at: new Date().toISOString(),
+          });
+        }
 
-      const overdueInvoices = overdueRes.data || [];
-      if (overdueInvoices.length > 0) {
-        const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-        autoAlerts.push({
-          id: 'auto-overdue',
-          title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${currency}${overdueTotal.toFixed(0)})`,
-          type: 'payment_failed',
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        });
-      }
+        const overdueInvoices = overdueRes.data || [];
+        if (overdueInvoices.length > 0) {
+          const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
+          autoAlerts.push({
+            id: 'auto-overdue',
+            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${currency}${overdueTotal.toFixed(0)})`,
+            type: 'payment_failed',
+            status: 'pending',
+            created_at: new Date().toISOString(),
+          });
+        }
 
-      setPendingAlerts([...autoAlerts, ...dbAlerts].slice(0, 8));
+        setPendingAlerts([...autoAlerts, ...dbAlerts].slice(0, 8));
 
       // Monthly revenue chart
-      const allOrders = allOrdersRes.data || [];
-      const monthMap = new Map<string, { revenue: number; profit: number }>();
-      const names = MONTH_NAMES[language] || MONTH_NAMES.pt;
+        const allOrders = allOrdersRes.data || [];
+        const monthMap = new Map<string, { revenue: number; profit: number }>();
+        const names = MONTH_NAMES[language] || MONTH_NAMES.pt;
 
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        monthMap.set(key, { revenue: 0, profit: 0 });
-      }
-
-      allOrders.forEach(o => {
-        const d = new Date(o.created_at);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const entry = monthMap.get(key);
-        if (entry) {
-          entry.revenue += o.total || 0;
-          entry.profit += o.profit || 0;
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          monthMap.set(key, { revenue: 0, profit: 0 });
         }
-      });
 
-      setMonthlyRevenue(
-        Array.from(monthMap.entries()).map(([key, val]) => {
-          const [, m] = key.split('-');
-          return { month: names[parseInt(m) - 1] || m, revenue: Math.round(val.revenue), profit: Math.round(val.profit) };
-        })
-      );
+        allOrders.forEach(o => {
+          const d = new Date(o.created_at);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const entry = monthMap.get(key);
+          if (entry) {
+            entry.revenue += o.total || 0;
+            entry.profit += o.profit || 0;
+          }
+        });
+
+        setMonthlyRevenue(
+          Array.from(monthMap.entries()).map(([key, val]) => {
+            const [, m] = key.split('-');
+            return { month: names[parseInt(m) - 1] || m, revenue: Math.round(val.revenue), profit: Math.round(val.profit) };
+          })
+        );
 
       // Status distribution
-      const statusCounts = new Map<string, number>();
-      orders.forEach(o => { statusCounts.set(o.status, (statusCounts.get(o.status) || 0) + 1); });
-      setStatusDistribution(
-        Array.from(statusCounts.entries())
-          .filter(([, v]) => v > 0)
-          .map(([name, value]) => ({ name: t(`service.${name}`), value, color: STATUS_COLORS[name] || '#888' }))
-      );
+        const statusCounts = new Map<string, number>();
+        orders.forEach(o => { statusCounts.set(o.status, (statusCounts.get(o.status) || 0) + 1); });
+        setStatusDistribution(
+          Array.from(statusCounts.entries())
+            .filter(([, v]) => v > 0)
+            .map(([name, value]) => ({ name: t(`service.${name}`), value, color: STATUS_COLORS[name] || '#888' }))
+        );
 
       // Conversion rate
-      const allQuotes = allQuotesRes.data || [];
-      if (allQuotes.length > 0) {
-        const approved = allQuotes.filter(q => ['approved', 'converted'].includes(q.status)).length;
-        setConversionRate(Math.round((approved / allQuotes.length) * 100));
-      }
+        const allQuotes = allQuotesRes.data || [];
+        if (allQuotes.length > 0) {
+          const approved = allQuotes.filter(q => ['approved', 'converted'].includes(q.status)).length;
+          setConversionRate(Math.round((approved / allQuotes.length) * 100));
+        }
 
       // Top parts
-      const partsMap = new Map<string, number>();
-      (partsUsedRes.data || []).forEach((m: any) => {
-        const name = (m.parts as any)?.name;
-        if (name) partsMap.set(name, (partsMap.get(name) || 0) + (m.quantity || 0));
-      });
-      setTopParts(
-        Array.from(partsMap.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([name, count]) => ({ name, count }))
-      );
-      // Load referral data
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+        const partsMap = new Map<string, number>();
+        (partsUsedRes.data || []).forEach((m: any) => {
+          const name = (m.parts as any)?.name;
+          if (name) partsMap.set(name, (partsMap.get(name) || 0) + (m.quantity || 0));
+        });
+        setTopParts(
+          Array.from(partsMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, count]) => ({ name, count }))
+        );
+        // Load referral data
         const { data: refCode } = await supabase
           .from("referral_codes")
           .select("free_months_balance, paid_referrals_count")
@@ -248,11 +260,14 @@ export default function Dashboard() {
             .gte("created_at", monthStart2);
           setMonthlyQuoteCount(qCount || 0);
         }
+      } catch (error) {
+        console.error("Dashboard load error:", error);
+      } finally {
+        setDataLoaded(true);
       }
-      setDataLoaded(true);
     };
     loadData();
-  }, [language, activeShopId]);
+  }, [language, activeShopId, isReady, user]);
 
   const alertTypeColors: Record<string, string> = {
     payment_failed: "text-destructive",
@@ -304,6 +319,10 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {/* Onboarding */}
+      <OnboardingChecklist />
+      <ShopCompleteness />
+
       {/* Trust Signal */}
       {!dataLoaded ? (
         <>
@@ -332,10 +351,6 @@ export default function Dashboard() {
           <span>{t('dashboard.lastUpdate')}</span>
         </div>
       )}
-
-      {/* Onboarding */}
-      <OnboardingChecklist />
-      <ShopCompleteness />
 
       {/* Quick Actions — TOP for maximum visibility */}
       <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">

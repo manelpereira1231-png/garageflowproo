@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 interface Shop {
   id: string;
@@ -12,13 +13,23 @@ interface Shop {
 const STORAGE_KEY = "garageflow_active_shop";
 
 export function useShopContext() {
+  const { isReady, user } = useAuthReady();
   const [shops, setShops] = useState<Shop[]>([]);
   const [activeShopId, setActiveShopId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadShops = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    if (!isReady) {
+      setLoading(true);
+      return;
+    }
+
+    if (!user) {
+      setShops([]);
+      setActiveShopId(null);
+      setLoading(false);
+      return;
+    }
 
     // Get shops where user is owner
     const { data: ownedShops } = await supabase
@@ -58,7 +69,7 @@ export function useShopContext() {
     }
 
     setLoading(false);
-  }, []);
+  }, [isReady, user]);
 
   useEffect(() => { loadShops(); }, [loadShops]);
 

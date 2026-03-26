@@ -61,6 +61,8 @@ export default function Vehicles() {
     setLoading(true);
     const shopId = localStorage.getItem("garageflow_active_shop");
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    if (!form.client_id) { toast.error(t('vehicles.selectClient')); setLoading(false); return; }
+    if (!form.make || !form.model) { toast.error(t('vehicles.make') + ' / ' + t('vehicles.model')); setLoading(false); return; }
 
     const payload = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,

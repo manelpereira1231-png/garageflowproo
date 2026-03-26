@@ -2504,6 +2504,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'IBAN is required to receive payments',
     'affiliate.mbwayRequired': 'MB WAY number is required to receive payments',
     'affiliate.registrationSuccess': 'Registration completed successfully! 🎉',
+
+    'admin.partners.nameEmailRequired': 'Name and email are required',
+    'admin.partners.duplicateEmail': 'A partner with this email already exists',
+    'admin.partners.created': 'Partner created ✅',
+    'admin.partners.inviteEmailRequired': 'Workshop email is required',
+    'admin.partners.duplicateInvite': 'An invite for this workshop already exists',
+    'admin.partners.inviteCreated': 'Invite created 📩',
+    'admin.partners.linkCopied': 'Link copied 📋',
+    'admin.partners.csvExported': 'CSV exported 📊',
+    'admin.partners.commissionPaidMsg': 'Commission paid ✅',
   },
 
   es: {

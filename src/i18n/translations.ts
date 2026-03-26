@@ -1260,6 +1260,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.ibanRequired': 'IBAN é obrigatório para receber pagamentos',
     'affiliate.mbwayRequired': 'Número MB WAY é obrigatório para receber pagamentos',
     'affiliate.registrationSuccess': 'Registo concluído com sucesso! 🎉',
+
+    // Admin Partners
+    'admin.partners.nameEmailRequired': 'Nome e email são obrigatórios',
+    'admin.partners.duplicateEmail': 'Já existe um parceiro com este email',
+    'admin.partners.created': 'Parceiro criado ✅',
+    'admin.partners.inviteEmailRequired': 'Email da oficina é obrigatório',
+    'admin.partners.duplicateInvite': 'Já existe um convite para esta oficina',
+    'admin.partners.inviteCreated': 'Convite criado 📩',
+    'admin.partners.linkCopied': 'Link copiado 📋',
+    'admin.partners.csvExported': 'CSV exportado 📊',
+    'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
   },
 
   en: {

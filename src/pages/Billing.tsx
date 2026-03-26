@@ -444,7 +444,7 @@ export default function Billing() {
         >
           {t('billing.yearly')}
           <Badge variant="secondary" className="ml-2 bg-success/10 text-success text-xs">
-            -17%
+            {regionalPricing.annualSavingsLabel}
           </Badge>
         </button>
       </div>

@@ -50,6 +50,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('garageflow_language', lang);
+    // Sync region with language choice
+    if (lang === 'pt-BR') {
+      setRegion('br');
+    } else if (['pt', 'en', 'es'].includes(lang)) {
+      setRegion('eu');
+    }
     // Update only the active shop's language, not all shops
     const activeShopId = localStorage.getItem("garageflow_active_shop");
     if (activeShopId) {

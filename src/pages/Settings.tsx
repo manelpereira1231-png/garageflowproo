@@ -13,18 +13,14 @@ import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const countries = Object.keys(VAT_RATES);
-
-const TIMEZONES = [
-  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
-  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
-  "Africa/Luanda", "Africa/Maputo",
-];
 
 export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
   const { plan, shopId: subShopId } = useSubscription();
+  const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);

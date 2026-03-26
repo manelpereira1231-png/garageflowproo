@@ -204,10 +204,10 @@ export default function OnboardingChecklist() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-success">
-            {tt("Configuração completa! 🎉", "Setup complete! 🎉", "¡Configuración completa! 🎉")}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {tt("A sua oficina está pronta para faturar.", "Your workshop is ready to go.", "Tu taller está listo para facturar.")}
+             {tt("Configuração completa! 🎉", "Setup complete! 🎉", "¡Configuración completa! 🎉")}
+           </p>
+           <p className="text-xs text-muted-foreground">
+             {tt("A sua oficina está pronta para faturar.", "Your workshop is ready to go.", "Tu taller está listo para facturar.", "Sua oficina está pronta para faturar.")}
           </p>
         </div>
         <button onClick={() => { localStorage.setItem(`garageflow_checklist_dismissed_${activeShopId}`, "true"); setDismissed(true); }}>

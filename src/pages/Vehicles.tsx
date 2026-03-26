@@ -153,8 +153,8 @@ export default function Vehicles() {
                 <VehicleMakeModelSelector
                   make={form.make}
                   model={form.model}
-                  onMakeChange={(v) => setForm({...form, make: v})}
-                  onModelChange={(v) => setForm({...form, model: v})}
+                  onMakeChange={(v) => setForm((current) => ({ ...current, make: v }))}
+                  onModelChange={(v) => setForm((current) => ({ ...current, model: v }))}
                 />
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.plate')} *</Label><Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" /></div>

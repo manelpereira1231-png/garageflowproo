@@ -252,6 +252,29 @@ export default function LandingPage() {
             <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>
             <p className="text-muted-foreground text-base sm:text-lg">{t('landing.pricingSubtitle')}</p>
           </div>
+
+          {/* Billing Cycle Toggle */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                billingCycle === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('billing.monthly')}
+            </button>
+            <button
+              onClick={() => setBillingCycle('yearly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                billingCycle === 'yearly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('billing.yearly')}
+              <Badge variant="secondary" className="ml-2 bg-success/10 text-success text-xs">
+                {pricing.annualSavingsLabel}
+              </Badge>
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {planConfigs.map(plan => (
               <div

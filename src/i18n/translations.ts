@@ -932,6 +932,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'team.removeConfirmMsg': 'Este membro perderá acesso à oficina.',
     'team.roleDescManager': 'Pode gerir orçamentos, serviços, clientes e stock.',
     'team.roleDescTechnician': 'Pode ver e atualizar serviços atribuídos.',
+    'settings.logoBranding': 'Logo & Identidade',
     'settings.shopLogo': 'Logo da oficina',
     'settings.logoDescription': 'Aparece nos PDFs, dashboard e emails',
     'settings.watermarkInfo': 'PDFs incluem marca d\'água GarageFlow',

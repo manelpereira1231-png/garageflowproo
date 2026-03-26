@@ -328,17 +328,36 @@ export default function Alerts() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {a.status === 'pending' && (
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => resolveAlert(a.id)} className="text-xs">
-                          <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                          {t('alerts.resolve')}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id)} className="text-xs text-muted-foreground">
-                          {t('alerts.dismiss')}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1">
+                      {/* Direct action buttons */}
+                      {a.vehicle_id && (
+                        <Link to="/workshop">
+                          <Button variant="ghost" size="sm" className="text-xs gap-1">
+                            <Eye className="w-3.5 h-3.5" />
+                            OS
+                          </Button>
+                        </Link>
+                      )}
+                      {(a.clients as any)?.name && a.client_id && (
+                        <Link to="/clients">
+                          <Button variant="ghost" size="sm" className="text-xs gap-1">
+                            <Phone className="w-3.5 h-3.5" />
+                            {t('alerts.contact') || 'Contactar'}
+                          </Button>
+                        </Link>
+                      )}
+                      {a.status === 'pending' && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => resolveAlert(a.id)} className="text-xs text-success">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                            {t('alerts.resolve')}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id)} className="text-xs text-muted-foreground">
+                            {t('alerts.dismiss')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

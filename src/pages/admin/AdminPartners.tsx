@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/auditLog";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   Plus, Users, TrendingUp, DollarSign, Send, CreditCard, Copy, Shield, AlertTriangle,
   CheckCircle, Clock, XCircle, BarChart3, Trophy, Eye, Ban, Download, Smartphone, Banknote

@@ -7,15 +7,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PRICES: Record<string, Record<string, string>> = {
+// EUR prices
+const EUR_PRICES: Record<string, Record<string, string>> = {
   pro: {
-    monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",   // €49/mês
-    yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",     // €490/ano
+    monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",
+    yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",
   },
   garage: {
-    monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",   // €99/mês
-    yearly: "price_1T49EnE1zL2Sl1ZTs0crtbLM",     // €990/ano
+    monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",
+    yearly: "price_1T49EnE1zL2Sl1ZTs0crtbLM",
   },
+};
+
+// BRL prices (to be created in Stripe dashboard)
+const BRL_PRICES: Record<string, Record<string, string>> = {
+  pro: {
+    monthly: "price_brl_pro_monthly",
+    yearly: "price_brl_pro_yearly",
+  },
+  garage: {
+    monthly: "price_brl_garage_monthly",
+    yearly: "price_brl_garage_yearly",
+  },
+};
+
+// Trial days per region
+const TRIAL_DAYS: Record<string, number> = {
+  eu: 30,
+  br: 15,
 };
 
 serve(async (req) => {
@@ -41,7 +60,12 @@ serve(async (req) => {
     if (userError || !userData.user?.email) throw new Error("Not authenticated");
 
     const user = userData.user;
-    const { plan, billing_cycle } = await req.json();
+    const { plan, billing_cycle, region } = await req.json();
+
+    // Determine region and price map
+    const effectiveRegion = region === 'br' ? 'br' : 'eu';
+    const PRICES = effectiveRegion === 'br' ? BRL_PRICES : EUR_PRICES;
+    const trialDays = TRIAL_DAYS[effectiveRegion];
 
     if (!plan || !PRICES[plan]) throw new Error("Invalid plan");
     const cycle = billing_cycle || "monthly";
@@ -69,7 +93,7 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       subscription_data: {
-        trial_period_days: 30,
+        trial_period_days: trialDays,
       },
       success_url: `${origin}/billing?success=true`,
       cancel_url: `${origin}/billing?canceled=true`,

@@ -2276,6 +2276,60 @@ export type Database = {
           },
         ]
       }
+      work_order_times: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          end_time: string | null
+          id: string
+          notes: string | null
+          shop_id: string
+          start_time: string
+          status: string
+          technician_name: string
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          shop_id: string
+          start_time?: string
+          status?: string
+          technician_name?: string
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          start_time?: string
+          status?: string
+          technician_name?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_times_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_times_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           client_description: string | null

@@ -292,6 +292,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alertas',
     'onboarding.noAlerts': 'Nenhum',
     'onboarding.plan': 'Plano',
+    'onboarding.completeProfile': 'Complete o perfil da oficina',
+    'onboarding.fieldsCompleted': 'campos preenchidos',
 
     // Common
     'common.save': 'Guardar',
@@ -1313,6 +1315,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Link copiado 📋',
     'admin.partners.csvExported': 'CSV exportado 📊',
     'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Configure a sua oficina',
+    'checklist.stepsCompleted': 'passos concluídos',
+    'checklist.next': 'Próximo',
+    'checklist.demoData': 'Dados Demo',
+    'checklist.creating': 'A criar...',
+    'checklist.setupComplete': 'Configuração completa! 🎉',
+    'checklist.readyToGo': 'A sua oficina está pronta para faturar.',
+    'checklist.demoCreated': 'Dados de demonstração criados! 🚀',
+    'checklist.demoError': 'Erro ao criar dados demo',
+    'checklist.createClient': 'Criar primeiro cliente',
+    'checklist.createClientDesc': 'Adicione os dados do seu primeiro cliente',
+    'checklist.addVehicle': 'Adicionar primeiro veículo',
+    'checklist.addVehicleDesc': 'Registe a matrícula e dados do veículo',
+    'checklist.createQuote': 'Criar primeiro orçamento',
+    'checklist.createQuoteDesc': 'Crie um orçamento profissional em segundos',
+    'checklist.sendQuote': 'Enviar orçamento ao cliente',
+    'checklist.sendQuoteDesc': 'Envie por WhatsApp ou email com 1 clique',
+    'checklist.createInvoice': 'Criar primeira fatura',
+    'checklist.createInvoiceDesc': 'Fature o seu trabalho profissionalmente',
   },
 
   en: {
@@ -1592,6 +1615,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alerts',
     'onboarding.noAlerts': 'None',
     'onboarding.plan': 'Plan',
+    'onboarding.completeProfile': 'Complete your workshop profile',
+    'onboarding.fieldsCompleted': 'fields completed',
 
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -2598,6 +2623,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Link copied 📋',
     'admin.partners.csvExported': 'CSV exported 📊',
     'admin.partners.commissionPaidMsg': 'Commission paid ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Set up your workshop',
+    'checklist.stepsCompleted': 'steps completed',
+    'checklist.next': 'Next',
+    'checklist.demoData': 'Demo Data',
+    'checklist.creating': 'Creating...',
+    'checklist.setupComplete': 'Setup complete! 🎉',
+    'checklist.readyToGo': 'Your workshop is ready to go.',
+    'checklist.demoCreated': 'Demo data created! 🚀',
+    'checklist.demoError': 'Error creating demo data',
+    'checklist.createClient': 'Create first client',
+    'checklist.createClientDesc': "Add your first client's details",
+    'checklist.addVehicle': 'Add first vehicle',
+    'checklist.addVehicleDesc': 'Register the vehicle plate and details',
+    'checklist.createQuote': 'Create first quote',
+    'checklist.createQuoteDesc': 'Create a professional quote in seconds',
+    'checklist.sendQuote': 'Send quote to client',
+    'checklist.sendQuoteDesc': 'Send via WhatsApp or email with 1 click',
+    'checklist.createInvoice': 'Create first invoice',
+    'checklist.createInvoiceDesc': 'Invoice your work professionally',
   },
 
   es: {
@@ -2877,6 +2923,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alertas',
     'onboarding.noAlerts': 'Ninguna',
     'onboarding.plan': 'Plan',
+    'onboarding.completeProfile': 'Complete el perfil del taller',
+    'onboarding.fieldsCompleted': 'campos completados',
 
     'common.save': 'Guardar',
     'common.cancel': 'Cancelar',
@@ -3883,6 +3931,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Enlace copiado 📋',
     'admin.partners.csvExported': 'CSV exportado 📊',
     'admin.partners.commissionPaidMsg': 'Comisión pagada ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Configure su taller',
+    'checklist.stepsCompleted': 'pasos completados',
+    'checklist.next': 'Siguiente',
+    'checklist.demoData': 'Datos Demo',
+    'checklist.creating': 'Creando...',
+    'checklist.setupComplete': '¡Configuración completa! 🎉',
+    'checklist.readyToGo': 'Su taller está listo para facturar.',
+    'checklist.demoCreated': '¡Datos demo creados! 🚀',
+    'checklist.demoError': 'Error al crear datos demo',
+    'checklist.createClient': 'Crear primer cliente',
+    'checklist.createClientDesc': 'Añade los datos de tu primer cliente',
+    'checklist.addVehicle': 'Añadir primer vehículo',
+    'checklist.addVehicleDesc': 'Registra la matrícula y datos del vehículo',
+    'checklist.createQuote': 'Crear primer presupuesto',
+    'checklist.createQuoteDesc': 'Crea un presupuesto profesional en segundos',
+    'checklist.sendQuote': 'Enviar presupuesto al cliente',
+    'checklist.sendQuoteDesc': 'Envía por WhatsApp o email con 1 clic',
+    'checklist.createInvoice': 'Crear primera factura',
+    'checklist.createInvoiceDesc': 'Factura tu trabajo profesionalmente',
   },
 
   'pt-BR': {
@@ -4176,6 +4245,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alertas',
     'onboarding.noAlerts': 'Nenhum',
     'onboarding.plan': 'Plano',
+    'onboarding.completeProfile': 'Complete o perfil da oficina',
+    'onboarding.fieldsCompleted': 'campos preenchidos',
 
     // Common
     'common.save': 'Salvar',
@@ -5195,5 +5266,26 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Link copiado 📋',
     'admin.partners.csvExported': 'CSV exportado 📊',
     'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Configure sua oficina',
+    'checklist.stepsCompleted': 'passos concluídos',
+    'checklist.next': 'Próximo',
+    'checklist.demoData': 'Dados Demo',
+    'checklist.creating': 'Criando...',
+    'checklist.setupComplete': 'Configuração completa! 🎉',
+    'checklist.readyToGo': 'Sua oficina está pronta para faturar.',
+    'checklist.demoCreated': 'Dados de demonstração criados! 🚀',
+    'checklist.demoError': 'Erro ao criar dados demo',
+    'checklist.createClient': 'Cadastrar primeiro cliente',
+    'checklist.createClientDesc': 'Adicione os dados do seu primeiro cliente',
+    'checklist.addVehicle': 'Adicionar primeiro veículo',
+    'checklist.addVehicleDesc': 'Registre a placa e dados do veículo',
+    'checklist.createQuote': 'Criar primeiro orçamento',
+    'checklist.createQuoteDesc': 'Crie um orçamento profissional em segundos',
+    'checklist.sendQuote': 'Enviar orçamento ao cliente',
+    'checklist.sendQuoteDesc': 'Envie por WhatsApp ou email com 1 clique',
+    'checklist.createInvoice': 'Criar primeira fatura',
+    'checklist.createInvoiceDesc': 'Fature seu trabalho profissionalmente',
   },
 };

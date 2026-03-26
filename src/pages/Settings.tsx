@@ -104,7 +104,7 @@ export default function SettingsPage() {
     }
 
     const payload: any = {
-      user_id: user.id, name: form.name, email: form.email, phone: form.phone,
+      name: form.name, email: form.email, phone: form.phone,
       country: form.country, currency: form.currency, vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
       nif: form.nif, address: form.address, timezone: form.timezone,

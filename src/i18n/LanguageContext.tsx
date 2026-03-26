@@ -39,9 +39,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('garageflow_language', lang);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("shops").update({ language: lang }).eq("user_id", user.id);
+    // Update only the active shop's language, not all shops
+    const activeShopId = localStorage.getItem("garageflow_active_shop");
+    if (activeShopId) {
+      await supabase.from("shops").update({ language: lang }).eq("id", activeShopId);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("shops").update({ language: lang }).eq("user_id", user.id).limit(1);
+      }
     }
   }, []);
 

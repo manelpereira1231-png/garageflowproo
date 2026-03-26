@@ -91,7 +91,7 @@ export default function AdminPartners() {
 
   const createPartner = async () => {
     if (!form.name.trim() || !form.contact_email.trim()) {
-      toast.error("Nome e email são obrigatórios"); return;
+      toast.error(t('admin.partners.nameEmailRequired')); return;
     }
     if (partners.some(p => p.contact_email.toLowerCase() === form.contact_email.toLowerCase())) {
       toast.error("⚠️ Já existe um parceiro com este email"); return;

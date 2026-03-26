@@ -366,7 +366,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <div className="stat-card lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">Faturação Mensal (Oficinas)</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.monthlyRevenue')}</h2>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.monthlyRevenue}>
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                 <YAxis className="text-xs" />
                 <Tooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
-                  formatter={(value: number) => [`€${value.toFixed(2)}`, "Faturação"]}
+                  formatter={(value: number) => [`€${value.toFixed(2)}`, t('admin.dashboard.revenue')]}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
               </LineChart>

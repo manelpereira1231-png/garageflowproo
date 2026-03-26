@@ -155,7 +155,7 @@ export default function AdminPartners() {
       details: { amount: commission.amount, commission_id: commission.id, paid_by: "admin" },
     } as any);
     await logAudit({ action: "commission_paid", entityType: "partner_commission", entityId: commission.id, details: { amount: commission.amount } });
-    toast.success(`Comissão de ${Number(commission.amount).toFixed(2)}€ paga ✅`);
+    toast.success(t('admin.partners.commissionPaidMsg'));
     loadData();
   };
 

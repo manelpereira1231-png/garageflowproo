@@ -416,7 +416,7 @@ export default function AdminSettings() {
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground">Storage Buckets</p>
             <p className="font-medium">2 buckets</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">shop-logos (público), work-order-files (privado)</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">shop-logos (público), work-order-files (privado), inspection-files (privado)</p>
           </div>
         </div>
       </div>

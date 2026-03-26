@@ -298,6 +298,19 @@ export default function SettingsPage() {
           </Card>
         )}
 
+        {/* Push Notifications */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              {t('pushNotifications') || 'Notificações'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PushNotificationToggle />
+          </CardContent>
+        </Card>
+
         <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? t('settings.saving') : t('settings.save')}
         </Button>

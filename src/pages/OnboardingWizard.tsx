@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ const countries = Object.keys(VAT_RATES);
 const STEPS = 5;
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
+  const navigate = useNavigate();
   const { t, setLanguage, language } = useLanguage();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -155,6 +157,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       setLanguage(form.language as Language);
       toast.success(t('settings.configured'));
       onComplete();
+      navigate('/dashboard');
     }
     setLoading(false);
   };

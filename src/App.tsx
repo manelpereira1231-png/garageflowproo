@@ -108,6 +108,7 @@ const adminRoutes = [
 
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
 
@@ -115,10 +116,11 @@ function AuthenticatedRoutes() {
     if (adminLoading) return;
     if (isSuperAdmin) { setReady(true); return; }
 
-    const checkAffiliate = async () => {
+    const checkUserState = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setReady(true); return; }
 
+      // Check if affiliate
       const { data: partnerData } = await supabase
         .from("partners")
         .select("id")
@@ -127,10 +129,24 @@ function AuthenticatedRoutes() {
 
       if (partnerData) {
         setIsAffiliate(true);
+        setReady(true);
+        return;
       }
+
+      // Check if shop needs onboarding (no phone = just created from signup trigger)
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("phone, address, logo_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (shop && !shop.phone && !shop.address) {
+        setNeedsOnboarding(true);
+      }
+
       setReady(true);
     };
-    checkAffiliate();
+    checkUserState();
   }, [isSuperAdmin, adminLoading]);
 
   if (adminLoading || !ready) {
@@ -201,7 +217,8 @@ function AuthenticatedRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
         <Route path="/book/:slug" element={<PublicBooking />} />
-        <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+        <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
+        {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />

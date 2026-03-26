@@ -15,6 +15,7 @@ import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
 import LaborTimer from "@/components/LaborTimer";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
+import { sendPushNotification } from "@/lib/pushNotifications";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 

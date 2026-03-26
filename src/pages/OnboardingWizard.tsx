@@ -156,6 +156,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       setLanguage(form.language as Language);
       toast.success(t('settings.configured'));
       onComplete();
+      navigate('/dashboard');
     }
     setLoading(false);
   };

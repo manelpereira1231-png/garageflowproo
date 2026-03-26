@@ -159,7 +159,7 @@ export default function AdminShopDetail() {
       .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
       .eq("shop_id", id);
     if (error) toast.error(error.message);
-    else toast.success("Trial reiniciado (30 dias)");
+    else toast.success(t('admin.logs.trialReset'));
   };
 
   const impersonateShop = () => {

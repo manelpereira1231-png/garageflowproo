@@ -17,6 +17,7 @@ import {
   StickyNote, MessageSquare, Camera, ImageIcon, Download
 } from "lucide-react";
 import { toast } from "sonner";
+import { sendPushNotification } from "@/lib/pushNotifications";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

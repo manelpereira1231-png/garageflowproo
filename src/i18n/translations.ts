@@ -144,6 +144,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'vehicles.creating': 'A criar...',
     'vehicles.create': 'Criar Veículo',
     'vehicles.vehicle': 'Veículo',
+    'vehicles.searchMake': 'Pesquisar marca...',
+    'vehicles.searchModel': 'Pesquisar modelo...',
+    'vehicles.selectMakeFirst': 'Selecione a marca primeiro',
 
     // Quotes
     'quotes.title': 'Orçamentos',
@@ -1410,6 +1413,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'vehicles.creating': 'Creating...',
     'vehicles.create': 'Create Vehicle',
     'vehicles.vehicle': 'Vehicle',
+    'vehicles.searchMake': 'Search make...',
+    'vehicles.searchModel': 'Search model...',
+    'vehicles.selectMakeFirst': 'Select make first',
 
     'quotes.title': 'Quotes',
     'quotes.new': 'New Quote',
@@ -2653,6 +2659,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'vehicles.creating': 'Creando...',
     'vehicles.create': 'Crear Vehículo',
     'vehicles.vehicle': 'Vehículo',
+    'vehicles.searchMake': 'Buscar marca...',
+    'vehicles.searchModel': 'Buscar modelo...',
+    'vehicles.selectMakeFirst': 'Seleccione marca primero',
 
     'quotes.title': 'Presupuestos',
     'quotes.new': 'Nuevo Presupuesto',
@@ -3902,6 +3911,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'vehicles.creating': 'Criando...',
     'vehicles.create': 'Criar Veículo',
     'vehicles.vehicle': 'Veículo',
+    'vehicles.searchMake': 'Buscar marca...',
+    'vehicles.searchModel': 'Buscar modelo...',
+    'vehicles.selectMakeFirst': 'Selecione a marca primeiro',
 
     // Quotes
     'quotes.title': 'Orçamentos',

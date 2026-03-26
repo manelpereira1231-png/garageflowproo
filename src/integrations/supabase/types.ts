@@ -1459,6 +1459,10 @@ export type Database = {
           number: string
           profit: number
           shop_id: string
+          signature_data: string | null
+          signature_hash: string | null
+          signed_at: string | null
+          signer_name: string | null
           status: string
           subtotal: number
           token: string | null
@@ -1479,6 +1483,10 @@ export type Database = {
           number: string
           profit?: number
           shop_id: string
+          signature_data?: string | null
+          signature_hash?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
           status?: string
           subtotal?: number
           token?: string | null
@@ -1499,6 +1507,10 @@ export type Database = {
           number?: string
           profit?: number
           shop_id?: string
+          signature_data?: string | null
+          signature_hash?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
           status?: string
           subtotal?: number
           token?: string | null

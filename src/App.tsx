@@ -160,6 +160,46 @@ const adminRoutes = [
   { path: "/admin/partners", element: <AdminPartners /> },
 ];
 
+const shopRoutes = [
+  { path: "/dashboard", element: <Layout><Dashboard /></Layout> },
+  { path: "/clients", element: <Layout><Clients /></Layout> },
+  { path: "/vehicles", element: <Layout><Vehicles /></Layout> },
+  { path: "/quotes", element: <Layout><Quotes /></Layout> },
+  { path: "/quotes/new", element: <Layout><QuoteForm /></Layout> },
+  { path: "/quotes/edit/:id", element: <Layout><QuoteForm /></Layout> },
+  { path: "/services", element: <Layout><Services /></Layout> },
+  { path: "/services/new", element: <Layout><ServiceForm /></Layout> },
+  { path: "/services/edit/:id", element: <Layout><ServiceForm /></Layout> },
+  { path: "/settings", element: <Layout><SettingsPage /></Layout> },
+  { path: "/billing", element: <Layout><Billing /></Layout> },
+  { path: "/alerts", element: <Layout><Alerts /></Layout> },
+  { path: "/team", element: <Layout><Team /></Layout> },
+  { path: "/chat", element: <Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout> },
+  { path: "/invoices", element: <Layout><Invoices /></Layout> },
+  { path: "/invoices/new", element: <Layout><InvoiceForm /></Layout> },
+  { path: "/invoices/:id", element: <Layout><InvoiceDetail /></Layout> },
+  { path: "/financial/reports", element: <Layout><FinancialReports /></Layout> },
+  { path: "/agenda", element: <Layout><Agenda /></Layout> },
+  { path: "/catalog", element: <Layout><ServiceCatalog /></Layout> },
+  { path: "/stock", element: <Layout><Stock /></Layout> },
+  { path: "/inspections", element: <Layout><Inspections /></Layout> },
+  { path: "/loyalty", element: <Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout> },
+  { path: "/marketing", element: <Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout> },
+  { path: "/workshop", element: <Layout><Workshop /></Layout> },
+  { path: "/automations", element: <Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout> },
+  { path: "/developers", element: <Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout> },
+  { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
+  { path: "/referrals", element: <Layout><Referrals /></Layout> },
+];
+
+const publicRoutes = [
+  { path: "/quote/:token", element: <QuoteApproval /> },
+  { path: "/portal/:token", element: <ClientPortal /> },
+  { path: "/book/:slug", element: <PublicBooking /> },
+  { path: "/", element: <LandingPage /> },
+  { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
+];
+
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -219,41 +259,14 @@ function AuthenticatedRoutes() {
             {adminRoutes.map(r => (
               <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
             ))}
-            <Route path="/quote/:token" element={<QuoteApproval />} />
-            <Route path="/portal/:token" element={<ClientPortal />} />
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/clients" element={<Layout><Clients /></Layout>} />
-            <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
-            <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
-            <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
-            <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
-            <Route path="/services" element={<Layout><Services /></Layout>} />
-            <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
-            <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
-            <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-            <Route path="/billing" element={<Layout><Billing /></Layout>} />
-            <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-            <Route path="/team" element={<Layout><Team /></Layout>} />
-            <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
-            <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
-            <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
-            <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
-            <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
-            <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
-            <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
-            <Route path="/stock" element={<Layout><Stock /></Layout>} />
-            <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
-            <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
-            <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
-            <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
-            <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
-            <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
-            <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
-            <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
-            <Route path="/book/:slug" element={<PublicBooking />} />
+            {shopRoutes.map(r => (
+              <Route key={r.path} path={r.path} element={r.element} />
+            ))}
+            {publicRoutes.map(r => (
+              <Route key={r.path} path={r.path} element={r.element} />
+            ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
-            <Route path="/" element={<LandingPage />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Suspense>
@@ -269,42 +282,14 @@ function AuthenticatedRoutes() {
         <Routes>
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
           <Route path="/auth" element={<Navigate to={defaultRoute} replace />} />
-          <Route path="/quote/:token" element={<QuoteApproval />} />
-          <Route path="/portal/:token" element={<ClientPortal />} />
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
-          <Route path="/book/:slug" element={<PublicBooking />} />
+          {publicRoutes.map(r => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
           {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
-          <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/clients" element={<Layout><Clients /></Layout>} />
-          <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
-          <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
-          <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
-          <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
-          <Route path="/services" element={<Layout><Services /></Layout>} />
-          <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
-          <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
-          <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-          <Route path="/billing" element={<Layout><Billing /></Layout>} />
-          <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-          <Route path="/team" element={<Layout><Team /></Layout>} />
-          <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
-          <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
-          <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
-          <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
-          <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
-          <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
-          <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
-          <Route path="/stock" element={<Layout><Stock /></Layout>} />
-          <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
-          <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
-          <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
-          <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
-          <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
-          <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
-          <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
-          <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
+          {shopRoutes.map(r => (
+            <Route key={r.path} path={r.path} element={r.element} />
+          ))}
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="*" element={<Navigate to={defaultRoute} replace />} />
         </Routes>

@@ -467,6 +467,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Common extras
     'common.exported': 'Exportado com sucesso!',
     'common.copied': 'Copiado!',
+    'common.of': 'de',
+    'common.portal': 'Portal',
 
     // Developers
     'developers.keyCreated': 'API Key criada com sucesso!',
@@ -1783,6 +1785,8 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'common.exported': 'Exported successfully!',
     'common.copied': 'Copied!',
+    'common.of': 'of',
+    'common.portal': 'Portal',
     'developers.keyCreated': 'API Key created successfully!',
     'developers.keyDeleted': 'API Key removed.',
     'shops.limitReached': 'Workshop limit reached. Upgrade to a higher plan.',
@@ -3091,6 +3095,8 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'common.exported': '¡Exportado con éxito!',
     'common.copied': '¡Copiado!',
+    'common.of': 'de',
+    'common.portal': 'Portal',
     'developers.keyCreated': '¡API Key creada con éxito!',
     'developers.keyDeleted': 'API Key eliminada.',
     'shops.limitReached': 'Límite de talleres alcanzado. Actualice a un plan superior.',
@@ -4420,6 +4426,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Common extras
     'common.exported': 'Exportado com sucesso!',
     'common.copied': 'Copiado!',
+    'common.of': 'de',
+    'common.portal': 'Portal',
 
     // Developers
     'developers.keyCreated': 'API Key criada com sucesso!',

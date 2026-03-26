@@ -269,7 +269,7 @@ export default function Vehicles() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} de {totalCount}
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
           </p>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>

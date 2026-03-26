@@ -3925,6 +3925,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Enlace copiado 📋',
     'admin.partners.csvExported': 'CSV exportado 📊',
     'admin.partners.commissionPaidMsg': 'Comisión pagada ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Configure su taller',
+    'checklist.stepsCompleted': 'pasos completados',
+    'checklist.next': 'Siguiente',
+    'checklist.demoData': 'Datos Demo',
+    'checklist.creating': 'Creando...',
+    'checklist.setupComplete': '¡Configuración completa! 🎉',
+    'checklist.readyToGo': 'Su taller está listo para facturar.',
+    'checklist.demoCreated': '¡Datos demo creados! 🚀',
+    'checklist.demoError': 'Error al crear datos demo',
+    'checklist.createClient': 'Crear primer cliente',
+    'checklist.createClientDesc': 'Añade los datos de tu primer cliente',
+    'checklist.addVehicle': 'Añadir primer vehículo',
+    'checklist.addVehicleDesc': 'Registra la matrícula y datos del vehículo',
+    'checklist.createQuote': 'Crear primer presupuesto',
+    'checklist.createQuoteDesc': 'Crea un presupuesto profesional en segundos',
+    'checklist.sendQuote': 'Enviar presupuesto al cliente',
+    'checklist.sendQuoteDesc': 'Envía por WhatsApp o email con 1 clic',
+    'checklist.createInvoice': 'Crear primera factura',
+    'checklist.createInvoiceDesc': 'Factura tu trabajo profesionalmente',
   },
 
   'pt-BR': {

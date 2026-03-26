@@ -808,6 +808,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'Tudo OK',
     'inspections.overall.inProgress': 'Em progresso',
     'inspections.autoSaved': 'Alterações guardadas automaticamente',
+    'inspections.progress': 'Progresso',
+    'inspections.addPhoto': 'Adicionar foto',
+    'inspections.changePhoto': 'Alterar foto',
+    'inspections.photoAdded': 'Foto adicionada',
+    'inspections.photoError': 'Erro ao enviar foto',
+    'inspections.sendToWO': 'Enviar para OS',
+    'inspections.generatePDF': 'Gerar PDF',
 
     'nav.adminPanel': 'Painel Admin',
 

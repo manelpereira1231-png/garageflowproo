@@ -46,6 +46,7 @@ interface Referral {
 }
 
 export default function AdminPartners() {
+  const { t } = useLanguage();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invites, setInvites] = useState<PartnerInvite[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);

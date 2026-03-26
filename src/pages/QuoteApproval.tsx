@@ -349,6 +349,14 @@ export default function QuoteApproval() {
               </div>
               <h1 className="text-2xl font-bold mb-2">{t('approved')}</h1>
               <p className="text-muted-foreground">{t('approvedDesc')}</p>
+              {quote?.signer_name && (
+                <div className="mt-4 p-3 bg-success/5 rounded-lg text-left space-y-1">
+                  <p className="text-sm"><span className="text-muted-foreground">{t('signedBy')}:</span> <strong>{quote.signer_name}</strong></p>
+                  {quote?.signature_hash && (
+                    <p className="text-xs text-muted-foreground font-mono break-all">{t('signatureHash')}: {quote.signature_hash.substring(0, 16)}...</p>
+                  )}
+                </div>
+              )}
             </>
           ) : result === 'expired' ? (
             <>

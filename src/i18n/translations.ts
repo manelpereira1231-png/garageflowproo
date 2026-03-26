@@ -1949,6 +1949,9 @@ export const translations: Record<Language, Record<string, string>> = {
      'landing.navAffiliates': 'Affiliates',
     'landing.footer': 'All rights reserved.',
     'landing.perMonth': '/mo',
+    'landing.perYear': '/yr',
+    'landing.trial15': '15-day free trial included',
+    'billing.trial15': '15-day free trial included',
     'landing.noCreditCard': 'No credit card required · Setup in 2 minutes',
 
     // Referrals

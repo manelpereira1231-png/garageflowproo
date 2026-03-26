@@ -12,6 +12,7 @@ import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, Thumbs
 import { format } from "date-fns";
 import { toast } from "sonner";
 import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
+import LaborTimer from "@/components/LaborTimer";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 
@@ -345,6 +346,15 @@ export default function Workshop() {
                   <Label className="text-xs text-muted-foreground">{t('workshop.diagnosis')}</Label>
                   <p className="text-sm bg-muted rounded-lg p-3 mt-1">{selected.diagnosis}</p>
                 </div>
+              )}
+
+              {/* Labor Timer */}
+              {activeShopId && selected.status !== 'delivered' && (
+                <LaborTimer
+                  workOrderId={selected.id}
+                  shopId={activeShopId}
+                  technicianName={selected.technician || ''}
+                />
               )}
 
               {/* Checklist */}

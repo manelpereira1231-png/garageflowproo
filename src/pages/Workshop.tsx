@@ -15,6 +15,7 @@ import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
 import LaborTimer from "@/components/LaborTimer";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
+import { sendPushNotification } from "@/lib/pushNotifications";
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 
@@ -87,6 +88,16 @@ export default function Workshop() {
       toast.error(t('workshop.errorUpdating'));
     } else {
       toast.success(`${wo.number} → ${statusConfig[nextStatus]?.label || nextStatus}`);
+      // Push notification for status change
+      if (activeShopId) {
+        const vehicle = wo.vehicles ? `${(wo.vehicles as any)?.make} ${(wo.vehicles as any)?.model}` : '';
+        sendPushNotification(
+          activeShopId,
+          `OS ${wo.number} — ${statusConfig[nextStatus]?.label || nextStatus}`,
+          `${vehicle} (${(wo.clients as any)?.name || ''})`,
+          '/workshop'
+        );
+      }
       fetchOrders();
       if (selected?.id === wo.id) setSelected({ ...wo, ...updates });
     }

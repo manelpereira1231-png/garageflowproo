@@ -17,6 +17,7 @@ import {
   StickyNote, MessageSquare, Camera, ImageIcon, Download
 } from "lucide-react";
 import { toast } from "sonner";
+import { sendPushNotification } from "@/lib/pushNotifications";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -164,6 +165,16 @@ export default function Inspections() {
     } as any);
     if (error) { toast.error(error.message); setSaving(false); return; }
     toast.success(asDraft ? t('inspections.draftSaved') : t('inspections.created'));
+    // Push notification for completed inspection
+    if (!asDraft && activeShopId) {
+      const wo = workOrders.find(w => w.id === selectedWO);
+      sendPushNotification(
+        activeShopId,
+        `Inspeção concluída`,
+        wo ? `${wo.number} — ${(wo.vehicles as any)?.make || ''} ${(wo.vehicles as any)?.model || ''} (${(wo.vehicles as any)?.plate || ''})` : 'Nova inspeção concluída',
+        '/inspections'
+      );
+    }
     setSaving(false);
     setDialogOpen(false);
     setItems(buildDefaultItems());

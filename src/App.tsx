@@ -160,6 +160,46 @@ const adminRoutes = [
   { path: "/admin/partners", element: <AdminPartners /> },
 ];
 
+const shopRoutes = [
+  { path: "/dashboard", element: <Layout><Dashboard /></Layout> },
+  { path: "/clients", element: <Layout><Clients /></Layout> },
+  { path: "/vehicles", element: <Layout><Vehicles /></Layout> },
+  { path: "/quotes", element: <Layout><Quotes /></Layout> },
+  { path: "/quotes/new", element: <Layout><QuoteForm /></Layout> },
+  { path: "/quotes/edit/:id", element: <Layout><QuoteForm /></Layout> },
+  { path: "/services", element: <Layout><Services /></Layout> },
+  { path: "/services/new", element: <Layout><ServiceForm /></Layout> },
+  { path: "/services/edit/:id", element: <Layout><ServiceForm /></Layout> },
+  { path: "/settings", element: <Layout><SettingsPage /></Layout> },
+  { path: "/billing", element: <Layout><Billing /></Layout> },
+  { path: "/alerts", element: <Layout><Alerts /></Layout> },
+  { path: "/team", element: <Layout><Team /></Layout> },
+  { path: "/chat", element: <Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout> },
+  { path: "/invoices", element: <Layout><Invoices /></Layout> },
+  { path: "/invoices/new", element: <Layout><InvoiceForm /></Layout> },
+  { path: "/invoices/:id", element: <Layout><InvoiceDetail /></Layout> },
+  { path: "/financial/reports", element: <Layout><FinancialReports /></Layout> },
+  { path: "/agenda", element: <Layout><Agenda /></Layout> },
+  { path: "/catalog", element: <Layout><ServiceCatalog /></Layout> },
+  { path: "/stock", element: <Layout><Stock /></Layout> },
+  { path: "/inspections", element: <Layout><Inspections /></Layout> },
+  { path: "/loyalty", element: <Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout> },
+  { path: "/marketing", element: <Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout> },
+  { path: "/workshop", element: <Layout><Workshop /></Layout> },
+  { path: "/automations", element: <Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout> },
+  { path: "/developers", element: <Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout> },
+  { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
+  { path: "/referrals", element: <Layout><Referrals /></Layout> },
+];
+
+const publicRoutes = [
+  { path: "/quote/:token", element: <QuoteApproval /> },
+  { path: "/portal/:token", element: <ClientPortal /> },
+  { path: "/book/:slug", element: <PublicBooking /> },
+  { path: "/", element: <LandingPage /> },
+  { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
+];
+
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);

@@ -374,7 +374,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               {logoPreview && (
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
                   <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-lg object-contain" />
-                  <span className="text-sm text-muted-foreground">Logo da oficina</span>
+                  <span className="text-sm text-muted-foreground">{t('settings.shopLogo')}</span>
                 </div>
               )}
             </div>

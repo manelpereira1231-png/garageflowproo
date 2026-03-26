@@ -165,6 +165,16 @@ export default function Inspections() {
     } as any);
     if (error) { toast.error(error.message); setSaving(false); return; }
     toast.success(asDraft ? t('inspections.draftSaved') : t('inspections.created'));
+    // Push notification for completed inspection
+    if (!asDraft && activeShopId) {
+      const wo = workOrders.find(w => w.id === selectedWO);
+      sendPushNotification(
+        activeShopId,
+        `Inspeção concluída`,
+        wo ? `${wo.number} — ${(wo.vehicles as any)?.make || ''} ${(wo.vehicles as any)?.model || ''} (${(wo.vehicles as any)?.plate || ''})` : 'Nova inspeção concluída',
+        '/inspections'
+      );
+    }
     setSaving(false);
     setDialogOpen(false);
     setItems(buildDefaultItems());

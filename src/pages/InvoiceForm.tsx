@@ -177,6 +177,16 @@ export default function InvoiceForm() {
     }
 
     toast.success(issueNow ? t('invoices.issued') : t('invoices.saved'));
+    // Push notification for new invoice
+    if (issueNow && activeId) {
+      const clientName = clients.find(c => c.id === clientId)?.name || '';
+      sendPushNotification(
+        activeId,
+        `Nova fatura ${number}`,
+        `${clientName} — ${shop?.currency || '€'}${total.toFixed(2)}`,
+        `/invoices/${invoice.id}`
+      );
+    }
     navigate(`/invoices/${invoice.id}`);
     setSaving(false);
   };

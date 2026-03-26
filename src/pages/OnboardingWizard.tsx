@@ -320,12 +320,12 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 <Bell className="w-4 h-4" />
                 {stepTitles[3]}
               </h2>
-              <p className="text-sm text-muted-foreground">Ative alertas automáticos para nunca perder prazos e oportunidades.</p>
+              <p className="text-sm text-muted-foreground">{t('onboarding.alertsDesc')}</p>
               <div className="space-y-3">
                 {[
-                  { key: 'pending_quotes' as const, label: 'Orçamentos Pendentes', desc: 'Alerta quando orçamentos aguardam resposta' },
-                  { key: 'expired_quotes' as const, label: 'Orçamentos Expirados', desc: 'Alerta quando orçamentos atingem data limite' },
-                  { key: 'completed_services' as const, label: 'Serviços Concluídos', desc: 'Alerta quando serviços estão prontos para entrega' },
+                  { key: 'pending_quotes' as const, label: t('onboarding.alert.pendingQuotes'), desc: t('onboarding.alert.pendingQuotesDesc') },
+                  { key: 'expired_quotes' as const, label: t('onboarding.alert.expiredQuotes'), desc: t('onboarding.alert.expiredQuotesDesc') },
+                  { key: 'completed_services' as const, label: t('onboarding.alert.completedServices'), desc: t('onboarding.alert.completedServicesDesc') },
                 ].map(item => (
                   <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border border-border">
                     <div>
@@ -337,7 +337,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 ))}
               </div>
               <div className="pt-2">
-                <Label className="text-sm font-medium mb-2 block">Canais de notificação</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('onboarding.notificationChannels')}</Label>
                 <div className="flex gap-3">
                   {[
                     { key: 'channel_email' as const, label: 'Email' },
@@ -365,16 +365,16 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 <p>✅ <strong>{t('settings.shopName')}:</strong> {form.name || '—'}</p>
                 <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% IVA)</p>
                 <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
-                <p>✅ <strong>Morada:</strong> {form.address || '—'}</p>
+                <p>✅ <strong>{t('settings.address')}:</strong> {form.address || '—'}</p>
                 <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>
-                <p>✅ <strong>Logo:</strong> {logoFile ? logoFile.name : 'Sem logo'}</p>
-                <p>✅ <strong>Alertas:</strong> {[alerts.pending_quotes && 'Pendentes', alerts.expired_quotes && 'Expirados', alerts.completed_services && 'Concluídos'].filter(Boolean).join(', ') || 'Nenhum'}</p>
-                <p>✅ <strong>Plano:</strong> FREE (Trial 30 dias)</p>
+                <p>✅ <strong>Logo:</strong> {logoFile ? logoFile.name : t('onboarding.noLogo')}</p>
+                <p>✅ <strong>{t('onboarding.alertsLabel')}:</strong> {[alerts.pending_quotes && t('onboarding.alert.pendingQuotes'), alerts.expired_quotes && t('onboarding.alert.expiredQuotes'), alerts.completed_services && t('onboarding.alert.completedServices')].filter(Boolean).join(', ') || t('onboarding.noAlerts')}</p>
+                <p>✅ <strong>{t('onboarding.plan')}:</strong> FREE ({t('billing.trial30')})</p>
               </div>
               {logoPreview && (
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
                   <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-lg object-contain" />
-                  <span className="text-sm text-muted-foreground">Logo da oficina</span>
+                  <span className="text-sm text-muted-foreground">{t('settings.shopLogo')}</span>
                 </div>
               )}
             </div>

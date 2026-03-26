@@ -23,6 +23,11 @@ export default function OnboardingChecklist() {
   const isPt = language === "pt" || language === "pt-BR";
   const isBr = language === "pt-BR";
   const isEs = language === "es";
+  const [items, setItems] = useState<ChecklistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dismissed, setDismissed] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [justCompleted, setJustCompleted] = useState<Set<string>>(new Set());
 
   const tt = (pt: string, en: string, es: string, br?: string) => {
     if (isBr && br) return br;

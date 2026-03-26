@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface AdminStats {
   totalShops: number;
@@ -47,6 +48,7 @@ interface RecentActivity {
 const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--success))"];
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
@@ -180,23 +182,23 @@ export default function AdminDashboard() {
         let label = l.action;
         let detail = det.name || det.email || l.entity_type || '';
         if (l.action === 'plan_changed') {
-          label = `Plano alterado: ${(det.from || '').toUpperCase()} → ${(det.to || '').toUpperCase()}`;
+          label = `${t('admin.activity.planChanged')}: ${(det.from || '').toUpperCase()} → ${(det.to || '').toUpperCase()}`;
           detail = det.name || '';
         } else if (l.action === 'shop_activated') {
-          label = 'Oficina ativada';
+          label = t('admin.activity.shopActivated');
           detail = det.name || '';
         } else if (l.action === 'shop_suspended') {
-          label = 'Oficina suspensa';
+          label = t('admin.activity.shopSuspended');
           detail = det.name || '';
         } else if (l.action === 'trial_reset') {
-          label = 'Trial reiniciado';
+          label = t('admin.activity.trialReset');
           detail = det.name || '';
         } else if (l.action === 'shop_deleted') {
-          label = 'Oficina eliminada';
+          label = t('admin.activity.shopDeleted');
           detail = det.name || '';
         } else if (l.action === 'settings_updated') {
-          label = 'Configurações atualizadas';
-          detail = 'Plataforma';
+          label = t('admin.activity.settingsUpdated');
+          detail = t('admin.activity.platform');
         }
 
         return {
@@ -234,28 +236,23 @@ export default function AdminDashboard() {
   const exportGlobalCSV = () => {
     if (!stats) return;
     const lines = [
-      "Métrica;Valor",
-      `Oficinas Totais;${stats.totalShops}`,
-      `Oficinas Ativas;${stats.activeShops}`,
-      `Oficinas Suspensas;${stats.suspendedShops}`,
-      `Novas Este Mês;${stats.newShopsThisMonth}`,
-      `Clientes Totais;${stats.totalClients}`,
-      `Veículos Totais;${stats.totalVehicles}`,
-      `Ordens de Serviço;${stats.totalWorkOrders}`,
-      `Orçamentos Totais;${stats.totalQuotes}`,
-      `Alertas Totais;${stats.totalAlerts}`,
-      `Faturação Total;€${stats.totalRevenue.toFixed(2)}`,
-      `Ticket Médio;€${stats.avgTicket.toFixed(2)}`,
+      `${t('admin.csv.metric')};${t('admin.csv.value')}`,
+      `${t('admin.dashboard.totalShops')};${stats.totalShops}`,
+      `${t('admin.dashboard.activeShops')};${stats.activeShops}`,
+      `${t('admin.dashboard.suspended')};${stats.suspendedShops}`,
+      `${t('admin.dashboard.newThisMonth')};${stats.newShopsThisMonth}`,
+      `${t('admin.dashboard.totalClients')};${stats.totalClients}`,
+      `${t('admin.dashboard.totalVehicles')};${stats.totalVehicles}`,
+      `${t('admin.dashboard.workOrders')};${stats.totalWorkOrders}`,
+      `${t('admin.dashboard.totalRevenue')};€${stats.totalRevenue.toFixed(2)}`,
+      `${t('admin.dashboard.avgTicket')};€${stats.avgTicket.toFixed(2)}`,
       `MRR;€${stats.mrr.toFixed(2)}`,
       `ARR;€${stats.arr.toFixed(2)}`,
       `ARPU;€${stats.arpu.toFixed(2)}`,
-      `LTV Estimado;€${stats.ltv.toFixed(2)}`,
-      `Churn Rate;${stats.churnRate.toFixed(1)}%`,
-      `Conversão Trial→Pago;${stats.conversionRate.toFixed(1)}%`,
-      `Alertas Pendentes;${stats.pendingAlerts}`,
-      `Plano Free;${stats.planBreakdown.free}`,
-      `Plano Pro;${stats.planBreakdown.pro}`,
-      `Plano Garage;${stats.planBreakdown.garage}`,
+      `${t('admin.dashboard.ltvEstimated')};€${stats.ltv.toFixed(2)}`,
+      `${t('admin.dashboard.churnRate')};${stats.churnRate.toFixed(1)}%`,
+      `${t('admin.csv.trialConversion')};${stats.conversionRate.toFixed(1)}%`,
+      `${t('admin.dashboard.pendingAlerts')};${stats.pendingAlerts}`,
     ];
     const csv = lines.join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -288,37 +285,37 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="page-title">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground">Visão global do sistema GarageFlow</p>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className="stat-card p-8 text-center">
           <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <p className="text-lg font-medium">Sem dados disponíveis</p>
-          <p className="text-sm text-muted-foreground mt-1">O sistema está a funcionar. Ainda não existem oficinas registadas.</p>
+          <p className="text-lg font-medium">{t('admin.dashboard.noData')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('admin.dashboard.noDataDesc')}</p>
         </div>
       </div>
     );
   }
 
   const kpiCards = [
-    { label: "Oficinas Totais", value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
-    { label: "Oficinas Ativas", value: stats.activeShops, icon: Building2, color: "text-success" },
-    { label: "Suspensas", value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
-    { label: "Novas Este Mês", value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
+    { label: t('admin.dashboard.totalShops'), value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
+    { label: t('admin.dashboard.activeShops'), value: stats.activeShops, icon: Building2, color: "text-success" },
+    { label: t('admin.dashboard.suspended'), value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
+    { label: t('admin.dashboard.newThisMonth'), value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
     { label: "MRR", value: `€${stats.mrr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARPU", value: `€${stats.arpu.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
-    { label: "LTV Estimado", value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
-    { label: "Churn Rate", value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
-    { label: "Trial→Pago", value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
-    { label: "Em Trial", value: stats.trialCount, icon: Clock, color: "text-warning" },
-    { label: "Pagantes", value: stats.paidCount, icon: DollarSign, color: "text-success" },
-    { label: "Clientes Totais", value: stats.totalClients, icon: Users, color: "text-primary" },
-    { label: "Veículos Totais", value: stats.totalVehicles, icon: Car, color: "text-primary" },
-    { label: "Ordens de Serviço", value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
-    { label: "Faturação Total", value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
-    { label: "Ticket Médio", value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
-    { label: "Alertas Pendentes", value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning", link: "/admin/alerts" },
+    { label: t('admin.dashboard.ltvEstimated'), value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
+    { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
+    { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
+    { label: t('admin.dashboard.inTrial'), value: stats.trialCount, icon: Clock, color: "text-warning" },
+    { label: t('admin.dashboard.paying'), value: stats.paidCount, icon: DollarSign, color: "text-success" },
+    { label: t('admin.dashboard.totalClients'), value: stats.totalClients, icon: Users, color: "text-primary" },
+    { label: t('admin.dashboard.totalVehicles'), value: stats.totalVehicles, icon: Car, color: "text-primary" },
+    { label: t('admin.dashboard.workOrders'), value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
+    { label: t('admin.dashboard.totalRevenue'), value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
+    { label: t('admin.dashboard.avgTicket'), value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
+    { label: t('admin.dashboard.pendingAlerts'), value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning", link: "/admin/alerts" },
   ];
 
   const planPieData = [
@@ -331,18 +328,18 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="page-title">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground">Visão global em tempo real · Auto-atualiza com novas oficinas e planos</p>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" /> Exportar CSV
+            <Download className="w-4 h-4" /> {t('admin.dashboard.exportCSV')}
           </Button>
           <Button onClick={() => navigate("/admin/shops")} size="sm" className="gap-2">
-            <Building2 className="w-4 h-4" /> Gerir Oficinas
+            <Building2 className="w-4 h-4" /> {t('admin.dashboard.manageShops')}
           </Button>
           <Button onClick={() => navigate("/admin/settings")} variant="outline" size="sm" className="gap-2">
-            <Zap className="w-4 h-4" /> Configurações
+            <Zap className="w-4 h-4" /> {t('admin.dashboard.settings')}
           </Button>
         </div>
       </div>
@@ -369,7 +366,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <div className="stat-card lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">Faturação Mensal (Oficinas)</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.monthlyRevenue')}</h2>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.monthlyRevenue}>
@@ -378,7 +375,7 @@ export default function AdminDashboard() {
                 <YAxis className="text-xs" />
                 <Tooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
-                  formatter={(value: number) => [`€${value.toFixed(2)}`, "Faturação"]}
+                  formatter={(value: number) => [`€${value.toFixed(2)}`, t('admin.dashboard.revenue')]}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
               </LineChart>
@@ -388,7 +385,7 @@ export default function AdminDashboard() {
 
         {/* Plan Distribution Pie */}
         <div className="stat-card">
-          <h2 className="text-lg font-semibold mb-4">Distribuição de Planos</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.planDistribution')}</h2>
           <div className="h-[280px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

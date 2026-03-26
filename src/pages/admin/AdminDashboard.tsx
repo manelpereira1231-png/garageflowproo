@@ -182,23 +182,23 @@ export default function AdminDashboard() {
         let label = l.action;
         let detail = det.name || det.email || l.entity_type || '';
         if (l.action === 'plan_changed') {
-          label = `Plano alterado: ${(det.from || '').toUpperCase()} → ${(det.to || '').toUpperCase()}`;
+          label = `${t('admin.activity.planChanged')}: ${(det.from || '').toUpperCase()} → ${(det.to || '').toUpperCase()}`;
           detail = det.name || '';
         } else if (l.action === 'shop_activated') {
-          label = 'Oficina ativada';
+          label = t('admin.activity.shopActivated');
           detail = det.name || '';
         } else if (l.action === 'shop_suspended') {
-          label = 'Oficina suspensa';
+          label = t('admin.activity.shopSuspended');
           detail = det.name || '';
         } else if (l.action === 'trial_reset') {
-          label = 'Trial reiniciado';
+          label = t('admin.activity.trialReset');
           detail = det.name || '';
         } else if (l.action === 'shop_deleted') {
-          label = 'Oficina eliminada';
+          label = t('admin.activity.shopDeleted');
           detail = det.name || '';
         } else if (l.action === 'settings_updated') {
-          label = 'Configurações atualizadas';
-          detail = 'Plataforma';
+          label = t('admin.activity.settingsUpdated');
+          detail = t('admin.activity.platform');
         }
 
         return {

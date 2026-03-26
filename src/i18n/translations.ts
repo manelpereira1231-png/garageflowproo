@@ -4245,6 +4245,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alertas',
     'onboarding.noAlerts': 'Nenhum',
     'onboarding.plan': 'Plano',
+    'onboarding.completeProfile': 'Complete o perfil da oficina',
+    'onboarding.fieldsCompleted': 'campos preenchidos',
 
     // Common
     'common.save': 'Salvar',

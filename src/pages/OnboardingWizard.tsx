@@ -61,6 +61,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           language: shop.language || prev.language,
           nif: shop.nif || prev.nif,
           address: shop.address || prev.address,
+          timezone: shop.timezone || prev.timezone,
         }));
         if (shop.logo_url) setLogoPreview(shop.logo_url);
       }

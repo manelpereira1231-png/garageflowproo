@@ -34,8 +34,8 @@ function lazyRetry(factory: () => Promise<any>) {
 
 const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
 const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
-const Layout = lazyRetry(() => import("@/components/Layout"));
-const AdminLayout = lazyRetry(() => import("@/components/AdminLayout"));
+import Layout from "@/components/Layout";
+import AdminLayout from "@/components/AdminLayout";
 
 // Lazy-loaded pages for code splitting & performance at scale
 const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));

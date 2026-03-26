@@ -7,13 +7,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell } from "lucide-react";
+import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
 
 const countries = Object.keys(VAT_RATES);
+const CURRENCIES = [
+  { value: "EUR", label: "EUR (€)" },
+  { value: "USD", label: "USD ($)" },
+  { value: "GBP", label: "GBP (£)" },
+  { value: "BRL", label: "BRL (R$)" },
+];
+const TIMEZONES = [
+  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
+  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
+  "Africa/Luanda", "Africa/Maputo",
+];
 const STEPS = 5;
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
@@ -28,7 +39,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     name: "", email: "", phone: "",
     country: "Portugal", currency: "EUR",
     vat_rate: "23", labor_rate: "35", language: language as string,
-    nif: "", address: "",
+    nif: "", address: "", timezone: "Europe/Lisbon",
   });
 
   // Pre-fill form with existing shop data (from signup metadata)
@@ -50,6 +61,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           language: shop.language || prev.language,
           nif: shop.nif || prev.nif,
           address: shop.address || prev.address,
+          timezone: shop.timezone || prev.timezone,
         }));
         if (shop.logo_url) setLogoPreview(shop.logo_url);
       }
@@ -135,6 +147,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       language: form.language,
       nif: form.nif,
       address: form.address,
+      timezone: form.timezone,
     };
     if (logoUrl) updatePayload.logo_url = logoUrl;
 
@@ -167,9 +180,9 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const stepTitles = [
     t('onboarding.step1') || "Dados da Oficina",
     t('onboarding.step2') || "Configurações Fiscais",
-    "Branding & Logo",
-    "Alertas & Notificações",
-    "Confirmação",
+    t('onboarding.step3') || "Branding & Logo",
+    t('onboarding.step4') || "Alertas & Notificações",
+    t('onboarding.step5') || "Confirmação",
   ];
 
   return (
@@ -230,9 +243,10 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   <Select value={form.language} onValueChange={v => setForm({...form, language: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="pt">🇵🇹 Português (PT)</SelectItem>
+                      <SelectItem value="pt-BR">🇧🇷 Português (BR)</SelectItem>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                      <SelectItem value="es">🇪🇸 Español</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -258,7 +272,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Morada</Label>
+                <Label>{t('settings.address')}</Label>
                 <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123, Lisboa" />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -268,8 +282,22 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t('settings.currency')}</Label>
-                  <Input value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} />
+                  <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {t('settings.timezone')}</Label>
+                <Select value={form.timezone} onValueChange={v => setForm({...form, timezone: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -282,7 +310,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 {stepTitles[2]}
               </h2>
               <p className="text-sm text-muted-foreground">
-                O logo aparece em PDFs de orçamentos e serviços, no dashboard e emails enviados aos clientes.
+                {t('onboarding.brandingDesc')}
               </p>
               <div className="flex flex-col items-center gap-4">
                 <div 
@@ -299,14 +327,14 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   )}
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                <p className="text-xs text-muted-foreground">PNG, JPG ou SVG · máx. 2MB</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, SVG · max 2MB</p>
               </div>
               {/* PDF Preview hint */}
               <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-3">
                 <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground mb-1">Pré-visualização de PDF</p>
-                  <p>O seu logo será aplicado em todos os PDFs gerados. No plano FREE, os PDFs incluem marca d'água "GarageFlow". Nos planos PRO/GARAGE a marca d'água é removida.</p>
+                  <p className="font-medium text-foreground mb-1">{t('onboarding.pdfPreviewTitle')}</p>
+                  <p>{t('onboarding.pdfPreviewDesc')}</p>
                 </div>
               </div>
             </div>
@@ -367,6 +395,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
                 <p>✅ <strong>{t('settings.address')}:</strong> {form.address || '—'}</p>
                 <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>
+                <p>✅ <strong>{t('settings.timezone')}:</strong> {form.timezone}</p>
                 <p>✅ <strong>Logo:</strong> {logoFile ? logoFile.name : t('onboarding.noLogo')}</p>
                 <p>✅ <strong>{t('onboarding.alertsLabel')}:</strong> {[alerts.pending_quotes && t('onboarding.alert.pendingQuotes'), alerts.expired_quotes && t('onboarding.alert.expiredQuotes'), alerts.completed_services && t('onboarding.alert.completedServices')].filter(Boolean).join(', ') || t('onboarding.noAlerts')}</p>
                 <p>✅ <strong>{t('onboarding.plan')}:</strong> FREE ({t('billing.trial30')})</p>

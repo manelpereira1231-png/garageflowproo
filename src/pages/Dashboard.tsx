@@ -427,17 +427,29 @@ export default function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="stat-card group hover:shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.label}</span>
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                <stat.icon className="w-4 h-4 text-primary" />
+        {!dataLoaded ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-9 w-9 rounded-lg" />
               </div>
+              <Skeleton className="h-7 w-32" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold mono">{stat.value}</div>
-          </div>
-        ))}
+          ))
+        ) : (
+          stats.map((stat) => (
+            <div key={stat.label} className="stat-card group hover:shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.label}</span>
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                  <stat.icon className="w-4 h-4 text-primary" />
+                </div>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold mono">{stat.value}</div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Charts Row */}

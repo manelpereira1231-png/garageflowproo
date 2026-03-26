@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { translations, type Language } from "./translations";
 import { supabase } from "@/integrations/supabase/client";
+import { setRegion } from "@/lib/regionConfig";
 
 interface LanguageContextType {
   language: Language;

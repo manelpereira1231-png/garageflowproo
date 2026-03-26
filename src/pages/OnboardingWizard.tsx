@@ -7,13 +7,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell } from "lucide-react";
+import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
 
 const countries = Object.keys(VAT_RATES);
+const CURRENCIES = [
+  { value: "EUR", label: "EUR (€)" },
+  { value: "USD", label: "USD ($)" },
+  { value: "GBP", label: "GBP (£)" },
+  { value: "BRL", label: "BRL (R$)" },
+];
+const TIMEZONES = [
+  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
+  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
+  "Africa/Luanda", "Africa/Maputo",
+];
 const STEPS = 5;
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {

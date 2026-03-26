@@ -107,7 +107,7 @@ export default function AdminPartners() {
       } as any);
       await logAudit({ action: "partner_created", entityType: "partner", entityId: (data as any).id, details: { name: form.name } });
     }
-    toast.success("Parceiro criado ✅");
+    toast.success(t('admin.partners.created'));
     setShowCreate(false);
     setForm({ name: "", type: "affiliate", contact_email: "", contact_phone: "", commission_percentage: 10, discount_percentage: 0, payout_method: "bank_transfer" });
     loadData();

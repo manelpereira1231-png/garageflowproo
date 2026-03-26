@@ -62,14 +62,14 @@ export default function OnboardingChecklist() {
       const newItems: ChecklistItem[] = [
         {
           key: "client",
-          label: tt("Criar primeiro cliente", "Create first client", "Crear primer cliente"),
-          tooltip: tt("Adicione os dados do seu primeiro cliente", "Add your first client's details", "Añade los datos de tu primer cliente"),
+          label: tt("Criar primeiro cliente", "Create first client", "Crear primer cliente", "Cadastrar primeiro cliente"),
+          tooltip: tt("Adicione os dados do seu primeiro cliente", "Add your first client's details", "Añade los datos de tu primer cliente", "Adicione os dados do seu primeiro cliente"),
           icon: Users, link: "/clients", done: (clientsRes.count || 0) > 0
         },
         {
           key: "vehicle",
           label: tt("Adicionar primeiro veículo", "Add first vehicle", "Añadir primer vehículo"),
-          tooltip: tt("Registe a matrícula e dados do veículo", "Register the vehicle plate and details", "Registra la matrícula y datos del vehículo"),
+          tooltip: tt("Registe a matrícula e dados do veículo", "Register the vehicle plate and details", "Registra la matrícula y datos del vehículo", "Registre a placa e dados do veículo"),
           icon: Car, link: "/vehicles", done: (vehiclesRes.count || 0) > 0
         },
         {
@@ -87,7 +87,7 @@ export default function OnboardingChecklist() {
         {
           key: "invoice",
           label: tt("Criar primeira fatura", "Create first invoice", "Crear primera factura"),
-          tooltip: tt("Fature o seu trabalho profissionalmente", "Invoice your work professionally", "Factura tu trabajo profesionalmente"),
+          tooltip: tt("Fature o seu trabalho profissionalmente", "Invoice your work professionally", "Factura tu trabajo profesionalmente", "Fature seu trabalho profissionalmente"),
           icon: Receipt, link: "/invoices/new", done: (invoicesRes.count || 0) > 0
         },
       ];

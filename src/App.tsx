@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import CommandPalette from "@/components/CommandPalette";
@@ -19,58 +19,69 @@ import LandingPage from "@/pages/LandingPage";
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
-// Non-critical lazy-loaded
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const QuoteApproval = lazy(() => import("@/pages/QuoteApproval"));
-const Layout = lazy(() => import("@/components/Layout"));
-const AdminLayout = lazy(() => import("@/components/AdminLayout"));
+// Non-critical lazy-loaded with retry
+function lazyRetry(factory: () => Promise<any>) {
+  return lazy(() =>
+    factory().catch(() => {
+      // Retry once after a brief delay (handles chunk load failures)
+      return new Promise<any>((resolve) => {
+        setTimeout(() => resolve(factory()), 1500);
+      });
+    })
+  );
+}
+
+const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
+const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
+const Layout = lazyRetry(() => import("@/components/Layout"));
+const AdminLayout = lazyRetry(() => import("@/components/AdminLayout"));
 
 // Lazy-loaded pages for code splitting & performance at scale
-const OnboardingWizard = lazy(() => import("@/pages/OnboardingWizard"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Clients = lazy(() => import("@/pages/Clients"));
-const Vehicles = lazy(() => import("@/pages/Vehicles"));
-const Quotes = lazy(() => import("@/pages/Quotes"));
-const QuoteForm = lazy(() => import("@/pages/QuoteForm"));
-const Services = lazy(() => import("@/pages/Services"));
-const ServiceForm = lazy(() => import("@/pages/ServiceForm"));
-const SettingsPage = lazy(() => import("@/pages/Settings"));
-const Billing = lazy(() => import("@/pages/Billing"));
-const Alerts = lazy(() => import("@/pages/Alerts"));
-const Team = lazy(() => import("@/pages/Team"));
-const Chat = lazy(() => import("@/pages/Chat"));
-const Invoices = lazy(() => import("@/pages/Invoices"));
-const InvoiceForm = lazy(() => import("@/pages/InvoiceForm"));
-const InvoiceDetail = lazy(() => import("@/pages/InvoiceDetail"));
-const FinancialReports = lazy(() => import("@/pages/FinancialReports"));
-const Agenda = lazy(() => import("@/pages/Agenda"));
-const PublicBooking = lazy(() => import("@/pages/PublicBooking"));
-const ClientPortal = lazy(() => import("@/pages/ClientPortal"));
-const ServiceCatalog = lazy(() => import("@/pages/ServiceCatalog"));
-const Stock = lazy(() => import("@/pages/Stock"));
-const Inspections = lazy(() => import("@/pages/Inspections"));
-const Loyalty = lazy(() => import("@/pages/Loyalty"));
-const Marketing = lazy(() => import("@/pages/Marketing"));
-const Workshop = lazy(() => import("@/pages/Workshop"));
-const Automations = lazy(() => import("@/pages/Automations"));
-const Developers = lazy(() => import("@/pages/Developers"));
-const PartnersPortal = lazy(() => import("@/pages/PartnersPortal"));
-const Referrals = lazy(() => import("@/pages/Referrals"));
+const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
+const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
+const Clients = lazyRetry(() => import("@/pages/Clients"));
+const Vehicles = lazyRetry(() => import("@/pages/Vehicles"));
+const Quotes = lazyRetry(() => import("@/pages/Quotes"));
+const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
+const Services = lazyRetry(() => import("@/pages/Services"));
+const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
+const SettingsPage = lazyRetry(() => import("@/pages/Settings"));
+const Billing = lazyRetry(() => import("@/pages/Billing"));
+const Alerts = lazyRetry(() => import("@/pages/Alerts"));
+const Team = lazyRetry(() => import("@/pages/Team"));
+const Chat = lazyRetry(() => import("@/pages/Chat"));
+const Invoices = lazyRetry(() => import("@/pages/Invoices"));
+const InvoiceForm = lazyRetry(() => import("@/pages/InvoiceForm"));
+const InvoiceDetail = lazyRetry(() => import("@/pages/InvoiceDetail"));
+const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
+const Agenda = lazyRetry(() => import("@/pages/Agenda"));
+const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
+const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
+const ServiceCatalog = lazyRetry(() => import("@/pages/ServiceCatalog"));
+const Stock = lazyRetry(() => import("@/pages/Stock"));
+const Inspections = lazyRetry(() => import("@/pages/Inspections"));
+const Loyalty = lazyRetry(() => import("@/pages/Loyalty"));
+const Marketing = lazyRetry(() => import("@/pages/Marketing"));
+const Workshop = lazyRetry(() => import("@/pages/Workshop"));
+const Automations = lazyRetry(() => import("@/pages/Automations"));
+const Developers = lazyRetry(() => import("@/pages/Developers"));
+const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
+const Referrals = lazyRetry(() => import("@/pages/Referrals"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const AdminShops = lazy(() => import("@/pages/admin/AdminShops"));
-const AdminShopDetail = lazy(() => import("@/pages/admin/AdminShopDetail"));
-const AdminLogs = lazy(() => import("@/pages/admin/AdminLogs"));
-const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
-const AdminBilling = lazy(() => import("@/pages/admin/AdminBilling"));
-const AdminAlerts = lazy(() => import("@/pages/admin/AdminAlerts"));
-const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
-const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
-const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
-const AdminFeatureAdoption = lazy(() => import("@/pages/admin/AdminFeatureAdoption"));
-const AdminSystemHealth = lazy(() => import("@/pages/admin/AdminSystemHealth"));
-const AdminPartners = lazy(() => import("@/pages/admin/AdminPartners"));
+const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
+const AdminShops = lazyRetry(() => import("@/pages/admin/AdminShops"));
+const AdminShopDetail = lazyRetry(() => import("@/pages/admin/AdminShopDetail"));
+const AdminLogs = lazyRetry(() => import("@/pages/admin/AdminLogs"));
+const AdminReports = lazyRetry(() => import("@/pages/admin/AdminReports"));
+const AdminBilling = lazyRetry(() => import("@/pages/admin/AdminBilling"));
+const AdminAlerts = lazyRetry(() => import("@/pages/admin/AdminAlerts"));
+const AdminSettings = lazyRetry(() => import("@/pages/admin/AdminSettings"));
+const AdminUsers = lazyRetry(() => import("@/pages/admin/AdminUsers"));
+const AdminEmailLogs = lazyRetry(() => import("@/pages/admin/AdminEmailLogs"));
+const AdminFeatureAdoption = lazyRetry(() => import("@/pages/admin/AdminFeatureAdoption"));
+const AdminSystemHealth = lazyRetry(() => import("@/pages/admin/AdminSystemHealth"));
+const AdminPartners = lazyRetry(() => import("@/pages/admin/AdminPartners"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -83,6 +94,34 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Error Boundary to catch lazy-load / chunk failures
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // If it's a chunk load error, reload the page
+    if (error?.message?.includes('Loading chunk') || error?.message?.includes('Failed to fetch') || error?.message?.includes('dynamically imported module')) {
+      window.location.reload();
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <p className="text-sm text-muted-foreground">Ocorreu um erro ao carregar a página.</p>
+          <button onClick={() => window.location.reload()} className="text-sm text-primary underline">Recarregar</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -159,13 +198,69 @@ function AuthenticatedRoutes() {
 
   if (isSuperAdmin) {
     return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {adminRoutes.map(r => (
+              <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
+            ))}
+            <Route path="/quote/:token" element={<QuoteApproval />} />
+            <Route path="/portal/:token" element={<ClientPortal />} />
+            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/clients" element={<Layout><Clients /></Layout>} />
+            <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
+            <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
+            <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
+            <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
+            <Route path="/services" element={<Layout><Services /></Layout>} />
+            <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
+            <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
+            <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+            <Route path="/billing" element={<Layout><Billing /></Layout>} />
+            <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+            <Route path="/team" element={<Layout><Team /></Layout>} />
+            <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
+            <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
+            <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
+            <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
+            <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
+            <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
+            <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
+            <Route path="/stock" element={<Layout><Stock /></Layout>} />
+            <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
+            <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
+            <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
+            <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
+            <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
+            <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
+            <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
+            <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
+            <Route path="/book/:slug" element={<PublicBooking />} />
+            <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+            <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
+  const defaultRoute = isAffiliate ? "/affiliate-dashboard" : "/dashboard";
+
+  return (
+    <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {adminRoutes.map(r => (
-            <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
-          ))}
+          <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
+          <Route path="/auth" element={<Navigate to={defaultRoute} replace />} />
           <Route path="/quote/:token" element={<QuoteApproval />} />
           <Route path="/portal/:token" element={<ClientPortal />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
+          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
+          {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
@@ -195,63 +290,11 @@ function AuthenticatedRoutes() {
           <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
           <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
           <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
-          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
-          <Route path="/" element={<LandingPage />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          <Route path="*" element={<Navigate to={defaultRoute} replace />} />
         </Routes>
       </Suspense>
-    );
-  }
-
-  const defaultRoute = isAffiliate ? "/affiliate-dashboard" : "/dashboard";
-
-  return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
-        <Route path="/auth" element={<Navigate to={defaultRoute} replace />} />
-        <Route path="/quote/:token" element={<QuoteApproval />} />
-        <Route path="/portal/:token" element={<ClientPortal />} />
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
-        <Route path="/book/:slug" element={<PublicBooking />} />
-        <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
-        {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
-        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/clients" element={<Layout><Clients /></Layout>} />
-        <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
-        <Route path="/quotes" element={<Layout><Quotes /></Layout>} />
-        <Route path="/quotes/new" element={<Layout><QuoteForm /></Layout>} />
-        <Route path="/quotes/edit/:id" element={<Layout><QuoteForm /></Layout>} />
-        <Route path="/services" element={<Layout><Services /></Layout>} />
-        <Route path="/services/new" element={<Layout><ServiceForm /></Layout>} />
-        <Route path="/services/edit/:id" element={<Layout><ServiceForm /></Layout>} />
-        <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-        <Route path="/billing" element={<Layout><Billing /></Layout>} />
-        <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-        <Route path="/team" element={<Layout><Team /></Layout>} />
-        <Route path="/chat" element={<Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout>} />
-        <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
-        <Route path="/invoices/new" element={<Layout><InvoiceForm /></Layout>} />
-        <Route path="/invoices/:id" element={<Layout><InvoiceDetail /></Layout>} />
-        <Route path="/financial/reports" element={<Layout><FinancialReports /></Layout>} />
-        <Route path="/agenda" element={<Layout><Agenda /></Layout>} />
-        <Route path="/catalog" element={<Layout><ServiceCatalog /></Layout>} />
-        <Route path="/stock" element={<Layout><Stock /></Layout>} />
-        <Route path="/inspections" element={<Layout><Inspections /></Layout>} />
-        <Route path="/loyalty" element={<Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout>} />
-        <Route path="/marketing" element={<Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout>} />
-        <Route path="/workshop" element={<Layout><Workshop /></Layout>} />
-        <Route path="/automations" element={<Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout>} />
-        <Route path="/developers" element={<Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout>} />
-        <Route path="/partners" element={<Layout><PartnersPortal /></Layout>} />
-        <Route path="/referrals" element={<Layout><Referrals /></Layout>} />
-        <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-        <Route path="*" element={<Navigate to={defaultRoute} replace />} />
-      </Routes>
-    </Suspense>
+    </ChunkErrorBoundary>
   );
 }
 
@@ -286,19 +329,21 @@ function AppRoutes() {
 
   if (!session) {
     return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/quote/:token" element={<QuoteApproval />} />
-          <Route path="/portal/:token" element={<ClientPortal />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
-          <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-          <Route path="/book/:slug" element={<PublicBooking />} />
-          <Route path="*" element={<LandingPage />} />
-        </Routes>
-      </Suspense>
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/quote/:token" element={<QuoteApproval />} />
+            <Route path="/portal/:token" element={<ClientPortal />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+            <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+            <Route path="/book/:slug" element={<PublicBooking />} />
+            <Route path="*" element={<LandingPage />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
     );
   }
 

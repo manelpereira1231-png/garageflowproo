@@ -217,7 +217,8 @@ function AuthenticatedRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
         <Route path="/book/:slug" element={<PublicBooking />} />
-        <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+        <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
+        {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/clients" element={<Layout><Clients /></Layout>} />
         <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />

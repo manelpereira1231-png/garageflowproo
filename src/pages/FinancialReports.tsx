@@ -145,6 +145,9 @@ export default function FinancialReports() {
     load();
   }, [period, activeShopId]);
 
+  const [saftLoading, setSaftLoading] = useState(false);
+  const [saftYear, setSaftYear] = useState(new Date().getFullYear().toString());
+
   const handleExport = () => {
     if (!canUseFeature('csvExport')) {
       toast.error(t('planGate.description').replace('{plan}', 'Pro'));
@@ -155,6 +158,49 @@ export default function FinancialReports() {
       'IVA': m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
     })), 'relatorio-financeiro');
     toast.success(t('common.exported'));
+  };
+
+  const handleExportSaft = async () => {
+    if (!activeShopId) return;
+    setSaftLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Unauthorized"); setSaftLoading(false); return; }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-saft`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            shop_id: activeShopId,
+            year: parseInt(saftYear),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || t('financial.exportSaftError'));
+        setSaftLoading(false);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SAFT-PT_${saftYear}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t('financial.exportSaftSuccess'));
+    } catch {
+      toast.error(t('financial.exportSaftError'));
+    }
+    setSaftLoading(false);
   };
 
   const GrowthBadge = ({ value }: { value: number }) => {

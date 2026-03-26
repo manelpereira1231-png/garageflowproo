@@ -119,7 +119,7 @@ export default function AdminPartners() {
       inv.partner_id === selectedPartner.id &&
       inv.workshop_email.toLowerCase() === inviteForm.workshop_email.toLowerCase()
     );
-    if (existing) { toast.error("⚠️ Já existe um convite para esta oficina"); return; }
+    if (existing) { toast.error(t('admin.partners.duplicateInvite')); return; }
     const { error } = await supabase.from("partner_invites").insert([{
       partner_id: selectedPartner.id, ...inviteForm,
     }] as any).select().single();

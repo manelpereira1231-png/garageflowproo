@@ -4682,6 +4682,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.navAffiliates': 'Afiliados',
     'landing.footer': 'Todos os direitos reservados.',
     'landing.perMonth': '/mês',
+    'landing.perYear': '/ano',
+    'landing.trial15': 'Teste grátis por 15 dias',
+    'billing.trial15': 'Teste grátis por 15 dias',
     'landing.noCreditCard': 'Sem cartão de crédito · Configuração em 2 minutos',
 
     // Referrals

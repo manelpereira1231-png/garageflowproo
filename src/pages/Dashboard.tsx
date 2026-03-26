@@ -252,7 +252,7 @@ export default function Dashboard() {
       setDataLoaded(true);
     };
     loadData();
-  }, [language]);
+  }, [language, activeShopId]);
 
   const alertTypeColors: Record<string, string> = {
     payment_failed: "text-destructive",

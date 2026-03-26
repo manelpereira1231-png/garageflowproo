@@ -285,13 +285,13 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="page-title">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground">Visão global do sistema GarageFlow</p>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className="stat-card p-8 text-center">
           <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <p className="text-lg font-medium">Sem dados disponíveis</p>
-          <p className="text-sm text-muted-foreground mt-1">O sistema está a funcionar. Ainda não existem oficinas registadas.</p>
+          <p className="text-lg font-medium">{t('admin.dashboard.noData')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('admin.dashboard.noDataDesc')}</p>
         </div>
       </div>
     );

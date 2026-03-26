@@ -132,7 +132,11 @@ function DropdownField({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 max-h-[280px] flex flex-col">
+        <div
+          className="absolute z-[100] mt-1 w-full rounded-md border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 max-h-[280px] flex flex-col"
+          onPointerDown={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
+        >
           <div className="flex items-center border-b px-2 py-1.5">
             <Search className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
             <input

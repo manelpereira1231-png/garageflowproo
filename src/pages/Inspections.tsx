@@ -202,18 +202,20 @@ export default function Inspections() {
     const path = `${activeShopId}/inspections/${Date.now()}-${file.name}`;
     const { error } = await supabase.storage.from("work-order-files").upload(path, file);
     if (error) { toast.error(t('inspections.photoError')); setUploadingPhoto(null); return; }
-    const { data: { publicUrl } } = supabase.storage.from("work-order-files").getPublicUrl(path);
+    // work-order-files is a private bucket - use createSignedUrl for access
+    const { data: signedData } = await supabase.storage.from("work-order-files").createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+    const photoUrl = signedData?.signedUrl || '';
 
     if (isView && viewChecklist) {
       const updated = [...viewChecklist.items];
-      updated[index] = { ...updated[index], photoUrl: publicUrl };
+      updated[index] = { ...updated[index], photoUrl };
       const newChecklist = { ...viewChecklist, items: updated };
       setViewChecklist(newChecklist);
       autoSaveChecklist(newChecklist, updated);
     } else {
       setItems(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], photoUrl: publicUrl };
+        updated[index] = { ...updated[index], photoUrl };
         return updated;
       });
     }

@@ -56,6 +56,7 @@ export default function SettingsPage() {
       if (shopData) {
         setShopId(shopData.id);
         setShopSlug(shopData.slug || "");
+        setLogoFile(null);
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
           country: shopData.country || "Portugal", currency: shopData.currency || "EUR",
@@ -64,10 +65,17 @@ export default function SettingsPage() {
           nif: shopData.nif || "", address: shopData.address || "",
           timezone: shopData.timezone || "Europe/Lisbon",
         });
-        if (shopData.logo_url) setLogoPreview(shopData.logo_url);
+        setLogoPreview(shopData.logo_url || null);
       }
     };
     load();
+
+    // Listen for shop switches
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "garageflow_active_shop") load();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +104,7 @@ export default function SettingsPage() {
     }
 
     const payload: any = {
-      user_id: user.id, name: form.name, email: form.email, phone: form.phone,
+      name: form.name, email: form.email, phone: form.phone,
       country: form.country, currency: form.currency, vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
       nif: form.nif, address: form.address, timezone: form.timezone,

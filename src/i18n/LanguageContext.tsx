@@ -27,7 +27,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const loadLanguage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
+      // Prioritize active shop's language setting
+      const activeShopId = localStorage.getItem("garageflow_active_shop");
+      let shop: { language: string } | null = null;
+      if (activeShopId) {
+        const { data } = await supabase.from("shops").select("language").eq("id", activeShopId).maybeSingle();
+        shop = data;
+      }
+      if (!shop) {
+        const { data } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
+        shop = data;
+      }
       if (shop?.language && ['pt', 'pt-BR', 'en', 'es'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
         localStorage.setItem('garageflow_language', shop.language);
@@ -39,9 +49,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('garageflow_language', lang);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("shops").update({ language: lang }).eq("user_id", user.id);
+    // Update only the active shop's language, not all shops
+    const activeShopId = localStorage.getItem("garageflow_active_shop");
+    if (activeShopId) {
+      await supabase.from("shops").update({ language: lang }).eq("id", activeShopId);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("shops").update({ language: lang }).eq("user_id", user.id).limit(1);
+      }
     }
   }, []);
 

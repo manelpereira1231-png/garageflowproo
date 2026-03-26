@@ -1615,6 +1615,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.alertsLabel': 'Alerts',
     'onboarding.noAlerts': 'None',
     'onboarding.plan': 'Plan',
+    'onboarding.completeProfile': 'Complete your workshop profile',
+    'onboarding.fieldsCompleted': 'fields completed',
 
     'common.save': 'Save',
     'common.cancel': 'Cancel',

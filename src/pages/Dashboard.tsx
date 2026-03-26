@@ -569,7 +569,7 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {pendingAlerts.map(alert => (
-              <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border group hover:bg-muted/80 transition-colors">
                 <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{alert.title}</p>
@@ -577,10 +577,12 @@ export default function Dashboard() {
                     {t(`alerts.type.${alert.type}`)} · {alert.due_date ? new Date(alert.due_date).toLocaleDateString() : new Date(alert.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs hidden sm:flex">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {t('alerts.statusPending')}
-                </Badge>
+                <Link to="/alerts" className="shrink-0">
+                  <Button variant="ghost" size="sm" className="text-xs gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Bell className="w-3 h-3" />
+                    {t('common.view') || 'Ver'}
+                  </Button>
+                </Link>
               </div>
             ))}
           </div>

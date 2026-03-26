@@ -3,7 +3,6 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
   ClipboardCheck, Plus, Eye, CheckCircle, AlertTriangle, XCircle,
-  Loader2, Wrench, Car, ChevronDown, ChevronUp, FileText, Send, Save, StickyNote, MessageSquare
+  Loader2, Wrench, Car, ChevronDown, ChevronUp, FileText, Send, Save,
+  StickyNote, MessageSquare, Camera, ImageIcon, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -27,13 +27,12 @@ interface ChecklistItem {
   category: string;
   status: "ok" | "attention" | "repair" | "na";
   notes: string;
+  photoUrl?: string;
 }
 
 const CHECKLIST_CATEGORIES = [
   {
-    id: 'braking',
-    labelKey: 'inspections.category.braking',
-    icon: '🛑',
+    id: 'braking', labelKey: 'inspections.category.braking', icon: '🛑',
     items: [
       { key: 'frontBrakes', labelKey: 'inspections.item.frontBrakes' },
       { key: 'rearBrakes', labelKey: 'inspections.item.rearBrakes' },
@@ -42,9 +41,7 @@ const CHECKLIST_CATEGORIES = [
     ],
   },
   {
-    id: 'tires',
-    labelKey: 'inspections.category.tires',
-    icon: '🔘',
+    id: 'tires', labelKey: 'inspections.category.tires', icon: '🔘',
     items: [
       { key: 'frontLeftTire', labelKey: 'inspections.item.frontLeftTire' },
       { key: 'frontRightTire', labelKey: 'inspections.item.frontRightTire' },
@@ -53,9 +50,7 @@ const CHECKLIST_CATEGORIES = [
     ],
   },
   {
-    id: 'engine',
-    labelKey: 'inspections.category.engine',
-    icon: '⚙️',
+    id: 'engine', labelKey: 'inspections.category.engine', icon: '⚙️',
     items: [
       { key: 'engineOil', labelKey: 'inspections.item.engineOil' },
       { key: 'airFilter', labelKey: 'inspections.item.airFilter' },
@@ -66,9 +61,7 @@ const CHECKLIST_CATEGORIES = [
     ],
   },
   {
-    id: 'suspension',
-    labelKey: 'inspections.category.suspension',
-    icon: '🔩',
+    id: 'suspension', labelKey: 'inspections.category.suspension', icon: '🔩',
     items: [
       { key: 'frontSuspension', labelKey: 'inspections.item.frontSuspension' },
       { key: 'rearSuspension', labelKey: 'inspections.item.rearSuspension' },
@@ -76,9 +69,7 @@ const CHECKLIST_CATEGORIES = [
     ],
   },
   {
-    id: 'electrical',
-    labelKey: 'inspections.category.electrical',
-    icon: '⚡',
+    id: 'electrical', labelKey: 'inspections.category.electrical', icon: '⚡',
     items: [
       { key: 'battery', labelKey: 'inspections.item.battery' },
       { key: 'lights', labelKey: 'inspections.item.lights' },
@@ -97,13 +88,6 @@ interface Checklist {
   created_at: string;
 }
 
-const STATUS_CONFIG = {
-  ok: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-500", bgLight: "bg-green-100 dark:bg-green-900/30", border: "border-green-300 dark:border-green-700", ring: "ring-green-400", labelKey: "inspections.status.ok" },
-  attention: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-500", bgLight: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-700", ring: "ring-amber-400", labelKey: "inspections.status.attention" },
-  repair: { icon: XCircle, color: "text-red-600", bg: "bg-red-500", bgLight: "bg-red-100 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", ring: "ring-red-400", labelKey: "inspections.status.repair" },
-  na: { icon: null, color: "text-muted-foreground", bg: "bg-muted", bgLight: "bg-muted", border: "border-border", ring: "ring-border", labelKey: "inspections.status.na" },
-};
-
 export default function Inspections() {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -118,8 +102,8 @@ export default function Inspections() {
   const [saving, setSaving] = useState(false);
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({});
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
-
   const activeShopId = useActiveShopId();
 
   const buildDefaultItems = useCallback((): ChecklistItem[] => {
@@ -130,6 +114,7 @@ export default function Inspections() {
         category: cat.id,
         status: "na" as const,
         notes: "",
+        photoUrl: "",
       }))
     );
   }, [t]);
@@ -153,6 +138,7 @@ export default function Inspections() {
         key: item.key || '',
         category: item.category || '',
         notes: item.notes || '',
+        photoUrl: item.photoUrl || '',
       })),
     })) as Checklist[]);
     if (woRes.data) setWorkOrders(woRes.data);
@@ -160,7 +146,6 @@ export default function Inspections() {
 
   useEffect(() => { load(); }, [activeShopId]);
 
-  // Filter WOs that don't have an inspection yet
   const availableWOs = workOrders.filter(wo =>
     !checklists.some(cl => cl.work_order_id === wo.id)
   );
@@ -168,7 +153,7 @@ export default function Inspections() {
   const handleCreate = async (asDraft = false) => {
     if (!activeShopId || !selectedWO) { toast.error(t('inspections.selectWO')); return; }
     setSaving(true);
-    const itemsToSave = items.map(i => ({ ...i, name: i.name }));
+    const itemsToSave = items.map(i => ({ ...i }));
     const completed = !asDraft && items.every(i => i.status !== 'na') ? new Date().toISOString() : null;
     const { error } = await supabase.from("inspection_checklists").insert({
       shop_id: activeShopId,
@@ -211,6 +196,31 @@ export default function Inspections() {
     });
   };
 
+  const handlePhotoUpload = async (index: number, file: File, isView = false) => {
+    if (!activeShopId) return;
+    setUploadingPhoto(index);
+    const path = `${activeShopId}/inspections/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("work-order-files").upload(path, file);
+    if (error) { toast.error(t('inspections.photoError')); setUploadingPhoto(null); return; }
+    const { data: { publicUrl } } = supabase.storage.from("work-order-files").getPublicUrl(path);
+
+    if (isView && viewChecklist) {
+      const updated = [...viewChecklist.items];
+      updated[index] = { ...updated[index], photoUrl: publicUrl };
+      const newChecklist = { ...viewChecklist, items: updated };
+      setViewChecklist(newChecklist);
+      autoSaveChecklist(newChecklist, updated);
+    } else {
+      setItems(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], photoUrl: publicUrl };
+        return updated;
+      });
+    }
+    setUploadingPhoto(null);
+    toast.success(t('inspections.photoAdded'));
+  };
+
   const autoSaveChecklist = useCallback(async (checklist: Checklist, updatedItems: ChecklistItem[]) => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
@@ -222,6 +232,15 @@ export default function Inspections() {
     if (!viewChecklist) return;
     const updated = [...viewChecklist.items];
     updated[index] = { ...updated[index], status: updated[index].status === status ? 'na' : status };
+    const newChecklist = { ...viewChecklist, items: updated };
+    setViewChecklist(newChecklist);
+    autoSaveChecklist(newChecklist, updated);
+  };
+
+  const updateViewItemNotes = (index: number, notes: string) => {
+    if (!viewChecklist) return;
+    const updated = [...viewChecklist.items];
+    updated[index] = { ...updated[index], notes };
     const newChecklist = { ...viewChecklist, items: updated };
     setViewChecklist(newChecklist);
     autoSaveChecklist(newChecklist, updated);
@@ -239,10 +258,17 @@ export default function Inspections() {
 
   const getOverallStatus = (itemsList: ChecklistItem[]) => {
     const s = getSummary(itemsList);
-    if (s.repair > 0) return { labelKey: "inspections.overall.repairsNeeded", color: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700" };
-    if (s.attention > 0) return { labelKey: "inspections.overall.attentionRecommended", color: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700" };
-    if (s.pct === 100) return { labelKey: "inspections.overall.allOk", color: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" };
-    return { labelKey: "inspections.overall.inProgress", color: "bg-muted text-muted-foreground border-border" };
+    if (s.repair > 0) return { labelKey: "inspections.overall.repairsNeeded", variant: "repair" as const };
+    if (s.attention > 0) return { labelKey: "inspections.overall.attentionRecommended", variant: "attention" as const };
+    if (s.pct === 100) return { labelKey: "inspections.overall.allOk", variant: "ok" as const };
+    return { labelKey: "inspections.overall.inProgress", variant: "na" as const };
+  };
+
+  const overallStyles = {
+    ok: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
+    attention: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700",
+    repair: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
+    na: "bg-muted text-muted-foreground border-border",
   };
 
   const getWOLabel = (wo: any) => {
@@ -256,37 +282,61 @@ export default function Inspections() {
     setCollapsedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
   };
 
-  // Status button component with premium animations
+  // ============ PREMIUM STATUS BUTTON ============
   const StatusButton = ({ status, currentStatus, onClick, size = "default" }: {
     status: "ok" | "attention" | "repair";
     currentStatus: string;
     onClick: () => void;
     size?: "default" | "sm";
   }) => {
-    const cfg = STATUS_CONFIG[status];
     const isActive = currentStatus === status;
-    const Icon = cfg.icon!;
-    const sizeClasses = size === "sm" ? "px-2 py-1 text-[10px] gap-0.5" : "px-3 py-2 text-xs gap-1.5";
+    const configs = {
+      ok: {
+        activeClass: "bg-green-500 text-white shadow-green-500/30 border-green-500",
+        inactiveClass: "text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20",
+        Icon: CheckCircle,
+      },
+      attention: {
+        activeClass: "bg-amber-500 text-white shadow-amber-500/30 border-amber-500",
+        inactiveClass: "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+        Icon: AlertTriangle,
+      },
+      repair: {
+        activeClass: "bg-red-500 text-white shadow-red-500/30 border-red-500",
+        inactiveClass: "text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20",
+        Icon: XCircle,
+      },
+    };
+
+    const cfg = configs[status];
+    const Icon = cfg.Icon;
+    const sizeClasses = size === "sm"
+      ? "h-7 px-2 text-[10px] gap-1 min-w-[52px]"
+      : "h-8 px-3 text-xs gap-1.5 min-w-[64px]";
 
     return (
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.06, y: -1 }}
+        whileTap={{ scale: 0.94 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`flex items-center ${sizeClasses} rounded-lg font-semibold border-2 transition-all duration-200 ${
-          isActive
-            ? `${cfg.bg} text-white border-transparent shadow-lg shadow-current/20 ring-2 ${cfg.ring} ring-offset-1 ring-offset-background`
-            : `bg-background border-border ${cfg.color} opacity-50 hover:opacity-90 hover:${cfg.bgLight}`
-        }`}
+        className={`
+          inline-flex items-center justify-center ${sizeClasses} rounded-full font-bold border-2
+          transition-all duration-200 select-none cursor-pointer
+          ${isActive
+            ? `${cfg.activeClass} shadow-lg ring-2 ring-offset-1 ring-offset-background ring-current/20`
+            : `${cfg.inactiveClass} bg-background opacity-60 hover:opacity-100`
+          }
+        `}
       >
-        <Icon className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
-        {t(cfg.labelKey)}
+        <Icon className={size === "sm" ? "w-3 h-3 shrink-0" : "w-3.5 h-3.5 shrink-0"} />
+        <span>{t(`inspections.status.${status}`)}</span>
       </motion.button>
     );
   };
 
-  // Render checklist items grouped by category
+  // ============ RENDER CATEGORY ITEMS ============
   const renderCategoryItems = (
     itemsList: ChecklistItem[],
     onStatusChange: (index: number, status: ChecklistItem["status"]) => void,
@@ -294,127 +344,202 @@ export default function Inspections() {
     isReadOnly = false,
     noteState?: Record<number, boolean>,
     setNoteState?: (s: Record<number, boolean>) => void,
+    isViewMode = false,
   ) => {
-    let globalIndex = 0;
-
     return CHECKLIST_CATEGORIES.map(cat => {
-      const catItems = itemsList.filter(item => item.category === cat.id);
-      // If items don't have category (legacy), match by key
-      const startIdx = globalIndex;
-      const categoryItems = catItems.length > 0
-        ? catItems.map((item) => {
-          const idx = itemsList.indexOf(item);
-          return { item, idx };
-        })
-        : cat.items.map((catItem) => {
-          const idx = itemsList.findIndex(item => item.key === catItem.key || item.name === t(catItem.labelKey));
-          globalIndex++;
-          return idx >= 0 ? { item: itemsList[idx], idx } : null;
-        }).filter(Boolean) as { item: ChecklistItem; idx: number }[];
+      const categoryItems = cat.items.map((catItem) => {
+        const idx = itemsList.findIndex(item => item.key === catItem.key || item.name === t(catItem.labelKey));
+        return idx >= 0 ? { item: itemsList[idx], idx } : null;
+      }).filter(Boolean) as { item: ChecklistItem; idx: number }[];
 
       if (categoryItems.length === 0) return null;
 
       const catSummary = getSummary(categoryItems.map(ci => ci.item));
       const isCollapsed = collapsedCategories[cat.id];
+      const catComplete = catSummary.checked === catSummary.total;
 
       return (
         <div key={cat.id} className="space-y-1">
+          {/* Category header */}
           <button
             onClick={() => toggleCategory(cat.id)}
-            className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+            className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 ${
+              catComplete
+                ? 'bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800'
+                : 'bg-muted/50 hover:bg-muted border border-transparent'
+            }`}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-base">{cat.icon}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">{cat.icon}</span>
               <span className="text-sm font-bold text-foreground">{t(cat.labelKey)}</span>
-              <span className="text-[10px] text-muted-foreground ml-1">
+              {catComplete && <CheckCircle className="w-4 h-4 text-green-500" />}
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Mini summary pills */}
+              <div className="flex items-center gap-1">
+                {catSummary.ok > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <CheckCircle className="w-2.5 h-2.5" />{catSummary.ok}
+                  </span>
+                )}
+                {catSummary.attention > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="w-2.5 h-2.5" />{catSummary.attention}
+                  </span>
+                )}
+                {catSummary.repair > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <XCircle className="w-2.5 h-2.5" />{catSummary.repair}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
                 {catSummary.checked}/{catSummary.total}
               </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {catSummary.ok > 0 && <span className="flex items-center gap-0.5 text-[10px] text-green-600 font-medium"><CheckCircle className="w-3 h-3" />{catSummary.ok}</span>}
-              {catSummary.attention > 0 && <span className="flex items-center gap-0.5 text-[10px] text-amber-600 font-medium"><AlertTriangle className="w-3 h-3" />{catSummary.attention}</span>}
-              {catSummary.repair > 0 && <span className="flex items-center gap-0.5 text-[10px] text-red-600 font-medium"><XCircle className="w-3 h-3" />{catSummary.repair}</span>}
               {isCollapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
             </div>
           </button>
 
+          {/* Items */}
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-1 overflow-hidden"
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="overflow-hidden"
               >
-                {categoryItems.map(({ item, idx }) => {
-                  const showNotes = noteState?.[idx];
-                  return (
-                    <div key={idx}>
-                      <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 ${
-                        item.status === 'ok' ? 'border-green-200 bg-green-50/60 dark:border-green-800 dark:bg-green-900/20' :
-                        item.status === 'attention' ? 'border-amber-200 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-900/20' :
-                        item.status === 'repair' ? 'border-red-200 bg-red-50/60 dark:border-red-800 dark:bg-red-900/20' :
-                        'border-border bg-background hover:bg-muted/30'
-                      }`}>
-                        <span className="text-sm font-medium flex-1 min-w-0 truncate">{item.name}</span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {!isReadOnly ? (
-                            <>
-                              <StatusButton status="ok" currentStatus={item.status} onClick={() => onStatusChange(idx, 'ok')} size="sm" />
-                              <StatusButton status="attention" currentStatus={item.status} onClick={() => onStatusChange(idx, 'attention')} size="sm" />
-                              <StatusButton status="repair" currentStatus={item.status} onClick={() => onStatusChange(idx, 'repair')} size="sm" />
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => setNoteState?.({ ...noteState, [idx]: !showNotes })}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  item.notes ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                                }`}
-                              >
-                                <StickyNote className="w-3.5 h-3.5" />
-                              </motion.button>
-                            </>
-                          ) : (
-                            <>
-                              <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-                                item.status === 'ok' ? 'bg-green-500 text-white' :
-                                item.status === 'attention' ? 'bg-amber-500 text-white' :
-                                item.status === 'repair' ? 'bg-red-500 text-white' :
-                                'bg-muted text-muted-foreground'
-                              }`}>
-                                {t(STATUS_CONFIG[item.status].labelKey)}
-                              </span>
-                              {item.notes && (
-                                <span className="text-primary"><StickyNote className="w-3.5 h-3.5" /></span>
-                              )}
-                            </>
-                          )}
+                <div className="space-y-1 pl-2">
+                  {categoryItems.map(({ item, idx }) => {
+                    const showNotes = noteState?.[idx];
+                    const hasContent = item.notes || item.photoUrl;
+
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.02 * categoryItems.indexOf(categoryItems.find(ci => ci.idx === idx)!) }}
+                      >
+                        {/* Item row */}
+                        <div className={`
+                          flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition-all duration-300
+                          ${item.status === 'ok' ? 'border-green-200 bg-green-50/50 dark:border-green-800/60 dark:bg-green-900/10' :
+                            item.status === 'attention' ? 'border-amber-200 bg-amber-50/50 dark:border-amber-800/60 dark:bg-amber-900/10' :
+                            item.status === 'repair' ? 'border-red-200 bg-red-50/50 dark:border-red-800/60 dark:bg-red-900/10' :
+                            'border-border bg-background hover:bg-muted/20'}
+                        `}>
+                          {/* Status indicator dot */}
+                          <div className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-300 ${
+                            item.status === 'ok' ? 'bg-green-500' :
+                            item.status === 'attention' ? 'bg-amber-500' :
+                            item.status === 'repair' ? 'bg-red-500' :
+                            'bg-muted-foreground/20'
+                          }`} />
+
+                          {/* Item name */}
+                          <span className={`text-sm font-medium flex-1 min-w-0 truncate transition-colors ${
+                            item.status !== 'na' ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>
+                            {item.name}
+                          </span>
+
+                          {/* Status buttons */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {!isReadOnly ? (
+                              <>
+                                <StatusButton status="ok" currentStatus={item.status} onClick={() => onStatusChange(idx, 'ok')} size="sm" />
+                                <StatusButton status="attention" currentStatus={item.status} onClick={() => onStatusChange(idx, 'attention')} size="sm" />
+                                <StatusButton status="repair" currentStatus={item.status} onClick={() => onStatusChange(idx, 'repair')} size="sm" />
+                                {/* Notes + Photo toggle */}
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={(e) => { e.stopPropagation(); setNoteState?.({ ...noteState, [idx]: !showNotes }); }}
+                                  className={`p-1.5 rounded-full transition-all ${
+                                    hasContent
+                                      ? 'bg-primary/15 text-primary ring-1 ring-primary/20'
+                                      : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted'
+                                  }`}
+                                >
+                                  <StickyNote className="w-3.5 h-3.5" />
+                                </motion.button>
+                              </>
+                            ) : (
+                              <>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                                  item.status === 'ok' ? 'bg-green-500 text-white' :
+                                  item.status === 'attention' ? 'bg-amber-500 text-white' :
+                                  item.status === 'repair' ? 'bg-red-500 text-white' :
+                                  'bg-muted text-muted-foreground'
+                                }`}>
+                                  {t(`inspections.status.${item.status}`)}
+                                </span>
+                                {hasContent && <StickyNote className="w-3.5 h-3.5 text-primary" />}
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <AnimatePresence>
-                        {showNotes && !isReadOnly && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <Input
-                              value={item.notes}
-                              onChange={(e) => onNotesChange?.(idx, e.target.value)}
-                              placeholder={t('inspections.itemNotePlaceholder')}
-                              className="mt-1 text-xs h-8"
-                            />
-                          </motion.div>
+
+                        {/* Expandable notes + photo */}
+                        <AnimatePresence>
+                          {showNotes && !isReadOnly && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-1 ml-4 mr-1 p-3 rounded-xl bg-muted/30 border border-border space-y-2">
+                                <Input
+                                  value={item.notes}
+                                  onChange={(e) => onNotesChange?.(idx, e.target.value)}
+                                  placeholder={t('inspections.itemNotePlaceholder')}
+                                  className="text-xs h-8"
+                                />
+                                {/* Photo upload */}
+                                <div className="flex items-center gap-2">
+                                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors">
+                                    <Camera className="w-3.5 h-3.5" />
+                                    <span>{item.photoUrl ? t('inspections.changePhoto') : t('inspections.addPhoto')}</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handlePhotoUpload(idx, file, isViewMode);
+                                      }}
+                                    />
+                                  </label>
+                                  {uploadingPhoto === idx && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                                </div>
+                                {item.photoUrl && (
+                                  <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                                    <img src={item.photoUrl} alt="" className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Read-only notes display */}
+                        {isReadOnly && (item.notes || item.photoUrl) && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            {item.notes && <p className="text-[11px] text-muted-foreground italic">📝 {item.notes}</p>}
+                            {item.photoUrl && (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden border border-border">
+                                <img src={item.photoUrl} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </AnimatePresence>
-                      {isReadOnly && item.notes && (
-                        <p className="text-[11px] text-muted-foreground ml-3 mt-0.5 italic">📝 {item.notes}</p>
-                      )}
-                    </div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -424,6 +549,7 @@ export default function Inspections() {
   };
 
   const summaryGlobal = getSummary(items);
+  const overallGlobal = getOverallStatus(items);
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -462,7 +588,7 @@ export default function Inspections() {
                 key={cl.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card border border-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-all duration-300"
+                className="bg-card border border-border rounded-xl p-4 space-y-3 hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm font-mono text-primary">{wo?.number || cl.work_order_id.slice(0, 8)}</span>
@@ -486,22 +612,23 @@ export default function Inspections() {
                     <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
                     <span className="font-bold text-foreground">{s.pct}%</span>
                   </div>
-                  <Progress value={s.pct} className="h-2" />
+                  <Progress value={s.pct} className="h-2.5" />
                 </div>
 
-                <div className="flex gap-2 text-xs">
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                {/* Summary pills */}
+                <div className="flex gap-1.5 text-xs flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold">
                     <CheckCircle className="w-3 h-3" /> {s.ok}
                   </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-semibold">
                     <AlertTriangle className="w-3 h-3" /> {s.attention}
                   </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-semibold">
                     <XCircle className="w-3 h-3" /> {s.repair}
                   </span>
                 </div>
 
-                <div className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border ${overall.color} text-center`}>
+                <div className={`text-xs font-semibold px-3 py-2 rounded-xl border-2 text-center ${overallStyles[overall.variant]}`}>
                   {t(overall.labelKey)}
                 </div>
 
@@ -584,36 +711,47 @@ export default function Inspections() {
 
             <Separator />
 
-            {/* Block 2 - Progress bar */}
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground font-medium">{summaryGlobal.checked}/{summaryGlobal.total} {t('inspections.checked')}</span>
-                <span className="font-bold text-sm text-foreground">{summaryGlobal.pct}%</span>
+            {/* Progress bar - premium */}
+            <div className="bg-muted/30 rounded-2xl p-4 border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">{t('inspections.progress')}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${overallStyles[overallGlobal.variant]}`}>
+                    {t(overallGlobal.labelKey)}
+                  </span>
+                </div>
+                <span className="text-2xl font-black text-primary tabular-nums">{summaryGlobal.pct}%</span>
               </div>
               <Progress value={summaryGlobal.pct} className="h-3 rounded-full" />
-              <div className="flex gap-3 mt-2 text-[10px]">
-                <span className="text-green-600 font-medium">✓ {summaryGlobal.ok} OK</span>
-                <span className="text-amber-600 font-medium">⚠ {summaryGlobal.attention} {t('inspections.status.attention')}</span>
-                <span className="text-red-600 font-medium">✕ {summaryGlobal.repair} {t('inspections.status.repair')}</span>
+              <div className="flex gap-3 mt-3">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400">
+                  <CheckCircle className="w-3.5 h-3.5" /> {summaryGlobal.ok} OK
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="w-3.5 h-3.5" /> {summaryGlobal.attention} {t('inspections.status.attention')}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400">
+                  <XCircle className="w-3.5 h-3.5" /> {summaryGlobal.repair} {t('inspections.status.repair')}
+                </span>
               </div>
             </div>
 
             <Separator />
 
-            {/* Block 3 - Checklist by categories */}
+            {/* Checklist by categories */}
             <div>
               <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 text-primary" />
                 {t('inspections.checklist')}
               </h3>
               <div className="space-y-2">
-                {renderCategoryItems(items, (idx, status) => updateItemStatus(idx, status), updateItemNotes, false, expandedNotes, setExpandedNotes)}
+                {renderCategoryItems(items, updateItemStatus, updateItemNotes, false, expandedNotes, setExpandedNotes, false)}
               </div>
             </div>
 
             <Separator />
 
-            {/* Block 4 - Client recommendation */}
+            {/* Client recommendation */}
             <div>
               <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
@@ -631,14 +769,26 @@ export default function Inspections() {
             <Separator />
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => handleCreate(true)} disabled={saving} className="flex-1 gap-1.5">
-                <Save className="w-4 h-4" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <Button variant="outline" onClick={() => handleCreate(true)} disabled={saving} className="gap-1.5 text-xs">
+                <Save className="w-3.5 h-3.5" />
                 {t('inspections.saveDraft')}
               </Button>
-              <Button onClick={() => handleCreate(false)} disabled={saving} className="flex-1 gap-1.5">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              <Button onClick={() => handleCreate(false)} disabled={saving} className="gap-1.5 text-xs">
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                 {t('inspections.create')}
+              </Button>
+              <Button variant="secondary" className="gap-1.5 text-xs" disabled={!selectedWO} onClick={() => {
+                if (selectedWO) {
+                  navigate(`/services/edit/${selectedWO}`);
+                }
+              }}>
+                <Send className="w-3.5 h-3.5" />
+                {t('inspections.sendToWO')}
+              </Button>
+              <Button variant="secondary" className="gap-1.5 text-xs" disabled>
+                <Download className="w-3.5 h-3.5" />
+                {t('inspections.generatePDF')}
               </Button>
             </div>
           </div>
@@ -661,12 +811,14 @@ export default function Inspections() {
             const s = getSummary(viewChecklist.items);
             const overall = getOverallStatus(viewChecklist.items);
             const wo = workOrders.find(w => w.id === viewChecklist.work_order_id);
+            const isCompleted = !!viewChecklist.completed_at;
+
             return (
               <div className="px-6 pb-6 space-y-4">
                 {/* WO Info */}
                 {wo && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-                    <Car className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl px-4 py-3 border border-border">
+                    <Car className="w-4 h-4 text-primary" />
                     <span className="font-mono font-bold text-foreground">{wo.number}</span>
                     {wo.clients && <span>— {(wo.clients as any)?.name}</span>}
                     {wo.vehicles && <span>— {(wo.vehicles as any)?.make} {(wo.vehicles as any)?.model} ({(wo.vehicles as any)?.plate})</span>}
@@ -674,16 +826,21 @@ export default function Inspections() {
                 )}
 
                 {/* Progress */}
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-muted-foreground">{s.checked}/{s.total} {t('inspections.checked')}</span>
-                    <span className="font-bold text-sm">{s.pct}%</span>
+                <div className="bg-muted/30 rounded-2xl p-4 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold">{t('inspections.progress')}</span>
+                    <span className="text-2xl font-black text-primary tabular-nums">{s.pct}%</span>
                   </div>
                   <Progress value={s.pct} className="h-3" />
+                  <div className="flex gap-3 mt-2">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400"><CheckCircle className="w-3 h-3" /> {s.ok}</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400"><AlertTriangle className="w-3 h-3" /> {s.attention}</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400"><XCircle className="w-3 h-3" /> {s.repair}</span>
+                  </div>
                 </div>
 
                 {/* Overall status */}
-                <div className={`text-sm font-semibold px-4 py-2.5 rounded-xl border-2 text-center ${overall.color}`}>
+                <div className={`text-sm font-bold px-4 py-3 rounded-xl border-2 text-center ${overallStyles[overall.variant]}`}>
                   {t(overall.labelKey)}
                 </div>
 
@@ -692,25 +849,33 @@ export default function Inspections() {
                   {renderCategoryItems(
                     viewChecklist.items,
                     (idx, status) => updateViewItem(idx, status),
-                    undefined,
-                    !!viewChecklist.completed_at,
+                    (idx, notes) => updateViewItemNotes(idx, notes),
+                    isCompleted,
                     expandedNotes,
-                    setExpandedNotes
+                    setExpandedNotes,
+                    true
                   )}
                 </div>
 
-                {!viewChecklist.completed_at && (
-                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                    <Button variant="outline" className="flex-1 gap-1.5 text-xs" onClick={() => { setViewChecklist(null); load(); }}>
+                {/* Actions */}
+                {!isCompleted && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                    <Button variant="outline" className="gap-1.5 text-xs" onClick={() => { setViewChecklist(null); load(); }}>
                       <Save className="w-3.5 h-3.5" />{t('inspections.saveDraft')}
                     </Button>
-                    <Button className="flex-1 gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleComplete(viewChecklist.id); setViewChecklist(null); }}>
+                    <Button className="gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleComplete(viewChecklist.id); setViewChecklist(null); }}>
                       <CheckCircle className="w-3.5 h-3.5" />{t('inspections.markComplete')}
+                    </Button>
+                    <Button variant="secondary" className="gap-1.5 text-xs" onClick={() => { setViewChecklist(null); navigate(`/services/edit/${viewChecklist.work_order_id}`); }}>
+                      <Send className="w-3.5 h-3.5" />{t('inspections.sendToWO')}
+                    </Button>
+                    <Button variant="secondary" className="gap-1.5 text-xs" disabled>
+                      <Download className="w-3.5 h-3.5" />{t('inspections.generatePDF')}
                     </Button>
                   </div>
                 )}
 
-                {!viewChecklist.completed_at && (
+                {!isCompleted && (
                   <p className="text-[10px] text-muted-foreground text-center italic">
                     ✓ {t('inspections.autoSaved')}
                   </p>

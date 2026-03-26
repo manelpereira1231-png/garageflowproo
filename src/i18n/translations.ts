@@ -808,6 +808,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'Tudo OK',
     'inspections.overall.inProgress': 'Em progresso',
     'inspections.autoSaved': 'Alterações guardadas automaticamente',
+    'inspections.progress': 'Progresso',
+    'inspections.addPhoto': 'Adicionar foto',
+    'inspections.changePhoto': 'Alterar foto',
+    'inspections.photoAdded': 'Foto adicionada',
+    'inspections.photoError': 'Erro ao enviar foto',
+    'inspections.sendToWO': 'Enviar para OS',
+    'inspections.generatePDF': 'Gerar PDF',
 
     'nav.adminPanel': 'Painel Admin',
 
@@ -2075,6 +2082,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'All OK',
     'inspections.overall.inProgress': 'In progress',
     'inspections.autoSaved': 'Changes saved automatically',
+    'inspections.progress': 'Progress',
+    'inspections.addPhoto': 'Add photo',
+    'inspections.changePhoto': 'Change photo',
+    'inspections.photoAdded': 'Photo added',
+    'inspections.photoError': 'Error uploading photo',
+    'inspections.sendToWO': 'Send to WO',
+    'inspections.generatePDF': 'Generate PDF',
 
     'nav.adminPanel': 'Admin Panel',
 
@@ -3340,6 +3354,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'Todo OK',
     'inspections.overall.inProgress': 'En progreso',
     'inspections.autoSaved': 'Cambios guardados automáticamente',
+    'inspections.progress': 'Progreso',
+    'inspections.addPhoto': 'Añadir foto',
+    'inspections.changePhoto': 'Cambiar foto',
+    'inspections.photoAdded': 'Foto añadida',
+    'inspections.photoError': 'Error al subir foto',
+    'inspections.sendToWO': 'Enviar a OS',
+    'inspections.generatePDF': 'Generar PDF',
 
     'nav.adminPanel': 'Panel Admin',
 
@@ -4632,6 +4653,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'Tudo OK',
     'inspections.overall.inProgress': 'Em andamento',
     'inspections.autoSaved': 'Alterações salvas automaticamente',
+    'inspections.progress': 'Progresso',
+    'inspections.addPhoto': 'Adicionar foto',
+    'inspections.changePhoto': 'Alterar foto',
+    'inspections.photoAdded': 'Foto adicionada',
+    'inspections.photoError': 'Erro ao enviar foto',
+    'inspections.sendToWO': 'Enviar para OS',
+    'inspections.generatePDF': 'Gerar PDF',
 
     'nav.adminPanel': 'Painel Admin',
 

@@ -328,18 +328,18 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="page-title">Dashboard Admin</h1>
-          <p className="text-sm text-muted-foreground">Visão global em tempo real · Auto-atualiza com novas oficinas e planos</p>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" /> Exportar CSV
+            <Download className="w-4 h-4" /> {t('admin.dashboard.exportCSV')}
           </Button>
           <Button onClick={() => navigate("/admin/shops")} size="sm" className="gap-2">
-            <Building2 className="w-4 h-4" /> Gerir Oficinas
+            <Building2 className="w-4 h-4" /> {t('admin.dashboard.manageShops')}
           </Button>
           <Button onClick={() => navigate("/admin/settings")} variant="outline" size="sm" className="gap-2">
-            <Zap className="w-4 h-4" /> Configurações
+            <Zap className="w-4 h-4" /> {t('admin.dashboard.settings')}
           </Button>
         </div>
       </div>

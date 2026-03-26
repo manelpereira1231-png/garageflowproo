@@ -20,7 +20,8 @@ interface ChecklistItem {
 export default function OnboardingChecklist() {
   const { activeShopId } = useShopContext();
   const { language } = useLanguage();
-  const isPt = language === "pt";
+  const isPt = language === "pt" || language === "pt-BR";
+  const isBr = language === "pt-BR";
   const isEs = language === "es";
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,12 @@ export default function OnboardingChecklist() {
   const [seeding, setSeeding] = useState(false);
   const [justCompleted, setJustCompleted] = useState<Set<string>>(new Set());
 
-  const tt = (pt: string, en: string, es: string) => isPt ? pt : isEs ? es : en;
+  const tt = (pt: string, en: string, es: string, br?: string) => {
+    if (isBr && br) return br;
+    if (isPt) return pt;
+    if (isEs) return es;
+    return en;
+  };
 
   useEffect(() => {
     if (!activeShopId) return;
@@ -56,14 +62,14 @@ export default function OnboardingChecklist() {
       const newItems: ChecklistItem[] = [
         {
           key: "client",
-          label: tt("Criar primeiro cliente", "Create first client", "Crear primer cliente"),
-          tooltip: tt("Adicione os dados do seu primeiro cliente", "Add your first client's details", "Añade los datos de tu primer cliente"),
+          label: tt("Criar primeiro cliente", "Create first client", "Crear primer cliente", "Cadastrar primeiro cliente"),
+          tooltip: tt("Adicione os dados do seu primeiro cliente", "Add your first client's details", "Añade los datos de tu primer cliente", "Adicione os dados do seu primeiro cliente"),
           icon: Users, link: "/clients", done: (clientsRes.count || 0) > 0
         },
         {
           key: "vehicle",
           label: tt("Adicionar primeiro veículo", "Add first vehicle", "Añadir primer vehículo"),
-          tooltip: tt("Registe a matrícula e dados do veículo", "Register the vehicle plate and details", "Registra la matrícula y datos del vehículo"),
+          tooltip: tt("Registe a matrícula e dados do veículo", "Register the vehicle plate and details", "Registra la matrícula y datos del vehículo", "Registre a placa e dados do veículo"),
           icon: Car, link: "/vehicles", done: (vehiclesRes.count || 0) > 0
         },
         {
@@ -81,7 +87,7 @@ export default function OnboardingChecklist() {
         {
           key: "invoice",
           label: tt("Criar primeira fatura", "Create first invoice", "Crear primera factura"),
-          tooltip: tt("Fature o seu trabalho profissionalmente", "Invoice your work professionally", "Factura tu trabajo profesionalmente"),
+          tooltip: tt("Fature o seu trabalho profissionalmente", "Invoice your work professionally", "Factura tu trabajo profesionalmente", "Fature seu trabalho profissionalmente"),
           icon: Receipt, link: "/invoices/new", done: (invoicesRes.count || 0) > 0
         },
       ];
@@ -198,10 +204,10 @@ export default function OnboardingChecklist() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-success">
-            {tt("Configuração completa! 🎉", "Setup complete! 🎉", "¡Configuración completa! 🎉")}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {tt("A sua oficina está pronta para faturar.", "Your workshop is ready to go.", "Tu taller está listo para facturar.")}
+             {tt("Configuração completa! 🎉", "Setup complete! 🎉", "¡Configuración completa! 🎉")}
+           </p>
+           <p className="text-xs text-muted-foreground">
+             {tt("A sua oficina está pronta para faturar.", "Your workshop is ready to go.", "Tu taller está listo para facturar.", "Sua oficina está pronta para faturar.")}
           </p>
         </div>
         <button onClick={() => { localStorage.setItem(`garageflow_checklist_dismissed_${activeShopId}`, "true"); setDismissed(true); }}>
@@ -220,13 +226,13 @@ export default function OnboardingChecklist() {
           </div>
           <div>
             <h2 className="text-base font-semibold">
-              {tt("Configure a sua oficina", "Set up your workshop", "Configure su taller")}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {doneCount}/{items.length} {tt("passos concluídos", "steps completed", "pasos completados")}
-              {nextItem && (
-                <span className="ml-1 text-primary font-medium">
-                  — {tt("Próximo", "Next", "Siguiente")}: {nextItem.label}
+               {tt("Configure a sua oficina", "Set up your workshop", "Configure su taller", "Configure sua oficina")}
+             </h2>
+             <p className="text-xs text-muted-foreground">
+               {doneCount}/{items.length} {tt("passos concluídos", "steps completed", "pasos completados", "passos concluídos")}
+               {nextItem && (
+                 <span className="ml-1 text-primary font-medium">
+                   — {tt("Próximo", "Next", "Siguiente", "Próximo")}: {nextItem.label}
                 </span>
               )}
             </p>
@@ -238,8 +244,8 @@ export default function OnboardingChecklist() {
               className="text-xs btn-interactive">
               <Sparkles className="w-3.5 h-3.5 mr-1" />
               {seeding
-                ? tt("A criar...", "Creating...", "Creando...")
-                : tt("Dados Demo", "Demo Data", "Datos Demo")}
+                 ? tt("A criar...", "Creating...", "Creando...", "Criando...")
+                 : tt("Dados Demo", "Demo Data", "Datos Demo", "Dados Demo")}
             </Button>
           )}
           <button onClick={() => { localStorage.setItem(`garageflow_checklist_dismissed_${activeShopId}`, "true"); setDismissed(true); }}>

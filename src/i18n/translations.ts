@@ -4070,6 +4070,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'checklist.sendQuoteDesc': 'Envía por WhatsApp o email con 1 clic',
     'checklist.createInvoice': 'Crear primera factura',
     'checklist.createInvoiceDesc': 'Factura tu trabajo profesionalmente',
+    'pushNotifications': 'Notificaciones Push',
+    'pushDescription': 'Reciba alertas de nuevas OT, facturas e inspecciones.',
+    'pushNotSupported': 'Notificaciones push no soportadas',
+    'pushNotSupportedDesc': 'Su navegador no soporta notificaciones push.',
+    'pushEnabled': '¡Notificaciones activadas!',
+    'pushDisabled': 'Notificaciones desactivadas',
+    'pushDenied': 'Permiso denegado. Active en ajustes del navegador.',
+    'active': 'Activo',
   },
 
   'pt-BR': {

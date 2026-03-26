@@ -463,10 +463,10 @@ export default function Dashboard() {
               {t('dashboard.revenueChart')}
             </h2>
             {monthlyRevenue.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={monthlyRevenue} barGap={4}>
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={60} tickFormatter={v => `${currency}${v}`} />
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={monthlyRevenue} barGap={2}>
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={45} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : `${v}`} />
                   <Tooltip
                     formatter={(value: number) => [`${currency}${value}`, '']}
                     contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}

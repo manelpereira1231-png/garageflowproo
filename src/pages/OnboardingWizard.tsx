@@ -180,9 +180,9 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const stepTitles = [
     t('onboarding.step1') || "Dados da Oficina",
     t('onboarding.step2') || "Configurações Fiscais",
-    "Branding & Logo",
-    "Alertas & Notificações",
-    "Confirmação",
+    t('onboarding.step3') || "Branding & Logo",
+    t('onboarding.step4') || "Alertas & Notificações",
+    t('onboarding.step5') || "Confirmação",
   ];
 
   return (

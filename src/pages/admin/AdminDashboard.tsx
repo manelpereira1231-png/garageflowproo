@@ -48,6 +48,7 @@ interface RecentActivity {
 const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--success))"];
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);

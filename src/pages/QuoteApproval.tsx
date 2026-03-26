@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User, Calendar, MessageSquare, FileText } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User, Calendar, MessageSquare, FileText, PenTool } from "lucide-react";
 import { sendEmail } from "@/lib/emailService";
+import SignaturePad from "@/components/SignaturePad";
 
 const translations: Record<string, Record<string, string>> = {
   pt: {
@@ -47,6 +48,15 @@ const translations: Record<string, Record<string, string>> = {
     rejectedAt: "Rejeitado em",
     estimatedTime: "Tempo estimado",
     hours: "horas",
+    signatureTitle: "Assinatura Digital",
+    signerName: "Nome do signatário",
+    signerNamePlaceholder: "Introduza o seu nome completo",
+    signatureClear: "Limpar",
+    signatureConfirm: "Confirmar assinatura",
+    signatureDrawHere: "Desenhe a sua assinatura aqui",
+    signatureRequired: "Assinatura e nome são obrigatórios para aprovar.",
+    signedBy: "Assinado por",
+    signatureHash: "Hash de verificação",
   },
   en: {
     loading: "Loading...",
@@ -87,6 +97,15 @@ const translations: Record<string, Record<string, string>> = {
     rejectedAt: "Rejected on",
     estimatedTime: "Estimated time",
     hours: "hours",
+    signatureTitle: "Digital Signature",
+    signerName: "Signer name",
+    signerNamePlaceholder: "Enter your full name",
+    signatureClear: "Clear",
+    signatureConfirm: "Confirm signature",
+    signatureDrawHere: "Draw your signature here",
+    signatureRequired: "Signature and name are required to approve.",
+    signedBy: "Signed by",
+    signatureHash: "Verification hash",
   },
   es: {
     loading: "Cargando...",
@@ -127,6 +146,15 @@ const translations: Record<string, Record<string, string>> = {
     rejectedAt: "Rechazado en",
     estimatedTime: "Tiempo estimado",
     hours: "horas",
+    signatureTitle: "Firma Digital",
+    signerName: "Nombre del firmante",
+    signerNamePlaceholder: "Introduzca su nombre completo",
+    signatureClear: "Borrar",
+    signatureConfirm: "Confirmar firma",
+    signatureDrawHere: "Dibuje su firma aquí",
+    signatureRequired: "Firma y nombre son obligatorios para aprobar.",
+    signedBy: "Firmado por",
+    signatureHash: "Hash de verificación",
   },
 };
 
@@ -140,7 +168,8 @@ export default function QuoteApproval() {
   const [error, setError] = useState<string | null>(null);
   const [lang, setLang] = useState<string>("pt");
   const [clientComment, setClientComment] = useState("");
-
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [signerName, setSignerName] = useState<string>("");
   const t = (key: string) => translations[lang]?.[key] || translations.pt[key] || key;
 
   useEffect(() => {
@@ -186,13 +215,39 @@ export default function QuoteApproval() {
     load();
   }, [token]);
 
+  const generateHash = async (data: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handleSignature = (data: string, name: string) => {
+    setSignatureData(data);
+    setSignerName(name);
+  };
+
   const handleAction = async (action: 'approved' | 'rejected') => {
     if (!quote || !shop) return;
+    
+    // Require signature for approval
+    if (action === 'approved' && (!signatureData || !signerName)) return;
+    
     setSubmitting(true);
 
     const updateData: any = { status: action };
     if (clientComment.trim()) {
       updateData.client_notes = clientComment.trim();
+    }
+
+    // Add signature data for approvals
+    if (action === 'approved' && signatureData) {
+      const hashInput = `${quote.id}|${signerName}|${quote.total}|${new Date().toISOString()}`;
+      updateData.signature_data = signatureData;
+      updateData.signature_hash = await generateHash(hashInput);
+      updateData.signed_at = new Date().toISOString();
+      updateData.signer_name = signerName;
     }
 
     const { error: err } = await supabase
@@ -294,6 +349,14 @@ export default function QuoteApproval() {
               </div>
               <h1 className="text-2xl font-bold mb-2">{t('approved')}</h1>
               <p className="text-muted-foreground">{t('approvedDesc')}</p>
+              {quote?.signer_name && (
+                <div className="mt-4 p-3 bg-success/5 rounded-lg text-left space-y-1">
+                  <p className="text-sm"><span className="text-muted-foreground">{t('signedBy')}:</span> <strong>{quote.signer_name}</strong></p>
+                  {quote?.signature_hash && (
+                    <p className="text-xs text-muted-foreground font-mono break-all">{t('signatureHash')}: {quote.signature_hash.substring(0, 16)}...</p>
+                  )}
+                </div>
+              )}
             </>
           ) : result === 'expired' ? (
             <>
@@ -481,12 +544,34 @@ export default function QuoteApproval() {
               />
             </div>
 
+            {/* Digital Signature */}
+            <SignaturePad
+              onSign={handleSignature}
+              disabled={submitting}
+              labels={{
+                title: t('signatureTitle'),
+                signerName: t('signerName'),
+                signerNamePlaceholder: t('signerNamePlaceholder'),
+                clear: t('signatureClear'),
+                confirm: t('signatureConfirm'),
+                drawHere: t('signatureDrawHere'),
+                required: t('signatureRequired'),
+              }}
+            />
+
+            {signatureData && (
+              <div className="flex items-center gap-2 text-sm text-success bg-success/10 rounded-lg p-3">
+                <CheckCircle className="w-4 h-4" />
+                <span>{t('signedBy')}: <strong>{signerName}</strong></span>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 className="flex-1 h-14 text-base font-semibold rounded-xl bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 transition-all"
                 onClick={() => handleAction('approved')}
-                disabled={submitting}
+                disabled={submitting || !signatureData || !signerName}
               >
                 {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <CheckCircle className="w-5 h-5 mr-2" />}
                 {t('approve')}

@@ -35,12 +35,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const activeId = localStorage.getItem("garageflow_active_shop");
-      const id = activeId || null;
-
       let shopData: any = null;
-      if (id) {
-        const { data } = await supabase.from("shops").select("*").eq("id", id).maybeSingle();
+      if (activeShopId) {
+        const { data } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
         shopData = data;
       } else {
         const { data: { user } } = await supabase.auth.getUser();
@@ -65,14 +62,7 @@ export default function SettingsPage() {
       }
     };
     load();
-
-    // Listen for shop switches
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "garageflow_active_shop") load();
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  }, [activeShopId]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

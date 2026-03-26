@@ -162,7 +162,7 @@ export default function AdminPartners() {
   const copyAffiliateLink = (partner: Partner) => {
     const link = `${PRODUCTION_DOMAIN}/auth?mode=signup&partner=${partner.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link copiado 📋");
+    toast.success(t('admin.partners.linkCopied'));
   };
 
   const getPaymentInfo = (partner: Partner) => {

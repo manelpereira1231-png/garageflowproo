@@ -1313,6 +1313,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Link copiado 📋',
     'admin.partners.csvExported': 'CSV exportado 📊',
     'admin.partners.commissionPaidMsg': 'Comissão paga ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Configure a sua oficina',
+    'checklist.stepsCompleted': 'passos concluídos',
+    'checklist.next': 'Próximo',
+    'checklist.demoData': 'Dados Demo',
+    'checklist.creating': 'A criar...',
+    'checklist.setupComplete': 'Configuração completa! 🎉',
+    'checklist.readyToGo': 'A sua oficina está pronta para faturar.',
+    'checklist.demoCreated': 'Dados de demonstração criados! 🚀',
+    'checklist.demoError': 'Erro ao criar dados demo',
+    'checklist.createClient': 'Criar primeiro cliente',
+    'checklist.createClientDesc': 'Adicione os dados do seu primeiro cliente',
+    'checklist.addVehicle': 'Adicionar primeiro veículo',
+    'checklist.addVehicleDesc': 'Registe a matrícula e dados do veículo',
+    'checklist.createQuote': 'Criar primeiro orçamento',
+    'checklist.createQuoteDesc': 'Crie um orçamento profissional em segundos',
+    'checklist.sendQuote': 'Enviar orçamento ao cliente',
+    'checklist.sendQuoteDesc': 'Envie por WhatsApp ou email com 1 clique',
+    'checklist.createInvoice': 'Criar primeira fatura',
+    'checklist.createInvoiceDesc': 'Fature o seu trabalho profissionalmente',
   },
 
   en: {

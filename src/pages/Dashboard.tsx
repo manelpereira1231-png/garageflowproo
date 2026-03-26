@@ -481,8 +481,8 @@ export default function Dashboard() {
           </div>
 
           {/* Status Distribution Pie */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-5">
+            <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <Wrench className="w-4 h-4 text-primary" />
               {t('dashboard.statusChart')}
             </h2>

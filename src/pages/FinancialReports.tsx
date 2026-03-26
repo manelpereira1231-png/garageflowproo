@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, TrendingDown, FileText, CheckCircle, Clock, AlertTriangle, FileDown, Users, Wrench, Lock, Receipt, Percent, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, FileText, CheckCircle, Clock, AlertTriangle, FileDown, Users, Wrench, Lock, Receipt, Percent, DollarSign, ArrowUpRight, ArrowDownRight, FileCode } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
@@ -145,6 +145,9 @@ export default function FinancialReports() {
     load();
   }, [period, activeShopId]);
 
+  const [saftLoading, setSaftLoading] = useState(false);
+  const [saftYear, setSaftYear] = useState(new Date().getFullYear().toString());
+
   const handleExport = () => {
     if (!canUseFeature('csvExport')) {
       toast.error(t('planGate.description').replace('{plan}', 'Pro'));
@@ -155,6 +158,49 @@ export default function FinancialReports() {
       'IVA': m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
     })), 'relatorio-financeiro');
     toast.success(t('common.exported'));
+  };
+
+  const handleExportSaft = async () => {
+    if (!activeShopId) return;
+    setSaftLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Unauthorized"); setSaftLoading(false); return; }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-saft`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            shop_id: activeShopId,
+            year: parseInt(saftYear),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || t('financial.exportSaftError'));
+        setSaftLoading(false);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SAFT-PT_${saftYear}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t('financial.exportSaftSuccess'));
+    } catch {
+      toast.error(t('financial.exportSaftError'));
+    }
+    setSaftLoading(false);
   };
 
   const GrowthBadge = ({ value }: { value: number }) => {
@@ -211,6 +257,23 @@ export default function FinancialReports() {
             {canUseFeature('csvExport') ? <FileDown className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
             CSV
           </Button>
+          <div className="flex items-center gap-1">
+            <Select value={saftYear} onValueChange={setSaftYear}>
+              <SelectTrigger className="w-[80px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[0, 1, 2].map(i => {
+                  const y = new Date().getFullYear() - i;
+                  return <SelectItem key={y} value={y.toString()}>{y}</SelectItem>;
+                })}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading}>
+              <FileCode className="w-4 h-4 mr-1" />
+              {saftLoading ? "..." : "SAF-T"}
+            </Button>
+          </div>
         </div>
       </div>
 

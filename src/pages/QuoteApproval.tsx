@@ -146,6 +146,15 @@ const translations: Record<string, Record<string, string>> = {
     rejectedAt: "Rechazado en",
     estimatedTime: "Tiempo estimado",
     hours: "horas",
+    signatureTitle: "Firma Digital",
+    signerName: "Nombre del firmante",
+    signerNamePlaceholder: "Introduzca su nombre completo",
+    signatureClear: "Borrar",
+    signatureConfirm: "Confirmar firma",
+    signatureDrawHere: "Dibuje su firma aquí",
+    signatureRequired: "Firma y nombre son obligatorios para aprobar.",
+    signedBy: "Firmado por",
+    signatureHash: "Hash de verificación",
   },
 };
 

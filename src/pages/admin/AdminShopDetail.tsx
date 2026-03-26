@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";

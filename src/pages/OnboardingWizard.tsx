@@ -17,6 +17,7 @@ const countries = Object.keys(VAT_RATES);
 const STEPS = 5;
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
+  const navigate = useNavigate();
   const { t, setLanguage, language } = useLanguage();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);

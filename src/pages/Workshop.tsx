@@ -12,6 +12,7 @@ import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, Thumbs
 import { format } from "date-fns";
 import { toast } from "sonner";
 import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
+import LaborTimer from "@/components/LaborTimer";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 

@@ -11,6 +11,7 @@ import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+import { useAuthReady } from "@/hooks/useAuthReady";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
 
 // Critical path - eagerly loaded for instant navigation
@@ -164,13 +165,13 @@ function AuthenticatedRoutes() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
+  const { isReady: authReady, user } = useAuthReady();
 
   useEffect(() => {
-    if (adminLoading) return;
+    if (adminLoading || !authReady) return;
     if (isSuperAdmin) { setReady(true); return; }
 
     const checkUserState = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setReady(true); return; }
 
       // Check if affiliate
@@ -200,9 +201,9 @@ function AuthenticatedRoutes() {
       setReady(true);
     };
     checkUserState();
-  }, [isSuperAdmin, adminLoading]);
+  }, [isSuperAdmin, adminLoading, authReady, user]);
 
-  if (adminLoading || !ready) {
+  if (adminLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />

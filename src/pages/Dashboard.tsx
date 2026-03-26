@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import ShopCompleteness from "@/components/ShopCompleteness";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 interface KPIData {
   revenue: number;
@@ -38,6 +39,7 @@ const MONTH_NAMES: Record<string, string[]> = {
 
 export default function Dashboard() {
   const { t, language } = useLanguage();
+  const { isReady, user } = useAuthReady();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
@@ -57,19 +59,32 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!isReady) return;
+
+      if (!user) {
+        setDataLoaded(true);
+        return;
+      }
+
+      setDataLoaded(false);
+
       let shopId = activeShopId;
       if (!shopId) {
         // Fallback: try to get from user's shops
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
         const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
         if (shop) {
           shopId = shop.id;
           localStorage.setItem("garageflow_active_shop", shop.id);
-        } else return;
+        } else {
+          setDataLoaded(true);
+          return;
+        }
       }
       const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
-      if (!shop) return;
+      if (!shop) {
+        setDataLoaded(true);
+        return;
+      }
       setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
       setShopName(shop.name || '');
       setShopLogoUrl(shop.logo_url || null);
@@ -227,7 +242,6 @@ export default function Dashboard() {
           .map(([name, count]) => ({ name, count }))
       );
       // Load referral data
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: refCode } = await supabase
           .from("referral_codes")
@@ -252,7 +266,7 @@ export default function Dashboard() {
       setDataLoaded(true);
     };
     loadData();
-  }, [language, activeShopId]);
+  }, [language, activeShopId, isReady, user]);
 
   const alertTypeColors: Record<string, string> = {
     payment_failed: "text-destructive",

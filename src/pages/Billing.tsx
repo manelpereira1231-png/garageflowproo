@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSubscription, type Plan } from "@/hooks/useSubscription";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";

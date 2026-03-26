@@ -13,6 +13,7 @@ import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const countries = Object.keys(VAT_RATES);
@@ -296,6 +297,19 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Push Notifications */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              {t('pushNotifications') || 'Notificações'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PushNotificationToggle />
+          </CardContent>
+        </Card>
 
         <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? t('settings.saving') : t('settings.save')}

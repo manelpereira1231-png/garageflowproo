@@ -1370,6 +1370,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'checklist.sendQuoteDesc': 'Envie por WhatsApp ou email com 1 clique',
     'checklist.createInvoice': 'Criar primeira fatura',
     'checklist.createInvoiceDesc': 'Fature o seu trabalho profissionalmente',
+    'pushNotifications': 'Notificações Push',
+    'pushDescription': 'Receba alertas de novas OS, faturas e inspeções.',
+    'pushNotSupported': 'Notificações push não suportadas',
+    'pushNotSupportedDesc': 'O seu browser não suporta notificações push.',
+    'pushEnabled': 'Notificações ativadas!',
+    'pushDisabled': 'Notificações desativadas',
+    'pushDenied': 'Permissão negada. Ative nas definições do browser.',
+    'active': 'Ativo',
   },
 
   en: {
@@ -2712,6 +2720,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'checklist.sendQuoteDesc': 'Send via WhatsApp or email with 1 click',
     'checklist.createInvoice': 'Create first invoice',
     'checklist.createInvoiceDesc': 'Invoice your work professionally',
+    'pushNotifications': 'Push Notifications',
+    'pushDescription': 'Get alerts for new work orders, invoices and inspections.',
+    'pushNotSupported': 'Push notifications not supported',
+    'pushNotSupportedDesc': 'Your browser does not support push notifications.',
+    'pushEnabled': 'Notifications enabled!',
+    'pushDisabled': 'Notifications disabled',
+    'pushDenied': 'Permission denied. Enable in browser settings.',
+    'active': 'Active',
   },
 
   es: {
@@ -4054,6 +4070,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'checklist.sendQuoteDesc': 'Envía por WhatsApp o email con 1 clic',
     'checklist.createInvoice': 'Crear primera factura',
     'checklist.createInvoiceDesc': 'Factura tu trabajo profesionalmente',
+    'pushNotifications': 'Notificaciones Push',
+    'pushDescription': 'Reciba alertas de nuevas OT, facturas e inspecciones.',
+    'pushNotSupported': 'Notificaciones push no soportadas',
+    'pushNotSupportedDesc': 'Su navegador no soporta notificaciones push.',
+    'pushEnabled': '¡Notificaciones activadas!',
+    'pushDisabled': 'Notificaciones desactivadas',
+    'pushDenied': 'Permiso denegado. Active en ajustes del navegador.',
+    'active': 'Activo',
   },
 
   'pt-BR': {
@@ -5662,5 +5686,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.users.role': 'Função',
     'admin.users.joined': 'Desde',
     'admin.users.actions': 'Ações',
+    'pushNotifications': 'Notificações Push',
+    'pushDescription': 'Receba alertas de novas OS, faturas e inspeções.',
+    'pushNotSupported': 'Notificações push não suportadas',
+    'pushNotSupportedDesc': 'O seu navegador não suporta notificações push.',
+    'pushEnabled': 'Notificações ativadas!',
+    'pushDisabled': 'Notificações desativadas',
+    'pushDenied': 'Permissão negada. Ative nas configurações do navegador.',
+    'active': 'Ativo',
   },
 };

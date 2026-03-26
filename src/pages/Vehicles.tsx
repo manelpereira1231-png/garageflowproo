@@ -150,8 +150,12 @@ export default function Vehicles() {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5"><Label>{t('vehicles.make')} *</Label><Input value={form.make} onChange={e => setForm({...form, make: e.target.value})} required /></div>
-                <div className="space-y-1.5"><Label>{t('vehicles.model')} *</Label><Input value={form.model} onChange={e => setForm({...form, model: e.target.value})} required /></div>
+                <VehicleMakeModelSelector
+                  make={form.make}
+                  model={form.model}
+                  onMakeChange={(v) => setForm({...form, make: v})}
+                  onModelChange={(v) => setForm({...form, model: v})}
+                />
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.plate')} *</Label><Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>

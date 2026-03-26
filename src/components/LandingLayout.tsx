@@ -46,7 +46,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 </button>
               ))}
             </div>
-            <Link to="/auth">
+            <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
             <Link to="/auth?mode=signup">

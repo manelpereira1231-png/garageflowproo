@@ -39,6 +39,7 @@ const MONTH_NAMES: Record<string, string[]> = {
 export default function Dashboard() {
   const { t, language } = useLanguage();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
+  const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
@@ -54,19 +55,19 @@ export default function Dashboard() {
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  const getActiveShopId = async (): Promise<string | null> => {
-    const stored = localStorage.getItem("garageflow_active_shop");
-    if (stored) return stored;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-    return shop?.id || null;
-  };
-
   useEffect(() => {
     const loadData = async () => {
-      const shopId = await getActiveShopId();
-      if (!shopId) return;
+      let shopId = activeShopId;
+      if (!shopId) {
+        // Fallback: try to get from user's shops
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+        if (shop) {
+          shopId = shop.id;
+          localStorage.setItem("garageflow_active_shop", shop.id);
+        } else return;
+      }
       const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
       if (!shop) return;
       setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);

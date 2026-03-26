@@ -469,7 +469,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.copied': 'Copiado!',
     'common.of': 'de',
     'common.portal': 'Portal',
-    'common.loading': 'A carregar...',
 
     // Developers
     'developers.keyCreated': 'API Key criada com sucesso!',

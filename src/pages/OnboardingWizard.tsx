@@ -282,8 +282,22 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t('settings.currency')}</Label>
-                  <Input value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} />
+                  <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {t('settings.timezone')}</Label>
+                <Select value={form.timezone} onValueChange={v => setForm({...form, timezone: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

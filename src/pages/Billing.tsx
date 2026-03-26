@@ -74,7 +74,10 @@ function ReferralFreeMonths() {
 
 export default function Billing() {
   const { t } = useLanguage();
-  const { subscription, plan, prices, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const regionalPricing = getRegionalPricing();
+  const prices = regionalPricing;
+  const isBR = isBrazil();
   const [monthlyQuotes, setMonthlyQuotes] = useState(0);
   const [teamCount, setTeamCount] = useState(0);
   const [shopCount, setShopCount] = useState(0);

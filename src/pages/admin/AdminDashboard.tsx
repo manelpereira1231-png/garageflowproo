@@ -385,7 +385,7 @@ export default function AdminDashboard() {
 
         {/* Plan Distribution Pie */}
         <div className="stat-card">
-          <h2 className="text-lg font-semibold mb-4">Distribuição de Planos</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.planDistribution')}</h2>
           <div className="h-[280px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

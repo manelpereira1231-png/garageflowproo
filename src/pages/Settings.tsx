@@ -17,6 +17,12 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const countries = Object.keys(VAT_RATES);
 
+const TIMEZONES = [
+  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
+  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
+  "Africa/Luanda", "Africa/Maputo",
+];
+
 export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
   const { plan, shopId: subShopId } = useSubscription();

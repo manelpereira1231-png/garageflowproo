@@ -46,7 +46,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 </button>
               ))}
             </div>
-            <Link to="/auth">
+            <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
             <Link to="/auth?mode=signup">
@@ -82,7 +82,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               ))}
             </div>
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full">{t('landing.login')}</Button>
               </Link>
               <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>

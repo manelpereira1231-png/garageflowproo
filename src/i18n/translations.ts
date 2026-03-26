@@ -2619,6 +2619,27 @@ export const translations: Record<Language, Record<string, string>> = {
     'admin.partners.linkCopied': 'Link copied 📋',
     'admin.partners.csvExported': 'CSV exported 📊',
     'admin.partners.commissionPaidMsg': 'Commission paid ✅',
+
+    // Onboarding Checklist
+    'checklist.setupTitle': 'Set up your workshop',
+    'checklist.stepsCompleted': 'steps completed',
+    'checklist.next': 'Next',
+    'checklist.demoData': 'Demo Data',
+    'checklist.creating': 'Creating...',
+    'checklist.setupComplete': 'Setup complete! 🎉',
+    'checklist.readyToGo': 'Your workshop is ready to go.',
+    'checklist.demoCreated': 'Demo data created! 🚀',
+    'checklist.demoError': 'Error creating demo data',
+    'checklist.createClient': 'Create first client',
+    'checklist.createClientDesc': "Add your first client's details",
+    'checklist.addVehicle': 'Add first vehicle',
+    'checklist.addVehicleDesc': 'Register the vehicle plate and details',
+    'checklist.createQuote': 'Create first quote',
+    'checklist.createQuoteDesc': 'Create a professional quote in seconds',
+    'checklist.sendQuote': 'Send quote to client',
+    'checklist.sendQuoteDesc': 'Send via WhatsApp or email with 1 click',
+    'checklist.createInvoice': 'Create first invoice',
+    'checklist.createInvoiceDesc': 'Invoice your work professionally',
   },
 
   es: {

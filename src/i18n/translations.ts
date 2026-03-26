@@ -2082,6 +2082,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'inspections.overall.allOk': 'All OK',
     'inspections.overall.inProgress': 'In progress',
     'inspections.autoSaved': 'Changes saved automatically',
+    'inspections.progress': 'Progress',
+    'inspections.addPhoto': 'Add photo',
+    'inspections.changePhoto': 'Change photo',
+    'inspections.photoAdded': 'Photo added',
+    'inspections.photoError': 'Error uploading photo',
+    'inspections.sendToWO': 'Send to WO',
+    'inspections.generatePDF': 'Generate PDF',
 
     'nav.adminPanel': 'Admin Panel',
 

@@ -476,7 +476,7 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">{t('dashboard.noData')}</div>
+              <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">{t('dashboard.noData')}</div>
             )}
           </div>
 

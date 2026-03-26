@@ -280,6 +280,18 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.back': 'Voltar',
     'onboarding.finish': 'Começar a usar!',
     'onboarding.skip': 'Configurar depois',
+    'onboarding.alertsDesc': 'Ative alertas automáticos para nunca perder prazos e oportunidades.',
+    'onboarding.alert.pendingQuotes': 'Orçamentos Pendentes',
+    'onboarding.alert.pendingQuotesDesc': 'Alerta quando orçamentos aguardam resposta',
+    'onboarding.alert.expiredQuotes': 'Orçamentos Expirados',
+    'onboarding.alert.expiredQuotesDesc': 'Alerta quando orçamentos atingem data limite',
+    'onboarding.alert.completedServices': 'Serviços Concluídos',
+    'onboarding.alert.completedServicesDesc': 'Alerta quando serviços estão prontos para entrega',
+    'onboarding.notificationChannels': 'Canais de notificação',
+    'onboarding.noLogo': 'Sem logo',
+    'onboarding.alertsLabel': 'Alertas',
+    'onboarding.noAlerts': 'Nenhum',
+    'onboarding.plan': 'Plano',
 
     // Common
     'common.save': 'Guardar',

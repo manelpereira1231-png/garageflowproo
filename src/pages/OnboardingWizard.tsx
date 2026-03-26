@@ -167,6 +167,9 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         );
       }
 
+      // Set active shop in localStorage so Dashboard loads data immediately
+      localStorage.setItem("garageflow_active_shop", shop.id);
+
       setLanguage(form.language as Language);
       toast.success(t('settings.configured'));
       onComplete();

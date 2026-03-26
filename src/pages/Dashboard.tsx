@@ -4,6 +4,7 @@ import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, Alert
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";

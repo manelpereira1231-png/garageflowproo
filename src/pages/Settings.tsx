@@ -139,7 +139,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Palette className="w-4 h-4" /> Logo & Branding
+              <Palette className="w-4 h-4" /> {t('settings.logoBranding')}
             </CardTitle>
           </CardHeader>
           <CardContent>

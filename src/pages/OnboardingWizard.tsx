@@ -272,7 +272,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Morada</Label>
+                <Label>{t('settings.address')}</Label>
                 <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123, Lisboa" />
               </div>
               <div className="grid grid-cols-2 gap-4">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSubscription, type Plan } from "@/hooks/useSubscription";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -73,7 +74,10 @@ function ReferralFreeMonths() {
 
 export default function Billing() {
   const { t } = useLanguage();
-  const { subscription, plan, prices, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const regionalPricing = getRegionalPricing();
+  const prices = regionalPricing;
+  const isBR = isBrazil();
   const [monthlyQuotes, setMonthlyQuotes] = useState(0);
   const [teamCount, setTeamCount] = useState(0);
   const [shopCount, setShopCount] = useState(0);
@@ -179,7 +183,7 @@ export default function Billing() {
     setUpgrading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan: targetPlan, billing_cycle: billingCycle },
+        body: { plan: targetPlan, billing_cycle: billingCycle, region: isBR ? 'br' : 'eu' },
       });
       if (error) throw error;
       if (data?.url) {
@@ -440,7 +444,7 @@ export default function Billing() {
         >
           {t('billing.yearly')}
           <Badge variant="secondary" className="ml-2 bg-success/10 text-success text-xs">
-            -17%
+            {regionalPricing.annualSavingsLabel}
           </Badge>
         </button>
       </div>
@@ -470,7 +474,7 @@ export default function Billing() {
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
                 <h3 className="text-xl font-bold">{t(`billing.plan.${key}`)}</h3>
                 <div className="mt-3">
-                  <span className="text-4xl font-bold mono">€{price}</span>
+                  <span className="text-4xl font-bold mono">{formatPrice(price)}</span>
                   {price > 0 && (
                     <span className="text-muted-foreground text-sm">
                       /{billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}
@@ -479,7 +483,7 @@ export default function Billing() {
                 </div>
                 {key !== 'free' && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {t('billing.trial30')}
+                    {isBR ? t('billing.trial15') : t('billing.trial30')}
                   </p>
                 )}
               </div>

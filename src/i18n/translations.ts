@@ -386,6 +386,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'billing.manage': 'Gerir Subscrição',
     'billing.trial30': 'Trial de 30 dias incluído',
+    'billing.trial15': 'Trial de 15 dias incluído',
     'billing.paymentSuccess': 'Pagamento confirmado! O seu plano foi atualizado.',
     'billing.paymentCanceled': 'Pagamento cancelado.',
     'billing.errorCheckout': 'Erro ao criar checkout. Tente novamente.',
@@ -556,6 +557,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.pricingSubtitle': 'Sem custos escondidos. Upgrade ou downgrade a qualquer momento.',
     'landing.popular': 'Mais Popular',
     'landing.trial30': 'Trial de 30 dias incluído',
+    'landing.trial15': 'Trial de 15 dias incluído',
     'landing.planFree': 'Free',
     'landing.planPro': 'Pro',
     'landing.planGarage': 'Garage',
@@ -594,6 +596,7 @@ export const translations: Record<Language, Record<string, string>> = {
      'landing.navAffiliates': 'Afiliados',
     'landing.footer': 'Todos os direitos reservados.',
     'landing.perMonth': '/mês',
+    'landing.perYear': '/ano',
     'landing.noCreditCard': 'Sem cartão de crédito · Configuração em 2 minutos',
 
     // Referrals
@@ -1946,6 +1949,9 @@ export const translations: Record<Language, Record<string, string>> = {
      'landing.navAffiliates': 'Affiliates',
     'landing.footer': 'All rights reserved.',
     'landing.perMonth': '/mo',
+    'landing.perYear': '/yr',
+    'landing.trial15': '15-day free trial included',
+    'billing.trial15': '15-day free trial included',
     'landing.noCreditCard': 'No credit card required · Setup in 2 minutes',
 
     // Referrals
@@ -3296,6 +3302,9 @@ export const translations: Record<Language, Record<string, string>> = {
      'landing.navAffiliates': 'Afiliados',
     'landing.footer': 'Todos los derechos reservados.',
     'landing.perMonth': '/mes',
+    'landing.perYear': '/año',
+    'landing.trial15': 'Prueba gratuita de 15 días incluida',
+    'billing.trial15': 'Prueba gratuita de 15 días incluida',
     'landing.noCreditCard': 'Sin tarjeta de crédito · Configuración en 2 minutos',
 
     // Referrals
@@ -4673,6 +4682,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.navAffiliates': 'Afiliados',
     'landing.footer': 'Todos os direitos reservados.',
     'landing.perMonth': '/mês',
+    'landing.perYear': '/ano',
+    'landing.trial15': 'Teste grátis por 15 dias',
+    'billing.trial15': 'Teste grátis por 15 dias',
     'landing.noCreditCard': 'Sem cartão de crédito · Configuração em 2 minutos',
 
     // Referrals

@@ -2,41 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
+import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
-
-const planConfigs = [
-  {
-    nameKey: 'landing.planFree',
-    price: '0€',
-    periodKey: '',
-    subtitleKey: '',
-    featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
-    ctaKey: 'landing.ctaFree',
-    highlighted: false,
-  },
-  {
-    nameKey: 'landing.planPro',
-    price: '49€',
-    periodKey: 'landing.perMonth',
-    subtitleKey: 'landing.trial30',
-    featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
-    ctaKey: 'landing.ctaPro',
-    highlighted: true,
-  },
-  {
-    nameKey: 'landing.planGarage',
-    price: '99€',
-    periodKey: 'landing.perMonth',
-    subtitleKey: 'landing.trial30',
-    featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
-    ctaKey: 'landing.ctaGarage',
-    highlighted: false,
-  },
-];
 
 const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES' };
 const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];
@@ -44,6 +16,39 @@ const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];
 export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const pricing = getRegionalPricing();
+  const isBR = pricing.currency === 'BRL';
+
+  const planConfigs = [
+    {
+      nameKey: 'landing.planFree',
+      price: formatPrice(0),
+      periodKey: '',
+      subtitleKey: '',
+      featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
+      ctaKey: 'landing.ctaFree',
+      highlighted: false,
+    },
+    {
+      nameKey: 'landing.planPro',
+      price: formatPrice(pricing.pro[billingCycle]),
+      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
+      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
+      ctaKey: 'landing.ctaPro',
+      highlighted: true,
+    },
+    {
+      nameKey: 'landing.planGarage',
+      price: formatPrice(pricing.garage[billingCycle]),
+      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
+      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
+      ctaKey: 'landing.ctaGarage',
+      highlighted: false,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,6 +251,29 @@ export default function LandingPage() {
           <div className="text-center mb-12 sm:mb-14">
             <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>
             <p className="text-muted-foreground text-base sm:text-lg">{t('landing.pricingSubtitle')}</p>
+          </div>
+
+          {/* Billing Cycle Toggle */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                billingCycle === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('billing.monthly')}
+            </button>
+            <button
+              onClick={() => setBillingCycle('yearly')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                billingCycle === 'yearly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('billing.yearly')}
+              <Badge variant="secondary" className="ml-2 bg-success/10 text-success text-xs">
+                {pricing.annualSavingsLabel}
+              </Badge>
+            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {planConfigs.map(plan => (

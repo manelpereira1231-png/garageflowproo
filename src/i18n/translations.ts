@@ -2720,6 +2720,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'checklist.sendQuoteDesc': 'Send via WhatsApp or email with 1 click',
     'checklist.createInvoice': 'Create first invoice',
     'checklist.createInvoiceDesc': 'Invoice your work professionally',
+    'pushNotifications': 'Push Notifications',
+    'pushDescription': 'Get alerts for new work orders, invoices and inspections.',
+    'pushNotSupported': 'Push notifications not supported',
+    'pushNotSupportedDesc': 'Your browser does not support push notifications.',
+    'pushEnabled': 'Notifications enabled!',
+    'pushDisabled': 'Notifications disabled',
+    'pushDenied': 'Permission denied. Enable in browser settings.',
+    'active': 'Active',
   },
 
   es: {

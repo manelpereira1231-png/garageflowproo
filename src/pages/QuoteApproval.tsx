@@ -168,7 +168,8 @@ export default function QuoteApproval() {
   const [error, setError] = useState<string | null>(null);
   const [lang, setLang] = useState<string>("pt");
   const [clientComment, setClientComment] = useState("");
-
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [signerName, setSignerName] = useState<string>("");
   const t = (key: string) => translations[lang]?.[key] || translations.pt[key] || key;
 
   useEffect(() => {

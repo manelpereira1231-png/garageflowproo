@@ -94,7 +94,7 @@ export default function AdminPartners() {
       toast.error(t('admin.partners.nameEmailRequired')); return;
     }
     if (partners.some(p => p.contact_email.toLowerCase() === form.contact_email.toLowerCase())) {
-      toast.error("⚠️ Já existe um parceiro com este email"); return;
+      toast.error(t('admin.partners.duplicateEmail')); return;
     }
     const { data, error } = await supabase.from("partners").insert([{
       ...form, commission_percentage: form.type === "affiliate" ? 10 : form.commission_percentage,

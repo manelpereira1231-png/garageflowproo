@@ -128,7 +128,7 @@ export default function AdminPartners() {
       partner_id: selectedPartner.id, action: "invite_sent_by_admin",
       details: { workshop_email: inviteForm.workshop_email, plan: inviteForm.plan_offer },
     } as any);
-    toast.success("Convite criado 📩");
+    toast.success(t('admin.partners.inviteCreated'));
     setShowInvite(false);
     setInviteForm({ workshop_email: "", workshop_name: "", workshop_phone: "", plan_offer: "pro", discount_percent: 0, trial_days: 30 });
     loadData();

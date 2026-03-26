@@ -10,6 +10,7 @@ import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { sendPushNotification } from "@/lib/pushNotifications";
 
 interface InvoiceItem {
   id: string;

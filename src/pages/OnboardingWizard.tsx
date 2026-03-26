@@ -147,6 +147,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       language: form.language,
       nif: form.nif,
       address: form.address,
+      timezone: form.timezone,
     };
     if (logoUrl) updatePayload.logo_url = logoUrl;
 

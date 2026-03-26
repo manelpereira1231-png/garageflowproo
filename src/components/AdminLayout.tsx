@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
@@ -206,8 +206,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
         </header>
-        <div className="flex-1 p-4 lg:p-6 animate-fade-in">
-          {children}
+        <div className="flex-1 p-4 lg:p-6">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            {children}
+          </Suspense>
         </div>
       </main>
     </div>

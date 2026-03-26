@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
@@ -262,8 +262,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 p-3 sm:p-4 lg:p-6 animate-fade-in">
-          {children}
+        <div className="flex-1 p-3 sm:p-4 lg:p-6">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            {children}
+          </Suspense>
         </div>
       </main>
     </div>

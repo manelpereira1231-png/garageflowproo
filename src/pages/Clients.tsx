@@ -19,11 +19,11 @@ interface ClientRow {
 
 const PAGE_SIZE = 25;
 
-const copyPortalLink = (portalToken: string | null) => {
+const copyPortalLink = (portalToken: string | null, successMsg: string) => {
   if (!portalToken) return;
   const url = `${window.location.origin}/portal/${portalToken}`;
   navigator.clipboard.writeText(url);
-  toast.success("Portal link copied!");
+  toast.success(successMsg);
 };
 
 export default function Clients() {

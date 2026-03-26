@@ -87,7 +87,7 @@ export default function PartnersPortal() {
   const copyAffiliateLink = (partnerId: string) => {
     const link = `${window.location.origin}/auth?mode=signup&partner=${partnerId}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link copiado! 📋");
+    toast.success(t('common.copied'));
   };
 
   return (

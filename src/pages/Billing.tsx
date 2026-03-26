@@ -474,7 +474,7 @@ export default function Billing() {
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
                 <h3 className="text-xl font-bold">{t(`billing.plan.${key}`)}</h3>
                 <div className="mt-3">
-                  <span className="text-4xl font-bold mono">€{price}</span>
+                  <span className="text-4xl font-bold mono">{formatPrice(price)}</span>
                   {price > 0 && (
                     <span className="text-muted-foreground text-sm">
                       /{billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}
@@ -483,7 +483,7 @@ export default function Billing() {
                 </div>
                 {key !== 'free' && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {t('billing.trial30')}
+                    {isBR ? t('billing.trial15') : t('billing.trial30')}
                   </p>
                 )}
               </div>

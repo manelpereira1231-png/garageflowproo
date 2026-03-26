@@ -2207,6 +2207,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'team.removeConfirmMsg': 'This member will lose access to the workshop.',
     'team.roleDescManager': 'Can manage quotes, services, clients and stock.',
     'team.roleDescTechnician': 'Can view and update assigned services.',
+    'settings.logoBranding': 'Logo & Branding',
     'settings.shopLogo': 'Workshop logo',
     'settings.logoDescription': 'Shown on PDFs, dashboard and emails',
     'settings.watermarkInfo': 'PDFs include GarageFlow watermark',

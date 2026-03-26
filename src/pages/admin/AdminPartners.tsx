@@ -114,7 +114,7 @@ export default function AdminPartners() {
   };
 
   const sendInvite = async () => {
-    if (!selectedPartner || !inviteForm.workshop_email.trim()) { toast.error("Email da oficina é obrigatório"); return; }
+    if (!selectedPartner || !inviteForm.workshop_email.trim()) { toast.error(t('admin.partners.inviteEmailRequired')); return; }
     const existing = invites.find(inv =>
       inv.partner_id === selectedPartner.id &&
       inv.workshop_email.toLowerCase() === inviteForm.workshop_email.toLowerCase()

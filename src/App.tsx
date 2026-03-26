@@ -114,8 +114,22 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: 
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <p className="text-sm text-muted-foreground">Ocorreu um erro ao carregar a página.</p>
-          <button onClick={() => window.location.reload()} className="text-sm text-primary underline">Recarregar</button>
+          <p className="text-sm text-muted-foreground">
+            {(() => {
+              const lang = localStorage.getItem('garageflow_language') || 'pt';
+              if (lang === 'en') return 'An error occurred loading the page.';
+              if (lang === 'es') return 'Ocurrió un error al cargar la página.';
+              return 'Ocorreu um erro ao carregar a página.';
+            })()}
+          </p>
+          <button onClick={() => window.location.reload()} className="text-sm text-primary underline">
+            {(() => {
+              const lang = localStorage.getItem('garageflow_language') || 'pt';
+              if (lang === 'en') return 'Reload';
+              if (lang === 'es') return 'Recargar';
+              return 'Recarregar';
+            })()}
+          </button>
         </div>
       );
     }

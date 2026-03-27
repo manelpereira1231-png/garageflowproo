@@ -22,12 +22,12 @@ const EUR_PRICES: Record<string, Record<string, string>> = {
 // BRL prices (to be created in Stripe dashboard)
 const BRL_PRICES: Record<string, Record<string, string>> = {
   pro: {
-    monthly: "price_brl_pro_monthly",
-    yearly: "price_brl_pro_yearly",
+    monthly: "price_1TFP7uE1zL2Sl1ZTQxdzHWRv",
+    yearly: "price_1TFP8EE1zL2Sl1ZTorzoNWLQ",
   },
   garage: {
-    monthly: "price_brl_garage_monthly",
-    yearly: "price_brl_garage_yearly",
+    monthly: "price_1TFP8dE1zL2Sl1ZT7N3wnDIY",
+    yearly: "price_1TFP8wE1zL2Sl1ZTuTK1wiqu",
   },
 };
 

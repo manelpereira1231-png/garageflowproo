@@ -166,12 +166,12 @@ const EUR_STRIPE_PRICES: StripePriceMap = {
 // For now, use placeholder IDs that will be replaced with real ones
 const BRL_STRIPE_PRICES: StripePriceMap = {
   pro: {
-    monthly: 'price_brl_pro_monthly',
-    yearly: 'price_brl_pro_yearly',
+    monthly: 'price_1TFP7uE1zL2Sl1ZTQxdzHWRv',
+    yearly: 'price_1TFP8EE1zL2Sl1ZTorzoNWLQ',
   },
   garage: {
-    monthly: 'price_brl_garage_monthly',
-    yearly: 'price_brl_garage_yearly',
+    monthly: 'price_1TFP8dE1zL2Sl1ZT7N3wnDIY',
+    yearly: 'price_1TFP8wE1zL2Sl1ZTuTK1wiqu',
   },
 };
 

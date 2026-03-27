@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, Gift, Plus, TrendingUp, Users, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
+import { sendEmail, loyaltyEmailHtml } from "@/lib/emailService";
 
 const TIER_COLORS: Record<string, string> = {
   bronze: "bg-amber-600/10 text-amber-700 border-amber-300",
@@ -90,6 +91,34 @@ export default function Loyalty() {
       points: isRedeem ? -pts : pts, type: form.type,
       description: form.description || (isRedeem ? t('loyalty.redeemed') : t('loyalty.earned')),
     } as any);
+
+    // Send loyalty email notification
+    const clientEmail = (member.clients as any)?.email;
+    if (clientEmail) {
+      const { data: shop } = await supabase.from("shops").select("name").eq("id", activeShopId).single();
+      const shopName = shop?.name || "GarageFlow";
+      const oldTier = member.tier || getTier(member.points);
+      const newTier = getTier(newPoints);
+      const tierChanged = oldTier !== newTier && !isRedeem;
+
+      try {
+        if (tierChanged) {
+          await sendEmail({
+            to: clientEmail,
+            subject: `🎉 Subiu para ${newTier.charAt(0).toUpperCase() + newTier.slice(1)}! — ${shopName}`,
+            html: loyaltyEmailHtml('tier_upgrade', (member.clients as any)?.name || '', shopName, pts, newTier, newPoints),
+          });
+        } else {
+          await sendEmail({
+            to: clientEmail,
+            subject: isRedeem ? `Resgate de ${pts} pontos — ${shopName}` : `Ganhou ${pts} pontos! — ${shopName}`,
+            html: loyaltyEmailHtml(isRedeem ? 'points_redeemed' : 'points_earned', (member.clients as any)?.name || '', shopName, pts, undefined, newPoints),
+          });
+        }
+      } catch (e) {
+        console.error("Loyalty email error:", e);
+      }
+    }
 
     toast.success(isRedeem ? t('loyalty.pointsRedeemed') : t('loyalty.pointsAdded'));
     setPointsDialog(null);

@@ -81,6 +81,45 @@ export function alertEmailHtml(alertTitle: string, alertMessage: string, shopNam
   `;
 }
 
+export function loyaltyEmailHtml(
+  type: 'points_earned' | 'points_redeemed' | 'tier_upgrade',
+  clientName: string,
+  shopName: string,
+  points: number,
+  newTier?: string,
+  totalPoints?: number,
+): string {
+  const tierLabels: Record<string, string> = { bronze: 'Bronze', silver: 'Silver 🥈', gold: 'Gold 🥇', platinum: 'Platinum 💎' };
+  const tierColors: Record<string, string> = { bronze: '#b45309', silver: '#64748b', gold: '#ca8a04', platinum: '#7c3aed' };
+
+  let title = '';
+  let message = '';
+  if (type === 'tier_upgrade') {
+    title = `Parabéns, ${clientName}! 🎉`;
+    message = `Subiu para o nível <strong style="color:${tierColors[newTier || 'bronze']}">${tierLabels[newTier || 'bronze']}</strong> no programa de fidelização da ${shopName}!<br/><br/>Pontos atuais: <strong>${(totalPoints || 0).toLocaleString()}</strong>`;
+  } else if (type === 'points_earned') {
+    title = `Ganhou ${points} pontos! ⭐`;
+    message = `Olá ${clientName}, foram adicionados <strong>${points}</strong> pontos à sua conta na ${shopName}.<br/>Total atual: <strong>${(totalPoints || 0).toLocaleString()}</strong> pontos.`;
+  } else {
+    title = `Resgate de ${points} pontos`;
+    message = `Olá ${clientName}, foram resgatados <strong>${points}</strong> pontos da sua conta na ${shopName}.<br/>Saldo restante: <strong>${(totalPoints || 0).toLocaleString()}</strong> pontos.`;
+  }
+
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
+      <div style="background:#262626;padding:20px 28px;border-radius:10px 10px 0 0;">
+        <span style="color:#ffb41e;font-size:18px;font-weight:700;">${shopName}</span>
+        <span style="float:right;color:#fbbf24;font-size:14px;">⭐ Programa de Fidelização</span>
+      </div>
+      <div style="padding:28px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;">
+        <h2 style="color:#1f2937;font-size:20px;margin:0 0 16px;">${title}</h2>
+        <p style="color:#6b7280;font-size:14px;line-height:1.6;">${message}</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;"/>
+        <p style="color:#bbb;font-size:11px;text-align:center;">${shopName} · Programa de Fidelização GarageFlow</p>
+      </div>
+    </div>`;
+}
+
 export function inviteUserEmailHtml(inviteUrl: string, shopName: string, role: string): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

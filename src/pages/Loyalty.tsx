@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, Gift, Plus, TrendingUp, Users, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
+import { sendEmail, loyaltyEmailHtml } from "@/lib/emailService";
 
 const TIER_COLORS: Record<string, string> = {
   bronze: "bg-amber-600/10 text-amber-700 border-amber-300",

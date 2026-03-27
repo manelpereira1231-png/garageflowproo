@@ -92,6 +92,34 @@ export default function Loyalty() {
       description: form.description || (isRedeem ? t('loyalty.redeemed') : t('loyalty.earned')),
     } as any);
 
+    // Send loyalty email notification
+    const clientEmail = (member.clients as any)?.email;
+    if (clientEmail) {
+      const { data: shop } = await supabase.from("shops").select("name").eq("id", activeShopId).single();
+      const shopName = shop?.name || "GarageFlow";
+      const oldTier = member.tier || getTier(member.points);
+      const newTier = getTier(newPoints);
+      const tierChanged = oldTier !== newTier && !isRedeem;
+
+      try {
+        if (tierChanged) {
+          await sendEmail({
+            to: clientEmail,
+            subject: `🎉 Subiu para ${newTier.charAt(0).toUpperCase() + newTier.slice(1)}! — ${shopName}`,
+            html: loyaltyEmailHtml('tier_upgrade', (member.clients as any)?.name || '', shopName, pts, newTier, newPoints),
+          });
+        } else {
+          await sendEmail({
+            to: clientEmail,
+            subject: isRedeem ? `Resgate de ${pts} pontos — ${shopName}` : `Ganhou ${pts} pontos! — ${shopName}`,
+            html: loyaltyEmailHtml(isRedeem ? 'points_redeemed' : 'points_earned', (member.clients as any)?.name || '', shopName, pts, undefined, newPoints),
+          });
+        }
+      } catch (e) {
+        console.error("Loyalty email error:", e);
+      }
+    }
+
     toast.success(isRedeem ? t('loyalty.pointsRedeemed') : t('loyalty.pointsAdded'));
     setPointsDialog(null);
     setForm({ client_id: "", points: "100", type: "earn", description: "" });

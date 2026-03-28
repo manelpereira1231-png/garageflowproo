@@ -337,6 +337,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="py-16 sm:py-20 px-4 border-t border-border">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.faqTitle')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t('landing.faqSubtitle')}</p>
+          </div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <AccordionItem key={i} value={`faq-${i}`} className="bg-card border border-border rounded-xl px-5">
+                <AccordionTrigger className="text-sm sm:text-base font-medium text-left">
+                  {t(`landing.faq${i}Q`)}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                  {t(`landing.faq${i}A`)}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
       {/* Sticky Mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
         <Link to="/auth?mode=signup">

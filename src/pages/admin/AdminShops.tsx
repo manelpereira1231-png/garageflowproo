@@ -15,6 +15,7 @@ import {
 import { Power, PowerOff, RotateCcw, Search, Bell, Download, Eye, Trash2, LogIn, Building2, Clock, Users, Wrench, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface ShopRow {
   id: string;
@@ -38,6 +39,7 @@ interface ShopRow {
 }
 
 export default function AdminShops() {
+  const { t } = useLanguage();
   const [shops, setShops] = useState<ShopRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterPlan, setFilterPlan] = useState("all");
@@ -83,7 +85,6 @@ export default function AdminShops() {
       };
     });
 
-    // Sort by created_at DESC
     rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setShops(rows);
     setLoading(false);
@@ -113,10 +114,10 @@ export default function AdminShops() {
     const newStatus = shop.status === "active" ? "suspended" : "active";
     const { error } = await supabase.from("shops").update({ status: newStatus }).eq("id", shop.id);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t('admin.common.error'), description: error.message, variant: "destructive" });
     } else {
       await logAction(newStatus === "active" ? "shop_activated" : "shop_suspended", "shop", shop.id, { name: shop.name });
-      toast({ title: `Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}` });
+      toast({ title: newStatus === 'active' ? t('admin.shops.shopActivated') : t('admin.shops.shopSuspended') });
     }
   };
 
@@ -127,10 +128,10 @@ export default function AdminShops() {
       .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
       .eq("shop_id", shop.id);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t('admin.common.error'), description: error.message, variant: "destructive" });
     } else {
       await logAction("trial_reset", "subscription", shop.id, { name: shop.name });
-      toast({ title: "Trial reiniciado (30 dias)" });
+      toast({ title: t('admin.shops.trialReset30') });
     }
   };
 
@@ -140,10 +141,10 @@ export default function AdminShops() {
       .eq("shop_id", shop.id)
       .eq("status", "pending");
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t('admin.common.error'), description: error.message, variant: "destructive" });
     } else {
       await logAction("alerts_reset", "alerts", shop.id, { name: shop.name });
-      toast({ title: "Alertas resetados" });
+      toast({ title: t('admin.shops.alertsReset') });
     }
   };
 
@@ -177,11 +178,11 @@ export default function AdminShops() {
       .update(updateData)
       .eq("shop_id", shop.id);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t('admin.common.error'), description: error.message, variant: "destructive" });
     } else {
-      const durationLabel = durationType === "unlimited" ? "ilimitado" : `${durationValue} ${durationType === "days" ? "dias" : "meses"}`;
+      const durationLabel = durationType === "unlimited" ? t('admin.shops.unlimited') : `${durationValue} ${durationType === "days" ? t('admin.shops.days') : t('admin.shops.months')}`;
       await logAction("plan_changed", "subscription", shop.id, { name: shop.name, from: shop.plan, to: newPlan, duration: durationLabel });
-      toast({ title: `Plano ${newPlan.toUpperCase()} atribuído (${durationLabel})` });
+      toast({ title: `${newPlan.toUpperCase()} ${t('admin.shops.planAssigned')} (${durationLabel})` });
     }
     setPlanDialog(null);
   };
@@ -190,23 +191,20 @@ export default function AdminShops() {
     if (!deleteShop) return;
     const { error } = await supabase.rpc('cascade_delete_shop', { _shop_id: deleteShop.id });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t('admin.common.error'), description: error.message, variant: "destructive" });
     } else {
       await logAction("shop_deleted", "shop", deleteShop.id, { name: deleteShop.name });
-      toast({ title: "Oficina eliminada permanentemente" });
+      toast({ title: t('admin.shops.shopDeletedPerm') });
     }
     setDeleteShop(null);
   };
 
   const exportCSV = () => {
-    const headers = ["Nome", "Email", "Telefone", "País", "Plano", "Estado Sub.", "Stripe", "Estado Oficina", "Clientes", "Serviços", "Faturação", "Trial Fim", "Período Fim", "Criada em"];
+    const headers = [t('admin.shops.shop'), "Email", t('admin.shops.plan'), t('admin.shops.status'), t('admin.shops.clients'), t('admin.shops.services'), t('admin.shops.revenue'), t('admin.shops.created')];
     const rows = filtered.map(s => [
-      s.name, s.email, s.phone, s.country, s.plan.toUpperCase(), s.subStatus,
-      s.stripeManaged ? "Sim" : "Manual", s.status,
+      s.name, s.email, s.plan.toUpperCase(), s.status,
       s.clientCount, s.workOrderCount, `€${s.revenue.toFixed(2)}`,
-      s.trialEnd ? new Date(s.trialEnd).toLocaleDateString("pt-PT") : "—",
-      s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString("pt-PT") : "—",
-      new Date(s.created_at).toLocaleDateString("pt-PT"),
+      new Date(s.created_at).toLocaleDateString(),
     ]);
     const csv = [headers.join(";"), ...rows.map(r => r.map(c => `"${c}"`).join(";"))].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -241,8 +239,8 @@ export default function AdminShops() {
 
   const statusBadge = (status: string) => {
     return status === "active"
-      ? <Badge variant="outline" className="bg-success/15 text-success border-success/30">Ativa</Badge>
-      : <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">Suspensa</Badge>;
+      ? <Badge variant="outline" className="bg-success/15 text-success border-success/30">{t('admin.shops.activeFemale')}</Badge>
+      : <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">{t('admin.shops.suspendedFemale')}</Badge>;
   };
 
   const countries = [...new Set(shops.map(s => s.country))];
@@ -258,15 +256,18 @@ export default function AdminShops() {
     return true;
   });
 
-  // Summary stats
   const totalRevenue = filtered.reduce((s, sh) => s + sh.revenue, 0);
   const totalClients = filtered.reduce((s, sh) => s + sh.clientCount, 0);
   const totalWO = filtered.reduce((s, sh) => s + sh.workOrderCount, 0);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1,2,3,4].map(i => <div key={i} className="stat-card h-20 animate-pulse bg-muted/30" />)}
+        </div>
+        <div className="stat-card h-64 animate-pulse bg-muted/30" />
       </div>
     );
   }
@@ -275,13 +276,13 @@ export default function AdminShops() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="page-title">Oficinas</h1>
+          <h1 className="page-title">{t('admin.shops.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Gerir todas as oficinas · {shops.length} total · Atualização em tempo real
+            {t('admin.shops.subtitle')} · {shops.length} {t('admin.shops.total')} · {t('admin.shops.realtime')}
           </p>
         </div>
         <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
-          <Download className="w-4 h-4" /> Exportar CSV
+          <Download className="w-4 h-4" /> {t('admin.shops.exportCsv')}
         </Button>
       </div>
 
@@ -290,28 +291,28 @@ export default function AdminShops() {
         <div className="stat-card flex items-center gap-3">
           <Building2 className="w-5 h-5 text-primary flex-shrink-0" />
           <div>
-            <p className="text-xs text-muted-foreground">Filtradas</p>
+            <p className="text-xs text-muted-foreground">{t('admin.shops.filtered')}</p>
             <p className="text-lg font-bold mono">{filtered.length}</p>
           </div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <Users className="w-5 h-5 text-primary flex-shrink-0" />
           <div>
-            <p className="text-xs text-muted-foreground">Clientes</p>
+            <p className="text-xs text-muted-foreground">{t('admin.shops.clients')}</p>
             <p className="text-lg font-bold mono">{totalClients}</p>
           </div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <Wrench className="w-5 h-5 text-primary flex-shrink-0" />
           <div>
-            <p className="text-xs text-muted-foreground">Serviços</p>
+            <p className="text-xs text-muted-foreground">{t('admin.shops.services')}</p>
             <p className="text-lg font-bold mono">{totalWO}</p>
           </div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <DollarSign className="w-5 h-5 text-success flex-shrink-0" />
           <div>
-            <p className="text-xs text-muted-foreground">Faturação</p>
+            <p className="text-xs text-muted-foreground">{t('admin.shops.revenue')}</p>
             <p className="text-lg font-bold mono">€{totalRevenue.toFixed(0)}</p>
           </div>
         </div>
@@ -321,172 +322,167 @@ export default function AdminShops() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar nome, email, telefone, ID..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t('admin.shops.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterPlan} onValueChange={setFilterPlan}>
-          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Plano" /></SelectTrigger>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder={t('admin.shops.plan')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
             <SelectItem value="free">Free</SelectItem>
             <SelectItem value="pro">Pro</SelectItem>
             <SelectItem value="garage">Garage</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder={t('admin.shops.status')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="active">Ativa</SelectItem>
-            <SelectItem value="suspended">Suspensa</SelectItem>
+            <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
+            <SelectItem value="active">{t('admin.shops.activeFemale')}</SelectItem>
+            <SelectItem value="suspended">{t('admin.shops.suspendedFemale')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterCountry} onValueChange={setFilterCountry}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="País" /></SelectTrigger>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder={t('admin.shops.country')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
             {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Table */}
-      <div className="stat-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Oficina</TableHead>
-              <TableHead>Plano</TableHead>
-              <TableHead>Subscrição</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-center">Clientes</TableHead>
-              <TableHead className="text-center">Serviços</TableHead>
-              <TableHead className="text-center">Alertas</TableHead>
-              <TableHead className="text-right">Faturação</TableHead>
-              <TableHead>Criada</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map(shop => (
-              <TableRow key={shop.id} className="group">
-                <TableCell>
-                  <div>
-                    <p className="font-medium text-sm">{shop.name || "—"}</p>
-                    <p className="text-[11px] text-muted-foreground">{shop.email}</p>
-                    {shop.phone && <p className="text-[10px] text-muted-foreground">{shop.phone}</p>}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan, durationType: "months", durationValue: 1 })}>
-                    {planBadge(shop.plan)}
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-0.5">
-                    {subStatusBadge(shop.subStatus, shop.stripeManaged)}
-                    {shop.trialEnd && new Date(shop.trialEnd) > new Date() && (
-                      <p className="text-[10px] text-warning flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" />
-                        Trial: {Math.ceil((new Date(shop.trialEnd).getTime() - Date.now()) / 86400000)}d
-                      </p>
-                    )}
-                    {shop.currentPeriodEnd && (
-                      <p className="text-[10px] text-muted-foreground">
-                        Até: {new Date(shop.currentPeriodEnd).toLocaleDateString("pt-PT")}
-                      </p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{statusBadge(shop.status)}</TableCell>
-                <TableCell className="text-center mono text-sm">{shop.clientCount}</TableCell>
-                <TableCell className="text-center mono text-sm">{shop.workOrderCount}</TableCell>
-                <TableCell className="text-center">
-                  {shop.alertCount > 0 ? (
-                    <Badge variant="outline" className="bg-warning/10 text-warning text-xs">{shop.alertCount}</Badge>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">0</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right mono text-sm">€{shop.revenue.toFixed(0)}</TableCell>
-                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(shop.created_at).toLocaleDateString("pt-PT")}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/shops/${shop.id}`)} title="Ver detalhes">
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => impersonateShop(shop)} title="Entrar como oficina">
-                      <LogIn className="w-3.5 h-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus(shop)}
-                      title={shop.status === "active" ? "Suspender" : "Ativar"}>
-                      {shop.status === "active"
-                        ? <PowerOff className="w-3.5 h-3.5 text-destructive" />
-                        : <Power className="w-3.5 h-3.5 text-success" />
-                      }
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => resetTrial(shop)} title="Reset Trial">
-                      <RotateCcw className="w-3.5 h-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => resetAlerts(shop)} title="Reset Alertas">
-                      <Bell className="w-3.5 h-3.5 text-warning" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteShop(shop)} title="Eliminar oficina">
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
+      {filtered.length === 0 ? (
+        <div className="stat-card text-center py-16">
+          <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <h3 className="font-semibold mb-1">{t('admin.shops.noShopFound')}</h3>
+          <p className="text-sm text-muted-foreground">{t('admin.shops.subtitle')}</p>
+        </div>
+      ) : (
+        <div className="stat-card overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                  Nenhuma oficina encontrada
-                </TableCell>
+                <TableHead>{t('admin.shops.shop')}</TableHead>
+                <TableHead>{t('admin.shops.plan')}</TableHead>
+                <TableHead>{t('admin.shops.subscription')}</TableHead>
+                <TableHead>{t('admin.shops.status')}</TableHead>
+                <TableHead className="text-center">{t('admin.shops.clients')}</TableHead>
+                <TableHead className="text-center">{t('admin.shops.services')}</TableHead>
+                <TableHead className="text-center">{t('admin.shops.alerts')}</TableHead>
+                <TableHead className="text-right">{t('admin.shops.revenue')}</TableHead>
+                <TableHead>{t('admin.shops.created')}</TableHead>
+                <TableHead>{t('admin.shops.actions')}</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(shop => (
+                <TableRow key={shop.id} className="group">
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-sm">{shop.name || "—"}</p>
+                      <p className="text-[11px] text-muted-foreground">{shop.email}</p>
+                      {shop.phone && <p className="text-[10px] text-muted-foreground">{shop.phone}</p>}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <button onClick={() => setPlanDialog({ shop, newPlan: shop.plan, durationType: "months", durationValue: 1 })}>
+                      {planBadge(shop.plan)}
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-0.5">
+                      {subStatusBadge(shop.subStatus, shop.stripeManaged)}
+                      {shop.trialEnd && new Date(shop.trialEnd) > new Date() && (
+                        <p className="text-[10px] text-warning flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          Trial: {Math.ceil((new Date(shop.trialEnd).getTime() - Date.now()) / 86400000)}d
+                        </p>
+                      )}
+                      {shop.currentPeriodEnd && (
+                        <p className="text-[10px] text-muted-foreground">
+                          {t('admin.shops.until')}: {new Date(shop.currentPeriodEnd).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{statusBadge(shop.status)}</TableCell>
+                  <TableCell className="text-center mono text-sm">{shop.clientCount}</TableCell>
+                  <TableCell className="text-center mono text-sm">{shop.workOrderCount}</TableCell>
+                  <TableCell className="text-center">
+                    {shop.alertCount > 0 ? (
+                      <Badge variant="outline" className="bg-warning/10 text-warning text-xs">{shop.alertCount}</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">0</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right mono text-sm font-medium">€{shop.revenue.toFixed(0)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                    {new Date(shop.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/shops/${shop.id}`)} title={t('admin.shops.viewDetails')}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => impersonateShop(shop)} title={t('admin.shops.enterAsShop')}>
+                        <LogIn className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => toggleStatus(shop)} title={shop.status === 'active' ? t('admin.shops.suspend') : t('admin.shops.activate')}>
+                        {shop.status === 'active' ? <PowerOff className="w-4 h-4 text-destructive" /> : <Power className="w-4 h-4 text-success" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => resetTrial(shop)} title={t('admin.shops.resetTrial')}>
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => resetAlerts(shop)} title={t('admin.shops.resetAlerts')}>
+                        <Bell className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteShop(shop)} title={t('admin.shops.deleteShop')}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Change Plan Dialog */}
       <Dialog open={!!planDialog} onOpenChange={() => setPlanDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Alterar Plano - {planDialog?.shop.name}</DialogTitle>
+            <DialogTitle>{t('admin.shops.changePlan')} — {planDialog?.shop.name}</DialogTitle>
             <DialogDescription>
-              Plano atual: <strong>{planDialog?.shop.plan.toUpperCase()}</strong>
-              {planDialog?.shop.stripeManaged && " (Gerido pelo Stripe — será convertido para manual)"}
+              {planDialog?.shop.stripeManaged && t('admin.shops.stripeManagedNote')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Plano</label>
+              <label className="text-sm font-medium mb-1.5 block">{t('admin.shops.plan')}</label>
               <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free (€0/mês)</SelectItem>
-                  <SelectItem value="pro">Pro (€49/mês)</SelectItem>
-                  <SelectItem value="garage">Garage (€99/mês)</SelectItem>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="pro">Pro (€49)</SelectItem>
+                  <SelectItem value="garage">Garage (€99)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Duração</label>
+              <label className="text-sm font-medium mb-1.5 block">{t('admin.shops.duration')}</label>
               <Select value={planDialog?.durationType || "months"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, durationType: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="days">Dias</SelectItem>
-                  <SelectItem value="months">Meses</SelectItem>
-                  <SelectItem value="unlimited">Ilimitado (sem expiração)</SelectItem>
+                  <SelectItem value="days">{t('admin.shops.days')}</SelectItem>
+                  <SelectItem value="months">{t('admin.shops.months')}</SelectItem>
+                  <SelectItem value="unlimited">{t('admin.shops.unlimited')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {planDialog?.durationType !== "unlimited" && (
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Quantidade ({planDialog?.durationType === "days" ? "dias" : "meses"})
+                  {t('admin.shops.quantity')} ({planDialog?.durationType === "days" ? t('admin.shops.days') : t('admin.shops.months')})
                 </label>
                 <Input
                   type="number"
@@ -499,25 +495,24 @@ export default function AdminShops() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPlanDialog(null)}>Cancelar</Button>
-            <Button onClick={changePlan}>Confirmar</Button>
+            <Button variant="outline" onClick={() => setPlanDialog(null)}>{t('admin.shops.cancel')}</Button>
+            <Button onClick={changePlan}>{t('admin.shops.confirm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Shop Dialog */}
+      {/* Delete Confirmation */}
       <Dialog open={!!deleteShop} onOpenChange={() => setDeleteShop(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar Oficina</DialogTitle>
+            <DialogTitle>{t('admin.shops.deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Tem a certeza que deseja eliminar permanentemente a oficina "{deleteShop?.name}"?
-              Todos os dados (clientes, veículos, orçamentos, serviços) serão apagados.
+              {t('admin.shops.deleteConfirm')} "{deleteShop?.name}"? {t('admin.shops.deleteWarn')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteShop(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteShop}>Eliminar Permanentemente</Button>
+            <Button variant="outline" onClick={() => setDeleteShop(null)}>{t('admin.shops.cancel')}</Button>
+            <Button variant="destructive" onClick={handleDeleteShop}>{t('admin.shops.deletePerm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

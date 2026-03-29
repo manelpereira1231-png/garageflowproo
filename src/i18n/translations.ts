@@ -4177,6 +4177,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'workshop.timer.started': 'Timer iniciado',
     'workshop.timer.stoppedMsg': 'Timer parado',
     'workshop.timer.error': 'Error al actualizar timer',
+    'workshop.timer.addTechnician': 'Añadir técnico',
+    'workshop.timer.byTechnician': 'Por técnico',
     'workshop.timer.sessions': 'Sesiones',
     'workshop.filterActive': 'Activos',
     'workshop.filterCompleted': 'Completados',

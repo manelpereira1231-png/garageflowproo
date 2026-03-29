@@ -58,6 +58,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/stock", label: t('nav.stock'), icon: Package },
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
     { path: "/workshop", label: t('nav.workshop'), icon: HardHat },
+    { path: "/warranties", label: t('nav.warranties'), icon: ShieldCheck },
     ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
     ...(canUseFeature('automations') ? [{ path: "/automations", label: t('nav.automations'), icon: Zap, planBadge: 'Garage' as const }] : []),

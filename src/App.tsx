@@ -191,6 +191,7 @@ const shopRoutes = [
   { path: "/developers", element: <Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout> },
   { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
   { path: "/referrals", element: <Layout><Referrals /></Layout> },
+  { path: "/warranties", element: <Layout><Warranties /></Layout> },
 ];
 
 const publicRoutes = [

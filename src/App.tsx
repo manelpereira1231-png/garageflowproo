@@ -68,6 +68,7 @@ const Automations = lazyRetry(() => import("@/pages/Automations"));
 const Developers = lazyRetry(() => import("@/pages/Developers"));
 const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
 const Referrals = lazyRetry(() => import("@/pages/Referrals"));
+const Warranties = lazyRetry(() => import("@/pages/Warranties"));
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -190,6 +191,7 @@ const shopRoutes = [
   { path: "/developers", element: <Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout> },
   { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
   { path: "/referrals", element: <Layout><Referrals /></Layout> },
+  { path: "/warranties", element: <Layout><Warranties /></Layout> },
 ];
 
 const publicRoutes = [

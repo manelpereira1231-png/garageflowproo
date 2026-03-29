@@ -2278,6 +2278,93 @@ export type Database = {
           },
         ]
       }
+      warranties: {
+        Row: {
+          client_id: string
+          coverage: string | null
+          created_at: string
+          description: string
+          end_date: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          shop_id: string
+          start_date: string
+          status: string
+          type: string
+          vehicle_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          client_id: string
+          coverage?: string | null
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          shop_id: string
+          start_date?: string
+          status?: string
+          type?: string
+          vehicle_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          coverage?: string | null
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          shop_id?: string
+          start_date?: string
+          status?: string
+          type?: string
+          vehicle_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranties_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranties_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranties_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranties_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_attachments: {
         Row: {
           created_at: string

@@ -23,6 +23,9 @@ function formatDateTime(d: string): string {
   return d.replace(" ", "T").slice(0, 19);
 }
 
+// TODO: AT validation — SAF-T hash chain requires AT-certified software.
+// TODO: production compliance review — ATCUD generation requires AT registration.
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -43,7 +46,6 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Validate user session
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -108,40 +110,53 @@ Deno.serve(async (req) => {
       paymentsByInvoice.set(p.invoice_id, arr);
     });
 
-    // Build SAF-T XML (v1.04_01)
     const now = new Date().toISOString();
     const taxRegNumber = shop.nif || "000000000";
 
-    // Product entries (from invoice items)
-    const productSet = new Set<string>();
+    // Determine SAF-T InvoiceType based on invoice.type field
+    // FT = Fatura, NC = Nota de Crédito, ND = Nota de Débito, FR = Fatura-Recibo
+    function getInvoiceType(invType: string): string {
+      switch (invType) {
+        case "credit_note": return "NC";
+        case "debit_note": return "ND";
+        case "receipt": return "FR";
+        default: return "FT";
+      }
+    }
+
+    // Product entries (from invoice items — deduplicated by description)
+    const productSet = new Map<string, string>(); // description -> code
+    let productIdx = 0;
     (invoices || []).forEach((inv: any) => {
       (inv.invoice_items || []).forEach((item: any) => {
-        productSet.add(item.description || "Serviço");
+        const desc = item.description || "Serviço";
+        if (!productSet.has(desc)) {
+          productIdx++;
+          productSet.set(desc, `SRV${String(productIdx).padStart(3, '0')}`);
+        }
       });
     });
-    const productXml = Array.from(productSet).map((desc, idx) => `
+
+    const productXml = Array.from(productSet.entries()).map(([desc, code]) => `
       <Product>
         <ProductType>S</ProductType>
-        <ProductCode>SRV${String(idx + 1).padStart(3, '0')}</ProductCode>
+        <ProductCode>${code}</ProductCode>
         <ProductDescription>${escapeXml(desc)}</ProductDescription>
-        <ProductNumberCode>SRV${String(idx + 1).padStart(3, '0')}</ProductNumberCode>
+        <ProductNumberCode>${code}</ProductNumberCode>
       </Product>`).join("");
 
-    const productCodeMap = new Map<string, string>();
-    Array.from(productSet).forEach((desc, idx) => {
-      productCodeMap.set(desc, `SRV${String(idx + 1).padStart(3, '0')}`);
-    });
-
     // Build customer entries
-    const customerXml = (clients || []).map((c: any) => `
+    const customerXml = (clients || []).map((c: any) => {
+      const hasNif = c.nif && c.nif.trim() !== "";
+      return `
       <Customer>
         <CustomerID>${escapeXml(c.id)}</CustomerID>
         <AccountID>21</AccountID>
-        <CustomerTaxID>${escapeXml(c.nif || "999999990")}</CustomerTaxID>
+        <CustomerTaxID>${escapeXml(hasNif ? c.nif : "999999990")}</CustomerTaxID>
         <CompanyName>${escapeXml(c.company || c.name)}</CompanyName>
         <Contact>${escapeXml(c.name)}</Contact>
         <BillingAddress>
-          <AddressDetail>${escapeXml("Consumidor Final")}</AddressDetail>
+          <AddressDetail>${escapeXml(hasNif ? (c.company || c.name) : "Consumidor Final")}</AddressDetail>
           <City>-</City>
           <PostalCode>0000-000</PostalCode>
           <Country>PT</Country>
@@ -149,30 +164,42 @@ Deno.serve(async (req) => {
         <Telephone>${escapeXml(c.phone || "")}</Telephone>
         <Email>${escapeXml(c.email || "")}</Email>
         <SelfBillingIndicator>0</SelfBillingIndicator>
-      </Customer>`).join("");
+      </Customer>`;
+    }).join("");
 
-    // Tax code mapping
+    // Tax code mapping (PT standard rates)
     const getTaxCode = (rate: number): string => {
       if (rate === 0) return "ISE";
       if (rate === 6) return "RED";
       if (rate === 13) return "INT";
-      return "NOR";
+      return "NOR"; // 23% standard
     };
 
-    // Build invoice entries
+    // Build invoice entries — calculate real totals
     let totalDebit = 0;
     let totalCredit = 0;
 
     const invoiceXml = (invoices || []).map((inv: any) => {
+      const invType = getInvoiceType(inv.type || "invoice");
+      const isCreditNote = invType === "NC";
+
       const lines = (inv.invoice_items || []).map((item: any, idx: number) => {
         const qty = Number(item.quantity) || 1;
         const unitPrice = Number(item.unit_price) || 0;
         const vatRate = Number(item.vat_rate) || 23;
         const lineNet = qty * unitPrice;
-        const lineTax = lineNet * (vatRate / 100);
-        const lineTotal = lineNet + lineTax;
-        totalCredit += lineNet;
-        const productCode = productCodeMap.get(item.description || "Serviço") || "SRV001";
+
+        // Credit notes use DebitAmount, invoices use CreditAmount
+        if (isCreditNote) {
+          totalDebit += lineNet;
+        } else {
+          totalCredit += lineNet;
+        }
+
+        const productCode = productSet.get(item.description || "Serviço") || "SRV001";
+        const amountTag = isCreditNote
+          ? `<DebitAmount>${lineNet.toFixed(2)}</DebitAmount>`
+          : `<CreditAmount>${lineNet.toFixed(2)}</CreditAmount>`;
 
         return `
           <Line>
@@ -184,7 +211,7 @@ Deno.serve(async (req) => {
             <UnitPrice>${unitPrice.toFixed(4)}</UnitPrice>
             <TaxPointDate>${formatDate(inv.created_at)}</TaxPointDate>
             <Description>${escapeXml(item.description)}</Description>
-            <CreditAmount>${lineNet.toFixed(2)}</CreditAmount>
+            ${amountTag}
             <Tax>
               <TaxType>IVA</TaxType>
               <TaxCountryRegion>PT</TaxCountryRegion>
@@ -197,10 +224,24 @@ Deno.serve(async (req) => {
 
       const invoiceStatus = inv.status === "cancelled" ? "A" : "N";
       const invPayments = paymentsByInvoice.get(inv.id) || [];
+
+      // Payment mechanism mapping
+      const getPaymentMechanism = (method: string): string => {
+        switch (method) {
+          case "card": return "CC";
+          case "transfer": return "TB";
+          case "mbway": return "MB";
+          case "multibanco": return "MB";
+          case "check": return "CH";
+          case "cash": return "NU"; // Numerário
+          default: return "OU"; // Outros
+        }
+      };
+
       const paymentsXml = invPayments.length > 0
         ? invPayments.map((p: any) => `
           <Payment>
-            <PaymentMechanism>${p.method === 'card' ? 'CC' : p.method === 'transfer' ? 'TB' : p.method === 'mbway' ? 'MB' : 'NU'}</PaymentMechanism>
+            <PaymentMechanism>${getPaymentMechanism(p.method)}</PaymentMechanism>
             <PaymentAmount>${Number(p.amount).toFixed(2)}</PaymentAmount>
             <PaymentDate>${formatDate(p.paid_at)}</PaymentDate>
           </Payment>`).join("")
@@ -220,7 +261,7 @@ Deno.serve(async (req) => {
           <HashControl>0</HashControl>
           <Period>${new Date(inv.created_at).getMonth() + 1}</Period>
           <InvoiceDate>${formatDate(inv.created_at)}</InvoiceDate>
-          <InvoiceType>FT</InvoiceType>
+          <InvoiceType>${invType}</InvoiceType>
           <SpecialRegimes>
             <SelfBillingIndicator>0</SelfBillingIndicator>
             <CashVATSchemeIndicator>0</CashVATSchemeIndicator>
@@ -239,7 +280,7 @@ Deno.serve(async (req) => {
         </Invoice>`;
     }).join("");
 
-    // Collect distinct tax entries used
+    // Tax table entries
     const taxEntries = new Set<number>();
     (invoices || []).forEach((inv: any) => {
       (inv.invoice_items || []).forEach((item: any) => {
@@ -261,6 +302,10 @@ Deno.serve(async (req) => {
       </TaxTableEntry>`;
     }).join("");
 
+    // TODO: AT validation — Hash chain (Hash/HashControl) requires AT software certification.
+    // TODO: AT validation — ATCUD series requires registration with AT portal.
+    // TODO: production compliance review — SoftwareCertificateNumber must be obtained from AT.
+
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_1.04_01" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Header>
@@ -273,7 +318,7 @@ Deno.serve(async (req) => {
       <AddressDetail>${escapeXml(shop.address || "Sem morada")}</AddressDetail>
       <City>-</City>
       <PostalCode>0000-000</PostalCode>
-      <Country>PT</Country>
+      <Country>${escapeXml(shop.country === "Portugal" ? "PT" : shop.country === "Brasil" ? "BR" : "PT")}</Country>
     </CompanyAddress>
     <FiscalYear>${fiscalYear}</FiscalYear>
     <StartDate>${periodStart}</StartDate>
@@ -281,11 +326,11 @@ Deno.serve(async (req) => {
     <CurrencyCode>${shop.currency || "EUR"}</CurrencyCode>
     <DateCreated>${formatDate(now)}</DateCreated>
     <TaxEntity>Global</TaxEntity>
-    <ProductCompanyTaxID>999999990</ProductCompanyTaxID>
+    <ProductCompanyTaxID>${escapeXml(taxRegNumber)}</ProductCompanyTaxID>
     <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
     <ProductID>GarageFlow</ProductID>
     <ProductVersion>1.0</ProductVersion>
-    <HeaderComment>Exportação fiscal (beta) — Documento gerado por sistema de gestão. Deve ser comunicado à Autoridade Tributária através de software certificado.</HeaderComment>
+    <HeaderComment>Exportação fiscal (beta) — Requer validação por software certificado pela AT antes de submissão oficial.</HeaderComment>
   </Header>
   <MasterFiles>
     ${productXml}

@@ -265,10 +265,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setTextColor(120, 120, 120);
   doc.setFontSize(6);
   doc.setFont("helvetica", "italic");
-  doc.text(
-    "Documento gerado por sistema de gestão. Deve ser comunicado à Autoridade Tributária através de software certificado.",
-    pageW / 2, pageH - 22, { align: "center" }
-  );
+  doc.text(tl('disclaimer'), pageW / 2, pageH - 22, { align: "center" });
 
   // Footer
   doc.setTextColor(150, 150, 150);

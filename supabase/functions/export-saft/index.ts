@@ -34,25 +34,20 @@ function countryToISO(country: string): string {
   return map[country] || country?.slice(0, 2).toUpperCase() || "PT";
 }
 
-/** Try to extract city and postal code from address string */
+/** Extract city and postal code from address string */
 function parseAddress(address: string | null): { detail: string; city: string; postalCode: string } {
   if (!address || !address.trim()) {
     return { detail: "Sem morada", city: "-", postalCode: "0000-000" };
   }
-  // Try to match Portuguese postal code pattern: XXXX-XXX
   const ptPostalMatch = address.match(/(\d{4}-\d{3})/);
   const postalCode = ptPostalMatch ? ptPostalMatch[1] : "0000-000";
-
-  // Try to extract city: typically after postal code or last comma-separated segment
   const parts = address.split(",").map(p => p.trim());
   let city = "-";
   if (parts.length >= 2) {
-    // Last non-empty part after removing postal code
     const lastPart = parts[parts.length - 1].replace(/\d{4}-\d{3}/, "").trim();
     if (lastPart) city = lastPart;
     else if (parts.length >= 3) city = parts[parts.length - 2].trim();
   }
-
   return { detail: address, city, postalCode };
 }
 
@@ -123,10 +118,21 @@ Deno.serve(async (req) => {
       .lte("created_at", periodEnd + "T23:59:59")
       .order("created_at", { ascending: true });
 
-    // Fetch clients referenced by invoices
-    const clientIds = [...new Set((invoices || []).map((i: any) => i.client_id))];
-    const { data: clients } = clientIds.length > 0
-      ? await supabase.from("clients").select("*").in("id", clientIds)
+    // Fetch quotes in period (for WorkingDocuments)
+    const { data: quotes } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("shop_id", shop_id)
+      .gte("created_at", periodStart)
+      .lte("created_at", periodEnd + "T23:59:59")
+      .order("created_at", { ascending: true });
+
+    // Fetch clients referenced by invoices and quotes
+    const invoiceClientIds = (invoices || []).map((i: any) => i.client_id);
+    const quoteClientIds = (quotes || []).map((q: any) => q.client_id);
+    const allClientIds = [...new Set([...invoiceClientIds, ...quoteClientIds])];
+    const { data: clients } = allClientIds.length > 0
+      ? await supabase.from("clients").select("*").in("id", allClientIds)
       : { data: [] };
 
     const clientMap = new Map((clients || []).map((c: any) => [c.id, c]));
@@ -145,12 +151,11 @@ Deno.serve(async (req) => {
     });
 
     const now = new Date().toISOString();
-    const taxRegNumber = shop.nif || "000000000";
+    const taxRegNumber = shop.nif || "999999990";
     const shopCountryISO = countryToISO(shop.country);
     const shopAddress = parseAddress(shop.address);
 
-    // Determine SAF-T InvoiceType based on invoice.type field
-    // FT = Fatura, NC = Nota de Crédito, ND = Nota de Débito, FR = Fatura-Recibo
+    // Invoice type mapping
     function getInvoiceType(invType: string): string {
       switch (invType) {
         case "credit_note": return "NC";
@@ -160,12 +165,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Product entries (from invoice items — deduplicated by description)
-    const productSet = new Map<string, string>(); // description -> code
+    // Product entries (deduplicated by description)
+    const productSet = new Map<string, string>();
     let productIdx = 0;
     (invoices || []).forEach((inv: any) => {
       (inv.invoice_items || []).forEach((item: any) => {
         const desc = item.description || "Serviço";
+        if (!productSet.has(desc)) {
+          productIdx++;
+          productSet.set(desc, `SRV${String(productIdx).padStart(3, '0')}`);
+        }
+      });
+    });
+    // Also add products from quote lines
+    (quotes || []).forEach((q: any) => {
+      const lines = Array.isArray(q.lines) ? q.lines : [];
+      lines.forEach((line: any) => {
+        const desc = line.name || line.description || "Serviço";
         if (!productSet.has(desc)) {
           productIdx++;
           productSet.set(desc, `SRV${String(productIdx).padStart(3, '0')}`);
@@ -181,18 +197,21 @@ Deno.serve(async (req) => {
         <ProductNumberCode>${code}</ProductNumberCode>
       </Product>`).join("");
 
-    // Build customer entries
+    // Build customer entries with real address data
     const customerXml = (clients || []).map((c: any) => {
       const hasNif = c.nif && c.nif.trim() !== "";
+      const customerTaxId = hasNif ? c.nif : "999999990";
+      // Use client company/name as address detail (clients table has no address field)
+      const addressDetail = c.company || c.name || "Consumidor Final";
       return `
       <Customer>
         <CustomerID>${escapeXml(c.id)}</CustomerID>
         <AccountID>21</AccountID>
-        <CustomerTaxID>${escapeXml(hasNif ? c.nif : "999999990")}</CustomerTaxID>
+        <CustomerTaxID>${escapeXml(customerTaxId)}</CustomerTaxID>
         <CompanyName>${escapeXml(c.company || c.name)}</CompanyName>
         <Contact>${escapeXml(c.name)}</Contact>
         <BillingAddress>
-          <AddressDetail>${escapeXml(hasNif ? (c.company || c.name) : "Consumidor Final")}</AddressDetail>
+          <AddressDetail>${escapeXml(addressDetail)}</AddressDetail>
           <City>-</City>
           <PostalCode>0000-000</PostalCode>
           <Country>${shopCountryISO}</Country>
@@ -208,14 +227,14 @@ Deno.serve(async (req) => {
       if (rate === 0) return "ISE";
       if (rate === 6) return "RED";
       if (rate === 13) return "INT";
-      return "NOR"; // 23% standard
+      return "NOR";
     };
 
-    // Build invoice entries — calculate real totals
+    // Build invoice entries
     let totalDebit = 0;
     let totalCredit = 0;
 
-    const invoiceXml = (invoices || []).map((inv: any, invIdx: number) => {
+    const invoiceXml = (invoices || []).map((inv: any) => {
       const invType = getInvoiceType(inv.type || "invoice");
       const isCreditNote = invType === "NC";
 
@@ -225,7 +244,6 @@ Deno.serve(async (req) => {
         const vatRate = Number(item.vat_rate) || 23;
         const lineNet = qty * unitPrice;
 
-        // Credit notes use DebitAmount, invoices use CreditAmount
         if (isCreditNote) {
           totalDebit += lineNet;
         } else {
@@ -260,27 +278,23 @@ Deno.serve(async (req) => {
       const invoiceStatus = inv.status === "cancelled" ? "A" : "N";
       const invPayments = paymentsByInvoice.get(inv.id) || [];
 
-      // Payment mechanism mapping
       const getPaymentMechanism = (method: string): string => {
         switch (method) {
           case "card": return "CC";
           case "transfer": return "TB";
-          case "mbway": return "MB";
-          case "multibanco": return "MB";
+          case "mbway": case "multibanco": return "MB";
           case "check": return "CH";
-          case "cash": return "NU"; // Numerário
-          default: return "OU"; // Outros
+          case "cash": return "NU";
+          default: return "OU";
         }
       };
 
-      const paymentsXml = invPayments.length > 0
-        ? invPayments.map((p: any) => `
+      const paymentsXml = invPayments.map((p: any) => `
           <Payment>
             <PaymentMechanism>${getPaymentMechanism(p.method)}</PaymentMechanism>
             <PaymentAmount>${Number(p.amount).toFixed(2)}</PaymentAmount>
             <PaymentDate>${formatDate(p.paid_at)}</PaymentDate>
-          </Payment>`).join("")
-        : "";
+          </Payment>`).join("");
 
       return `
         <Invoice>
@@ -315,11 +329,75 @@ Deno.serve(async (req) => {
         </Invoice>`;
     }).join("");
 
+    // WorkingDocuments — quotes/estimates (ORC = Orçamento)
+    const workingDocsXml = (quotes || []).map((q: any) => {
+      const qLines = Array.isArray(q.lines) ? q.lines : [];
+      const qStatus = q.status === "rejected" ? "A" : q.status === "approved" || q.status === "converted" ? "F" : "N";
+      
+      const linesXml = qLines.map((line: any, idx: number) => {
+        const qty = Number(line.quantity) || 1;
+        const unitPrice = Number(line.unit_price) || 0;
+        const vatRate = Number(line.vat_rate) || 23;
+        const lineNet = qty * unitPrice;
+        const productCode = productSet.get(line.name || line.description || "Serviço") || "SRV001";
+
+        return `
+            <Line>
+              <LineNumber>${idx + 1}</LineNumber>
+              <ProductCode>${productCode}</ProductCode>
+              <ProductDescription>${escapeXml(line.name || line.description || "Serviço")}</ProductDescription>
+              <Quantity>${qty}</Quantity>
+              <UnitOfMeasure>UN</UnitOfMeasure>
+              <UnitPrice>${unitPrice.toFixed(4)}</UnitPrice>
+              <TaxPointDate>${formatDate(q.created_at)}</TaxPointDate>
+              <Description>${escapeXml(line.name || line.description || "Serviço")}</Description>
+              <CreditAmount>${lineNet.toFixed(2)}</CreditAmount>
+              <Tax>
+                <TaxType>IVA</TaxType>
+                <TaxCountryRegion>${shopCountryISO}</TaxCountryRegion>
+                <TaxCode>${getTaxCode(vatRate)}</TaxCode>
+                <TaxPercentage>${vatRate}</TaxPercentage>
+              </Tax>
+            </Line>`;
+      }).join("");
+
+      return `
+          <WorkDocument>
+            <DocumentNumber>${escapeXml(q.number)}</DocumentNumber>
+            <ATCUD>0</ATCUD>
+            <DocumentStatus>
+              <WorkStatus>${qStatus}</WorkStatus>
+              <WorkStatusDate>${formatDateTime(q.created_at)}</WorkStatusDate>
+              <SourceID>${escapeXml(user.email || "GarageFlow")}</SourceID>
+              <SourceBilling>P</SourceBilling>
+            </DocumentStatus>
+            <Hash>0</Hash>
+            <HashControl>0</HashControl>
+            <WorkDate>${formatDate(q.date || q.created_at)}</WorkDate>
+            <WorkType>ORC</WorkType>
+            <SourceID>${escapeXml(user.email || "GarageFlow")}</SourceID>
+            <SystemEntryDate>${formatDateTime(q.created_at)}</SystemEntryDate>
+            <CustomerID>${escapeXml(q.client_id)}</CustomerID>
+            ${linesXml}
+            <DocumentTotals>
+              <TaxPayable>${(Number(q.vat_total) || 0).toFixed(2)}</TaxPayable>
+              <NetTotal>${(Number(q.subtotal) || 0).toFixed(2)}</NetTotal>
+              <GrossTotal>${(Number(q.total) || 0).toFixed(2)}</GrossTotal>
+            </DocumentTotals>
+          </WorkDocument>`;
+    }).join("");
+
     // Tax table entries
     const taxEntries = new Set<number>();
     (invoices || []).forEach((inv: any) => {
       (inv.invoice_items || []).forEach((item: any) => {
         taxEntries.add(Number(item.vat_rate) || 23);
+      });
+    });
+    (quotes || []).forEach((q: any) => {
+      const lines = Array.isArray(q.lines) ? q.lines : [];
+      lines.forEach((line: any) => {
+        taxEntries.add(Number(line.vat_rate) || 23);
       });
     });
     if (taxEntries.size === 0) taxEntries.add(Number(shop.vat_rate) || 23);
@@ -385,6 +463,12 @@ Deno.serve(async (req) => {
       <NumberOfMovementLines>0</NumberOfMovementLines>
       <TotalQuantityIssued>0.00</TotalQuantityIssued>
     </MovementOfGoods>
+    <WorkingDocuments>
+      <NumberOfEntries>${(quotes || []).length}</NumberOfEntries>
+      <TotalDebit>0.00</TotalDebit>
+      <TotalCredit>${(quotes || []).reduce((s: number, q: any) => s + (Number(q.subtotal) || 0), 0).toFixed(2)}</TotalCredit>
+      ${workingDocsXml}
+    </WorkingDocuments>
   </SourceDocuments>
 </AuditFile>`;
 

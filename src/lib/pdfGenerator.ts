@@ -103,7 +103,12 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  const typeLabel = data.type === 'quote' ? 'ORÇAMENTO' : 'ORDEM DE SERVIÇO';
+  const docLabels: Record<string, Record<string, string>> = {
+    quote: { pt: 'ORÇAMENTO', en: 'QUOTE', es: 'PRESUPUESTO', 'pt-BR': 'ORÇAMENTO' },
+    service: { pt: 'ORDEM DE SERVIÇO', en: 'WORK ORDER', es: 'ORDEN DE SERVICIO', 'pt-BR': 'ORDEM DE SERVIÇO' },
+  };
+  const lang = data.language || 'pt';
+  const typeLabel = docLabels[data.type]?.[lang] || docLabels[data.type]?.pt || 'DOCUMENTO';
   doc.text(typeLabel, pageW - 14, 18, { align: "right" });
   doc.setFontSize(11);
   doc.text(data.number, pageW - 14, 26, { align: "right" });

@@ -141,14 +141,14 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.text(data.number, pageW - 14, 26, { align: "right" });
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Data: ${data.date}`, pageW - 14, 34, { align: "right" });
+  doc.text(`${tl('date')}: ${data.date}`, pageW - 14, 34, { align: "right" });
 
   // Client info
   let y = 50;
   doc.setTextColor(38, 38, 38);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("CLIENTE", 14, y);
+  doc.text(tl('client'), 14, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   y += 6;
@@ -160,25 +160,25 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   // Vehicle info
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("VEÍCULO", pageW / 2, 50);
+  doc.text(tl('vehicle'), pageW / 2, 50);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`${data.vehicleMake} ${data.vehicleModel}`, pageW / 2, 56);
-  doc.text(`Matrícula: ${data.vehiclePlate}`, pageW / 2, 61);
+  doc.text(`${tl('plate')}: ${data.vehiclePlate}`, pageW / 2, 61);
 
   if (data.type === 'service') {
-    if (data.technician) doc.text(`Técnico: ${data.technician}`, pageW / 2, 66);
-    if (data.laborHours) doc.text(`Horas: ${data.laborHours}h`, pageW / 2, 71);
+    if (data.technician) doc.text(`${tl('technician')}: ${data.technician}`, pageW / 2, 66);
+    if (data.laborHours) doc.text(`${tl('hours')}: ${data.laborHours}h`, pageW / 2, 71);
   }
 
   if (data.validityDate) {
-    doc.text(`Válido até: ${data.validityDate}`, pageW / 2, data.type === 'service' ? 76 : 66);
+    doc.text(`${tl('validUntil')}: ${data.validityDate}`, pageW / 2, data.type === 'service' ? 76 : 66);
   }
 
   // Lines table
   const tableY = Math.max(y + 12, 82);
   const tableData = data.lines.map(l => [
-    l.type === 'service' ? 'Serviço' : 'Peça',
+    l.type === 'service' ? tl('serviceType') : tl('partType'),
     l.name,
     String(l.quantity),
     `${cur}${l.unit_price.toFixed(2)}`,
@@ -188,7 +188,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
 
   autoTable(doc, {
     startY: tableY,
-    head: [['Tipo', 'Descrição', 'Qtd', 'Preço', 'IVA', 'Total']],
+    head: [[tl('type'), tl('description'), tl('qty'), tl('price'), tl('vat'), tl('total')]],
     body: tableData,
     theme: 'striped',
     headStyles: { fillColor: [38, 38, 38], textColor: [255, 180, 30], fontStyle: 'bold', fontSize: 8 },
@@ -211,7 +211,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setFont("helvetica", "normal");
   doc.setTextColor(38, 38, 38);
   doc.text(`Subtotal: ${cur}${data.subtotal.toFixed(2)}`, totalsX, finalY, { align: "right" });
-  doc.text(`IVA: ${cur}${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
+  doc.text(`${tl('vat')}: ${cur}${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
 
   doc.setFillColor(38, 38, 38);
   doc.rect(pageW - 80, finalY + 9, 66, 10, 'F');
@@ -225,7 +225,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("DIAGNÓSTICO", 14, finalY + 28);
+    doc.text(tl('diagnosis'), 14, finalY + 28);
     doc.setFont("helvetica", "normal");
     const diagLines = doc.splitTextToSize(data.diagnosis, pageW - 28);
     doc.text(diagLines, 14, finalY + 34);
@@ -237,7 +237,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("NOTAS", 14, notesY);
+    doc.text(tl('notes'), 14, notesY);
     doc.setFont("helvetica", "normal");
     const noteLines = doc.splitTextToSize(data.notes, pageW - 28);
     doc.text(noteLines, 14, notesY + 6);

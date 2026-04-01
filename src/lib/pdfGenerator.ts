@@ -39,6 +39,7 @@ interface PdfData {
   laborHours?: number;
   currency: string;
   plan?: 'free' | 'pro' | 'garage';
+  language?: string;
 }
 
 async function loadImage(url: string): Promise<string | null> {
@@ -103,7 +104,12 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  const typeLabel = data.type === 'quote' ? 'ORÇAMENTO' : 'ORDEM DE SERVIÇO';
+  const docLabels: Record<string, Record<string, string>> = {
+    quote: { pt: 'ORÇAMENTO', en: 'QUOTE', es: 'PRESUPUESTO', 'pt-BR': 'ORÇAMENTO' },
+    service: { pt: 'ORDEM DE SERVIÇO', en: 'WORK ORDER', es: 'ORDEN DE SERVICIO', 'pt-BR': 'ORDEM DE SERVIÇO' },
+  };
+  const lang = data.language || 'pt';
+  const typeLabel = docLabels[data.type]?.[lang] || docLabels[data.type]?.pt || 'DOCUMENTO';
   doc.text(typeLabel, pageW - 14, 18, { align: "right" });
   doc.setFontSize(11);
   doc.text(data.number, pageW - 14, 26, { align: "right" });
@@ -226,8 +232,19 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.restoreGraphicsState();
   }
 
-  // Footer
+  // Legal disclaimer
   const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(245, 245, 245);
+  doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+  doc.setTextColor(120, 120, 120);
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "italic");
+  doc.text(
+    "Documento gerado por sistema de gestão. Deve ser comunicado à Autoridade Tributária através de software certificado.",
+    pageW / 2, pageH - 22, { align: "center" }
+  );
+
+  // Footer
   doc.setTextColor(150, 150, 150);
   doc.setFontSize(7);
   

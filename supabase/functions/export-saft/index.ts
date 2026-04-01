@@ -23,8 +23,42 @@ function formatDateTime(d: string): string {
   return d.replace(" ", "T").slice(0, 19);
 }
 
+/** Map country name to ISO 3166-1 alpha-2 */
+function countryToISO(country: string): string {
+  const map: Record<string, string> = {
+    "Portugal": "PT", "Espanha": "ES", "España": "ES", "Spain": "ES",
+    "França": "FR", "France": "FR", "Brasil": "BR", "Brazil": "BR",
+    "United Kingdom": "GB", "Germany": "DE", "Alemanha": "DE",
+    "Italy": "IT", "Itália": "IT", "Angola": "AO", "Moçambique": "MZ",
+  };
+  return map[country] || country?.slice(0, 2).toUpperCase() || "PT";
+}
+
+/** Try to extract city and postal code from address string */
+function parseAddress(address: string | null): { detail: string; city: string; postalCode: string } {
+  if (!address || !address.trim()) {
+    return { detail: "Sem morada", city: "-", postalCode: "0000-000" };
+  }
+  // Try to match Portuguese postal code pattern: XXXX-XXX
+  const ptPostalMatch = address.match(/(\d{4}-\d{3})/);
+  const postalCode = ptPostalMatch ? ptPostalMatch[1] : "0000-000";
+
+  // Try to extract city: typically after postal code or last comma-separated segment
+  const parts = address.split(",").map(p => p.trim());
+  let city = "-";
+  if (parts.length >= 2) {
+    // Last non-empty part after removing postal code
+    const lastPart = parts[parts.length - 1].replace(/\d{4}-\d{3}/, "").trim();
+    if (lastPart) city = lastPart;
+    else if (parts.length >= 3) city = parts[parts.length - 2].trim();
+  }
+
+  return { detail: address, city, postalCode };
+}
+
 // TODO: AT validation — SAF-T hash chain requires AT-certified software.
 // TODO: production compliance review — ATCUD generation requires AT registration.
+// TODO: AT validation — SoftwareCertificateNumber must be obtained from AT.
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -112,6 +146,8 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
     const taxRegNumber = shop.nif || "000000000";
+    const shopCountryISO = countryToISO(shop.country);
+    const shopAddress = parseAddress(shop.address);
 
     // Determine SAF-T InvoiceType based on invoice.type field
     // FT = Fatura, NC = Nota de Crédito, ND = Nota de Débito, FR = Fatura-Recibo
@@ -159,7 +195,7 @@ Deno.serve(async (req) => {
           <AddressDetail>${escapeXml(hasNif ? (c.company || c.name) : "Consumidor Final")}</AddressDetail>
           <City>-</City>
           <PostalCode>0000-000</PostalCode>
-          <Country>PT</Country>
+          <Country>${shopCountryISO}</Country>
         </BillingAddress>
         <Telephone>${escapeXml(c.phone || "")}</Telephone>
         <Email>${escapeXml(c.email || "")}</Email>
@@ -179,7 +215,7 @@ Deno.serve(async (req) => {
     let totalDebit = 0;
     let totalCredit = 0;
 
-    const invoiceXml = (invoices || []).map((inv: any) => {
+    const invoiceXml = (invoices || []).map((inv: any, invIdx: number) => {
       const invType = getInvoiceType(inv.type || "invoice");
       const isCreditNote = invType === "NC";
 
@@ -205,20 +241,19 @@ Deno.serve(async (req) => {
           <Line>
             <LineNumber>${idx + 1}</LineNumber>
             <ProductCode>${productCode}</ProductCode>
-            <ProductDescription>${escapeXml(item.description)}</ProductDescription>
+            <ProductDescription>${escapeXml(item.description || "Serviço")}</ProductDescription>
             <Quantity>${qty}</Quantity>
             <UnitOfMeasure>UN</UnitOfMeasure>
             <UnitPrice>${unitPrice.toFixed(4)}</UnitPrice>
             <TaxPointDate>${formatDate(inv.created_at)}</TaxPointDate>
-            <Description>${escapeXml(item.description)}</Description>
+            <Description>${escapeXml(item.description || "Serviço")}</Description>
             ${amountTag}
             <Tax>
               <TaxType>IVA</TaxType>
-              <TaxCountryRegion>PT</TaxCountryRegion>
+              <TaxCountryRegion>${shopCountryISO}</TaxCountryRegion>
               <TaxCode>${getTaxCode(vatRate)}</TaxCode>
               <TaxPercentage>${vatRate}</TaxPercentage>
             </Tax>
-            <SettlementAmount>0.00</SettlementAmount>
           </Line>`;
       }).join("");
 
@@ -295,7 +330,7 @@ Deno.serve(async (req) => {
       return `
       <TaxTableEntry>
         <TaxType>IVA</TaxType>
-        <TaxCountryRegion>PT</TaxCountryRegion>
+        <TaxCountryRegion>${shopCountryISO}</TaxCountryRegion>
         <TaxCode>${code}</TaxCode>
         <Description>${desc}</Description>
         <TaxPercentage>${rate}</TaxPercentage>
@@ -315,10 +350,10 @@ Deno.serve(async (req) => {
     <TaxAccountingBasis>F</TaxAccountingBasis>
     <CompanyName>${escapeXml(shop.name)}</CompanyName>
     <CompanyAddress>
-      <AddressDetail>${escapeXml(shop.address || "Sem morada")}</AddressDetail>
-      <City>-</City>
-      <PostalCode>0000-000</PostalCode>
-      <Country>${escapeXml(shop.country === "Portugal" ? "PT" : shop.country === "Brasil" ? "BR" : "PT")}</Country>
+      <AddressDetail>${escapeXml(shopAddress.detail)}</AddressDetail>
+      <City>${escapeXml(shopAddress.city)}</City>
+      <PostalCode>${escapeXml(shopAddress.postalCode)}</PostalCode>
+      <Country>${shopCountryISO}</Country>
     </CompanyAddress>
     <FiscalYear>${fiscalYear}</FiscalYear>
     <StartDate>${periodStart}</StartDate>
@@ -330,7 +365,7 @@ Deno.serve(async (req) => {
     <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
     <ProductID>GarageFlow</ProductID>
     <ProductVersion>1.0</ProductVersion>
-    <HeaderComment>Exportação fiscal (beta) — Requer validação por software certificado pela AT antes de submissão oficial.</HeaderComment>
+    <HeaderComment>Exportação fiscal operacional — Requer validação por software certificado pela AT antes de submissão oficial. Hash/ATCUD não implementados.</HeaderComment>
   </Header>
   <MasterFiles>
     ${productXml}
@@ -346,6 +381,10 @@ Deno.serve(async (req) => {
       <TotalCredit>${totalCredit.toFixed(2)}</TotalCredit>
       ${invoiceXml}
     </SalesInvoices>
+    <MovementOfGoods>
+      <NumberOfMovementLines>0</NumberOfMovementLines>
+      <TotalQuantityIssued>0.00</TotalQuantityIssued>
+    </MovementOfGoods>
   </SourceDocuments>
 </AuditFile>`;
 

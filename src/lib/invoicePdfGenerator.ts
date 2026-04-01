@@ -13,6 +13,7 @@ interface InvoicePdfData {
   vehicleModel?: string;
   vehiclePlate?: string;
   totalPaid: number;
+  language?: string;
 }
 
 async function loadImage(url: string): Promise<string | null> {
@@ -66,7 +67,15 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("FATURA", pageW - 14, 18, { align: "right" });
+  const invoiceTypeLabels: Record<string, Record<string, string>> = {
+    invoice: { pt: 'FATURA', en: 'INVOICE', es: 'FACTURA', 'pt-BR': 'FATURA' },
+    credit_note: { pt: 'NOTA DE CRÉDITO', en: 'CREDIT NOTE', es: 'NOTA DE CRÉDITO', 'pt-BR': 'NOTA DE CRÉDITO' },
+    debit_note: { pt: 'NOTA DE DÉBITO', en: 'DEBIT NOTE', es: 'NOTA DE DÉBITO', 'pt-BR': 'NOTA DE DÉBITO' },
+    receipt: { pt: 'FATURA-RECIBO', en: 'RECEIPT', es: 'RECIBO', 'pt-BR': 'FATURA-RECIBO' },
+  };
+  const lang = data.language || 'pt';
+  const docTypeLabel = invoiceTypeLabels[invoice.type || 'invoice']?.[lang] || invoiceTypeLabels.invoice?.pt || 'FATURA';
+  doc.text(docTypeLabel, pageW - 14, 18, { align: "right" });
   doc.setFontSize(11);
   doc.text(invoice.number, pageW - 14, 26, { align: "right" });
   doc.setFontSize(9);

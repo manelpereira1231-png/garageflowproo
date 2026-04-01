@@ -39,6 +39,7 @@ interface PdfData {
   laborHours?: number;
   currency: string;
   plan?: 'free' | 'pro' | 'garage';
+  language?: string;
 }
 
 async function loadImage(url: string): Promise<string | null> {

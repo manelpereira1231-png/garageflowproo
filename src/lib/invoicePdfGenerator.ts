@@ -13,6 +13,7 @@ interface InvoicePdfData {
   vehicleModel?: string;
   vehiclePlate?: string;
   totalPaid: number;
+  language?: string;
 }
 
 async function loadImage(url: string): Promise<string | null> {

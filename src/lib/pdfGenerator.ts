@@ -231,8 +231,19 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.restoreGraphicsState();
   }
 
-  // Footer
+  // Legal disclaimer
   const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(245, 245, 245);
+  doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+  doc.setTextColor(120, 120, 120);
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "italic");
+  doc.text(
+    "Documento gerado por sistema de gestão. Deve ser comunicado à Autoridade Tributária através de software certificado.",
+    pageW / 2, pageH - 22, { align: "center" }
+  );
+
+  // Footer
   doc.setTextColor(150, 150, 150);
   doc.setFontSize(7);
   

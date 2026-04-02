@@ -76,6 +76,11 @@ export default function Marketing() {
   const sendCampaign = async (campaign: any) => {
     if (!activeShopId) return;
 
+    // Guard: only email campaigns can actually send
+    if (campaign.type !== 'email') {
+      toast.error(t('marketing.channelNotConfigured'));
+      return;
+    }
     let recipients = clients.filter(c => c.email);
     if (campaign.target_segment === 'new') {
       recipients = recipients.slice(0, Math.ceil(recipients.length * 0.3));

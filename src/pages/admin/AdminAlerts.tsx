@@ -227,7 +227,7 @@ export default function AdminAlerts() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={fetchAlerts} variant="outline" size="sm" className="gap-2">
-            <RotateCw className="w-4 h-4" /> Atualizar
+            <RotateCw className="w-4 h-4" /> {t('common.refresh')}
           </Button>
           <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" /> {t('alerts.export')}

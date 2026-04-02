@@ -353,7 +353,7 @@ export default function Automations() {
                           <div className="flex items-center gap-2">
                             <Icon className="w-3.5 h-3.5" />
                             <span>{t(ak.label)}</span>
-                            {!ak.ready && <Badge variant="outline" className="text-[8px] ml-1">em breve</Badge>}
+                            {!ak.ready && <Badge variant="outline" className="text-[8px] ml-1">{t('common.comingSoon')}</Badge>}
                           </div>
                         </SelectItem>
                       );

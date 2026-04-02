@@ -5064,6 +5064,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.date': 'Data',
     'common.error': 'Ocorreu um erro',
     'common.noData': 'Sem dados',
+    'common.comingSoon': 'em breve',
+    'common.refresh': 'Atualizar',
+    'common.created': 'Criado',
 
     'clients.updated': 'Cliente atualizado',
     'clients.deleted': 'Cliente excluído',

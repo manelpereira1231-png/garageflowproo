@@ -260,7 +260,7 @@ export default function Automations() {
                             <ActionIcon className="w-2.5 h-2.5" />
                             {t(actionInfo?.label || r.action_type)}
                             {actionInfo && !actionInfo.ready && (
-                              <span className="text-[8px] text-warning ml-0.5">(em breve)</span>
+                              <span className="text-[8px] text-warning ml-0.5">({t('common.comingSoon')})</span>
                             )}
                           </Badge>
                           {r.run_count > 0 && (

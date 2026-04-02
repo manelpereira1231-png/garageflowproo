@@ -222,12 +222,12 @@ export default function AdminAlerts() {
         <div>
           <h1 className="page-title">{t('alerts.title')} — Admin</h1>
           <p className="text-sm text-muted-foreground">
-            Gestão global de todos os alertas do sistema
+            {t('admin.alerts.subtitle')}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button onClick={fetchAlerts} variant="outline" size="sm" className="gap-2">
-            <RotateCw className="w-4 h-4" /> Atualizar
+            <RotateCw className="w-4 h-4" /> {t('common.refresh')}
           </Button>
           <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" /> {t('alerts.export')}

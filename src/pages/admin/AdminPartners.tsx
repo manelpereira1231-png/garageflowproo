@@ -177,7 +177,7 @@ export default function AdminPartners() {
   };
 
   const exportCSV = () => {
-    const headers = ["Parceiro", "Valor", "Moeda", "Status", "Método Pagamento", "IBAN/MBWAY", "Criado", "Pago em"];
+    const headers = [t('admin.partners.partner'), t('admin.partners.amount'), t('admin.partners.currency'), t('common.status'), t('admin.partners.paymentMethod'), "IBAN/MBWAY", t('common.created'), t('admin.partners.paidAt')];
     const rows = commissions.map(c => {
       const p = partners.find(p2 => p2.id === c.partner_id);
       const pay = p ? getPaymentInfo(p) : null;
@@ -452,10 +452,10 @@ export default function AdminPartners() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <CardTitle>Comissões</CardTitle>
+                <CardTitle>{t('admin.partners.commissions')}</CardTitle>
                 <div className="flex gap-2 items-center">
-                  <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pendente: {totalPending.toFixed(2)}€</Badge>
-                  <Badge variant="default" className="gap-1"><CheckCircle className="w-3 h-3" />Pago: {totalPaid.toFixed(2)}€</Badge>
+                  <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />{t('admin.partners.pending')}: {totalPending.toFixed(2)}€</Badge>
+                  <Badge variant="default" className="gap-1"><CheckCircle className="w-3 h-3" />{t('admin.partners.paid')}: {totalPaid.toFixed(2)}€</Badge>
                   <Button size="sm" variant="outline" onClick={exportCSV} className="gap-1 ml-2"><Download className="w-3 h-3" />CSV</Button>
                 </div>
               </div>
@@ -463,9 +463,9 @@ export default function AdminPartners() {
             <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Parceiro</TableHead><TableHead>Valor</TableHead><TableHead>Método</TableHead>
-                  <TableHead>Dados Pagamento</TableHead><TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead><TableHead>Pago em</TableHead><TableHead>Ação</TableHead>
+                  <TableHead>{t('admin.partners.partner')}</TableHead><TableHead>{t('admin.partners.amount')}</TableHead><TableHead>{t('admin.partners.method')}</TableHead>
+                  <TableHead>{t('admin.partners.paymentData')}</TableHead><TableHead>{t('common.status')}</TableHead>
+                  <TableHead>{t('common.date')}</TableHead><TableHead>{t('admin.partners.paidAt')}</TableHead><TableHead>{t('common.actions')}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {commissions.map(c => {

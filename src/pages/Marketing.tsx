@@ -76,6 +76,11 @@ export default function Marketing() {
   const sendCampaign = async (campaign: any) => {
     if (!activeShopId) return;
 
+    // Guard: only email campaigns can actually send
+    if (campaign.type !== 'email') {
+      toast.error(t('marketing.channelNotConfigured'));
+      return;
+    }
     let recipients = clients.filter(c => c.email);
     if (campaign.target_segment === 'new') {
       recipients = recipients.slice(0, Math.ceil(recipients.length * 0.3));
@@ -342,8 +347,8 @@ export default function Marketing() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="sms" disabled>SMS ({t('common.comingSoon')})</SelectItem>
+                    <SelectItem value="whatsapp" disabled>WhatsApp ({t('common.comingSoon')})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

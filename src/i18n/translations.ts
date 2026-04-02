@@ -4103,6 +4103,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.sent': '¡Campaña enviada!',
     'marketing.sending': 'Enviando emails',
     'marketing.noRecipients': 'Sin destinatarios con email válido.',
+    'marketing.channelNotConfigured': 'Canal SMS/WhatsApp aún no configurado. Use Email.',
     'marketing.emailsSent': 'emails enviados',
     'marketing.emailsFailed': 'fallaron',
     'marketing.send': 'Enviar',

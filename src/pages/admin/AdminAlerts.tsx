@@ -222,7 +222,7 @@ export default function AdminAlerts() {
         <div>
           <h1 className="page-title">{t('alerts.title')} — Admin</h1>
           <p className="text-sm text-muted-foreground">
-            Gestão global de todos os alertas do sistema
+            {t('admin.alerts.subtitle')}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

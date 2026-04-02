@@ -177,7 +177,7 @@ export default function AdminPartners() {
   };
 
   const exportCSV = () => {
-    const headers = ["Parceiro", "Valor", "Moeda", "Status", "Método Pagamento", "IBAN/MBWAY", "Criado", "Pago em"];
+    const headers = [t('admin.partners.partner'), t('admin.partners.amount'), t('admin.partners.currency'), t('common.status'), t('admin.partners.paymentMethod'), "IBAN/MBWAY", t('common.created'), t('admin.partners.paidAt')];
     const rows = commissions.map(c => {
       const p = partners.find(p2 => p2.id === c.partner_id);
       const pay = p ? getPaymentInfo(p) : null;

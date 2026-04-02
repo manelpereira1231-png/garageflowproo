@@ -2530,6 +2530,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'marketing.sent': 'Campaign sent!',
     'marketing.sending': 'Sending emails',
     'marketing.noRecipients': 'No recipients with valid email.',
+    'marketing.channelNotConfigured': 'SMS/WhatsApp channel not yet configured. Use Email.',
     'marketing.emailsSent': 'emails sent',
     'marketing.emailsFailed': 'failed',
     'marketing.send': 'Send',

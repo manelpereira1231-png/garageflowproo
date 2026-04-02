@@ -347,8 +347,8 @@ export default function Marketing() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="sms" disabled>SMS ({t('common.comingSoon')})</SelectItem>
+                    <SelectItem value="whatsapp" disabled>WhatsApp ({t('common.comingSoon')})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

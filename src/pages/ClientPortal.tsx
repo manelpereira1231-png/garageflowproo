@@ -417,7 +417,7 @@ export default function ClientPortal() {
     );
   }
 
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const cur = shop?.currency === 'EUR' ? '€' : shop?.currency === 'BRL' ? 'R$' : shop?.currency === 'USD' ? '$' : (shop?.currency || '€');
 
   // Calculate financial summary
   const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);

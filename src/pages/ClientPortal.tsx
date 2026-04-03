@@ -830,7 +830,7 @@ export default function ClientPortal() {
               </div>
               {selectedService.client_description && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">{lang === 'en' ? 'Description' : 'Descrição'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('descriptionLabel')}</p>
                   <p className="text-sm bg-muted rounded-lg p-3">{selectedService.client_description}</p>
                 </div>
               )}

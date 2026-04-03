@@ -823,7 +823,7 @@ export default function ClientPortal() {
                 )}
                 {selectedService.delivered_at && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{lang === 'en' ? 'Delivered' : 'Entregue'}</span>
+                    <span className="text-muted-foreground">{t('delivered')}</span>
                     <span>{format(new Date(selectedService.delivered_at), 'dd/MM/yyyy HH:mm')}</span>
                   </div>
                 )}

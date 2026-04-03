@@ -711,7 +711,7 @@ export default function ClientPortal() {
                       {lastService && (
                         <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                           <Wrench className="w-3 h-3" />
-                          {lang === 'en' ? 'Last service' : lang === 'es' ? 'Último servicio' : 'Último serviço'}: {format(new Date(lastService.created_at), 'dd/MM/yyyy')}
+                          {t('lastService')}: {format(new Date(lastService.created_at), 'dd/MM/yyyy')}
                           <Badge variant="secondary" className={`ml-1 text-[10px] py-0 ${serviceStatusColors[lastService.status]}`}>
                             {t(lastService.status)}
                           </Badge>

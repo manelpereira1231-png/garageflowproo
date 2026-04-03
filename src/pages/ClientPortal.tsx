@@ -836,7 +836,7 @@ export default function ClientPortal() {
               )}
               {selectedService.diagnosis && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">{lang === 'en' ? 'Diagnosis' : 'Diagnóstico'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('diagnosis')}</p>
                   <p className="text-sm bg-muted rounded-lg p-3">{selectedService.diagnosis}</p>
                 </div>
               )}

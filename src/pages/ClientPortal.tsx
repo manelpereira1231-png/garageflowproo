@@ -121,6 +121,12 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Paid",
     totalDue: "Total Due",
+    completed: "Completed",
+    description: "Description",
+    items: "Items",
+    lastService: "Last service",
+    dueLabel: "Due",
+    notifications: "Notifications",
   },
   es: {
     loading: "Cargando portal...",

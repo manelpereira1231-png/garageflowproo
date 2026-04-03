@@ -513,6 +513,14 @@ export default function ClientPortal() {
           </div>
         </div>
 
+        {/* Push Notifications */}
+        <div className="mb-4">
+          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <BellRing className="w-3.5 h-3.5" /> {t('notifications')}
+          </p>
+          <PushNotificationToggle />
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
           {tabs.map(tab => (

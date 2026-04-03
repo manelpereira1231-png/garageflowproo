@@ -178,6 +178,12 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Pagado",
     totalDue: "Total Pendiente",
+    completed: "Completado",
+    description: "Descripción",
+    items: "Elementos",
+    lastService: "Último servicio",
+    dueLabel: "Vence",
+    notifications: "Notificaciones",
   },
   'pt-BR': {
     loading: "Carregando portal...",

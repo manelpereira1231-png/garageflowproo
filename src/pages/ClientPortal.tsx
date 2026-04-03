@@ -843,7 +843,7 @@ export default function ClientPortal() {
               {/* Service lines */}
               {Array.isArray(selectedService.lines) && selectedService.lines.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{lang === 'en' ? 'Items' : 'Itens'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t('items')}</p>
                   <div className="space-y-1.5">
                     {(selectedService.lines as any[]).map((line: any, idx: number) => (
                       <div key={idx} className="flex justify-between text-sm bg-muted/50 rounded-lg p-2">

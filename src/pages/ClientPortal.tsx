@@ -669,7 +669,7 @@ export default function ClientPortal() {
                   {inv.due_date && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {lang === 'en' ? 'Due' : 'Vence'}: {inv.due_date}
+                      {t('dueLabel')}: {inv.due_date}
                     </p>
                   )}
                   

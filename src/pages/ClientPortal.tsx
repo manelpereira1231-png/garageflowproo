@@ -515,10 +515,16 @@ export default function ClientPortal() {
 
         {/* Push Notifications */}
         <div className="mb-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-            <BellRing className="w-3.5 h-3.5" /> {t('notifications')}
-          </p>
-          <PushNotificationToggle />
+          <PortalPushToggle
+            shopId={client.shop_id}
+            clientId={client.id}
+            labels={{
+              pushNotifications: t('notifications'),
+              pushDescription: lang === 'en' ? 'Receive alerts about your services' : lang === 'es' ? 'Reciba alertas sobre sus servicios' : 'Receba alertas sobre os seus serviços',
+              pushNotSupported: lang === 'en' ? 'Push notifications not supported' : lang === 'es' ? 'Notificaciones no soportadas' : 'Notificações push não suportadas',
+              active: lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : 'Ativo',
+            }}
+          />
         </div>
 
         {/* Tabs */}

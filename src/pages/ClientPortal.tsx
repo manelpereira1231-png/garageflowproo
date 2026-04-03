@@ -817,7 +817,7 @@ export default function ClientPortal() {
                 )}
                 {selectedService.completed_at && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{lang === 'en' ? 'Completed' : 'Concluído'}</span>
+                    <span className="text-muted-foreground">{t('completed')}</span>
                     <span>{format(new Date(selectedService.completed_at), 'dd/MM/yyyy HH:mm')}</span>
                   </div>
                 )}

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Car, User, Wrench, FileText, Receipt, Clock, CheckCircle, Truck, XCircle, Calendar, Phone, Mail, Building2, CalendarPlus, ClipboardCheck, CreditCard, Eye, ChevronRight, AlertCircle } from "lucide-react";
+import { PortalPushToggle } from "@/components/PortalPushToggle";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -63,6 +64,11 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Pago",
     totalDue: "Total em Dívida",
+    descriptionLabel: "Descrição",
+    items: "Itens",
+    lastService: "Último serviço",
+    dueLabel: "Vence",
+    notifications: "Notificações",
   },
   en: {
     loading: "Loading portal...",
@@ -114,6 +120,11 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Paid",
     totalDue: "Total Due",
+    descriptionLabel: "Description",
+    items: "Items",
+    lastService: "Last service",
+    dueLabel: "Due",
+    notifications: "Notifications",
   },
   es: {
     loading: "Cargando portal...",
@@ -165,6 +176,11 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Pagado",
     totalDue: "Total Pendiente",
+    descriptionLabel: "Descripción",
+    items: "Elementos",
+    lastService: "Último servicio",
+    dueLabel: "Vence",
+    notifications: "Notificaciones",
   },
   'pt-BR': {
     loading: "Carregando portal...",
@@ -216,6 +232,11 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Pago",
     totalDue: "Total em Dívida",
+    descriptionLabel: "Descrição",
+    items: "Itens",
+    lastService: "Último serviço",
+    dueLabel: "Vence",
+    notifications: "Notificações",
   },
 };
 
@@ -416,7 +437,7 @@ export default function ClientPortal() {
     );
   }
 
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const cur = shop?.currency === 'EUR' ? '€' : shop?.currency === 'BRL' ? 'R$' : shop?.currency === 'USD' ? '$' : (shop?.currency || '€');
 
   // Calculate financial summary
   const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
@@ -490,6 +511,20 @@ export default function ClientPortal() {
               <p className={`text-sm font-bold font-mono ${totalDue > 0 ? 'text-destructive' : 'text-success'}`}>{cur}{totalDue.toFixed(2)}</p>
             </div>
           </div>
+        </div>
+
+        {/* Push Notifications */}
+        <div className="mb-4">
+          <PortalPushToggle
+            shopId={client.shop_id}
+            clientId={client.id}
+            labels={{
+              pushNotifications: t('notifications'),
+              pushDescription: lang === 'en' ? 'Receive alerts about your services' : lang === 'es' ? 'Reciba alertas sobre sus servicios' : 'Receba alertas sobre os seus serviços',
+              pushNotSupported: lang === 'en' ? 'Push notifications not supported' : lang === 'es' ? 'Notificaciones no soportadas' : 'Notificações push não suportadas',
+              active: lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : 'Ativo',
+            }}
+          />
         </div>
 
         {/* Tabs */}
@@ -648,7 +683,7 @@ export default function ClientPortal() {
                   {inv.due_date && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {lang === 'en' ? 'Due' : 'Vence'}: {inv.due_date}
+                      {t('dueLabel')}: {inv.due_date}
                     </p>
                   )}
                   
@@ -690,7 +725,7 @@ export default function ClientPortal() {
                       {lastService && (
                         <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                           <Wrench className="w-3 h-3" />
-                          {lang === 'en' ? 'Last service' : lang === 'es' ? 'Último servicio' : 'Último serviço'}: {format(new Date(lastService.created_at), 'dd/MM/yyyy')}
+                          {t('lastService')}: {format(new Date(lastService.created_at), 'dd/MM/yyyy')}
                           <Badge variant="secondary" className={`ml-1 text-[10px] py-0 ${serviceStatusColors[lastService.status]}`}>
                             {t(lastService.status)}
                           </Badge>
@@ -796,33 +831,33 @@ export default function ClientPortal() {
                 )}
                 {selectedService.completed_at && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{lang === 'en' ? 'Completed' : 'Concluído'}</span>
+                    <span className="text-muted-foreground">{t('completed')}</span>
                     <span>{format(new Date(selectedService.completed_at), 'dd/MM/yyyy HH:mm')}</span>
                   </div>
                 )}
                 {selectedService.delivered_at && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{lang === 'en' ? 'Delivered' : 'Entregue'}</span>
+                    <span className="text-muted-foreground">{t('delivered')}</span>
                     <span>{format(new Date(selectedService.delivered_at), 'dd/MM/yyyy HH:mm')}</span>
                   </div>
                 )}
               </div>
               {selectedService.client_description && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">{lang === 'en' ? 'Description' : 'Descrição'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('descriptionLabel')}</p>
                   <p className="text-sm bg-muted rounded-lg p-3">{selectedService.client_description}</p>
                 </div>
               )}
               {selectedService.diagnosis && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">{lang === 'en' ? 'Diagnosis' : 'Diagnóstico'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('diagnosis')}</p>
                   <p className="text-sm bg-muted rounded-lg p-3">{selectedService.diagnosis}</p>
                 </div>
               )}
               {/* Service lines */}
               {Array.isArray(selectedService.lines) && selectedService.lines.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{lang === 'en' ? 'Items' : 'Itens'}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t('items')}</p>
                   <div className="space-y-1.5">
                     {(selectedService.lines as any[]).map((line: any, idx: number) => (
                       <div key={idx} className="flex justify-between text-sm bg-muted/50 rounded-lg p-2">

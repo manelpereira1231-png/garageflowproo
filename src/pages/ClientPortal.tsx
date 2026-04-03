@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Car, User, Wrench, FileText, Receipt, Clock, CheckCircle, Truck, XCircle, Calendar, Phone, Mail, Building2, CalendarPlus, ClipboardCheck, CreditCard, Eye, ChevronRight, AlertCircle, BellRing } from "lucide-react";
-import { PushNotificationToggle } from "@/components/PushNotificationToggle";
+import { PortalPushToggle } from "@/components/PortalPushToggle";
 import { format } from "date-fns";
 import { toast } from "sonner";
 

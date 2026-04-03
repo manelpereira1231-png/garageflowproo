@@ -235,6 +235,12 @@ const translations: Record<string, Record<string, string>> = {
     serviceTimeline: "Timeline",
     totalPaid: "Total Pago",
     totalDue: "Total em Dívida",
+    completed: "Concluído",
+    description: "Descrição",
+    items: "Itens",
+    lastService: "Último serviço",
+    dueLabel: "Vence",
+    notifications: "Notificações",
   },
 };
 

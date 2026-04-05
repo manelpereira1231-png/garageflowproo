@@ -126,7 +126,50 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const { shop_id, title, body, url, user_ids } = await req.json();
+    const body_json = await req.json();
+    const { action, shop_id, title, body, url, user_ids } = body_json;
+
+    // Handle client portal push subscription (no auth required)
+    if (action === "subscribe") {
+      const { client_id, endpoint, p256dh, auth } = body_json;
+      if (!shop_id || !client_id || !endpoint || !p256dh || !auth) {
+        return new Response(JSON.stringify({ error: "Missing fields for subscribe" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Use client_id as user_id for portal subscriptions (prefixed to distinguish)
+      const portalUserId = client_id;
+
+      // Upsert: remove existing subscription for this client, then insert
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("shop_id", shop_id)
+        .eq("user_id", portalUserId);
+
+      const { error: insertErr } = await supabase
+        .from("push_subscriptions")
+        .insert({
+          shop_id,
+          user_id: portalUserId,
+          endpoint,
+          p256dh,
+          auth,
+        });
+
+      if (insertErr) {
+        return new Response(JSON.stringify({ error: insertErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!shop_id || !title || !body) {
       return new Response(JSON.stringify({ error: "Missing shop_id, title, or body" }), {

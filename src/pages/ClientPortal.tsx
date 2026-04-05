@@ -625,7 +625,7 @@ export default function ClientPortal() {
                 )}
                 {q.status === 'sent' && q.token && (
                   <a
-                    href={`https://garageflow.pt/quote/${q.token}`}
+                    href={`${window.location.origin}/quote/${q.token}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"

@@ -349,7 +349,7 @@ export default function Automations() {
                     {ACTION_KEYS.map(ak => {
                       const Icon = ak.icon;
                       return (
-                        <SelectItem key={ak.value} value={ak.value}>
+                        <SelectItem key={ak.value} value={ak.value} disabled={!ak.ready}>
                           <div className="flex items-center gap-2">
                             <Icon className="w-3.5 h-3.5" />
                             <span>{t(ak.label)}</span>

@@ -311,6 +311,17 @@ Deno.serve(async (req) => {
                 } catch (_) { /* silently skip */ }
               }
             }
+          } else if (rule.action_type === "send_sms" || rule.action_type === "send_whatsapp") {
+            // Channel not yet configured — log as skipped, do not fake success
+            await supabase.from("automation_logs").insert({
+              shop_id: rule.shop_id,
+              rule_id: rule.id,
+              trigger_type: rule.trigger_type,
+              action_type: rule.action_type,
+              status: "skipped",
+              details: { reason: "Channel not configured" },
+            });
+            continue;
           } else if (rule.action_type === "create_alert") {
             await supabase.from("alerts").insert({
               shop_id: rule.shop_id,

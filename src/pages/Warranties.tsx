@@ -222,54 +222,85 @@ export default function Warranties() {
           </Button>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('warranties.description')}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t('common.client')}</TableHead>
-                <TableHead className="hidden md:table-cell">{t('common.vehicle')}</TableHead>
-                <TableHead>{t('warranties.type')}</TableHead>
-                <TableHead>{t('warranties.period')}</TableHead>
-                <TableHead>{t('common.status')}</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(w => (
-                <TableRow key={w.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openEdit(w)}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{w.description}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex items-center gap-1 text-sm">
-                      <User className="w-3 h-3 text-muted-foreground" />
-                      {(w.clients as any)?.name}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex items-center gap-1 text-sm">
-                      <Car className="w-3 h-3 text-muted-foreground" />
-                      {(w.vehicles as any)?.make} {(w.vehicles as any)?.model} — {(w.vehicles as any)?.plate}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {t(`warranties.type.${w.type}`)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(new Date(w.start_date), 'dd/MM/yyyy')} — {format(new Date(w.end_date), 'dd/MM/yyyy')}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(w.status, w.end_date)}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={e => { e.stopPropagation(); openEdit(w); }}>
-                      {t('common.edit')}
-                    </Button>
-                  </TableCell>
+        <>
+          {/* Desktop Table */}
+          <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('warranties.description')}</TableHead>
+                  <TableHead>{t('common.client')}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t('common.vehicle')}</TableHead>
+                  <TableHead>{t('warranties.type')}</TableHead>
+                  <TableHead>{t('warranties.period')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(w => (
+                  <TableRow key={w.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openEdit(w)}>
+                    <TableCell className="font-medium max-w-[200px] truncate">{w.description}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <User className="w-3 h-3 text-muted-foreground" />
+                        {(w.clients as any)?.name}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Car className="w-3 h-3 text-muted-foreground" />
+                        {(w.vehicles as any)?.make} {(w.vehicles as any)?.model} — {(w.vehicles as any)?.plate}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {t(`warranties.type.${w.type}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {format(new Date(w.start_date), 'dd/MM/yyyy')} — {format(new Date(w.end_date), 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(w.status, w.end_date)}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={e => { e.stopPropagation(); openEdit(w); }}>
+                        {t('common.edit')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-3">
+            {filtered.map(w => (
+              <div key={w.id} className="bg-card border border-border rounded-xl p-4 space-y-2 active:bg-muted/50 transition-colors" onClick={() => openEdit(w)}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">{w.description}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <User className="w-3 h-3" /> {(w.clients as any)?.name}
+                    </p>
+                  </div>
+                  {getStatusBadge(w.status, w.end_date)}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Car className="w-3 h-3" />
+                  <span>{(w.vehicles as any)?.make} {(w.vehicles as any)?.model} — {(w.vehicles as any)?.plate}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <Badge variant="outline" className="text-[10px]">{t(`warranties.type.${w.type}`)}</Badge>
+                  <span className="text-muted-foreground">
+                    <Calendar className="w-3 h-3 inline mr-1" />
+                    {format(new Date(w.start_date), 'dd/MM/yy')} — {format(new Date(w.end_date), 'dd/MM/yy')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Create/Edit Dialog */}

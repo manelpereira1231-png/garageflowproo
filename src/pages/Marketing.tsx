@@ -247,61 +247,112 @@ export default function Marketing() {
         </div>
       </div>
 
-      {/* Campaigns Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>{t('marketing.campaignName')}</TableHead>
-              <TableHead>{t('marketing.type')}</TableHead>
-              <TableHead>{t('marketing.segment')}</TableHead>
-              <TableHead className="text-center">{t('marketing.recipients')}</TableHead>
-              <TableHead>{t('marketing.status')}</TableHead>
-              <TableHead className="text-right">{t('common.actions')}</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {filteredCampaigns.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('marketing.empty')}</TableCell></TableRow>
-              ) : filteredCampaigns.map(c => (
-                <TableRow key={c.id} className="hover:bg-muted/50">
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{c.name}</p>
-                      {c.subject && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{c.subject}</p>}
-                    </div>
-                  </TableCell>
-                  <TableCell><Badge variant="outline" className="capitalize">{c.type}</Badge></TableCell>
-                  <TableCell className="text-sm">{t(`marketing.seg_${c.target_segment}`)}</TableCell>
-                  <TableCell className="text-center font-medium">{c.recipients_count}</TableCell>
-                  <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{t(`marketing.st_${c.status}`)}</Badge></TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-end">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailCampaign(c)}>
-                        <Eye className="w-3.5 h-3.5" />
-                      </Button>
-                      {['draft', 'scheduled'].includes(c.status) && (
-                        <>
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => sendCampaign(c)}>
-                            <Send className="w-3 h-3 mr-1" />{t('marketing.send')}
+      {/* Campaigns */}
+      {filteredCampaigns.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Send className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+            <h3 className="text-lg font-semibold mb-1">{t('marketing.empty')}</h3>
+            <p className="text-sm text-muted-foreground">{t('marketing.subtitle')}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <Card className="hidden sm:block">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>{t('marketing.campaignName')}</TableHead>
+                  <TableHead>{t('marketing.type')}</TableHead>
+                  <TableHead>{t('marketing.segment')}</TableHead>
+                  <TableHead className="text-center">{t('marketing.recipients')}</TableHead>
+                  <TableHead>{t('marketing.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filteredCampaigns.map(c => (
+                    <TableRow key={c.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{c.name}</p>
+                          {c.subject && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{c.subject}</p>}
+                        </div>
+                      </TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize">{c.type}</Badge></TableCell>
+                      <TableCell className="text-sm">{t(`marketing.seg_${c.target_segment}`)}</TableCell>
+                      <TableCell className="text-center font-medium">{c.recipients_count}</TableCell>
+                      <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{t(`marketing.st_${c.status}`)}</Badge></TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setDetailCampaign(c)}>
+                            <Eye className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => cancelCampaign(c.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </>
-                      )}
-                      {['cancelled', 'sent'].includes(c.status) && (
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteCampaign(c.id)}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                          {['draft', 'scheduled'].includes(c.status) && (
+                            <>
+                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => sendCampaign(c)}>
+                                <Send className="w-3 h-3 mr-1" />{t('marketing.send')}
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => cancelCampaign(c.id)}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
+                          {['cancelled', 'sent'].includes(c.status) && (
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteCampaign(c.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-3">
+            {filteredCampaigns.map(c => (
+              <div key={c.id} className="bg-card border border-border rounded-xl p-4 space-y-3" onClick={() => setDetailCampaign(c)}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">{c.name}</p>
+                    {c.subject && <p className="text-xs text-muted-foreground truncate">{c.subject}</p>}
+                  </div>
+                  <Badge variant="secondary" className={`shrink-0 ${STATUS_COLORS[c.status]}`}>{t(`marketing.st_${c.status}`)}</Badge>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <Badge variant="outline" className="capitalize text-[10px]">{c.type}</Badge>
+                  <span>{t(`marketing.seg_${c.target_segment}`)}</span>
+                  <span className="ml-auto font-medium text-foreground">{c.recipients_count} <Users className="w-3 h-3 inline" /></span>
+                </div>
+                <div className="flex gap-2 pt-1 border-t border-border">
+                  {['draft', 'scheduled'].includes(c.status) && (
+                    <Button variant="outline" size="sm" className="h-9 text-xs flex-1" onClick={(e) => { e.stopPropagation(); sendCampaign(c); }}>
+                      <Send className="w-3.5 h-3.5 mr-1.5" />{t('marketing.send')}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={(e) => { e.stopPropagation(); setDetailCampaign(c); }}>
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  {['draft', 'scheduled'].includes(c.status) && (
+                    <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); cancelCampaign(c.id); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {['cancelled', 'sent'].includes(c.status) && (
+                    <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); deleteCampaign(c.id); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Campaign detail dialog */}
       <Dialog open={!!detailCampaign} onOpenChange={() => setDetailCampaign(null)}>

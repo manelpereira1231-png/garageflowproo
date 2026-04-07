@@ -258,7 +258,37 @@ export default function Stock() {
               </SelectContent>
             </Select>
           </div>
-          <Card>
+          {/* Mobile: Card view */}
+          <div className="sm:hidden space-y-2">
+            {filtered.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.empty')}</div>
+            ) : filtered.map(p => (
+              <div key={p.id} className={`bg-card border border-border rounded-xl p-4 space-y-2 ${!p.active ? 'opacity-50' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-sm">{p.name}</span>
+                    {p.reference && <p className="text-xs text-muted-foreground">{p.reference}</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}><ArrowUpDown className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
+                    {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
+                  </div>
+                  <span className="font-semibold text-sm">€{p.sale_price.toFixed(2)}</span>
+                </div>
+                {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Table view */}
+          <Card className="hidden sm:block">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>

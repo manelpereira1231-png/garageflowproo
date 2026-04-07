@@ -153,7 +153,8 @@ export default function Loyalty() {
 
       <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder={t('loyalty.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" /></div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Desktop table */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden hidden sm:block">
         <Table>
           <TableHeader><TableRow>
             <TableHead>{t('loyalty.client')}</TableHead>
@@ -181,6 +182,38 @@ export default function Loyalty() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">{t('loyalty.empty')}</div>
+        ) : filtered.map(m => (
+          <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">{(m.clients as any)?.name}</p>
+              <Badge variant="outline" className={`text-[10px] ${TIER_COLORS[getTier(m.points)]}`}>{getTier(m.points)}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold">{m.points}</p>
+                <p className="text-[10px] text-muted-foreground">{t('loyalty.points')}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">{m.total_earned || 0}</p>
+                <p className="text-[10px] text-muted-foreground">{t('loyalty.totalEarned')}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 text-xs h-9" onClick={() => { setPointsDialog(m); setForm({ ...form, type: "earn", points: "100", description: "" }); }}>
+                <Plus className="w-3 h-3 mr-1" />{t('loyalty.addPoints')}
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-1 text-xs h-9" onClick={() => { setPointsDialog(m); setForm({ ...form, type: "redeem", points: "100", description: "" }); }}>
+                <Gift className="w-3 h-3 mr-1" />{t('loyalty.redeem')}
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Recent transactions */}

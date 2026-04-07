@@ -280,7 +280,8 @@ export default function Alerts() {
         </Select>
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Desktop table */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden hidden sm:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -329,7 +330,6 @@ export default function Alerts() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {/* Direct action buttons */}
                       {a.vehicle_id && (
                         <Link to="/workshop">
                           <Button variant="ghost" size="sm" className="text-xs gap-1">
@@ -364,6 +364,48 @@ export default function Alerts() {
             })}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">{t('alerts.empty')}</div>
+        ) : filtered.map(a => {
+          const Icon = alertTypeIcons[a.type] || Bell;
+          const typeColor = alertTypeColors[a.type] || 'text-warning';
+          return (
+            <div key={a.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 ${typeColor}`} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{a.title}</p>
+                    <p className="text-xs text-muted-foreground">{t(`alerts.type.${a.type}`)}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className={`shrink-0 text-[10px] ${alertStatusStyles[a.status] || ''}`}>
+                  {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {(a.clients as any)?.name && <span>👤 {(a.clients as any).name}</span>}
+                {(a.vehicles as any) && <span>🚗 {(a.vehicles as any).make} {(a.vehicles as any).model}</span>}
+                <span>📅 {a.due_date || new Date(a.created_at).toLocaleDateString()}</span>
+              </div>
+              {a.status === 'pending' && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => resolveAlert(a.id)} className="flex-1 text-xs text-success h-9">
+                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                    {t('alerts.resolve')}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id)} className="text-xs text-muted-foreground h-9">
+                    {t('alerts.dismiss')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Create Alert Dialog */}

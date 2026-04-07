@@ -221,8 +221,8 @@ export default function Team() {
         ))}
       </div>
 
-      {/* Members table */}
-      <Card>
+      {/* Members table - Desktop */}
+      <Card className="hidden sm:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -302,6 +302,65 @@ export default function Team() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Members cards - Mobile */}
+      <div className="sm:hidden space-y-3">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+        ) : members.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">{t('team.empty')}</div>
+        ) : members.map(m => {
+          const RoleIcon = roleIcons[m.role] || Users;
+          const isCurrentUser = m.user_id === currentUserId;
+          return (
+            <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  m.role === 'owner' ? 'bg-primary/10' : m.role === 'manager' ? 'bg-yellow-500/10' : 'bg-blue-500/10'
+                }`}>
+                  <RoleIcon className={`w-5 h-5 ${
+                    m.role === 'owner' ? 'text-primary' : m.role === 'manager' ? 'text-yellow-600' : 'text-blue-600'
+                  }`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {m.email || `${m.user_id.slice(0, 8)}...`}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className={`text-[10px] ${roleBadgeStyles[m.role] || ''}`}>
+                      {t(`team.role.${m.role}`)}
+                    </Badge>
+                    {isCurrentUser && <Badge variant="outline" className="text-[9px] px-1 py-0">{t('team.you')}</Badge>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString()}</span>
+                <div className="flex gap-2">
+                  {isOwner && !isCurrentUser && m.role !== 'owner' && (
+                    <>
+                      <Select value={m.role} onValueChange={v => handleRoleChange(m.id, m.user_id, v)}>
+                        <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manager">{t('team.role.manager')}</SelectItem>
+                          <SelectItem value="technician">{t('team.role.technician')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => setRemoveConfirm({ id: m.id, userId: m.user_id })}
+                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Remove Confirmation */}
       <Dialog open={!!removeConfirm} onOpenChange={() => setRemoveConfirm(null)}>

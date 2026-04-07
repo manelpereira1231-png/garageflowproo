@@ -258,7 +258,37 @@ export default function Stock() {
               </SelectContent>
             </Select>
           </div>
-          <Card>
+          {/* Mobile: Card view */}
+          <div className="sm:hidden space-y-2">
+            {filtered.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.empty')}</div>
+            ) : filtered.map(p => (
+              <div key={p.id} className={`bg-card border border-border rounded-xl p-4 space-y-2 ${!p.active ? 'opacity-50' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-sm">{p.name}</span>
+                    {p.reference && <p className="text-xs text-muted-foreground">{p.reference}</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}><ArrowUpDown className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
+                    {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
+                  </div>
+                  <span className="font-semibold text-sm">€{p.sale_price.toFixed(2)}</span>
+                </div>
+                {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Table view */}
+          <Card className="hidden sm:block">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -319,7 +349,41 @@ export default function Stock() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <Card>
+          {/* Mobile: Card view */}
+          <div className="sm:hidden space-y-2">
+            {orders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.orders.empty')}</div>
+            ) : orders.map(o => (
+              <div key={o.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm">{o.part_name}</span>
+                  <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
+                    {t(`stock.orders.${o.status}`) || o.status}
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>{(o.suppliers as any)?.name || '—'}</span>
+                  <span>{t('stock.orders.qty')}: {o.quantity}</span>
+                  <span>{format(new Date(o.created_at), 'dd/MM/yyyy')}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-border">
+                  <span className="font-semibold text-sm">€{(o.total || 0).toFixed(2)}</span>
+                  {o.status !== 'delivered' && o.status !== 'cancelled' && (
+                    <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={async () => {
+                      const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
+                      if (error) { toast.error(error.message); return; }
+                      toast.success(t('stock.orders.deliveryConfirmed'));
+                      load();
+                    }}>
+                      <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop: Table view */}
+          <Card className="hidden sm:block">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -336,9 +400,7 @@ export default function Stock() {
                 <TableBody>
                   {orders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {t('stock.orders.empty')}
-                      </TableCell>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.orders.empty')}</TableCell>
                     </TableRow>
                   ) : orders.map(o => (
                     <TableRow key={o.id}>
@@ -354,19 +416,13 @@ export default function Stock() {
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
                         {o.status !== 'delivered' && o.status !== 'cancelled' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            onClick={async () => {
-                              const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
-                              if (error) { toast.error(error.message); return; }
-                              toast.success(t('stock.orders.deliveryConfirmed'));
-                              load();
-                            }}
-                          >
-                            <Truck className="w-3.5 h-3.5" />
-                            {t('stock.orders.confirmDelivery')}
+                          <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
+                            const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
+                            if (error) { toast.error(error.message); return; }
+                            toast.success(t('stock.orders.deliveryConfirmed'));
+                            load();
+                          }}>
+                            <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
                           </Button>
                         )}
                       </TableCell>
@@ -379,7 +435,33 @@ export default function Stock() {
         </TabsContent>
 
         <TabsContent value="movements">
-          <Card>
+          {/* Mobile: Card view */}
+          <div className="sm:hidden space-y-2">
+            {movements.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.noMovements')}</div>
+            ) : movements.map(m => {
+              const part = parts.find(p => p.id === m.part_id);
+              return (
+                <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">{part?.name || "—"}</span>
+                    <Badge variant={m.type === "in" ? "default" : m.type === "out" ? "destructive" : "secondary"}>
+                      {m.type === "in" ? t('stock.typeIn') : m.type === "out" ? t('stock.typeOut') : t('stock.typeAdjustment')}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={m.type === "out" ? "text-destructive font-medium" : "text-success font-medium"}>
+                      {m.type === "out" ? `-${m.quantity}` : `+${m.quantity}`}
+                    </span>
+                    <span className="text-muted-foreground">{format(new Date(m.created_at), "dd/MM HH:mm")}</span>
+                  </div>
+                  {m.reason && <p className="text-xs text-muted-foreground">{m.reason}</p>}
+                </div>
+              );
+            })}
+          </div>
+          {/* Desktop: Table view */}
+          <Card className="hidden sm:block">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>

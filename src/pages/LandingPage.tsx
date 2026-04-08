@@ -21,7 +21,27 @@ export default function LandingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const pricing = getRegionalPricing();
   const isBR = pricing.currency === 'BRL';
+  const scrollTracked = useRef<Set<number>>(new Set());
 
+  // Capture gclid/UTM params + scroll depth tracking
+  useEffect(() => {
+    captureAdsParams();
+
+    const handleScroll = () => {
+      const scrollPercent = Math.round(
+        (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+      );
+      [25, 50, 75, 90].forEach(milestone => {
+        if (scrollPercent >= milestone && !scrollTracked.current.has(milestone)) {
+          scrollTracked.current.add(milestone);
+          trackScrollDepth(milestone);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const planConfigs = [
     {
       nameKey: 'landing.planFree',

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
 import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check } from "lucide-react";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
+import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -20,7 +21,27 @@ export default function LandingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const pricing = getRegionalPricing();
   const isBR = pricing.currency === 'BRL';
+  const scrollTracked = useRef<Set<number>>(new Set());
 
+  // Capture gclid/UTM params + scroll depth tracking
+  useEffect(() => {
+    captureAdsParams();
+
+    const handleScroll = () => {
+      const scrollPercent = Math.round(
+        (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+      );
+      [25, 50, 75, 90].forEach(milestone => {
+        if (scrollPercent >= milestone && !scrollTracked.current.has(milestone)) {
+          scrollTracked.current.add(milestone);
+          trackScrollDepth(milestone);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const planConfigs = [
     {
       nameKey: 'landing.planFree',
@@ -151,7 +172,7 @@ export default function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+            <Link to="/auth?mode=signup" className="w-full sm:w-auto" onClick={() => trackCtaClick('hero_demo')}>
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -264,7 +285,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border">
+      <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border" onMouseEnter={() => trackPricingView()}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
             <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>

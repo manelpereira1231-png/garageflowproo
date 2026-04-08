@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,8 @@ export default function Auth() {
   const urlPartnerId = searchParams.get('partner');
   
   useEffect(() => {
-    // If partner param is in URL, persist it to localStorage
+    captureAdsParams();
+    if (initialMode === 'signup') trackSignupPageView();
     if (urlPartnerId) {
       localStorage.setItem(PARTNER_STORAGE_KEY, urlPartnerId);
     }
@@ -115,14 +117,8 @@ export default function Auth() {
           }
         }
 
-        // Google Ads conversion tracking
-        if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
-          (window as any).gtag('event', 'conversion', {
-            send_to: 'AW-18023581561',
-            value: 1.0,
-            currency: 'EUR',
-          });
-        }
+        // Google Ads conversion tracking with enhanced conversions
+        trackSignupConversion(email);
 
         toast.success(t('auth.accountCreated'));
       }

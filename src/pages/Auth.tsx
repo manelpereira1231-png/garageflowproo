@@ -32,7 +32,8 @@ export default function Auth() {
   const urlPartnerId = searchParams.get('partner');
   
   useEffect(() => {
-    // If partner param is in URL, persist it to localStorage
+    captureAdsParams();
+    if (initialMode === 'signup') trackSignupPageView();
     if (urlPartnerId) {
       localStorage.setItem(PARTNER_STORAGE_KEY, urlPartnerId);
     }

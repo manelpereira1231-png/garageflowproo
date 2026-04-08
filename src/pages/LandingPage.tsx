@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -51,6 +51,8 @@ export default function LandingPage() {
     },
   ];
 
+  const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -70,7 +72,6 @@ export default function LandingPage() {
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
           <div className="hidden sm:flex items-center gap-3">
-            {/* Language Selector */}
             <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
               {languages.map(lang => (
                 <button
@@ -91,11 +92,10 @@ export default function LandingPage() {
             </Link>
             <Link to="/auth?mode=signup">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-md">
-                {t('landing.cta')}
+                {t('landing.ctaDemo')}
               </Button>
             </Link>
           </div>
-          {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="sm:hidden p-2 rounded-lg hover:bg-muted transition-colors"
@@ -104,7 +104,6 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="sm:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
@@ -128,7 +127,7 @@ export default function LandingPage() {
                 <Button variant="outline" className="w-full">{t('landing.login')}</Button>
               </Link>
               <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full gradient-primary text-primary-foreground">{t('landing.cta')}</Button>
+                <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
               </Link>
             </div>
           </div>
@@ -154,33 +153,51 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
             <Link to="/auth?mode=signup" className="w-full sm:w-auto">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
-                🚀 {t('landing.cta')} <ArrowRight className="w-5 h-5 ml-2" />
+                {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <a href="#features" className="w-full sm:w-auto">
+            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto btn-interactive">
-                {t('landing.ctaFeatures')}
+                {t('landing.cta')}
               </Button>
-            </a>
+            </Link>
           </div>
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </header>
 
+      {/* Ideal For section */}
+      <section className="py-10 sm:py-14 px-4 border-b border-border">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-xl sm:text-2xl font-bold mb-6">{t('landing.idealForTitle')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left max-w-xl mx-auto">
+            {idealForKeys.map(key => (
+              <div key={key} className="flex items-start gap-2.5">
+                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">{t(key)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Stats counter */}
       <section className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
-          {[
-            { value: '120+', labelKey: 'landing.statsShops' },
-            { value: '1.500+', labelKey: 'landing.statsVehicles' },
-            { value: '5.000+', labelKey: 'landing.statsQuotes' },
-            { value: '99,9%', labelKey: 'landing.statsUptime' },
-          ].map((stat, i) => (
-            <div key={i}>
-              <p className="text-2xl sm:text-4xl font-bold text-primary">{stat.value}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t(stat.labelKey)}</p>
-            </div>
-          ))}
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-sm text-muted-foreground mb-6 max-w-xl mx-auto">{t('landing.statsHeadline')}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
+            {[
+              { value: '120+', labelKey: 'landing.statsShops' },
+              { value: '1.500+', labelKey: 'landing.statsVehicles' },
+              { value: '5.000+', labelKey: 'landing.statsQuotes' },
+              { value: '99,9%', labelKey: 'landing.statsUptime' },
+            ].map((stat, i) => (
+              <div key={i}>
+                <p className="text-2xl sm:text-4xl font-bold text-primary">{stat.value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t(stat.labelKey)}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -254,7 +271,6 @@ export default function LandingPage() {
             <p className="text-muted-foreground text-base sm:text-lg">{t('landing.pricingSubtitle')}</p>
           </div>
 
-          {/* Billing Cycle Toggle */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <button
               onClick={() => setBillingCycle('monthly')}
@@ -321,18 +337,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA Final */}
       <section className="py-16 sm:py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h2>
           <p className="text-muted-foreground text-base sm:text-lg mb-8 px-4">
             {t('landing.ctaSubtitle')}
           </p>
-          <Link to="/auth?mode=signup">
-            <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
-              🚀 {t('landing.ctaButton')} <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
+            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
+                {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto btn-interactive">
+                {t('landing.ctaButton')}
+              </Button>
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </section>
@@ -363,7 +386,7 @@ export default function LandingPage() {
       <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
         <Link to="/auth?mode=signup">
           <Button className="w-full gradient-primary text-primary-foreground h-12 text-base font-bold btn-interactive">
-            🚀 {t('landing.cta')} <ArrowRight className="w-4 h-4 ml-2" />
+            {t('landing.ctaDemo')} <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </Link>
       </div>

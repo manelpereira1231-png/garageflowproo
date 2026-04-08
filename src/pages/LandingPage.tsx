@@ -285,7 +285,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border">
+      <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border" onMouseEnter={() => trackPricingView()}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
             <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.pricingTitle')}</h2>

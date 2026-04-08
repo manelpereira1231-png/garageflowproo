@@ -51,7 +51,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             </Link>
             <Link to="/auth?mode=signup">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-md">
-                {t('landing.cta')}
+                {t('landing.ctaDemo')}
               </Button>
             </Link>
           </div>
@@ -86,7 +86,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 <Button variant="outline" className="w-full">{t('landing.login')}</Button>
               </Link>
               <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full gradient-primary text-primary-foreground">{t('landing.cta')}</Button>
+                <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
               </Link>
             </div>
           </div>

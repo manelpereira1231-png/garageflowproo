@@ -172,7 +172,7 @@ export default function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+            <Link to="/auth?mode=signup" className="w-full sm:w-auto" onClick={() => trackCtaClick('hero_demo')}>
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

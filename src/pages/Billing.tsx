@@ -182,15 +182,33 @@ export default function Billing() {
     if (targetPlan === 'free') return;
     setUpgrading(true);
     try {
+      // Verify session is active before calling checkout
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
+        navigate('/auth');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan: targetPlan, billing_cycle: billingCycle, region: isBR ? 'br' : 'eu' },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (err: any) {
-      toast.error(t('billing.errorCheckout'));
+      console.error('Checkout error:', err);
+      const msg = err?.message || '';
+      if (msg.includes('Not authenticated') || msg.includes('No authorization')) {
+        toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
+        navigate('/auth');
+      } else {
+        toast.error(t('billing.errorCheckout'));
+      }
     } finally {
       setUpgrading(false);
     }

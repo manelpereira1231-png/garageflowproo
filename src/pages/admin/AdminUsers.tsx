@@ -134,6 +134,13 @@ export default function AdminUsers() {
     a.click(); URL.revokeObjectURL(url);
   };
 
+  const ROLE_LABELS: Record<string, string> = {
+    super_admin: "Super Admin",
+    owner: "Proprietário",
+    manager: "Gestor",
+    technician: "Técnico",
+  };
+
   const roleBadge = (role: string) => {
     const colors: Record<string, string> = {
       super_admin: "bg-destructive/15 text-destructive border-destructive/30",
@@ -141,7 +148,7 @@ export default function AdminUsers() {
       manager: "bg-success/15 text-success border-success/30",
       technician: "bg-muted text-muted-foreground",
     };
-    return <Badge variant="outline" className={colors[role] || "bg-muted"}>{role}</Badge>;
+    return <Badge variant="outline" className={colors[role] || "bg-muted"}>{ROLE_LABELS[role] || role}</Badge>;
   };
 
   const filtered = users.filter(u => {
@@ -186,7 +193,7 @@ export default function AdminUsers() {
         </Button>
       </div>
 
-      {/* Stats */}
+      {/* Estatísticas */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="stat-card flex items-center gap-3">
           <Users className="w-5 h-5 text-primary flex-shrink-0" />
@@ -198,15 +205,15 @@ export default function AdminUsers() {
         </div>
         <div className="stat-card flex items-center gap-3">
           <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-          <div><p className="text-[10px] text-muted-foreground">Owners</p><p className="text-lg font-bold mono">{roleBreakdown.owners}</p></div>
+          <div><p className="text-[10px] text-muted-foreground">Proprietários</p><p className="text-lg font-bold mono">{roleBreakdown.owners}</p></div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <Users className="w-5 h-5 text-success flex-shrink-0" />
-          <div><p className="text-[10px] text-muted-foreground">Managers</p><p className="text-lg font-bold mono">{roleBreakdown.managers}</p></div>
+          <div><p className="text-[10px] text-muted-foreground">Gestores</p><p className="text-lg font-bold mono">{roleBreakdown.managers}</p></div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <Users className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-          <div><p className="text-[10px] text-muted-foreground">Technicians</p><p className="text-lg font-bold mono">{roleBreakdown.technicians}</p></div>
+          <div><p className="text-[10px] text-muted-foreground">Técnicos</p><p className="text-lg font-bold mono">{roleBreakdown.technicians}</p></div>
         </div>
         <div className="stat-card flex items-center gap-3">
           <Building2 className="w-5 h-5 text-warning flex-shrink-0" />
@@ -224,9 +231,9 @@ export default function AdminUsers() {
           <SelectContent>
             <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
             <SelectItem value="super_admin">Super Admin</SelectItem>
-            <SelectItem value="owner">Owner</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="technician">Technician</SelectItem>
+            <SelectItem value="owner">Proprietário</SelectItem>
+            <SelectItem value="manager">Gestor</SelectItem>
+            <SelectItem value="technician">Técnico</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -291,9 +298,9 @@ export default function AdminUsers() {
           <Select value={roleDialog?.newRole || "technician"} onValueChange={v => roleDialog && setRoleDialog({ ...roleDialog, newRole: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="owner">Owner</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="technician">Technician</SelectItem>
+              <SelectItem value="owner">Proprietário</SelectItem>
+              <SelectItem value="manager">Gestor</SelectItem>
+              <SelectItem value="technician">Técnico</SelectItem>
             </SelectContent>
           </Select>
           <DialogFooter>

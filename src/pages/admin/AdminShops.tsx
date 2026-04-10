@@ -228,7 +228,14 @@ export default function AdminShops() {
   };
 
   const subStatusBadge = (status: string, stripeManaged: boolean) => {
-    const label = stripeManaged ? `${status} (Stripe)` : `${status} (Manual)`;
+    const statusLabels: Record<string, string> = {
+      active: "Ativo",
+      trialing: "Em Trial",
+      canceled: "Cancelado",
+      cancelled: "Cancelado",
+      past_due: "Pagamento Pendente",
+    };
+    const label = `${statusLabels[status] || status} (${stripeManaged ? 'Stripe' : 'Manual'})`;
     const colors: Record<string, string> = {
       active: "bg-success/10 text-success",
       trialing: "bg-warning/10 text-warning",

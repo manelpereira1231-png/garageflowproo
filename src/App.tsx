@@ -97,6 +97,19 @@ const queryClient = new QueryClient({
   },
 });
 
+const AUTO_RECOVERY_KEY = "garageflow_auto_recover_attempted";
+
+const isRecoverableLoadError = (message: string) => {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("loading chunk") ||
+    normalized.includes("failed to fetch") ||
+    normalized.includes("dynamically imported module") ||
+    normalized.includes("module script") ||
+    normalized.includes("import")
+  );
+};
+
 // Error Boundary to catch lazy-load / chunk failures
 class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -107,9 +120,13 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: 
     return { hasError: true };
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // If it's a chunk load error, reload the page
-    if (error?.message?.includes('Loading chunk') || error?.message?.includes('Failed to fetch') || error?.message?.includes('dynamically imported module')) {
+    const message = error?.message || "";
+    const alreadyRetried = sessionStorage.getItem(AUTO_RECOVERY_KEY) === "1";
+
+    if (!alreadyRetried && isRecoverableLoadError(message)) {
+      sessionStorage.setItem(AUTO_RECOVERY_KEY, "1");
       window.location.reload();
+      return;
     }
   }
   render() {
@@ -303,6 +320,12 @@ function AuthenticatedRoutes() {
 function AppRoutes() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading) {
+      sessionStorage.removeItem(AUTO_RECOVERY_KEY);
+    }
+  }, [loading]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

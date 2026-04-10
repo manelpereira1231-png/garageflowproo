@@ -7,15 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil,
-  LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield,
+  LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield, Percent, Trash2,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/auditLog";
 
 interface ShopDetail {
   id: string; name: string; email: string; phone: string; country: string;
@@ -28,7 +30,11 @@ interface SubDetail {
   plan: string; status: string; billing_cycle: string;
   trial_end: string | null; current_period_end: string | null;
   stripe_customer_id: string | null; stripe_subscription_id: string | null;
+  discount_percent: number; discount_reason: string | null;
+  discount_applied_at: string | null; discount_expires_at: string | null;
 }
+
+const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 export default function AdminShopDetail() {
   const { t } = useLanguage();
@@ -49,17 +55,26 @@ export default function AdminShopDetail() {
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", nif: "", address: "", vat_rate: "23", labor_rate: "35" });
   const [saving, setSaving] = useState(false);
 
+  // Confirmation dialogs
+  const [confirmAction, setConfirmAction] = useState<{ type: string; title: string; description: string; onConfirm: () => Promise<void> } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Discount dialog
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountForm, setDiscountForm] = useState({ percent: "0", reason: "", permanent: true, expiresMonths: "1" });
+  const [discountSaving, setDiscountSaving] = useState(false);
+
   const fetchAll = useCallback(async () => {
     if (!id) return;
     const [shopRes, subRes, clientsRes, vehiclesRes, quotesRes, woRes, alertsRes, logsRes, teamRes, invoicesRes, servicesRes] = await Promise.all([
       supabase.from("shops").select("*").eq("id", id).single(),
-      supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id").eq("shop_id", id).maybeSingle(),
+      supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id, discount_percent, discount_reason, discount_applied_at, discount_expires_at").eq("shop_id", id).maybeSingle(),
       supabase.from("clients").select("id, name, email, phone, created_at").eq("shop_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(50),
       supabase.from("vehicles").select("id").eq("shop_id", id).is("deleted_at", null),
       supabase.from("quotes").select("id, number, status, total, created_at, client_id").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
       supabase.from("work_orders").select("id, number, total, status, created_at, technician").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
       supabase.from("alerts").select("id, status").eq("shop_id", id).eq("status", "pending"),
-      supabase.from("audit_logs").select("*").eq("entity_id", id).order("created_at", { ascending: false }).limit(15),
+      supabase.from("audit_logs").select("*").eq("entity_id", id).order("created_at", { ascending: false }).limit(25),
       supabase.rpc("get_shop_member_emails", { _shop_id: id }),
       supabase.from("invoices").select("id, number, status, total, created_at").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
       supabase.from("service_catalog").select("id, name, default_price, active").eq("shop_id", id),
@@ -68,7 +83,6 @@ export default function AdminShopDetail() {
     if (shopRes.data) setShop(shopRes.data as ShopDetail);
     if (subRes.data) setSub(subRes.data as SubDetail);
 
-    // Team with roles
     const { data: shopUsers } = await supabase.from("shop_users").select("user_id, role, created_at").eq("shop_id", id);
     const emailMap = new Map<string, string>();
     ((teamRes.data || []) as any[]).forEach((e: any) => emailMap.set(e.user_id, e.email));
@@ -128,40 +142,81 @@ export default function AdminShopDetail() {
     return () => { supabase.removeChannel(channel); };
   }, [id, fetchAll]);
 
-  const handleChangePlan = async (newPlan: string) => {
-    if (!id || newPlan === sub?.plan) return;
-    const { data: existing } = await supabase.from("subscriptions").select("id").eq("shop_id", id).maybeSingle();
-
-    let error;
-    if (existing) {
-      ({ error } = await supabase.from("subscriptions").update({
-        plan: newPlan, status: 'active', stripe_subscription_id: null, updated_at: new Date().toISOString(),
-      }).eq("shop_id", id));
-    } else {
-      ({ error } = await supabase.from("subscriptions").insert({ shop_id: id, plan: newPlan, status: 'active' }));
-    }
-
-    if (error) toast.error("Erro ao alterar plano: " + error.message);
-    else toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
+  // --- Confirmation wrapper ---
+  const confirmAndExecute = (type: string, title: string, description: string, onConfirm: () => Promise<void>) => {
+    setConfirmAction({ type, title, description, onConfirm });
   };
 
-  const toggleShopStatus = async () => {
+  const executeConfirmed = async () => {
+    if (!confirmAction) return;
+    setConfirmLoading(true);
+    try {
+      await confirmAction.onConfirm();
+    } finally {
+      setConfirmLoading(false);
+      setConfirmAction(null);
+    }
+  };
+
+  // --- Actions with confirmation ---
+  const handleChangePlan = (newPlan: string) => {
+    if (!id || newPlan === sub?.plan) return;
+    const oldPlan = sub?.plan || 'free';
+    confirmAndExecute(
+      "plan_change",
+      "Alterar Plano",
+      `Tem a certeza que pretende alterar o plano de ${oldPlan.toUpperCase()} para ${newPlan.toUpperCase()}?`,
+      async () => {
+        const { data: existing } = await supabase.from("subscriptions").select("id").eq("shop_id", id).maybeSingle();
+        let error;
+        if (existing) {
+          ({ error } = await supabase.from("subscriptions").update({
+            plan: newPlan, status: 'active', stripe_subscription_id: null, updated_at: new Date().toISOString(),
+          }).eq("shop_id", id));
+        } else {
+          ({ error } = await supabase.from("subscriptions").insert({ shop_id: id, plan: newPlan, status: 'active' }));
+        }
+        if (error) { toast.error("Erro ao alterar plano: " + error.message); return; }
+        await logAudit({ action: "plan_changed", entityType: "subscription", entityId: id, details: { name: shop?.name, from: oldPlan, to: newPlan } });
+        toast.success(`Plano alterado para ${newPlan.toUpperCase()}`);
+      }
+    );
+  };
+
+  const toggleShopStatus = () => {
     if (!shop || !id) return;
     const newStatus = shop.status === 'active' ? 'suspended' : 'active';
-    const { error } = await supabase.from("shops").update({ status: newStatus }).eq("id", id);
-    if (error) toast.error(error.message);
-    else toast.success(`Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}`);
+    const actionWord = newStatus === 'active' ? 'ativar' : 'suspender';
+    confirmAndExecute(
+      "status_change",
+      `${newStatus === 'active' ? 'Ativar' : 'Suspender'} Oficina`,
+      `Tem a certeza que pretende ${actionWord} a oficina "${shop.name}"?`,
+      async () => {
+        const { error } = await supabase.from("shops").update({ status: newStatus }).eq("id", id);
+        if (error) { toast.error(error.message); return; }
+        await logAudit({ action: newStatus === 'active' ? 'shop_activated' : 'shop_suspended', entityType: "shop", entityId: id, details: { name: shop.name } });
+        toast.success(`Oficina ${newStatus === 'active' ? 'ativada' : 'suspensa'}`);
+      }
+    );
   };
 
-  const resetTrial = async () => {
+  const resetTrial = () => {
     if (!id) return;
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 30);
-    const { error } = await supabase.from("subscriptions")
-      .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
-      .eq("shop_id", id);
-    if (error) toast.error(error.message);
-    else toast.success(t('admin.logs.trialReset'));
+    confirmAndExecute(
+      "trial_reset",
+      "Reset de Trial",
+      `Tem a certeza que pretende reiniciar o trial de 30 dias para "${shop?.name}"? Esta ação é auditada.`,
+      async () => {
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 30);
+        const { error } = await supabase.from("subscriptions")
+          .update({ trial_end: trialEnd.toISOString(), status: "trialing" })
+          .eq("shop_id", id);
+        if (error) { toast.error(error.message); return; }
+        await logAudit({ action: "trial_reset", entityType: "subscription", entityId: id, details: { name: shop?.name, new_trial_end: trialEnd.toISOString() } });
+        toast.success("Trial reiniciado (30 dias)");
+      }
+    );
   };
 
   const impersonateShop = () => {
@@ -170,6 +225,93 @@ export default function AdminShopDetail() {
     window.location.href = "/dashboard";
   };
 
+  // --- Discount System ---
+  const openDiscountDialog = () => {
+    setDiscountForm({
+      percent: String(sub?.discount_percent || 0),
+      reason: "",
+      permanent: true,
+      expiresMonths: "1",
+    });
+    setDiscountOpen(true);
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!id || !shop) return;
+    const percent = parseFloat(discountForm.percent);
+    if (isNaN(percent) || percent < 0 || percent > 80) {
+      toast.error("Desconto deve ser entre 0% e 80%");
+      return;
+    }
+    if (!discountForm.reason.trim()) {
+      toast.error("Motivo obrigatório para aplicar desconto");
+      return;
+    }
+
+    setDiscountSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let expiresAt: string | null = null;
+      if (!discountForm.permanent) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + parseInt(discountForm.expiresMonths));
+        expiresAt = d.toISOString();
+      }
+
+      const { error } = await supabase.from("subscriptions").update({
+        discount_percent: percent,
+        discount_reason: discountForm.reason,
+        discount_applied_at: new Date().toISOString(),
+        discount_applied_by: user?.id || null,
+        discount_expires_at: expiresAt,
+      }).eq("shop_id", id);
+
+      if (error) { toast.error(error.message); return; }
+
+      const oldDiscount = sub?.discount_percent || 0;
+      await logAudit({
+        action: "discount_applied",
+        entityType: "subscription",
+        entityId: id,
+        details: {
+          name: shop.name,
+          old_discount: `${oldDiscount}%`,
+          new_discount: `${percent}%`,
+          reason: discountForm.reason,
+          permanent: discountForm.permanent,
+          expires_at: expiresAt,
+        },
+      });
+
+      toast.success(`Desconto de ${percent}% aplicado com sucesso`);
+      setDiscountOpen(false);
+    } finally {
+      setDiscountSaving(false);
+    }
+  };
+
+  const removeDiscount = () => {
+    if (!id) return;
+    confirmAndExecute(
+      "discount_remove",
+      "Remover Desconto",
+      `Tem a certeza que pretende remover o desconto de ${sub?.discount_percent}% da oficina "${shop?.name}"?`,
+      async () => {
+        const { error } = await supabase.from("subscriptions").update({
+          discount_percent: 0,
+          discount_reason: null,
+          discount_applied_at: null,
+          discount_applied_by: null,
+          discount_expires_at: null,
+        }).eq("shop_id", id);
+        if (error) { toast.error(error.message); return; }
+        await logAudit({ action: "discount_removed", entityType: "subscription", entityId: id, details: { name: shop?.name, old_discount: `${sub?.discount_percent}%` } });
+        toast.success("Desconto removido");
+      }
+    );
+  };
+
+  // --- Edit dialog ---
   const openEditDialog = () => {
     if (!shop) return;
     setEditForm({
@@ -217,6 +359,10 @@ export default function AdminShopDetail() {
   const plan = sub?.plan || 'free';
   const trialDays = sub?.trial_end && new Date(sub.trial_end) > new Date()
     ? Math.ceil((new Date(sub.trial_end).getTime() - Date.now()) / 86400000) : 0;
+  const discount = sub?.discount_percent || 0;
+  const originalPrice = PLAN_PRICES[plan] || 0;
+  const discountedPrice = originalPrice * (1 - discount / 100);
+  const mrrImpact = originalPrice - discountedPrice;
 
   return (
     <div className="space-y-6">
@@ -235,6 +381,7 @@ export default function AdminShopDetail() {
             {shop.address && <p className="text-sm text-muted-foreground">{shop.address}</p>}
             {shop.slug && <p className="text-xs text-muted-foreground">Slug: {shop.slug}</p>}
             <p className="text-xs text-muted-foreground mt-1">IVA: {shop.vat_rate}% · Mão de obra: €{shop.labor_rate}/h</p>
+            <p className="text-xs text-muted-foreground">Criada: {new Date(shop.created_at).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" })}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={openEditDialog} className="gap-1">
@@ -249,6 +396,9 @@ export default function AdminShopDetail() {
             </Button>
             <Button variant="outline" size="sm" onClick={resetTrial} className="gap-1">
               <RotateCcw className="w-3 h-3" /> Reset Trial
+            </Button>
+            <Button variant="outline" size="sm" onClick={openDiscountDialog} className="gap-1">
+              <Percent className="w-3 h-3" /> Desconto
             </Button>
             <Badge variant="outline" className={shop.status === 'active' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}>
               {shop.status === 'active' ? 'Ativa' : 'Suspensa'}
@@ -277,6 +427,42 @@ export default function AdminShopDetail() {
               {trialDays > 0 && <span className="text-warning flex items-center gap-1"><Clock className="w-3 h-3" /> Trial: {trialDays} dias restantes</span>}
               {sub.current_period_end && <span>Expira: {new Date(sub.current_period_end).toLocaleDateString("pt-PT")}</span>}
             </div>
+
+            {/* Discount info */}
+            {discount > 0 && (
+              <div className="mt-2 p-3 rounded-lg bg-success/5 border border-success/20">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Percent className="w-4 h-4 text-success" />
+                    <span className="text-sm font-semibold text-success">{discount}% desconto</span>
+                    <span className="text-xs text-muted-foreground">
+                      <span className="line-through">€{originalPrice}</span> → <strong>€{discountedPrice.toFixed(2)}</strong>/mês
+                    </span>
+                    <span className="text-xs text-destructive">(-€{mrrImpact.toFixed(2)} MRR)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {sub.discount_expires_at ? (
+                      <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning">
+                        Expira: {new Date(sub.discount_expires_at).toLocaleDateString("pt-PT")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] bg-success/10 text-success">Permanente</Badge>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={removeDiscount} className="h-6 text-xs text-destructive hover:text-destructive">
+                      <Trash2 className="w-3 h-3 mr-1" /> Remover
+                    </Button>
+                  </div>
+                </div>
+                {sub.discount_reason && (
+                  <p className="text-xs text-muted-foreground mt-1">Motivo: {sub.discount_reason}</p>
+                )}
+                {sub.discount_applied_at && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Aplicado em: {new Date(sub.discount_applied_at).toLocaleString("pt-PT")}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -312,7 +498,7 @@ export default function AdminShopDetail() {
           <TabsTrigger value="services">Serviços ({stats.workOrders})</TabsTrigger>
           <TabsTrigger value="invoices">Faturas ({stats.invoices})</TabsTrigger>
           <TabsTrigger value="catalog">Catálogo ({services.length})</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="logs">Auditoria</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -422,22 +608,6 @@ export default function AdminShopDetail() {
 
         <TabsContent value="services">
           <div className="stat-card overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nº</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Técnico</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quotes.length === 0 && services.length === 0 ? null : null}
-                {/* Use work orders from fetch */}
-              </TableBody>
-            </Table>
-            {/* Workaround: re-fetch for this tab */}
             <WorkOrdersTab shopId={id!} statusBadge={statusBadge} />
           </div>
         </TabsContent>
@@ -502,17 +672,34 @@ export default function AdminShopDetail() {
 
         <TabsContent value="logs">
           <div className="stat-card">
+            <h2 className="text-lg font-semibold mb-4">Log de Auditoria</h2>
             {recentLogs.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Sem logs registados</p>}
             <div className="space-y-2">
-              {recentLogs.map((log: any) => (
-                <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{log.action}</p>
-                    <p className="text-xs text-muted-foreground">{log.entity_type}</p>
+              {recentLogs.map((log: any) => {
+                const det = (log.details || {}) as Record<string, any>;
+                return (
+                  <div key={log.id} className="flex items-start justify-between py-2 border-b border-border last:border-0 gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{log.action}</Badge>
+                        <span className="text-xs text-muted-foreground">{log.entity_type}</span>
+                      </div>
+                      {det.from && det.to && (
+                        <p className="text-xs mt-0.5">
+                          <span className="text-muted-foreground">{String(det.from).toUpperCase()}</span>
+                          <span className="text-muted-foreground mx-1">→</span>
+                          <span className="font-medium">{String(det.to).toUpperCase()}</span>
+                        </p>
+                      )}
+                      {det.reason && <p className="text-xs text-muted-foreground mt-0.5">Motivo: {det.reason}</p>}
+                      {det.old_discount && <p className="text-xs text-muted-foreground mt-0.5">{det.old_discount} → {det.new_discount || "0%"}</p>}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString("pt-PT")}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </TabsContent>
@@ -557,6 +744,125 @@ export default function AdminShopDetail() {
               {saving ? "A guardar..." : "Guardar"}
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discount Dialog */}
+      <Dialog open={discountOpen} onOpenChange={setDiscountOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Percent className="w-5 h-5 text-success" /> Aplicar Desconto
+            </DialogTitle>
+            <DialogDescription>
+              Aplique um desconto personalizado (até 80%) para esta oficina. Esta ação será auditada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Percentagem de desconto *</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max="80"
+                  step="1"
+                  value={discountForm.percent}
+                  onChange={e => setDiscountForm({ ...discountForm, percent: e.target.value })}
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+                {plan !== 'free' && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    €{PLAN_PRICES[plan]} → <strong>€{(PLAN_PRICES[plan] * (1 - parseFloat(discountForm.percent || "0") / 100)).toFixed(2)}</strong>/mês
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Motivo (obrigatório) *</Label>
+              <Textarea
+                value={discountForm.reason}
+                onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
+                placeholder="Ex: Parceiro estratégico, cliente antigo, promoção especial..."
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Duração</Label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={discountForm.permanent}
+                    onChange={() => setDiscountForm({ ...discountForm, permanent: true })}
+                    className="accent-primary"
+                  />
+                  Permanente
+                </label>
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={!discountForm.permanent}
+                    onChange={() => setDiscountForm({ ...discountForm, permanent: false })}
+                    className="accent-primary"
+                  />
+                  Temporário
+                </label>
+              </div>
+              {!discountForm.permanent && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={discountForm.expiresMonths}
+                    onChange={e => setDiscountForm({ ...discountForm, expiresMonths: e.target.value })}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">meses</span>
+                </div>
+              )}
+            </div>
+
+            {plan !== 'free' && parseFloat(discountForm.percent || "0") > 0 && (
+              <div className="p-3 rounded-lg bg-warning/5 border border-warning/20 text-xs space-y-1">
+                <p><strong>Impacto no MRR:</strong> -€{(PLAN_PRICES[plan] * parseFloat(discountForm.percent || "0") / 100).toFixed(2)}/mês</p>
+                <p><strong>Preço final:</strong> €{(PLAN_PRICES[plan] * (1 - parseFloat(discountForm.percent || "0") / 100)).toFixed(2)}/mês</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDiscountOpen(false)}>Cancelar</Button>
+            <Button onClick={handleApplyDiscount} disabled={discountSaving} className="gap-1">
+              {discountSaving ? "A aplicar..." : "Confirmar Desconto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              {confirmAction?.title}
+            </DialogTitle>
+            <DialogDescription>{confirmAction?.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAction(null)} disabled={confirmLoading}>Cancelar</Button>
+            <Button
+              variant={confirmAction?.type === 'status_change' ? 'destructive' : 'default'}
+              onClick={executeConfirmed}
+              disabled={confirmLoading}
+            >
+              {confirmLoading ? "A processar..." : "Confirmar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

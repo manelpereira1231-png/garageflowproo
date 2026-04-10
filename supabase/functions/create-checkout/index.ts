@@ -19,7 +19,7 @@ const EUR_PRICES: Record<string, Record<string, string>> = {
   },
 };
 
-// BRL prices (to be created in Stripe dashboard)
+// BRL prices
 const BRL_PRICES: Record<string, Record<string, string>> = {
   pro: {
     monthly: "price_1TFP7uE1zL2Sl1ZTQxdzHWRv",
@@ -31,11 +31,7 @@ const BRL_PRICES: Record<string, Record<string, string>> = {
   },
 };
 
-// Trial days per region
-const TRIAL_DAYS: Record<string, number> = {
-  eu: 30,
-  br: 30,
-};
+const TRIAL_DAYS = 30;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -65,7 +61,6 @@ serve(async (req) => {
     // Determine region and price map
     const effectiveRegion = region === 'br' ? 'br' : 'eu';
     const PRICES = effectiveRegion === 'br' ? BRL_PRICES : EUR_PRICES;
-    const trialDays = TRIAL_DAYS[effectiveRegion];
 
     if (!plan || !PRICES[plan]) throw new Error("Invalid plan");
     const cycle = billing_cycle || "monthly";
@@ -81,25 +76,82 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Always use the custom domain so users don't land on preview URLs
+    // --- ANTI-FRAUD TRIAL CHECK (server-side only) ---
+    // Get user's shop info for NIF/phone cross-check
+    const { data: shopData } = await supabaseClient
+      .from("shops")
+      .select("id, nif, phone")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+
+    const userNif = shopData?.nif || null;
+    const userPhone = shopData?.phone || null;
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+
+    // Check trial eligibility via DB function
+    const { data: eligible } = await supabaseClient.rpc("check_trial_eligibility", {
+      _email: user.email,
+      _nif: userNif,
+      _phone: userPhone,
+      _stripe_customer_id: customerId || null,
+    });
+
+    // Also check Stripe: has this customer ever had a trial/subscription?
+    let stripeHadTrial = false;
+    if (customerId) {
+      const subs = await stripe.subscriptions.list({
+        customer: customerId,
+        limit: 100,
+        status: "all",
+      });
+      stripeHadTrial = subs.data.some(
+        (s) => s.trial_start !== null || s.status === "trialing"
+      );
+    }
+
+    const canTrial = eligible === true && !stripeHadTrial;
+
+    // Always use the custom domain
     const rawOrigin = req.headers.get("origin") || "";
     const origin = rawOrigin.includes("lovable.app") || rawOrigin.includes("lovableproject.com") || !rawOrigin
       ? "https://garageflow.pt"
       : rawOrigin;
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      subscription_data: {
-        trial_period_days: trialDays,
-      },
       success_url: `${origin}/billing?success=true`,
       cancel_url: `${origin}/billing?canceled=true`,
-    });
+    };
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    // Only add trial if eligible
+    if (canTrial) {
+      sessionParams.subscription_data = {
+        trial_period_days: TRIAL_DAYS,
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    // Record trial usage if trial was granted
+    if (canTrial && shopData) {
+      await supabaseClient.from("trial_records").insert({
+        user_id: user.id,
+        shop_id: shopData.id,
+        email: user.email,
+        nif: userNif,
+        phone: userPhone,
+        stripe_customer_id: customerId || null,
+        ip_address: clientIp,
+        trial_start: new Date().toISOString(),
+        trial_end: new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString(),
+      });
+    }
+
+    return new Response(JSON.stringify({ url: session.url, trial_granted: canTrial }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

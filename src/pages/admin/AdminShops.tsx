@@ -36,6 +36,7 @@ interface ShopRow {
   workOrderCount: number;
   alertCount: number;
   revenue: number;
+  discountPercent: number;
 }
 
 export default function AdminShops() {

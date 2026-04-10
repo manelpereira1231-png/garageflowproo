@@ -70,7 +70,7 @@ export default function AdminDashboard() {
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
         supabase.from("alerts").select("id, status"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at"),
         supabase.from("quotes").select("id, status"),
       ]);
 
@@ -89,7 +89,14 @@ export default function AdminDashboard() {
 
       const now = new Date();
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const newShopsThisMonth = (shops.data || []).filter(s => new Date(s.created_at) >= thisMonthStart).length;
+      const thisWeekStart = new Date(now); thisWeekStart.setDate(now.getDate() - now.getDay());
+      thisWeekStart.setHours(0, 0, 0, 0);
+      const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+
+      const allShops = shops.data || [];
+      const newShopsThisMonth = allShops.filter(s => new Date(s.created_at) >= thisMonthStart).length;
+      const newShopsThisWeek = allShops.filter(s => new Date(s.created_at) >= thisWeekStart).length;
+      const newShopsToday = allShops.filter(s => new Date(s.created_at) >= todayStart).length;
 
       const monthlyRevenue: { month: string; revenue: number }[] = [];
       const monthlyNewShops: { month: string; shops: number }[] = [];
@@ -105,7 +112,7 @@ export default function AdminDashboard() {
           .reduce((sum, wo) => sum + Number(wo.total || 0), 0);
         monthlyRevenue.push({ month: monthStr, revenue: Math.round(revenue * 100) / 100 });
 
-        const newShops = (shops.data || []).filter(s => {
+        const newShops = allShops.filter(s => {
           const sd = new Date(s.created_at);
           return sd.getMonth() === d.getMonth() && sd.getFullYear() === d.getFullYear();
         }).length;
@@ -116,7 +123,7 @@ export default function AdminDashboard() {
       (clients.data || []).forEach(c => {
         shopClientCount.set(c.shop_id, (shopClientCount.get(c.shop_id) || 0) + 1);
       });
-      const topShops = (shops.data || [])
+      const topShops = allShops
         .map(s => ({ name: s.name || "Sem nome", clients: shopClientCount.get(s.id) || 0, id: s.id }))
         .sort((a, b) => b.clients - a.clients)
         .slice(0, 5);
@@ -128,9 +135,21 @@ export default function AdminDashboard() {
       const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
       const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
-      const arr = mrr * 12;
+      
+      // MRR with discounts applied
+      const mrrWithDiscounts = activeSubs.reduce((sum, s) => {
+        const basePrice = PLAN_PRICES[s.plan] || 0;
+        const discount = Number(s.discount_percent || 0);
+        const discountExpired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
+        const effectiveDiscount = discountExpired ? 0 : discount;
+        return sum + (basePrice * (1 - effectiveDiscount / 100));
+      }, 0);
+      const discountImpact = mrr - mrrWithDiscounts;
+      
+      const arr = mrrWithDiscounts * 12;
       const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
-      const arpu = paidCount > 0 ? mrr / paidCount : 0;
+      const freeCount = activeSubs.filter(s => s.plan === 'free').length;
+      const arpu = paidCount > 0 ? mrrWithDiscounts / paidCount : 0;
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
@@ -139,16 +158,16 @@ export default function AdminDashboard() {
       const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
 
       // Recent shops (last 10)
-      const sortedShops = [...(shops.data || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+      const sortedShops = [...allShops].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
       setRecentShops(sortedShops.map(s => ({
         ...s,
         plan: subsMap.get(s.id) || 'free',
       })));
 
       setStats({
-        totalShops: shops.data?.length || 0,
-        activeShops: (shops.data || []).filter(s => s.status === 'active').length,
-        suspendedShops: (shops.data || []).filter(s => s.status === 'suspended').length,
+        totalShops: allShops.length,
+        activeShops: allShops.filter(s => s.status === 'active').length,
+        suspendedShops: allShops.filter(s => s.status === 'suspended').length,
         totalClients: clients.data?.length || 0,
         totalVehicles: vehicles.data?.length || 0,
         totalWorkOrders: workOrders.data?.length || 0,
@@ -156,9 +175,10 @@ export default function AdminDashboard() {
         totalAlerts: alerts.data?.length || 0,
         totalRevenue, avgTicket,
         pendingAlerts, openQuotes, approvedQuotes,
-        newShopsThisMonth,
+        newShopsThisMonth, newShopsThisWeek, newShopsToday,
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
-        mrr, arr, arpu, ltv, churnRate, trialCount, paidCount, conversionRate,
+        mrr, mrrWithDiscounts, arr, arpu, ltv, churnRate, trialCount, paidCount, freeCount,
+        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact,
       });
     } catch (err) {
       console.error("Failed to fetch admin stats:", err);
@@ -166,11 +186,12 @@ export default function AdminDashboard() {
         totalShops: 0, activeShops: 0, suspendedShops: 0, totalClients: 0,
         totalVehicles: 0, totalWorkOrders: 0, totalQuotes: 0, totalAlerts: 0,
         totalRevenue: 0, avgTicket: 0, pendingAlerts: 0, openQuotes: 0,
-        approvedQuotes: 0, newShopsThisMonth: 0,
+        approvedQuotes: 0, newShopsThisMonth: 0, newShopsThisWeek: 0, newShopsToday: 0,
         planBreakdown: { free: 0, pro: 0, garage: 0 },
         monthlyRevenue: [], monthlyNewShops: [], topShops: [],
-        mrr: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
-        paidCount: 0, conversionRate: 0,
+        mrr: 0, mrrWithDiscounts: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
+        paidCount: 0, freeCount: 0, canceledCount: 0, conversionRate: 0,
+        totalAccounts: 0, discountImpact: 0,
       });
     }
     setLoading(false);

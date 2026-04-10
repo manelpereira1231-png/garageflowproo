@@ -191,6 +191,57 @@ export default function Billing() {
     },
   ];
 
+  const isEmbeddedRuntime = () => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  };
+
+  const openPendingExternalWindow = () => {
+    if (!isEmbeddedRuntime()) return null;
+
+    const externalWindow = window.open("", "_blank");
+    if (externalWindow) {
+      try {
+        externalWindow.opener = null;
+        externalWindow.document.title = "GarageFlow";
+      } catch {}
+      externalWindow.focus();
+    }
+
+    return externalWindow;
+  };
+
+  const redirectToExternalUrl = (url: string, externalWindow?: Window | null) => {
+    if (externalWindow && !externalWindow.closed) {
+      externalWindow.location.replace(url);
+      externalWindow.focus();
+      return;
+    }
+
+    if (isEmbeddedRuntime()) {
+      throw new Error('REDIRECT_BLOCKED');
+    }
+
+    window.location.assign(url);
+  };
+
+  const runExternalRedirect = async (resolveUrl: () => Promise<string>) => {
+    const externalWindow = openPendingExternalWindow();
+
+    try {
+      const url = await resolveUrl();
+      redirectToExternalUrl(url, externalWindow);
+    } catch (error) {
+      if (externalWindow && !externalWindow.closed) {
+        externalWindow.close();
+      }
+      throw error;
+    }
+  };
+
   const createCheckoutUrl = async (targetPlan: Plan) => {
     const { data: sessionData } = await supabase.auth.getSession();
     let session = sessionData.session;
@@ -244,16 +295,24 @@ export default function Billing() {
     return payload.url;
   };
 
+  const createCustomerPortalUrl = async () => {
+    const { data, error } = await supabase.functions.invoke('customer-portal');
+    if (error) throw error;
+    if (!data?.url) throw new Error('PORTAL_FAILED');
+    return data.url as string;
+  };
+
   const handleUpgrade = async (targetPlan: Plan) => {
     if (targetPlan === 'free') return;
     setUpgrading(true);
     try {
-      const checkoutUrl = await createCheckoutUrl(targetPlan);
-      window.location.assign(checkoutUrl);
+      await runExternalRedirect(() => createCheckoutUrl(targetPlan));
     } catch (err: any) {
       console.error('Checkout error:', err);
       const msg = err?.message || '';
-      if (msg === 'SESSION_EXPIRED' || msg.includes('Not authenticated') || msg.includes('No authorization')) {
+      if (msg === 'REDIRECT_BLOCKED') {
+        toast.error('O checkout foi criado, mas o browser bloqueou a abertura da nova aba.');
+      } else if (msg === 'SESSION_EXPIRED' || msg.includes('Not authenticated') || msg.includes('No authorization')) {
         toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
         navigate('/auth');
       } else {
@@ -267,11 +326,7 @@ export default function Billing() {
   const handleManageSubscription = async () => {
     setManagingPortal(true);
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      await runExternalRedirect(createCustomerPortalUrl);
     } catch (err: any) {
       toast.error(t('billing.errorPortal'));
     } finally {
@@ -284,12 +339,8 @@ export default function Billing() {
     try {
       if (hasStripe) {
         // Cancel via Stripe portal
-        const { data, error } = await supabase.functions.invoke('customer-portal');
-        if (error) throw error;
-        if (data?.url) {
-          window.location.href = data.url;
-          return;
-        }
+        await runExternalRedirect(createCustomerPortalUrl);
+        return;
       }
       // For admin-managed plans or fallback — downgrade to free locally
       const shopId = subscription?.shop_id;

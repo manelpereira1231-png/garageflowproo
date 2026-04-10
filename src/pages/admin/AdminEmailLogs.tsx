@@ -70,7 +70,7 @@ export default function AdminEmailLogs() {
     return (
       <Badge variant="outline" className={`text-xs ${variants[status] || ""}`}>
         {statusIcon(status)}
-        <span className="ml-1 capitalize">{status}</span>
+        <span className="ml-1">{status === "sent" ? "Enviado" : status === "failed" ? "Falhado" : "Pendente"}</span>
       </Badge>
     );
   };

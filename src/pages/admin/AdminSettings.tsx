@@ -296,7 +296,7 @@ export default function AdminSettings() {
       {/* Feature Gates */}
       <div className="stat-card space-y-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Lock className="w-5 h-5 text-primary" /> Feature Gates por Plano
+          <Lock className="w-5 h-5 text-primary" /> Funcionalidades por Plano
         </h2>
         <p className="text-xs text-muted-foreground">Ativa/desativa funcionalidades para cada plano. Alterações aplicam-se imediatamente após guardar.</p>
         <div className="overflow-x-auto">
@@ -354,19 +354,19 @@ export default function AdminSettings() {
           <div className="flex items-center justify-between">
             <div>
               <Label>Notificações por email</Label>
-              <p className="text-xs text-muted-foreground">Enviar emails automáticos para owners de oficinas</p>
+              <p className="text-xs text-muted-foreground">Enviar emails automáticos para proprietários de oficinas</p>
             </div>
             <Switch checked={notifications.emailNotifications} onCheckedChange={v => setNotifications(s => ({ ...s, emailNotifications: v }))} />
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Follow-up a cada (dias)</Label>
+            <Label className="text-xs text-muted-foreground">Seguimento a cada (dias)</Label>
             <Input type="number" value={notifications.alertFollowUpDays}
               onChange={e => setNotifications(s => ({ ...s, alertFollowUpDays: Number(e.target.value) }))} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Máximo de follow-ups</Label>
+            <Label className="text-xs text-muted-foreground">Máximo de seguimentos</Label>
             <Input type="number" value={notifications.alertMaxFollowUps}
               onChange={e => setNotifications(s => ({ ...s, alertMaxFollowUps: Number(e.target.value) }))} />
           </div>
@@ -404,7 +404,7 @@ export default function AdminSettings() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
           <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Edge Functions</p>
+            <p className="text-xs text-muted-foreground">Funções Backend</p>
             <p className="font-medium">9 ativas</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">send-email, check-reminders, generate-alerts, expire-trials, create-checkout, check-subscription, customer-portal, admin-confirm-email, stripe-webhook</p>
           </div>
@@ -414,7 +414,7 @@ export default function AdminSettings() {
             <p className="text-[10px] text-muted-foreground mt-0.5">shops, subscriptions, chat_messages, alerts</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Storage Buckets</p>
+            <p className="text-xs text-muted-foreground">Armazenamento</p>
             <p className="font-medium">2 buckets</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">shop-logos (público), work-order-files (privado), inspection-files (privado)</p>
           </div>

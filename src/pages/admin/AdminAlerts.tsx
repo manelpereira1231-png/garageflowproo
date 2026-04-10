@@ -349,7 +349,7 @@ export default function AdminAlerts() {
               <TableHead>{t('alerts.clientCol')}</TableHead>
               <TableHead>{t('alerts.statusCol')}</TableHead>
               <TableHead>{t('alerts.dateCol')}</TableHead>
-              <TableHead>Follow-ups</TableHead>
+              <TableHead>Seguimentos</TableHead>
               <TableHead>{t('alerts.actionsCol')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -508,7 +508,7 @@ export default function AdminAlerts() {
                   <p className="text-sm">{selectedAlert.due_date ? new Date(selectedAlert.due_date).toLocaleDateString() : '—'}</p>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground uppercase tracking-wide">Follow-ups</label>
+                  <label className="text-xs text-muted-foreground uppercase tracking-wide">Seguimentos</label>
                   <p className="text-sm">{selectedAlert.follow_up_count}</p>
                 </div>
               </div>
@@ -516,12 +516,12 @@ export default function AdminAlerts() {
               {selectedAlert.last_follow_up_at && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs text-muted-foreground uppercase tracking-wide">Último follow-up</label>
+                    <label className="text-xs text-muted-foreground uppercase tracking-wide">Último seguimento</label>
                     <p className="text-sm">{new Date(selectedAlert.last_follow_up_at).toLocaleString()}</p>
                   </div>
                   {selectedAlert.next_follow_up_at && (
                     <div>
-                      <label className="text-xs text-muted-foreground uppercase tracking-wide">Próximo follow-up</label>
+                      <label className="text-xs text-muted-foreground uppercase tracking-wide">Próximo seguimento</label>
                       <p className="text-sm">{new Date(selectedAlert.next_follow_up_at).toLocaleString()}</p>
                     </div>
                   )}

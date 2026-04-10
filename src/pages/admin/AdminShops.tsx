@@ -83,6 +83,7 @@ export default function AdminShops() {
         workOrderCount: countBy(woRes.data, s.id),
         alertCount: countBy(alertsRes.data, s.id),
         revenue: revenueBy(s.id),
+        discountPercent: Number(sub?.discount_percent || 0),
       };
     });
 

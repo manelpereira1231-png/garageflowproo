@@ -532,6 +532,12 @@ export default function AdminShopDetail() {
           <TabsTrigger value="services">Serviços ({stats.workOrders})</TabsTrigger>
           <TabsTrigger value="invoices">Faturas ({stats.invoices})</TabsTrigger>
           <TabsTrigger value="catalog">Catálogo ({services.length})</TabsTrigger>
+          <TabsTrigger value="stripe" className="gap-1" onClick={() => sub?.stripe_customer_id && fetchStripeInvoices(sub.stripe_customer_id)}>
+            <CreditCard className="w-3 h-3" /> Stripe
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1">
+            <History className="w-3 h-3" /> Histórico
+          </TabsTrigger>
           <TabsTrigger value="logs">Auditoria</TabsTrigger>
         </TabsList>
 

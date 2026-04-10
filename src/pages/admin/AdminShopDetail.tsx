@@ -130,6 +130,19 @@ export default function AdminShopDetail() {
     }
     setMonthlyData(md);
     setRecentLogs(logsRes.data || []);
+
+    // Extract plan history from audit logs
+    const history = (logsRes.data || [])
+      .filter((l: any) => ['plan_changed', 'discount_applied', 'discount_removed', 'trial_reset', 'shop_activated', 'shop_suspended'].includes(l.action))
+      .map((l: any) => ({
+        action: l.action,
+        from: l.details?.from,
+        to: l.details?.to,
+        date: l.created_at,
+        details: l.details,
+      }));
+    setPlanHistory(history);
+
     setLoading(false);
   }, [id]);
 

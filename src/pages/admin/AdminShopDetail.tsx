@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil,
   LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield, Percent, Trash2,
+  CreditCard, History, Activity,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";

@@ -329,13 +329,13 @@ export default function AdminDashboard() {
     { label: t('admin.dashboard.totalShops'), value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
     { label: t('admin.dashboard.activeShops'), value: stats.activeShops, icon: Building2, color: "text-success" },
     { label: t('admin.dashboard.suspended'), value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
-    { label: t('admin.dashboard.newThisMonth'), value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
-    { label: "MRR", value: `€${stats.mrr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "MRR (real)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARPU", value: `€${stats.arpu.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.ltvEstimated'), value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
     { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
+    { label: "Descontos (impacto)", value: stats.discountImpact > 0 ? `-€${stats.discountImpact.toFixed(0)}/mês` : "€0", icon: Percent, color: stats.discountImpact > 0 ? "text-warning" : "text-muted-foreground" },
     { label: t('admin.dashboard.inTrial'), value: stats.trialCount, icon: Clock, color: "text-warning" },
     { label: t('admin.dashboard.paying'), value: stats.paidCount, icon: DollarSign, color: "text-success" },
     { label: t('admin.dashboard.totalClients'), value: stats.totalClients, icon: Users, color: "text-primary" },
@@ -350,6 +350,15 @@ export default function AdminDashboard() {
     { name: "Free", value: stats.planBreakdown.free },
     { name: "Pro", value: stats.planBreakdown.pro },
     { name: "Garage", value: stats.planBreakdown.garage },
+  ];
+
+  // Funnel data
+  const funnelData = [
+    { stage: "Contas Criadas", count: stats.totalAccounts, color: "hsl(var(--muted-foreground))" },
+    { stage: "Free", count: stats.freeCount, color: "hsl(var(--muted-foreground))" },
+    { stage: "Em Trial", count: stats.trialCount, color: "hsl(var(--warning))" },
+    { stage: "Pagantes", count: stats.paidCount, color: "hsl(var(--success))" },
+    { stage: "Cancelados", count: stats.canceledCount, color: "hsl(var(--destructive))" },
   ];
 
   return (

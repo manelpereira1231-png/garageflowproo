@@ -436,7 +436,7 @@ export default function AdminReports() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="stat-card text-center">
-              <p className="text-xs text-muted-foreground">Churn Rate</p>
+              <p className="text-xs text-muted-foreground">Taxa de Cancelamento</p>
               <p className="text-xl font-bold mono text-destructive">{data.churnRate.toFixed(1)}%</p>
             </div>
             <div className="stat-card text-center">
@@ -477,7 +477,7 @@ export default function AdminReports() {
                 <p className="font-bold text-lg text-destructive">{data.suspendedShops}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Work Orders</p>
+                <p className="text-muted-foreground">Ordens de Serviço</p>
                 <p className="font-bold text-lg">{data.totalWorkOrders}</p>
               </div>
             </div>

@@ -404,7 +404,7 @@ export default function AdminSettings() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
           <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Edge Functions</p>
+            <p className="text-xs text-muted-foreground">Funções Backend</p>
             <p className="font-medium">9 ativas</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">send-email, check-reminders, generate-alerts, expire-trials, create-checkout, check-subscription, customer-portal, admin-confirm-email, stripe-webhook</p>
           </div>
@@ -414,7 +414,7 @@ export default function AdminSettings() {
             <p className="text-[10px] text-muted-foreground mt-0.5">shops, subscriptions, chat_messages, alerts</p>
           </div>
           <div className="p-3 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground">Storage Buckets</p>
+            <p className="text-xs text-muted-foreground">Armazenamento</p>
             <p className="font-medium">2 buckets</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">shop-logos (público), work-order-files (privado), inspection-files (privado)</p>
           </div>

@@ -13,18 +13,19 @@ import {
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const navItems = [
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
   { path: "/admin/shops", label: "Oficinas", icon: Building2 },
-  { path: "/admin/billing", label: "Planos & Billing", icon: CreditCard },
+  { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
+  { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
   { path: "/admin/alerts", label: "Alertas", icon: Bell },
   { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
-  { path: "/admin/emails", label: "Email Logs", icon: Mail },
-  { path: "/admin/adoption", label: "Feature Adoption", icon: Activity },
-  { path: "/admin/system-health", label: "System Health", icon: Activity },
+  { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
+  { path: "/admin/adoption", label: "Adoção de Funcionalidades", icon: Activity },
+  { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
   { path: "/admin/settings", label: "Configurações", icon: Settings },
-  { path: "/admin/logs", label: "Logs / Auditoria", icon: FileText },
-  { path: "/admin/users", label: "Usuários Admin", icon: Users },
-  { path: "/admin/partners", label: "Parceiros", icon: Users },
+  { path: "/admin/logs", label: "Auditoria", icon: FileText },
+  { path: "/admin/users", label: "Utilizadores", icon: Users },
+  { path: "/admin/partners", label: "Parceiros", icon: Shield },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

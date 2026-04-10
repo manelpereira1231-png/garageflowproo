@@ -106,9 +106,9 @@ export default function AdminFeatureAdoption() {
   }
 
   const kpis = [
-    { label: "NRR", value: `${nrr}%`, icon: TrendingUp, color: nrr >= 100 ? "text-success" : "text-warning" },
-    { label: "DAU", value: String(dailyActive), icon: Activity, color: "text-primary" },
-    { label: "WAU", value: String(weeklyActive), icon: Users, color: "text-info" },
+    { label: "Retenção Líquida (NRR)", value: `${nrr}%`, icon: TrendingUp, color: nrr >= 100 ? "text-success" : "text-warning" },
+    { label: "Utilizadores Hoje", value: String(dailyActive), icon: Activity, color: "text-primary" },
+    { label: "Utilizadores Semana", value: String(weeklyActive), icon: Users, color: "text-info" },
     { label: "Funcionalidades", value: String(features.length), icon: Zap, color: "text-primary" },
   ];
 
@@ -159,11 +159,11 @@ export default function AdminFeatureAdoption() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-4 py-2 font-medium text-muted-foreground">Cohort</th>
-                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">M0</th>
-                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">M1</th>
-                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">M2</th>
-                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">M3</th>
+                  <th className="text-left px-4 py-2 font-medium text-muted-foreground">Período</th>
+                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">Mês 0</th>
+                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">Mês 1</th>
+                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">Mês 2</th>
+                  <th className="text-center px-4 py-2 font-medium text-muted-foreground">Mês 3</th>
                 </tr>
               </thead>
               <tbody>

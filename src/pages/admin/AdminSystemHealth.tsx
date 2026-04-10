@@ -47,7 +47,7 @@ export default function AdminSystemHealth() {
     const { error: dbErr, count: shopsTotal } = await supabase.from("shops").select("id", { count: "exact", head: true });
     const dbLatency = Date.now() - dbStart;
     results.push({
-      name: "Database",
+      name: "Base de Dados",
       status: dbErr ? "error" : dbLatency > 2000 ? "warning" : "healthy",
       latency: dbLatency,
       details: dbErr ? dbErr.message : `${dbLatency}ms`,
@@ -59,7 +59,7 @@ export default function AdminSystemHealth() {
     const { error: authErr } = await supabase.auth.getSession();
     const authLatency = Date.now() - authStart;
     results.push({
-      name: "Auth Service",
+      name: "Autenticação",
       status: authErr ? "error" : authLatency > 3000 ? "warning" : "healthy",
       latency: authLatency,
       details: authErr ? authErr.message : `${authLatency}ms`,
@@ -72,7 +72,7 @@ export default function AdminSystemHealth() {
     const failed = emails?.filter(e => e.status === "failed").length || 0;
     setEmailStats({ total: emailCount || 0, sent, failed });
     results.push({
-      name: "Email Service",
+      name: "Serviço de Email",
       status: failed > sent * 0.5 ? "error" : failed > 0 ? "warning" : "healthy",
       details: `${sent} enviados, ${failed} falhados (24h)`,
       icon: Mail,
@@ -96,15 +96,15 @@ export default function AdminSystemHealth() {
       });
       const stripeLatency = Date.now() - stripeStart;
       results.push({
-        name: "Stripe Gateway",
+        name: "Pagamentos (Stripe)",
         status: res.error ? "warning" : stripeLatency > 5000 ? "warning" : "healthy",
         latency: stripeLatency,
-        details: res.error ? "Edge function indisponível" : `${stripeLatency}ms`,
+        details: res.error ? "Função indisponível" : `${stripeLatency}ms`,
         icon: CreditCard,
       });
     } catch {
       results.push({
-        name: "Stripe Gateway",
+        name: "Pagamentos (Stripe)",
         status: "warning",
         latency: Date.now() - stripeStart,
         details: "Não verificado",
@@ -118,7 +118,7 @@ export default function AdminSystemHealth() {
       const { data: logoFiles } = await supabase.storage.from("shop-logos").list("", { limit: 1 });
       const storageLatency = Date.now() - storageStart;
       results.push({
-        name: "Storage",
+        name: "Armazenamento",
         status: storageLatency > 3000 ? "warning" : "healthy",
         latency: storageLatency,
         details: `${storageLatency}ms`,
@@ -126,7 +126,7 @@ export default function AdminSystemHealth() {
       });
     } catch {
       results.push({
-        name: "Storage",
+        name: "Armazenamento",
         status: "error",
         details: "Erro ao verificar",
         icon: HardDrive,
@@ -165,8 +165,8 @@ export default function AdminSystemHealth() {
       { name: "quotes", label: "Orçamentos" },
       { name: "invoices", label: "Faturas" },
       { name: "subscriptions", label: "Subscrições" },
-      { name: "audit_logs", label: "Audit Logs" },
-      { name: "email_logs", label: "Email Logs" },
+      { name: "audit_logs", label: "Registos de Auditoria" },
+      { name: "email_logs", label: "Registos de Email" },
     ];
     for (const tbl of tables) {
       const { count } = await supabase.from(tbl.name as any).select("id", { count: "exact", head: true });
@@ -312,8 +312,8 @@ export default function AdminSystemHealth() {
                     <XAxis dataKey="time" className="text-xs" />
                     <YAxis className="text-xs" unit="ms" />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12 }} />
-                    <Bar dataKey="db" name="Database" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="auth" name="Auth" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="db" name="Base de Dados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="auth" name="Autenticação" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

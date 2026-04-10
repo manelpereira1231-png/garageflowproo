@@ -349,7 +349,7 @@ export default function AdminAlerts() {
               <TableHead>{t('alerts.clientCol')}</TableHead>
               <TableHead>{t('alerts.statusCol')}</TableHead>
               <TableHead>{t('alerts.dateCol')}</TableHead>
-              <TableHead>Follow-ups</TableHead>
+              <TableHead>Seguimentos</TableHead>
               <TableHead>{t('alerts.actionsCol')}</TableHead>
             </TableRow>
           </TableHeader>

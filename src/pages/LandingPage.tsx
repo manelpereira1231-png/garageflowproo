@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -20,7 +20,6 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const pricing = getRegionalPricing();
-  const isBR = pricing.currency === 'BRL';
   const scrollTracked = useRef<Set<number>>(new Set());
 
   // Capture gclid/UTM params + scroll depth tracking
@@ -49,6 +48,7 @@ export default function LandingPage() {
       periodKey: '',
       subtitleKey: '',
       featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
+      lockedFeatureKeys: ['landing.feat.5users', 'landing.feat.basicAlerts', 'landing.feat.advancedReports', 'landing.feat.automations'],
       ctaKey: 'landing.ctaFree',
       highlighted: false,
     },
@@ -56,8 +56,9 @@ export default function LandingPage() {
       nameKey: 'landing.planPro',
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      subtitleKey: 'landing.trial30',
       featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
+      lockedFeatureKeys: ['landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
       ctaKey: 'landing.ctaPro',
       highlighted: true,
     },
@@ -65,8 +66,9 @@ export default function LandingPage() {
       nameKey: 'landing.planGarage',
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isBR ? 'landing.trial15' : 'landing.trial30',
+      subtitleKey: 'landing.trial30',
       featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
+      lockedFeatureKeys: [],
       ctaKey: 'landing.ctaGarage',
       highlighted: false,
     },
@@ -340,6 +342,12 @@ export default function LandingPage() {
                   {plan.featureKeys.map(fk => (
                     <li key={fk} className="flex items-center gap-2 text-sm">
                       <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                      {t(fk)}
+                    </li>
+                  ))}
+                  {plan.lockedFeatureKeys.map(fk => (
+                    <li key={`locked-${fk}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       {t(fk)}
                     </li>
                   ))}

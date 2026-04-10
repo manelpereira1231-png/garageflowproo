@@ -34,7 +34,7 @@ const BRL_PRICES: Record<string, Record<string, string>> = {
 // Trial days per region
 const TRIAL_DAYS: Record<string, number> = {
   eu: 30,
-  br: 15,
+  br: 30,
 };
 
 serve(async (req) => {

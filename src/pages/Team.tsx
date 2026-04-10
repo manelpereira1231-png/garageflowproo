@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Users, UserPlus, Trash2, Shield, Wrench, Crown, AlertTriangle, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import { sendEmail, inviteUserEmailHtml } from "@/lib/emailService";
 
 interface TeamMember {
@@ -38,7 +37,7 @@ const roleBadgeStyles: Record<string, string> = {
 
 export default function Team() {
   const { t } = useLanguage();
-  const { plan, limits, shopId, loading: subLoading } = useSubscription();
+  const { limits, shopId, loading: subLoading } = useSubscription();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -125,19 +124,6 @@ export default function Team() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (plan === 'free') {
-    return (
-      <div>
-        <div className="page-header"><h1 className="page-title">{t('team.title')}</h1></div>
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
-          <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground mb-4">{t('team.disabledFree')}</p>
-          <Link to="/billing"><Button>{t('nav.billing')}</Button></Link>
-        </div>
       </div>
     );
   }

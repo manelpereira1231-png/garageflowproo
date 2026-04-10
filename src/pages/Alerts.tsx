@@ -13,7 +13,6 @@ import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, 
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -50,7 +49,7 @@ const alertTypeColors: Record<string, string> = {
 
 export default function Alerts() {
   const { t } = useLanguage();
-  const { plan, shopId, loading: subLoading, validatePlanAction } = useSubscription();
+  const { shopId, loading: subLoading, validatePlanAction } = useSubscription();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -186,24 +185,6 @@ export default function Alerts() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // FREE plan: show upgrade message
-  if (plan === 'free') {
-    return (
-      <div>
-        <div className="page-header">
-          <h1 className="page-title">{t('alerts.title')}</h1>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
-          <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground mb-4">{t('alerts.disabledFree')}</p>
-          <Link to="/billing">
-            <Button>{t('nav.billing')}</Button>
-          </Link>
-        </div>
       </div>
     );
   }

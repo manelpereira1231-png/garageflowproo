@@ -93,7 +93,7 @@ const BRL_PRICING: RegionalPricing = {
   free: { monthly: 0, yearly: 0 },
   pro: { monthly: 97, yearly: 970 },
   garage: { monthly: 197, yearly: 1970 },
-  trialDays: 15,
+  trialDays: 30,
   annualSavingsLabel: '2 meses grátis',
 };
 

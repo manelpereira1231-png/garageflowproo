@@ -6,7 +6,7 @@ import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge, Gift } from "lucide-react";
+import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge, Gift, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -133,7 +133,7 @@ export default function Billing() {
   const hasStripe = !!subscription?.stripe_subscription_id;
   const isCanceled = subscription?.status === 'canceled' || subscription?.status === 'cancelled';
 
-  const plans: { key: Plan; icon: React.ElementType; color: string; features: string[] }[] = [
+  const plans: { key: Plan; icon: React.ElementType; color: string; features: string[]; lockedFeatures?: string[] }[] = [
     {
       key: 'free',
       icon: Zap,
@@ -143,6 +143,12 @@ export default function Billing() {
         t('billing.feature.1user'),
         t('billing.feature.basicDashboard'),
         t('billing.feature.watermarkPdf'),
+      ],
+      lockedFeatures: [
+        t('billing.feature.5users'),
+        t('billing.feature.basicAlerts'),
+        t('billing.feature.advancedReports'),
+        t('billing.feature.automations'),
       ],
     },
     {
@@ -157,6 +163,12 @@ export default function Billing() {
         t('billing.feature.basicAlerts'),
         t('billing.feature.emailAuto'),
         t('billing.feature.export'),
+      ],
+      lockedFeatures: [
+        t('billing.feature.automations'),
+        t('billing.feature.advancedReports'),
+        t('billing.feature.multiShop'),
+        t('billing.feature.api'),
       ],
     },
     {
@@ -175,35 +187,73 @@ export default function Billing() {
         t('billing.feature.chatbot'),
         t('billing.feature.api'),
       ],
+      lockedFeatures: [],
     },
   ];
+
+  const createCheckoutUrl = async (targetPlan: Plan) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    let session = sessionData.session;
+
+    if (!session) {
+      throw new Error('SESSION_EXPIRED');
+    }
+
+    const expiresSoon = !session.expires_at || (session.expires_at * 1000) - Date.now() < 60_000;
+    if (expiresSoon) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshed.session) {
+        throw new Error('SESSION_EXPIRED');
+      }
+      session = refreshed.session;
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify({
+        plan: targetPlan,
+        billing_cycle: billingCycle,
+        region: isBR ? 'br' : 'eu',
+      }),
+    });
+
+    const raw = await response.text();
+    let payload: { url?: string; error?: string } = {};
+
+    if (raw) {
+      try {
+        payload = JSON.parse(raw);
+      } catch {
+        payload = { error: raw };
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(payload.error || 'CHECKOUT_FAILED');
+    }
+
+    if (!payload.url) {
+      throw new Error(payload.error || 'CHECKOUT_FAILED');
+    }
+
+    return payload.url;
+  };
 
   const handleUpgrade = async (targetPlan: Plan) => {
     if (targetPlan === 'free') return;
     setUpgrading(true);
     try {
-      // Verify session is active before calling checkout
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) {
-        toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
-        navigate('/auth');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan: targetPlan, billing_cycle: billingCycle, region: isBR ? 'br' : 'eu' },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
+      const checkoutUrl = await createCheckoutUrl(targetPlan);
+      window.location.assign(checkoutUrl);
     } catch (err: any) {
       console.error('Checkout error:', err);
       const msg = err?.message || '';
-      if (msg.includes('Not authenticated') || msg.includes('No authorization')) {
+      if (msg === 'SESSION_EXPIRED' || msg.includes('Not authenticated') || msg.includes('No authorization')) {
         toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
         navigate('/auth');
       } else {
@@ -469,7 +519,7 @@ export default function Billing() {
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(({ key, icon: Icon, color, features }) => {
+        {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
           const price = prices[key][billingCycle];
           const isCurrentPlan = plan === key;
 
@@ -501,7 +551,7 @@ export default function Billing() {
                 </div>
                 {key !== 'free' && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {isBR ? t('billing.trial15') : t('billing.trial30')}
+                    {t('billing.trial30')}
                   </p>
                 )}
               </div>
@@ -510,6 +560,12 @@ export default function Billing() {
                 {features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+                {lockedFeatures?.map((feature, i) => (
+                  <li key={`locked-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
                     <span>{feature}</span>
                   </li>
                 ))}

@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Car, FileText, Wrench, Settings, 
   Menu, X, LogOut, ChevronRight, Globe, CreditCard, Bell, Shield, UserPlus, MessageCircle,
-  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code, Search, Gift, ShieldCheck
+  Receipt, ChevronDown, CalendarDays, BookOpen, Package, ClipboardCheck, Star, Megaphone, HardHat, Zap, Code, Search, Gift, ShieldCheck, Lock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,22 @@ import ShopSwitcher from "@/components/ShopSwitcher";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
+type NavItem = {
+  path: string;
+  label: string;
+  icon: React.ElementType;
+  badge?: number;
+  planBadge?: 'Pro' | 'Garage';
+  locked?: boolean;
+};
+
+type FinancialNavItem = {
+  path: string;
+  label: string;
+  planBadge?: 'Pro' | 'Garage';
+  locked?: boolean;
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
@@ -22,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature, plan, subscriptionLoaded } = useSubscription();
+  const { canUseFeature } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
 
   useEffect(() => {
@@ -47,7 +63,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     location.pathname.startsWith('/invoices') || location.pathname.startsWith('/financial')
   );
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: "/dashboard", label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: "/clients", label: t('nav.clients'), icon: Users },
     { path: "/vehicles", label: t('nav.vehicles'), icon: Car },
@@ -59,21 +75,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/inspections", label: t('nav.inspections'), icon: ClipboardCheck },
     { path: "/workshop", label: t('nav.workshop'), icon: HardHat },
     { path: "/warranties", label: t('nav.warranties'), icon: ShieldCheck },
-    ...(canUseFeature('loyalty') ? [{ path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage' as const }] : []),
-    ...(canUseFeature('marketing') ? [{ path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage' as const }] : []),
-    ...(canUseFeature('automations') ? [{ path: "/automations", label: t('nav.automations'), icon: Zap, planBadge: 'Garage' as const }] : []),
-    ...(canUseFeature('api') ? [{ path: "/developers", label: "API", icon: Code, planBadge: 'Garage' as const }] : []),
-    { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount },
-    { path: "/team", label: t('nav.team'), icon: UserPlus },
-    ...(canUseFeature('chatbot') ? [{ path: "/chat", label: t('nav.chat'), icon: MessageCircle }] : []),
+    { path: "/loyalty", label: t('nav.loyalty'), icon: Star, planBadge: 'Garage', locked: !canUseFeature('loyalty') },
+    { path: "/marketing", label: t('nav.marketing'), icon: Megaphone, planBadge: 'Garage', locked: !canUseFeature('marketing') },
+    { path: "/automations", label: t('nav.automations'), icon: Zap, planBadge: 'Garage', locked: !canUseFeature('automations') },
+    { path: "/developers", label: "API", icon: Code, planBadge: 'Garage', locked: !canUseFeature('api') },
+    { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount, planBadge: !canUseFeature('basicAlerts') ? 'Pro' : undefined, locked: !canUseFeature('basicAlerts') },
+    { path: "/team", label: t('nav.team'), icon: UserPlus, planBadge: !canUseFeature('teamManagement') ? 'Pro' : undefined, locked: !canUseFeature('teamManagement') },
+    { path: "/chat", label: t('nav.chat'), icon: MessageCircle, planBadge: 'Garage', locked: !canUseFeature('chatbot') },
     { path: "/referrals", label: t('nav.referrals'), icon: Gift },
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },
     { path: "/settings", label: t('nav.settings'), icon: Settings },
   ];
 
-  const financialSubItems = [
+  const financialSubItems: FinancialNavItem[] = [
     { path: "/invoices", label: t('nav.invoices') },
-    { path: "/financial/reports", label: t('nav.financialReports') },
+    { path: "/financial/reports", label: t('nav.financialReports'), planBadge: !canUseFeature('basicReports') ? 'Pro' : undefined, locked: !canUseFeature('basicReports') },
   ];
 
   const handleLogout = async () => {
@@ -119,13 +135,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 }`}>
                 <item.icon className="w-[18px] h-[18px] shrink-0" />
                 <span className="truncate">{item.label}</span>
-                {'badge' in item && item.badge && item.badge > 0 ? (
-                  <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </span>
-                ) : isActive ? (
-                  <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" />
-                ) : null}
+                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                  {item.planBadge && (
+                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                      isActive
+                        ? 'bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80'
+                        : 'bg-sidebar-accent text-sidebar-foreground/70'
+                    }`}>
+                      {item.planBadge}
+                    </span>
+                  )}
+                  {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                  {item.badge && item.badge > 0 ? (
+                    <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  ) : null}
+                  {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
+                </div>
               </Link>
             );
 
@@ -149,10 +176,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         const fiActive = location.pathname === fi.path;
                         return (
                           <Link key={fi.path} to={fi.path} onClick={() => setSidebarOpen(false)}
-                            className={`block px-3 py-2 rounded-lg text-sm transition-all ${
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                               fiActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'
                             }`}>
-                            {fi.label}
+                            <span className="truncate">{fi.label}</span>
+                            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                              {fi.planBadge && (
+                                <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                                  fiActive
+                                    ? 'bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80'
+                                    : 'bg-sidebar-accent text-sidebar-foreground/70'
+                                }`}>
+                                  {fi.planBadge}
+                                </span>
+                              )}
+                              {fi.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                            </div>
                           </Link>
                         );
                       })}

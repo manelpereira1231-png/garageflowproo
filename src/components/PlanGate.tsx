@@ -32,23 +32,29 @@ const PlanGate = React.forwardRef<HTMLDivElement, PlanGateProps>(
 
     if (!canUseFeature(feature)) {
       return (
-        <div ref={ref} className="flex items-center justify-center min-h-[50vh] p-4">
-          <Card className="max-w-md w-full border-primary/20">
-            <CardContent className="py-12 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-xl font-bold text-foreground">
-                {t('planGate.title')}
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                {t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
-              </p>
-              <Link to="/billing">
-                <Button className="mt-2">{t('planGate.upgrade')}</Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <div ref={ref} className="relative min-h-[50vh]">
+          <div className="pointer-events-none min-h-[50vh] select-none opacity-40 blur-[2px]">
+            {children}
+          </div>
+
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 p-4 backdrop-blur-[1px]">
+            <Card className="max-w-md w-full border-primary/20 bg-card/95">
+              <CardContent className="py-12 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">
+                  {t('planGate.title')}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
+                </p>
+                <Link to="/billing">
+                  <Button className="mt-2">{t('planGate.upgrade')}</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       );
     }

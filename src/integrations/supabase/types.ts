@@ -1958,6 +1958,11 @@ export type Database = {
           billing_cycle: string
           created_at: string
           current_period_end: string | null
+          discount_applied_at: string | null
+          discount_applied_by: string | null
+          discount_expires_at: string | null
+          discount_percent: number
+          discount_reason: string | null
           id: string
           plan: string
           shop_id: string
@@ -1971,6 +1976,11 @@ export type Database = {
           billing_cycle?: string
           created_at?: string
           current_period_end?: string | null
+          discount_applied_at?: string | null
+          discount_applied_by?: string | null
+          discount_expires_at?: string | null
+          discount_percent?: number
+          discount_reason?: string | null
           id?: string
           plan?: string
           shop_id: string
@@ -1984,6 +1994,11 @@ export type Database = {
           billing_cycle?: string
           created_at?: string
           current_period_end?: string | null
+          discount_applied_at?: string | null
+          discount_applied_by?: string | null
+          discount_expires_at?: string | null
+          discount_percent?: number
+          discount_reason?: string | null
           id?: string
           plan?: string
           shop_id?: string

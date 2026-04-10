@@ -63,10 +63,17 @@ export default function AdminTraffic() {
   // ---- KPIs ----
   const totalVisits = visits.length;
   const totalSignups = signups.length;
-  const conversionRate = totalVisits > 0 ? ((totalSignups / totalVisits) * 100) : 0;
-  const dropOffs = Math.max(0, totalVisits - totalSignups);
+  // Only count signups that happened AFTER first tracked visit for accurate conversion
+  const firstVisitDate = visits.length > 0
+    ? visits.reduce((min, v) => v.created_at < min ? v.created_at : min, visits[0].created_at)
+    : null;
+  const relevantSignups = firstVisitDate
+    ? signups.filter(s => s.created_at >= firstVisitDate).length
+    : 0;
+  const conversionRate = totalVisits > 0 ? Math.min(((relevantSignups / totalVisits) * 100), 100) : 0;
+  const dropOffs = Math.max(0, totalVisits - relevantSignups);
   const adsVisits = visits.filter(v => v.gclid || v.source === "google" || v.medium === "cpc").length;
-  const organicVisits = visits.filter(v => !v.gclid && v.medium !== "cpc" && !v.source).length;
+  const organicVisits = visits.filter(v => !v.gclid && v.medium !== "cpc").length;
   const mobileVisits = visits.filter(v => v.device_type === "mobile").length;
   const desktopVisits = visits.filter(v => v.device_type === "desktop").length;
 

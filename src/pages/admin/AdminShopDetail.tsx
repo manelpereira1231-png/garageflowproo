@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil,
   LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield, Percent, Trash2,
+  CreditCard, History, Activity,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -54,6 +55,9 @@ export default function AdminShopDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", nif: "", address: "", vat_rate: "23", labor_rate: "35" });
   const [saving, setSaving] = useState(false);
+  const [stripeInvoices, setStripeInvoices] = useState<any[]>([]);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [planHistory, setPlanHistory] = useState<{ action: string; from?: string; to?: string; date: string; details?: any }[]>([]);
 
   // Confirmation dialogs
   const [confirmAction, setConfirmAction] = useState<{ type: string; title: string; description: string; onConfirm: () => Promise<void> } | null>(null);
@@ -126,8 +130,38 @@ export default function AdminShopDetail() {
     }
     setMonthlyData(md);
     setRecentLogs(logsRes.data || []);
+
+    // Extract plan history from audit logs
+    const history = (logsRes.data || [])
+      .filter((l: any) => ['plan_changed', 'discount_applied', 'discount_removed', 'trial_reset', 'shop_activated', 'shop_suspended'].includes(l.action))
+      .map((l: any) => ({
+        action: l.action,
+        from: l.details?.from,
+        to: l.details?.to,
+        date: l.created_at,
+        details: l.details,
+      }));
+    setPlanHistory(history);
+
     setLoading(false);
   }, [id]);
+
+  // Fetch Stripe invoices when sub has stripe_customer_id
+  const fetchStripeInvoices = useCallback(async (customerId: string) => {
+    if (!customerId) return;
+    setStripeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        body: { action: "list_invoices", customer_id: customerId },
+      });
+      if (!error && data?.invoices) {
+        setStripeInvoices(data.invoices);
+      }
+    } catch (e) {
+      console.warn("Could not fetch Stripe invoices:", e);
+    }
+    setStripeLoading(false);
+  }, []);
 
   useEffect(() => {
     fetchAll();
@@ -498,6 +532,12 @@ export default function AdminShopDetail() {
           <TabsTrigger value="services">Serviços ({stats.workOrders})</TabsTrigger>
           <TabsTrigger value="invoices">Faturas ({stats.invoices})</TabsTrigger>
           <TabsTrigger value="catalog">Catálogo ({services.length})</TabsTrigger>
+          <TabsTrigger value="stripe" className="gap-1" onClick={() => sub?.stripe_customer_id && fetchStripeInvoices(sub.stripe_customer_id)}>
+            <CreditCard className="w-3 h-3" /> Stripe
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1">
+            <History className="w-3 h-3" /> Histórico
+          </TabsTrigger>
           <TabsTrigger value="logs">Auditoria</TabsTrigger>
         </TabsList>
 
@@ -667,6 +707,144 @@ export default function AdminShopDetail() {
                 )}
               </TableBody>
             </Table>
+          </div>
+        </TabsContent>
+
+        {/* Stripe Tab */}
+        <TabsContent value="stripe">
+          <div className="stat-card">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary" /> Informação Stripe
+            </h2>
+            {!sub?.stripe_customer_id ? (
+              <div className="text-center py-8">
+                <CreditCard className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Esta oficina não tem cliente Stripe associado</p>
+                <p className="text-xs text-muted-foreground mt-1">O plano é gerido manualmente</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-[10px] text-muted-foreground">Customer ID</p>
+                    <p className="text-xs font-mono font-medium truncate">{sub.stripe_customer_id}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-[10px] text-muted-foreground">Subscription ID</p>
+                    <p className="text-xs font-mono font-medium truncate">{sub.stripe_subscription_id || "—"}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-[10px] text-muted-foreground">Estado</p>
+                    <Badge variant="outline" className={`text-[10px] ${sub.status === 'active' ? 'bg-success/10 text-success' : sub.status === 'trialing' ? 'bg-warning/10 text-warning' : 'bg-destructive/10 text-destructive'}`}>
+                      {sub.status}
+                    </Badge>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-[10px] text-muted-foreground">Período Atual</p>
+                    <p className="text-xs font-medium">
+                      {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("pt-PT") : "—"}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Faturas Stripe</h3>
+                  {stripeLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : stripeInvoices.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Sem faturas Stripe disponíveis</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nº</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead>Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stripeInvoices.map((inv: any, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-sm font-mono">{inv.number || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={`text-[10px] ${inv.status === 'paid' ? 'bg-success/10 text-success' : inv.status === 'open' ? 'bg-warning/10 text-warning' : 'bg-muted'}`}>
+                                {inv.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right mono text-sm">
+                              {inv.currency?.toUpperCase()} {(inv.amount_paid / 100).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {inv.created ? new Date(inv.created * 1000).toLocaleDateString("pt-PT") : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Plan History Tab */}
+        <TabsContent value="history">
+          <div className="stat-card">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" /> Histórico de Planos e Alterações
+            </h2>
+            {planHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Sem alterações registadas</p>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+                <div className="space-y-4">
+                  {planHistory.map((h, i) => {
+                    const actionLabels: Record<string, string> = {
+                      plan_changed: "Alteração de Plano",
+                      discount_applied: "Desconto Aplicado",
+                      discount_removed: "Desconto Removido",
+                      trial_reset: "Trial Reiniciado",
+                      shop_activated: "Oficina Ativada",
+                      shop_suspended: "Oficina Suspensa",
+                    };
+                    const actionColors: Record<string, string> = {
+                      plan_changed: "bg-primary",
+                      discount_applied: "bg-success",
+                      discount_removed: "bg-warning",
+                      trial_reset: "bg-primary",
+                      shop_activated: "bg-success",
+                      shop_suspended: "bg-destructive",
+                    };
+                    return (
+                      <div key={i} className="relative pl-10">
+                        <div className={`absolute left-2.5 w-3 h-3 rounded-full ${actionColors[h.action] || 'bg-muted'}`} />
+                        <div className="p-3 rounded-lg border border-border">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="text-sm font-semibold">{actionLabels[h.action] || h.action}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(h.date).toLocaleString("pt-PT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          {h.from && h.to && (
+                            <p className="text-sm mt-1">
+                              <span className="text-muted-foreground">{String(h.from).toUpperCase()}</span>
+                              <span className="mx-1">→</span>
+                              <span className="font-bold">{String(h.to).toUpperCase()}</span>
+                            </p>
+                          )}
+                          {h.details?.reason && <p className="text-xs text-muted-foreground mt-1">Motivo: {h.details.reason}</p>}
+                          {h.details?.new_discount && <p className="text-xs text-muted-foreground mt-1">Desconto: {h.details.old_discount} → {h.details.new_discount}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 

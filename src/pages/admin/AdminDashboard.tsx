@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap } from "lucide-react";
+import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap, CalendarDays, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";

@@ -22,18 +22,25 @@ interface AdminStats {
   openQuotes: number;
   approvedQuotes: number;
   newShopsThisMonth: number;
+  newShopsThisWeek: number;
+  newShopsToday: number;
   planBreakdown: { free: number; pro: number; garage: number };
   monthlyRevenue: { month: string; revenue: number }[];
   monthlyNewShops: { month: string; shops: number }[];
   topShops: { name: string; clients: number; id: string }[];
   mrr: number;
+  mrrWithDiscounts: number;
   arr: number;
   arpu: number;
   ltv: number;
   churnRate: number;
   trialCount: number;
   paidCount: number;
+  freeCount: number;
+  canceledCount: number;
   conversionRate: number;
+  totalAccounts: number;
+  discountImpact: number;
 }
 
 interface RecentActivity {

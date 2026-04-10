@@ -7,11 +7,17 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+function isPreviewEnvironment() {
+  const hostname = window.location.hostname;
+  return hostname.endsWith("lovableproject.com") || (hostname.endsWith("lovable.app") && hostname.includes("--"));
+}
+
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    if (isPreviewEnvironment()) return;
     if (localStorage.getItem("pwa_prompt_dismissed")) return;
     const handler = (e: Event) => {
       e.preventDefault();
@@ -22,11 +28,23 @@ export default function PWAInstallPrompt() {
   }, []);
 
   useEffect(() => {
+    if (isPreviewEnvironment()) {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            registration.unregister().catch(() => {});
+          });
+        }).catch(() => {});
+      }
+      return;
+    }
+
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
 
+  if (isPreviewEnvironment()) return null;
   if (!deferredPrompt || dismissed) return null;
 
   const install = async () => {

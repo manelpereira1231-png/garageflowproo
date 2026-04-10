@@ -146,6 +146,23 @@ export default function AdminShopDetail() {
     setLoading(false);
   }, [id]);
 
+  // Fetch Stripe invoices when sub has stripe_customer_id
+  const fetchStripeInvoices = useCallback(async (customerId: string) => {
+    if (!customerId) return;
+    setStripeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        body: { action: "list_invoices", customer_id: customerId },
+      });
+      if (!error && data?.invoices) {
+        setStripeInvoices(data.invoices);
+      }
+    } catch (e) {
+      console.warn("Could not fetch Stripe invoices:", e);
+    }
+    setStripeLoading(false);
+  }, []);
+
   useEffect(() => {
     fetchAll();
     if (!id) return;

@@ -371,6 +371,7 @@ export default function AdminShops() {
                 <TableHead className="text-center">{t('admin.shops.services')}</TableHead>
                 <TableHead className="text-center">{t('admin.shops.alerts')}</TableHead>
                 <TableHead className="text-right">{t('admin.shops.revenue')}</TableHead>
+                <TableHead className="text-center">Desconto</TableHead>
                 <TableHead>{t('admin.shops.created')}</TableHead>
                 <TableHead>{t('admin.shops.actions')}</TableHead>
               </TableRow>

@@ -271,7 +271,9 @@ export default function AdminBilling() {
                   </button>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={sub.status === 'active' ? 'bg-success/15 text-success' : sub.status === 'trialing' ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'}>{sub.status}</Badge>
+                  <Badge variant="outline" className={sub.status === 'active' ? 'bg-success/15 text-success' : sub.status === 'trialing' ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'}>
+                    {sub.status === 'active' ? 'Ativo' : sub.status === 'trialing' ? 'Em Trial' : sub.status === 'canceled' || sub.status === 'cancelled' ? 'Cancelado' : sub.status}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-sm">{sub.billing_cycle}</TableCell>
                 <TableCell>

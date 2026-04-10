@@ -109,7 +109,7 @@ export default function AdminFeatureAdoption() {
     { label: "NRR", value: `${nrr}%`, icon: TrendingUp, color: nrr >= 100 ? "text-success" : "text-warning" },
     { label: "DAU", value: String(dailyActive), icon: Activity, color: "text-primary" },
     { label: "WAU", value: String(weeklyActive), icon: Users, color: "text-info" },
-    { label: "Features", value: String(features.length), icon: Zap, color: "text-primary" },
+    { label: "Funcionalidades", value: String(features.length), icon: Zap, color: "text-primary" },
   ];
 
   return (

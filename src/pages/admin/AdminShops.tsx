@@ -418,6 +418,13 @@ export default function AdminShops() {
                     )}
                   </TableCell>
                   <TableCell className="text-right mono text-sm font-medium">€{shop.revenue.toFixed(0)}</TableCell>
+                  <TableCell className="text-center">
+                    {shop.discountPercent > 0 ? (
+                      <Badge variant="outline" className="bg-warning/10 text-warning text-xs">{shop.discountPercent}%</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {new Date(shop.created_at).toLocaleDateString()}
                   </TableCell>

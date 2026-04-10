@@ -8,6 +8,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
+import { trackLandingVisit } from "@/lib/landingTracker";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -25,6 +26,7 @@ export default function LandingPage() {
   // Capture gclid/UTM params + scroll depth tracking
   useEffect(() => {
     captureAdsParams();
+    trackLandingVisit();
 
     const handleScroll = () => {
       const scrollPercent = Math.round(

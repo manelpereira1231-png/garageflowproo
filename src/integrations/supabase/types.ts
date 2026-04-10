@@ -692,6 +692,48 @@ export type Database = {
           },
         ]
       }
+      landing_visits: {
+        Row: {
+          campaign: string | null
+          country_hint: string | null
+          created_at: string
+          device_type: string | null
+          gclid: string | null
+          id: string
+          landing_path: string | null
+          medium: string | null
+          referrer: string | null
+          session_id: string | null
+          source: string | null
+        }
+        Insert: {
+          campaign?: string | null
+          country_hint?: string | null
+          created_at?: string
+          device_type?: string | null
+          gclid?: string | null
+          id?: string
+          landing_path?: string | null
+          medium?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+        }
+        Update: {
+          campaign?: string | null
+          country_hint?: string | null
+          created_at?: string
+          device_type?: string | null
+          gclid?: string | null
+          id?: string
+          landing_path?: string | null
+          medium?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       loyalty_points: {
         Row: {
           client_id: string

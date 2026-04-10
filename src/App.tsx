@@ -84,6 +84,7 @@ const AdminEmailLogs = lazyRetry(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazyRetry(() => import("@/pages/admin/AdminFeatureAdoption"));
 const AdminSystemHealth = lazyRetry(() => import("@/pages/admin/AdminSystemHealth"));
 const AdminPartners = lazyRetry(() => import("@/pages/admin/AdminPartners"));
+const AdminTraffic = lazyRetry(() => import("@/pages/admin/AdminTraffic"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -176,6 +177,7 @@ const adminRoutes = [
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
   { path: "/admin/partners", element: <AdminPartners /> },
+  { path: "/admin/traffic", element: <AdminTraffic /> },
 ];
 
 const shopRoutes = [

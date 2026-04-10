@@ -36,6 +36,7 @@ interface ShopRow {
   workOrderCount: number;
   alertCount: number;
   revenue: number;
+  discountPercent: number;
 }
 
 export default function AdminShops() {
@@ -55,13 +56,13 @@ export default function AdminShops() {
     setLoading(true);
     const [shopsRes, subsRes, clientsRes, woRes, alertsRes] = await Promise.all([
       supabase.from("shops").select("id, name, email, phone, country, currency, timezone, status, created_at"),
-      supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id"),
+      supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id, discount_percent"),
       supabase.from("clients").select("id, shop_id"),
       supabase.from("work_orders").select("id, shop_id, total, status"),
       supabase.from("alerts").select("id, shop_id, status").eq("status", "pending"),
     ]);
 
-    const subsMap = new Map<string, { plan: string; status: string; trial_end: string | null; current_period_end: string | null; stripe_subscription_id: string | null }>();
+    const subsMap = new Map<string, { plan: string; status: string; trial_end: string | null; current_period_end: string | null; stripe_subscription_id: string | null; discount_percent: number }>();
     (subsRes.data || []).forEach(s => subsMap.set(s.shop_id, s));
 
     const countBy = (arr: any[] | null, shopId: string) => (arr || []).filter(r => r.shop_id === shopId).length;
@@ -82,6 +83,7 @@ export default function AdminShops() {
         workOrderCount: countBy(woRes.data, s.id),
         alertCount: countBy(alertsRes.data, s.id),
         revenue: revenueBy(s.id),
+        discountPercent: Number(sub?.discount_percent || 0),
       };
     });
 
@@ -369,6 +371,7 @@ export default function AdminShops() {
                 <TableHead className="text-center">{t('admin.shops.services')}</TableHead>
                 <TableHead className="text-center">{t('admin.shops.alerts')}</TableHead>
                 <TableHead className="text-right">{t('admin.shops.revenue')}</TableHead>
+                <TableHead className="text-center">Desconto</TableHead>
                 <TableHead>{t('admin.shops.created')}</TableHead>
                 <TableHead>{t('admin.shops.actions')}</TableHead>
               </TableRow>
@@ -415,6 +418,13 @@ export default function AdminShops() {
                     )}
                   </TableCell>
                   <TableCell className="text-right mono text-sm font-medium">€{shop.revenue.toFixed(0)}</TableCell>
+                  <TableCell className="text-center">
+                    {shop.discountPercent > 0 ? (
+                      <Badge variant="outline" className="bg-warning/10 text-warning text-xs">{shop.discountPercent}%</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {new Date(shop.created_at).toLocaleDateString()}
                   </TableCell>

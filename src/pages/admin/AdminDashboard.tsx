@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap } from "lucide-react";
+import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap, CalendarDays, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
@@ -22,18 +22,25 @@ interface AdminStats {
   openQuotes: number;
   approvedQuotes: number;
   newShopsThisMonth: number;
+  newShopsThisWeek: number;
+  newShopsToday: number;
   planBreakdown: { free: number; pro: number; garage: number };
   monthlyRevenue: { month: string; revenue: number }[];
   monthlyNewShops: { month: string; shops: number }[];
   topShops: { name: string; clients: number; id: string }[];
   mrr: number;
+  mrrWithDiscounts: number;
   arr: number;
   arpu: number;
   ltv: number;
   churnRate: number;
   trialCount: number;
   paidCount: number;
+  freeCount: number;
+  canceledCount: number;
   conversionRate: number;
+  totalAccounts: number;
+  discountImpact: number;
 }
 
 interface RecentActivity {
@@ -63,7 +70,7 @@ export default function AdminDashboard() {
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
         supabase.from("alerts").select("id, status"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at"),
         supabase.from("quotes").select("id, status"),
       ]);
 
@@ -82,7 +89,14 @@ export default function AdminDashboard() {
 
       const now = new Date();
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const newShopsThisMonth = (shops.data || []).filter(s => new Date(s.created_at) >= thisMonthStart).length;
+      const thisWeekStart = new Date(now); thisWeekStart.setDate(now.getDate() - now.getDay());
+      thisWeekStart.setHours(0, 0, 0, 0);
+      const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+
+      const allShops = shops.data || [];
+      const newShopsThisMonth = allShops.filter(s => new Date(s.created_at) >= thisMonthStart).length;
+      const newShopsThisWeek = allShops.filter(s => new Date(s.created_at) >= thisWeekStart).length;
+      const newShopsToday = allShops.filter(s => new Date(s.created_at) >= todayStart).length;
 
       const monthlyRevenue: { month: string; revenue: number }[] = [];
       const monthlyNewShops: { month: string; shops: number }[] = [];
@@ -98,7 +112,7 @@ export default function AdminDashboard() {
           .reduce((sum, wo) => sum + Number(wo.total || 0), 0);
         monthlyRevenue.push({ month: monthStr, revenue: Math.round(revenue * 100) / 100 });
 
-        const newShops = (shops.data || []).filter(s => {
+        const newShops = allShops.filter(s => {
           const sd = new Date(s.created_at);
           return sd.getMonth() === d.getMonth() && sd.getFullYear() === d.getFullYear();
         }).length;
@@ -109,7 +123,7 @@ export default function AdminDashboard() {
       (clients.data || []).forEach(c => {
         shopClientCount.set(c.shop_id, (shopClientCount.get(c.shop_id) || 0) + 1);
       });
-      const topShops = (shops.data || [])
+      const topShops = allShops
         .map(s => ({ name: s.name || "Sem nome", clients: shopClientCount.get(s.id) || 0, id: s.id }))
         .sort((a, b) => b.clients - a.clients)
         .slice(0, 5);
@@ -121,9 +135,21 @@ export default function AdminDashboard() {
       const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
       const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
-      const arr = mrr * 12;
+      
+      // MRR with discounts applied
+      const mrrWithDiscounts = activeSubs.reduce((sum, s) => {
+        const basePrice = PLAN_PRICES[s.plan] || 0;
+        const discount = Number(s.discount_percent || 0);
+        const discountExpired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
+        const effectiveDiscount = discountExpired ? 0 : discount;
+        return sum + (basePrice * (1 - effectiveDiscount / 100));
+      }, 0);
+      const discountImpact = mrr - mrrWithDiscounts;
+      
+      const arr = mrrWithDiscounts * 12;
       const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
-      const arpu = paidCount > 0 ? mrr / paidCount : 0;
+      const freeCount = activeSubs.filter(s => s.plan === 'free').length;
+      const arpu = paidCount > 0 ? mrrWithDiscounts / paidCount : 0;
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
@@ -132,16 +158,16 @@ export default function AdminDashboard() {
       const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
 
       // Recent shops (last 10)
-      const sortedShops = [...(shops.data || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+      const sortedShops = [...allShops].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
       setRecentShops(sortedShops.map(s => ({
         ...s,
         plan: subsMap.get(s.id) || 'free',
       })));
 
       setStats({
-        totalShops: shops.data?.length || 0,
-        activeShops: (shops.data || []).filter(s => s.status === 'active').length,
-        suspendedShops: (shops.data || []).filter(s => s.status === 'suspended').length,
+        totalShops: allShops.length,
+        activeShops: allShops.filter(s => s.status === 'active').length,
+        suspendedShops: allShops.filter(s => s.status === 'suspended').length,
         totalClients: clients.data?.length || 0,
         totalVehicles: vehicles.data?.length || 0,
         totalWorkOrders: workOrders.data?.length || 0,
@@ -149,9 +175,10 @@ export default function AdminDashboard() {
         totalAlerts: alerts.data?.length || 0,
         totalRevenue, avgTicket,
         pendingAlerts, openQuotes, approvedQuotes,
-        newShopsThisMonth,
+        newShopsThisMonth, newShopsThisWeek, newShopsToday,
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
-        mrr, arr, arpu, ltv, churnRate, trialCount, paidCount, conversionRate,
+        mrr, mrrWithDiscounts, arr, arpu, ltv, churnRate, trialCount, paidCount, freeCount,
+        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact,
       });
     } catch (err) {
       console.error("Failed to fetch admin stats:", err);
@@ -159,11 +186,12 @@ export default function AdminDashboard() {
         totalShops: 0, activeShops: 0, suspendedShops: 0, totalClients: 0,
         totalVehicles: 0, totalWorkOrders: 0, totalQuotes: 0, totalAlerts: 0,
         totalRevenue: 0, avgTicket: 0, pendingAlerts: 0, openQuotes: 0,
-        approvedQuotes: 0, newShopsThisMonth: 0,
+        approvedQuotes: 0, newShopsThisMonth: 0, newShopsThisWeek: 0, newShopsToday: 0,
         planBreakdown: { free: 0, pro: 0, garage: 0 },
         monthlyRevenue: [], monthlyNewShops: [], topShops: [],
-        mrr: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
-        paidCount: 0, conversionRate: 0,
+        mrr: 0, mrrWithDiscounts: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
+        paidCount: 0, freeCount: 0, canceledCount: 0, conversionRate: 0,
+        totalAccounts: 0, discountImpact: 0,
       });
     }
     setLoading(false);
@@ -301,13 +329,13 @@ export default function AdminDashboard() {
     { label: t('admin.dashboard.totalShops'), value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
     { label: t('admin.dashboard.activeShops'), value: stats.activeShops, icon: Building2, color: "text-success" },
     { label: t('admin.dashboard.suspended'), value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
-    { label: t('admin.dashboard.newThisMonth'), value: stats.newShopsThisMonth, icon: TrendingUp, color: "text-info" },
-    { label: "MRR", value: `€${stats.mrr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "MRR (real)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
     { label: "ARPU", value: `€${stats.arpu.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.ltvEstimated'), value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
     { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
+    { label: "Descontos (impacto)", value: stats.discountImpact > 0 ? `-€${stats.discountImpact.toFixed(0)}/mês` : "€0", icon: Percent, color: stats.discountImpact > 0 ? "text-warning" : "text-muted-foreground" },
     { label: t('admin.dashboard.inTrial'), value: stats.trialCount, icon: Clock, color: "text-warning" },
     { label: t('admin.dashboard.paying'), value: stats.paidCount, icon: DollarSign, color: "text-success" },
     { label: t('admin.dashboard.totalClients'), value: stats.totalClients, icon: Users, color: "text-primary" },
@@ -322,6 +350,15 @@ export default function AdminDashboard() {
     { name: "Free", value: stats.planBreakdown.free },
     { name: "Pro", value: stats.planBreakdown.pro },
     { name: "Garage", value: stats.planBreakdown.garage },
+  ];
+
+  // Funnel data
+  const funnelData = [
+    { stage: "Contas Criadas", count: stats.totalAccounts, color: "hsl(var(--muted-foreground))" },
+    { stage: "Free", count: stats.freeCount, color: "hsl(var(--muted-foreground))" },
+    { stage: "Em Trial", count: stats.trialCount, color: "hsl(var(--warning))" },
+    { stage: "Pagantes", count: stats.paidCount, color: "hsl(var(--success))" },
+    { stage: "Cancelados", count: stats.canceledCount, color: "hsl(var(--destructive))" },
   ];
 
   return (
@@ -406,6 +443,74 @@ export default function AdminDashboard() {
                 <span className="text-muted-foreground">{p.name}: <span className="font-medium text-foreground">{p.value}</span></span>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Registration Breakdown + Conversion Funnel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Registration breakdown */}
+        <div className="stat-card">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-primary" /> Novos Registos
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsToday}</p>
+              <p className="text-xs text-muted-foreground mt-1">Hoje</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsThisWeek}</p>
+              <p className="text-xs text-muted-foreground mt-1">Esta Semana</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsThisMonth}</p>
+              <p className="text-xs text-muted-foreground mt-1">Este Mês</p>
+            </div>
+          </div>
+          {stats.discountImpact > 0 && (
+            <div className="mt-4 p-3 rounded-lg border border-warning/30 bg-warning/5">
+              <div className="flex items-center gap-2 text-sm">
+                <Percent className="w-4 h-4 text-warning" />
+                <span className="text-muted-foreground">Impacto de descontos no MRR:</span>
+                <span className="font-bold text-warning">-€{stats.discountImpact.toFixed(2)}/mês</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                MRR sem descontos: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Conversion Funnel */}
+        <div className="stat-card">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" /> Funil de Conversão
+          </h2>
+          <div className="space-y-3">
+            {funnelData.map((step, i) => {
+              const maxCount = Math.max(...funnelData.map(d => d.count), 1);
+              const pct = (step.count / maxCount) * 100;
+              return (
+                <div key={step.stage}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{step.stage}</span>
+                    <span className="text-sm font-bold mono">{step.count}</span>
+                  </div>
+                  <div className="h-6 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.max(pct, 2)}%`, background: step.color }}
+                    />
+                  </div>
+                  {i < funnelData.length - 1 && i > 0 && step.count > 0 && funnelData[0].count > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {((step.count / funnelData[0].count) * 100).toFixed(1)}% do total
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

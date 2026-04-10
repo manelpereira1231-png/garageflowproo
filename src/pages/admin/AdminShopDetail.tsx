@@ -55,6 +55,9 @@ export default function AdminShopDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", nif: "", address: "", vat_rate: "23", labor_rate: "35" });
   const [saving, setSaving] = useState(false);
+  const [stripeInvoices, setStripeInvoices] = useState<any[]>([]);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [planHistory, setPlanHistory] = useState<{ action: string; from?: string; to?: string; date: string; details?: any }[]>([]);
 
   // Confirmation dialogs
   const [confirmAction, setConfirmAction] = useState<{ type: string; title: string; description: string; onConfirm: () => Promise<void> } | null>(null);

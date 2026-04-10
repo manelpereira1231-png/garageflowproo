@@ -176,7 +176,7 @@ export default function AdminTraffic() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
           { icon: Eye, label: "Visitas Totais", value: totalVisits, color: "text-primary" },
-          { icon: Users, label: "Inscrições", value: totalSignups, color: "text-success" },
+          { icon: Users, label: "Inscrições (total)", value: totalSignups, color: "text-success" },
           { icon: TrendingDown, label: "Não se Inscreveram", value: dropOffs, color: "text-destructive" },
           { icon: MousePointerClick, label: "Taxa Conversão", value: `${conversionRate.toFixed(1)}%`, color: conversionRate > 5 ? "text-success" : "text-warning" },
           { icon: Megaphone, label: "Via Anúncios", value: adsVisits, color: "text-primary" },

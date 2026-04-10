@@ -56,13 +56,13 @@ export default function AdminShops() {
     setLoading(true);
     const [shopsRes, subsRes, clientsRes, woRes, alertsRes] = await Promise.all([
       supabase.from("shops").select("id, name, email, phone, country, currency, timezone, status, created_at"),
-      supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id"),
+      supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id, discount_percent"),
       supabase.from("clients").select("id, shop_id"),
       supabase.from("work_orders").select("id, shop_id, total, status"),
       supabase.from("alerts").select("id, shop_id, status").eq("status", "pending"),
     ]);
 
-    const subsMap = new Map<string, { plan: string; status: string; trial_end: string | null; current_period_end: string | null; stripe_subscription_id: string | null }>();
+    const subsMap = new Map<string, { plan: string; status: string; trial_end: string | null; current_period_end: string | null; stripe_subscription_id: string | null; discount_percent: number }>();
     (subsRes.data || []).forEach(s => subsMap.set(s.shop_id, s));
 
     const countBy = (arr: any[] | null, shopId: string) => (arr || []).filter(r => r.shop_id === shopId).length;

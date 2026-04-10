@@ -2155,6 +2155,56 @@ export type Database = {
         }
         Relationships: []
       }
+      trial_records: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          nif: string | null
+          phone: string | null
+          shop_id: string
+          stripe_customer_id: string | null
+          trial_end: string | null
+          trial_start: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          nif?: string | null
+          phone?: string | null
+          shop_id: string
+          stripe_customer_id?: string | null
+          trial_end?: string | null
+          trial_start?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          nif?: string | null
+          phone?: string | null
+          shop_id?: string
+          stripe_customer_id?: string | null
+          trial_end?: string | null
+          trial_start?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_records_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_global_history: {
         Row: {
           created_at: string
@@ -2582,6 +2632,15 @@ export type Database = {
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
       check_shop_creation_limit: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      check_trial_eligibility: {
+        Args: {
+          _email: string
+          _nif?: string
+          _phone?: string
+          _stripe_customer_id?: string
+        }
         Returns: boolean
       }
       get_shop_member_emails: {

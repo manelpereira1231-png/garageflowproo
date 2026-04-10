@@ -447,6 +447,74 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Registration Breakdown + Conversion Funnel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Registration breakdown */}
+        <div className="stat-card">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-primary" /> Novos Registos
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsToday}</p>
+              <p className="text-xs text-muted-foreground mt-1">Hoje</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsThisWeek}</p>
+              <p className="text-xs text-muted-foreground mt-1">Esta Semana</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <p className="text-3xl font-bold mono text-primary">{stats.newShopsThisMonth}</p>
+              <p className="text-xs text-muted-foreground mt-1">Este Mês</p>
+            </div>
+          </div>
+          {stats.discountImpact > 0 && (
+            <div className="mt-4 p-3 rounded-lg border border-warning/30 bg-warning/5">
+              <div className="flex items-center gap-2 text-sm">
+                <Percent className="w-4 h-4 text-warning" />
+                <span className="text-muted-foreground">Impacto de descontos no MRR:</span>
+                <span className="font-bold text-warning">-€{stats.discountImpact.toFixed(2)}/mês</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                MRR sem descontos: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Conversion Funnel */}
+        <div className="stat-card">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" /> Funil de Conversão
+          </h2>
+          <div className="space-y-3">
+            {funnelData.map((step, i) => {
+              const maxCount = Math.max(...funnelData.map(d => d.count), 1);
+              const pct = (step.count / maxCount) * 100;
+              return (
+                <div key={step.stage}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{step.stage}</span>
+                    <span className="text-sm font-bold mono">{step.count}</span>
+                  </div>
+                  <div className="h-6 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.max(pct, 2)}%`, background: step.color }}
+                    />
+                  </div>
+                  {i < funnelData.length - 1 && i > 0 && step.count > 0 && funnelData[0].count > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {((step.count / funnelData[0].count) * 100).toFixed(1)}% do total
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity Feed */}
         <div className="stat-card">

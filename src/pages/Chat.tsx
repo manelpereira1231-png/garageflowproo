@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Users, Mail, UsersRound, Search, Circle } from "lucide-react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 interface ChatMessage {
@@ -28,7 +27,7 @@ interface Client {
 
 export default function Chat() {
   const { t } = useLanguage();
-  const { plan, shopId, canUseFeature, loading: subLoading } = useSubscription();
+  const { shopId, loading: subLoading } = useSubscription();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("all");
@@ -185,19 +184,6 @@ export default function Chat() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!canUseFeature('chatbot')) {
-    return (
-      <div>
-        <div className="page-header"><h1 className="page-title">{t('chat.title')}</h1></div>
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
-          <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground mb-4">{t('chat.disabledPlan')}</p>
-          <Link to="/billing"><Button>{t('nav.billing')}</Button></Link>
-        </div>
       </div>
     );
   }

@@ -38,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature, plan } = useSubscription();
+  const { canUseFeature } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/automations", label: t('nav.automations'), icon: Zap, planBadge: 'Garage', locked: !canUseFeature('automations') },
     { path: "/developers", label: "API", icon: Code, planBadge: 'Garage', locked: !canUseFeature('api') },
     { path: "/alerts", label: t('nav.alerts'), icon: Bell, badge: pendingAlertCount, planBadge: !canUseFeature('basicAlerts') ? 'Pro' : undefined, locked: !canUseFeature('basicAlerts') },
-    { path: "/team", label: t('nav.team'), icon: UserPlus, planBadge: plan === 'free' ? 'Pro' : undefined, locked: plan === 'free' },
+    { path: "/team", label: t('nav.team'), icon: UserPlus, planBadge: !canUseFeature('teamManagement') ? 'Pro' : undefined, locked: !canUseFeature('teamManagement') },
     { path: "/chat", label: t('nav.chat'), icon: MessageCircle, planBadge: 'Garage', locked: !canUseFeature('chatbot') },
     { path: "/referrals", label: t('nav.referrals'), icon: Gift },
     { path: "/billing", label: t('nav.billing'), icon: CreditCard },

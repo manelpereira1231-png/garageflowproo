@@ -10,11 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Plus, Send, Mail, Users, TrendingUp, Clock, Trash2, Eye, Search, Lock } from "lucide-react";
+import { Megaphone, Plus, Send, Mail, Users, TrendingUp, Clock, Trash2, Eye, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useShopContext } from "@/hooks/useShopContext";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -27,7 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Marketing() {
   const { t } = useLanguage();
-  const { canUseFeature, loading: subLoading } = useSubscription();
+  const { loading: subLoading } = useSubscription();
   const { activeShopId } = useShopContext();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -167,20 +166,6 @@ export default function Marketing() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!canUseFeature('marketing')) {
-    return (
-      <div>
-        <div className="page-header"><h1 className="page-title flex items-center gap-2"><Megaphone className="w-6 h-6 text-primary" />{t('marketing.title')}</h1></div>
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
-          <Lock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-semibold mb-2">{t('marketing.title')}</h3>
-          <p className="text-muted-foreground mb-4">{t('marketing.disabledPlan')}</p>
-          <Link to="/billing"><Button>{t('nav.billing')}</Button></Link>
-        </div>
       </div>
     );
   }

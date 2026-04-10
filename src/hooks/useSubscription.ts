@@ -18,6 +18,7 @@ export interface Subscription {
 export interface PlanLimits {
   maxQuotesPerMonth: number;
   maxUsers: number;
+  teamManagement: boolean;
   pdfWatermark: boolean;
   advancedAlerts: boolean;
   basicAlerts: boolean;
@@ -40,6 +41,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
     maxQuotesPerMonth: 10,
     maxUsers: 1,
+    teamManagement: false,
     pdfWatermark: true,
     advancedAlerts: false,
     basicAlerts: false,
@@ -60,6 +62,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   pro: {
     maxQuotesPerMonth: Infinity,
     maxUsers: 5,
+    teamManagement: true,
     pdfWatermark: false,
     advancedAlerts: true,
     basicAlerts: true,
@@ -80,6 +83,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   garage: {
     maxQuotesPerMonth: Infinity,
     maxUsers: Infinity,
+    teamManagement: true,
     pdfWatermark: false,
     advancedAlerts: true,
     basicAlerts: true,

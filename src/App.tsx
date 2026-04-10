@@ -177,6 +177,7 @@ const adminRoutes = [
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
   { path: "/admin/partners", element: <AdminPartners /> },
+  { path: "/admin/traffic", element: <AdminTraffic /> },
 ];
 
 const shopRoutes = [

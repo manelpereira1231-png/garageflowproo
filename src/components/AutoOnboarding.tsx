@@ -190,6 +190,17 @@ export default function AutoOnboarding() {
     return () => clearTimeout(timer);
   }, [dismissed, isGuidedMode, visible]);
 
+  const allDone = completed.client && completed.vehicle && completed.quote;
+  const completedCount = Object.values(completed).filter(Boolean).length;
+  const progress = (completedCount / 3) * 100;
+
+  const getCurrentStep = (): Step | null => {
+    if (!completed.client) return "client";
+    if (!completed.vehicle) return "vehicle";
+    if (!completed.quote) return "quote";
+    return null;
+  };
+
   // Nudge timer (10s of inactivity)
   useEffect(() => {
     if (allDone || dismissed || !visible || !isGuidedMode) return;
@@ -221,17 +232,6 @@ export default function AutoOnboarding() {
       if (reengageTimerRef.current) clearTimeout(reengageTimerRef.current);
     };
   }, [allDone, completed, dismissed, isGuidedMode, visible]);
-
-  const allDone = completed.client && completed.vehicle && completed.quote;
-  const completedCount = Object.values(completed).filter(Boolean).length;
-  const progress = (completedCount / 3) * 100;
-
-  const getCurrentStep = (): Step | null => {
-    if (!completed.client) return "client";
-    if (!completed.vehicle) return "vehicle";
-    if (!completed.quote) return "quote";
-    return null;
-  };
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "1");

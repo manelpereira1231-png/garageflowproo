@@ -169,9 +169,13 @@ export default function Dashboard() {
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
 
-        // Detect new user: no clients, no vehicles, no quotes yet
-        const hasNoData = totalClients === 0 && (quotesRes.count || 0) === 0;
-        setIsNewUser(hasNoData);
+        // Auto-complete onboarding if user already has data
+        const totalClients = allClientsRes.count || 0;
+        const hasData = totalClients > 0 && (quotesRes.count || 0) > 0;
+        if (hasData && localStorage.getItem('garageflow_onboarding_completed') !== 'true') {
+          localStorage.setItem('garageflow_onboarding_completed', 'true');
+          setIsNewUser(false);
+        }
 
         setKpis({
           revenue,

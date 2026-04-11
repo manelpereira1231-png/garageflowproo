@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Users, TrendingUp, DollarSign, Shield, CheckCircle, Copy,
-  Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone, Eye, EyeOff
+  Rocket, Award, Sparkles, BarChart3, Zap, CreditCard, Smartphone, Eye, EyeOff,
+  ArrowRight, Share2, Link2, Wallet
 } from "lucide-react";
 import LandingLayout from "@/components/LandingLayout";
 import { useNavigate } from "react-router-dom";
@@ -99,14 +100,12 @@ export default function AffiliateSignup() {
         throw new Error(data?.error || "Erro ao registar. Tente novamente.");
       }
 
-      // Auto-login with returned session
       if (data.session?.access_token && data.session?.refresh_token) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
         toast.success(t('affiliate.registrationSuccess') || "Registo concluído com sucesso! 🎉 A entrar no painel...");
-        // Navigate to affiliate dashboard
         setTimeout(() => navigate("/affiliate-dashboard"), 500);
       } else {
         toast.success(t('affiliate.registrationSuccess') || "Registo concluído com sucesso! 🎉");
@@ -118,298 +117,283 @@ export default function AffiliateSignup() {
     }
   };
 
+  const scrollToForm = () => {
+    document.getElementById("signup-form")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <LandingLayout>
       <div className="bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
-        {/* Hero */}
-        <div className="text-center mb-10">
-          <Badge variant="secondary" className="mb-4 gap-1 px-3 py-1">
-            <Sparkles className="w-3.5 h-3.5" /> {t('affiliate.programBadge') || "Programa de Afiliados"}
-          </Badge>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            {t('affiliate.heroTitle') || "Torne-se parceiro"} <span className="text-primary">GarageFlow</span> {t('affiliate.heroTitleSuffix') || "e ganhe comissões"}
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('affiliate.heroSubtitle') || "Ganhe comissões automáticas por cada oficina que se registar e pagar um plano através do seu link exclusivo."}
-          </p>
-        </div>
+        <div className="container mx-auto px-4 py-10 md:py-16 max-w-5xl">
 
-        {/* Commission highlight */}
-        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-10">
-          <Card className="text-center border-2 border-primary/20 bg-primary/5">
-            <CardContent className="pt-6 pb-4">
-              <p className="text-3xl font-black text-primary">10%</p>
-              <p className="text-sm font-semibold mt-1">{t('affiliate.planPro') || "Plano Pro"}</p>
-              <p className="text-xs text-muted-foreground">49€/mês → 4,90€/mês</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center border-2 border-primary/20 bg-primary/5">
-            <CardContent className="pt-6 pb-4">
-              <p className="text-3xl font-black text-primary">20%</p>
-              <p className="text-sm font-semibold mt-1">{t('affiliate.planGarage') || "Plano Garage"}</p>
-              <p className="text-xs text-muted-foreground">99€/mês → 19,80€/mês</p>
-            </CardContent>
-          </Card>
-        </div>
+          {/* ── HERO ── */}
+          <div className="text-center mb-12 md:mb-16">
+            <Badge variant="secondary" className="mb-5 gap-1.5 px-4 py-1.5 text-sm">
+              <Sparkles className="w-4 h-4" /> Programa de Afiliados
+            </Badge>
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-5 leading-tight">
+              Programa de Afiliados <span className="text-primary">GarageFlow</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+              Ganhe dinheiro recomendando software para oficinas em Portugal.
+              <br className="hidden sm:block" />
+              Comissões automáticas por cada oficina que se registar e ativar um plano através do seu link exclusivo.
+            </p>
 
-        {/* Benefits */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          {[
-            { icon: DollarSign, color: "text-primary", title: t('affiliate.benefit1Title') || "Sem investimento", desc: t('affiliate.benefit1Desc') || "Cadastre-se grátis e comece imediatamente" },
-            { icon: Zap, color: "text-amber-500", title: t('affiliate.benefit2Title') || "Link automático", desc: t('affiliate.benefit2Desc') || "Receba o seu link exclusivo na hora" },
-            { icon: BarChart3, color: "text-blue-500", title: t('affiliate.benefit3Title') || "Rastreio total", desc: t('affiliate.benefit3Desc') || "Veja em tempo real quem entrou pelo seu link" },
-            { icon: Shield, color: "text-green-500", title: t('affiliate.benefit4Title') || "Pagamentos seguros", desc: t('affiliate.benefit4Desc') || "IBAN ou MB WAY — receba de forma simples" },
-          ].map(b => (
-            <Card key={b.title} className="text-center hover:shadow-md transition-shadow">
-              <CardContent className="pt-6 pb-4">
-                <b.icon className={`w-8 h-8 ${b.color} mx-auto mb-3`} />
-                <h3 className="font-bold text-sm mb-1">{b.title}</h3>
-                <p className="text-xs text-muted-foreground">{b.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+            {/* Hero bullets */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              {[
+                { icon: CheckCircle, text: "Sem investimento" },
+                { icon: Zap, text: "Registo em 2 minutos" },
+                { icon: TrendingUp, text: "Comissões automáticas e rastreadas" },
+              ].map((b) => (
+                <span key={b.text} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium">
+                  <b.icon className="w-4 h-4" /> {b.text}
+                </span>
+              ))}
+            </div>
 
-        {/* Signup Form */}
-        <div className="max-w-lg mx-auto">
-          <Card className="border-2 shadow-lg" id="signup-form">
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl flex items-center justify-center gap-2">
-                <Rocket className="w-5 h-5 text-primary" />
-                {t('affiliate.formTitle') || "Quero ser Afiliado"}
-              </CardTitle>
-              <CardDescription>{t('affiliate.formSubtitle') || "Preencha os dados abaixo e entre diretamente no seu painel"}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="af-name">{t('affiliate.fullName') || "Nome Completo"} *</Label>
-                  <Input
-                    id="af-name"
-                    placeholder="João Silva"
-                    value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
-                    required
-                    maxLength={100}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="af-email">Email *</Label>
-                  <Input
-                    id="af-email"
-                    type="email"
-                    placeholder="joao@exemplo.com"
-                    value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
-                    required
-                    maxLength={255}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="af-password">{t('affiliate.password') || "Password"} *</Label>
-                  <div className="relative">
-                    <Input
-                      id="af-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={t('affiliate.passwordPlaceholder') || "Mínimo 6 caracteres"}
-                      value={form.password}
-                      onChange={e => setForm({ ...form, password: e.target.value })}
-                      required
-                      minLength={6}
-                      maxLength={72}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="af-phone">{t('affiliate.phone') || "Telefone / WhatsApp"} *</Label>
-                  <Input
-                    id="af-phone"
-                    placeholder="+351 912 345 678"
-                    value={form.phone}
-                    onChange={e => setForm({ ...form, phone: e.target.value })}
-                    required
-                    maxLength={20}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="af-company">{t('affiliate.company') || "Empresa / Profissão"}</Label>
-                    <Input
-                      id="af-company"
-                      placeholder={t('common.optional') || "Opcional"}
-                      value={form.company}
-                      onChange={e => setForm({ ...form, company: e.target.value })}
-                      maxLength={100}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="af-city">{t('affiliate.city') || "Cidade / País"}</Label>
-                    <Input
-                      id="af-city"
-                      placeholder="Lisboa, PT"
-                      value={form.city}
-                      onChange={e => setForm({ ...form, city: e.target.value })}
-                      maxLength={100}
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Method Section */}
-                <div className="border-t pt-4 mt-2">
-                  <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
-                    <CreditCard className="w-4 h-4 text-primary" />
-                    {t('affiliate.paymentData') || "Dados de Pagamento"}
-                  </Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {t('affiliate.paymentDataDesc') || "Para recebermos as suas comissões, indique o método preferido."}
-                  </p>
-                  
-                  <div className="space-y-3">
-                    <Select value={payoutMethod} onValueChange={(v: "iban" | "mbway") => setPayoutMethod(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="iban">
-                          <span className="flex items-center gap-2">
-                            <CreditCard className="w-3.5 h-3.5" /> {t('affiliate.bankTransfer') || "Transferência Bancária (IBAN)"}
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="mbway">
-                          <span className="flex items-center gap-2">
-                            <Smartphone className="w-3.5 h-3.5" /> MB WAY
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <div className="space-y-1.5">
-                      <Label>{t('affiliate.holderName') || "Nome do titular"} *</Label>
-                      <Input
-                        placeholder={t('affiliate.holderNamePlaceholder') || "Nome completo do titular"}
-                        value={payoutData.holder_name}
-                        onChange={e => setPayoutData({ ...payoutData, holder_name: e.target.value })}
-                        maxLength={100}
-                      />
-                    </div>
-
-                    {payoutMethod === "iban" ? (
-                      <>
-                        <div className="space-y-1.5">
-                          <Label>IBAN *</Label>
-                          <Input
-                            placeholder="PT50 0000 0000 0000 0000 0000 0"
-                            value={payoutData.iban}
-                            onChange={e => setPayoutData({ ...payoutData, iban: e.target.value })}
-                            maxLength={34}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>{t('affiliate.bank') || "Banco"} ({t('common.optional') || "opcional"})</Label>
-                          <Input
-                            placeholder="Ex: Millennium, CGD, Novo Banco..."
-                            value={payoutData.bank}
-                            onChange={e => setPayoutData({ ...payoutData, bank: e.target.value })}
-                            maxLength={50}
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <Label>{t('affiliate.mbwayNumber') || "Número MB WAY"} *</Label>
-                        <Input
-                          placeholder="912 345 678"
-                          value={payoutData.mbway_phone}
-                          onChange={e => setPayoutData({ ...payoutData, mbway_phone: e.target.value })}
-                          maxLength={15}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 pt-2">
-                  <Checkbox
-                    id="af-terms"
-                    checked={acceptedTerms}
-                    onCheckedChange={(v) => setAcceptedTerms(v === true)}
-                  />
-                  <label htmlFor="af-terms" className="text-sm text-muted-foreground cursor-pointer leading-tight">
-                    {t('affiliate.termsAccept') || "Aceito os termos do programa de afiliados e confirmo que os dados são verdadeiros."}
-                  </label>
-                </div>
-
-                <Button type="submit" className="w-full h-12 text-base" disabled={loading || !acceptedTerms}>
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Award className="w-5 h-5 mr-2" />
-                      {t('affiliate.submitButton') || "Criar conta e entrar no painel"}
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  {t('affiliate.alreadyHaveAccount') || "Já tem conta?"}{" "}
-                  <a href="/auth" className="text-primary hover:underline font-medium">
-                    {t('affiliate.loginHere') || "Faça login aqui"}
-                  </a>
-                </p>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* How it works */}
-        <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold mb-8">{t('affiliate.howItWorks') || "Como funciona?"}</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { step: "1", title: t('affiliate.step1') || "Registe-se", desc: t('affiliate.step1Desc') || "Crie conta grátis — demora 2 minutos" },
-              { step: "2", title: t('affiliate.step2') || "Receba o link", desc: t('affiliate.step2Desc') || "Link exclusivo gerado na hora" },
-              { step: "3", title: t('affiliate.step3') || "Partilhe", desc: t('affiliate.step3Desc') || "Envie o link a oficinas que conhece" },
-              { step: "4", title: t('affiliate.step4') || "Ganhe", desc: t('affiliate.step4Desc') || "Comissão automática a cada pagamento" },
-            ].map(s => (
-              <div key={s.step} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary font-black text-xl flex items-center justify-center mx-auto mb-3">
-                  {s.step}
-                </div>
-                <h3 className="font-bold mb-1">{s.title}</h3>
-                <p className="text-sm text-muted-foreground">{s.desc}</p>
-              </div>
-            ))}
+            <Button size="lg" onClick={scrollToForm} className="h-14 px-8 text-base font-semibold shadow-lg">
+              <Rocket className="w-5 h-5 mr-2" /> Quero começar a ganhar
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-        </div>
 
-        {/* FAQ */}
-        <div className="mt-16 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8">{t('affiliate.faqTitle') || "Perguntas Frequentes"}</h2>
-          <div className="space-y-4">
+          {/* ── COMISSÕES ── */}
+          <div className="mb-14 md:mb-16">
+            <h2 className="text-2xl font-bold text-center mb-2">💰 Quanto pode ganhar?</h2>
+            <p className="text-center text-muted-foreground mb-8 text-sm">
+              Os ganhos são recorrentes enquanto o cliente se mantiver ativo.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-lg mx-auto">
+              <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden">
+                <div className="absolute top-3 right-3">
+                  <Badge variant="secondary" className="text-xs">Pro</Badge>
+                </div>
+                <CardContent className="pt-8 pb-6 text-center">
+                  <p className="text-5xl font-black text-primary mb-1">10%</p>
+                  <p className="font-semibold text-base mb-2">Plano Pro</p>
+                  <div className="bg-background/80 rounded-lg py-2 px-3">
+                    <p className="text-sm text-muted-foreground">49€/mês → <span className="font-bold text-foreground">4,90€/mês</span> por oficina</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/15 relative overflow-hidden">
+                <div className="absolute top-3 right-3">
+                  <Badge className="text-xs bg-primary text-primary-foreground">Garage</Badge>
+                </div>
+                <CardContent className="pt-8 pb-6 text-center">
+                  <p className="text-5xl font-black text-primary mb-1">20%</p>
+                  <p className="font-semibold text-base mb-2">Plano Garage</p>
+                  <div className="bg-background/80 rounded-lg py-2 px-3">
+                    <p className="text-sm text-muted-foreground">99€/mês → <span className="font-bold text-foreground">19,80€/mês</span> por oficina</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* ── COMO FUNCIONA ── */}
+          <div className="mb-14 md:mb-16">
+            <h2 className="text-2xl font-bold text-center mb-2">🧭 Como funciona?</h2>
+            <p className="text-center text-muted-foreground mb-8 text-sm">
+              Não precisa de vender — apenas partilhar o link.
+            </p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {[
+                { step: "1", icon: Users, title: "Registe-se gratuitamente", desc: "Crie a sua conta em 2 minutos — é 100% grátis." },
+                { step: "2", icon: Link2, title: "Receba o seu link", desc: "Link de afiliado exclusivo gerado automaticamente." },
+                { step: "3", icon: Share2, title: "Partilhe", desc: "Envie via WhatsApp, redes sociais ou contactos diretos." },
+                { step: "4", icon: Wallet, title: "Ganhe comissões", desc: "Receba automaticamente por cada oficina que ativar um plano." },
+              ].map((s) => (
+                <Card key={s.step} className="text-center border hover:shadow-md transition-shadow">
+                  <CardContent className="pt-6 pb-5">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 relative">
+                      <s.icon className="w-5 h-5 text-primary" />
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+                        {s.step}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-sm mb-1">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* ── BENEFÍCIOS ── */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-14 md:mb-16">
             {[
-              { q: t('affiliate.faq1Q') || "Quanto custa ser afiliado?", a: t('affiliate.faq1A') || "Nada! O registo é 100% gratuito." },
-              { q: t('affiliate.faq2Q') || "Quando recebo as comissões?", a: t('affiliate.faq2A') || "As comissões são calculadas automaticamente e pagas mensalmente via IBAN ou MB WAY." },
-              { q: t('affiliate.faq3Q') || "Posso ver quantas oficinas se registaram pelo meu link?", a: t('affiliate.faq3A') || "Sim! No seu painel de afiliado, tem acesso a todas as métricas em tempo real." },
-            ].map(f => (
-              <Card key={f.q} className="hover:shadow-sm transition-shadow">
-                <CardContent className="pt-5 pb-4">
-                  <h3 className="font-semibold text-sm mb-1">{f.q}</h3>
-                  <p className="text-sm text-muted-foreground">{f.a}</p>
+              { icon: DollarSign, color: "text-primary", title: "Sem investimento", desc: "Cadastre-se grátis e comece imediatamente" },
+              { icon: Zap, color: "text-amber-500", title: "Link automático", desc: "Receba o seu link exclusivo na hora" },
+              { icon: BarChart3, color: "text-blue-500", title: "Rastreio total", desc: "Veja em tempo real quem entrou pelo seu link" },
+              { icon: Shield, color: "text-green-500", title: "Pagamentos seguros", desc: "IBAN ou MB WAY — receba de forma simples" },
+            ].map((b) => (
+              <Card key={b.title} className="text-center hover:shadow-md transition-shadow">
+                <CardContent className="pt-6 pb-4">
+                  <b.icon className={`w-8 h-8 ${b.color} mx-auto mb-3`} />
+                  <h3 className="font-bold text-sm mb-1">{b.title}</h3>
+                  <p className="text-xs text-muted-foreground">{b.desc}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
+
+          {/* ── FORMULÁRIO ── */}
+          <div className="max-w-lg mx-auto" id="signup-form">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold mb-2">🚀 Crie a sua conta</h2>
+              <p className="text-muted-foreground text-sm">
+                Crie a sua conta e comece a ganhar comissões em minutos.
+              </p>
+            </div>
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-lg flex items-center justify-center gap-2">
+                  <Rocket className="w-5 h-5 text-primary" />
+                  Quero ser Afiliado
+                </CardTitle>
+                <CardDescription>Preencha os dados abaixo e entre diretamente no seu painel</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="af-name">{t('affiliate.fullName') || "Nome Completo"} *</Label>
+                    <Input id="af-name" placeholder="João Silva" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required maxLength={100} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="af-email">Email *</Label>
+                    <Input id="af-email" type="email" placeholder="joao@exemplo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required maxLength={255} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="af-password">{t('affiliate.password') || "Password"} *</Label>
+                    <div className="relative">
+                      <Input id="af-password" type={showPassword ? "text" : "password"} placeholder={t('affiliate.passwordPlaceholder') || "Mínimo 6 caracteres"} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} maxLength={72} className="pr-10" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="af-phone">{t('affiliate.phone') || "Telefone / WhatsApp"} *</Label>
+                    <Input id="af-phone" placeholder="+351 912 345 678" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required maxLength={20} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="af-company">{t('affiliate.company') || "Empresa / Profissão"}</Label>
+                      <Input id="af-company" placeholder={t('common.optional') || "Opcional"} value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} maxLength={100} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="af-city">{t('affiliate.city') || "Cidade / País"}</Label>
+                      <Input id="af-city" placeholder="Lisboa, PT" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} maxLength={100} />
+                    </div>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="border-t pt-4 mt-2">
+                    <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                      {t('affiliate.paymentData') || "Dados de Pagamento"}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {t('affiliate.paymentDataDesc') || "Para recebermos as suas comissões, indique o método preferido."}
+                    </p>
+                    <div className="space-y-3">
+                      <Select value={payoutMethod} onValueChange={(v: "iban" | "mbway") => setPayoutMethod(v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="iban">
+                            <span className="flex items-center gap-2"><CreditCard className="w-3.5 h-3.5" /> Transferência Bancária (IBAN)</span>
+                          </SelectItem>
+                          <SelectItem value="mbway">
+                            <span className="flex items-center gap-2"><Smartphone className="w-3.5 h-3.5" /> MB WAY</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="space-y-1.5">
+                        <Label>{t('affiliate.holderName') || "Nome do titular"} *</Label>
+                        <Input placeholder={t('affiliate.holderNamePlaceholder') || "Nome completo do titular"} value={payoutData.holder_name} onChange={e => setPayoutData({ ...payoutData, holder_name: e.target.value })} maxLength={100} />
+                      </div>
+                      {payoutMethod === "iban" ? (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label>IBAN *</Label>
+                            <Input placeholder="PT50 0000 0000 0000 0000 0000 0" value={payoutData.iban} onChange={e => setPayoutData({ ...payoutData, iban: e.target.value })} maxLength={34} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>{t('affiliate.bank') || "Banco"} ({t('common.optional') || "opcional"})</Label>
+                            <Input placeholder="Ex: Millennium, CGD, Novo Banco..." value={payoutData.bank} onChange={e => setPayoutData({ ...payoutData, bank: e.target.value })} maxLength={50} />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <Label>{t('affiliate.mbwayNumber') || "Número MB WAY"} *</Label>
+                          <Input placeholder="912 345 678" value={payoutData.mbway_phone} onChange={e => setPayoutData({ ...payoutData, mbway_phone: e.target.value })} maxLength={15} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 pt-2">
+                    <Checkbox id="af-terms" checked={acceptedTerms} onCheckedChange={(v) => setAcceptedTerms(v === true)} />
+                    <label htmlFor="af-terms" className="text-sm text-muted-foreground cursor-pointer leading-tight">
+                      {t('affiliate.termsAccept') || "Aceito os termos do programa de afiliados e confirmo que os dados são verdadeiros."}
+                    </label>
+                  </div>
+
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading || !acceptedTerms}>
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Award className="w-5 h-5 mr-2" />
+                        Quero começar a ganhar
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    {t('affiliate.alreadyHaveAccount') || "Já tem conta?"}{" "}
+                    <a href="/auth" className="text-primary hover:underline font-medium">
+                      {t('affiliate.loginHere') || "Faça login aqui"}
+                    </a>
+                  </p>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── FAQ ── */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-8">❓ Perguntas Frequentes</h2>
+            <div className="space-y-4">
+              {[
+                { q: "Quanto custa ser afiliado?", a: "Nada! O registo é 100% gratuito. Não precisa de investir nada para começar." },
+                { q: "Quando recebo as comissões?", a: "As comissões são calculadas automaticamente e pagas mensalmente via IBAN ou MB WAY." },
+                { q: "Posso ver quantas oficinas se registaram pelo meu link?", a: "Sim! No seu painel de afiliado, tem acesso a todas as métricas em tempo real." },
+                { q: "Preciso de experiência em vendas?", a: "Não. Basta partilhar o seu link com oficinas que conhece. O GarageFlow faz o resto." },
+              ].map((f) => (
+                <Card key={f.q} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="pt-5 pb-4">
+                    <h3 className="font-semibold text-sm mb-1">{f.q}</h3>
+                    <p className="text-sm text-muted-foreground">{f.a}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* ── CTA FINAL ── */}
+          <div className="mt-16 text-center pb-8">
+            <p className="text-lg font-semibold mb-4">Pronto para começar a ganhar?</p>
+            <Button size="lg" onClick={scrollToForm} className="h-14 px-8 text-base font-semibold shadow-lg">
+              <Rocket className="w-5 h-5 mr-2" /> Quero começar a ganhar
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+
         </div>
-      </div>
       </div>
     </LandingLayout>
   );

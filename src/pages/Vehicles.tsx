@@ -14,6 +14,7 @@ import VehiclePassport from "@/components/VehiclePassport";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
+import { completeOnboarding } from "@/hooks/useOnboardingStatus";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -76,6 +77,9 @@ export default function Vehicles() {
 
     if (error) toast.error(error.message);
     else {
+      if (!editingId) {
+        completeOnboarding();
+      }
       toast.success(editingId ? t('vehicles.updated') : t('vehicles.created'));
       setOpen(false);
       setEditingId(null);

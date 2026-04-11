@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { completeOnboarding } from "@/hooks/useOnboardingStatus";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -153,7 +154,11 @@ export default function QuoteForm() {
       });
 
       if (error) toast.error(error.message);
-      else { toast.success(t('quotes.created')); navigate("/quotes"); }
+      else {
+        completeOnboarding();
+        toast.success(t('quotes.created'));
+        navigate("/quotes");
+      }
     }
     setLoading(false);
   };

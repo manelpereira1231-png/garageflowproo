@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import AutoOnboarding, { OnboardingBackupButton } from "@/components/AutoOnboarding";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 interface KPIData {
   revenue: number;
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
+  const { isGuidedMode, completeOnboarding } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -56,9 +58,6 @@ export default function Dashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(() => {
-    return localStorage.getItem('garageflow_onboarding_completed') !== 'true';
-  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -168,13 +167,6 @@ export default function Dashboard() {
         
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
-
-        // Auto-complete onboarding if user already has data
-        const hasData = totalClients > 0 && (quotesRes.count || 0) > 0;
-        if (hasData && localStorage.getItem('garageflow_onboarding_completed') !== 'true') {
-          localStorage.setItem('garageflow_onboarding_completed', 'true');
-          setIsNewUser(false);
-        }
 
         setKpis({
           revenue,
@@ -356,7 +348,7 @@ export default function Dashboard() {
       <OnboardingBackupButton />
 
       {/* Welcome message for new users */}
-      {isNewUser && dataLoaded && (
+      {isGuidedMode && dataLoaded && (
         <div className="text-center py-6 space-y-3">
           <h2 className="text-2xl sm:text-3xl font-bold">
             {t('dashboard.welcome') || 'Bem-vindo ao GarageFlow'} 👋
@@ -368,10 +360,7 @@ export default function Dashboard() {
             variant="ghost"
             size="sm"
             className="text-xs text-muted-foreground"
-            onClick={() => {
-              localStorage.setItem('garageflow_onboarding_completed', 'true');
-              setIsNewUser(false);
-            }}
+            onClick={completeOnboarding}
           >
             {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
           </Button>
@@ -402,7 +391,7 @@ export default function Dashboard() {
       </div>
 
       {/* === Sections hidden for new users === */}
-      {!isNewUser && (<>
+      {!isGuidedMode && (<>
 
       {/* Trust Signal */}
       {dataLoaded && (

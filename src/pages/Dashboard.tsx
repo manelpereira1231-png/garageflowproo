@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import OnboardingChecklist from "@/components/OnboardingChecklist";
 import ShopCompleteness from "@/components/ShopCompleteness";
+import AutoOnboarding from "@/components/AutoOnboarding";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
 interface KPIData {
@@ -319,6 +320,9 @@ export default function Dashboard() {
           <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
         </button>
       </div>
+
+      {/* Auto Onboarding Bot */}
+      <AutoOnboarding />
 
       {/* Onboarding */}
       <OnboardingChecklist />

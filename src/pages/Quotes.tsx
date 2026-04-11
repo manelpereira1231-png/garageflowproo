@@ -249,11 +249,25 @@ export default function Quotes() {
         <Input placeholder={t('quotes.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {/* Empty state CTA */}
+      {totalCount === 0 && (
+        <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
+          <span className="text-4xl sm:text-5xl block mb-3">📋</span>
+          <h3 className="text-lg font-bold mb-1">{t('quotes.empty') || 'Ainda sem orçamentos'}</h3>
+          <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+            {'Crie o seu primeiro orçamento e comece a gerar receita'}
+          </p>
+          <Button size="lg" onClick={handleNewQuote} disabled={isLimitReached} className="px-6">
+            <Plus className="w-4 h-4 mr-2" />{t('quotes.new')}
+          </Button>
+        </div>
+      )}
+
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {totalCount > 0 && filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
-            {totalCount === 0 ? t('quotes.empty') : t('quotes.noResults')}
+            {t('quotes.noResults')}
           </div>
         ) : filtered.map(q => (
           <div key={q.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
@@ -310,6 +324,7 @@ export default function Quotes() {
       </div>
 
       {/* Desktop: Table view */}
+      {totalCount > 0 && (
       <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
@@ -327,7 +342,7 @@ export default function Quotes() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0 ? t('quotes.empty') : t('quotes.noResults')}
+                  {t('quotes.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(q => (
@@ -389,6 +404,7 @@ export default function Quotes() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">

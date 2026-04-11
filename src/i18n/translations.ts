@@ -70,6 +70,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.subtitle': 'Visão geral da oficina',
+    'dashboard.welcome': 'Bem-vindo ao GarageFlow',
+    'dashboard.welcomeSubtitle': 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.',
     'dashboard.revenueMonth': 'Faturação Mês',
     'dashboard.profitMonth': 'Lucro Mês',
     'dashboard.servicesMonth': 'Serviços Mês',

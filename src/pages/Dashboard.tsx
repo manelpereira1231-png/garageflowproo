@@ -351,14 +351,15 @@ export default function Dashboard() {
       <AutoOnboarding />
       <OnboardingBackupButton />
 
-
-      {/* Trust Signal */}
-      {dataLoaded && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Shield className="w-3.5 h-3.5 text-success" />
-          <span>{t('dashboard.dataSaved')}</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>{t('dashboard.lastUpdate')}</span>
+      {/* Welcome message for new users */}
+      {isNewUser && dataLoaded && (
+        <div className="text-center py-6 space-y-3">
+          <h2 className="text-2xl sm:text-3xl font-bold">
+            {t('dashboard.welcome') || 'Bem-vindo ao GarageFlow'} 👋
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+            {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
+          </p>
         </div>
       )}
 

@@ -408,6 +408,8 @@ export default function AdminDashboard() {
           {operationalMetrics.map(kpi => renderKpiCard(kpi))}
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <div className="stat-card lg:col-span-2">
           <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.monthlyRevenue')}</h2>

@@ -231,7 +231,7 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   }
 
   // Legal disclaimer
-  const pageH = doc.internal.pageSize.getHeight();
+  // pageH already declared at top
   doc.setFillColor(245, 245, 245);
   doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
   doc.setTextColor(120, 120, 120);

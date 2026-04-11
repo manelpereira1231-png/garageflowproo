@@ -321,6 +321,9 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {/* Auto Onboarding Bot */}
+      <AutoOnboarding />
+
       {/* Onboarding */}
       <OnboardingChecklist />
       <ShopCompleteness />

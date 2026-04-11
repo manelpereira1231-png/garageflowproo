@@ -324,9 +324,6 @@ export default function Dashboard() {
       {/* Auto Onboarding Bot */}
       <AutoOnboarding />
 
-      {/* Onboarding */}
-      <OnboardingChecklist />
-      <ShopCompleteness />
 
       {/* Trust Signal */}
       {dataLoaded && (

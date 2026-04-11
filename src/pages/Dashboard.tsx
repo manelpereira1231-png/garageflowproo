@@ -170,7 +170,6 @@ export default function Dashboard() {
         const totalClients = allClientsRes.count || 0;
 
         // Auto-complete onboarding if user already has data
-        const totalClients = allClientsRes.count || 0;
         const hasData = totalClients > 0 && (quotesRes.count || 0) > 0;
         if (hasData && localStorage.getItem('garageflow_onboarding_completed') !== 'true') {
           localStorage.setItem('garageflow_onboarding_completed', 'true');

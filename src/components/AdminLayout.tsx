@@ -76,12 +76,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+    <>
+      {/* Force desktop layout on mobile for admin panel */}
+      <style>{`
+        .admin-desktop-force {
+          min-width: 1024px;
+        }
+      `}</style>
+      <div className="admin-desktop-force min-h-screen flex bg-background">
 
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 gradient-dark border-r border-sidebar-border flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className="sticky top-0 left-0 z-50 h-screen w-64 gradient-dark border-r border-sidebar-border flex flex-col shrink-0">
         <div className="h-16 flex items-center px-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
@@ -92,9 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="text-xs ml-1 text-muted-foreground">Admin</span>
             </span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto lg:hidden text-sidebar-foreground">
-            <X className="w-5 h-5" />
-          </button>
+        
         </div>
 
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
@@ -154,10 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <main className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
-          <Button variant="ghost" size="icon" className="lg:hidden mr-2" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-5 h-5" />
-          </Button>
+        <header className="h-16 border-b border-border flex items-center px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
           
           {/* Global search */}
           <div className="relative flex-1 max-w-md" ref={searchRef}>
@@ -217,6 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Suspense>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

@@ -71,7 +71,29 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   const { invoice, items, shop } = data;
   const cur = shop.currency === 'EUR' ? '€' : shop.currency;
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const lang = data.language || 'pt';
+  const isFreePlan = !data.plan || data.plan === 'free';
+
+  // FREE plan watermark — diagonal across page
+  if (isFreePlan) {
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    const centerX = pageW / 2;
+    const centerY = pageH / 2;
+    const watermarkText = 'GarageFlow FREE';
+    // Rotate text diagonally
+    const angle = -35;
+    const rad = (angle * Math.PI) / 180;
+    doc.text(watermarkText, centerX, centerY, {
+      align: 'center',
+      angle: angle,
+    });
+    doc.restoreGraphicsState();
+  }
 
   // Header bar
   doc.setFillColor(38, 38, 38);

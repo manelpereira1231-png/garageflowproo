@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import AutoOnboarding from "@/components/AutoOnboarding";
-import AutoOnboarding from "@/components/AutoOnboarding";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
 interface KPIData {

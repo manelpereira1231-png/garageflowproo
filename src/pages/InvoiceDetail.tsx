@@ -25,6 +25,7 @@ const statusColors: Record<string, string> = {
 
 export default function InvoiceDetail() {
   const { t } = useLanguage();
+  const { plan } = useSubscription();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<any>(null);

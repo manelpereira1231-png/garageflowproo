@@ -190,11 +190,25 @@ export default function Vehicles() {
         <Input placeholder={t('vehicles.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {/* Empty state CTA */}
+      {totalCount === 0 && (
+        <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
+          <span className="text-4xl sm:text-5xl block mb-3">🚗</span>
+          <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || 'Ainda sem veículos'}</h3>
+          <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+            {'Adicione o primeiro veículo de um cliente'}
+          </p>
+          <Button size="lg" onClick={() => setOpen(true)} className="px-6">
+            <Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}
+          </Button>
+        </div>
+      )}
+
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {totalCount > 0 && filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
-            {totalCount === 0 ? t('vehicles.empty') : t('vehicles.noResults')}
+            {t('vehicles.noResults')}
           </div>
         ) : filtered.map(v => (
           <div key={v.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
@@ -220,6 +234,7 @@ export default function Vehicles() {
       </div>
 
       {/* Desktop: Table view */}
+      {totalCount > 0 && (
       <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
@@ -236,7 +251,7 @@ export default function Vehicles() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0 ? t('vehicles.empty') : t('vehicles.noResults')}
+                  {t('vehicles.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(v => (
@@ -269,6 +284,7 @@ export default function Vehicles() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">

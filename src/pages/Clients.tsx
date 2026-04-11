@@ -168,11 +168,25 @@ export default function Clients() {
         <Input placeholder={t('clients.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {/* Empty state CTA */}
+      {totalCount === 0 && (
+        <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
+          <span className="text-4xl sm:text-5xl block mb-3">👤</span>
+          <h3 className="text-lg font-bold mb-1">{t('clients.empty') || 'Ainda sem clientes'}</h3>
+          <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+            {'Crie o seu primeiro cliente para começar a usar o sistema'}
+          </p>
+          <Button size="lg" onClick={() => setOpen(true)} className="px-6">
+            <Plus className="w-4 h-4 mr-2" />{t('clients.new')}
+          </Button>
+        </div>
+      )}
+
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {totalCount > 0 && filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
-            {totalCount === 0 ? t('clients.empty') : t('clients.noResults')}
+            {t('clients.noResults')}
           </div>
         ) : filtered.map(client => (
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
@@ -194,6 +208,7 @@ export default function Clients() {
       </div>
 
       {/* Desktop: Table view */}
+      {totalCount > 0 && (
       <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
@@ -209,7 +224,7 @@ export default function Clients() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0 ? t('clients.empty') : t('clients.noResults')}
+                  {t('clients.noResults')}
                 </TableCell>
               </TableRow>
             ) : filtered.map(client => (
@@ -243,6 +258,7 @@ export default function Clients() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

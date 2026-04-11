@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "react-router-dom";
@@ -347,48 +347,90 @@ export default function Dashboard() {
       <AutoOnboarding />
       <OnboardingBackupButton />
 
-      {/* Welcome message for new users */}
+      {/* Welcome + Next Step for guided mode */}
       {isGuidedMode && dataLoaded && (
-        <div className="text-center py-6 space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-bold">
-            {t('dashboard.welcome') || 'Bem-vindo ao GarageFlow'} 👋
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
-            {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
-          </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground"
-            onClick={completeOnboarding}
-          >
-            {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
-          </Button>
+        <div className="space-y-4">
+          <div className="text-center py-4 space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              {t('dashboard.welcome') || 'Bem-vindo ao GarageFlow'} 👋
+            </h2>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+              {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
+            </p>
+          </div>
+
+          {/* Single primary CTA — next step */}
+          <Link to="/clients" className="block">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/30 rounded-2xl p-6 sm:p-8 text-center hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 active:scale-[0.98] transition-all cursor-pointer group">
+              <span className="text-4xl sm:text-5xl block mb-3">👤</span>
+              <p className="text-lg sm:text-xl font-bold group-hover:text-primary transition-colors">
+                {t('dashboard.newClient') || 'Criar primeiro cliente'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {'O primeiro passo para começar a faturar'}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-semibold group-hover:shadow-lg transition-all">
+                {'Começar agora'} <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          </Link>
+
+          {/* Secondary actions — subtle */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: t('dashboard.newVehicle') || 'Veículo', href: "/vehicles", emoji: "🚗" },
+              { label: t('dashboard.newQuote') || 'Orçamento', href: "/quotes/new", emoji: "📋" },
+              { label: t('nav.settings') || 'Definições', href: "/settings", emoji: "⚙️" },
+            ].map((action) => (
+              <Link
+                key={action.label}
+                to={action.href}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border
+                  hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all text-center group"
+              >
+                <span className="text-xl">{action.emoji}</span>
+                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">{action.label}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground"
+              onClick={completeOnboarding}
+            >
+              {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Quick Actions — TOP for maximum visibility */}
-      <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">
-        <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          {[
-            { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },
-            { label: t('dashboard.newVehicle'), href: "/vehicles", emoji: "🚗" },
-            { label: t('dashboard.newQuote'), href: "/quotes/new", emoji: "📋" },
-            { label: t('dashboard.newService'), href: "/services/new", emoji: "🔧" },
-          ].map((action) => (
-            <Link
-              key={action.label}
-              to={action.href}
-              className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-3 sm:p-5 rounded-xl bg-card border-2 border-border
-                hover:border-primary hover:shadow-lg hover:shadow-primary/10 active:scale-95 sm:hover:-translate-y-0.5 transition-all text-center group"
-            >
-              <span className="text-2xl sm:text-3xl">{action.emoji}</span>
-              <span className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors leading-tight">{action.label}</span>
-            </Link>
-          ))}
+      {/* Quick Actions — full mode */}
+      {!isGuidedMode && (
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            {[
+              { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },
+              { label: t('dashboard.newVehicle'), href: "/vehicles", emoji: "🚗" },
+              { label: t('dashboard.newQuote'), href: "/quotes/new", emoji: "📋" },
+              { label: t('dashboard.newService'), href: "/services/new", emoji: "🔧" },
+            ].map((action) => (
+              <Link
+                key={action.label}
+                to={action.href}
+                className="flex flex-col items-center gap-1.5 sm:gap-2.5 p-3 sm:p-5 rounded-xl bg-card border-2 border-border
+                  hover:border-primary hover:shadow-lg hover:shadow-primary/10 active:scale-95 sm:hover:-translate-y-0.5 transition-all text-center group"
+              >
+                <span className="text-2xl sm:text-3xl">{action.emoji}</span>
+                <span className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors leading-tight">{action.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* === Sections hidden for new users === */}
       {!isGuidedMode && (<>

@@ -11,6 +11,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/pushNotifications";
+import ProgressiveSetup from "@/components/ProgressiveSetup";
 
 interface InvoiceItem {
   id: string;
@@ -300,6 +301,8 @@ export default function InvoiceForm() {
           {t('invoices.issueInvoice')}
         </Button>
       </div>
+      <ProgressiveSetup trigger="nif" />
+      <ProgressiveSetup trigger="address" />
     </div>
   );
 }

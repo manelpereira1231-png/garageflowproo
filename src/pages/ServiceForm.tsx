@@ -9,6 +9,7 @@ import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import ProgressiveSetup from "@/components/ProgressiveSetup";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
@@ -220,6 +221,7 @@ export default function ServiceForm() {
           {loading ? (editId ? t('services.saving') : t('services.creating')) : (editId ? t('services.save') : t('services.create'))}
         </Button>
       </form>
+      <ProgressiveSetup trigger="labor_rate" />
     </div>
   );
 }

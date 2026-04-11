@@ -364,6 +364,17 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
             {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
           </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => {
+              localStorage.setItem('garageflow_onboarding_completed', 'true');
+              setIsNewUser(false);
+            }}
+          >
+            {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
+          </Button>
         </div>
       )}
 

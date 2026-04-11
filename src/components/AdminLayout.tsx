@@ -12,20 +12,40 @@ import {
 } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 
-const navItems = [
-  { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
-  { path: "/admin/shops", label: "Oficinas", icon: Building2 },
-  { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
-  { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
-  { path: "/admin/alerts", label: "Alertas", icon: Bell },
-  { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
-  { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
-  { path: "/admin/adoption", label: "Adoção de Funcionalidades", icon: Activity },
-  { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
-  { path: "/admin/settings", label: "Configurações", icon: Settings },
-  { path: "/admin/logs", label: "Auditoria", icon: FileText },
-  { path: "/admin/users", label: "Utilizadores", icon: Users },
-  { path: "/admin/partners", label: "Parceiros", icon: Shield },
+const navSections = [
+  {
+    label: "Principal",
+    items: [
+      { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
+      { path: "/admin/shops", label: "Oficinas", icon: Building2 },
+      { path: "/admin/users", label: "Utilizadores", icon: Users },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
+      { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
+      { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Operações",
+    items: [
+      { path: "/admin/alerts", label: "Alertas", icon: Bell },
+      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
+      { path: "/admin/adoption", label: "Adoção", icon: Activity },
+      { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { path: "/admin/partners", label: "Parceiros", icon: Shield },
+      { path: "/admin/logs", label: "Auditoria", icon: FileText },
+      { path: "/admin/settings", label: "Configurações", icon: Settings },
+    ],
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -112,20 +132,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link key={item.path} to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
-                  isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                }`}>
-                <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                {item.label}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.label}>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link key={item.path} to={item.path}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+                        isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      }`}>
+                      <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
+                      {item.label}
+                      {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Admin profile */}

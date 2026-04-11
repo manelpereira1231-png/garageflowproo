@@ -119,6 +119,7 @@ export default function InvoiceDetail() {
       vehicleModel: (invoice.vehicles as any)?.model,
       vehiclePlate: (invoice.vehicles as any)?.plate,
       totalPaid,
+      plan,
     });
     doc.save(`${invoice.number}.pdf`);
   };

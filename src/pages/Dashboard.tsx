@@ -344,6 +344,7 @@ export default function Dashboard() {
 
       {/* Auto Onboarding Bot */}
       <AutoOnboarding />
+      <OnboardingBackupButton />
 
 
       {/* Trust Signal */}

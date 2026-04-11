@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

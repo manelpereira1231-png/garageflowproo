@@ -223,7 +223,6 @@ const publicRoutes = [
 
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isReady: authReady, user } = useAuthReady();
@@ -248,17 +247,7 @@ function AuthenticatedRoutes() {
         return;
       }
 
-      // Check if shop needs onboarding (no phone = just created from signup trigger)
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("phone, address, logo_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (shop && !shop.phone && !shop.address) {
-        setNeedsOnboarding(true);
-      }
-
+      // Shop exists — go directly to dashboard (progressive setup handles missing fields)
       setReady(true);
     };
     checkUserState();
@@ -306,8 +295,7 @@ function AuthenticatedRoutes() {
           {publicRoutes.map(r => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
-          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => setNeedsOnboarding(false)} />} />
-          {needsOnboarding && <Route path="*" element={<Navigate to="/onboarding" replace />} />}
+          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
           {shopRoutes.map(r => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}

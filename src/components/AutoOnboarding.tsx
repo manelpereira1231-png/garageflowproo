@@ -75,7 +75,10 @@ export default function AutoOnboarding() {
 
   // Check completion status
   const checkStatus = useCallback(async () => {
-    if (!shopId) return;
+    if (!shopId) {
+      setLoading(false);
+      return;
+    }
 
     const [clientsRes, vehiclesRes, quotesRes] = await Promise.all([
       supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),

@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Mail, Lock, User, ArrowLeft, Building2, MapPin, Globe } from "lucide-react";
+import { Wrench, Mail, Lock, User, ArrowLeft, Building2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { VAT_RATES } from "@/types/garage";
-
-const countries = Object.keys(VAT_RATES);
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 
@@ -25,8 +22,6 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
-  const [country, setCountry] = useState("Portugal");
-  const [nif, setNif] = useState("");
 
   // Capture and persist partner ID from URL or localStorage
   const urlPartnerId = searchParams.get('partner');
@@ -67,8 +62,6 @@ export default function Auth() {
             data: {
               owner_name: name,
               name: shopName || name,
-              shop_country: country,
-              shop_nif: nif,
               referral_code: refCode || undefined,
             },
             emailRedirectTo: window.location.origin,
@@ -178,20 +171,7 @@ export default function Auth() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-1.5 text-sm"><Building2 className="w-3.5 h-3.5" />{t('auth.shopName')}</Label>
-                  <Input value={shopName} onChange={e => setShopName(e.target.value)} maxLength={100} placeholder={t('auth.shopName')} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1.5 text-sm"><MapPin className="w-3.5 h-3.5" />{t('settings.country')}</Label>
-                    <Select value={country} onValueChange={setCountry}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">NIF</Label>
-                    <Input value={nif} onChange={e => setNif(e.target.value)} maxLength={20} placeholder={t('common.optional')} />
-                  </div>
+                  <Input value={shopName} onChange={e => setShopName(e.target.value)} maxLength={100} placeholder={`${t('auth.shopName')} (${t('common.optional')})`} />
                 </div>
               </>
             )}

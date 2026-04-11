@@ -4,6 +4,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import {
   CheckCircle2, Users, Car, FileText, Rocket, ArrowRight,
   MessageCircle, ChevronDown, ChevronUp, X,
@@ -52,6 +53,7 @@ const DISMISSED_KEY = "gf_auto_onboarding_dismissed";
 
 export default function AutoOnboarding() {
   const { isReady, user } = useAuthReady();
+  const { isGuidedMode } = useOnboardingStatus();
   const [shopId, setShopId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Record<Step, boolean>>({
     client: false,
@@ -70,7 +72,7 @@ export default function AutoOnboarding() {
 
   // Resolve shopId directly from DB — never depend on localStorage alone
   useEffect(() => {
-    if (!isReady || !user || dismissed) return;
+    if (!isReady || !user || dismissed || !isGuidedMode) return;
 
     const resolve = async () => {
       // Try localStorage first
@@ -106,11 +108,11 @@ export default function AutoOnboarding() {
     }, 2000);
 
     return () => clearInterval(retryInterval);
-  }, [isReady, user, dismissed]);
+  }, [dismissed, isGuidedMode, isReady, user]);
 
   // Check completion status
   const checkStatus = useCallback(async () => {
-    if (!shopId) return;
+    if (!shopId || !isGuidedMode) return;
 
     const [clientsRes, vehiclesRes, quotesRes] = await Promise.all([
       supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
@@ -144,22 +146,22 @@ export default function AutoOnboarding() {
 
     // Bot is confirmed needed — show it
     setVisible(true);
-  }, [shopId]);
+  }, [isGuidedMode, shopId]);
 
   // Initial check + polling every 5s
   useEffect(() => {
-    if (!shopId || dismissed) return;
+    if (!shopId || dismissed || !isGuidedMode) return;
 
     checkStatus();
     pollRef.current = setInterval(checkStatus, 5000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [checkStatus, shopId, dismissed]);
+  }, [checkStatus, dismissed, isGuidedMode, shopId]);
 
   // FALLBACK: If after 3s we have a user but no shopId resolved yet, force-show anyway
   useEffect(() => {
-    if (dismissed || visible) return;
+    if (dismissed || visible || !isGuidedMode) return;
     if (!isReady || !user) return;
 
     fallbackRef.current = setTimeout(() => {
@@ -171,11 +173,11 @@ export default function AutoOnboarding() {
     return () => {
       if (fallbackRef.current) clearTimeout(fallbackRef.current);
     };
-  }, [isReady, user, dismissed, visible]);
+  }, [dismissed, isGuidedMode, isReady, user, visible]);
 
   // Initial bot message — fires when visible
   useEffect(() => {
-    if (!visible || dismissed) return;
+    if (!visible || dismissed || !isGuidedMode) return;
 
     const timer = setTimeout(() => {
       setBotMessages(prev => {
@@ -186,11 +188,22 @@ export default function AutoOnboarding() {
       });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [visible, dismissed]);
+  }, [dismissed, isGuidedMode, visible]);
+
+  const allDone = completed.client && completed.vehicle && completed.quote;
+  const completedCount = Object.values(completed).filter(Boolean).length;
+  const progress = (completedCount / 3) * 100;
+
+  const getCurrentStep = (): Step | null => {
+    if (!completed.client) return "client";
+    if (!completed.vehicle) return "vehicle";
+    if (!completed.quote) return "quote";
+    return null;
+  };
 
   // Nudge timer (10s of inactivity)
   useEffect(() => {
-    if (allDone || dismissed || !visible) return;
+    if (allDone || dismissed || !visible || !isGuidedMode) return;
 
     nudgeTimerRef.current = setTimeout(() => {
       setShowNudge(true);
@@ -199,11 +212,11 @@ export default function AutoOnboarding() {
     return () => {
       if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
     };
-  }, [completed, dismissed, visible]);
+  }, [allDone, completed, dismissed, isGuidedMode, visible]);
 
   // Re-engagement (30s)
   useEffect(() => {
-    if (allDone || dismissed || !visible) return;
+    if (allDone || dismissed || !visible || !isGuidedMode) return;
 
     reengageTimerRef.current = setTimeout(() => {
       const currentStep = getCurrentStep();
@@ -218,18 +231,7 @@ export default function AutoOnboarding() {
     return () => {
       if (reengageTimerRef.current) clearTimeout(reengageTimerRef.current);
     };
-  }, [completed, dismissed, visible]);
-
-  const allDone = completed.client && completed.vehicle && completed.quote;
-  const completedCount = Object.values(completed).filter(Boolean).length;
-  const progress = (completedCount / 3) * 100;
-
-  const getCurrentStep = (): Step | null => {
-    if (!completed.client) return "client";
-    if (!completed.vehicle) return "vehicle";
-    if (!completed.quote) return "quote";
-    return null;
-  };
+  }, [allDone, completed, dismissed, isGuidedMode, visible]);
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "1");
@@ -239,16 +241,16 @@ export default function AutoOnboarding() {
 
   // Auto-dismiss when all done (after 15s)
   useEffect(() => {
-    if (allDone && !dismissed) {
+    if (allDone && !dismissed && isGuidedMode) {
       const timer = setTimeout(() => {
         handleDismiss();
       }, 15000);
       return () => clearTimeout(timer);
     }
-  }, [allDone, dismissed]);
+  }, [allDone, dismissed, isGuidedMode]);
 
   // Don't render if dismissed or not yet visible
-  if (dismissed || !visible) return null;
+  if (!isGuidedMode || dismissed || !visible) return null;
 
   const currentStep = getCurrentStep();
 
@@ -415,9 +417,13 @@ export default function AutoOnboarding() {
 export function OnboardingBackupButton() {
   const [show, setShow] = useState(false);
   const { isReady, user } = useAuthReady();
+  const { isGuidedMode } = useOnboardingStatus();
 
   useEffect(() => {
-    if (!isReady || !user) return;
+    if (!isReady || !user || !isGuidedMode) {
+      setShow(false);
+      return;
+    }
 
     const check = async () => {
       const shopId = localStorage.getItem("garageflow_active_shop");
@@ -439,14 +445,14 @@ export function OnboardingBackupButton() {
     };
 
     check();
-  }, [isReady, user]);
+  }, [isGuidedMode, isReady, user]);
 
   const handleClick = () => {
     localStorage.removeItem(DISMISSED_KEY);
     window.location.reload();
   };
 
-  if (!show) return null;
+  if (!isGuidedMode || !show) return null;
 
   // Don't show if bot is already visible (not dismissed)
   if (localStorage.getItem(DISMISSED_KEY) !== "1") return null;

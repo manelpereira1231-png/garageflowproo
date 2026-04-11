@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { completeOnboarding } from "@/hooks/useOnboardingStatus";
 
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
@@ -79,6 +80,9 @@ export default function Clients() {
 
     if (error) toast.error(error.message);
     else {
+      if (!editingId) {
+        completeOnboarding();
+      }
       toast.success(editingId ? t('clients.updated') : t('clients.created'));
       setOpen(false);
       setEditingId(null);

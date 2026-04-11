@@ -325,79 +325,68 @@ export default function AdminDashboard() {
     );
   }
 
-  const kpiCards = [
+  const heroMetrics = [
+    { label: "MRR (real)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success", sub: stats.discountImpact > 0 ? `−€${stats.discountImpact.toFixed(0)} desc.` : undefined },
+    { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: TrendingUp, color: "text-success" },
+    { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-primary" },
+    { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
+  ];
+
+  const shopMetrics = [
     { label: t('admin.dashboard.totalShops'), value: stats.totalShops, icon: Building2, color: "text-primary", link: "/admin/shops" },
     { label: t('admin.dashboard.activeShops'), value: stats.activeShops, icon: Building2, color: "text-success" },
     { label: t('admin.dashboard.suspended'), value: stats.suspendedShops, icon: Building2, color: "text-destructive" },
-    { label: "MRR (real)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success" },
-    { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: DollarSign, color: "text-success" },
-    { label: "ARPU", value: `€${stats.arpu.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
-    { label: t('admin.dashboard.ltvEstimated'), value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
-    { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
-    { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-info" },
-    { label: "Descontos (impacto)", value: stats.discountImpact > 0 ? `-€${stats.discountImpact.toFixed(0)}/mês` : "€0", icon: Percent, color: stats.discountImpact > 0 ? "text-warning" : "text-muted-foreground" },
     { label: t('admin.dashboard.inTrial'), value: stats.trialCount, icon: Clock, color: "text-warning" },
     { label: t('admin.dashboard.paying'), value: stats.paidCount, icon: DollarSign, color: "text-success" },
+  ];
+
+  const operationalMetrics = [
     { label: t('admin.dashboard.totalClients'), value: stats.totalClients, icon: Users, color: "text-primary" },
     { label: t('admin.dashboard.totalVehicles'), value: stats.totalVehicles, icon: Car, color: "text-primary" },
     { label: t('admin.dashboard.workOrders'), value: stats.totalWorkOrders, icon: Wrench, color: "text-primary" },
-    { label: t('admin.dashboard.totalRevenue'), value: `€${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
-    { label: t('admin.dashboard.avgTicket'), value: `€${stats.avgTicket.toFixed(2)}`, icon: TrendingUp, color: "text-primary" },
+    { label: t('admin.dashboard.totalRevenue'), value: `€${stats.totalRevenue.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: t('admin.dashboard.avgTicket'), value: `€${stats.avgTicket.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
+    { label: "ARPU", value: `€${stats.arpu.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
+    { label: t('admin.dashboard.ltvEstimated'), value: `€${stats.ltv.toFixed(0)}`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.pendingAlerts'), value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning", link: "/admin/alerts" },
   ];
 
-  const planPieData = [
-    { name: "Free", value: stats.planBreakdown.free },
-    { name: "Pro", value: stats.planBreakdown.pro },
-    { name: "Garage", value: stats.planBreakdown.garage },
-  ];
+  const renderKpiCard = (kpi: { label: string; value: string | number; icon: any; color: string; link?: string; sub?: string }, size: 'hero' | 'normal' = 'normal') => (
+    <div
+      key={kpi.label}
+      className={`stat-card flex items-center gap-3 ${kpi.link ? 'cursor-pointer hover:border-primary/30 transition-colors' : ''} ${size === 'hero' ? 'border-primary/10 bg-gradient-to-br from-card to-muted/30' : ''}`}
+      onClick={() => kpi.link && navigate(kpi.link)}
+    >
+      <div className={`${size === 'hero' ? 'w-11 h-11' : 'w-9 h-9'} rounded-lg bg-muted flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
+        <kpi.icon className={size === 'hero' ? 'w-5 h-5' : 'w-4 h-4'} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground truncate">{kpi.label}</p>
+        <p className={`${size === 'hero' ? 'text-2xl' : 'text-lg'} font-bold mono leading-tight`}>{kpi.value}</p>
+        {kpi.sub && <p className="text-[10px] text-warning mt-0.5">{kpi.sub}</p>}
+      </div>
+    </div>
+  );
 
-  // Funnel data
-  const funnelData = [
-    { stage: "Contas Criadas", count: stats.totalAccounts, color: "hsl(var(--muted-foreground))" },
-    { stage: "Free", count: stats.freeCount, color: "hsl(var(--muted-foreground))" },
-    { stage: "Em Trial", count: stats.trialCount, color: "hsl(var(--warning))" },
-    { stage: "Pagantes", count: stats.paidCount, color: "hsl(var(--success))" },
-    { stage: "Cancelados", count: stats.canceledCount, color: "hsl(var(--destructive))" },
-  ];
+      {/* Hero Financial Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {heroMetrics.map(kpi => renderKpiCard(kpi, 'hero'))}
+      </div>
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" /> {t('admin.dashboard.exportCSV')}
-          </Button>
-          <Button onClick={() => navigate("/admin/shops")} size="sm" className="gap-2">
-            <Building2 className="w-4 h-4" /> {t('admin.dashboard.manageShops')}
-          </Button>
-          <Button onClick={() => navigate("/admin/settings")} variant="outline" size="sm" className="gap-2">
-            <Zap className="w-4 h-4" /> {t('admin.dashboard.settings')}
-          </Button>
+      {/* Shop Metrics */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Oficinas & Subscrições</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {shopMetrics.map(kpi => renderKpiCard(kpi))}
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3">
-        {kpiCards.map((kpi) => (
-          <div
-            key={kpi.label}
-            className={`stat-card flex items-center gap-3 ${kpi.link ? 'cursor-pointer hover:border-primary/30 transition-colors' : ''}`}
-            onClick={() => kpi.link && navigate(kpi.link)}
-          >
-            <div className={`w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 ${kpi.color}`}>
-              <kpi.icon className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground truncate">{kpi.label}</p>
-              <p className="text-lg font-bold mono leading-tight">{kpi.value}</p>
-            </div>
-          </div>
-        ))}
+      {/* Operational Metrics */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Operacional</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {operationalMetrics.map(kpi => renderKpiCard(kpi))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

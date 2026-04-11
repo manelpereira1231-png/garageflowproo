@@ -12,20 +12,40 @@ import {
 } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 
-const navItems = [
-  { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
-  { path: "/admin/shops", label: "Oficinas", icon: Building2 },
-  { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
-  { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
-  { path: "/admin/alerts", label: "Alertas", icon: Bell },
-  { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
-  { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
-  { path: "/admin/adoption", label: "Adoção de Funcionalidades", icon: Activity },
-  { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
-  { path: "/admin/settings", label: "Configurações", icon: Settings },
-  { path: "/admin/logs", label: "Auditoria", icon: FileText },
-  { path: "/admin/users", label: "Utilizadores", icon: Users },
-  { path: "/admin/partners", label: "Parceiros", icon: Shield },
+const navSections = [
+  {
+    label: "Principal",
+    items: [
+      { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
+      { path: "/admin/shops", label: "Oficinas", icon: Building2 },
+      { path: "/admin/users", label: "Utilizadores", icon: Users },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
+      { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
+      { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Operações",
+    items: [
+      { path: "/admin/alerts", label: "Alertas", icon: Bell },
+      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
+      { path: "/admin/adoption", label: "Adoção", icon: Activity },
+      { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { path: "/admin/partners", label: "Parceiros", icon: Shield },
+      { path: "/admin/logs", label: "Auditoria", icon: FileText },
+      { path: "/admin/settings", label: "Configurações", icon: Settings },
+    ],
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -92,7 +92,7 @@ export default function Dashboard() {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-        const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes] = await Promise.all([
+        const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
             .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
             .eq("shop_id", shop.id)
@@ -136,21 +136,44 @@ export default function Dashboard() {
             .eq("type", "out")
             .order("created_at", { ascending: false })
             .limit(100),
+          // Faturas do mês para KPI de faturação real
+          supabase.from("invoices")
+            .select("total, subtotal, vat_total, status")
+            .eq("shop_id", shop.id)
+            .gte("created_at", monthStart),
+          // Todos os clientes ativos (não apagados)
+          supabase.from("clients")
+            .select("id", { count: "exact", head: true })
+            .eq("shop_id", shop.id)
+            .is("deleted_at", null),
         ]);
 
         const orders = ordersRes.data || [];
         const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-        const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
-        const profit = delivered.reduce((s, o) => s + (o.profit || 0), 0);
-        const uniqueClients = new Set((clientsRes.data || []).map(c => c.client_id));
+        
+        // Faturação: combinar work_orders completadas + faturas emitidas/pagas do mês
+        const woRevenue = delivered.reduce((s, o) => s + Number(o.total || 0), 0);
+        const woProfit = delivered.reduce((s, o) => s + Number(o.profit || 0), 0);
+        
+        const monthInvoices = (invoicesMonthRes.data || []).filter(
+          (i: any) => ['issued', 'paid', 'partial'].includes(i.status)
+        );
+        const invRevenue = monthInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
+        
+        // Usar o maior dos dois (evitar duplicação se fatura vem de work_order)
+        const revenue = Math.max(woRevenue, invRevenue);
+        const profit = woRevenue > 0 ? woProfit : (invRevenue * 0.3); // estimativa se só há faturas
+        
+        // Clientes ativos: total de clientes não apagados
+        const totalClients = allClientsRes.count || 0;
 
         setKpis({
           revenue,
-          profit,
+          profit: woRevenue > 0 ? woProfit : Math.round(profit * 100) / 100,
           serviceCount: orders.length,
-          avgTicket: delivered.length > 0 ? revenue / delivered.length : 0,
+          avgTicket: delivered.length > 0 ? woRevenue / delivered.length : (monthInvoices.length > 0 ? invRevenue / monthInvoices.length : 0),
           openQuotes: quotesRes.count || 0,
-          activeClients: uniqueClients.size,
+          activeClients: totalClients,
         });
 
         setRecentServices(orders.slice(0, 5));

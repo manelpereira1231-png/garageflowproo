@@ -96,9 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="text-xs ml-1 text-muted-foreground">Admin</span>
             </span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto lg:hidden text-sidebar-foreground">
-            <X className="w-5 h-5" />
-          </button>
+        
         </div>
 
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">

@@ -368,6 +368,26 @@ export default function AdminDashboard() {
     </div>
   );
 
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin.dashboard.subtitle')}</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={exportGlobalCSV} variant="outline" size="sm" className="gap-2">
+            <Download className="w-4 h-4" /> {t('admin.dashboard.exportCSV')}
+          </Button>
+          <Button onClick={() => navigate("/admin/shops")} size="sm" className="gap-2">
+            <Building2 className="w-4 h-4" /> {t('admin.dashboard.manageShops')}
+          </Button>
+          <Button onClick={() => navigate("/admin/settings")} variant="outline" size="sm" className="gap-2">
+            <Zap className="w-4 h-4" /> {t('admin.dashboard.settings')}
+          </Button>
+        </div>
+      </div>
+
       {/* Hero Financial Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {heroMetrics.map(kpi => renderKpiCard(kpi, 'hero'))}
@@ -388,8 +408,6 @@ export default function AdminDashboard() {
           {operationalMetrics.map(kpi => renderKpiCard(kpi))}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <div className="stat-card lg:col-span-2">
           <h2 className="text-lg font-semibold mb-4">{t('admin.dashboard.monthlyRevenue')}</h2>

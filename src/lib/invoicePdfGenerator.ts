@@ -14,6 +14,7 @@ interface InvoicePdfData {
   vehiclePlate?: string;
   totalPaid: number;
   language?: string;
+  plan?: string;
 }
 
 const labels: Record<string, Record<string, string>> = {

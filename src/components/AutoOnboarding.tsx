@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -51,34 +51,66 @@ const STEPS: StepConfig[] = [
 const DISMISSED_KEY = "gf_auto_onboarding_dismissed";
 
 export default function AutoOnboarding() {
-  const shopId = useActiveShopId();
+  const { isReady, user } = useAuthReady();
+  const [shopId, setShopId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Record<Step, boolean>>({
     client: false,
     vehicle: false,
     quote: false,
   });
-  const [loading, setLoading] = useState(true);
-  const [dismissed, setDismissed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === "1");
   const [expanded, setExpanded] = useState(true);
   const [showNudge, setShowNudge] = useState(false);
   const [botMessages, setBotMessages] = useState<string[]>([]);
   const nudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reengageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check if already dismissed
+  // Resolve shopId directly from DB — never depend on localStorage alone
   useEffect(() => {
-    if (localStorage.getItem(DISMISSED_KEY) === "1") {
-      setDismissed(true);
-    }
-  }, []);
+    if (!isReady || !user || dismissed) return;
+
+    const resolve = async () => {
+      // Try localStorage first
+      const stored = localStorage.getItem("garageflow_active_shop");
+      if (stored) {
+        setShopId(stored);
+        return;
+      }
+
+      // Fallback: query DB
+      const { data } = await supabase
+        .from("shops")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setShopId(data.id);
+        localStorage.setItem("garageflow_active_shop", data.id);
+      }
+    };
+
+    resolve();
+
+    // Retry every 2s if shopId not found (shop creation may be in-flight)
+    const retryInterval = setInterval(() => {
+      const stored = localStorage.getItem("garageflow_active_shop");
+      if (stored) {
+        setShopId(stored);
+        clearInterval(retryInterval);
+      }
+    }, 2000);
+
+    return () => clearInterval(retryInterval);
+  }, [isReady, user, dismissed]);
 
   // Check completion status
   const checkStatus = useCallback(async () => {
-    if (!shopId) {
-      setLoading(false);
-      return;
-    }
+    if (!shopId) return;
 
     const [clientsRes, vehiclesRes, quotesRes] = await Promise.all([
       supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
@@ -92,8 +124,14 @@ export default function AutoOnboarding() {
       quote: (quotesRes.count ?? 0) > 0,
     };
 
+    // If account already has all data → old user, auto-dismiss silently
+    if (newCompleted.client && newCompleted.vehicle && newCompleted.quote) {
+      localStorage.setItem(DISMISSED_KEY, "1");
+      setDismissed(true);
+      return;
+    }
+
     setCompleted(prev => {
-      // Detect newly completed steps and add bot messages
       const msgs: string[] = [];
       if (!prev.client && newCompleted.client) msgs.push("✅ Cliente criado com sucesso! Agora cria o primeiro veículo.");
       if (!prev.vehicle && newCompleted.vehicle) msgs.push("✅ Veículo criado! Último passo — cria um orçamento.");
@@ -104,36 +142,55 @@ export default function AutoOnboarding() {
       return newCompleted;
     });
 
-    setLoading(false);
+    // Bot is confirmed needed — show it
+    setVisible(true);
   }, [shopId]);
 
-  // Initial check + polling every 5s for auto-detection
+  // Initial check + polling every 5s
   useEffect(() => {
+    if (!shopId || dismissed) return;
+
     checkStatus();
     pollRef.current = setInterval(checkStatus, 5000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [checkStatus]);
+  }, [checkStatus, shopId, dismissed]);
 
-  // Initial bot message
+  // FALLBACK: If after 3s we have a user but no shopId resolved yet, force-show anyway
   useEffect(() => {
-    if (!loading && !allDone) {
-      const timer = setTimeout(() => {
-        setBotMessages(prev => {
-          if (prev.length === 0) {
-            return ["Olá 👋 Sou o assistente automático do GarageFlow. Vou guiar-te em 3 passos simples para configurares tudo!"];
-          }
-          return prev;
-        });
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
+    if (dismissed || visible) return;
+    if (!isReady || !user) return;
+
+    fallbackRef.current = setTimeout(() => {
+      if (!visible) {
+        setVisible(true);
+      }
+    }, 3000);
+
+    return () => {
+      if (fallbackRef.current) clearTimeout(fallbackRef.current);
+    };
+  }, [isReady, user, dismissed, visible]);
+
+  // Initial bot message — fires when visible
+  useEffect(() => {
+    if (!visible || dismissed) return;
+
+    const timer = setTimeout(() => {
+      setBotMessages(prev => {
+        if (prev.length === 0) {
+          return ["Olá 👋 Sou o assistente automático do GarageFlow. Vou guiar-te em 3 passos simples para configurares tudo!"];
+        }
+        return prev;
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [visible, dismissed]);
 
   // Nudge timer (10s of inactivity)
   useEffect(() => {
-    if (allDone || dismissed) return;
+    if (allDone || dismissed || !visible) return;
 
     nudgeTimerRef.current = setTimeout(() => {
       setShowNudge(true);
@@ -142,11 +199,11 @@ export default function AutoOnboarding() {
     return () => {
       if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
     };
-  }, [completed, dismissed]);
+  }, [completed, dismissed, visible]);
 
   // Re-engagement (30s)
   useEffect(() => {
-    if (allDone || dismissed) return;
+    if (allDone || dismissed || !visible) return;
 
     reengageTimerRef.current = setTimeout(() => {
       const currentStep = getCurrentStep();
@@ -161,7 +218,7 @@ export default function AutoOnboarding() {
     return () => {
       if (reengageTimerRef.current) clearTimeout(reengageTimerRef.current);
     };
-  }, [completed, dismissed]);
+  }, [completed, dismissed, visible]);
 
   const allDone = completed.client && completed.vehicle && completed.quote;
   const completedCount = Object.values(completed).filter(Boolean).length;
@@ -180,7 +237,7 @@ export default function AutoOnboarding() {
     if (pollRef.current) clearInterval(pollRef.current);
   };
 
-  // Auto-dismiss when all done (after showing success for 10s)
+  // Auto-dismiss when all done (after 15s)
   useEffect(() => {
     if (allDone && !dismissed) {
       const timer = setTimeout(() => {
@@ -190,7 +247,8 @@ export default function AutoOnboarding() {
     }
   }, [allDone, dismissed]);
 
-  if (dismissed || loading) return null;
+  // Don't render if dismissed or not yet visible
+  if (dismissed || !visible) return null;
 
   const currentStep = getCurrentStep();
 
@@ -347,5 +405,60 @@ export default function AutoOnboarding() {
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+/**
+ * Backup button — renders a "Começar configuração" button if onboarding was dismissed
+ * or never appeared. Clicking it resets the dismiss flag and forces the bot to show.
+ */
+export function OnboardingBackupButton() {
+  const [show, setShow] = useState(false);
+  const { isReady, user } = useAuthReady();
+
+  useEffect(() => {
+    if (!isReady || !user) return;
+
+    const check = async () => {
+      const shopId = localStorage.getItem("garageflow_active_shop");
+      if (!shopId) {
+        setShow(true);
+        return;
+      }
+
+      const [c, v, q] = await Promise.all([
+        supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+      ]);
+
+      const allDone = (c.count ?? 0) > 0 && (v.count ?? 0) > 0 && (q.count ?? 0) > 0;
+      if (!allDone) {
+        setShow(true);
+      }
+    };
+
+    check();
+  }, [isReady, user]);
+
+  const handleClick = () => {
+    localStorage.removeItem(DISMISSED_KEY);
+    window.location.reload();
+  };
+
+  if (!show) return null;
+
+  // Don't show if bot is already visible (not dismissed)
+  if (localStorage.getItem(DISMISSED_KEY) !== "1") return null;
+
+  return (
+    <Button
+      onClick={handleClick}
+      variant="outline"
+      className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
+    >
+      <Rocket className="w-4 h-4" />
+      Começar configuração
+    </Button>
   );
 }

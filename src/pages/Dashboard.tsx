@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -166,6 +167,10 @@ export default function Dashboard() {
         
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
+
+        // Detect new user: no clients, no vehicles, no quotes yet
+        const hasNoData = totalClients === 0 && (quotesRes.count || 0) === 0;
+        setIsNewUser(hasNoData);
 
         setKpis({
           revenue,
@@ -346,14 +351,15 @@ export default function Dashboard() {
       <AutoOnboarding />
       <OnboardingBackupButton />
 
-
-      {/* Trust Signal */}
-      {dataLoaded && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Shield className="w-3.5 h-3.5 text-success" />
-          <span>{t('dashboard.dataSaved')}</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>{t('dashboard.lastUpdate')}</span>
+      {/* Welcome message for new users */}
+      {isNewUser && dataLoaded && (
+        <div className="text-center py-6 space-y-3">
+          <h2 className="text-2xl sm:text-3xl font-bold">
+            {t('dashboard.welcome') || 'Bem-vindo ao GarageFlow'} 👋
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+            {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
+          </p>
         </div>
       )}
 
@@ -379,6 +385,19 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* === Sections hidden for new users === */}
+      {!isNewUser && (<>
+
+      {/* Trust Signal */}
+      {dataLoaded && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-3.5 h-3.5 text-success" />
+          <span>{t('dashboard.dataSaved')}</span>
+          <span className="text-muted-foreground/50">·</span>
+          <span>{t('dashboard.lastUpdate')}</span>
+        </div>
+      )}
 
       {/* Plan Banner */}
       {(plan === 'free' || isTrialing) && (
@@ -631,6 +650,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      </>)}
     </div>
   );
 }

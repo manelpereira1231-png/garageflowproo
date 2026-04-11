@@ -70,6 +70,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.subtitle': 'Visão geral da oficina',
+    'dashboard.welcome': 'Bem-vindo ao GarageFlow',
+    'dashboard.welcomeSubtitle': 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.',
     'dashboard.revenueMonth': 'Faturação Mês',
     'dashboard.profitMonth': 'Lucro Mês',
     'dashboard.servicesMonth': 'Serviços Mês',
@@ -1676,6 +1678,8 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'dashboard.title': 'Dashboard',
     'dashboard.subtitle': 'Workshop overview',
+    'dashboard.welcome': 'Welcome to GarageFlow',
+    'dashboard.welcomeSubtitle': 'Get started in 3 simple steps: create a client, a vehicle and a quote.',
     'dashboard.revenueMonth': 'Monthly Revenue',
     'dashboard.profitMonth': 'Monthly Profit',
     'dashboard.servicesMonth': 'Monthly Services',
@@ -3257,6 +3261,8 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'dashboard.title': 'Panel',
     'dashboard.subtitle': 'Resumen del taller',
+    'dashboard.welcome': 'Bienvenido a GarageFlow',
+    'dashboard.welcomeSubtitle': 'Comienza en 3 pasos simples: crea un cliente, un vehículo y un presupuesto.',
     'dashboard.revenueMonth': 'Facturación Mes',
     'dashboard.profitMonth': 'Beneficio Mes',
     'dashboard.servicesMonth': 'Servicios Mes',
@@ -4842,6 +4848,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     'dashboard.title': 'Painel',
     'dashboard.subtitle': 'Visão geral da oficina',
+    'dashboard.welcome': 'Bem-vindo ao GarageFlow',
+    'dashboard.welcomeSubtitle': 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.',
     'dashboard.revenueMonth': 'Faturamento Mês',
     'dashboard.profitMonth': 'Lucro Mês',
     'dashboard.servicesMonth': 'Serviços Mês',

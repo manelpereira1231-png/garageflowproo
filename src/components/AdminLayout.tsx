@@ -71,22 +71,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   }, []);
 
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <>
-      {/* Force desktop layout on mobile for admin panel */}
-      <style>{`
-        .admin-desktop-force {
-          min-width: 1024px;
-        }
-      `}</style>
-      <div className="admin-desktop-force min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <aside className="sticky top-0 left-0 z-50 h-screen w-64 gradient-dark border-r border-sidebar-border flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-5 border-b border-sidebar-border">
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 gradient-dark border-r border-sidebar-border flex flex-col
+        transition-transform duration-300 ease-in-out
+        lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <Shield className="w-4 h-4 text-primary-foreground" />
@@ -96,14 +107,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="text-xs ml-1 text-muted-foreground">Admin</span>
             </span>
           </div>
-        
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
+              <Link key={item.path} to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                   isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 }`}>
@@ -130,7 +143,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="px-3 pb-2">
           <button onClick={async () => {
-            // Ensure super admin has an active shop set before navigating
             const stored = localStorage.getItem("garageflow_active_shop");
             if (!stored) {
               const { data: shops } = await supabase.from("shops").select("id").limit(1);
@@ -155,14 +167,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 border-b border-border flex items-center px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
-          
+      {/* Main content */}
+      <main className="flex-1 flex flex-col min-h-screen min-w-0">
+        <header className="h-14 lg:h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
+          {/* Mobile menu button */}
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent">
+            <Menu className="w-5 h-5" />
+          </button>
+
           {/* Global search */}
           <div className="relative flex-1 max-w-md" ref={searchRef}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Pesquisar oficinas, emails, IDs..." 
+              placeholder="Pesquisar oficinas..." 
               value={globalSearch} 
               onChange={e => setGlobalSearch(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowResults(true)}
@@ -187,7 +204,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            {/* Language selector */}
             <Select value={language} onValueChange={(v: 'pt' | 'en' | 'es') => setLanguage(v)}>
               <SelectTrigger className="w-[70px] h-9">
                 <Globe className="w-3.5 h-3.5 mr-1" />
@@ -200,13 +216,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Painel de Administração</span>
+              <span className="text-sm font-medium text-muted-foreground">Painel de Administração</span>
             </div>
           </div>
         </header>
-        <div className="flex-1 p-4 lg:p-6">
+
+        <div className="flex-1 p-3 sm:p-4 lg:p-6">
           <Suspense fallback={
             <div className="flex items-center justify-center h-64">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -216,7 +233,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Suspense>
         </div>
       </main>
-      </div>
-    </>
+    </div>
   );
 }

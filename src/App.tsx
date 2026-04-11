@@ -224,7 +224,6 @@ const publicRoutes = [
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
   const [ready, setReady] = useState(false);
-  const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isReady: authReady, user } = useAuthReady();
 

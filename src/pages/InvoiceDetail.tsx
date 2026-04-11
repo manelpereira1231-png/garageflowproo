@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -24,6 +25,7 @@ const statusColors: Record<string, string> = {
 
 export default function InvoiceDetail() {
   const { t } = useLanguage();
+  const { plan } = useSubscription();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<any>(null);
@@ -117,6 +119,7 @@ export default function InvoiceDetail() {
       vehicleModel: (invoice.vehicles as any)?.model,
       vehiclePlate: (invoice.vehicles as any)?.plate,
       totalPaid,
+      plan,
     });
     doc.save(`${invoice.number}.pdf`);
   };

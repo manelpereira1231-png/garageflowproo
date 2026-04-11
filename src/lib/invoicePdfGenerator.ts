@@ -14,6 +14,7 @@ interface InvoicePdfData {
   vehiclePlate?: string;
   totalPaid: number;
   language?: string;
+  plan?: string;
 }
 
 const labels: Record<string, Record<string, string>> = {
@@ -70,7 +71,29 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   const { invoice, items, shop } = data;
   const cur = shop.currency === 'EUR' ? '€' : shop.currency;
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const lang = data.language || 'pt';
+  const isFreePlan = !data.plan || data.plan === 'free';
+
+  // FREE plan watermark — diagonal across page
+  if (isFreePlan) {
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    const centerX = pageW / 2;
+    const centerY = pageH / 2;
+    const watermarkText = 'GarageFlow FREE';
+    // Rotate text diagonally
+    const angle = -35;
+    const rad = (angle * Math.PI) / 180;
+    doc.text(watermarkText, centerX, centerY, {
+      align: 'center',
+      angle: angle,
+    });
+    doc.restoreGraphicsState();
+  }
 
   // Header bar
   doc.setFillColor(38, 38, 38);
@@ -208,7 +231,7 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   }
 
   // Legal disclaimer
-  const pageH = doc.internal.pageSize.getHeight();
+  // pageH already declared at top
   doc.setFillColor(245, 245, 245);
   doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
   doc.setTextColor(120, 120, 120);
@@ -224,6 +247,20 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   if (shop.nif) footerParts.push(`NIF: ${shop.nif}`);
   if (shop.address) footerParts.push(shop.address);
   doc.text(footerParts.join(' | '), pageW / 2, pageH - 8, { align: "center" });
+
+  // FREE plan upgrade nudge
+  if (isFreePlan) {
+    const upgradeLabels: Record<string, string> = {
+      pt: 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow-pt.lovable.app/billing',
+      en: 'Created with GarageFlow — Free Version | Remove this watermark by upgrading to Pro at garageflow-pt.lovable.app/billing',
+      es: 'Creado con GarageFlow — Versión Gratuita | Elimine esta marca actualizando al plan Pro en garageflow-pt.lovable.app/billing',
+      'pt-BR': 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow-pt.lovable.app/billing',
+    };
+    doc.setTextColor(180, 140, 60);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "italic");
+    doc.text(upgradeLabels[lang] || upgradeLabels.pt, pageW / 2, pageH - 3, { align: "center" });
+  }
 
   return doc;
 }

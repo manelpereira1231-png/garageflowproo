@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {

@@ -386,6 +386,19 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* === Sections hidden for new users === */}
+      {!isNewUser && (<>
+
+      {/* Trust Signal */}
+      {dataLoaded && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-3.5 h-3.5 text-success" />
+          <span>{t('dashboard.dataSaved')}</span>
+          <span className="text-muted-foreground/50">·</span>
+          <span>{t('dashboard.lastUpdate')}</span>
+        </div>
+      )}
+
       {/* Plan Banner */}
       {(plan === 'free' || isTrialing) && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

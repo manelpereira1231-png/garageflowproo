@@ -168,6 +168,10 @@ export default function Dashboard() {
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
 
+        // Detect new user: no clients, no vehicles, no quotes yet
+        const hasNoData = totalClients === 0 && (quotesRes.count || 0) === 0;
+        setIsNewUser(hasNoData);
+
         setKpis({
           revenue,
           profit: woRevenue > 0 ? woProfit : Math.round(profit * 100) / 100,

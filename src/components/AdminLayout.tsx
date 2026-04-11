@@ -221,6 +221,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Suspense>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

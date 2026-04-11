@@ -56,7 +56,9 @@ export default function Dashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(() => {
+    return localStorage.getItem('garageflow_onboarding_completed') !== 'true';
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -72,7 +74,6 @@ export default function Dashboard() {
       try {
         let shopId = activeShopId;
         if (!shopId) {
-          // Fallback: try to get from user's shops
           const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
           if (shop) {
             shopId = shop.id;

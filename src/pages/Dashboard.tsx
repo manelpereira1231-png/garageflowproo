@@ -56,7 +56,9 @@ export default function Dashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(() => {
+    return localStorage.getItem('garageflow_onboarding_completed') !== 'true';
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -72,7 +74,6 @@ export default function Dashboard() {
       try {
         let shopId = activeShopId;
         if (!shopId) {
-          // Fallback: try to get from user's shops
           const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
           if (shop) {
             shopId = shop.id;
@@ -168,9 +169,12 @@ export default function Dashboard() {
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
 
-        // Detect new user: no clients, no vehicles, no quotes yet
-        const hasNoData = totalClients === 0 && (quotesRes.count || 0) === 0;
-        setIsNewUser(hasNoData);
+        // Auto-complete onboarding if user already has data
+        const hasData = totalClients > 0 && (quotesRes.count || 0) > 0;
+        if (hasData && localStorage.getItem('garageflow_onboarding_completed') !== 'true') {
+          localStorage.setItem('garageflow_onboarding_completed', 'true');
+          setIsNewUser(false);
+        }
 
         setKpis({
           revenue,
@@ -360,6 +364,17 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
             {t('dashboard.welcomeSubtitle') || 'Comece em 3 passos simples: crie um cliente, um veículo e um orçamento.'}
           </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => {
+              localStorage.setItem('garageflow_onboarding_completed', 'true');
+              setIsNewUser(false);
+            }}
+          >
+            {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
+          </Button>
         </div>
       )}
 

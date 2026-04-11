@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import OnboardingChecklist from "@/components/OnboardingChecklist";
-import ShopCompleteness from "@/components/ShopCompleteness";
 import AutoOnboarding from "@/components/AutoOnboarding";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
@@ -324,9 +322,6 @@ export default function Dashboard() {
       {/* Auto Onboarding Bot */}
       <AutoOnboarding />
 
-      {/* Onboarding */}
-      <OnboardingChecklist />
-      <ShopCompleteness />
 
       {/* Trust Signal */}
       {dataLoaded && (

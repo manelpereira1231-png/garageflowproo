@@ -239,7 +239,7 @@ export default function AdminDashboard() {
         };
       }));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchStats();

@@ -76,6 +76,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const [shopName, setShopName] = useState("");
+  const [isCarityPartner, setIsCarityPartner] = useState(false);
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,12 @@ const navSections = [
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
       { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
+    ],
+  },
+  {
+    label: "Marketplace",
+    items: [
+      { path: "/admin/carity", label: "Carity", icon: Car },
     ],
   },
   {

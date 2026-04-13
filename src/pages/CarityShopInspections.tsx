@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X } from "lucide-react";
+import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown } from "lucide-react";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },
@@ -36,11 +36,14 @@ interface Defect {
 
 export default function CarityShopInspections() {
   const shopId = useActiveShopId();
+  const [tab, setTab] = useState("offers");
+  const [offers, setOffers] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeInspection, setActiveInspection] = useState<any>(null);
   const [activeListing, setActiveListing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
 
   // Report form state
   const [report, setReport] = useState({
@@ -56,32 +59,96 @@ export default function CarityShopInspections() {
   });
   const [uploading, setUploading] = useState<string | null>(null);
 
-  const loadInspections = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!shopId) return;
-    const { data } = await supabase
-      .from("carity_inspections")
-      .select("*, carity_listings(*)")
-      .eq("shop_id", shopId)
-      .eq("payment_status", "paid")
-      .order("assigned_at", { ascending: false });
 
-    setInspections((data || []).map((i: any) => ({
+    const [offersRes, inspectionsRes] = await Promise.all([
+      supabase
+        .from("carity_inspection_offers")
+        .select("*, carity_listings(*)")
+        .eq("shop_id", shopId)
+        .eq("status", "pending")
+        .order("offered_at", { ascending: false }),
+      supabase
+        .from("carity_inspections")
+        .select("*, carity_listings(*)")
+        .eq("shop_id", shopId)
+        .order("assigned_at", { ascending: false }),
+    ]);
+
+    setOffers((offersRes.data || []).map((o: any) => ({
+      ...o,
+      listing: o.carity_listings ? { ...o.carity_listings, photos: Array.isArray(o.carity_listings.photos) ? o.carity_listings.photos : [] } : null,
+    })));
+
+    setInspections((inspectionsRes.data || []).map((i: any) => ({
       ...i,
-      listing: i.carity_listings ? {
-        ...i.carity_listings,
-        photos: Array.isArray(i.carity_listings.photos) ? i.carity_listings.photos : [],
-      } : null,
+      listing: i.carity_listings ? { ...i.carity_listings, photos: Array.isArray(i.carity_listings.photos) ? i.carity_listings.photos : [] } : null,
     })));
     setLoading(false);
   }, [shopId]);
 
-  useEffect(() => { loadInspections(); }, [loadInspections]);
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Accept inspection offer
+  const acceptOffer = async (offer: any) => {
+    setRespondingId(offer.id);
+    try {
+      // Update offer status
+      await supabase.from("carity_inspection_offers")
+        .update({ status: "accepted", responded_at: new Date().toISOString() })
+        .eq("id", offer.id);
+
+      // Create the actual inspection
+      await supabase.from("carity_inspections").insert({
+        listing_id: offer.listing_id,
+        shop_id: shopId!,
+        payment_status: "paid",
+        status: "pending",
+      });
+
+      // Update listing
+      await supabase.from("carity_listings")
+        .update({ status: "pending_inspection", shop_id: shopId })
+        .eq("id", offer.listing_id);
+
+      // Reject all other pending offers for this inspection
+      await supabase.from("carity_inspection_offers")
+        .update({ status: "rejected", responded_at: new Date().toISOString(), rejection_reason: "Outra oficina aceitou" })
+        .eq("inspection_id", offer.inspection_id)
+        .neq("id", offer.id)
+        .eq("status", "pending");
+
+      toast.success("Inspeção aceite! O carro será enviado à sua oficina.");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aceitar inspeção");
+    } finally {
+      setRespondingId(null);
+    }
+  };
+
+  // Reject inspection offer
+  const rejectOffer = async (offerId: string) => {
+    setRespondingId(offerId);
+    try {
+      await supabase.from("carity_inspection_offers")
+        .update({ status: "rejected", responded_at: new Date().toISOString(), rejection_reason: "Recusado pela oficina" })
+        .eq("id", offerId);
+
+      toast.success("Pedido recusado.");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao recusar");
+    } finally {
+      setRespondingId(null);
+    }
+  };
 
   const startInspection = async (inspection: any) => {
     setActiveInspection(inspection);
     setActiveListing(inspection.listing);
 
-    // Check existing report
     const { data: existing } = await supabase
       .from("carity_inspection_reports")
       .select("*")
@@ -109,9 +176,12 @@ export default function CarityShopInspections() {
         tire_photos: Array.isArray(existing.tire_photos) ? existing.tire_photos as string[] : [],
         damage_photos: Array.isArray(existing.damage_photos) ? existing.damage_photos as string[] : [],
       });
+    } else {
+      setReport({ engine_status: "ok", transmission_status: "ok", brakes_status: "ok", suspension_status: "ok", steering_status: "ok", tires_status: "ok", electrical_status: "ok", overall_score: 7, recommendation: "recommended", inspector_notes: "" });
+      setDefects([]);
+      setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
     }
 
-    // Mark inspection as in_progress
     if (inspection.status === 'pending') {
       await supabase.from("carity_inspections")
         .update({ status: 'in_progress', started_at: new Date().toISOString() })
@@ -141,28 +211,16 @@ export default function CarityShopInspections() {
 
   const submitReport = async () => {
     if (!activeInspection || !shopId) return;
-
-    // Validate
-    if (photoSections.exterior_photos.length < 1) {
-      toast.error("Carregue pelo menos 1 foto do exterior"); return;
-    }
-    if (photoSections.interior_photos.length < 1) {
-      toast.error("Carregue pelo menos 1 foto do interior"); return;
-    }
+    if (photoSections.exterior_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do exterior"); return; }
+    if (photoSections.interior_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do interior"); return; }
 
     setSaving(true);
     try {
-      // Check existing report
       const { data: existing } = await supabase
-        .from("carity_inspection_reports")
-        .select("id")
-        .eq("inspection_id", activeInspection.id)
-        .maybeSingle();
+        .from("carity_inspection_reports").select("id").eq("inspection_id", activeInspection.id).maybeSingle();
 
       const reportData = {
-        inspection_id: activeInspection.id,
-        listing_id: activeInspection.listing_id,
-        shop_id: shopId,
+        inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
         defects: defects.filter(d => d.description.trim()) as unknown as any,
         exterior_photos: photoSections.exterior_photos as unknown as any,
@@ -179,19 +237,17 @@ export default function CarityShopInspections() {
         await supabase.from("carity_inspection_reports").insert(reportData);
       }
 
-      // Update inspection status
       await supabase.from("carity_inspections")
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq("id", activeInspection.id);
 
-      // Update listing status
       await supabase.from("carity_listings")
         .update({ status: 'pending_approval' })
         .eq("id", activeInspection.listing_id);
 
       toast.success("Relatório de inspeção enviado com sucesso!");
       setActiveInspection(null);
-      loadInspections();
+      loadData();
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar relatório");
     } finally {
@@ -199,6 +255,7 @@ export default function CarityShopInspections() {
     }
   };
 
+  // --- INSPECTION FORM VIEW ---
   if (activeInspection && activeListing) {
     return (
       <div className="space-y-6">
@@ -215,7 +272,6 @@ export default function CarityShopInspections() {
           <Button variant="outline" onClick={() => setActiveInspection(null)}>Voltar</Button>
         </div>
 
-        {/* Vehicle info */}
         <Card>
           <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
           <CardContent>
@@ -231,7 +287,6 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
-        {/* Checklist */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Checklist Mecânico</CardTitle>
@@ -246,15 +301,10 @@ export default function CarityShopInspections() {
                     const Icon = opt.icon;
                     const selected = report[key as keyof typeof report] === opt.value;
                     return (
-                      <Button
-                        key={opt.value}
-                        size="sm"
-                        variant={selected ? "default" : "outline"}
+                      <Button key={opt.value} size="sm" variant={selected ? "default" : "outline"}
                         className={selected ? (opt.value === 'ok' ? 'bg-green-600' : opt.value === 'problems' ? 'bg-amber-500' : 'bg-red-600') : ''}
-                        onClick={() => setReport(p => ({ ...p, [key]: opt.value }))}
-                      >
-                        <Icon className="h-3.5 w-3.5 mr-1" />
-                        {opt.label}
+                        onClick={() => setReport(p => ({ ...p, [key]: opt.value }))}>
+                        <Icon className="h-3.5 w-3.5 mr-1" />{opt.label}
                       </Button>
                     );
                   })}
@@ -264,7 +314,6 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
-        {/* Photos */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Fotos da Inspeção</CardTitle>
@@ -286,10 +335,8 @@ export default function CarityShopInspections() {
                   {photoSections[section.key].map((photo, i) => (
                     <div key={i} className="w-20 h-20 rounded overflow-hidden relative group">
                       <img src={photo} alt="" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100"
-                      >
+                      <button onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
+                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100">
                         <X className="h-3 w-3" />
                       </button>
                     </div>
@@ -304,7 +351,6 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
-        {/* Defects */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Defeitos / Problemas</CardTitle>
@@ -313,24 +359,8 @@ export default function CarityShopInspections() {
           <CardContent className="space-y-3">
             {defects.map((defect, i) => (
               <div key={i} className="flex gap-2 items-start">
-                <Input
-                  value={defect.description}
-                  onChange={e => {
-                    const updated = [...defects];
-                    updated[i].description = e.target.value;
-                    setDefects(updated);
-                  }}
-                  placeholder="Descreva o problema..."
-                  className="flex-1"
-                />
-                <Select
-                  value={defect.severity}
-                  onValueChange={v => {
-                    const updated = [...defects];
-                    updated[i].severity = v as Defect["severity"];
-                    setDefects(updated);
-                  }}
-                >
+                <Input value={defect.description} onChange={e => { const u = [...defects]; u[i].description = e.target.value; setDefects(u); }} placeholder="Descreva o problema..." className="flex-1" />
+                <Select value={defect.severity} onValueChange={v => { const u = [...defects]; u[i].severity = v as Defect["severity"]; setDefects(u); }}>
                   <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="leve">Leve</SelectItem>
@@ -338,31 +368,19 @@ export default function CarityShopInspections() {
                     <SelectItem value="grave">Grave</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}><X className="h-4 w-4" /></Button>
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={addDefect}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito
-            </Button>
+            <Button variant="outline" size="sm" onClick={addDefect}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito</Button>
           </CardContent>
         </Card>
 
-        {/* Score & Recommendation */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Classificação Final</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Classificação Final</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <div>
               <Label className="mb-3 block">Estado Geral: <strong className="text-emerald-600 text-xl">{report.overall_score}/10</strong></Label>
-              <Slider
-                value={[report.overall_score]}
-                onValueChange={([v]) => setReport(p => ({ ...p, overall_score: v }))}
-                max={10} min={0} step={0.5}
-                className="py-2"
-              />
+              <Slider value={[report.overall_score]} onValueChange={([v]) => setReport(p => ({ ...p, overall_score: v }))} max={10} min={0} step={0.5} className="py-2" />
             </div>
             <div>
               <Label className="mb-2 block">Recomendação</Label>
@@ -372,25 +390,15 @@ export default function CarityShopInspections() {
                   { value: "acceptable", label: "Aceitável", color: "bg-amber-500" },
                   { value: "not_recommended", label: "Não Recomendado", color: "bg-red-600" },
                 ].map(opt => (
-                  <Button
-                    key={opt.value}
-                    variant={report.recommendation === opt.value ? "default" : "outline"}
+                  <Button key={opt.value} variant={report.recommendation === opt.value ? "default" : "outline"}
                     className={report.recommendation === opt.value ? opt.color : ''}
-                    onClick={() => setReport(p => ({ ...p, recommendation: opt.value }))}
-                  >
-                    {opt.label}
-                  </Button>
+                    onClick={() => setReport(p => ({ ...p, recommendation: opt.value }))}>{opt.label}</Button>
                 ))}
               </div>
             </div>
             <div>
               <Label>Notas do Inspetor</Label>
-              <Textarea
-                value={report.inspector_notes}
-                onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))}
-                placeholder="Observações adicionais sobre o veículo..."
-                rows={4}
-              />
+              <Textarea value={report.inspector_notes} onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))} placeholder="Observações adicionais..." rows={4} />
             </div>
           </CardContent>
         </Card>
@@ -403,6 +411,12 @@ export default function CarityShopInspections() {
     );
   }
 
+  // --- MAIN LIST VIEW ---
+  const pendingOffers = offers.length;
+  const activeInspections = inspections.filter(i => i.status !== 'completed').length;
+  const completedInspections = inspections.filter(i => i.status === 'completed').length;
+  const totalEarnings = inspections.filter(i => i.status === 'completed').reduce((sum, i) => sum + Number(i.shop_share || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -411,64 +425,173 @@ export default function CarityShopInspections() {
             <ShieldCheck className="h-6 w-6 text-emerald-600" />
             Inspeções Carity
           </h1>
-          <p className="text-muted-foreground">Inspeções de carros atribuídas à sua oficina</p>
+          <p className="text-muted-foreground">Aceite pedidos de inspeção e ganhe por cada carro inspecionado</p>
         </div>
         <Badge variant="outline" className="text-emerald-600 border-emerald-200">
           <Euro className="h-3.5 w-3.5 mr-1" />
-          €5,97 por inspeção
+          €{totalEarnings.toFixed(2)} ganhos
         </Badge>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : inspections.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="font-semibold mb-2">Sem inspeções pendentes</h3>
-            <p className="text-muted-foreground">Quando um carro for atribuído à sua oficina, aparecerá aqui.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {inspections.map(inspection => {
-            const listing = inspection.listing;
-            const statusLabel = inspection.status === 'pending' ? 'Pendente' : inspection.status === 'in_progress' ? 'Em curso' : 'Concluída';
-            const statusColor = inspection.status === 'pending' ? 'bg-amber-100 text-amber-800' : inspection.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-            
-            return (
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card><CardContent className="pt-4 pb-4 text-center">
+          <Bell className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+          <p className="text-2xl font-bold">{pendingOffers}</p>
+          <p className="text-xs text-muted-foreground">Pedidos Pendentes</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-center">
+          <ClipboardCheck className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-2xl font-bold">{activeInspections}</p>
+          <p className="text-xs text-muted-foreground">Em Curso</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-center">
+          <CheckCircle className="h-5 w-5 mx-auto text-green-600 mb-1" />
+          <p className="text-2xl font-bold">{completedInspections}</p>
+          <p className="text-xs text-muted-foreground">Concluídas</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-center">
+          <Euro className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
+          <p className="text-2xl font-bold">€{totalEarnings.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Ganhos Totais</p>
+        </CardContent></Card>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="offers" className="relative">
+            Pedidos {pendingOffers > 0 && <Badge className="ml-1.5 bg-amber-500 text-white text-xs px-1.5 py-0">{pendingOffers}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="active">Em Curso ({activeInspections})</TabsTrigger>
+          <TabsTrigger value="completed">Concluídas ({completedInspections})</TabsTrigger>
+        </TabsList>
+
+        {/* PENDING OFFERS */}
+        <TabsContent value="offers" className="space-y-4 mt-4">
+          {loading ? (
+            <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>
+          ) : offers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Bell className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="font-semibold mb-2">Sem pedidos de inspeção</h3>
+                <p className="text-muted-foreground">Quando um carro precisar de inspeção, receberá o pedido aqui.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            offers.map(offer => (
+              <Card key={offer.id} className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5">
+                <CardContent className="p-4">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-20 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
+                      {offer.listing?.photos?.[0] ? (
+                        <img src={offer.listing.photos[0]} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full"><Car className="h-5 w-5 text-muted-foreground/30" /></div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">Novo Pedido</Badge>
+                      </div>
+                      <h3 className="font-semibold">
+                        {offer.listing?.make} {offer.listing?.model} ({offer.listing?.year})
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{offer.listing?.plate} · {offer.listing?.mileage?.toLocaleString()} km</p>
+                    </div>
+                    <div className="text-right mr-2">
+                      <p className="text-lg font-bold text-emerald-600">€5,97</p>
+                      <p className="text-xs text-muted-foreground">por inspeção</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => acceptOffer(offer)}
+                        disabled={respondingId === offer.id}
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        {respondingId === offer.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ThumbsUp className="h-4 w-4 mr-1" />}
+                        Aceitar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => rejectOffer(offer.id)}
+                        disabled={respondingId === offer.id}
+                        className="border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        <ThumbsDown className="h-4 w-4 mr-1" />
+                        Recusar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* ACTIVE INSPECTIONS */}
+        <TabsContent value="active" className="space-y-4 mt-4">
+          {inspections.filter(i => i.status !== 'completed').length === 0 ? (
+            <Card><CardContent className="py-12 text-center text-muted-foreground">Sem inspeções em curso</CardContent></Card>
+          ) : (
+            inspections.filter(i => i.status !== 'completed').map(inspection => (
               <Card key={inspection.id}>
                 <CardContent className="p-4">
                   <div className="flex gap-4 items-center">
                     <div className="w-20 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
-                      {listing?.photos?.[0] ? (
-                        <img src={listing.photos[0]} alt="" className="w-full h-full object-cover" />
+                      {inspection.listing?.photos?.[0] ? (
+                        <img src={inspection.listing.photos[0]} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex items-center justify-center h-full"><Car className="h-5 w-5 text-muted-foreground/30" /></div>
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">
-                        {listing?.make} {listing?.model} ({listing?.year})
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{listing?.plate} · {listing?.mileage?.toLocaleString()} km</p>
+                      <h3 className="font-semibold">{inspection.listing?.make} {inspection.listing?.model} ({inspection.listing?.year})</h3>
+                      <p className="text-sm text-muted-foreground">{inspection.listing?.plate} · {inspection.listing?.mileage?.toLocaleString()} km</p>
                     </div>
-                    <Badge className={statusColor}>{statusLabel}</Badge>
-                    {inspection.status !== 'completed' && (
-                      <Button onClick={() => startInspection(inspection)} className="bg-emerald-600 hover:bg-emerald-700">
-                        <ClipboardCheck className="h-4 w-4 mr-1" />
-                        {inspection.status === 'pending' ? 'Iniciar' : 'Continuar'}
-                      </Button>
-                    )}
+                    <Badge className={inspection.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
+                      {inspection.status === 'pending' ? 'Pendente' : 'Em curso'}
+                    </Badge>
+                    <Button onClick={() => startInspection(inspection)} className="bg-emerald-600 hover:bg-emerald-700">
+                      <ClipboardCheck className="h-4 w-4 mr-1" />
+                      {inspection.status === 'pending' ? 'Iniciar' : 'Continuar'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-      )}
+            ))
+          )}
+        </TabsContent>
+
+        {/* COMPLETED */}
+        <TabsContent value="completed" className="space-y-4 mt-4">
+          {inspections.filter(i => i.status === 'completed').length === 0 ? (
+            <Card><CardContent className="py-12 text-center text-muted-foreground">Sem inspeções concluídas</CardContent></Card>
+          ) : (
+            inspections.filter(i => i.status === 'completed').map(inspection => (
+              <Card key={inspection.id}>
+                <CardContent className="p-4">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-20 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
+                      {inspection.listing?.photos?.[0] ? (
+                        <img src={inspection.listing.photos[0]} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full"><Car className="h-5 w-5 text-muted-foreground/30" /></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{inspection.listing?.make} {inspection.listing?.model} ({inspection.listing?.year})</h3>
+                      <p className="text-sm text-muted-foreground">{inspection.listing?.plate}</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Concluída</Badge>
+                    <span className="text-sm font-medium text-emerald-600">+€{Number(inspection.shop_share).toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

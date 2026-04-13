@@ -77,20 +77,20 @@ export default function CarityMarketplace() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <header className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white">
+      <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/carity" className="flex items-center gap-2">
-            <ShieldCheck className="h-8 w-8" />
+            <ShieldCheck className="h-8 w-8 text-amber-400" />
             <span className="text-2xl font-bold tracking-tight">Carity</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/carity/vender">
-              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+              <Button variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10">
                 Vender Carro
               </Button>
             </Link>
             <Link to="/carity/auth">
-              <Button className="bg-white text-emerald-700 hover:bg-white/90">
+              <Button className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
                 Entrar
               </Button>
             </Link>
@@ -98,30 +98,30 @@ export default function CarityMarketplace() {
         </nav>
 
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <Badge className="mb-4 bg-white/20 text-white border-0 text-sm">
+          <Badge className="mb-4 bg-amber-400/20 text-amber-300 border-amber-400/30 text-sm">
             <ShieldCheck className="h-3.5 w-3.5 mr-1" />
             Todos os carros inspecionados por oficinas certificadas
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
-            Carros usados com <span className="text-emerald-200">confiança total</span>
+            Carros usados com <span className="text-amber-400">confiança total</span>
           </h1>
-          <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
             Cada carro no Carity passa por uma inspeção técnica obrigatória numa oficina certificada. 
             Sem surpresas. Sem riscos.
           </p>
           
           {/* Trust indicators */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-emerald-200">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-300">
             <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 text-amber-400" />
               Inspeção obrigatória
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 text-amber-400" />
               Relatório técnico completo
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 text-amber-400" />
               Oficinas certificadas GarageFlow
             </div>
           </div>
@@ -141,7 +141,7 @@ export default function CarityMarketplace() {
             ].map(s => (
               <Card key={s.step} className="text-center border-0 shadow-sm">
                 <CardContent className="pt-6">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center mx-auto mb-3 text-lg">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center mx-auto mb-3 text-lg dark:bg-amber-900/30 dark:text-amber-400">
                     {s.step}
                   </div>
                   <h3 className="font-semibold mb-1">{s.title}</h3>
@@ -193,7 +193,7 @@ export default function CarityMarketplace() {
         {/* Listings Grid */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
@@ -206,7 +206,7 @@ export default function CarityMarketplace() {
               }
             </p>
             <Link to="/carity/vender">
-              <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
                 Vender o meu carro <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -228,7 +228,7 @@ export default function CarityMarketplace() {
                         <Car className="h-12 w-12 text-muted-foreground/30" />
                       </div>
                     )}
-                    <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0">
+                    <Badge className="absolute top-3 left-3 bg-slate-900 text-amber-400 border-0">
                       <ShieldCheck className="h-3 w-3 mr-1" />
                       Inspecionado
                     </Badge>
@@ -252,10 +252,10 @@ export default function CarityMarketplace() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-emerald-700">
+                      <span className="text-xl font-bold text-slate-800 dark:text-amber-400">
                         €{listing.price.toLocaleString()}
                       </span>
-                      <Button size="sm" variant="ghost" className="text-emerald-600">
+                      <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400">
                         Ver detalhes <Eye className="ml-1 h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -268,14 +268,14 @@ export default function CarityMarketplace() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-emerald-50 dark:bg-emerald-900/10">
+      <section className="py-16 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">Quer vender o seu carro?</h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-slate-300 mb-6">
             Submeta o seu carro, pague apenas €19,90 pela inspeção oficial e venda com a confiança de um relatório técnico completo.
           </p>
           <Link to="/carity/vender">
-            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700">
+            <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
               Começar a vender <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -283,11 +283,11 @@ export default function CarityMarketplace() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 border-t">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+      <footer className="py-8 border-t bg-slate-950 text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            <span>Carity by <Link to="/" className="text-emerald-600 hover:underline">GarageFlow</Link></span>
+            <ShieldCheck className="h-5 w-5 text-amber-400" />
+            <span>Carity by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
           </div>
           <p>© {new Date().getFullYear()} Carity. Todos os direitos reservados.</p>
         </div>

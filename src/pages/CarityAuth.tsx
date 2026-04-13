@@ -76,16 +76,16 @@ export default function CarityAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-950">
       {/* Nav */}
-      <nav className="bg-emerald-700 text-white px-4 py-3">
+      <nav className="bg-slate-900 border-b border-slate-800 text-white px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Link to="/carity" className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6" />
+            <ShieldCheck className="h-6 w-6 text-amber-400" />
             <span className="text-xl font-bold">Carity</span>
           </Link>
           <Link to="/carity">
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+            <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
           </Link>
@@ -94,13 +94,13 @@ export default function CarityAuth() {
 
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <ShieldCheck className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20">
+            <ShieldCheck className="w-7 h-7 text-slate-900" />
           </div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-white">
             {mode === "forgot" ? "Recuperar Palavra-passe" : mode === "login" ? "Entrar no Carity" : "Criar Conta Carity"}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             {mode === "forgot"
               ? "Enviaremos um link de recuperação para o seu email"
               : mode === "login"
@@ -109,12 +109,12 @@ export default function CarityAuth() {
           </p>
         </div>
 
-        <div className="bg-card border rounded-2xl p-6 shadow-sm">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <>
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-sm">
+                  <Label className="flex items-center gap-1.5 text-sm text-slate-300">
                     <User className="w-3.5 h-3.5" /> Nome completo *
                   </Label>
                   <Input
@@ -122,33 +122,36 @@ export default function CarityAuth() {
                     onChange={(e) => setName(e.target.value)}
                     required
                     placeholder="O seu nome"
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-sm">
+                  <Label className="flex items-center gap-1.5 text-sm text-slate-300">
                     <Phone className="w-3.5 h-3.5" /> Telefone
                   </Label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+351 9XX XXX XXX"
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-sm">
+                  <Label className="flex items-center gap-1.5 text-sm text-slate-300">
                     <MapPin className="w-3.5 h-3.5" /> Localização
                   </Label>
                   <Input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="Lisboa, Porto..."
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5 text-sm">
+              <Label className="flex items-center gap-1.5 text-sm text-slate-300">
                 <Mail className="w-3.5 h-3.5" /> Email *
               </Label>
               <Input
@@ -157,12 +160,13 @@ export default function CarityAuth() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="email@exemplo.com"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
               />
             </div>
 
             {mode !== "forgot" && (
               <div className="space-y-1.5">
-                <Label className="flex items-center gap-1.5 text-sm">
+                <Label className="flex items-center gap-1.5 text-sm text-slate-300">
                   <Lock className="w-3.5 h-3.5" /> Palavra-passe *
                 </Label>
                 <Input
@@ -172,6 +176,7 @@ export default function CarityAuth() {
                   required
                   minLength={6}
                   placeholder="••••••"
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                 />
               </div>
             )}
@@ -181,7 +186,7 @@ export default function CarityAuth() {
                 <button
                   type="button"
                   onClick={() => setMode("forgot")}
-                  className="text-xs text-emerald-600 hover:underline"
+                  className="text-xs text-amber-400 hover:underline"
                 >
                   Esqueceu a palavra-passe?
                 </button>
@@ -190,7 +195,7 @@ export default function CarityAuth() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-700"
+              className="w-full h-11 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold"
               disabled={loading}
             >
               {loading ? (
@@ -208,21 +213,21 @@ export default function CarityAuth() {
             {mode === "forgot" ? (
               <button
                 onClick={() => setMode("login")}
-                className="text-emerald-600 hover:underline flex items-center gap-1 mx-auto"
+                className="text-amber-400 hover:underline flex items-center gap-1 mx-auto"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao login
               </button>
             ) : mode === "login" ? (
               <button
                 onClick={() => setMode("signup")}
-                className="text-emerald-600 hover:underline"
+                className="text-amber-400 hover:underline"
               >
                 Não tem conta? Criar agora
               </button>
             ) : (
               <button
                 onClick={() => setMode("login")}
-                className="text-emerald-600 hover:underline"
+                className="text-amber-400 hover:underline"
               >
                 Já tem conta? Entrar
               </button>
@@ -230,9 +235,9 @@ export default function CarityAuth() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="text-center text-xs text-slate-500 mt-6">
           O Carity é um serviço de{" "}
-          <Link to="/" className="text-emerald-600 hover:underline">
+          <Link to="/" className="text-amber-400 hover:underline">
             GarageFlow
           </Link>
         </p>

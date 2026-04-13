@@ -262,7 +262,7 @@ export default function CarityShopInspections() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardCheck className="h-6 w-6 text-emerald-600" />
+              <ClipboardCheck className="h-6 w-6 text-amber-500" />
               Inspeção Carity
             </h1>
             <p className="text-muted-foreground">
@@ -379,7 +379,7 @@ export default function CarityShopInspections() {
           <CardHeader><CardTitle className="text-lg">Classificação Final</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label className="mb-3 block">Estado Geral: <strong className="text-emerald-600 text-xl">{report.overall_score}/10</strong></Label>
+              <Label className="mb-3 block">Estado Geral: <strong className="text-amber-500 text-xl">{report.overall_score}/10</strong></Label>
               <Slider value={[report.overall_score]} onValueChange={([v]) => setReport(p => ({ ...p, overall_score: v }))} max={10} min={0} step={0.5} className="py-2" />
             </div>
             <div>
@@ -403,7 +403,7 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
-        <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
           Submeter Relatório de Inspeção
         </Button>
@@ -422,12 +422,12 @@ export default function CarityShopInspections() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-emerald-600" />
+            <ShieldCheck className="h-6 w-6 text-amber-500" />
             Inspeções Carity
           </h1>
           <p className="text-muted-foreground">Aceite pedidos de inspeção e ganhe por cada carro inspecionado</p>
         </div>
-        <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+        <Badge variant="outline" className="text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800">
           <Euro className="h-3.5 w-3.5 mr-1" />
           €{totalEarnings.toFixed(2)} ganhos
         </Badge>
@@ -451,7 +451,7 @@ export default function CarityShopInspections() {
           <p className="text-xs text-muted-foreground">Concluídas</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Euro className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
+          <Euro className="h-5 w-5 mx-auto text-amber-500 mb-1" />
           <p className="text-2xl font-bold">€{totalEarnings.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground">Ganhos Totais</p>
         </CardContent></Card>
@@ -469,7 +469,7 @@ export default function CarityShopInspections() {
         {/* PENDING OFFERS */}
         <TabsContent value="offers" className="space-y-4 mt-4">
           {loading ? (
-            <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>
+            <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
           ) : offers.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
@@ -500,14 +500,14 @@ export default function CarityShopInspections() {
                       <p className="text-sm text-muted-foreground">{offer.listing?.plate} · {offer.listing?.mileage?.toLocaleString()} km</p>
                     </div>
                     <div className="text-right mr-2">
-                      <p className="text-lg font-bold text-emerald-600">€5,97</p>
+                      <p className="text-lg font-bold text-amber-600 dark:text-amber-400">€5,97</p>
                       <p className="text-xs text-muted-foreground">por inspeção</p>
                     </div>
                     <div className="flex gap-2">
                       <Button
                         onClick={() => acceptOffer(offer)}
                         disabled={respondingId === offer.id}
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold"
                       >
                         {respondingId === offer.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ThumbsUp className="h-4 w-4 mr-1" />}
                         Aceitar
@@ -552,7 +552,7 @@ export default function CarityShopInspections() {
                     <Badge className={inspection.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
                       {inspection.status === 'pending' ? 'Pendente' : 'Em curso'}
                     </Badge>
-                    <Button onClick={() => startInspection(inspection)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Button onClick={() => startInspection(inspection)} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
                       <ClipboardCheck className="h-4 w-4 mr-1" />
                       {inspection.status === 'pending' ? 'Iniciar' : 'Continuar'}
                     </Button>
@@ -584,7 +584,7 @@ export default function CarityShopInspections() {
                       <p className="text-sm text-muted-foreground">{inspection.listing?.plate}</p>
                     </div>
                     <Badge className="bg-green-100 text-green-800">Concluída</Badge>
-                    <span className="text-sm font-medium text-emerald-600">+€{Number(inspection.shop_share).toFixed(2)}</span>
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">+€{Number(inspection.shop_share).toFixed(2)}</span>
                   </div>
                 </CardContent>
               </Card>

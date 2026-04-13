@@ -70,6 +70,14 @@ const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
 const Referrals = lazyRetry(() => import("@/pages/Referrals"));
 const Warranties = lazyRetry(() => import("@/pages/Warranties"));
 
+// Carity pages
+const CarityMarketplace = lazyRetry(() => import("@/pages/CarityMarketplace"));
+const CarityListingDetail = lazyRetry(() => import("@/pages/CarityListingDetail"));
+const CaritySellCar = lazyRetry(() => import("@/pages/CaritySellCar"));
+const CarityPayInspection = lazyRetry(() => import("@/pages/CarityPayInspection"));
+const CaritySellerDashboard = lazyRetry(() => import("@/pages/CaritySellerDashboard"));
+const CarityShopInspections = lazyRetry(() => import("@/pages/CarityShopInspections"));
+
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
 const AdminShops = lazyRetry(() => import("@/pages/admin/AdminShops"));
@@ -85,6 +93,7 @@ const AdminFeatureAdoption = lazyRetry(() => import("@/pages/admin/AdminFeatureA
 const AdminSystemHealth = lazyRetry(() => import("@/pages/admin/AdminSystemHealth"));
 const AdminPartners = lazyRetry(() => import("@/pages/admin/AdminPartners"));
 const AdminTraffic = lazyRetry(() => import("@/pages/admin/AdminTraffic"));
+const AdminCarity = lazyRetry(() => import("@/pages/admin/AdminCarity"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -178,6 +187,7 @@ const adminRoutes = [
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
   { path: "/admin/partners", element: <AdminPartners /> },
   { path: "/admin/traffic", element: <AdminTraffic /> },
+  { path: "/admin/carity", element: <AdminCarity /> },
 ];
 
 const shopRoutes = [
@@ -211,6 +221,7 @@ const shopRoutes = [
   { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
   { path: "/referrals", element: <Layout><Referrals /></Layout> },
   { path: "/warranties", element: <Layout><Warranties /></Layout> },
+  { path: "/carity/inspections", element: <Layout><CarityShopInspections /></Layout> },
 ];
 
 const publicRoutes = [
@@ -219,6 +230,11 @@ const publicRoutes = [
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
+  { path: "/carity", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
+  { path: "/carity/carro/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
+  { path: "/carity/vender", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
+  { path: "/carity/pagar/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
+  { path: "/carity/meus-anuncios", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
 ];
 
 function AuthenticatedRoutes() {

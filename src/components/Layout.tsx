@@ -88,9 +88,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadAlertCount = async () => {
       if (!activeShopId) return;
-      const { data: shop } = await supabase.from("shops").select("id, name").eq("id", activeShopId).maybeSingle();
+      const { data: shop } = await supabase.from("shops").select("id, name, is_carity_partner, carity_active").eq("id", activeShopId).maybeSingle();
       if (!shop) return;
       setShopName(shop.name || "");
+      setIsCarityPartner(shop.is_carity_partner === true && shop.carity_active !== false);
       const { count } = await supabase
         .from("alerts")
         .select("id", { count: "exact", head: true })

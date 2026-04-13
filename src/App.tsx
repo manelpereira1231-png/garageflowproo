@@ -77,6 +77,7 @@ const CaritySellCar = lazyRetry(() => import("@/pages/CaritySellCar"));
 const CarityPayInspection = lazyRetry(() => import("@/pages/CarityPayInspection"));
 const CaritySellerDashboard = lazyRetry(() => import("@/pages/CaritySellerDashboard"));
 const CarityShopInspections = lazyRetry(() => import("@/pages/CarityShopInspections"));
+const CarityAuth = lazyRetry(() => import("@/pages/CarityAuth"));
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -235,6 +236,7 @@ const publicRoutes = [
   { path: "/carity/vender", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/carity/pagar/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/carity/meus-anuncios", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
+  { path: "/carity/auth", element: <Suspense fallback={<PageLoader />}><CarityAuth /></Suspense> },
 ];
 
 function AuthenticatedRoutes() {
@@ -376,6 +378,7 @@ function AppRoutes() {
             <Route path="/carity/vender" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
             <Route path="/carity/pagar/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
             <Route path="/carity/meus-anuncios" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
+            <Route path="/carity/auth" element={<Suspense fallback={<PageLoader />}><CarityAuth /></Suspense>} />
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </Suspense>

@@ -76,6 +76,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const [shopName, setShopName] = useState("");
+  const [isCarityPartner, setIsCarityPartner] = useState(false);
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
@@ -87,9 +88,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadAlertCount = async () => {
       if (!activeShopId) return;
-      const { data: shop } = await supabase.from("shops").select("id, name").eq("id", activeShopId).maybeSingle();
+      const { data: shop } = await supabase.from("shops").select("id, name, is_carity_partner, carity_active").eq("id", activeShopId).maybeSingle();
       if (!shop) return;
       setShopName(shop.name || "");
+      setIsCarityPartner(shop.is_carity_partner === true && shop.carity_active !== false);
       const { count } = await supabase
         .from("alerts")
         .select("id", { count: "exact", head: true })
@@ -153,7 +155,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    { path: "/carity/inspections", label: "Carity Inspeções", icon: Car },
+    ...(isCarityPartner ? [{ path: "/carity/inspections", label: "Carity Inspeções", icon: Car }] : []),
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },

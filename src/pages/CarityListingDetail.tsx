@@ -74,7 +74,7 @@ export default function CarityListingDetail() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -94,14 +94,14 @@ export default function CarityListingDetail() {
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="bg-emerald-700 text-white px-4 py-3">
+      <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/carity" className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6" />
+            <ShieldCheck className="h-6 w-6 text-amber-400" />
             <span className="text-xl font-bold">Carity</span>
           </Link>
           <Link to="/carity">
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+            <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
           </Link>
@@ -126,7 +126,7 @@ export default function CarityListingDetail() {
                     <Car className="h-16 w-16 text-muted-foreground/30" />
                   </div>
                 )}
-                <Badge className="absolute top-4 left-4 bg-emerald-600 text-white border-0">
+                <Badge className="absolute top-4 left-4 bg-slate-900 text-amber-400 border-0">
                   <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Inspecionado
                 </Badge>
               </div>
@@ -136,7 +136,7 @@ export default function CarityListingDetail() {
                     <button
                       key={i}
                       onClick={() => setSelectedPhoto(i)}
-                      className={`w-20 h-14 rounded overflow-hidden flex-shrink-0 border-2 ${i === selectedPhoto ? 'border-emerald-600' : 'border-transparent'}`}
+                      className={`w-20 h-14 rounded overflow-hidden flex-shrink-0 border-2 ${i === selectedPhoto ? 'border-amber-500' : 'border-transparent'}`}
                     >
                       <img src={photo} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -168,8 +168,8 @@ export default function CarityListingDetail() {
                     <p className="text-xs text-muted-foreground">Combustível</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
-                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-emerald-600" />
-                    <p className="font-semibold text-emerald-600">{report?.overall_score || '-'}/10</p>
+                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" />
+                    <p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score || '-'}/10</p>
                     <p className="text-xs text-muted-foreground">Classificação</p>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function CarityListingDetail() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                      <ShieldCheck className="h-5 w-5 text-amber-500" />
                       Relatório de Inspeção Carity
                     </CardTitle>
                     {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
@@ -202,9 +202,9 @@ export default function CarityListingDetail() {
                 <CardContent className="space-y-6">
                   {/* Score */}
                   <div className="text-center py-4">
-                    <div className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-6 py-3">
-                      <Star className="h-8 w-8 text-emerald-600 fill-emerald-600" />
-                      <span className="text-4xl font-bold text-emerald-700">{report.overall_score}</span>
+                    <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-6 py-3">
+                      <Star className="h-8 w-8 text-amber-500 fill-amber-500" />
+                      <span className="text-4xl font-bold text-slate-800 dark:text-amber-400">{report.overall_score}</span>
                       <span className="text-xl text-muted-foreground">/10</span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-2">Classificação geral da oficina</p>
@@ -293,7 +293,7 @@ export default function CarityListingDetail() {
             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-emerald-700">
+                  <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">
                     €{listing.price.toLocaleString()}
                   </p>
                 </div>
@@ -311,7 +311,7 @@ export default function CarityListingDetail() {
                         </p>
                       )}
                       {seller.phone && (
-                        <a href={`tel:${seller.phone}`} className="flex items-center gap-2 text-sm text-emerald-600 hover:underline">
+                        <a href={`tel:${seller.phone}`} className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 hover:underline">
                           <Phone className="h-3.5 w-3.5" /> {seller.phone}
                         </a>
                       )}
@@ -319,7 +319,7 @@ export default function CarityListingDetail() {
                   </div>
                 )}
 
-                <Button className="w-full bg-emerald-600 hover:bg-emerald-700" size="lg">
+                <Button className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" size="lg">
                   Contactar vendedor
                 </Button>
                 

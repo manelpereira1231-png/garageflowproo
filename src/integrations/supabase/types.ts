@@ -397,6 +397,61 @@ export type Database = {
           },
         ]
       }
+      carity_inspection_offers: {
+        Row: {
+          id: string
+          inspection_id: string
+          listing_id: string
+          offered_at: string
+          rejection_reason: string | null
+          responded_at: string | null
+          shop_id: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          inspection_id: string
+          listing_id: string
+          offered_at?: string
+          rejection_reason?: string | null
+          responded_at?: string | null
+          shop_id: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          inspection_id?: string
+          listing_id?: string
+          offered_at?: string
+          rejection_reason?: string | null
+          responded_at?: string | null
+          shop_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_inspection_offers_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_offers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carity_inspection_reports: {
         Row: {
           brakes_status: string
@@ -2205,11 +2260,14 @@ export type Database = {
       shops: {
         Row: {
           address: string | null
+          carity_active: boolean
+          carity_priority: number
           country: string
           created_at: string
           currency: string
           email: string
           id: string
+          is_carity_partner: boolean
           labor_rate: number
           language: string
           logo_url: string | null
@@ -2225,11 +2283,14 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          carity_active?: boolean
+          carity_priority?: number
           country?: string
           created_at?: string
           currency?: string
           email?: string
           id?: string
+          is_carity_partner?: boolean
           labor_rate?: number
           language?: string
           logo_url?: string | null
@@ -2245,11 +2306,14 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          carity_active?: boolean
+          carity_priority?: number
           country?: string
           created_at?: string
           currency?: string
           email?: string
           id?: string
+          is_carity_partner?: boolean
           labor_rate?: number
           language?: string
           logo_url?: string | null

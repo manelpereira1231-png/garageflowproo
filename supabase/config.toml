@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.send-push]
 verify_jwt = false
+
+[functions.carity-pay-inspection]
+verify_jwt = false

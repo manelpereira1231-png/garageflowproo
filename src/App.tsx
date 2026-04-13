@@ -371,6 +371,11 @@ function AppRoutes() {
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
+            <Route path="/carity" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
+            <Route path="/carity/carro/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
+            <Route path="/carity/vender" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
+            <Route path="/carity/pagar/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
+            <Route path="/carity/meus-anuncios" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </Suspense>

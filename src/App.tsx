@@ -378,6 +378,7 @@ function AppRoutes() {
             <Route path="/carity/vender" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
             <Route path="/carity/pagar/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
             <Route path="/carity/meus-anuncios" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
+            <Route path="/carity/auth" element={<Suspense fallback={<PageLoader />}><CarityAuth /></Suspense>} />
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </Suspense>

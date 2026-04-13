@@ -397,6 +397,331 @@ export type Database = {
           },
         ]
       }
+      carity_inspection_reports: {
+        Row: {
+          brakes_status: string
+          completed_at: string | null
+          created_at: string
+          damage_photos: Json
+          defects: Json
+          electrical_status: string
+          engine_photos: Json
+          engine_status: string
+          exterior_photos: Json
+          id: string
+          inspection_id: string
+          inspector_notes: string | null
+          interior_photos: Json
+          listing_id: string
+          overall_score: number
+          recommendation: string
+          shop_id: string
+          steering_status: string
+          suspension_status: string
+          tire_photos: Json
+          tires_status: string
+          transmission_status: string
+        }
+        Insert: {
+          brakes_status?: string
+          completed_at?: string | null
+          created_at?: string
+          damage_photos?: Json
+          defects?: Json
+          electrical_status?: string
+          engine_photos?: Json
+          engine_status?: string
+          exterior_photos?: Json
+          id?: string
+          inspection_id: string
+          inspector_notes?: string | null
+          interior_photos?: Json
+          listing_id: string
+          overall_score?: number
+          recommendation?: string
+          shop_id: string
+          steering_status?: string
+          suspension_status?: string
+          tire_photos?: Json
+          tires_status?: string
+          transmission_status?: string
+        }
+        Update: {
+          brakes_status?: string
+          completed_at?: string | null
+          created_at?: string
+          damage_photos?: Json
+          defects?: Json
+          electrical_status?: string
+          engine_photos?: Json
+          engine_status?: string
+          exterior_photos?: Json
+          id?: string
+          inspection_id?: string
+          inspector_notes?: string | null
+          interior_photos?: Json
+          listing_id?: string
+          overall_score?: number
+          recommendation?: string
+          shop_id?: string
+          steering_status?: string
+          suspension_status?: string
+          tire_photos?: Json
+          tires_status?: string
+          transmission_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_inspection_reports_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carity_inspections: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          id: string
+          listing_id: string
+          notes: string | null
+          payment_amount: number
+          payment_status: string
+          platform_share: number
+          shop_id: string
+          shop_share: number
+          started_at: string | null
+          status: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          id?: string
+          listing_id: string
+          notes?: string | null
+          payment_amount?: number
+          payment_status?: string
+          platform_share?: number
+          shop_id: string
+          shop_share?: number
+          started_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          id?: string
+          listing_id?: string
+          notes?: string | null
+          payment_amount?: number
+          payment_status?: string
+          platform_share?: number
+          shop_id?: string
+          shop_share?: number
+          started_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_inspections_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspections_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carity_listings: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          description: string
+          fuel: string
+          id: string
+          make: string
+          mileage: number
+          model: string
+          photos: Json
+          plate: string
+          price: number
+          published_at: string | null
+          seller_id: string
+          shop_id: string | null
+          sold_at: string | null
+          status: string
+          vin: string | null
+          year: number
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          description?: string
+          fuel?: string
+          id?: string
+          make?: string
+          mileage?: number
+          model?: string
+          photos?: Json
+          plate?: string
+          price?: number
+          published_at?: string | null
+          seller_id: string
+          shop_id?: string | null
+          sold_at?: string | null
+          status?: string
+          vin?: string | null
+          year?: number
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          description?: string
+          fuel?: string
+          id?: string
+          make?: string
+          mileage?: number
+          model?: string
+          photos?: Json
+          plate?: string
+          price?: number
+          published_at?: string | null
+          seller_id?: string
+          shop_id?: string | null
+          sold_at?: string | null
+          status?: string
+          vin?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_listings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carity_seller_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          name: string
+          phone: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          phone?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          phone?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      carity_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          inspection_id: string | null
+          listing_id: string | null
+          platform_amount: number
+          shop_amount: number
+          shop_id: string | null
+          status: string
+          stripe_payment_id: string | null
+          type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          inspection_id?: string | null
+          listing_id?: string | null
+          platform_amount?: number
+          shop_amount?: number
+          shop_id?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          type?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          inspection_id?: string | null
+          listing_id?: string | null
+          platform_amount?: number
+          shop_amount?: number
+          shop_id?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_transactions_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_transactions_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           client_id: string | null

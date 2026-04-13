@@ -101,7 +101,7 @@ export default function CarityShopInspections() {
         recommendation: existing.recommendation,
         inspector_notes: existing.inspector_notes || "",
       });
-      setDefects(Array.isArray(existing.defects) ? existing.defects as Defect[] : []);
+      setDefects(Array.isArray(existing.defects) ? (existing.defects as unknown as Defect[]) : []);
       setPhotoSections({
         exterior_photos: Array.isArray(existing.exterior_photos) ? existing.exterior_photos as string[] : [],
         interior_photos: Array.isArray(existing.interior_photos) ? existing.interior_photos as string[] : [],
@@ -164,8 +164,12 @@ export default function CarityShopInspections() {
         listing_id: activeInspection.listing_id,
         shop_id: shopId,
         ...report,
-        defects: defects.filter(d => d.description.trim()),
-        ...photoSections,
+        defects: defects.filter(d => d.description.trim()) as unknown as any,
+        exterior_photos: photoSections.exterior_photos as unknown as any,
+        interior_photos: photoSections.interior_photos as unknown as any,
+        engine_photos: photoSections.engine_photos as unknown as any,
+        tire_photos: photoSections.tire_photos as unknown as any,
+        damage_photos: photoSections.damage_photos as unknown as any,
         completed_at: new Date().toISOString(),
       };
 

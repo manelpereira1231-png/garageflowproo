@@ -75,6 +75,8 @@ export default function CarityShopInspections() {
     inspector_notes: "",
   });
   const [defects, setDefects] = useState<Defect[]>([]);
+  const [technicianName, setTechnicianName] = useState("");
+  const [reportLocked, setReportLocked] = useState(false);
   const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
     exterior_photos: [], interior_photos: [], engine_photos: [],
     tire_photos: [], damage_photos: [],

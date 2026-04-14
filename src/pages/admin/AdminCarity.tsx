@@ -54,7 +54,10 @@ export default function AdminCarity() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [saleConfirmations, setSaleConfirmations] = useState<any[]>([]);
+  const [escrows, setEscrows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
+  const [resolveNotes, setResolveNotes] = useState("");
   const [tab, setTab] = useState("overview");
   const [updatingShop, setUpdatingShop] = useState<string | null>(null);
   const [sendingOffer, setSendingOffer] = useState<string | null>(null);

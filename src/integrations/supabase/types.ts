@@ -1422,6 +1422,95 @@ export type Database = {
           },
         ]
       }
+      market_escrow: {
+        Row: {
+          amount: number
+          buyer_dispute_reason: string | null
+          buyer_id: string
+          commission_rate: number
+          created_at: string
+          delivery_confirmed_at: string | null
+          delivery_deadline: string | null
+          disputed_at: string | null
+          id: string
+          listing_id: string
+          platform_fee: number
+          refunded_at: string | null
+          released_at: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          seller_amount: number
+          seller_dispute_response: string | null
+          seller_id: string
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          stripe_verified: boolean
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          buyer_dispute_reason?: string | null
+          buyer_id: string
+          commission_rate?: number
+          created_at?: string
+          delivery_confirmed_at?: string | null
+          delivery_deadline?: string | null
+          disputed_at?: string | null
+          id?: string
+          listing_id: string
+          platform_fee?: number
+          refunded_at?: string | null
+          released_at?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seller_amount?: number
+          seller_dispute_response?: string | null
+          seller_id: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          stripe_verified?: boolean
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_dispute_reason?: string | null
+          buyer_id?: string
+          commission_rate?: number
+          created_at?: string
+          delivery_confirmed_at?: string | null
+          delivery_deadline?: string | null
+          disputed_at?: string | null
+          id?: string
+          listing_id?: string
+          platform_fee?: number
+          refunded_at?: string | null
+          released_at?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seller_amount?: number
+          seller_dispute_response?: string | null
+          seller_id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          stripe_verified?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_escrow_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

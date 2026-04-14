@@ -50,6 +50,15 @@ export default function CarityMarketplace() {
     loadStats();
   }, []);
 
+  const loadStats = async () => {
+    const [countRes, shopsRes] = await Promise.all([
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+    ]);
+    setTotalVerified(countRes.count || 0);
+    setPartnerShops(shopsRes.count || 0);
+  };
+
   const loadListings = async () => {
     const { data } = await supabase
       .from("carity_listings")

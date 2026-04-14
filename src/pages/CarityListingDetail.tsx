@@ -59,6 +59,7 @@ export default function CarityListingDetail() {
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [trustScore, setTrustScore] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));

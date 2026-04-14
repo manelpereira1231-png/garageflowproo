@@ -202,6 +202,7 @@ export default function AdminDashboard() {
         mrr: 0, mrrWithDiscounts: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
         paidCount: 0, freeCount: 0, canceledCount: 0, conversionRate: 0,
         totalAccounts: 0, discountImpact: 0,
+        manualCount: 0,
       });
     }
     setLoading(false);

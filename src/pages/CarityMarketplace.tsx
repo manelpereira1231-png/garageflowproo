@@ -142,6 +142,24 @@ export default function CarityMarketplace() {
               Oficinas certificadas GarageFlow
             </div>
           </div>
+
+          {/* Real stats counters */}
+          {(totalVerified > 0 || partnerShops > 0) && (
+            <div className="flex flex-wrap justify-center gap-8 mt-8 pt-6 border-t border-white/10">
+              {totalVerified > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400">{totalVerified}</p>
+                  <p className="text-xs text-slate-400">Carros verificados</p>
+                </div>
+              )}
+              {partnerShops > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400">{partnerShops}</p>
+                  <p className="text-xs text-slate-400">Oficinas certificadas</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

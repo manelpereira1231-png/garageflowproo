@@ -135,21 +135,21 @@ export default function CaritySellCar() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Fotos do Veículo</CardTitle><CardDescription>Mínimo 3 fotos. Inclua exterior, interior e motor.</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg">Fotos do Veículo</CardTitle>
+              <CardDescription>
+                Upload estruturado obrigatório. Cada slot corresponde a uma vista específica do veículo.
+                As fotos não podem ser alteradas após submissão.
+              </CardDescription>
+            </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                {photos.map((photo, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
-                    <img src={photo} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"><X className="h-3 w-3" /></button>
-                  </div>
-                ))}
-                <label className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition">
-                  {uploading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : <><Camera className="h-6 w-6 text-muted-foreground mb-1" /><span className="text-xs text-muted-foreground">Adicionar</span></>}
-                  <input type="file" className="hidden" accept="image/*" multiple onChange={handlePhotoUpload} disabled={uploading} />
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">{photos.length}/10 fotos carregadas (mínimo 3)</p>
+              {user && (
+                <StructuredPhotoUpload
+                  userId={user.id}
+                  photos={photoSlots}
+                  onChange={setPhotoSlots}
+                />
+              )}
             </CardContent>
           </Card>
 

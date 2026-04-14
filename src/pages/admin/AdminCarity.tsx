@@ -297,6 +297,23 @@ export default function AdminCarity() {
     loadData();
   };
 
+  // Escrow admin actions
+  const handleEscrowResolve = async (escrowId: string, action: "release" | "refund") => {
+    setResolvingEscrow(escrowId);
+    try {
+      const { data, error } = await supabase.functions.invoke("market-escrow-manage", {
+        body: { escrow_id: escrowId, action: action === "release" ? "admin_release" : "admin_refund", resolution_notes: resolveNotes },
+      });
+      if (error) throw error;
+      toast.success(action === "release" ? "Fundos libertados para o vendedor!" : "Reembolso processado!");
+      setResolveNotes("");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao resolver escrow");
+    }
+    setResolvingEscrow(null);
+  };
+
   // === STATS ===
   const totalListings = listings.length;
   const published = listings.filter(l => l.status === "published").length;

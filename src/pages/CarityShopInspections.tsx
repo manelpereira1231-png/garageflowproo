@@ -317,6 +317,13 @@ export default function CarityShopInspections() {
       .maybeSingle();
 
     if (existing) {
+      // If report is locked, show read-only
+      if ((existing as any).is_locked) {
+        setReportLocked(true);
+        toast.info("Este relatório está bloqueado e não pode ser editado.");
+      } else {
+        setReportLocked(false);
+      }
       setReport({
         engine_status: existing.engine_status,
         transmission_status: existing.transmission_status,
@@ -329,6 +336,7 @@ export default function CarityShopInspections() {
         recommendation: existing.recommendation,
         inspector_notes: existing.inspector_notes || "",
       });
+      setTechnicianName((existing as any).technician_name || "");
       setDefects(Array.isArray(existing.defects) ? (existing.defects as unknown as Defect[]) : []);
       setPhotoSections({
         exterior_photos: Array.isArray(existing.exterior_photos) ? existing.exterior_photos as string[] : [],
@@ -338,7 +346,9 @@ export default function CarityShopInspections() {
         damage_photos: Array.isArray(existing.damage_photos) ? existing.damage_photos as string[] : [],
       });
     } else {
+      setReportLocked(false);
       setReport({ engine_status: "ok", transmission_status: "ok", brakes_status: "ok", suspension_status: "ok", steering_status: "ok", tires_status: "ok", electrical_status: "ok", overall_score: 7, recommendation: "recommended", inspector_notes: "" });
+      setTechnicianName("");
       setDefects([]);
       setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
     }

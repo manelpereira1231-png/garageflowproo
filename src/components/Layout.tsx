@@ -155,7 +155,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    ...(isCarityPartner ? [{ path: "/market/inspections", label: "Market", icon: ShieldCheck }] : []),
+    { path: "/market/inspections", label: "Market", icon: ShieldCheck },
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },

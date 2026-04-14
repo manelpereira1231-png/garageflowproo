@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, Star, ArrowRight, CheckCircle, Eye } from "lucide-react";
+import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp } from "lucide-react";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',
@@ -28,8 +28,17 @@ interface Listing {
   description: string;
   status: string;
   created_at: string;
+  published_at: string | null;
   boost_active?: boolean;
-  boost_expires_at?: string;
+  shop_id: string | null;
+  shop_name?: string;
+  shop_location?: string;
+}
+
+interface RealStats {
+  totalPublished: number;
+  totalInspections: number;
+  totalPartnerShops: number;
 }
 
 export default function CarityMarketplace() {
@@ -38,40 +47,70 @@ export default function CarityMarketplace() {
   const [search, setSearch] = useState("");
   const [fuelFilter, setFuelFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
-  const [totalVerified, setTotalVerified] = useState(0);
-  const [partnerShops, setPartnerShops] = useState(0);
+  const [stats, setStats] = useState<RealStats>({ totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 
-  useEffect(() => {
-    document.title = "GarageFlow Market — Carros Usados Inspecionados";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Compre carros usados com confiança. Todos os veículos no GarageFlow Market são inspecionados por oficinas certificadas com relatório técnico completo.");
-
-    loadListings();
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    const [countRes, shopsRes] = await Promise.all([
-      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
-    ]);
-    setTotalVerified(countRes.count || 0);
-    setPartnerShops(shopsRes.count || 0);
-  };
-
-  const loadListings = async () => {
-    const { data } = await supabase
+  const loadAll = useCallback(async () => {
+    // Load listings with shop info
+    const { data: listingsData } = await supabase
       .from("carity_listings")
-      .select("*")
+      .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id")
       .eq("status", "published")
       .order("published_at", { ascending: false });
-    
-    setListings((data || []).map((l: any) => ({
+
+    const rawListings = (listingsData || []).map((l: any) => ({
       ...l,
       photos: Array.isArray(l.photos) ? l.photos : [],
+    }));
+
+    // Get shop info for listings that have shop_id
+    const shopIds = [...new Set(rawListings.filter(l => l.shop_id).map(l => l.shop_id))];
+    let shopMap: Record<string, { name: string; address: string | null }> = {};
+    if (shopIds.length > 0) {
+      const { data: shops } = await supabase
+        .from("shops")
+        .select("id, name, address")
+        .in("id", shopIds);
+      (shops || []).forEach((s: any) => { shopMap[s.id] = { name: s.name, address: s.address }; });
+    }
+
+    setListings(rawListings.map(l => ({
+      ...l,
+      shop_name: l.shop_id ? shopMap[l.shop_id]?.name : undefined,
+      shop_location: l.shop_id ? shopMap[l.shop_id]?.address : undefined,
     })));
+
+    // Load real stats in parallel
+    const [publishedRes, inspectionsRes, shopsRes] = await Promise.all([
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
+      supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("status", "completed"),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+    ]);
+
+    setStats({
+      totalPublished: publishedRes.count || 0,
+      totalInspections: inspectionsRes.count || 0,
+      totalPartnerShops: shopsRes.count || 0,
+    });
+
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    document.title = "Carros Usados Inspecionados — GarageFlow Market";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Compre carros usados com inspeção real feita por oficinas certificadas. Relatório técnico completo e auditável. Sem surpresas, sem riscos.");
+    loadAll();
+
+    // Real-time: listen for new published listings
+    const channel = supabase
+      .channel("market-listings-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "carity_listings" }, () => {
+        loadAll();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [loadAll]);
 
   const filtered = listings
     .filter(l => {
@@ -84,7 +123,6 @@ export default function CarityMarketplace() {
       const aBoost = a.boost_active ? 1 : 0;
       const bBoost = b.boost_active ? 1 : 0;
       if (bBoost !== aBoost) return bBoost - aBoost;
-      
       if (sortBy === "price_asc") return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
       if (sortBy === "year") return b.year - a.year;
@@ -92,9 +130,17 @@ export default function CarityMarketplace() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
+  const hasAnyStats = stats.totalPublished > 0 || stats.totalInspections > 0 || stats.totalPartnerShops > 0;
+
+  // SEO: generate slug for listing URL
+  const listingUrl = (l: Listing) => {
+    const slug = `${l.make}-${l.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+    return `/market/carros/${slug}-${l.id}`;
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
+      {/* HERO — Comunicar confiança em 3 segundos */}
       <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">
@@ -118,43 +164,62 @@ export default function CarityMarketplace() {
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
           <Badge className="mb-4 bg-amber-400/20 text-amber-300 border-amber-400/30 text-sm">
             <ShieldCheck className="h-3.5 w-3.5 mr-1" />
-            Todos os carros inspecionados por oficinas certificadas
+            Inspeção real por oficinas certificadas
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
-            Carros usados com <span className="text-amber-400">confiança total</span>
+            Carros usados com <span className="text-amber-400">inspeção real</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-            Cada carro no GarageFlow Market passa por uma inspeção técnica obrigatória numa oficina certificada. 
-            Sem surpresas. Sem riscos.
+            Cada veículo é verificado antes de ser publicado — dados técnicos completos e auditáveis.
           </p>
-          
+
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            <Link to="#listings">
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+                Ver carros <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/market/sell">
+              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                Vender carro
+              </Button>
+            </Link>
+          </div>
+
+          {/* Trust layer — badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-300">
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4 text-amber-400" />
-              Inspeção obrigatória
+              Inspeção Real
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4 text-amber-400" />
-              Relatório técnico completo
+              Oficina Certificada
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4 text-amber-400" />
-              Oficinas certificadas GarageFlow
+              Relatório Técnico Incluído
             </div>
           </div>
 
-          {/* Real stats counters */}
-          {(totalVerified > 0 || partnerShops > 0) && (
+          {/* REAL STATS — only shown when data exists */}
+          {hasAnyStats && (
             <div className="flex flex-wrap justify-center gap-8 mt-8 pt-6 border-t border-white/10">
-              {totalVerified > 0 && (
+              {stats.totalPublished > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400">{totalVerified}</p>
-                  <p className="text-xs text-slate-400">Carros verificados</p>
+                  <p className="text-3xl font-bold text-amber-400">{stats.totalPublished}</p>
+                  <p className="text-xs text-slate-400">Carros publicados</p>
                 </div>
               )}
-              {partnerShops > 0 && (
+              {stats.totalInspections > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400">{partnerShops}</p>
+                  <p className="text-3xl font-bold text-amber-400">{stats.totalInspections}</p>
+                  <p className="text-xs text-slate-400">Inspeções concluídas</p>
+                </div>
+              )}
+              {stats.totalPartnerShops > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400">{stats.totalPartnerShops}</p>
                   <p className="text-xs text-slate-400">Oficinas certificadas</p>
                 </div>
               )}
@@ -169,15 +234,15 @@ export default function CarityMarketplace() {
           <h2 className="text-center text-2xl font-bold mb-8">Como funciona o GarageFlow Market?</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "1", title: "Vendedor submete", desc: "O vendedor cria o anúncio e paga a taxa de inspeção" },
-              { step: "2", title: "Oficina inspeciona", desc: "Uma oficina GarageFlow faz a inspeção completa" },
-              { step: "3", title: "Relatório gerado", desc: "Checklist mecânico, fotos e classificação automática" },
-              { step: "4", title: "Compre com confiança", desc: "Só carros aprovados aparecem no marketplace" },
+              { step: "1", title: "Vendedor submete", desc: "O vendedor cria o anúncio e paga a taxa de inspeção", icon: Car },
+              { step: "2", title: "Oficina inspeciona", desc: "Uma oficina certificada GarageFlow faz a inspeção completa", icon: Wrench },
+              { step: "3", title: "Relatório gerado", desc: "Checklist mecânico, fotos e classificação automática", icon: FileCheck },
+              { step: "4", title: "Compre com confiança", desc: "Só carros aprovados aparecem no marketplace", icon: ShieldCheck },
             ].map(s => (
               <Card key={s.step} className="text-center border-0 shadow-sm">
                 <CardContent className="pt-6">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center mx-auto mb-3 text-lg dark:bg-amber-900/30 dark:text-amber-400">
-                    {s.step}
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3 dark:bg-amber-900/30 dark:text-amber-400">
+                    <s.icon className="h-6 w-6" />
                   </div>
                   <h3 className="font-semibold mb-1">{s.title}</h3>
                   <p className="text-sm text-muted-foreground">{s.desc}</p>
@@ -188,33 +253,22 @@ export default function CarityMarketplace() {
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
+      {/* Listings */}
+      <section id="listings" className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar marca, modelo..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-10"
-            />
+            <Input placeholder="Pesquisar marca, modelo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
           <Select value={fuelFilter} onValueChange={setFuelFilter}>
-            <SelectTrigger className="w-full md:w-44">
-              <SelectValue placeholder="Combustível" />
-            </SelectTrigger>
+            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Combustível" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              {Object.entries(FUEL_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
+              {Object.entries(FUEL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-44">
-              <SelectValue placeholder="Ordenar" />
-            </SelectTrigger>
+            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Ordenar" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="recent">Mais recentes</SelectItem>
               <SelectItem value="price_asc">Preço: menor</SelectItem>
@@ -234,10 +288,9 @@ export default function CarityMarketplace() {
             <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum carro disponível</h3>
             <p className="text-muted-foreground mb-6">
-              {listings.length === 0 
+              {listings.length === 0
                 ? "Ainda não há carros publicados no GarageFlow Market. Seja o primeiro a vender!"
-                : "Nenhum resultado para os filtros selecionados."
-              }
+                : "Nenhum resultado para os filtros selecionados."}
             </p>
             <Link to="/market/sell">
               <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
@@ -248,47 +301,42 @@ export default function CarityMarketplace() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(listing => (
-              <Link key={listing.id} to={`/market/car/${listing.id}`}>
+              <Link key={listing.id} to={listingUrl(listing)}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {listing.photos[0] ? (
-                      <img
-                        src={listing.photos[0] as string}
-                        alt={`${listing.make} ${listing.model}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <img src={listing.photos[0] as string} alt={`${listing.make} ${listing.model} ${listing.year}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Car className="h-12 w-12 text-muted-foreground/30" />
-                      </div>
+                      <div className="flex items-center justify-center h-full"><Car className="h-12 w-12 text-muted-foreground/30" /></div>
                     )}
-                    <Badge className="absolute top-3 left-3 bg-slate-900 text-amber-400 border-0">
-                      <ShieldCheck className="h-3 w-3 mr-1" />
-                      Inspecionado
+                    <Badge className="absolute top-3 left-3 bg-green-600 text-white border-0 shadow-md">
+                      <ShieldCheck className="h-3 w-3 mr-1" /> Inspecionado ✓
                     </Badge>
+                    {listing.boost_active && (
+                      <Badge className="absolute top-3 right-3 bg-purple-600 text-white border-0">⚡ Destaque</Badge>
+                    )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-1">
-                      {listing.make} {listing.model}
-                    </h3>
-                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {listing.year}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Gauge className="h-3.5 w-3.5" />
-                        {listing.mileage.toLocaleString()} km
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Fuel className="h-3.5 w-3.5" />
-                        {listing.fuel}
-                      </span>
+                    <h3 className="font-bold text-lg mb-1">{listing.make} {listing.model}</h3>
+                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-2">
+                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{listing.year}</span>
+                      <span className="flex items-center gap-1"><Gauge className="h-3.5 w-3.5" />{listing.mileage.toLocaleString()} km</span>
+                      <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" />{listing.fuel}</span>
                     </div>
+                    {/* Oficina responsável */}
+                    {listing.shop_name && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
+                        <Wrench className="h-3 w-3 text-amber-500" />
+                        Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span>
+                      </p>
+                    )}
+                    {listing.published_at && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Publicado a {new Date(listing.published_at).toLocaleDateString("pt-PT")}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-slate-800 dark:text-amber-400">
-                        €{listing.price.toLocaleString()}
-                      </span>
+                      <span className="text-xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</span>
                       <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400">
                         Ver detalhes <Eye className="ml-1 h-3.5 w-3.5" />
                       </Button>
@@ -301,7 +349,7 @@ export default function CarityMarketplace() {
         )}
       </section>
 
-      {/* CTA */}
+      {/* CTA Sell */}
       <section className="py-16 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">Quer vender o seu carro?</h2>
@@ -334,11 +382,7 @@ export default function CarityMarketplace() {
         "name": "GarageFlow Market",
         "url": "https://garageflow.pt/market",
         "description": "Marketplace de carros usados com inspeção técnica obrigatória por oficinas certificadas.",
-        "publisher": {
-          "@type": "Organization",
-          "name": "GarageFlow",
-          "url": "https://garageflow.pt"
-        }
+        "publisher": { "@type": "Organization", "name": "GarageFlow", "url": "https://garageflow.pt" }
       })}} />
     </div>
   );

@@ -28,6 +28,8 @@ interface Listing {
   description: string;
   status: string;
   created_at: string;
+  boost_active?: boolean;
+  boost_expires_at?: string;
 }
 
 export default function CarityMarketplace() {
@@ -67,6 +69,11 @@ export default function CarityMarketplace() {
       return matchSearch && matchFuel;
     })
     .sort((a, b) => {
+      // Boosted listings always first
+      const aBoost = a.boost_active ? 1 : 0;
+      const bBoost = b.boost_active ? 1 : 0;
+      if (bBoost !== aBoost) return bBoost - aBoost;
+      
       if (sortBy === "price_asc") return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
       if (sortBy === "year") return b.year - a.year;

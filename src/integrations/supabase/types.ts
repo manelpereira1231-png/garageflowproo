@@ -397,6 +397,53 @@ export type Database = {
           },
         ]
       }
+      carity_boosts: {
+        Row: {
+          boost_type: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          listing_id: string
+          price: number
+          seller_id: string
+          started_at: string | null
+          status: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          boost_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id: string
+          price?: number
+          seller_id: string
+          started_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          boost_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id?: string
+          price?: number
+          seller_id?: string
+          started_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_boosts_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carity_inspection_offers: {
         Row: {
           id: string
@@ -614,6 +661,8 @@ export type Database = {
       }
       carity_listings: {
         Row: {
+          boost_active: boolean
+          boost_expires_at: string | null
           commission_rate: number
           created_at: string
           description: string
@@ -634,6 +683,8 @@ export type Database = {
           year: number
         }
         Insert: {
+          boost_active?: boolean
+          boost_expires_at?: string | null
           commission_rate?: number
           created_at?: string
           description?: string
@@ -654,6 +705,8 @@ export type Database = {
           year?: number
         }
         Update: {
+          boost_active?: boolean
+          boost_expires_at?: string | null
           commission_rate?: number
           created_at?: string
           description?: string

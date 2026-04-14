@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, AlertTriangle, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2 } from "lucide-react";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
@@ -16,19 +17,42 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
   rejected: { label: "Rejeitado", color: "bg-red-100 text-red-800", icon: XCircle },
 };
 
+const BOOST_OPTIONS = [
+  { type: "7d", label: "Destaque 7 dias", price: "5,99", description: "O seu anúncio aparece em destaque durante 7 dias" },
+  { type: "14d", label: "Destaque 14 dias", price: "9,99", description: "Maior visibilidade durante 14 dias" },
+  { type: "top", label: "Topo do marketplace", price: "12,99", description: "O seu anúncio aparece sempre no topo" },
+];
+
 export default function CaritySellerDashboard() {
   const navigate = useNavigate();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boostingId, setBoostingId] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth"); return; }
+    if (!user) { navigate("/auth?from=carity"); return; }
     const { data } = await supabase.from("carity_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false });
     setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
     setLoading(false);
+  };
+
+  const handleBoost = async (listingId: string, boostType: string) => {
+    setBoostingId(listingId);
+    try {
+      const res = await supabase.functions.invoke("carity-pay-inspection", {
+        body: { listing_id: listingId, type: "boost", boost_type: boostType },
+      });
+      if (res.error) throw new Error(res.error.message);
+      const { url } = res.data;
+      if (url) window.location.href = url;
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar boost");
+    } finally {
+      setBoostingId(null);
+    }
   };
 
   return (
@@ -72,6 +96,8 @@ export default function CaritySellerDashboard() {
             {listings.map(listing => {
               const statusConfig = STATUS_MAP[listing.status] || STATUS_MAP.pending_payment;
               const StatusIcon = statusConfig.icon;
+              const canBoost = listing.status === "published" && !listing.boost_active;
+
               return (
                 <Card key={listing.id} className="overflow-hidden">
                   <CardContent className="p-4">
@@ -83,14 +109,36 @@ export default function CaritySellerDashboard() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-semibold">{listing.make} {listing.model} ({listing.year})</h3>
-                            <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage.toLocaleString()} km · €{listing.price.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage?.toLocaleString()} km · €{listing.price?.toLocaleString()}</p>
                           </div>
-                          <Badge className={statusConfig.color}><StatusIcon className="h-3 w-3 mr-1" />{statusConfig.label}</Badge>
+                          <div className="flex items-center gap-2">
+                            {listing.boost_active && <Badge className="bg-purple-100 text-purple-800"><Rocket className="h-3 w-3 mr-1" />Destaque</Badge>}
+                            <Badge className={statusConfig.color}><StatusIcon className="h-3 w-3 mr-1" />{statusConfig.label}</Badge>
+                          </div>
                         </div>
+
                         {listing.status === 'pending_payment' && (
                           <Link to={`/carity/pagar/${listing.id}`}>
-                            <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
+                            <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€24,90)</Button>
                           </Link>
+                        )}
+
+                        {canBoost && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {BOOST_OPTIONS.map(opt => (
+                              <Button
+                                key={opt.type}
+                                size="sm"
+                                variant="outline"
+                                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                                disabled={boostingId === listing.id}
+                                onClick={() => handleBoost(listing.id, opt.type)}
+                              >
+                                {boostingId === listing.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Rocket className="h-3 w-3 mr-1" />}
+                                {opt.label} — €{opt.price}
+                              </Button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>

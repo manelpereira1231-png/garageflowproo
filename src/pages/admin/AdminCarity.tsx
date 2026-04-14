@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star, Loader2, Send } from "lucide-react";
+import { ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star, Loader2, Send, ClipboardCheck } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Aguarda Pagamento",
@@ -135,8 +135,12 @@ export default function AdminCarity() {
   // Stats
   const totalListings = listings.length;
   const published = listings.filter(l => l.status === "published").length;
+  const sold = listings.filter(l => l.status === "sold").length;
   const pendingApproval = listings.filter(l => l.status === "pending_approval").length;
-  const totalRevenue = transactions.filter(t => t.status === 'paid').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const paidTransactions = transactions.filter(t => t.status === 'paid');
+  const totalRevenue = paidTransactions.reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const totalInspectionRevenue = paidTransactions.filter(t => t.type === 'inspection_fee').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const totalCommissionRevenue = paidTransactions.filter(t => t.type === 'sale_commission').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
   const partnerShops = shops.filter(s => s.is_carity_partner);
 
   // Shop performance
@@ -152,21 +156,21 @@ export default function AdminCarity() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-emerald-600" />
+          <ShieldCheck className="h-6 w-6 text-amber-500" />
           Carity — Gestão Completa
         </h1>
         <p className="text-muted-foreground">Controlo total: carros, inspeções, oficinas parceiras e receita</p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Financial KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card><CardContent className="pt-4 pb-4 text-center">
           <Car className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
           <p className="text-2xl font-bold">{totalListings}</p>
@@ -178,21 +182,53 @@ export default function AdminCarity() {
           <p className="text-xs text-muted-foreground">Publicados</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Clock className="h-5 w-5 mx-auto text-amber-500 mb-1" />
-          <p className="text-2xl font-bold">{pendingApproval}</p>
-          <p className="text-xs text-muted-foreground">Aguardam Aprovação</p>
+          <TrendingUp className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-2xl font-bold">{sold}</p>
+          <p className="text-xs text-muted-foreground">Vendidos</p>
+        </CardContent></Card>
+        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5"><CardContent className="pt-4 pb-4 text-center">
+          <Euro className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+          <p className="text-2xl font-bold text-amber-600">€{totalRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Receita Total</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Building2 className="h-5 w-5 mx-auto text-blue-500 mb-1" />
-          <p className="text-2xl font-bold">{partnerShops.length}</p>
-          <p className="text-xs text-muted-foreground">Oficinas Parceiras</p>
+          <ClipboardCheck className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-2xl font-bold">€{totalInspectionRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Inspeções (35%)</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Euro className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-          <p className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground">Receita Plataforma</p>
+          <Star className="h-5 w-5 mx-auto text-purple-500 mb-1" />
+          <p className="text-2xl font-bold">€{totalCommissionRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Comissões (2%)</p>
         </CardContent></Card>
       </div>
+
+      {/* Funnel */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{totalListings}</p>
+              <p className="text-xs text-muted-foreground">Carros Submetidos</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{inspections.length}</p>
+              <p className="text-xs text-muted-foreground">Inspecionados</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{published}</p>
+              <p className="text-xs text-muted-foreground">Publicados</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold text-green-600">{sold}</p>
+              <p className="text-xs text-muted-foreground">Vendidos</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
@@ -234,7 +270,7 @@ export default function AdminCarity() {
                         variant="outline"
                         onClick={() => sendOfferToPartners(listing.id)}
                         disabled={sendingOffer === listing.id}
-                        className="border-emerald-200 text-emerald-700"
+                        className="border-amber-200 text-amber-700"
                       >
                         {sendingOffer === listing.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                         Enviar a oficinas
@@ -252,7 +288,7 @@ export default function AdminCarity() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-emerald-600" />
+                <Building2 className="h-5 w-5 text-amber-600" />
                 Gestão de Oficinas Carity
               </CardTitle>
             </CardHeader>
@@ -263,12 +299,12 @@ export default function AdminCarity() {
               {shops.map(shop => {
                 const perf = getShopPerformance(shop.id);
                 return (
-                  <div key={shop.id} className={`p-4 rounded-lg border ${shop.is_carity_partner ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-900/5' : 'border-border'}`}>
+                  <div key={shop.id} className={`p-4 rounded-lg border ${shop.is_carity_partner ? 'border-amber-200 bg-amber-50/30 dark:bg-amber-900/5' : 'border-border'}`}>
                     <div className="flex items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold flex items-center gap-2">
                           {shop.name}
-                          {shop.is_carity_partner && <Badge className="bg-emerald-100 text-emerald-800 border-0 text-xs">Parceira</Badge>}
+                          {shop.is_carity_partner && <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">Parceira</Badge>}
                           {shop.is_carity_partner && !shop.carity_active && <Badge variant="destructive" className="text-xs">Bloqueada</Badge>}
                         </h3>
                         {shop.is_carity_partner && (
@@ -332,7 +368,7 @@ export default function AdminCarity() {
                   <div className="flex items-center gap-3">
                     <Badge>{insp.status === 'pending' ? 'Pendente' : insp.status === 'in_progress' ? 'Em curso' : insp.status === 'completed' ? 'Concluída' : insp.status}</Badge>
                     <Badge variant="outline">{insp.payment_status === 'paid' ? 'Pago' : insp.payment_status}</Badge>
-                    <span className="text-sm text-emerald-600 font-medium">€{Number(insp.shop_share).toFixed(2)} oficina</span>
+                    <span className="text-sm text-amber-600 font-medium">€{Number(insp.shop_share).toFixed(2)} oficina</span>
                   </div>
                 </div>
               </CardContent>

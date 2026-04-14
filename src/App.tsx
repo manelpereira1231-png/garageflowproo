@@ -78,6 +78,8 @@ const CarityPayInspection = lazyRetry(() => import("@/pages/CarityPayInspection"
 const CaritySellerDashboard = lazyRetry(() => import("@/pages/CaritySellerDashboard"));
 const CarityShopInspections = lazyRetry(() => import("@/pages/CarityShopInspections"));
 const CarityAuth = lazyRetry(() => import("@/pages/CarityAuth"));
+const CarityByMake = lazyRetry(() => import("@/pages/CarityByMake"));
+const CarityByCity = lazyRetry(() => import("@/pages/CarityByCity"));
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -237,6 +239,8 @@ const publicRoutes = [
   { path: "/carity/pagar/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/carity/meus-anuncios", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
   { path: "/carity/auth", element: <Suspense fallback={<PageLoader />}><CarityAuth /></Suspense> },
+  { path: "/carity/marca/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
+  { path: "/carity/cidade/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
 ];
 
 function AuthenticatedRoutes() {

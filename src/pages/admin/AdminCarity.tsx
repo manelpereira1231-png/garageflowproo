@@ -55,6 +55,8 @@ export default function AdminCarity() {
   const [payouts, setPayouts] = useState<any[]>([]);
   const [saleConfirmations, setSaleConfirmations] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
+  const [riskFlags, setRiskFlags] = useState<any[]>([]);
+  const [scanningRisks, setScanningRisks] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
@@ -75,7 +77,7 @@ export default function AdminCarity() {
   const [viewingReport, setViewingReport] = useState<any | null>(null);
 
   const loadData = useCallback(async () => {
-    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes, walletsRes, payoutsRes, confirmRes, escrowRes] = await Promise.all([
+    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes, walletsRes, payoutsRes, confirmRes, escrowRes, riskFlagsRes] = await Promise.all([
       supabase.from("carity_listings").select("*").order("created_at", { ascending: false }),
       supabase.from("carity_inspections").select("*, carity_listings(make, model, year, plate, seller_id)").order("assigned_at", { ascending: false }),
       supabase.from("carity_transactions").select("*").order("created_at", { ascending: false }),
@@ -88,6 +90,7 @@ export default function AdminCarity() {
       supabase.from("shop_payouts").select("*, shops(name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("sale_confirmations").select("*, carity_listings(make, model, year, plate, price)").order("created_at", { ascending: false }),
       supabase.from("market_escrow").select("*, carity_listings(make, model, year, plate, price)").order("created_at", { ascending: false }),
+      supabase.from("audit_risk_flags" as any).select("*").order("created_at", { ascending: false }).limit(200),
     ]);
 
     setListings((listingsRes.data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
@@ -102,6 +105,7 @@ export default function AdminCarity() {
     setPayouts(payoutsRes.data || []);
     setSaleConfirmations(confirmRes.data || []);
     setEscrows(escrowRes.data || []);
+    setRiskFlags((riskFlagsRes.data as any[]) || []);
     setLoading(false);
   }, []);
 
@@ -477,6 +481,7 @@ export default function AdminCarity() {
           <TabsTrigger value="wallets">💰 Wallets ({wallets.length})</TabsTrigger>
           <TabsTrigger value="sales">🏷️ Vendas ({saleConfirmations.length})</TabsTrigger>
           <TabsTrigger value="escrows">⚖️ Escrow ({escrows.length})</TabsTrigger>
+          <TabsTrigger value="risk">🚨 Risco ({riskFlags.filter(f => !f.auto_resolved && !f.reviewed_by).length})</TabsTrigger>
         </TabsList>
 
         {/* === OVERVIEW === */}
@@ -1105,6 +1110,112 @@ export default function AdminCarity() {
                         )}
 
                         <p className="text-[10px] text-muted-foreground">ID: {e.id} • Criado: {new Date(e.created_at).toLocaleString("pt-PT")} {e.delivery_deadline ? `• Deadline: ${new Date(e.delivery_deadline).toLocaleDateString("pt-PT")}` : ""}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === RISK FLAGS TAB === */}
+        <TabsContent value="risk">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                  Flags de Risco e Auditoria
+                </CardTitle>
+                <Button
+                  onClick={async () => {
+                    setScanningRisks(true);
+                    try {
+                      const { data, error } = await supabase.rpc("flag_suspicious_transactions");
+                      if (error) throw error;
+                      const result = data as any;
+                      toast.success(`Scan concluído: ${result?.flagged || 0} nova(s) flag(s) criada(s)`);
+                      loadData();
+                    } catch (err: any) {
+                      toast.error(err.message || "Erro ao executar scan");
+                    } finally {
+                      setScanningRisks(false);
+                    }
+                  }}
+                  disabled={scanningRisks}
+                  size="sm"
+                >
+                  {scanningRisks ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
+                  Executar Scan de Risco
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {riskFlags.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Nenhuma flag de risco. Execute um scan para verificar.</p>
+              ) : (
+                <div className="space-y-3">
+                  {riskFlags.map((flag: any) => {
+                    const isReviewed = !!flag.reviewed_by;
+                    const severityColors: Record<string, string> = {
+                      critical: "bg-red-100 text-red-800 border-red-200",
+                      high: "bg-orange-100 text-orange-800 border-orange-200",
+                      medium: "bg-amber-100 text-amber-800 border-amber-200",
+                      info: "bg-blue-100 text-blue-800 border-blue-200",
+                    };
+                    const flagTypeLabels: Record<string, string> = {
+                      high_value_transaction: "💰 Alto Valor",
+                      rapid_seller_activity: "⚡ Atividade Rápida",
+                      stale_escrow: "⏰ Escrow Estagnado",
+                      low_trust_active_seller: "🔻 Trust Baixo",
+                      random_audit_sample: "🎲 Amostra Aleatória",
+                      chat_evasion_repeat: "🚫 Evasão de Chat",
+                    };
+
+                    return (
+                      <div key={flag.id} className={`p-4 rounded-lg border ${isReviewed ? 'opacity-60 bg-muted/30' : 'bg-background'}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className={severityColors[flag.severity] || severityColors.medium}>
+                                {flag.severity?.toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline">
+                                {flagTypeLabels[flag.flag_type] || flag.flag_type}
+                              </Badge>
+                              {isReviewed && <Badge className="bg-green-100 text-green-800">✓ Revisto</Badge>}
+                            </div>
+                            <p className="text-sm font-medium">{flag.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(flag.created_at).toLocaleString("pt-PT")} • {flag.entity_type}: {flag.entity_id?.slice(0, 8)}...
+                            </p>
+                            {flag.review_notes && (
+                              <p className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
+                                📝 {flag.review_notes}
+                              </p>
+                            )}
+                          </div>
+                          {!isReviewed && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const notes = prompt("Notas de revisão (opcional):");
+                                const { data: { user } } = await supabase.auth.getUser();
+                                await supabase.from("audit_risk_flags" as any).update({
+                                  reviewed_by: user?.id,
+                                  reviewed_at: new Date().toISOString(),
+                                  review_notes: notes || "Revisto sem notas",
+                                }).eq("id", flag.id);
+                                toast.success("Flag marcada como revista");
+                                loadData();
+                              }}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" /> Marcar Revisto
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

@@ -123,6 +123,8 @@ export default function MarketMessages() {
                 listingId={activeConvo.listingId}
                 sellerId={activeConvo.otherUserId}
                 currentUserId={userId}
+                listingPrice={0}
+                listingLabel={activeConvo.listingTitle}
               />
             </CardContent>
           </Card>

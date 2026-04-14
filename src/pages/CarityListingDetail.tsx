@@ -312,14 +312,14 @@ export default function CarityListingDetail() {
               </CardContent>
             </Card>
 
-            {/* Inspection report */}
+            {/* Inspection report — 2 LAYER VIEW */}
             {report && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <ShieldCheck className="h-5 w-5 text-amber-500" />
-                      Relatório de Inspeção GarageFlow Market
+                      Relatório de Inspeção Certificado
                     </CardTitle>
                     {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
                       <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
@@ -329,108 +329,182 @@ export default function CarityListingDetail() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* LAYER 1: SIMPLIFIED VIEW (Quick Decision) */}
+                  <div className="border-2 border-amber-200 dark:border-amber-800 rounded-xl p-6 bg-amber-50/30 dark:bg-amber-900/5">
+                    <p className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 mb-4">📊 Visão Rápida — Decisão de Compra</p>
+                    
+                    <div className="flex items-center justify-center gap-6 mb-4">
+                      <div className="text-center">
+                        <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
+                          report.overall_score >= 80 ? 'bg-green-100 dark:bg-green-900/30' :
+                          report.overall_score >= 60 ? 'bg-amber-100 dark:bg-amber-900/30' :
+                          'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          <Star className={`h-8 w-8 ${report.overall_score >= 80 ? 'text-green-500 fill-green-500' : report.overall_score >= 60 ? 'text-amber-500 fill-amber-500' : 'text-red-500 fill-red-500'}`} />
+                          <span className={`text-4xl font-bold ${
+                            report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
+                            report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                            'text-red-700 dark:text-red-400'
+                          }`}>{report.overall_score}</span>
+                          <span className="text-xl text-muted-foreground">/100</span>
+                        </div>
+                        <p className="text-sm font-semibold mt-2">
+                          {report.overall_score >= 80 ? '🟢 Excelente estado' :
+                           report.overall_score >= 60 ? '🟡 Bom estado — verificar detalhes' :
+                           '🔴 Necessita atenção significativa'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Risk summary */}
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-2 rounded-lg bg-background">
+                        <p className="text-xs text-muted-foreground">Nível de Risco</p>
+                        <p className={`font-bold text-sm ${report.overall_score >= 80 ? 'text-green-600' : report.overall_score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                          {report.overall_score >= 80 ? 'Baixo' : report.overall_score >= 60 ? 'Moderado' : 'Elevado'}
+                        </p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-background">
+                        <p className="text-xs text-muted-foreground">Problemas</p>
+                        <p className="font-bold text-sm">{report.defects?.length || 0} encontrado{(report.defects?.length || 0) !== 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-background">
+                        <p className="text-xs text-muted-foreground">Certificação</p>
+                        <p className="font-bold text-sm text-green-600">✓ Verificado</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Workshop info with reputation */}
                   {shopInfo && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Inspecionado por <span className="text-amber-700 dark:text-amber-400 font-semibold">{shopInfo.name}</span></p>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-lg border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <FileCheck className="h-5 w-5 text-amber-500" />
+                        <p className="font-semibold">Inspecionado por <span className="text-amber-700 dark:text-amber-400">{shopInfo.name}</span></p>
+                      </div>
                       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                        {shopInfo.carity_inspections_count > 0 && <span>📋 {shopInfo.carity_inspections_count} inspeções</span>}
-                        {shopInfo.carity_approval_rate > 0 && <span>✅ {shopInfo.carity_approval_rate}% aprovação</span>}
-                        {shopInfo.carity_rating > 0 && <span>⭐ {shopInfo.carity_rating}/5</span>}
+                        {shopInfo.carity_inspections_count > 0 && <span>📋 {shopInfo.carity_inspections_count} inspeções realizadas</span>}
+                        {shopInfo.carity_approval_rate > 0 && <span>✅ {shopInfo.carity_approval_rate}% taxa de aprovação</span>}
+                        {shopInfo.carity_rating > 0 && <span>⭐ {shopInfo.carity_rating}/5 classificação</span>}
                         <span className="text-amber-600 dark:text-amber-400 font-medium">Oficina certificada GarageFlow</span>
                       </div>
+                      {(report as any).technician_name && (
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          Técnico responsável: <strong>{(report as any).technician_name}</strong>
+                        </p>
+                      )}
                     </div>
                   )}
 
-                  <div className="text-center py-4">
-                    <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
-                      report.overall_score >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
-                      report.overall_score >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
-                      'bg-red-50 dark:bg-red-900/20'
-                    }`}>
-                      <Star className={`h-8 w-8 ${report.overall_score >= 80 ? 'text-green-500 fill-green-500' : report.overall_score >= 60 ? 'text-amber-500 fill-amber-500' : 'text-red-500 fill-red-500'}`} />
-                      <span className={`text-4xl font-bold ${
-                        report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
-                        report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
-                        'text-red-700 dark:text-red-400'
-                      }`}>{report.overall_score}</span>
-                      <span className="text-xl text-muted-foreground">/100</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {report.overall_score >= 80 ? '🟢 Premium — Excelente estado' :
-                       report.overall_score >= 60 ? '🟡 Bom estado geral' :
-                       '🔴 Necessita atenção'}
-                    </p>
-                  </div>
+                  {/* LAYER 2: DETAILED VIEW (Full Transparency) */}
+                  <div className="border rounded-lg">
+                    <button 
+                      onClick={() => {
+                        const el = document.getElementById('detailed-report');
+                        if (el) el.classList.toggle('hidden');
+                      }}
+                      className="w-full p-3 flex items-center justify-between hover:bg-muted/50 rounded-t-lg"
+                    >
+                      <span className="text-sm font-semibold flex items-center gap-2">
+                        <Eye className="h-4 w-4" /> Ver Relatório Técnico Completo
+                      </span>
+                      <span className="text-xs text-muted-foreground">Checklist · Fotos · Defeitos · Assinatura Digital</span>
+                    </button>
 
-                  <Separator />
-
-                  <div>
-                    <h3 className="font-semibold mb-3">Checklist Mecânico</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
-                        const status = report[key] || 'ok';
-                        const config = STATUS_ICON[status] || STATUS_ICON.ok;
-                        const Icon = config.icon;
-                        return (
-                          <div key={key} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                            <span className="font-medium">{label}</span>
-                            <div className={`flex items-center gap-1.5 ${config.color}`}>
-                              <Icon className="h-4 w-4" />
-                              <span className="text-sm font-medium">{config.label}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {report.defects.length > 0 && (
-                    <>
-                      <Separator />
+                    <div id="detailed-report" className="hidden border-t p-4 space-y-6">
+                      {/* Mechanical checklist */}
                       <div>
-                        <h3 className="font-semibold mb-3">Problemas Identificados</h3>
-                        <div className="space-y-2">
-                          {report.defects.map((defect: any, i: number) => (
-                            <div key={i} className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
-                              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="font-medium text-sm">{defect.description || defect}</p>
-                                {defect.severity && (
-                                  <Badge variant="outline" className="mt-1 text-xs">
-                                    {defect.severity === 'grave' ? '⚠️ Grave' : defect.severity === 'medio' ? '⚡ Médio' : '💡 Leve'}
-                                  </Badge>
-                                )}
+                        <h3 className="font-semibold mb-3">Checklist Mecânico</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
+                            const status = report[key] || 'ok';
+                            const config = STATUS_ICON[status] || STATUS_ICON.ok;
+                            const Icon = config.icon;
+                            return (
+                              <div key={key} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                <span className="font-medium">{label}</span>
+                                <div className={`flex items-center gap-1.5 ${config.color}`}>
+                                  <Icon className="h-4 w-4" />
+                                  <span className="text-sm font-medium">{config.label}</span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
-                    </>
-                  )}
 
-                  {report.damage_photos.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h3 className="font-semibold mb-3">Fotos de Danos</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {report.damage_photos.map((photo: string, i: number) => (
-                            <img key={i} src={photo} alt="Dano" className="rounded-lg w-full aspect-square object-cover" />
-                          ))}
+                      {/* Defects with evidence */}
+                      {report.defects.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-3">Problemas Identificados ({report.defects.length})</h3>
+                          <div className="space-y-2">
+                            {report.defects.map((defect: any, i: number) => (
+                              <div key={i} className={`flex items-start gap-2 p-3 rounded-lg ${
+                                defect.severity === 'grave' ? 'bg-red-50 dark:bg-red-900/10' :
+                                defect.severity === 'medio' ? 'bg-amber-50 dark:bg-amber-900/10' :
+                                'bg-blue-50 dark:bg-blue-900/10'
+                              }`}>
+                                <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                                  defect.severity === 'grave' ? 'text-red-500' :
+                                  defect.severity === 'medio' ? 'text-amber-500' : 'text-blue-500'
+                                }`} />
+                                <div>
+                                  <p className="font-medium text-sm">{defect.description || defect}</p>
+                                  {defect.severity && (
+                                    <Badge variant="outline" className="mt-1 text-xs">
+                                      {defect.severity === 'grave' ? '⚠️ Grave — Segurança/Estrutural' : defect.severity === 'medio' ? '⚡ Médio — Funcional' : '💡 Leve — Cosmético'}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Damage photos */}
+                      {report.damage_photos.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-3">📸 Prova Fotográfica de Danos</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {report.damage_photos.map((photo: string, i: number) => (
+                              <img key={i} src={photo} alt="Dano documentado" className="rounded-lg w-full aspect-square object-cover border" />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inspector notes */}
+                      {report.inspector_notes && (
+                        <div>
+                          <h3 className="font-semibold mb-2">Notas do Inspetor</h3>
+                          <p className="text-muted-foreground whitespace-pre-line">{report.inspector_notes}</p>
+                        </div>
+                      )}
+
+                      {/* Digital signature / integrity */}
+                      <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-4 border">
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <Hash className="h-3.5 w-3.5" /> Assinatura Digital do Relatório
+                        </p>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <p>📌 ID: <code className="bg-muted px-1 rounded">{report.id?.slice(0, 8)}...</code></p>
+                          {(report as any).technician_name && <p>👤 Técnico: <strong>{(report as any).technician_name}</strong></p>}
+                          {shopInfo && <p>🏪 Oficina: <strong>{shopInfo.name}</strong></p>}
+                          {report.completed_at && <p>📅 Data: <strong>{new Date(report.completed_at).toLocaleString('pt-PT')}</strong></p>}
+                          {(report as any).report_hash && (
+                            <p>🔐 Hash SHA-256: <code className="bg-muted px-1 rounded text-[10px] break-all">{(report as any).report_hash?.slice(0, 32)}...</code></p>
+                          )}
+                          {(report as any).is_locked && (
+                            <p className="text-green-600 dark:text-green-400 font-semibold mt-1 flex items-center gap-1">
+                              <Lock className="h-3 w-3" /> Relatório bloqueado e imutável — integridade garantida
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </>
-                  )}
-
-                  {report.inspector_notes && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h3 className="font-semibold mb-2">Notas do Inspetor</h3>
-                        <p className="text-muted-foreground whitespace-pre-line">{report.inspector_notes}</p>
-                      </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}

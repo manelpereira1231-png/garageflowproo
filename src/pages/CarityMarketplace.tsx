@@ -175,7 +175,7 @@ export default function CarityMarketplace() {
 
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <Link to="#listings">
-              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+              <Button size="lg" className="bg-white hover:bg-slate-100 text-slate-900 font-bold text-lg px-8 py-3 shadow-lg shadow-white/20">
                 Ver carros <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>

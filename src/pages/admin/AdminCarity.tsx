@@ -279,7 +279,10 @@ export default function AdminCarity() {
           <CardContent className="pt-4 pb-4 text-center">
             <Euro className="h-5 w-5 mx-auto text-amber-500 mb-1" />
             <p className="text-2xl font-bold text-amber-600">€{totalRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Receita Plataforma</p>
+            <p className="text-xs text-muted-foreground">Receita Stripe Verificada</p>
+            {unverifiedTx.length > 0 && (
+              <p className="text-[10px] text-destructive mt-1">⚠ €{unverifiedTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0).toFixed(2)} não verificado</p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -300,7 +303,10 @@ export default function AdminCarity() {
           <CardContent className="pt-4 pb-4 text-center">
             <Zap className="h-5 w-5 mx-auto text-amber-500 mb-1" />
             <p className="text-2xl font-bold">€{boostRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Boosts</p>
+            <p className="text-xs text-muted-foreground">Boosts (Stripe)</p>
+            {unverifiedBoostRevenue > 0 && (
+              <p className="text-[10px] text-destructive mt-1">⚠ €{unverifiedBoostRevenue.toFixed(2)} não verificado</p>
+            )}
           </CardContent>
         </Card>
       </div>

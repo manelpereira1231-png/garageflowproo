@@ -402,13 +402,18 @@ function AppRoutes() {
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
-            <Route path="/carity" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
-            <Route path="/carity/carro/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
-            <Route path="/carity/vender" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
-            <Route path="/carity/pagar/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
-            <Route path="/carity/meus-anuncios" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
-            <Route path="/carity/auth" element={<Suspense fallback={<PageLoader />}><CarityAuth /></Suspense>} />
-            <Route path="*" element={<LandingPage />} />
+            {/* GarageFlow Market routes */}
+            <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
+            <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
+            <Route path="/market/sell" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
+            <Route path="/market/pay/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
+            <Route path="/market/my-listings" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
+            <Route path="/market/make/:make" element={<Suspense fallback={<PageLoader />}><CarityByMake /></Suspense>} />
+            <Route path="/market/city/:city" element={<Suspense fallback={<PageLoader />}><CarityByCity /></Suspense>} />
+            {/* Legacy redirects */}
+            <Route path="/carity" element={<Navigate to="/market" replace />} />
+            <Route path="/carity/*" element={<Navigate to="/market" replace />} />
+            <Route path="*" element={<Navigate to="/auth?mode=login" replace />} />
           </Routes>
         </Suspense>
       </ChunkErrorBoundary>

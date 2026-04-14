@@ -14,7 +14,7 @@ export default function MarketAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
-  const redirect = searchParams.get("redirect") || "/market/my-listings";
+  const redirect = searchParams.get("redirect") || "/market/dashboard";
 
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [loading, setLoading] = useState(false);

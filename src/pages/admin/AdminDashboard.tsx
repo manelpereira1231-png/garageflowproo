@@ -187,7 +187,7 @@ export default function AdminDashboard() {
         newShopsThisMonth, newShopsThisWeek, newShopsToday,
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
         mrr, mrrWithDiscounts, arr, arpu, ltv, churnRate, trialCount, paidCount, freeCount,
-        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact,
+        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact, manualCount,
       });
     } catch (err) {
       console.error("Failed to fetch admin stats:", err);

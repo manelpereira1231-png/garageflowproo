@@ -273,6 +273,7 @@ const publicRoutes = [
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
+  { path: "/market/carros/:slug", element: <Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },

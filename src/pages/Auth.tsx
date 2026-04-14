@@ -143,8 +143,8 @@ export default function Auth() {
     }
   };
 
-  // Theme: Market dark theme ONLY on signup with particular selected, or when coming from /market
-  const isMarketTheme = mode === 'signup' && (fromMarket || accountType === "particular");
+  // Theme: Market dark theme ONLY when explicitly coming from /market context
+  const isMarketTheme = fromMarket && mode !== 'login';
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative transition-colors duration-300 ${isMarketTheme ? 'bg-slate-950' : 'bg-background'}`}>
@@ -207,8 +207,8 @@ export default function Auth() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Account type selection - only on signup */}
-            {mode === 'signup' && (
+            {/* Account type selection - only on signup AND only when coming from Market */}
+            {mode === 'signup' && fromMarket && (
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <button
                   type="button"
@@ -216,14 +216,12 @@ export default function Auth() {
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                     accountType === "particular"
                       ? "border-amber-400 bg-amber-400/10 text-amber-400"
-                      : isMarketTheme
-                        ? "border-slate-700 text-slate-400 hover:border-slate-600"
-                        : "border-border text-muted-foreground hover:border-primary/40"
+                      : "border-slate-700 text-slate-400 hover:border-slate-600"
                   }`}
                 >
                   <Car className="w-6 h-6" />
                   <span className="text-sm font-medium">Particular</span>
-                  <span className={`text-xs ${accountType === "particular" ? "text-amber-400/70" : isMarketTheme ? "text-slate-500" : "text-muted-foreground"}`}>
+                  <span className={`text-xs ${accountType === "particular" ? "text-amber-400/70" : "text-slate-500"}`}>
                     Comprar / Vender
                   </span>
                 </button>
@@ -233,14 +231,12 @@ export default function Auth() {
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                     accountType === "garage"
                       ? "border-primary bg-primary/10 text-primary"
-                      : isMarketTheme
-                        ? "border-slate-700 text-slate-400 hover:border-slate-600"
-                        : "border-border text-muted-foreground hover:border-primary/40"
+                      : "border-slate-700 text-slate-400 hover:border-slate-600"
                   }`}
                 >
                   <Wrench className="w-6 h-6" />
                   <span className="text-sm font-medium">Oficina</span>
-                  <span className={`text-xs ${accountType === "garage" ? "" : isMarketTheme ? "text-slate-500" : "text-muted-foreground"}`}>
+                  <span className={`text-xs ${accountType === "garage" ? "" : "text-slate-500"}`}>
                     Gerir oficina
                   </span>
                 </button>

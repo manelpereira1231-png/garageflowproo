@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User } from "lucide-react";
+import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User, Lock, Hash, FileCheck } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 const COMPONENT_KEYS = [
@@ -34,7 +34,14 @@ const STATUS_OPTIONS = [
 interface Defect {
   description: string;
   severity: "leve" | "medio" | "grave";
+  photo_url?: string;
 }
+
+const SEVERITY_IMPACT: Record<string, { label: string; weight: number; color: string }> = {
+  leve: { label: "Cosmético / Menor", weight: 1, color: "text-blue-600" },
+  medio: { label: "Funcional — requer atenção", weight: 3, color: "text-amber-600" },
+  grave: { label: "Segurança / Estrutural", weight: 5, color: "text-red-600" },
+};
 
 export default function CarityShopInspections() {
   const shopId = useActiveShopId();

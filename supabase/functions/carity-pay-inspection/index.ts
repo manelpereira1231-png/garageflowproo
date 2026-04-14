@@ -39,7 +39,7 @@ serve(async (req) => {
     const { listing_id, type, action } = body;
     if (!listing_id && !action) throw new Error("listing_id é obrigatório");
 
-    // Handle car purchase action
+    // Handle car purchase action (via accepted offer)
     if (action === "buy_car") {
       const { offer_id, amount } = body;
       if (!offer_id || !amount || !listing_id) throw new Error("Dados de compra inválidos");
@@ -119,6 +119,80 @@ serve(async (req) => {
         listing_id,
         type: "car_purchase",
         amount,
+        platform_amount: commissionCents / 100,
+        shop_amount: 0,
+        status: "pending",
+        stripe_payment_id: session.id,
+      });
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Handle direct Buy Now (at full listed price, no offer needed)
+    if (action === "buy_now") {
+      if (!listing_id) throw new Error("listing_id é obrigatório");
+
+      const adminClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      const { data: listing } = await adminClient
+        .from("carity_listings")
+        .select("*")
+        .eq("id", listing_id)
+        .eq("status", "published")
+        .single();
+
+      if (!listing) throw new Error("Anúncio não encontrado ou já vendido");
+      if (listing.seller_id === user.id) throw new Error("Não pode comprar o seu próprio carro");
+
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        apiVersion: "2025-08-27.basil",
+      });
+
+      const origin = req.headers.get("origin") || "https://garageflow.pt";
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      let customerId: string | undefined;
+      if (customers.data.length > 0) customerId = customers.data[0].id;
+
+      const amountCents = Math.round(listing.price * 100);
+      const commissionCents = Math.round(amountCents * 0.02);
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : user.email,
+        line_items: [{
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: `${listing.make} ${listing.model} (${listing.year})`,
+              description: `Compra direta via GarageFlow Market — Matrícula: ${listing.plate}`,
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        success_url: `${origin}/market/car/${listing_id}?purchase=success`,
+        cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
+        metadata: {
+          listing_id,
+          type: "carity_car_purchase_direct",
+          commission_cents: String(commissionCents),
+          buyer_id: user.id,
+          seller_id: listing.seller_id,
+        },
+      });
+
+      // Record transaction
+      await adminClient.from("carity_transactions").insert({
+        listing_id,
+        type: "car_purchase",
+        amount: listing.price,
         platform_amount: commissionCents / 100,
         shop_amount: 0,
         status: "pending",

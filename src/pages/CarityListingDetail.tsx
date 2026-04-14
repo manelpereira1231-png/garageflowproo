@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock, CreditCard, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
 
 const STATUS_ICON: Record<string, any> = {
@@ -32,6 +33,8 @@ const RECOMMENDATION_LABELS: Record<string, { label: string; color: string }> = 
 
 export default function CarityListingDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
@@ -40,10 +43,21 @@ export default function CarityListingDetail() {
   const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [totalVerified, setTotalVerified] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [buying, setBuying] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
   }, []);
+
+  // Show purchase result
+  useEffect(() => {
+    const purchaseStatus = searchParams.get("purchase");
+    if (purchaseStatus === "success") {
+      toast.success("🎉 Compra realizada com sucesso! O vendedor será notificado.");
+    } else if (purchaseStatus === "cancelled") {
+      toast.info("Compra cancelada.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (id) loadData();
@@ -88,6 +102,33 @@ export default function CarityListingDetail() {
     if (sellerRes.data) setSeller(sellerRes.data);
     setTotalVerified(countRes.count || 0);
     setLoading(false);
+  };
+
+  const handleBuyNow = async () => {
+    if (!currentUserId) {
+      toast.error("Precisa de uma conta para comprar.");
+      navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
+      return;
+    }
+    if (listing?.seller_id === currentUserId) {
+      toast.error("Não pode comprar o seu próprio carro.");
+      return;
+    }
+    setBuying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("carity-pay-inspection", {
+        body: { action: "buy_now", listing_id: id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL de pagamento não recebida");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar compra");
+      setBuying(false);
+    }
   };
 
   if (loading) {
@@ -334,11 +375,28 @@ export default function CarityListingDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card className="sticky top-4">
+             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
                 </div>
+
+                {/* Buy Now button */}
+                {(!currentUserId || listing.seller_id !== currentUserId) && (
+                  <Button
+                    onClick={handleBuyNow}
+                    disabled={buying}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 font-bold"
+                    size="lg"
+                  >
+                    {buying ? (
+                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
+                    ) : (
+                      <><CreditCard className="h-5 w-5 mr-2" /> Comprar Agora — €{listing.price.toLocaleString()}</>
+                    )}
+                  </Button>
+                )}
+
                 <Separator />
 
                 {/* Seller info - CONTACTS HIDDEN */}
@@ -358,6 +416,7 @@ export default function CarityListingDetail() {
                 )}
 
                 <p className="text-xs text-center text-muted-foreground">Este carro foi inspecionado e aprovado pelo sistema GarageFlow Market</p>
+                <p className="text-xs text-center text-muted-foreground">💳 Pagamento seguro via Stripe • 🛡️ Comissão de 2% incluída</p>
               </CardContent>
             </Card>
 

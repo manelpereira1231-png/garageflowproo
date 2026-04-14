@@ -152,6 +152,28 @@ export default function CarityShopInspections() {
     if (partnerChecked) loadInspectionData();
   }, [partnerChecked, loadInspectionData]);
 
+  // Realtime: listen for new inspection offers → auto-refresh + toast
+  useEffect(() => {
+    if (!shopId || !isPartner || !isActive) return;
+    const channel = supabase
+      .channel(`shop-offers-${shopId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "carity_inspection_offers",
+          filter: `shop_id=eq.${shopId}`,
+        },
+        () => {
+          toast.info("🚗 Nova inspeção disponível!", { description: "Verifique os pedidos pendentes." });
+          loadInspectionData();
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [shopId, isPartner, isActive, loadInspectionData]);
+
   // Alias for callbacks that call loadData
   const loadData = loadInspectionData;
 
@@ -232,7 +254,7 @@ export default function CarityShopInspections() {
       .then(() => loadData());
   };
 
-  // Schedule confirmation
+  // Schedule confirmation + WhatsApp to seller
   const confirmSchedule = async () => {
     if (!scheduleDialog || !schedDate || !schedTime) return;
     setScheduling(true);
@@ -245,7 +267,25 @@ export default function CarityShopInspections() {
         } as any)
         .eq("id", scheduleDialog.id);
 
-      toast.success("Inspeção agendada com sucesso!");
+      // Send WhatsApp to seller with schedule details
+      const seller = scheduleDialog.seller;
+      const listing = scheduleDialog.listing;
+      if (seller?.phone) {
+        const shopName = shopData?.name || "a oficina";
+        const shopAddr = shopData?.address || "";
+        const carLabel = `${listing?.make || ""} ${listing?.model || ""} (${listing?.plate || ""})`;
+        const message = `Olá ${seller.name || ""}! 👋\n\nA inspeção do seu ${carLabel} foi agendada ✅\n\n📅 Data: ${schedDate}\n⏰ Hora: ${schedTime}\n🏪 Oficina: ${shopName}\n📍 Morada: ${shopAddr}\n\nPor favor traga o veículo na data e hora indicadas.\n\nObrigado!`;
+
+        let phone = seller.phone.replace(/[^0-9+]/g, '');
+        if (phone.startsWith('00')) phone = '+' + phone.slice(2);
+        if (!phone.startsWith('+') && !phone.startsWith('351')) phone = '351' + phone;
+        phone = phone.replace('+', '');
+
+        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, "_blank", "noopener");
+      }
+
+      toast.success("Inspeção agendada! Mensagem WhatsApp aberta para o vendedor.");
       setScheduleDialog(null);
       setSchedDate("");
       setSchedTime("");

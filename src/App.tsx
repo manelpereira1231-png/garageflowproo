@@ -376,7 +376,7 @@ function AuthenticatedRoutes() {
   const defaultRoute = isAffiliate
     ? "/affiliate-dashboard"
     : isCarityUser
-      ? "/market"
+      ? "/market/dashboard"
       : "/dashboard";
 
   // Carity-only users (buyers/sellers) — NO access to SaaS shop routes

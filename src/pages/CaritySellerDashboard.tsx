@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import MarketLayout from "@/components/MarketLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,26 +148,9 @@ export default function CaritySellerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="bg-slate-900 text-white px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link to="/market" className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
-          </Link>
-          <Link to="/market/sell">
-            <Button size="sm" className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
-              <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
-            </Button>
-          </Link>
-        </div>
-      </nav>
+    <MarketLayout>
+      <h1 className="text-2xl font-bold mb-6">Os meus anúncios</h1>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="mb-2">
-          <p className="text-sm text-muted-foreground">Comprar e vender carros com inspeção certificada</p>
-        </div>
-        <h1 className="text-2xl font-bold mb-6">Os meus anúncios</h1>
 
         {loading ? (
           <div className="flex justify-center py-20">

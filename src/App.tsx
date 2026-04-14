@@ -198,9 +198,17 @@ function LoginRouteRedirect() {
 
 function AuthRouteRedirect({ fallback }: { fallback: string }) {
   const location = useLocation();
-  const redirect = getSafeRedirectPath(new URLSearchParams(location.search).get("redirect"), fallback);
+  const params = new URLSearchParams(location.search);
+  const redirectParam = params.get("redirect");
+  
+  // If explicit redirect provided, use it
+  if (redirectParam) {
+    return <Navigate to={getSafeRedirectPath(redirectParam, fallback)} replace />;
+  }
 
-  return <Navigate to={redirect} replace />;
+  // /auth (GarageFlow ERP) always goes to dashboard, never market
+  // Only /market/auth should redirect to market
+  return <Navigate to={fallback} replace />;
 }
 
 const adminRoutes = [
@@ -368,7 +376,7 @@ function AuthenticatedRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
-          <Route path="/auth" element={<AuthRouteRedirect fallback={defaultRoute} />} />
+          <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} />} />
           {publicRoutes.map(r => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}

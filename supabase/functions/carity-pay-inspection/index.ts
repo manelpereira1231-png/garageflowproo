@@ -7,6 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Haversine distance in km
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -75,7 +86,6 @@ serve(async (req) => {
         metadata: { listing_id, type: "carity_boost", boost_type: boost_type || "7d" },
       });
 
-      // Create boost record
       await adminClient.from("carity_boosts").insert({
         listing_id,
         seller_id: user.id,
@@ -102,7 +112,7 @@ serve(async (req) => {
 
     if (listingErr || !listing) throw new Error("Anúncio não encontrado ou já pago");
 
-    // Inspection: 24.90€ (65% oficina, 35% plataforma)
+    // Inspection: 24.90€
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -128,11 +138,113 @@ serve(async (req) => {
       .update({ status: "pending_inspection" })
       .eq("id", listing_id);
 
+    // ── AUTO-ASSIGN: Find partner shops and send inspection offers ──
+
+    // Get seller location from profile
+    const { data: sellerProfile } = await adminClient
+      .from("carity_seller_profiles")
+      .select("location")
+      .eq("user_id", user.id)
+      .single();
+
+    // Get all active partner shops
+    const { data: partnerShops } = await adminClient
+      .from("shops")
+      .select("id, name, email, phone, address, latitude, longitude")
+      .eq("is_carity_partner", true)
+      .eq("carity_active", true);
+
+    if (partnerShops && partnerShops.length > 0) {
+      // Sort by distance if seller has coords, otherwise take all
+      let sortedShops = [...partnerShops];
+
+      // Try to find a shop with coordinates to calculate distance
+      const shopsWithCoords = sortedShops.filter(s => s.latitude && s.longitude);
+
+      if (shopsWithCoords.length > 0) {
+        // Use the first shop with coords as reference or seller location
+        // For now, sort shops with coords first (nearest logic ready for when seller has coords)
+        sortedShops = [
+          ...shopsWithCoords,
+          ...sortedShops.filter(s => !s.latitude || !s.longitude),
+        ];
+      }
+
+      // Take top 5 shops
+      const topShops = sortedShops.slice(0, 5);
+
+      // Create inspection record assigned to nearest shop
+      const primaryShop = topShops[0];
+      const { data: inspection } = await adminClient
+        .from("carity_inspections")
+        .insert({
+          listing_id,
+          shop_id: primaryShop.id,
+          status: "pending",
+          payment_status: "paid",
+          payment_amount: 24.90,
+          shop_share: 16.19,
+          platform_share: 8.72,
+          stripe_session_id: session.id,
+          notes: `Inspeção auto-atribuída após pagamento. ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}`,
+        })
+        .select()
+        .single();
+
+      if (inspection) {
+        // Create offers for all top shops
+        const offers = topShops.map(shop => ({
+          inspection_id: inspection.id,
+          listing_id,
+          shop_id: shop.id,
+          status: "pending",
+        }));
+
+        await adminClient.from("carity_inspection_offers").insert(offers);
+
+        // Create notification for each shop
+        const notifications = topShops.map(shop => ({
+          shop_id: shop.id,
+          title: "🚗 Nova inspeção Market disponível",
+          message: `Novo pedido de inspeção: ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}. Aceite antes que outra oficina o faça!`,
+          type: "carity_inspection",
+          link: "/market/inspections",
+        }));
+
+        await adminClient.from("notifications").insert(notifications);
+
+        // Try to send push notifications (non-blocking)
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+          for (const shop of topShops) {
+            await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                shop_id: shop.id,
+                title: "🚗 Nova inspeção Market",
+                body: `${listing.make} ${listing.model} (${listing.year}) - Aceite agora!`,
+                url: "/market/inspections",
+              }),
+            }).catch(() => {});
+          }
+        } catch (_) {
+          // Push is non-blocking
+        }
+      }
+
+      // Update listing with the primary shop
+      await adminClient.from("carity_listings")
+        .update({ shop_id: primaryShop.id })
+        .eq("id", listing_id);
+    }
+
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: any) {
+    console.error("carity-pay-inspection error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

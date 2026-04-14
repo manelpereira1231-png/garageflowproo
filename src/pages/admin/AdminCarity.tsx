@@ -68,7 +68,7 @@ export default function AdminCarity() {
     setUpdatingShop(shopId);
     await supabase.from("shops").update({ is_carity_partner: value }).eq("id", shopId);
     setShops(prev => prev.map(s => s.id === shopId ? { ...s, is_carity_partner: value } : s));
-    toast.success(value ? "Oficina marcada como parceira Carity" : "Oficina removida da rede Carity");
+    toast.success(value ? "Oficina marcada como parceira GarageFlow Market" : "Oficina removida da rede Market");
     setUpdatingShop(null);
   };
 
@@ -164,7 +164,7 @@ export default function AdminCarity() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <ShieldCheck className="h-6 w-6 text-amber-500" />
-          Carity — Gestão Completa
+          GarageFlow Market — Gestão Completa
         </h1>
         <p className="text-muted-foreground">Controlo total: carros, inspeções, oficinas parceiras e receita</p>
       </div>
@@ -194,7 +194,7 @@ export default function AdminCarity() {
         <Card><CardContent className="pt-4 pb-4 text-center">
           <ClipboardCheck className="h-5 w-5 mx-auto text-blue-500 mb-1" />
           <p className="text-2xl font-bold">€{totalInspectionRevenue.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground">Inspeções (35%)</p>
+          <p className="text-xs text-muted-foreground">Inspeções (30%)</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
           <Star className="h-5 w-5 mx-auto text-purple-500 mb-1" />
@@ -289,7 +289,7 @@ export default function AdminCarity() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-amber-600" />
-                Gestão de Oficinas Carity
+                Gestão de Oficinas GarageFlow Market
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">

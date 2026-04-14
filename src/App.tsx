@@ -70,7 +70,7 @@ const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
 const Referrals = lazyRetry(() => import("@/pages/Referrals"));
 const Warranties = lazyRetry(() => import("@/pages/Warranties"));
 
-// Carity pages
+// Market pages (GarageFlow Market)
 const CarityMarketplace = lazyRetry(() => import("@/pages/CarityMarketplace"));
 const CarityListingDetail = lazyRetry(() => import("@/pages/CarityListingDetail"));
 const CaritySellCar = lazyRetry(() => import("@/pages/CaritySellCar"));
@@ -190,7 +190,7 @@ const adminRoutes = [
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
   { path: "/admin/partners", element: <AdminPartners /> },
   { path: "/admin/traffic", element: <AdminTraffic /> },
-  { path: "/admin/carity", element: <AdminCarity /> },
+  { path: "/admin/market", element: <AdminCarity /> },
 ];
 
 const shopRoutes = [
@@ -224,7 +224,7 @@ const shopRoutes = [
   { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
   { path: "/referrals", element: <Layout><Referrals /></Layout> },
   { path: "/warranties", element: <Layout><Warranties /></Layout> },
-  { path: "/carity/inspections", element: <Layout><CarityShopInspections /></Layout> },
+  { path: "/market/inspections", element: <Layout><CarityShopInspections /></Layout> },
 ];
 
 const publicRoutes = [
@@ -233,14 +233,17 @@ const publicRoutes = [
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
-  { path: "/carity", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
-  { path: "/carity/carro/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
-  { path: "/carity/vender", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
-  { path: "/carity/pagar/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
-  { path: "/carity/meus-anuncios", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
+  { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
+  { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
+  { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
+  { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
+  { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
+  { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
+  { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
+  // Legacy redirects for old Carity URLs
+  { path: "/carity", element: <Navigate to="/market" replace /> },
+  { path: "/carity/*", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Suspense fallback={<PageLoader />}><CarityAuth /></Suspense> },
-  { path: "/carity/marca/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
-  { path: "/carity/cidade/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
 ];
 
 function AuthenticatedRoutes() {
@@ -327,7 +330,7 @@ function AuthenticatedRoutes() {
   const defaultRoute = isAffiliate
     ? "/affiliate-dashboard"
     : isCarityUser
-      ? "/carity"
+      ? "/market"
       : "/dashboard";
 
   return (

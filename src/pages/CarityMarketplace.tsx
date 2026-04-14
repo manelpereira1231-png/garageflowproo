@@ -40,9 +40,9 @@ export default function CarityMarketplace() {
   const [sortBy, setSortBy] = useState("recent");
 
   useEffect(() => {
-    document.title = "Carity — Marketplace de Carros Usados Inspecionados";
+    document.title = "GarageFlow Market — Carros Usados Inspecionados";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Compre carros usados com confiança. Todos os veículos no Carity são inspecionados por oficinas certificadas com relatório técnico completo.");
+    if (meta) meta.setAttribute("content", "Compre carros usados com confiança. Todos os veículos no GarageFlow Market são inspecionados por oficinas certificadas com relatório técnico completo.");
 
     loadListings();
   }, []);
@@ -69,7 +69,6 @@ export default function CarityMarketplace() {
       return matchSearch && matchFuel;
     })
     .sort((a, b) => {
-      // Boosted listings always first
       const aBoost = a.boost_active ? 1 : 0;
       const bBoost = b.boost_active ? 1 : 0;
       if (bBoost !== aBoost) return bBoost - aBoost;
@@ -86,17 +85,17 @@ export default function CarityMarketplace() {
       {/* Hero */}
       <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-amber-400" />
-            <span className="text-2xl font-bold tracking-tight">Carity</span>
+            <span className="text-2xl font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link to="/carity/vender">
+            <Link to="/market/sell">
               <Button variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10">
                 Vender Carro
               </Button>
             </Link>
-            <Link to="/auth?from=carity">
+            <Link to="/auth?from=market">
               <Button className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
                 Entrar
               </Button>
@@ -113,11 +112,10 @@ export default function CarityMarketplace() {
             Carros usados com <span className="text-amber-400">confiança total</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-            Cada carro no Carity passa por uma inspeção técnica obrigatória numa oficina certificada. 
+            Cada carro no GarageFlow Market passa por uma inspeção técnica obrigatória numa oficina certificada. 
             Sem surpresas. Sem riscos.
           </p>
           
-          {/* Trust indicators */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-300">
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4 text-amber-400" />
@@ -138,7 +136,7 @@ export default function CarityMarketplace() {
       {/* How it works */}
       <section className="py-12 bg-muted/50 border-b">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-center text-2xl font-bold mb-8">Como funciona o Carity?</h2>
+          <h2 className="text-center text-2xl font-bold mb-8">Como funciona o GarageFlow Market?</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { step: "1", title: "Vendedor submete", desc: "O vendedor cria o anúncio e paga a taxa de inspeção" },
@@ -197,7 +195,6 @@ export default function CarityMarketplace() {
           </Select>
         </div>
 
-        {/* Listings Grid */}
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
@@ -208,11 +205,11 @@ export default function CarityMarketplace() {
             <h3 className="text-lg font-semibold mb-2">Nenhum carro disponível</h3>
             <p className="text-muted-foreground mb-6">
               {listings.length === 0 
-                ? "Ainda não há carros publicados no Carity. Seja o primeiro a vender!"
+                ? "Ainda não há carros publicados no GarageFlow Market. Seja o primeiro a vender!"
                 : "Nenhum resultado para os filtros selecionados."
               }
             </p>
-            <Link to="/carity/vender">
+            <Link to="/market/sell">
               <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
                 Vender o meu carro <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -221,7 +218,7 @@ export default function CarityMarketplace() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(listing => (
-              <Link key={listing.id} to={`/carity/carro/${listing.id}`}>
+              <Link key={listing.id} to={`/market/car/${listing.id}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {listing.photos[0] ? (
@@ -281,7 +278,7 @@ export default function CarityMarketplace() {
           <p className="text-slate-300 mb-6">
             Submeta o seu carro, pague apenas €19,90 pela inspeção oficial e venda com a confiança de um relatório técnico completo.
           </p>
-          <Link to="/carity/vender">
+          <Link to="/market/sell">
             <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
               Começar a vender <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -294,9 +291,9 @@ export default function CarityMarketplace() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-amber-400" />
-            <span>Carity by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
+            <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
           </div>
-          <p>© {new Date().getFullYear()} Carity. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
         </div>
       </footer>
 
@@ -304,8 +301,8 @@ export default function CarityMarketplace() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Carity",
-        "url": "https://garageflow.pt/carity",
+        "name": "GarageFlow Market",
+        "url": "https://garageflow.pt/market",
         "description": "Marketplace de carros usados com inspeção técnica obrigatória por oficinas certificadas.",
         "publisher": {
           "@type": "Organization",

@@ -18,7 +18,7 @@ export default function Auth() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
-  const fromCarity = searchParams.get('from') === 'carity';
+  const fromMarket = searchParams.get('from') === 'carity' || searchParams.get('from') === 'market';
   const redirect = searchParams.get('redirect') || '';
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export default function Auth() {
   const [shopName, setShopName] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
-  const [accountType, setAccountType] = useState<AccountType>(fromCarity ? "particular" : "garage");
+  const [accountType, setAccountType] = useState<AccountType>(fromMarket ? "particular" : "garage");
 
   // Capture and persist partner ID from URL or localStorage
   const urlPartnerId = searchParams.get('partner');

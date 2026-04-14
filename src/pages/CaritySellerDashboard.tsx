@@ -18,9 +18,9 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 };
 
 const BOOST_OPTIONS = [
-  { type: "7d", label: "Destaque 7 dias", price: "5,99", description: "O seu anúncio aparece em destaque durante 7 dias" },
-  { type: "14d", label: "Destaque 14 dias", price: "9,99", description: "Maior visibilidade durante 14 dias" },
-  { type: "top", label: "Topo do marketplace", price: "12,99", description: "O seu anúncio aparece sempre no topo" },
+  { type: "7d", label: "Destaque 7 dias", price: "4,99", description: "O seu anúncio aparece em destaque durante 7 dias" },
+  { type: "14d", label: "Destaque 14 dias", price: "7,99", description: "Maior visibilidade durante 14 dias" },
+  { type: "top", label: "Topo do marketplace", price: "9,99", description: "O seu anúncio aparece sempre no topo" },
 ];
 
 export default function CaritySellerDashboard() {
@@ -33,7 +33,7 @@ export default function CaritySellerDashboard() {
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth?from=carity"); return; }
+    if (!user) { navigate("/auth?from=market"); return; }
     const { data } = await supabase.from("carity_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false });
     setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
     setLoading(false);
@@ -59,11 +59,11 @@ export default function CaritySellerDashboard() {
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">Carity</span>
+            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/carity/vender">
+          <Link to="/market/sell">
             <Button size="sm" className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
               <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
             </Button>
@@ -84,7 +84,7 @@ export default function CaritySellerDashboard() {
               <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
               <h3 className="font-semibold mb-2">Ainda não tem anúncios</h3>
               <p className="text-muted-foreground mb-4">Comece a vender o seu carro com a confiança de uma inspeção oficial.</p>
-              <Link to="/carity/vender">
+              <Link to="/market/sell">
                 <Button className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
                   <Plus className="h-4 w-4 mr-1" /> Criar anúncio
                 </Button>
@@ -118,8 +118,8 @@ export default function CaritySellerDashboard() {
                         </div>
 
                         {listing.status === 'pending_payment' && (
-                          <Link to={`/carity/pagar/${listing.id}`}>
-                            <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€24,90)</Button>
+                          <Link to={`/market/pay/${listing.id}`}>
+                            <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
                           </Link>
                         )}
 

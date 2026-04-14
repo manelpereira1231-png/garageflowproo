@@ -98,9 +98,10 @@ serve(async (req) => {
       }
 
       // ADMIN: Release funds to seller
-      case "release_funds": {
+      case "release_funds":
+      case "admin_release": {
         if (!isAdmin) throw new Error("Apenas administradores podem libertar fundos");
-        if (!["delivery_confirmed", "disputed"].includes(escrow.status)) {
+        if (!["paid", "delivery_confirmed", "disputed"].includes(escrow.status)) {
           throw new Error("Escrow não está em estado libertável");
         }
 
@@ -132,11 +133,15 @@ serve(async (req) => {
           })
           .eq("id", escrow_id);
 
+        // Recalculate seller trust score
+        await supabaseAdmin.rpc("recalculate_trust_score", { _seller_id: escrow.seller_id });
+
         return respond({ success: true, message: "Fundos libertados." });
       }
 
       // ADMIN: Refund buyer
-      case "refund": {
+      case "refund":
+      case "admin_refund": {
         if (!isAdmin) throw new Error("Apenas administradores podem processar reembolsos");
         if (!["paid", "disputed"].includes(escrow.status)) {
           throw new Error("Escrow não está em estado reembolsável");
@@ -162,6 +167,9 @@ serve(async (req) => {
             resolution_notes: resolution_notes || "Reembolso processado pelo administrador",
           })
           .eq("id", escrow_id);
+
+        // Recalculate seller trust score
+        await supabaseAdmin.rpc("recalculate_trust_score", { _seller_id: escrow.seller_id });
 
         return respond({ success: true, message: "Reembolso processado." });
       }

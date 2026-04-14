@@ -59,6 +59,7 @@ export default function CarityListingDetail() {
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [trustScore, setTrustScore] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
@@ -111,8 +112,16 @@ export default function CarityListingDetail() {
         if (shop) setShopInfo(shop);
       }
     }
-    if (sellerRes.data) setSeller(sellerRes.data);
-    setTotalVerified(countRes.count || 0);
+    if (sellerRes.data) {
+      setSeller(sellerRes.data);
+      // Load trust score
+      const { data: ts } = await supabase
+        .from("seller_trust_scores" as any)
+        .select("*")
+        .eq("user_id", listingData.seller_id)
+        .maybeSingle();
+      if (ts) setTrustScore(ts);
+    }
 
     // Load escrow status for this listing (if buyer or seller)
     if (currentUserId) {
@@ -557,6 +566,27 @@ export default function CarityListingDetail() {
                     <div className="space-y-2">
                       <p className="font-medium">{seller.name}</p>
                       {seller.location && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {seller.location}</p>}
+                      
+                      {/* Trust Score Badge */}
+                      {trustScore && (
+                        <div className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
+                          trustScore.trust_level === 'platinum' ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' :
+                          trustScore.trust_level === 'gold' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' :
+                          trustScore.trust_level === 'silver' ? 'bg-slate-50 dark:bg-slate-800/30 text-slate-700 dark:text-slate-300' :
+                          'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
+                        }`}>
+                          <ShieldCheck className="h-4 w-4" />
+                          <div>
+                            <span className="font-semibold capitalize">{trustScore.trust_level}</span>
+                            <span className="mx-1">•</span>
+                            <span>{trustScore.score_points} pts</span>
+                            {trustScore.successful_sales > 0 && (
+                              <span className="ml-1 text-xs">• {trustScore.successful_sales} venda{trustScore.successful_sales > 1 ? 's' : ''} ✓</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted p-2 rounded">
                         <Lock className="h-3 w-3" />
                         Contactos protegidos — comunique pela plataforma

@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User } from "lucide-react";
+import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User, Lock, Hash, FileCheck } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 const COMPONENT_KEYS = [
@@ -34,7 +34,14 @@ const STATUS_OPTIONS = [
 interface Defect {
   description: string;
   severity: "leve" | "medio" | "grave";
+  photo_url?: string;
 }
+
+const SEVERITY_IMPACT: Record<string, { label: string; weight: number; color: string }> = {
+  leve: { label: "Cosmético / Menor", weight: 1, color: "text-blue-600" },
+  medio: { label: "Funcional — requer atenção", weight: 3, color: "text-amber-600" },
+  grave: { label: "Segurança / Estrutural", weight: 5, color: "text-red-600" },
+};
 
 export default function CarityShopInspections() {
   const shopId = useActiveShopId();
@@ -68,6 +75,8 @@ export default function CarityShopInspections() {
     inspector_notes: "",
   });
   const [defects, setDefects] = useState<Defect[]>([]);
+  const [technicianName, setTechnicianName] = useState("");
+  const [reportLocked, setReportLocked] = useState(false);
   const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
     exterior_photos: [], interior_photos: [], engine_photos: [],
     tire_photos: [], damage_photos: [],
@@ -308,6 +317,13 @@ export default function CarityShopInspections() {
       .maybeSingle();
 
     if (existing) {
+      // If report is locked, show read-only
+      if ((existing as any).is_locked) {
+        setReportLocked(true);
+        toast.info("Este relatório está bloqueado e não pode ser editado.");
+      } else {
+        setReportLocked(false);
+      }
       setReport({
         engine_status: existing.engine_status,
         transmission_status: existing.transmission_status,
@@ -320,6 +336,7 @@ export default function CarityShopInspections() {
         recommendation: existing.recommendation,
         inspector_notes: existing.inspector_notes || "",
       });
+      setTechnicianName((existing as any).technician_name || "");
       setDefects(Array.isArray(existing.defects) ? (existing.defects as unknown as Defect[]) : []);
       setPhotoSections({
         exterior_photos: Array.isArray(existing.exterior_photos) ? existing.exterior_photos as string[] : [],
@@ -329,7 +346,9 @@ export default function CarityShopInspections() {
         damage_photos: Array.isArray(existing.damage_photos) ? existing.damage_photos as string[] : [],
       });
     } else {
+      setReportLocked(false);
       setReport({ engine_status: "ok", transmission_status: "ok", brakes_status: "ok", suspension_status: "ok", steering_status: "ok", tires_status: "ok", electrical_status: "ok", overall_score: 7, recommendation: "recommended", inspector_notes: "" });
+      setTechnicianName("");
       setDefects([]);
       setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
     }
@@ -391,6 +410,20 @@ export default function CarityShopInspections() {
 
   const submitReport = async () => {
     if (!activeInspection || !shopId) return;
+    if (reportLocked) { toast.error("Este relatório está bloqueado e não pode ser alterado."); return; }
+
+    // Validate technician name
+    if (!technicianName.trim()) { toast.error("Identifique o técnico responsável pela inspeção."); return; }
+
+    // Validate defect descriptions
+    const validDefects = defects.filter(d => d.description.trim());
+    const graveDefects = validDefects.filter(d => d.severity === 'grave');
+    
+    // If grave defects exist, require photo evidence
+    if (graveDefects.length > 0 && photoSections.damage_photos.length === 0) {
+      toast.error("Defeitos graves identificados — é obrigatório carregar fotos de danos como prova.");
+      return;
+    }
 
     // Enforce minimum 6 photos total
     const totalPhotos = Object.values(photoSections).reduce((sum, arr) => sum + arr.length, 0);
@@ -401,26 +434,44 @@ export default function CarityShopInspections() {
 
     const autoScore = calculateAutoScore(report);
 
+    // Apply defect penalty
+    const defectPenalty = validDefects.reduce((sum, d) => sum + (SEVERITY_IMPACT[d.severity]?.weight || 0) * 3, 0);
+    const finalScore = Math.max(0, Math.min(100, autoScore - defectPenalty));
+
     setSaving(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData.user?.id;
+
       const { data: existing } = await supabase
-        .from("carity_inspection_reports").select("id").eq("inspection_id", activeInspection.id).maybeSingle();
+        .from("carity_inspection_reports").select("id, is_locked").eq("inspection_id", activeInspection.id).maybeSingle();
+
+      // Block if already locked
+      if (existing && (existing as any).is_locked) {
+        toast.error("Este relatório já foi submetido e bloqueado permanentemente.");
+        setSaving(false);
+        return;
+      }
 
       // Auto-determine recommendation from score
-      const autoRecommendation = autoScore >= 80 ? "recommended" : autoScore >= 60 ? "acceptable" : "not_recommended";
+      const autoRecommendation = finalScore >= 80 ? "recommended" : finalScore >= 60 ? "acceptable" : "not_recommended";
 
       const reportData = {
         inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
-        overall_score: autoScore,
+        overall_score: finalScore,
         recommendation: autoRecommendation,
-        defects: defects.filter(d => d.description.trim()) as unknown as any,
+        defects: validDefects as unknown as any,
         exterior_photos: photoSections.exterior_photos as unknown as any,
         interior_photos: photoSections.interior_photos as unknown as any,
         engine_photos: photoSections.engine_photos as unknown as any,
         tire_photos: photoSections.tire_photos as unknown as any,
         damage_photos: photoSections.damage_photos as unknown as any,
         completed_at: new Date().toISOString(),
+        technician_name: technicianName.trim(),
+        submitted_by_user_id: currentUserId,
+        is_locked: true,
+        locked_at: new Date().toISOString(),
       };
 
       let reportId: string;
@@ -430,6 +481,16 @@ export default function CarityShopInspections() {
       } else {
         const { data: newReport } = await supabase.from("carity_inspection_reports").insert(reportData).select("id").single();
         reportId = newReport?.id || "";
+      }
+
+      // Generate cryptographic hash for integrity
+      if (reportId) {
+        const { data: hashResult } = await supabase.rpc("generate_report_hash", { _report_id: reportId });
+        if (hashResult) {
+          await supabase.from("carity_inspection_reports")
+            .update({ report_hash: hashResult } as any)
+            .eq("id", reportId);
+        }
       }
 
       // === COHERENCE VALIDATION ===
@@ -470,7 +531,7 @@ export default function CarityShopInspections() {
             await supabase.from("carity_listings")
               .update({ status: 'rejected' })
               .eq("id", activeInspection.listing_id);
-            toast.error(`Relatório rejeitado pela validação de coerência (score: ${coherence.coherence_score}/100). Corrija os problemas identificados.`, { duration: 10000 });
+            toast.error(`Relatório rejeitado pela validação de coerência (score: ${coherence.coherence_score}/100). O relatório está bloqueado.`, { duration: 10000 });
             setActiveInspection(null);
             loadData();
             return;
@@ -483,16 +544,16 @@ export default function CarityShopInspections() {
         .eq("id", activeInspection.id);
 
       // Auto-publish or reject based on score
-      if (autoScore >= 60) {
+      if (finalScore >= 60) {
         await supabase.from("carity_listings")
           .update({ status: 'published', published_at: new Date().toISOString() })
           .eq("id", activeInspection.listing_id);
-        toast.success(`Relatório enviado! Score: ${autoScore}/100 — Carro publicado no Market ✅`);
+        toast.success(`✅ Relatório submetido e BLOQUEADO permanentemente. Score: ${finalScore}/100 — Carro publicado no Market`);
       } else {
         await supabase.from("carity_listings")
           .update({ status: 'rejected' })
           .eq("id", activeInspection.listing_id);
-        toast.warning(`Relatório enviado. Score: ${autoScore}/100 — Carro rejeitado (mínimo 60) ❌`);
+        toast.warning(`Relatório submetido e BLOQUEADO. Score: ${finalScore}/100 — Carro rejeitado (mínimo 60) ❌`);
       }
 
       setActiveInspection(null);
@@ -506,6 +567,10 @@ export default function CarityShopInspections() {
 
   // --- INSPECTION FORM VIEW ---
   if (activeInspection && activeListing) {
+    const defectPenalty = defects.filter(d => d.description.trim()).reduce((sum, d) => sum + (SEVERITY_IMPACT[d.severity]?.weight || 0) * 3, 0);
+    const displayScore = Math.max(0, Math.min(100, report.overall_score - defectPenalty));
+    const displayRecommendation = displayScore >= 80 ? "✅ Aprovado" : displayScore >= 60 ? "⚠️ Aprovado com reservas" : "❌ Reprovado";
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -520,6 +585,19 @@ export default function CarityShopInspections() {
           </div>
           <Button variant="outline" onClick={() => setActiveInspection(null)}>Voltar</Button>
         </div>
+
+        {/* LOCKED BANNER */}
+        {reportLocked && (
+          <Card className="border-red-300 bg-red-50 dark:bg-red-900/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Lock className="h-6 w-6 text-red-600 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-red-800 dark:text-red-300">🔒 Relatório BLOQUEADO permanentemente</p>
+                <p className="text-sm text-red-600 dark:text-red-400">Este relatório foi submetido e não pode ser editado, substituído ou eliminado. Qualquer alteração requer auditoria da plataforma.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Seller info */}
         {activeInspection.seller && (
@@ -541,6 +619,32 @@ export default function CarityShopInspections() {
           </Card>
         )}
 
+        {/* Technician identification */}
+        <Card className="border-amber-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-amber-500" />
+              Identificação do Técnico Responsável
+            </CardTitle>
+            <CardDescription>O nome do técnico ficará vinculado permanentemente a este relatório</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Nome completo do técnico *</Label>
+              <Input
+                value={technicianName}
+                onChange={e => setTechnicianName(e.target.value)}
+                placeholder="Ex: João Silva"
+                disabled={reportLocked}
+                className={reportLocked ? "opacity-60" : ""}
+              />
+              {!technicianName.trim() && !reportLocked && (
+                <p className="text-xs text-red-500">Obrigatório — o relatório não pode ser submetido sem identificação</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
           <CardContent>
@@ -558,8 +662,8 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Checklist Mecânico</CardTitle>
-            <CardDescription>Avalie cada componente do veículo</CardDescription>
+            <CardTitle className="text-lg">Checklist Mecânico (Sistema Fechado)</CardTitle>
+            <CardDescription>Avalie cada componente — a classificação final é calculada automaticamente</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {COMPONENT_KEYS.map(({ key, label }) => (
@@ -572,7 +676,8 @@ export default function CarityShopInspections() {
                     return (
                       <Button key={opt.value} size="sm" variant={selected ? "default" : "outline"}
                         className={selected ? (opt.value === 'ok' ? 'bg-green-600' : opt.value === 'problems' ? 'bg-amber-500' : 'bg-red-600') : ''}
-                        onClick={() => setReport(p => ({ ...p, [key]: opt.value }))}>
+                        onClick={() => !reportLocked && setReport(p => ({ ...p, [key]: opt.value }))}
+                        disabled={reportLocked}>
                         <Icon className="h-3.5 w-3.5 mr-1" />{opt.label}
                       </Button>
                     );
@@ -585,16 +690,16 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Fotos da Inspeção</CardTitle>
-            <CardDescription>Carregue fotos obrigatórias do exterior, interior e motor</CardDescription>
+            <CardTitle className="text-lg">📸 Prova Evidencial Obrigatória</CardTitle>
+            <CardDescription>Fotos estruturadas — cada declaração deve ter prova visual associada</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {[
               { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
-              { key: "interior_photos", label: "Interior — mín. 2 fotos", required: true },
-              { key: "engine_photos", label: "Motor — mín. 1 foto", required: true },
-              { key: "tire_photos", label: "Pneus", required: false },
-              { key: "damage_photos", label: "Danos encontrados", required: false },
+              { key: "interior_photos", label: "Interior — mín. 2 fotos (painel, bancos, quilometragem)", required: true },
+              { key: "engine_photos", label: "Motor — mín. 1 foto (compartimento do motor)", required: true },
+              { key: "tire_photos", label: "Pneus — estado do piso", required: false },
+              { key: "damage_photos", label: "Danos encontrados (obrigatório se defeitos graves)", required: false },
             ].map(section => (
               <div key={section.key}>
                 <Label className="mb-2 block">
@@ -604,16 +709,20 @@ export default function CarityShopInspections() {
                   {photoSections[section.key].map((photo, i) => (
                     <div key={i} className="w-20 h-20 rounded overflow-hidden relative group">
                       <img src={photo} alt="" className="w-full h-full object-cover" />
-                      <button onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100">
-                        <X className="h-3 w-3" />
-                      </button>
+                      {!reportLocked && (
+                        <button onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
+                          className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100">
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
-                  <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:bg-muted/50">
-                    {uploading === section.key ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5 text-muted-foreground" />}
-                    <input type="file" className="hidden" accept="image/*" multiple onChange={e => handlePhotoUpload(section.key, e)} />
-                  </label>
+                  {!reportLocked && (
+                    <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:bg-muted/50">
+                      {uploading === section.key ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5 text-muted-foreground" />}
+                      <input type="file" className="hidden" accept="image/*" multiple onChange={e => handlePhotoUpload(section.key, e)} />
+                    </label>
+                  )}
                 </div>
               </div>
             ))}
@@ -622,64 +731,101 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Defeitos / Problemas</CardTitle>
-            <CardDescription>Liste todos os problemas encontrados</CardDescription>
+            <CardTitle className="text-lg">Defeitos / Problemas Identificados</CardTitle>
+            <CardDescription>Cada defeito tem impacto direto no score — defeitos graves exigem prova fotográfica</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {defects.map((defect, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <Input value={defect.description} onChange={e => { const u = [...defects]; u[i].description = e.target.value; setDefects(u); }} placeholder="Descreva o problema..." className="flex-1" />
-                <Select value={defect.severity} onValueChange={v => { const u = [...defects]; u[i].severity = v as Defect["severity"]; setDefects(u); }}>
-                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="leve">Leve</SelectItem>
-                    <SelectItem value="medio">Médio</SelectItem>
-                    <SelectItem value="grave">Grave</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}><X className="h-4 w-4" /></Button>
+              <div key={i} className="p-3 bg-muted/30 rounded-lg space-y-2">
+                <div className="flex gap-2 items-start">
+                  <Input value={defect.description} onChange={e => { const u = [...defects]; u[i].description = e.target.value; setDefects(u); }} placeholder="Descreva o problema..." className="flex-1" disabled={reportLocked} />
+                  <Select value={defect.severity} onValueChange={v => { const u = [...defects]; u[i].severity = v as Defect["severity"]; setDefects(u); }} disabled={reportLocked}>
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="leve">💡 Leve</SelectItem>
+                      <SelectItem value="medio">⚡ Médio</SelectItem>
+                      <SelectItem value="grave">⚠️ Grave</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!reportLocked && <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}><X className="h-4 w-4" /></Button>}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={SEVERITY_IMPACT[defect.severity]?.color || ""}>
+                    {SEVERITY_IMPACT[defect.severity]?.label} — Penalização: -{(SEVERITY_IMPACT[defect.severity]?.weight || 0) * 3} pts
+                  </span>
+                </div>
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={addDefect}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito</Button>
+            {!reportLocked && (
+              <Button variant="outline" size="sm" onClick={addDefect}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito</Button>
+            )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-lg">Classificação Automática</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Motor de Decisão Automático
+            </CardTitle>
+            <CardDescription>A classificação é gerada pelo sistema — a oficina NÃO pode alterar o resultado</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center py-4">
               <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
-                report.overall_score >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
-                report.overall_score >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
+                displayScore >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
+                displayScore >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
                 'bg-red-50 dark:bg-red-900/20'
               }`}>
                 <span className={`text-4xl font-bold ${
-                  report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
-                  report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                  displayScore >= 80 ? 'text-green-700 dark:text-green-400' :
+                  displayScore >= 60 ? 'text-amber-700 dark:text-amber-400' :
                   'text-red-700 dark:text-red-400'
-                }`}>{report.overall_score}</span>
+                }`}>{displayScore}</span>
                 <span className="text-xl text-muted-foreground">/100</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                {report.overall_score >= 80 ? '🟢 PREMIUM — Publicação automática' :
-                 report.overall_score >= 60 ? '🟡 OK — Publicação automática' :
-                 '🔴 REJEITADO — Score abaixo de 60, carro não será publicado'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className={`text-lg font-bold mt-2 ${
+                displayScore >= 80 ? 'text-green-700 dark:text-green-400' :
+                displayScore >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                'text-red-700 dark:text-red-400'
+              }`}>{displayRecommendation}</p>
+              <p className="text-xs text-muted-foreground mt-2">
                 Motor 30% · Travões 20% · Suspensão 20% · Pneus 15% · Eletrónica 15%
+                {defectPenalty > 0 && <span className="text-red-500 ml-1">· Penalização defeitos: -{defectPenalty} pts</span>}
               </p>
             </div>
+
+            {/* Consequences */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-semibold">⚙️ Consequências automáticas:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>✅ Score ≥ 80 → <strong>Aprovado</strong> — publicação automática</li>
+                <li>⚠️ Score 60-79 → <strong>Aprovado com reservas</strong> — publicação com aviso</li>
+                <li>❌ Score &lt; 60 → <strong>Reprovado</strong> — veículo NÃO é publicado</li>
+                <li>🔒 Após submissão → relatório bloqueado permanentemente</li>
+                <li>🔐 Hash SHA-256 gerado para garantir integridade</li>
+              </ul>
+            </div>
+
             <div>
               <Label>Notas do Inspetor</Label>
-              <Textarea value={report.inspector_notes} onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))} placeholder="Observações adicionais..." rows={4} />
+              <Textarea value={report.inspector_notes} onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))} placeholder="Observações adicionais..." rows={4} disabled={reportLocked} />
             </div>
           </CardContent>
         </Card>
 
-        <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-          Submeter Relatório de Inspeção
-        </Button>
+        {!reportLocked ? (
+          <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
+            Submeter e BLOQUEAR Relatório Permanentemente
+          </Button>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Lock className="h-4 w-4" /> Relatório bloqueado — sem alterações possíveis
+            </p>
+          </div>
+        )}
       </div>
     );
   }

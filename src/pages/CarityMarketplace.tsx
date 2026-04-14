@@ -38,6 +38,8 @@ export default function CarityMarketplace() {
   const [search, setSearch] = useState("");
   const [fuelFilter, setFuelFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [totalVerified, setTotalVerified] = useState(0);
+  const [partnerShops, setPartnerShops] = useState(0);
 
   useEffect(() => {
     document.title = "GarageFlow Market — Carros Usados Inspecionados";
@@ -45,6 +47,7 @@ export default function CarityMarketplace() {
     if (meta) meta.setAttribute("content", "Compre carros usados com confiança. Todos os veículos no GarageFlow Market são inspecionados por oficinas certificadas com relatório técnico completo.");
 
     loadListings();
+    loadStats();
   }, []);
 
   const loadListings = async () => {

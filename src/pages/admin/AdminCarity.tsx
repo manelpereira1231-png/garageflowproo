@@ -192,11 +192,15 @@ export default function AdminCarity() {
   const sold = listings.filter(l => l.status === "sold").length;
   const pendingApproval = listings.filter(l => l.status === "pending_approval").length;
   const pendingInspection = listings.filter(l => l.status === "pending_inspection").length;
-  const paidTx = transactions.filter(t => t.status === "paid");
-  const totalRevenue = paidTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const inspectionRevenue = paidTx.filter(t => t.type === "inspection_fee").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const commissionRevenue = paidTx.filter(t => t.type === "sale_commission").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const boostRevenue = boosts.filter(b => b.status === "active" || b.status === "completed").reduce((s, b) => s + Number(b.price || 0), 0);
+  // REGRA: Apenas transações com pagamento Stripe verificado contam como receita
+  const verifiedTx = transactions.filter(t => t.status === "paid" && t.stripe_verified === true);
+  const unverifiedTx = transactions.filter(t => t.status === "paid" && !t.stripe_verified);
+  const totalRevenue = verifiedTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const inspectionRevenue = verifiedTx.filter(t => t.type === "inspection_fee").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const commissionRevenue = verifiedTx.filter(t => t.type === "sale_commission").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const verifiedBoosts = boosts.filter(b => (b.status === "active" || b.status === "completed") && b.stripe_verified === true);
+  const boostRevenue = verifiedBoosts.reduce((s, b) => s + Number(b.price || 0), 0);
+  const unverifiedBoostRevenue = boosts.filter(b => (b.status === "active" || b.status === "completed") && !b.stripe_verified).reduce((s, b) => s + Number(b.price || 0), 0);
   const partnerShops = shops.filter(s => s.is_carity_partner);
   const verifiedSellers = sellers.filter(s => s.verified).length;
   const activeBoosts = boosts.filter(b => b.status === "active").length;

@@ -41,6 +41,7 @@ interface AdminStats {
   conversionRate: number;
   totalAccounts: number;
   discountImpact: number;
+  manualCount: number;
 }
 
 interface RecentActivity {

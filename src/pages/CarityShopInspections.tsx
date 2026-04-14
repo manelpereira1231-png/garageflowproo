@@ -10,8 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },
@@ -44,6 +46,13 @@ export default function CarityShopInspections() {
   const [activeListing, setActiveListing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [shopData, setShopData] = useState<any>(null);
+
+  // Schedule dialog
+  const [scheduleDialog, setScheduleDialog] = useState<any>(null);
+  const [schedDate, setSchedDate] = useState("");
+  const [schedTime, setSchedTime] = useState("");
+  const [scheduling, setScheduling] = useState(false);
 
   // Report form state
   const [report, setReport] = useState({
@@ -62,7 +71,7 @@ export default function CarityShopInspections() {
   const loadData = useCallback(async () => {
     if (!shopId) return;
 
-    const [offersRes, inspectionsRes] = await Promise.all([
+    const [offersRes, inspectionsRes, shopRes] = await Promise.all([
       supabase
         .from("carity_inspection_offers")
         .select("*, carity_listings(*)")
@@ -74,17 +83,43 @@ export default function CarityShopInspections() {
         .select("*, carity_listings(*)")
         .eq("shop_id", shopId)
         .order("assigned_at", { ascending: false }),
+      supabase
+        .from("shops")
+        .select("id, name, address, phone, latitude, longitude")
+        .eq("id", shopId)
+        .single(),
     ]);
+
+    if (shopRes.data) setShopData(shopRes.data);
 
     setOffers((offersRes.data || []).map((o: any) => ({
       ...o,
       listing: o.carity_listings ? { ...o.carity_listings, photos: Array.isArray(o.carity_listings.photos) ? o.carity_listings.photos : [] } : null,
     })));
 
-    setInspections((inspectionsRes.data || []).map((i: any) => ({
+    // Fetch seller profiles for inspections
+    const inspArr = (inspectionsRes.data || []).map((i: any) => ({
       ...i,
       listing: i.carity_listings ? { ...i.carity_listings, photos: Array.isArray(i.carity_listings.photos) ? i.carity_listings.photos : [] } : null,
-    })));
+    }));
+
+    // Get seller info for each listing
+    const sellerIds = [...new Set(inspArr.filter((i: any) => i.listing?.seller_id).map((i: any) => i.listing.seller_id))];
+    let sellersMap: Record<string, any> = {};
+    if (sellerIds.length > 0) {
+      const { data: sellers } = await supabase
+        .from("carity_seller_profiles")
+        .select("*")
+        .in("user_id", sellerIds);
+      (sellers || []).forEach((s: any) => { sellersMap[s.user_id] = s; });
+    }
+
+    const enriched = inspArr.map((i: any) => ({
+      ...i,
+      seller: i.listing?.seller_id ? sellersMap[i.listing.seller_id] || null : null,
+    }));
+
+    setInspections(enriched);
     setLoading(false);
   }, [shopId]);
 
@@ -94,12 +129,10 @@ export default function CarityShopInspections() {
   const acceptOffer = async (offer: any) => {
     setRespondingId(offer.id);
     try {
-      // Update offer status
       await supabase.from("carity_inspection_offers")
         .update({ status: "accepted", responded_at: new Date().toISOString() })
         .eq("id", offer.id);
 
-      // Create the actual inspection
       await supabase.from("carity_inspections").insert({
         listing_id: offer.listing_id,
         shop_id: shopId!,
@@ -107,19 +140,18 @@ export default function CarityShopInspections() {
         status: "pending",
       });
 
-      // Update listing
       await supabase.from("carity_listings")
         .update({ status: "pending_inspection", shop_id: shopId })
         .eq("id", offer.listing_id);
 
-      // Reject all other pending offers for this inspection
       await supabase.from("carity_inspection_offers")
         .update({ status: "rejected", responded_at: new Date().toISOString(), rejection_reason: "Outra oficina aceitou" })
         .eq("inspection_id", offer.inspection_id)
         .neq("id", offer.id)
         .eq("status", "pending");
 
-      toast.success("Inspeção aceite! O carro será enviado à sua oficina.");
+      toast.success("Inspeção aceite! Contacte o vendedor para agendar.");
+      setTab("active");
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Erro ao aceitar inspeção");
@@ -128,20 +160,70 @@ export default function CarityShopInspections() {
     }
   };
 
-  // Reject inspection offer
   const rejectOffer = async (offerId: string) => {
     setRespondingId(offerId);
     try {
       await supabase.from("carity_inspection_offers")
         .update({ status: "rejected", responded_at: new Date().toISOString(), rejection_reason: "Recusado pela oficina" })
         .eq("id", offerId);
-
       toast.success("Pedido recusado.");
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Erro ao recusar");
     } finally {
       setRespondingId(null);
+    }
+  };
+
+  // WhatsApp message to seller
+  const openWhatsAppToSeller = (inspection: any) => {
+    const seller = inspection.seller;
+    const listing = inspection.listing;
+    if (!seller?.phone) { toast.error("Vendedor sem telefone registado"); return; }
+
+    const shopName = shopData?.name || "a oficina";
+    const shopAddr = shopData?.address || "";
+
+    const message = `Olá! 👋\n\nSou da oficina ${shopName}.\n\nRecebemos o pedido de inspeção do seu ${listing?.make || ""} ${listing?.model || ""} (${listing?.plate || ""}).\n\n📍 Morada: ${shopAddr}\n\nPode confirmar quando tem disponibilidade para trazer o veículo?\n\nObrigado!`;
+
+    const phone = seller.phone;
+    let cleaned = phone.replace(/[^0-9+]/g, '');
+    if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2);
+    if (!cleaned.startsWith('+') && !cleaned.startsWith('351')) cleaned = '351' + cleaned;
+    cleaned = cleaned.replace('+', '');
+
+    const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener");
+
+    // Mark as contacted
+    supabase.from("carity_inspections")
+      .update({ seller_contacted_at: new Date().toISOString(), seller_notified: true } as any)
+      .eq("id", inspection.id)
+      .then(() => loadData());
+  };
+
+  // Schedule confirmation
+  const confirmSchedule = async () => {
+    if (!scheduleDialog || !schedDate || !schedTime) return;
+    setScheduling(true);
+    try {
+      await supabase.from("carity_inspections")
+        .update({
+          scheduled_date: schedDate,
+          scheduled_time: schedTime,
+          status: "scheduled",
+        } as any)
+        .eq("id", scheduleDialog.id);
+
+      toast.success("Inspeção agendada com sucesso!");
+      setScheduleDialog(null);
+      setSchedDate("");
+      setSchedTime("");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao agendar");
+    } finally {
+      setScheduling(false);
     }
   };
 
@@ -182,10 +264,14 @@ export default function CarityShopInspections() {
       setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
     }
 
-    if (inspection.status === 'pending') {
+    if (inspection.status === 'pending' || inspection.status === 'scheduled') {
       await supabase.from("carity_inspections")
         .update({ status: 'in_progress', started_at: new Date().toISOString() })
         .eq("id", inspection.id);
+
+      await supabase.from("carity_listings")
+        .update({ status: 'inspecting' })
+        .eq("id", inspection.listing_id);
     }
   };
 
@@ -271,6 +357,26 @@ export default function CarityShopInspections() {
           </div>
           <Button variant="outline" onClick={() => setActiveInspection(null)}>Voltar</Button>
         </div>
+
+        {/* Seller info */}
+        {activeInspection.seller && (
+          <Card className="border-blue-200 bg-blue-50/30 dark:bg-blue-900/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <User className="h-5 w-5 text-blue-500" />
+                <div className="flex-1">
+                  <p className="font-semibold">{activeInspection.seller.name}</p>
+                  <p className="text-sm text-muted-foreground">{activeInspection.seller.phone} · {activeInspection.seller.location}</p>
+                </div>
+                {activeInspection.seller.phone && (
+                  <Button size="sm" variant="outline" className="border-green-200 text-green-700" onClick={() => openWhatsAppToSeller(activeInspection)}>
+                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
@@ -413,7 +519,7 @@ export default function CarityShopInspections() {
 
   // --- MAIN LIST VIEW ---
   const pendingOffers = offers.length;
-  const activeInspections = inspections.filter(i => i.status !== 'completed').length;
+  const activeInspections = inspections.filter(i => !['completed'].includes(i.status)).length;
   const completedInspections = inspections.filter(i => i.status === 'completed').length;
   const totalEarnings = inspections.filter(i => i.status === 'completed').reduce((sum, i) => sum + Number(i.shop_share || 0), 0);
 
@@ -534,32 +640,92 @@ export default function CarityShopInspections() {
           {inspections.filter(i => i.status !== 'completed').length === 0 ? (
             <Card><CardContent className="py-12 text-center text-muted-foreground">Sem inspeções em curso</CardContent></Card>
           ) : (
-            inspections.filter(i => i.status !== 'completed').map(inspection => (
-              <Card key={inspection.id}>
-                <CardContent className="p-4">
-                  <div className="flex gap-4 items-center">
-                    <div className="w-20 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
-                      {inspection.listing?.photos?.[0] ? (
-                        <img src={inspection.listing.photos[0]} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex items-center justify-center h-full"><Car className="h-5 w-5 text-muted-foreground/30" /></div>
+            inspections.filter(i => i.status !== 'completed').map(inspection => {
+              const seller = inspection.seller;
+              const isScheduled = inspection.status === 'scheduled';
+              const isPending = inspection.status === 'pending';
+              const needsContact = isPending && !inspection.seller_contacted_at;
+
+              return (
+                <Card key={inspection.id} className={needsContact ? "border-amber-300 bg-amber-50/20 dark:bg-amber-900/5" : ""}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex gap-4 items-center">
+                      <div className="w-20 h-14 rounded bg-muted flex-shrink-0 overflow-hidden">
+                        {inspection.listing?.photos?.[0] ? (
+                          <img src={inspection.listing.photos[0]} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full"><Car className="h-5 w-5 text-muted-foreground/30" /></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{inspection.listing?.make} {inspection.listing?.model} ({inspection.listing?.year})</h3>
+                        <p className="text-sm text-muted-foreground">{inspection.listing?.plate} · {inspection.listing?.mileage?.toLocaleString()} km</p>
+                        {isScheduled && inspection.scheduled_date && (
+                          <p className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center gap-1 mt-1">
+                            <CalendarCheck className="h-3.5 w-3.5" />
+                            {inspection.scheduled_date}{inspection.scheduled_time ? ` às ${inspection.scheduled_time}` : ""}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge className={
+                          isPending ? 'bg-amber-100 text-amber-800' :
+                          isScheduled ? 'bg-blue-100 text-blue-800' :
+                          'bg-purple-100 text-purple-800'
+                        }>
+                          {isPending ? 'Aguarda contacto' : isScheduled ? 'Agendada' : 'Em curso'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Seller info + actions */}
+                    {seller && (
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{seller.name}</p>
+                          <p className="text-xs text-muted-foreground">{seller.phone} · {seller.location}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 flex-wrap">
+                      {/* WhatsApp to seller */}
+                      {seller?.phone && (isPending || isScheduled) && (
+                        <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => openWhatsAppToSeller(inspection)}>
+                          <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                          {needsContact ? "Enviar WhatsApp ao vendedor" : "WhatsApp vendedor"}
+                        </Button>
                       )}
+
+                      {/* Schedule button */}
+                      {(isPending || (isScheduled && !inspection.started_at)) && (
+                        <Button size="sm" variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => {
+                          setScheduleDialog(inspection);
+                          setSchedDate(inspection.scheduled_date || "");
+                          setSchedTime(inspection.scheduled_time || "");
+                        }}>
+                          <CalendarCheck className="h-3.5 w-3.5 mr-1" />
+                          {isScheduled ? "Reagendar" : "Agendar inspeção"}
+                        </Button>
+                      )}
+
+                      {/* Start/continue inspection */}
+                      <Button onClick={() => startInspection(inspection)} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" size="sm">
+                        <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
+                        {inspection.status === 'in_progress' ? 'Continuar inspeção' : 'Iniciar inspeção'}
+                      </Button>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{inspection.listing?.make} {inspection.listing?.model} ({inspection.listing?.year})</h3>
-                      <p className="text-sm text-muted-foreground">{inspection.listing?.plate} · {inspection.listing?.mileage?.toLocaleString()} km</p>
-                    </div>
-                    <Badge className={inspection.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
-                      {inspection.status === 'pending' ? 'Pendente' : 'Em curso'}
-                    </Badge>
-                    <Button onClick={() => startInspection(inspection)} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-                      <ClipboardCheck className="h-4 w-4 mr-1" />
-                      {inspection.status === 'pending' ? 'Iniciar' : 'Continuar'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+
+                    {needsContact && (
+                      <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-100/50 dark:bg-amber-900/20 px-2 py-1 rounded">
+                        ⚠️ Contacte o vendedor para agendar a inspeção
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
 
@@ -592,6 +758,38 @@ export default function CarityShopInspections() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Schedule Dialog */}
+      <Dialog open={!!scheduleDialog} onOpenChange={o => !o && setScheduleDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarCheck className="h-5 w-5 text-blue-500" />
+              Agendar inspeção
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {scheduleDialog?.listing?.make} {scheduleDialog?.listing?.model} — {scheduleDialog?.listing?.plate}
+          </p>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label>Data *</Label>
+              <Input type="date" value={schedDate} onChange={e => setSchedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div>
+              <Label>Hora *</Label>
+              <Input type="time" value={schedTime} onChange={e => setSchedTime(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleDialog(null)}>Cancelar</Button>
+            <Button onClick={confirmSchedule} disabled={!schedDate || !schedTime || scheduling} className="bg-blue-600 hover:bg-blue-500 text-white">
+              {scheduling ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CalendarCheck className="h-4 w-4 mr-1" />}
+              Confirmar agendamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

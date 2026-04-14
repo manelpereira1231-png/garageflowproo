@@ -41,6 +41,7 @@ interface AdminStats {
   conversionRate: number;
   totalAccounts: number;
   discountImpact: number;
+  manualCount: number;
 }
 
 interface RecentActivity {
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
         supabase.from("alerts").select("id, status"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id"),
         supabase.from("quotes").select("id, status"),
       ]);
 
@@ -134,10 +135,18 @@ export default function AdminDashboard() {
 
       const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
-      const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
       
-      // MRR with discounts applied
-      const mrrWithDiscounts = activeSubs.reduce((sum, s) => {
+      // REGRA: Apenas subscrições com pagamento Stripe real contam como receita
+      const stripePaidSubs = activeSubs.filter(s => 
+        s.revenue_type === 'stripe_paid' || (s.stripe_subscription_id && s.plan !== 'free')
+      );
+      const manualAdminSubs = activeSubs.filter(s => 
+        s.revenue_type === 'manual_admin' || (!s.stripe_subscription_id && s.plan !== 'free' && s.status === 'active')
+      );
+      
+      // MRR REAL: apenas Stripe paid
+      const mrr = stripePaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+      const mrrWithDiscounts = stripePaidSubs.reduce((sum, s) => {
         const basePrice = PLAN_PRICES[s.plan] || 0;
         const discount = Number(s.discount_percent || 0);
         const discountExpired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
@@ -147,8 +156,9 @@ export default function AdminDashboard() {
       const discountImpact = mrr - mrrWithDiscounts;
       
       const arr = mrrWithDiscounts * 12;
-      const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
+      const paidCount = stripePaidSubs.length;
       const freeCount = activeSubs.filter(s => s.plan === 'free').length;
+      const manualCount = manualAdminSubs.length;
       const arpu = paidCount > 0 ? mrrWithDiscounts / paidCount : 0;
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
@@ -178,7 +188,7 @@ export default function AdminDashboard() {
         newShopsThisMonth, newShopsThisWeek, newShopsToday,
         planBreakdown, monthlyRevenue, monthlyNewShops, topShops,
         mrr, mrrWithDiscounts, arr, arpu, ltv, churnRate, trialCount, paidCount, freeCount,
-        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact,
+        canceledCount, conversionRate, totalAccounts: totalSubCount, discountImpact, manualCount,
       });
     } catch (err) {
       console.error("Failed to fetch admin stats:", err);
@@ -192,6 +202,7 @@ export default function AdminDashboard() {
         mrr: 0, mrrWithDiscounts: 0, arr: 0, arpu: 0, ltv: 0, churnRate: 0, trialCount: 0,
         paidCount: 0, freeCount: 0, canceledCount: 0, conversionRate: 0,
         totalAccounts: 0, discountImpact: 0,
+        manualCount: 0,
       });
     }
     setLoading(false);
@@ -326,8 +337,8 @@ export default function AdminDashboard() {
   }
 
   const heroMetrics = [
-    { label: "MRR (real)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success", sub: stats.discountImpact > 0 ? `−€${stats.discountImpact.toFixed(0)} desc.` : undefined },
-    { label: "ARR", value: `€${stats.arr.toFixed(0)}`, icon: TrendingUp, color: "text-success" },
+    { label: "MRR (Stripe)", value: `€${stats.mrrWithDiscounts.toFixed(0)}`, icon: DollarSign, color: "text-success", sub: stats.discountImpact > 0 ? `−€${stats.discountImpact.toFixed(0)} desc.` : "Apenas pagamentos reais" },
+    { label: "ARR (Stripe)", value: `€${stats.arr.toFixed(0)}`, icon: TrendingUp, color: "text-success" },
     { label: t('admin.dashboard.trialToPaid'), value: `${stats.conversionRate.toFixed(0)}%`, icon: TrendingUp, color: "text-primary" },
     { label: t('admin.dashboard.churnRate'), value: `${stats.churnRate.toFixed(1)}%`, icon: AlertTriangle, color: stats.churnRate > 10 ? "text-destructive" : "text-warning" },
   ];
@@ -498,7 +509,7 @@ export default function AdminDashboard() {
                 <span className="font-bold text-warning">-€{stats.discountImpact.toFixed(2)}/mês</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                MRR sem descontos: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)}
+              MRR base Stripe: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)} • Manuais (não contabilizados): {(stats as any).manualCount || 0}
               </p>
             </div>
           )}

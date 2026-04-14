@@ -192,11 +192,15 @@ export default function AdminCarity() {
   const sold = listings.filter(l => l.status === "sold").length;
   const pendingApproval = listings.filter(l => l.status === "pending_approval").length;
   const pendingInspection = listings.filter(l => l.status === "pending_inspection").length;
-  const paidTx = transactions.filter(t => t.status === "paid");
-  const totalRevenue = paidTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const inspectionRevenue = paidTx.filter(t => t.type === "inspection_fee").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const commissionRevenue = paidTx.filter(t => t.type === "sale_commission").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
-  const boostRevenue = boosts.filter(b => b.status === "active" || b.status === "completed").reduce((s, b) => s + Number(b.price || 0), 0);
+  // REGRA: Apenas transações com pagamento Stripe verificado contam como receita
+  const verifiedTx = transactions.filter(t => t.status === "paid" && t.stripe_verified === true);
+  const unverifiedTx = transactions.filter(t => t.status === "paid" && !t.stripe_verified);
+  const totalRevenue = verifiedTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const inspectionRevenue = verifiedTx.filter(t => t.type === "inspection_fee").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const commissionRevenue = verifiedTx.filter(t => t.type === "sale_commission").reduce((s, t) => s + Number(t.platform_amount || 0), 0);
+  const verifiedBoosts = boosts.filter(b => (b.status === "active" || b.status === "completed") && b.stripe_verified === true);
+  const boostRevenue = verifiedBoosts.reduce((s, b) => s + Number(b.price || 0), 0);
+  const unverifiedBoostRevenue = boosts.filter(b => (b.status === "active" || b.status === "completed") && !b.stripe_verified).reduce((s, b) => s + Number(b.price || 0), 0);
   const partnerShops = shops.filter(s => s.is_carity_partner);
   const verifiedSellers = sellers.filter(s => s.verified).length;
   const activeBoosts = boosts.filter(b => b.status === "active").length;
@@ -275,7 +279,10 @@ export default function AdminCarity() {
           <CardContent className="pt-4 pb-4 text-center">
             <Euro className="h-5 w-5 mx-auto text-amber-500 mb-1" />
             <p className="text-2xl font-bold text-amber-600">€{totalRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Receita Plataforma</p>
+            <p className="text-xs text-muted-foreground">Receita Stripe Verificada</p>
+            {unverifiedTx.length > 0 && (
+              <p className="text-[10px] text-destructive mt-1">⚠ €{unverifiedTx.reduce((s, t) => s + Number(t.platform_amount || 0), 0).toFixed(2)} não verificado</p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -296,7 +303,10 @@ export default function AdminCarity() {
           <CardContent className="pt-4 pb-4 text-center">
             <Zap className="h-5 w-5 mx-auto text-amber-500 mb-1" />
             <p className="text-2xl font-bold">€{boostRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Boosts</p>
+            <p className="text-xs text-muted-foreground">Boosts (Stripe)</p>
+            {unverifiedBoostRevenue > 0 && (
+              <p className="text-[10px] text-destructive mt-1">⚠ €{unverifiedBoostRevenue.toFixed(2)} não verificado</p>
+            )}
           </CardContent>
         </Card>
       </div>

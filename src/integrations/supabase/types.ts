@@ -409,6 +409,7 @@ export type Database = {
           started_at: string | null
           status: string
           stripe_session_id: string | null
+          stripe_verified: boolean
         }
         Insert: {
           boost_type?: string
@@ -421,6 +422,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           stripe_session_id?: string | null
+          stripe_verified?: boolean
         }
         Update: {
           boost_type?: string
@@ -433,6 +435,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           stripe_session_id?: string | null
+          stripe_verified?: boolean
         }
         Relationships: [
           {
@@ -778,6 +781,7 @@ export type Database = {
           shop_id: string | null
           status: string
           stripe_payment_id: string | null
+          stripe_verified: boolean
           type: string
         }
         Insert: {
@@ -791,6 +795,7 @@ export type Database = {
           shop_id?: string | null
           status?: string
           stripe_payment_id?: string | null
+          stripe_verified?: boolean
           type?: string
         }
         Update: {
@@ -804,6 +809,7 @@ export type Database = {
           shop_id?: string | null
           status?: string
           stripe_payment_id?: string | null
+          stripe_verified?: boolean
           type?: string
         }
         Relationships: [
@@ -2449,6 +2455,7 @@ export type Database = {
           discount_reason: string | null
           id: string
           plan: string
+          revenue_type: string
           shop_id: string
           status: string
           stripe_customer_id: string | null
@@ -2467,6 +2474,7 @@ export type Database = {
           discount_reason?: string | null
           id?: string
           plan?: string
+          revenue_type?: string
           shop_id: string
           status?: string
           stripe_customer_id?: string | null
@@ -2485,6 +2493,7 @@ export type Database = {
           discount_reason?: string | null
           id?: string
           plan?: string
+          revenue_type?: string
           shop_id?: string
           status?: string
           stripe_customer_id?: string | null

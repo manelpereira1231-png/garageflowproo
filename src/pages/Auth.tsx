@@ -153,7 +153,7 @@ export default function Auth() {
     }
   };
 
-  const isCarity = fromCarity || accountType === "particular";
+  const isCarity = fromMarket || accountType === "particular";
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative ${isCarity ? 'bg-slate-950' : 'bg-background'}`}>

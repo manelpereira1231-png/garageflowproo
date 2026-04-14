@@ -179,7 +179,7 @@ export default function Auth() {
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20">
                 <ShieldCheck className="w-7 h-7 text-slate-900" />
               </div>
-              <h1 className="text-2xl font-bold text-white">Carity</h1>
+              <h1 className="text-2xl font-bold text-white">GarageFlow <span className="text-amber-400">Market</span></h1>
               <p className="text-slate-400 text-sm mt-1">Marketplace de carros certificados</p>
             </>
           ) : (

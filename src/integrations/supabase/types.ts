@@ -447,6 +447,50 @@ export type Database = {
           },
         ]
       }
+      carity_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          message: string
+          message_type: string
+          offer_amount: number | null
+          read: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          message?: string
+          message_type?: string
+          offer_amount?: number | null
+          read?: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          message?: string
+          message_type?: string
+          offer_amount?: number | null
+          read?: boolean
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_chat_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carity_inspection_offers: {
         Row: {
           id: string
@@ -747,6 +791,56 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carity_offers: {
+        Row: {
+          amount: number
+          buyer_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          listing_id: string
+          message: string | null
+          responded_at: string | null
+          seller_id: string
+          status: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          amount?: number
+          buyer_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id: string
+          message?: string | null
+          responded_at?: string | null
+          seller_id: string
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id?: string
+          message?: string | null
+          responded_at?: string | null
+          seller_id?: string
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
             referencedColumns: ["id"]
           },
         ]

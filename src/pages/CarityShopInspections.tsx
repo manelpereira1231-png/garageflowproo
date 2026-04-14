@@ -410,6 +410,20 @@ export default function CarityShopInspections() {
 
   const submitReport = async () => {
     if (!activeInspection || !shopId) return;
+    if (reportLocked) { toast.error("Este relatório está bloqueado e não pode ser alterado."); return; }
+
+    // Validate technician name
+    if (!technicianName.trim()) { toast.error("Identifique o técnico responsável pela inspeção."); return; }
+
+    // Validate defect descriptions
+    const validDefects = defects.filter(d => d.description.trim());
+    const graveDefects = validDefects.filter(d => d.severity === 'grave');
+    
+    // If grave defects exist, require photo evidence
+    if (graveDefects.length > 0 && photoSections.damage_photos.length === 0) {
+      toast.error("Defeitos graves identificados — é obrigatório carregar fotos de danos como prova.");
+      return;
+    }
 
     // Enforce minimum 6 photos total
     const totalPhotos = Object.values(photoSections).reduce((sum, arr) => sum + arr.length, 0);
@@ -420,26 +434,44 @@ export default function CarityShopInspections() {
 
     const autoScore = calculateAutoScore(report);
 
+    // Apply defect penalty
+    const defectPenalty = validDefects.reduce((sum, d) => sum + (SEVERITY_IMPACT[d.severity]?.weight || 0) * 3, 0);
+    const finalScore = Math.max(0, Math.min(100, autoScore - defectPenalty));
+
     setSaving(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData.user?.id;
+
       const { data: existing } = await supabase
-        .from("carity_inspection_reports").select("id").eq("inspection_id", activeInspection.id).maybeSingle();
+        .from("carity_inspection_reports").select("id, is_locked").eq("inspection_id", activeInspection.id).maybeSingle();
+
+      // Block if already locked
+      if (existing && (existing as any).is_locked) {
+        toast.error("Este relatório já foi submetido e bloqueado permanentemente.");
+        setSaving(false);
+        return;
+      }
 
       // Auto-determine recommendation from score
-      const autoRecommendation = autoScore >= 80 ? "recommended" : autoScore >= 60 ? "acceptable" : "not_recommended";
+      const autoRecommendation = finalScore >= 80 ? "recommended" : finalScore >= 60 ? "acceptable" : "not_recommended";
 
       const reportData = {
         inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
-        overall_score: autoScore,
+        overall_score: finalScore,
         recommendation: autoRecommendation,
-        defects: defects.filter(d => d.description.trim()) as unknown as any,
+        defects: validDefects as unknown as any,
         exterior_photos: photoSections.exterior_photos as unknown as any,
         interior_photos: photoSections.interior_photos as unknown as any,
         engine_photos: photoSections.engine_photos as unknown as any,
         tire_photos: photoSections.tire_photos as unknown as any,
         damage_photos: photoSections.damage_photos as unknown as any,
         completed_at: new Date().toISOString(),
+        technician_name: technicianName.trim(),
+        submitted_by_user_id: currentUserId,
+        is_locked: true,
+        locked_at: new Date().toISOString(),
       };
 
       let reportId: string;
@@ -449,6 +481,16 @@ export default function CarityShopInspections() {
       } else {
         const { data: newReport } = await supabase.from("carity_inspection_reports").insert(reportData).select("id").single();
         reportId = newReport?.id || "";
+      }
+
+      // Generate cryptographic hash for integrity
+      if (reportId) {
+        const { data: hashResult } = await supabase.rpc("generate_report_hash", { _report_id: reportId });
+        if (hashResult) {
+          await supabase.from("carity_inspection_reports")
+            .update({ report_hash: hashResult } as any)
+            .eq("id", reportId);
+        }
       }
 
       // === COHERENCE VALIDATION ===
@@ -489,7 +531,7 @@ export default function CarityShopInspections() {
             await supabase.from("carity_listings")
               .update({ status: 'rejected' })
               .eq("id", activeInspection.listing_id);
-            toast.error(`Relatório rejeitado pela validação de coerência (score: ${coherence.coherence_score}/100). Corrija os problemas identificados.`, { duration: 10000 });
+            toast.error(`Relatório rejeitado pela validação de coerência (score: ${coherence.coherence_score}/100). O relatório está bloqueado.`, { duration: 10000 });
             setActiveInspection(null);
             loadData();
             return;
@@ -502,16 +544,16 @@ export default function CarityShopInspections() {
         .eq("id", activeInspection.id);
 
       // Auto-publish or reject based on score
-      if (autoScore >= 60) {
+      if (finalScore >= 60) {
         await supabase.from("carity_listings")
           .update({ status: 'published', published_at: new Date().toISOString() })
           .eq("id", activeInspection.listing_id);
-        toast.success(`Relatório enviado! Score: ${autoScore}/100 — Carro publicado no Market ✅`);
+        toast.success(`✅ Relatório submetido e BLOQUEADO permanentemente. Score: ${finalScore}/100 — Carro publicado no Market`);
       } else {
         await supabase.from("carity_listings")
           .update({ status: 'rejected' })
           .eq("id", activeInspection.listing_id);
-        toast.warning(`Relatório enviado. Score: ${autoScore}/100 — Carro rejeitado (mínimo 60) ❌`);
+        toast.warning(`Relatório submetido e BLOQUEADO. Score: ${finalScore}/100 — Carro rejeitado (mínimo 60) ❌`);
       }
 
       setActiveInspection(null);

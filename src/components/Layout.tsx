@@ -34,6 +34,7 @@ import {
   Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";

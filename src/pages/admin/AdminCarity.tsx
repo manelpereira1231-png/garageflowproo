@@ -481,6 +481,7 @@ export default function AdminCarity() {
           <TabsTrigger value="wallets">💰 Wallets ({wallets.length})</TabsTrigger>
           <TabsTrigger value="sales">🏷️ Vendas ({saleConfirmations.length})</TabsTrigger>
           <TabsTrigger value="escrows">⚖️ Escrow ({escrows.length})</TabsTrigger>
+          <TabsTrigger value="risk">🚨 Risco ({riskFlags.filter(f => !f.auto_resolved && !f.reviewed_by).length})</TabsTrigger>
         </TabsList>
 
         {/* === OVERVIEW === */}

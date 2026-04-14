@@ -689,6 +689,11 @@ export default function AdminCarity() {
                     <Badge className={boost.status === "active" ? "bg-green-100 text-green-800" : boost.status === "completed" ? "bg-blue-100 text-blue-800" : boost.status === "cancelled" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"}>
                       {boost.status === "active" ? "Ativo" : boost.status === "completed" ? "Concluído" : boost.status === "cancelled" ? "Cancelado" : boost.status}
                     </Badge>
+                    {boost.stripe_verified ? (
+                      <Badge className="bg-green-100 text-green-800 border-0 text-[10px]">✓ Stripe</Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-[10px]">⚠ Não verificado</Badge>
+                    )}
                     {boost.status === "active" && (
                       <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => cancelBoost(boost.id)}>Cancelar</Button>
                     )}
@@ -724,20 +729,27 @@ export default function AdminCarity() {
           {transactions.length === 0 ? <Card><CardContent className="py-8 text-center text-muted-foreground">Sem transações</CardContent></Card> : transactions.map(tx => (
             <Card key={tx.id}>
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{tx.type === "inspection_fee" ? "Taxa de Inspeção" : tx.type === "sale_commission" ? "Comissão de Venda" : tx.type === "boost" ? "Boost" : tx.type}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Plataforma: €{Number(tx.platform_amount).toFixed(2)} · Oficina: €{Number(tx.shop_amount).toFixed(2)}
-                      · {new Date(tx.created_at).toLocaleDateString("pt-PT")}
-                    </p>
-                    {tx.stripe_payment_id && <p className="text-[10px] text-muted-foreground">Stripe: {tx.stripe_payment_id}</p>}
+          <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{tx.type === "inspection_fee" ? "Taxa de Inspeção" : tx.type === "sale_commission" ? "Comissão de Venda" : tx.type === "boost" ? "Boost" : tx.type}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Plataforma: €{Number(tx.platform_amount).toFixed(2)} · Oficina: €{Number(tx.shop_amount).toFixed(2)}
+                        · {new Date(tx.created_at).toLocaleDateString("pt-PT")}
+                      </p>
+                      {tx.stripe_payment_id && <p className="text-[10px] text-muted-foreground">Stripe: {tx.stripe_payment_id}</p>}
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <p className="font-bold text-lg">€{Number(tx.amount).toFixed(2)}</p>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline">{tx.status === "paid" ? "Pago" : tx.status}</Badge>
+                        {tx.stripe_verified ? (
+                          <Badge className="bg-green-100 text-green-800 border-0 text-[10px]">✓ Stripe</Badge>
+                        ) : (
+                          <Badge variant="destructive" className="text-[10px]">⚠ Não verificado</Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">€{Number(tx.amount).toFixed(2)}</p>
-                    <Badge variant="outline">{tx.status === "paid" ? "Pago" : tx.status}</Badge>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           ))}

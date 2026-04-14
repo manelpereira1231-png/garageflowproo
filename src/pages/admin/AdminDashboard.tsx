@@ -509,7 +509,7 @@ export default function AdminDashboard() {
                 <span className="font-bold text-warning">-€{stats.discountImpact.toFixed(2)}/mês</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-              MRR base Stripe: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)} • Manuais (não contabilizados): {(stats as any).manualCount || 0}
+              MRR base Stripe: €{stats.mrr.toFixed(0)} → MRR real: €{stats.mrrWithDiscounts.toFixed(0)} • Manuais (não contabilizados): {stats.manualCount}
               </p>
             </div>
           )}

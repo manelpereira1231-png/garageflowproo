@@ -375,11 +375,28 @@ export default function CarityListingDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card className="sticky top-4">
+             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
                 </div>
+
+                {/* Buy Now button */}
+                {(!currentUserId || listing.seller_id !== currentUserId) && (
+                  <Button
+                    onClick={handleBuyNow}
+                    disabled={buying}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 font-bold"
+                    size="lg"
+                  >
+                    {buying ? (
+                      <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
+                    ) : (
+                      <><CreditCard className="h-5 w-5 mr-2" /> Comprar Agora — €{listing.price.toLocaleString()}</>
+                    )}
+                  </Button>
+                )}
+
                 <Separator />
 
                 {/* Seller info - CONTACTS HIDDEN */}
@@ -399,6 +416,7 @@ export default function CarityListingDetail() {
                 )}
 
                 <p className="text-xs text-center text-muted-foreground">Este carro foi inspecionado e aprovado pelo sistema GarageFlow Market</p>
+                <p className="text-xs text-center text-muted-foreground">💳 Pagamento seguro via Stripe • 🛡️ Comissão de 2% incluída</p>
               </CardContent>
             </Card>
 

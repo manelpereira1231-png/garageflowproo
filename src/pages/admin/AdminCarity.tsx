@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star, Loader2, Send } from "lucide-react";
+import { ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star, Loader2, Send, ClipboardCheck } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Aguarda Pagamento",

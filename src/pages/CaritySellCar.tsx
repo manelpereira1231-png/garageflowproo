@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, Upload, ArrowLeft, Car, Camera, X, Loader2 } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Car, Loader2 } from "lucide-react";
+import StructuredPhotoUpload, { getDefaultPhotoSlots, getPhotoUrls, areRequiredPhotosFilled, type PhotoSlot } from "@/components/StructuredPhotoUpload";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 
@@ -18,8 +18,7 @@ export default function CaritySellCar() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sellerProfile, setSellerProfile] = useState<any>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [photoSlots, setPhotoSlots] = useState<PhotoSlot[]>(getDefaultPhotoSlots());
 
   const [form, setForm] = useState({
     make: '', model: '', year: new Date().getFullYear(), mileage: 0,
@@ -48,30 +47,13 @@ export default function CaritySellCar() {
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !user) return;
-    setUploading(true);
-    const newPhotos: string[] = [];
-    for (const file of Array.from(e.target.files)) {
-      const ext = file.name.split('.').pop();
-      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from("carity-photos").upload(path, file);
-      if (!error) {
-        const { data: urlData } = supabase.storage.from("carity-photos").getPublicUrl(path);
-        newPhotos.push(urlData.publicUrl);
-      }
-    }
-    setPhotos(prev => [...prev, ...newPhotos]);
-    setUploading(false);
-  };
-
-  const removePhoto = (index: number) => setPhotos(prev => prev.filter((_, i) => i !== index));
+  // Photo upload is now handled by StructuredPhotoUpload component
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error("Preencha todos os campos obrigatórios"); return; }
-    if (photos.length < 3) { toast.error("Carregue pelo menos 3 fotos do veículo"); return; }
+    if (!areRequiredPhotosFilled(photoSlots)) { toast.error("Preencha todas as fotos obrigatórias do veículo"); return; }
     if (!sellerForm.name || !sellerForm.phone) { toast.error("Preencha os dados de contacto do vendedor"); return; }
 
     setLoading(true);
@@ -82,10 +64,11 @@ export default function CaritySellCar() {
         await supabase.from("carity_seller_profiles").update({ name: sellerForm.name, phone: sellerForm.phone, location: sellerForm.location }).eq("id", sellerProfile.id);
       }
 
+      const photoUrls = getPhotoUrls(photoSlots);
       const { data: listing, error } = await supabase.from("carity_listings").insert({
         seller_id: user.id, make: form.make, model: form.model, year: form.year, mileage: form.mileage,
         fuel: form.fuel, plate: form.plate.toUpperCase(), vin: form.vin || null, price: form.price,
-        description: form.description, photos: photos, status: 'pending_payment',
+        description: form.description, photos: photoUrls, status: 'pending_payment',
       }).select().single();
 
       if (error) throw error;
@@ -152,21 +135,21 @@ export default function CaritySellCar() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Fotos do Veículo</CardTitle><CardDescription>Mínimo 3 fotos. Inclua exterior, interior e motor.</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg">Fotos do Veículo</CardTitle>
+              <CardDescription>
+                Upload estruturado obrigatório. Cada slot corresponde a uma vista específica do veículo.
+                As fotos não podem ser alteradas após submissão.
+              </CardDescription>
+            </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                {photos.map((photo, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
-                    <img src={photo} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"><X className="h-3 w-3" /></button>
-                  </div>
-                ))}
-                <label className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition">
-                  {uploading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : <><Camera className="h-6 w-6 text-muted-foreground mb-1" /><span className="text-xs text-muted-foreground">Adicionar</span></>}
-                  <input type="file" className="hidden" accept="image/*" multiple onChange={handlePhotoUpload} disabled={uploading} />
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">{photos.length}/10 fotos carregadas (mínimo 3)</p>
+              {user && (
+                <StructuredPhotoUpload
+                  userId={user.id}
+                  photos={photoSlots}
+                  onChange={setPhotoSlots}
+                />
+              )}
             </CardContent>
           </Card>
 

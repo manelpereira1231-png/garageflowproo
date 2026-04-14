@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Send, MessageCircle, Euro, Check, X, Loader2, Lock } from "lucide-react";
+import { Send, MessageCircle, Euro, Check, X, Loader2, Lock, ShieldAlert } from "lucide-react";
+import { filterMessage, type ViolationType } from "@/lib/chatSafetyFilter";
 
 interface CarityChatProps {
   listingId: string;
@@ -37,7 +38,8 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
   const [pendingOffer, setPendingOffer] = useState<any>(null);
   const [acceptedOffer, setAcceptedOffer] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
+  const [fugaAttempts, setFugaAttempts] = useState(0);
+  const [fugaWarning, setFugaWarning] = useState<string | null>(null);
   const isSeller = currentUserId === sellerId;
   const isBuyer = currentUserId && currentUserId !== sellerId;
 
@@ -103,6 +105,33 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUserId || sending) return;
+    
+    // Anti-fuga filter
+    const filterResult = filterMessage(newMessage);
+    if (!filterResult.safe) {
+      setFugaAttempts(prev => prev + 1);
+      setFugaWarning(filterResult.warningMessage);
+      
+      // Log the attempt
+      try {
+        await supabase.from("audit_logs").insert({
+          action: "chat_fuga_attempt",
+          entity_type: "carity_chat",
+          entity_id: listingId,
+          user_id: currentUserId,
+          details: { violations: filterResult.violations, attempt_number: fugaAttempts + 1, message_preview: newMessage.substring(0, 50) + "..." },
+        });
+      } catch {}
+      
+      if (fugaAttempts >= 2) {
+        toast.error("A sua conta pode ser suspensa por tentativas repetidas de fuga à plataforma.", { duration: 8000 });
+      } else {
+        toast.warning(filterResult.warningMessage, { duration: 6000 });
+      }
+      return;
+    }
+    
+    setFugaWarning(null);
     setSending(true);
     try {
       const receiverId = isSeller ? messages.find(m => m.sender_id !== currentUserId)?.sender_id : sellerId;
@@ -230,6 +259,21 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Anti-fuga warning */}
+        {fugaWarning && (
+          <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30 flex items-start gap-2">
+            <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs text-destructive font-medium">{fugaWarning}</p>
+              {fugaAttempts >= 2 && (
+                <p className="text-[10px] text-destructive/80 mt-1">
+                  ⚠️ Aviso {fugaAttempts}/3 — Após 3 tentativas a sua conta será restrita.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Pending offer banner (seller side) */}
         {isSeller && pendingOffer && (
           <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">

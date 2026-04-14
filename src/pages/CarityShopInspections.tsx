@@ -471,9 +471,9 @@ export default function CarityShopInspections() {
           </CardHeader>
           <CardContent className="space-y-6">
             {[
-              { key: "exterior_photos", label: "Exterior (frente, trás, laterais)", required: true },
-              { key: "interior_photos", label: "Interior", required: true },
-              { key: "engine_photos", label: "Motor", required: false },
+              { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
+              { key: "interior_photos", label: "Interior — mín. 2 fotos", required: true },
+              { key: "engine_photos", label: "Motor — mín. 1 foto", required: true },
               { key: "tire_photos", label: "Pneus", required: false },
               { key: "damage_photos", label: "Danos encontrados", required: false },
             ].map(section => (

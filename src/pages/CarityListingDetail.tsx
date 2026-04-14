@@ -33,6 +33,8 @@ const RECOMMENDATION_LABELS: Record<string, { label: string; color: string }> = 
 
 export default function CarityListingDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
@@ -41,10 +43,21 @@ export default function CarityListingDetail() {
   const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [totalVerified, setTotalVerified] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [buying, setBuying] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
   }, []);
+
+  // Show purchase result
+  useEffect(() => {
+    const purchaseStatus = searchParams.get("purchase");
+    if (purchaseStatus === "success") {
+      toast.success("🎉 Compra realizada com sucesso! O vendedor será notificado.");
+    } else if (purchaseStatus === "cancelled") {
+      toast.info("Compra cancelada.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (id) loadData();

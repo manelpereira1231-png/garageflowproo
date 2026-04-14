@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, Phone, MapPin, Star, Clock, Users } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock } from "lucide-react";
+import CarityChat from "@/components/CarityChat";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "OK" },
@@ -38,6 +39,11 @@ export default function CarityListingDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [totalVerified, setTotalVerified] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
+  }, []);
 
   useEffect(() => {
     if (id) loadData();
@@ -54,7 +60,6 @@ export default function CarityListingDetail() {
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    // Set SEO meta
     document.title = `${listingData.make} ${listingData.model} ${listingData.year} — GarageFlow Market`;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", `${listingData.make} ${listingData.model} ${listingData.year} com ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada GarageFlow Market. €${listingData.price?.toLocaleString()}`);
@@ -75,7 +80,6 @@ export default function CarityListingDetail() {
         damage_photos: Array.isArray(reportRes.data.damage_photos) ? reportRes.data.damage_photos : [],
       });
 
-      // Load shop reputation
       if (reportRes.data.shop_id) {
         const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", reportRes.data.shop_id).single();
         if (shop) setShopInfo(shop);
@@ -126,6 +130,7 @@ export default function CarityListingDetail() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            {/* Photo gallery */}
             <Card className="overflow-hidden">
               <div className="aspect-video bg-muted relative">
                 {allPhotos[selectedPhoto] ? (
@@ -154,10 +159,10 @@ export default function CarityListingDetail() {
               )}
             </Card>
 
+            {/* Details */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl">{listing.make} {listing.model}</CardTitle>
-                {/* Urgency signals */}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {daysSincePublished <= 3 && <Badge variant="outline" className="text-green-600 border-green-200">🆕 Publicado há {daysSincePublished || 1} dia{daysSincePublished !== 1 ? 's' : ''}</Badge>}
                   {daysSincePublished > 3 && daysSincePublished <= 14 && <Badge variant="outline"><Clock className="h-3 w-3 mr-1" /> Publicado há {daysSincePublished} dias</Badge>}
@@ -179,7 +184,6 @@ export default function CarityListingDetail() {
                   </div>
                 </div>
 
-                {/* Trust badges */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400">
                     <CheckCircle className="h-3 w-3 mr-1" /> Inspeção feita
@@ -204,6 +208,7 @@ export default function CarityListingDetail() {
               </CardContent>
             </Card>
 
+            {/* Inspection report */}
             {report && (
               <Card>
                 <CardHeader>
@@ -220,7 +225,6 @@ export default function CarityListingDetail() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Shop reputation */}
                   {shopInfo && (
                     <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
                       <p className="text-sm font-medium mb-1">Inspecionado por <span className="text-amber-700 dark:text-amber-400 font-semibold">{shopInfo.name}</span></p>
@@ -252,7 +256,6 @@ export default function CarityListingDetail() {
                        report.overall_score >= 60 ? '🟡 Bom estado geral' :
                        '🔴 Necessita atenção'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Motor 30% · Travões 20% · Suspensão 20% · Pneus 15% · Eletrónica 15%</p>
                   </div>
 
                   <Separator />
@@ -329,6 +332,7 @@ export default function CarityListingDetail() {
             )}
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-6">
             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
@@ -336,25 +340,40 @@ export default function CarityListingDetail() {
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
                 </div>
                 <Separator />
+
+                {/* Seller info - CONTACTS HIDDEN */}
                 {seller && (
                   <div>
                     <h3 className="font-semibold mb-2 text-sm uppercase text-muted-foreground">Vendedor</h3>
                     <div className="space-y-2">
                       <p className="font-medium">{seller.name}</p>
                       {seller.location && <p className="text-sm text-muted-foreground flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {seller.location}</p>}
-                      {seller.phone && <a href={`tel:${seller.phone}`} className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 hover:underline"><Phone className="h-3.5 w-3.5" /> {seller.phone}</a>}
+                      {/* Contacts hidden - communicate through platform only */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted p-2 rounded">
+                        <Lock className="h-3 w-3" />
+                        Contactos protegidos — comunique pela plataforma
+                      </div>
                     </div>
                   </div>
                 )}
-                <Button className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" size="lg">Contactar vendedor</Button>
+
                 <p className="text-xs text-center text-muted-foreground">Este carro foi inspecionado e aprovado pelo sistema GarageFlow Market</p>
               </CardContent>
             </Card>
+
+            {/* Chat component */}
+            <CarityChat
+              listingId={id!}
+              sellerId={listing.seller_id}
+              listingPrice={listing.price}
+              listingLabel={`${listing.make} ${listing.model}`}
+              currentUserId={currentUserId}
+            />
           </div>
         </div>
       </div>
 
-      {/* JSON-LD Vehicle Schema */}
+      {/* JSON-LD */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Vehicle",
@@ -362,11 +381,7 @@ export default function CarityListingDetail() {
         "brand": { "@type": "Brand", "name": listing.make },
         "model": listing.model,
         "modelDate": String(listing.year),
-        "mileageFromOdometer": {
-          "@type": "QuantitativeValue",
-          "value": listing.mileage,
-          "unitCode": "KMT"
-        },
+        "mileageFromOdometer": { "@type": "QuantitativeValue", "value": listing.mileage, "unitCode": "KMT" },
         "fuelType": listing.fuel,
         "offers": {
           "@type": "Offer",
@@ -377,11 +392,6 @@ export default function CarityListingDetail() {
         },
         "image": listing.photos[0] || undefined,
         "description": listing.description || `${listing.make} ${listing.model} ${listing.year} com inspeção certificada GarageFlow Market`,
-        "additionalProperty": {
-          "@type": "PropertyValue",
-          "name": "Inspeção certificada",
-          "value": "Sim"
-        }
       })}} />
     </div>
   );

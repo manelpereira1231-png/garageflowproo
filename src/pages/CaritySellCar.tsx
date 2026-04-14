@@ -36,7 +36,7 @@ export default function CaritySellCar() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Precisa de uma conta para vender. Faça login primeiro.");
-      navigate("/auth?mode=signup&from=carity&redirect=/carity/vender");
+      navigate("/auth?mode=signup&from=market&redirect=/market/sell");
       return;
     }
     setUser(user);
@@ -90,7 +90,7 @@ export default function CaritySellCar() {
 
       if (error) throw error;
       toast.success("Anúncio criado! Agora pague a taxa de inspeção para continuar.");
-      navigate(`/carity/pagar/${listing.id}`);
+      navigate(`/market/pay/${listing.id}`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar anúncio");
     } finally { setLoading(false); }
@@ -100,11 +100,11 @@ export default function CaritySellCar() {
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">Carity</span>
+            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/carity">
+          <Link to="/market">
             <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
@@ -116,7 +116,7 @@ export default function CaritySellCar() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Vender o meu carro</h1>
           <p className="text-muted-foreground">
-            Preencha os dados do veículo. Depois será necessário pagar €24,90 para a inspeção oficial.
+            Preencha os dados do veículo. Depois será necessário pagar €19,90 para a inspeção oficial.
           </p>
         </div>
 
@@ -175,7 +175,7 @@ export default function CaritySellCar() {
               <div className="flex items-center gap-3 mb-3">
                 <ShieldCheck className="h-8 w-8 text-amber-500" />
                 <div>
-                  <h3 className="font-semibold">Taxa de Inspeção: €24,90</h3>
+                  <h3 className="font-semibold">Taxa de Inspeção: €19,90</h3>
                   <p className="text-sm text-muted-foreground">Após submeter, será redirecionado para pagamento. Uma oficina certificada fará a inspeção completa do seu carro.</p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default function CaritySellCar() {
 
           <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            Submeter e pagar inspeção (€24,90)
+            Submeter e pagar inspeção (€19,90)
           </Button>
         </form>
       </div>

@@ -13,32 +13,19 @@ export default function CarityByCity() {
   const decodedCity = decodeURIComponent(city || "");
 
   useEffect(() => {
-    document.title = `Carros Usados em ${decodedCity} — Carity`;
+    document.title = `Carros Usados em ${decodedCity} — GarageFlow Market`;
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", `Carros usados certificados em ${decodedCity}. Todos inspecionados por oficinas profissionais. Compre com confiança no Carity.`);
+    if (meta) meta.setAttribute("content", `Carros usados certificados em ${decodedCity}. Todos inspecionados por oficinas profissionais. Compre com confiança no GarageFlow Market.`);
 
     const load = async () => {
-      // City filtering uses seller profile location
       const { data: sellers } = await supabase
-        .from("carity_seller_profiles")
-        .select("user_id")
-        .ilike("location", `%${decodedCity}%`);
-
+        .from("carity_seller_profiles").select("user_id").ilike("location", `%${decodedCity}%`);
       const sellerIds = (sellers || []).map(s => s.user_id);
-
-      if (sellerIds.length === 0) {
-        setListings([]);
-        setLoading(false);
-        return;
-      }
+      if (sellerIds.length === 0) { setListings([]); setLoading(false); return; }
 
       const { data } = await supabase
-        .from("carity_listings")
-        .select("*")
-        .eq("status", "published")
-        .in("seller_id", sellerIds)
-        .order("published_at", { ascending: false });
-
+        .from("carity_listings").select("*").eq("status", "published")
+        .in("seller_id", sellerIds).order("published_at", { ascending: false });
       setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
       setLoading(false);
     };
@@ -49,11 +36,11 @@ export default function CarityByCity() {
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">Carity</span>
+            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/carity"><Button variant="ghost" size="sm" className="text-slate-300"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Button></Link>
+          <Link to="/market"><Button variant="ghost" size="sm" className="text-slate-300"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Button></Link>
         </div>
       </nav>
 
@@ -66,12 +53,12 @@ export default function CarityByCity() {
         ) : listings.length === 0 ? (
           <Card><CardContent className="py-12 text-center">
             <Car className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground">Ainda não existem carros certificados em {decodedCity}. <Link to="/carity/vender" className="text-amber-500 hover:underline">Seja o primeiro!</Link></p>
+            <p className="text-muted-foreground">Ainda não existem carros certificados em {decodedCity}. <Link to="/market/sell" className="text-amber-500 hover:underline">Seja o primeiro!</Link></p>
           </CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map(listing => (
-              <Link key={listing.id} to={`/carity/carro/${listing.id}`}>
+              <Link key={listing.id} to={`/market/car/${listing.id}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer">
                   <div className="aspect-[16/10] bg-muted overflow-hidden relative">
                     {listing.photos[0] ? <img src={listing.photos[0]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="flex items-center justify-center h-full"><Car className="h-10 w-10 text-muted-foreground/30" /></div>}

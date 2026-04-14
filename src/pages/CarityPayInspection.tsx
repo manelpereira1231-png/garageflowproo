@@ -35,14 +35,14 @@ export default function CarityPayInspection() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  if (!listing) return <div className="min-h-screen flex flex-col items-center justify-center gap-4"><p className="text-lg">Anúncio não encontrado</p><Link to="/carity"><Button>Voltar</Button></Link></div>;
+  if (!listing) return <div className="min-h-screen flex flex-col items-center justify-center gap-4"><p className="text-lg">Anúncio não encontrado</p><Link to="/market"><Button>Voltar</Button></Link></div>;
 
   if (listing.status !== 'pending_payment') return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <CheckCircle className="h-16 w-16 text-amber-500" />
       <h2 className="text-xl font-semibold">Pagamento já realizado</h2>
       <p className="text-muted-foreground">Este anúncio já tem pagamento confirmado.</p>
-      <Link to="/carity"><Button>Ver marketplace</Button></Link>
+      <Link to="/market"><Button>Ver marketplace</Button></Link>
     </div>
   );
 
@@ -50,9 +50,9 @@ export default function CarityPayInspection() {
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">Carity</span>
+            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
         </div>
       </nav>
@@ -72,8 +72,8 @@ export default function CarityPayInspection() {
 
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex justify-between">
-                <span>Taxa de inspeção Carity</span>
-                <span className="font-semibold">€24,90</span>
+                <span>Taxa de inspeção GarageFlow Market</span>
+                <span className="font-semibold">€19,90</span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Inclui inspeção mecânica completa, relatório fotográfico e classificação oficial por uma oficina certificada GarageFlow.
@@ -94,7 +94,7 @@ export default function CarityPayInspection() {
 
             <Button onClick={handlePayment} disabled={paying} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
               {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
-              Pagar €24,90
+              Pagar €19,90
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">Pagamento seguro processado por Stripe. Pode cancelar a qualquer momento.</p>

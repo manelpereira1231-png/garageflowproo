@@ -13,17 +13,14 @@ export default function CarityByMake() {
   const decodedMake = decodeURIComponent(make || "");
 
   useEffect(() => {
-    document.title = `Carros ${decodedMake} Usados Inspecionados — Carity`;
+    document.title = `Carros ${decodedMake} Usados Inspecionados — GarageFlow Market`;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", `Encontre carros ${decodedMake} usados com inspeção oficial. Todos os veículos são certificados por oficinas profissionais.`);
 
     const load = async () => {
       const { data } = await supabase
-        .from("carity_listings")
-        .select("*")
-        .eq("status", "published")
-        .ilike("make", decodedMake)
-        .order("published_at", { ascending: false });
+        .from("carity_listings").select("*").eq("status", "published")
+        .ilike("make", decodedMake).order("published_at", { ascending: false });
       setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
       setLoading(false);
     };
@@ -34,29 +31,29 @@ export default function CarityByMake() {
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/carity" className="flex items-center gap-2">
+          <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-amber-400" />
-            <span className="text-xl font-bold">Carity</span>
+            <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/carity"><Button variant="ghost" size="sm" className="text-slate-300"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Button></Link>
+          <Link to="/market"><Button variant="ghost" size="sm" className="text-slate-300"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Button></Link>
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2">Carros {decodedMake} Usados</h1>
-        <p className="text-muted-foreground mb-8">Todos os {decodedMake} com inspeção oficial Carity. Compre com confiança.</p>
+        <p className="text-muted-foreground mb-8">Todos os {decodedMake} com inspeção oficial GarageFlow Market. Compre com confiança.</p>
 
         {loading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
         ) : listings.length === 0 ? (
           <Card><CardContent className="py-12 text-center">
             <Car className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground">Ainda não existem {decodedMake} certificados. <Link to="/carity/vender" className="text-amber-500 hover:underline">Seja o primeiro a vender!</Link></p>
+            <p className="text-muted-foreground">Ainda não existem {decodedMake} certificados. <Link to="/market/sell" className="text-amber-500 hover:underline">Seja o primeiro a vender!</Link></p>
           </CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map(listing => (
-              <Link key={listing.id} to={`/carity/carro/${listing.id}`}>
+              <Link key={listing.id} to={`/market/car/${listing.id}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer">
                   <div className="aspect-[16/10] bg-muted overflow-hidden relative">
                     {listing.photos[0] ? <img src={listing.photos[0]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="flex items-center justify-center h-full"><Car className="h-10 w-10 text-muted-foreground/30" /></div>}

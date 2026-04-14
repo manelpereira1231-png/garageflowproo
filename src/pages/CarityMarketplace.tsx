@@ -354,7 +354,7 @@ export default function CarityMarketplace() {
         <div className="max-w-3xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">Quer vender o seu carro?</h2>
           <p className="text-slate-300 mb-6">
-            Submeta o seu carro, pague apenas €19,90 pela inspeção oficial e venda com a confiança de um relatório técnico completo.
+            Submeta o seu carro, pague apenas €24,90 pela inspeção oficial e venda com a confiança de um relatório técnico completo.
           </p>
           <Link to="/market/sell">
             <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">

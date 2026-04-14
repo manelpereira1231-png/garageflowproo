@@ -206,7 +206,7 @@ export default function CaritySellerDashboard() {
 
                           {listing.status === 'pending_payment' && (
                             <Link to={`/market/pay/${listing.id}`}>
-                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
+                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€24,90)</Button>
                             </Link>
                           )}
 

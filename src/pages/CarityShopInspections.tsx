@@ -910,8 +910,8 @@ export default function CarityShopInspections() {
             <div className="flex items-center gap-3">
               <Euro className="h-5 w-5 text-amber-600" />
               <div>
-                <p className="font-semibold text-sm">Ganhos por inspeção: <span className="text-amber-600">~€13,93</span></p>
-                <p className="text-xs text-muted-foreground">O vendedor paga €19,90 — 70% fica para a oficina, 30% para a plataforma</p>
+                 <p className="font-semibold text-sm">Ganhos por inspeção: <span className="text-amber-600">~€16,19</span></p>
+                 <p className="text-xs text-muted-foreground">O vendedor paga €24,90 — 65% fica para a oficina (€16,19), 35% para a plataforma (€8,72)</p>
               </div>
             </div>
           </CardContent>

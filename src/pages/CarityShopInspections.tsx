@@ -295,19 +295,55 @@ export default function CarityShopInspections() {
   const addDefect = () => setDefects(prev => [...prev, { description: "", severity: "leve" }]);
   const removeDefect = (i: number) => setDefects(prev => prev.filter((_, idx) => idx !== i));
 
+  // Weighted auto-score calculation (0-100)
+  const calculateAutoScore = (r: typeof report): number => {
+    const statusScore: Record<string, number> = { ok: 100, problems: 50, critical: 0 };
+    const weights = {
+      engine_status: 0.30,
+      brakes_status: 0.20,
+      suspension_status: 0.20,
+      tires_status: 0.15,
+      electrical_status: 0.15,
+    };
+    let score = 0;
+    for (const [key, weight] of Object.entries(weights)) {
+      score += (statusScore[r[key as keyof typeof r] as string] ?? 50) * weight;
+    }
+    return Math.round(score);
+  };
+
+  // Auto-update score when component statuses change
+  useEffect(() => {
+    if (!activeInspection) return;
+    const auto = calculateAutoScore(report);
+    setReport(p => ({ ...p, overall_score: auto }));
+  }, [report.engine_status, report.brakes_status, report.suspension_status, report.tires_status, report.electrical_status]);
+
   const submitReport = async () => {
     if (!activeInspection || !shopId) return;
-    if (photoSections.exterior_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do exterior"); return; }
-    if (photoSections.interior_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do interior"); return; }
+
+    // Enforce minimum 6 photos total
+    const totalPhotos = Object.values(photoSections).reduce((sum, arr) => sum + arr.length, 0);
+    if (totalPhotos < 6) { toast.error("Carregue pelo menos 6 fotos no total (exterior, interior, motor, etc.)"); return; }
+    if (photoSections.exterior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do exterior"); return; }
+    if (photoSections.interior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do interior"); return; }
+    if (photoSections.engine_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do motor"); return; }
+
+    const autoScore = calculateAutoScore(report);
 
     setSaving(true);
     try {
       const { data: existing } = await supabase
         .from("carity_inspection_reports").select("id").eq("inspection_id", activeInspection.id).maybeSingle();
 
+      // Auto-determine recommendation from score
+      const autoRecommendation = autoScore >= 80 ? "recommended" : autoScore >= 60 ? "acceptable" : "not_recommended";
+
       const reportData = {
         inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
+        overall_score: autoScore,
+        recommendation: autoRecommendation,
         defects: defects.filter(d => d.description.trim()) as unknown as any,
         exterior_photos: photoSections.exterior_photos as unknown as any,
         interior_photos: photoSections.interior_photos as unknown as any,
@@ -327,11 +363,19 @@ export default function CarityShopInspections() {
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq("id", activeInspection.id);
 
-      await supabase.from("carity_listings")
-        .update({ status: 'pending_approval' })
-        .eq("id", activeInspection.listing_id);
+      // Auto-publish or reject based on score
+      if (autoScore >= 60) {
+        await supabase.from("carity_listings")
+          .update({ status: 'published', published_at: new Date().toISOString() })
+          .eq("id", activeInspection.listing_id);
+        toast.success(`Relatório enviado! Score: ${autoScore}/100 — Carro publicado no Market ✅`);
+      } else {
+        await supabase.from("carity_listings")
+          .update({ status: 'rejected' })
+          .eq("id", activeInspection.listing_id);
+        toast.warning(`Relatório enviado. Score: ${autoScore}/100 — Carro rejeitado (mínimo 60) ❌`);
+      }
 
-      toast.success("Relatório de inspeção enviado com sucesso!");
       setActiveInspection(null);
       loadData();
     } catch (err: any) {
@@ -427,9 +471,9 @@ export default function CarityShopInspections() {
           </CardHeader>
           <CardContent className="space-y-6">
             {[
-              { key: "exterior_photos", label: "Exterior (frente, trás, laterais)", required: true },
-              { key: "interior_photos", label: "Interior", required: true },
-              { key: "engine_photos", label: "Motor", required: false },
+              { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
+              { key: "interior_photos", label: "Interior — mín. 2 fotos", required: true },
+              { key: "engine_photos", label: "Motor — mín. 1 foto", required: true },
               { key: "tire_photos", label: "Pneus", required: false },
               { key: "damage_photos", label: "Danos encontrados", required: false },
             ].map(section => (
@@ -482,25 +526,29 @@ export default function CarityShopInspections() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-lg">Classificação Final</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Classificação Automática</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <Label className="mb-3 block">Estado Geral: <strong className="text-amber-500 text-xl">{report.overall_score}/10</strong></Label>
-              <Slider value={[report.overall_score]} onValueChange={([v]) => setReport(p => ({ ...p, overall_score: v }))} max={10} min={0} step={0.5} className="py-2" />
-            </div>
-            <div>
-              <Label className="mb-2 block">Recomendação</Label>
-              <div className="flex gap-2">
-                {[
-                  { value: "recommended", label: "Recomendado", color: "bg-green-600" },
-                  { value: "acceptable", label: "Aceitável", color: "bg-amber-500" },
-                  { value: "not_recommended", label: "Não Recomendado", color: "bg-red-600" },
-                ].map(opt => (
-                  <Button key={opt.value} variant={report.recommendation === opt.value ? "default" : "outline"}
-                    className={report.recommendation === opt.value ? opt.color : ''}
-                    onClick={() => setReport(p => ({ ...p, recommendation: opt.value }))}>{opt.label}</Button>
-                ))}
+            <div className="text-center py-4">
+              <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
+                report.overall_score >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
+                report.overall_score >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
+                'bg-red-50 dark:bg-red-900/20'
+              }`}>
+                <span className={`text-4xl font-bold ${
+                  report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
+                  report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                  'text-red-700 dark:text-red-400'
+                }`}>{report.overall_score}</span>
+                <span className="text-xl text-muted-foreground">/100</span>
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {report.overall_score >= 80 ? '🟢 PREMIUM — Publicação automática' :
+                 report.overall_score >= 60 ? '🟡 OK — Publicação automática' :
+                 '🔴 REJEITADO — Score abaixo de 60, carro não será publicado'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Motor 30% · Travões 20% · Suspensão 20% · Pneus 15% · Eletrónica 15%
+              </p>
             </div>
             <div>
               <Label>Notas do Inspetor</Label>

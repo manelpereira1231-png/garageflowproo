@@ -280,6 +280,9 @@ const publicRoutes = [
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
+  { path: "/market/dashboard", element: <Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense> },
+  { path: "/market/messages", element: <Suspense fallback={<PageLoader />}><MarketMessages /></Suspense> },
+  { path: "/market/profile", element: <Suspense fallback={<PageLoader />}><MarketProfile /></Suspense> },
   { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
   // Legacy redirects

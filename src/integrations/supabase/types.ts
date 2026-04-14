@@ -243,6 +243,51 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_risk_flags: {
+        Row: {
+          auto_resolved: boolean
+          created_at: string
+          description: string
+          details: Json | null
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+        }
+        Insert: {
+          auto_resolved?: boolean
+          created_at?: string
+          description: string
+          details?: Json | null
+          entity_id: string
+          entity_type: string
+          flag_type: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+        }
+        Update: {
+          auto_resolved?: boolean
+          created_at?: string
+          description?: string
+          details?: Json | null
+          entity_id?: string
+          entity_type?: string
+          flag_type?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       automation_logs: {
         Row: {
           action_type: string
@@ -3559,6 +3604,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      flag_suspicious_transactions: { Args: never; Returns: Json }
       get_shop_member_emails: {
         Args: { _shop_id: string }
         Returns: {
@@ -3598,6 +3644,10 @@ export type Database = {
       user_owns_shop: {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
+      }
+      validate_inspection_coherence: {
+        Args: { _listing_id: string; _report_id: string }
+        Returns: Json
       }
       validate_plan_limit: {
         Args: { _action_type: string; _shop_id: string }

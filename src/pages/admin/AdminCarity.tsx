@@ -765,6 +765,95 @@ export default function AdminCarity() {
             </Card>
           ))}
         </TabsContent>
+
+        {/* === WALLETS === */}
+        <TabsContent value="wallets" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Wallet className="h-4 w-4" /> Wallets das Oficinas Parceiras</CardTitle></CardHeader>
+            <CardContent>
+              {wallets.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma wallet criada. As wallets são criadas automaticamente quando uma oficina recebe o primeiro pagamento.</p>
+              ) : (
+                <div className="space-y-3">
+                  {wallets.map(w => (
+                    <div key={w.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{w.shops?.name || w.shop_id?.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">Ganho: €{Number(w.total_earned || 0).toFixed(2)} · Pago: €{Number(w.total_paid || 0).toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">€{Number(w.balance || 0).toFixed(2)}</p>
+                        <Badge className={w.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>{w.status === "active" ? "Ativa" : "Bloqueada"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BanknoteIcon className="h-4 w-4" /> Histórico de Payouts</CardTitle></CardHeader>
+            <CardContent>
+              {payouts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Sem payouts registados</p>
+              ) : (
+                <div className="space-y-2">
+                  {payouts.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-2 border rounded">
+                      <div>
+                        <p className="text-sm font-medium">{p.shops?.name || "—"}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-PT")} · {p.method}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">€{Number(p.amount || 0).toFixed(2)}</p>
+                        <Badge variant="outline" className="text-xs">{p.status === "paid" ? "✅ Pago" : p.status === "processing" ? "⏳ A processar" : "🕐 Pendente"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === SALES CONFIRMATIONS === */}
+        <TabsContent value="sales" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="h-4 w-4" /> Confirmações de Venda (Dupla Confirmação)</CardTitle></CardHeader>
+            <CardContent>
+              {saleConfirmations.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma venda registada. As vendas aparecem aqui quando o vendedor marca um carro como vendido.</p>
+              ) : (
+                <div className="space-y-3">
+                  {saleConfirmations.map(sc => (
+                    <div key={sc.id} className="p-3 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium">{sc.carity_listings?.make} {sc.carity_listings?.model} ({sc.carity_listings?.year})</p>
+                          <p className="text-xs text-muted-foreground">{sc.carity_listings?.plate} · €{Number(sc.sale_price || sc.carity_listings?.price || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge className={sc.seller_confirmed ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                            Vendedor: {sc.seller_confirmed ? "✅" : "⏳"}
+                          </Badge>
+                          <Badge className={sc.buyer_confirmed ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                            Comprador: {sc.buyer_confirmed ? "✅" : "⏳"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Comprador: {sc.buyer_email || "—"} {sc.buyer_phone ? `· ${sc.buyer_phone}` : ""} · {new Date(sc.created_at).toLocaleDateString("pt-PT")}
+                        {sc.confirmed_at && ` · Confirmado: ${new Date(sc.confirmed_at).toLocaleDateString("pt-PT")}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* === EDIT LISTING DIALOG === */}

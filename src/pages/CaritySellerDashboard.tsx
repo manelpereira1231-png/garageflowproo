@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag } from "lucide-react";
+import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag, MapPin, Phone, MessageCircle, CalendarCheck } from "lucide-react";
 import VehicleTimeline from "@/components/VehicleTimeline";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
@@ -43,8 +44,49 @@ export default function CaritySellerDashboard() {
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/market/auth"); return; }
-    const { data } = await supabase.from("carity_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false });
-    setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
+
+    // Get listings
+    const { data: listingsData } = await supabase
+      .from("carity_listings")
+      .select("*")
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false });
+
+    const listingsArr = (listingsData || []).map((l: any) => ({
+      ...l,
+      photos: Array.isArray(l.photos) ? l.photos : [],
+    }));
+
+    // For each listing with a shop_id, fetch shop info and inspection details
+    const shopIds = [...new Set(listingsArr.filter((l: any) => l.shop_id).map((l: any) => l.shop_id))];
+    let shopsMap: Record<string, any> = {};
+    if (shopIds.length > 0) {
+      const { data: shops } = await supabase
+        .from("shops")
+        .select("id, name, address, phone, latitude, longitude")
+        .in("id", shopIds);
+      (shops || []).forEach((s: any) => { shopsMap[s.id] = s; });
+    }
+
+    // Fetch inspections for these listings
+    const listingIds = listingsArr.map((l: any) => l.id);
+    let inspectionsMap: Record<string, any> = {};
+    if (listingIds.length > 0) {
+      const { data: inspections } = await supabase
+        .from("carity_inspections")
+        .select("*")
+        .in("listing_id", listingIds);
+      (inspections || []).forEach((i: any) => { inspectionsMap[i.listing_id] = i; });
+    }
+
+    // Enrich listings
+    const enriched = listingsArr.map((l: any) => ({
+      ...l,
+      shop: l.shop_id ? shopsMap[l.shop_id] || null : null,
+      inspection: inspectionsMap[l.id] || null,
+    }));
+
+    setListings(enriched);
     setLoading(false);
   };
 
@@ -70,7 +112,7 @@ export default function CaritySellerDashboard() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       const { error } = await supabase.from("sale_confirmations").insert({
         listing_id: sellDialog.listing.id,
         seller_id: user.id,
@@ -91,6 +133,17 @@ export default function CaritySellerDashboard() {
     } finally {
       setSubmittingSale(false);
     }
+  };
+
+  const openWhatsAppToShop = (shop: any, listing: any) => {
+    if (!shop?.phone) { toast.error("Oficina sem telefone registado"); return; }
+    const url = buildWhatsAppUrl({
+      phone: shop.phone,
+      clientName: shop.name,
+      type: "service",
+      plate: listing.plate,
+    });
+    if (url) window.open(url, "_blank", "noopener");
   };
 
   return (
@@ -139,6 +192,9 @@ export default function CaritySellerDashboard() {
               const StatusIcon = statusConfig.icon;
               const canBoost = listing.status === "published" && !listing.boost_active;
               const canSell = listing.status === "published";
+              const shop = listing.shop;
+              const inspection = listing.inspection;
+              const hasShop = !!shop;
 
               return (
                 <Card key={listing.id} className="overflow-hidden">
@@ -159,15 +215,21 @@ export default function CaritySellerDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-2 flex-wrap">
                           <Button size="sm" variant="outline" onClick={() => setSelectedListing(selectedListing?.id === listing.id ? null : listing)}>
-                            <Eye className="h-3 w-3 mr-1" /> {selectedListing?.id === listing.id ? "Ocultar progresso" : "Ver progresso"}
+                            <Eye className="h-3 w-3 mr-1" /> {selectedListing?.id === listing.id ? "Ocultar" : "Ver progresso"}
                           </Button>
 
                           {listing.status === 'pending_payment' && (
                             <Link to={`/market/pay/${listing.id}`}>
                               <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
                             </Link>
+                          )}
+
+                          {hasShop && (
+                            <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => openWhatsAppToShop(shop, listing)}>
+                              <MessageCircle className="h-3 w-3 mr-1" /> Falar com oficina
+                            </Button>
                           )}
 
                           {canSell && (
@@ -197,10 +259,100 @@ export default function CaritySellerDashboard() {
                       </div>
                     </div>
 
+                    {/* Expanded detail panel */}
                     {selectedListing?.id === listing.id && (
-                      <div className="mt-4 pt-4 border-t">
+                      <div className="mt-4 pt-4 border-t space-y-4">
                         <h4 className="text-sm font-semibold mb-2">Progresso do veículo</h4>
-                        <VehicleTimeline status={listing.status} />
+                        <VehicleTimeline
+                          status={listing.status}
+                          inspectionStatus={inspection?.status}
+                          scheduledDate={inspection?.scheduled_date}
+                          scheduledTime={inspection?.scheduled_time}
+                          shopName={shop?.name}
+                          shopAddress={shop?.address}
+                        />
+
+                        {/* Shop info card */}
+                        {hasShop && (
+                          <Card className="bg-muted/30 border-dashed">
+                            <CardHeader className="pb-2 pt-3">
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4 text-amber-500" />
+                                Oficina responsável
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pb-3 space-y-2">
+                              <p className="font-semibold">{shop.name}</p>
+                              {shop.address && (
+                                <p className="text-sm text-muted-foreground flex items-start gap-1">
+                                  <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                                  {shop.address}
+                                </p>
+                              )}
+                              {shop.phone && (
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                                  {shop.phone}
+                                </p>
+                              )}
+
+                              {/* Scheduled date/time */}
+                              {inspection?.scheduled_date && (
+                                <div className="flex items-center gap-1 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                  <CalendarCheck className="h-3.5 w-3.5" />
+                                  Agendada: {inspection.scheduled_date}{inspection.scheduled_time ? ` às ${inspection.scheduled_time}` : ""}
+                                </div>
+                              )}
+
+                              <div className="flex gap-2 mt-2">
+                                {/* Google Maps */}
+                                {shop.latitude && shop.longitude ? (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Button size="sm" variant="outline">
+                                      <MapPin className="h-3 w-3 mr-1" /> Abrir no Google Maps
+                                    </Button>
+                                  </a>
+                                ) : shop.address ? (
+                                  <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Button size="sm" variant="outline">
+                                      <MapPin className="h-3 w-3 mr-1" /> Abrir no Google Maps
+                                    </Button>
+                                  </a>
+                                ) : null}
+
+                                {/* WhatsApp */}
+                                {shop.phone && (
+                                  <Button size="sm" variant="outline" className="border-green-200 text-green-700" onClick={() => openWhatsAppToShop(shop, listing)}>
+                                    <MessageCircle className="h-3 w-3 mr-1" /> WhatsApp
+                                  </Button>
+                                )}
+                              </div>
+
+                              {/* Map embed if coordinates exist */}
+                              {shop.latitude && shop.longitude && (
+                                <div className="mt-2 rounded overflow-hidden border">
+                                  <iframe
+                                    title="Localização da oficina"
+                                    width="100%"
+                                    height="150"
+                                    style={{ border: 0 }}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    src={`https://maps.google.com/maps?q=${shop.latitude},${shop.longitude}&z=15&output=embed`}
+                                  />
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     )}
                   </CardContent>

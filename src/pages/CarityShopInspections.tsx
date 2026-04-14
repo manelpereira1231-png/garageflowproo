@@ -567,6 +567,10 @@ export default function CarityShopInspections() {
 
   // --- INSPECTION FORM VIEW ---
   if (activeInspection && activeListing) {
+    const defectPenalty = defects.filter(d => d.description.trim()).reduce((sum, d) => sum + (SEVERITY_IMPACT[d.severity]?.weight || 0) * 3, 0);
+    const displayScore = Math.max(0, Math.min(100, report.overall_score - defectPenalty));
+    const displayRecommendation = displayScore >= 80 ? "✅ Aprovado" : displayScore >= 60 ? "⚠️ Aprovado com reservas" : "❌ Reprovado";
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -581,6 +585,19 @@ export default function CarityShopInspections() {
           </div>
           <Button variant="outline" onClick={() => setActiveInspection(null)}>Voltar</Button>
         </div>
+
+        {/* LOCKED BANNER */}
+        {reportLocked && (
+          <Card className="border-red-300 bg-red-50 dark:bg-red-900/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Lock className="h-6 w-6 text-red-600 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-red-800 dark:text-red-300">🔒 Relatório BLOQUEADO permanentemente</p>
+                <p className="text-sm text-red-600 dark:text-red-400">Este relatório foi submetido e não pode ser editado, substituído ou eliminado. Qualquer alteração requer auditoria da plataforma.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Seller info */}
         {activeInspection.seller && (
@@ -602,6 +619,32 @@ export default function CarityShopInspections() {
           </Card>
         )}
 
+        {/* Technician identification */}
+        <Card className="border-amber-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-amber-500" />
+              Identificação do Técnico Responsável
+            </CardTitle>
+            <CardDescription>O nome do técnico ficará vinculado permanentemente a este relatório</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Nome completo do técnico *</Label>
+              <Input
+                value={technicianName}
+                onChange={e => setTechnicianName(e.target.value)}
+                placeholder="Ex: João Silva"
+                disabled={reportLocked}
+                className={reportLocked ? "opacity-60" : ""}
+              />
+              {!technicianName.trim() && !reportLocked && (
+                <p className="text-xs text-red-500">Obrigatório — o relatório não pode ser submetido sem identificação</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
           <CardContent>
@@ -619,8 +662,8 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Checklist Mecânico</CardTitle>
-            <CardDescription>Avalie cada componente do veículo</CardDescription>
+            <CardTitle className="text-lg">Checklist Mecânico (Sistema Fechado)</CardTitle>
+            <CardDescription>Avalie cada componente — a classificação final é calculada automaticamente</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {COMPONENT_KEYS.map(({ key, label }) => (
@@ -633,7 +676,8 @@ export default function CarityShopInspections() {
                     return (
                       <Button key={opt.value} size="sm" variant={selected ? "default" : "outline"}
                         className={selected ? (opt.value === 'ok' ? 'bg-green-600' : opt.value === 'problems' ? 'bg-amber-500' : 'bg-red-600') : ''}
-                        onClick={() => setReport(p => ({ ...p, [key]: opt.value }))}>
+                        onClick={() => !reportLocked && setReport(p => ({ ...p, [key]: opt.value }))}
+                        disabled={reportLocked}>
                         <Icon className="h-3.5 w-3.5 mr-1" />{opt.label}
                       </Button>
                     );
@@ -646,16 +690,16 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Fotos da Inspeção</CardTitle>
-            <CardDescription>Carregue fotos obrigatórias do exterior, interior e motor</CardDescription>
+            <CardTitle className="text-lg">📸 Prova Evidencial Obrigatória</CardTitle>
+            <CardDescription>Fotos estruturadas — cada declaração deve ter prova visual associada</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {[
               { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
-              { key: "interior_photos", label: "Interior — mín. 2 fotos", required: true },
-              { key: "engine_photos", label: "Motor — mín. 1 foto", required: true },
-              { key: "tire_photos", label: "Pneus", required: false },
-              { key: "damage_photos", label: "Danos encontrados", required: false },
+              { key: "interior_photos", label: "Interior — mín. 2 fotos (painel, bancos, quilometragem)", required: true },
+              { key: "engine_photos", label: "Motor — mín. 1 foto (compartimento do motor)", required: true },
+              { key: "tire_photos", label: "Pneus — estado do piso", required: false },
+              { key: "damage_photos", label: "Danos encontrados (obrigatório se defeitos graves)", required: false },
             ].map(section => (
               <div key={section.key}>
                 <Label className="mb-2 block">
@@ -665,16 +709,20 @@ export default function CarityShopInspections() {
                   {photoSections[section.key].map((photo, i) => (
                     <div key={i} className="w-20 h-20 rounded overflow-hidden relative group">
                       <img src={photo} alt="" className="w-full h-full object-cover" />
-                      <button onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100">
-                        <X className="h-3 w-3" />
-                      </button>
+                      {!reportLocked && (
+                        <button onClick={() => setPhotoSections(prev => ({ ...prev, [section.key]: prev[section.key].filter((_, idx) => idx !== i) }))}
+                          className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100">
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
-                  <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:bg-muted/50">
-                    {uploading === section.key ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5 text-muted-foreground" />}
-                    <input type="file" className="hidden" accept="image/*" multiple onChange={e => handlePhotoUpload(section.key, e)} />
-                  </label>
+                  {!reportLocked && (
+                    <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:bg-muted/50">
+                      {uploading === section.key ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5 text-muted-foreground" />}
+                      <input type="file" className="hidden" accept="image/*" multiple onChange={e => handlePhotoUpload(section.key, e)} />
+                    </label>
+                  )}
                 </div>
               </div>
             ))}
@@ -683,64 +731,101 @@ export default function CarityShopInspections() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Defeitos / Problemas</CardTitle>
-            <CardDescription>Liste todos os problemas encontrados</CardDescription>
+            <CardTitle className="text-lg">Defeitos / Problemas Identificados</CardTitle>
+            <CardDescription>Cada defeito tem impacto direto no score — defeitos graves exigem prova fotográfica</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {defects.map((defect, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <Input value={defect.description} onChange={e => { const u = [...defects]; u[i].description = e.target.value; setDefects(u); }} placeholder="Descreva o problema..." className="flex-1" />
-                <Select value={defect.severity} onValueChange={v => { const u = [...defects]; u[i].severity = v as Defect["severity"]; setDefects(u); }}>
-                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="leve">Leve</SelectItem>
-                    <SelectItem value="medio">Médio</SelectItem>
-                    <SelectItem value="grave">Grave</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}><X className="h-4 w-4" /></Button>
+              <div key={i} className="p-3 bg-muted/30 rounded-lg space-y-2">
+                <div className="flex gap-2 items-start">
+                  <Input value={defect.description} onChange={e => { const u = [...defects]; u[i].description = e.target.value; setDefects(u); }} placeholder="Descreva o problema..." className="flex-1" disabled={reportLocked} />
+                  <Select value={defect.severity} onValueChange={v => { const u = [...defects]; u[i].severity = v as Defect["severity"]; setDefects(u); }} disabled={reportLocked}>
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="leve">💡 Leve</SelectItem>
+                      <SelectItem value="medio">⚡ Médio</SelectItem>
+                      <SelectItem value="grave">⚠️ Grave</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!reportLocked && <Button variant="ghost" size="icon" onClick={() => removeDefect(i)}><X className="h-4 w-4" /></Button>}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={SEVERITY_IMPACT[defect.severity]?.color || ""}>
+                    {SEVERITY_IMPACT[defect.severity]?.label} — Penalização: -{(SEVERITY_IMPACT[defect.severity]?.weight || 0) * 3} pts
+                  </span>
+                </div>
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={addDefect}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito</Button>
+            {!reportLocked && (
+              <Button variant="outline" size="sm" onClick={addDefect}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar defeito</Button>
+            )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-lg">Classificação Automática</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Motor de Decisão Automático
+            </CardTitle>
+            <CardDescription>A classificação é gerada pelo sistema — a oficina NÃO pode alterar o resultado</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center py-4">
               <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
-                report.overall_score >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
-                report.overall_score >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
+                displayScore >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
+                displayScore >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
                 'bg-red-50 dark:bg-red-900/20'
               }`}>
                 <span className={`text-4xl font-bold ${
-                  report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
-                  report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                  displayScore >= 80 ? 'text-green-700 dark:text-green-400' :
+                  displayScore >= 60 ? 'text-amber-700 dark:text-amber-400' :
                   'text-red-700 dark:text-red-400'
-                }`}>{report.overall_score}</span>
+                }`}>{displayScore}</span>
                 <span className="text-xl text-muted-foreground">/100</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                {report.overall_score >= 80 ? '🟢 PREMIUM — Publicação automática' :
-                 report.overall_score >= 60 ? '🟡 OK — Publicação automática' :
-                 '🔴 REJEITADO — Score abaixo de 60, carro não será publicado'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className={`text-lg font-bold mt-2 ${
+                displayScore >= 80 ? 'text-green-700 dark:text-green-400' :
+                displayScore >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                'text-red-700 dark:text-red-400'
+              }`}>{displayRecommendation}</p>
+              <p className="text-xs text-muted-foreground mt-2">
                 Motor 30% · Travões 20% · Suspensão 20% · Pneus 15% · Eletrónica 15%
+                {defectPenalty > 0 && <span className="text-red-500 ml-1">· Penalização defeitos: -{defectPenalty} pts</span>}
               </p>
             </div>
+
+            {/* Consequences */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-semibold">⚙️ Consequências automáticas:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>✅ Score ≥ 80 → <strong>Aprovado</strong> — publicação automática</li>
+                <li>⚠️ Score 60-79 → <strong>Aprovado com reservas</strong> — publicação com aviso</li>
+                <li>❌ Score &lt; 60 → <strong>Reprovado</strong> — veículo NÃO é publicado</li>
+                <li>🔒 Após submissão → relatório bloqueado permanentemente</li>
+                <li>🔐 Hash SHA-256 gerado para garantir integridade</li>
+              </ul>
+            </div>
+
             <div>
               <Label>Notas do Inspetor</Label>
-              <Textarea value={report.inspector_notes} onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))} placeholder="Observações adicionais..." rows={4} />
+              <Textarea value={report.inspector_notes} onChange={e => setReport(p => ({ ...p, inspector_notes: e.target.value }))} placeholder="Observações adicionais..." rows={4} disabled={reportLocked} />
             </div>
           </CardContent>
         </Card>
 
-        <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-          Submeter Relatório de Inspeção
-        </Button>
+        {!reportLocked ? (
+          <Button onClick={submitReport} disabled={saving} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
+            Submeter e BLOQUEAR Relatório Permanentemente
+          </Button>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Lock className="h-4 w-4" /> Relatório bloqueado — sem alterações possíveis
+            </p>
+          </div>
+        )}
       </div>
     );
   }

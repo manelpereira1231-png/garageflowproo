@@ -270,7 +270,7 @@ export default function AdminCarity() {
                         variant="outline"
                         onClick={() => sendOfferToPartners(listing.id)}
                         disabled={sendingOffer === listing.id}
-                        className="border-emerald-200 text-emerald-700"
+                        className="border-amber-200 text-amber-700"
                       >
                         {sendingOffer === listing.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                         Enviar a oficinas
@@ -288,7 +288,7 @@ export default function AdminCarity() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-emerald-600" />
+                <Building2 className="h-5 w-5 text-amber-600" />
                 Gestão de Oficinas Carity
               </CardTitle>
             </CardHeader>
@@ -299,12 +299,12 @@ export default function AdminCarity() {
               {shops.map(shop => {
                 const perf = getShopPerformance(shop.id);
                 return (
-                  <div key={shop.id} className={`p-4 rounded-lg border ${shop.is_carity_partner ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-900/5' : 'border-border'}`}>
+                  <div key={shop.id} className={`p-4 rounded-lg border ${shop.is_carity_partner ? 'border-amber-200 bg-amber-50/30 dark:bg-amber-900/5' : 'border-border'}`}>
                     <div className="flex items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold flex items-center gap-2">
                           {shop.name}
-                          {shop.is_carity_partner && <Badge className="bg-emerald-100 text-emerald-800 border-0 text-xs">Parceira</Badge>}
+                          {shop.is_carity_partner && <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">Parceira</Badge>}
                           {shop.is_carity_partner && !shop.carity_active && <Badge variant="destructive" className="text-xs">Bloqueada</Badge>}
                         </h3>
                         {shop.is_carity_partner && (
@@ -368,7 +368,7 @@ export default function AdminCarity() {
                   <div className="flex items-center gap-3">
                     <Badge>{insp.status === 'pending' ? 'Pendente' : insp.status === 'in_progress' ? 'Em curso' : insp.status === 'completed' ? 'Concluída' : insp.status}</Badge>
                     <Badge variant="outline">{insp.payment_status === 'paid' ? 'Pago' : insp.payment_status}</Badge>
-                    <span className="text-sm text-emerald-600 font-medium">€{Number(insp.shop_share).toFixed(2)} oficina</span>
+                    <span className="text-sm text-amber-600 font-medium">€{Number(insp.shop_share).toFixed(2)} oficina</span>
                   </div>
                 </div>
               </CardContent>

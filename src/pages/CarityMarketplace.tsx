@@ -95,7 +95,7 @@ export default function CarityMarketplace() {
                 Vender Carro
               </Button>
             </Link>
-            <Link to="/auth?from=market">
+            <Link to="/market/auth">
               <Button className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
                 Entrar
               </Button>

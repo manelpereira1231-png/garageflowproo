@@ -36,7 +36,7 @@ export default function CaritySellCar() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Precisa de uma conta para vender. Faça login primeiro.");
-      navigate("/auth?mode=signup&from=market&redirect=/market/sell");
+      navigate("/market/auth?mode=signup&redirect=/market/sell");
       return;
     }
     setUser(user);

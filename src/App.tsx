@@ -17,6 +17,7 @@ const PlanGate = lazy(() => import("@/components/PlanGate"));
 // Critical path - eagerly loaded for instant navigation
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
+const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
@@ -234,16 +235,17 @@ const publicRoutes = [
   { path: "/", element: <LandingPage /> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
+  { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
   { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
-  // Legacy redirects for old Carity URLs
+  // Legacy redirects
   { path: "/carity", element: <Navigate to="/market" replace /> },
+  { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },
-  { path: "/carity/auth", element: <Suspense fallback={<PageLoader />}><CarityAuth /></Suspense> },
 ];
 
 function AuthenticatedRoutes() {
@@ -404,6 +406,7 @@ function AppRoutes() {
             <Route path="/book/:slug" element={<PublicBooking />} />
             {/* GarageFlow Market routes */}
             <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
+            <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
             <Route path="/market/sell" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
             <Route path="/market/pay/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
@@ -412,6 +415,7 @@ function AppRoutes() {
             <Route path="/market/city/:city" element={<Suspense fallback={<PageLoader />}><CarityByCity /></Suspense>} />
             {/* Legacy redirects */}
             <Route path="/carity" element={<Navigate to="/market" replace />} />
+            <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />
             <Route path="*" element={<Navigate to="/auth?mode=login" replace />} />
           </Routes>

@@ -606,12 +606,17 @@ export type Database = {
           inspection_id: string
           inspector_notes: string | null
           interior_photos: Json
+          is_locked: boolean
           listing_id: string
+          locked_at: string | null
           overall_score: number
           recommendation: string
+          report_hash: string | null
           shop_id: string
           steering_status: string
+          submitted_by_user_id: string | null
           suspension_status: string
+          technician_name: string | null
           tire_photos: Json
           tires_status: string
           transmission_status: string
@@ -630,12 +635,17 @@ export type Database = {
           inspection_id: string
           inspector_notes?: string | null
           interior_photos?: Json
+          is_locked?: boolean
           listing_id: string
+          locked_at?: string | null
           overall_score?: number
           recommendation?: string
+          report_hash?: string | null
           shop_id: string
           steering_status?: string
+          submitted_by_user_id?: string | null
           suspension_status?: string
+          technician_name?: string | null
           tire_photos?: Json
           tires_status?: string
           transmission_status?: string
@@ -654,12 +664,17 @@ export type Database = {
           inspection_id?: string
           inspector_notes?: string | null
           interior_photos?: Json
+          is_locked?: boolean
           listing_id?: string
+          locked_at?: string | null
           overall_score?: number
           recommendation?: string
+          report_hash?: string | null
           shop_id?: string
           steering_status?: string
+          submitted_by_user_id?: string | null
           suspension_status?: string
+          technician_name?: string | null
           tire_photos?: Json
           tires_status?: string
           transmission_status?: string
@@ -3604,7 +3619,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
+      generate_report_hash: { Args: { _report_id: string }; Returns: string }
       get_shop_member_emails: {
         Args: { _shop_id: string }
         Returns: {

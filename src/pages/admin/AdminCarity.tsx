@@ -496,6 +496,11 @@ export default function AdminCarity() {
                             {sendingOffer === listing.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3 mr-0.5" />} Oficinas
                           </Button>
                         )}
+                        {(listing.status === "pending_payment" || listing.status === "pending_inspection") && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50" onClick={() => sendOfferToPartners(listing.id, true)} disabled={sendingOffer === listing.id}>
+                            {sendingOffer === listing.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Euro className="h-3 w-3 mr-0.5" />} Oferecer
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingListing(listing); setEditStatus(listing.status); setEditPrice(String(listing.price)); }}>
                           <Edit className="h-3 w-3" />
                         </Button>

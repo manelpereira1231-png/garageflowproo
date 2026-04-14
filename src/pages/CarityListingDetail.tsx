@@ -104,6 +104,33 @@ export default function CarityListingDetail() {
     setLoading(false);
   };
 
+  const handleBuyNow = async () => {
+    if (!currentUserId) {
+      toast.error("Precisa de uma conta para comprar.");
+      navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
+      return;
+    }
+    if (listing?.seller_id === currentUserId) {
+      toast.error("Não pode comprar o seu próprio carro.");
+      return;
+    }
+    setBuying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("carity-pay-inspection", {
+        body: { action: "buy_now", listing_id: id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL de pagamento não recebida");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar compra");
+      setBuying(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

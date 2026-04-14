@@ -34,6 +34,7 @@ import {
   Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
@@ -103,6 +104,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const interval = setInterval(loadAlertCount, 60000);
     return () => clearInterval(interval);
   }, [activeShopId]);
+
+  // Global realtime listener for new inspection offers (Market)
+  useEffect(() => {
+    if (!activeShopId || !isCarityPartner) return;
+    const channel = supabase
+      .channel(`global-offers-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "carity_inspection_offers",
+          filter: `shop_id=eq.${activeShopId}`,
+        },
+        () => {
+          toast.info("🚗 Nova inspeção Market disponível!", {
+            description: "Tem um novo pedido de inspeção para aceitar.",
+            action: {
+              label: "Ver",
+              onClick: () => window.location.assign("/inspections"),
+            },
+            duration: 15000,
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeShopId, isCarityPartner]);
 
   useEffect(() => {
     const checkOnboardingProgress = async () => {

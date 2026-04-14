@@ -160,7 +160,7 @@ export default function AdminCarity() {
     loadData();
   };
 
-  const sendOfferToPartners = async (listingId: string) => {
+  const sendOfferToPartners = async (listingId: string, gifted = false) => {
     setSendingOffer(listingId);
     const partnerShops = shops.filter(s => s.is_carity_partner && s.carity_active);
     if (partnerShops.length === 0) {
@@ -169,7 +169,14 @@ export default function AdminCarity() {
       return;
     }
     const { data: inspection } = await supabase.from("carity_inspections").insert({
-      listing_id: listingId, shop_id: partnerShops[0].id, payment_status: "paid", status: "pending",
+      listing_id: listingId,
+      shop_id: partnerShops[0].id,
+      payment_status: gifted ? "gifted" : "paid",
+      payment_amount: gifted ? 0 : 24.90,
+      shop_share: gifted ? 0 : 16.19,
+      platform_share: gifted ? 0 : 8.72,
+      status: "pending",
+      notes: gifted ? "Inspeção oferecida pelo administrador" : null,
     }).select().single();
     if (!inspection) { toast.error("Erro"); setSendingOffer(null); return; }
 
@@ -179,7 +186,10 @@ export default function AdminCarity() {
       topShops.map(s => ({ inspection_id: inspection.id, listing_id: listingId, shop_id: s.id, status: "pending" }))
     );
     await supabase.from("carity_listings").update({ status: "pending_inspection" }).eq("id", listingId);
-    toast.success(`Pedido enviado a ${topShops.length} oficinas!`);
+    toast.success(gifted
+      ? `Inspeção OFERECIDA e enviada a ${topShops.length} oficinas! 🎁`
+      : `Pedido enviado a ${topShops.length} oficinas!`
+    );
     setSendingOffer(null);
     loadData();
   };
@@ -484,6 +494,11 @@ export default function AdminCarity() {
                         {(listing.status === "pending_payment" || listing.status === "pending_inspection") && (
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => sendOfferToPartners(listing.id)} disabled={sendingOffer === listing.id}>
                             {sendingOffer === listing.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3 mr-0.5" />} Oficinas
+                          </Button>
+                        )}
+                        {(listing.status === "pending_payment" || listing.status === "pending_inspection") && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50" onClick={() => sendOfferToPartners(listing.id, true)} disabled={sendingOffer === listing.id}>
+                            {sendingOffer === listing.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Euro className="h-3 w-3 mr-0.5" />} Oferecer
                           </Button>
                         )}
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingListing(listing); setEditStatus(listing.status); setEditPrice(String(listing.price)); }}>

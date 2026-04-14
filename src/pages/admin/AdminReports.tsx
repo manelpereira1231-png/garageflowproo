@@ -228,7 +228,7 @@ export default function AdminReports() {
 
   const kpis = [
     { label: "MRR Real", value: `€${data.mrrReal.toFixed(0)}`, sub: `ARR: €${data.arrReal.toFixed(0)}`, icon: DollarSign, color: "text-chart-3" },
-    { label: "Impacto Descontos", value: `-€${data.discountImpact.toFixed(0)}/mês`, sub: `${data.planDistribution.reduce((s, p) => s + p.value, 0)} subscrições`, icon: CreditCard, color: "text-destructive" },
+    { label: "Impacto Descontos", value: `-€${data.discountImpact.toFixed(0)}/mês`, sub: `Apenas Stripe pagantes`, icon: CreditCard, color: "text-destructive" },
     { label: "Oficinas Ativas", value: data.activeShops.toString(), sub: `${data.suspendedShops} suspensas`, icon: Building2, color: "text-primary" },
     { label: "Taxa de Cancelamento", value: `${data.churnRate.toFixed(1)}%`, sub: `Conv. Trial: ${data.trialConversion.toFixed(1)}%`, icon: ArrowDownRight, color: "text-destructive" },
     { label: "Ticket Médio", value: `€${data.avgTicket.toFixed(2)}`, sub: `${data.totalWorkOrders} ordens`, icon: TrendingUp, color: "text-primary" },
@@ -375,11 +375,11 @@ export default function AdminReports() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card text-center">
-              <p className="text-xs text-muted-foreground">MRR</p>
+              <p className="text-xs text-muted-foreground">MRR (Stripe)</p>
               <p className="text-xl font-bold mono text-chart-3">€{data.mrrReal.toFixed(0)}</p>
             </div>
             <div className="stat-card text-center">
-              <p className="text-xs text-muted-foreground">ARR</p>
+              <p className="text-xs text-muted-foreground">ARR (Stripe)</p>
               <p className="text-xl font-bold mono text-chart-3">€{data.arrReal.toFixed(0)}</p>
             </div>
             <div className="stat-card text-center">

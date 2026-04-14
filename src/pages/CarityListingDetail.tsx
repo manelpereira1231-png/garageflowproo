@@ -42,8 +42,9 @@ const ESCROW_STATUS_LABELS: Record<string, { label: string; color: string; icon:
   refunded: { label: "Reembolsado", color: "bg-slate-100 text-slate-800", icon: CreditCard },
 };
 
-export default function CarityListingDetail() {
-  const { id } = useParams();
+export default function CarityListingDetail({ overrideId }: { overrideId?: string } = {}) {
+  const { id: paramId } = useParams();
+  const id = overrideId || paramId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [listing, setListing] = useState<any>(null);
@@ -60,6 +61,7 @@ export default function CarityListingDetail() {
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [trustScore, setTrustScore] = useState<any>(null);
+  const [similarListings, setSimilarListings] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
@@ -90,7 +92,12 @@ export default function CarityListingDetail() {
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    document.title = `${listingData.make} ${listingData.model} ${listingData.year} — GarageFlow Market`;
+    document.title = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
+    // Dynamic meta description with real data
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — €${listingData.price?.toLocaleString()}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
+    if (metaDesc) metaDesc.setAttribute("content", descText);
+    else { const m = document.createElement("meta"); m.name = "description"; m.content = descText; document.head.appendChild(m); }
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
       supabase.from("carity_inspection_reports").select("*").eq("listing_id", id).single(),
@@ -135,6 +142,16 @@ export default function CarityListingDetail() {
         .maybeSingle();
       if (escrowData) setEscrow(escrowData);
     }
+
+    // Load similar cars (same make or similar price range, exclude current)
+    const { data: similar } = await supabase
+      .from("carity_listings")
+      .select("id, make, model, year, mileage, fuel, price, photos")
+      .eq("status", "published")
+      .neq("id", id!)
+      .or(`make.eq.${listingData.make},price.gte.${Math.max(0, listingData.price - 5000)}.price.lte.${listingData.price + 5000}`)
+      .limit(6);
+    setSimilarListings((similar || []).map((s: any) => ({ ...s, photos: Array.isArray(s.photos) ? s.photos : [] })));
 
     setLoading(false);
   };
@@ -708,9 +725,43 @@ export default function CarityListingDetail() {
             )}
           </div>
         </div>
+
+        {/* Similar cars */}
+        {similarListings.length > 0 && (
+          <section className="mt-8 border-t pt-8">
+            <h2 className="text-2xl font-bold mb-6">Carros semelhantes</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarListings.slice(0, 3).map((s: any) => (
+                <Link key={s.id} to={`/market/car/${s.id}`}>
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
+                    <div className="aspect-video bg-muted relative overflow-hidden">
+                      {s.photos[0] ? (
+                        <img src={s.photos[0]} alt={`${s.make} ${s.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full"><Car className="h-10 w-10 text-muted-foreground/30" /></div>
+                      )}
+                      <Badge className="absolute top-2 left-2 bg-green-600 text-white border-0 text-xs">
+                        <ShieldCheck className="h-3 w-3 mr-0.5" /> Inspecionado
+                      </Badge>
+                    </div>
+                    <CardContent className="p-3">
+                      <h3 className="font-bold">{s.make} {s.model}</h3>
+                      <div className="flex gap-2 text-xs text-muted-foreground mt-1 mb-2">
+                        <span>{s.year}</span><span>•</span>
+                        <span>{s.mileage?.toLocaleString()} km</span><span>•</span>
+                        <span>{s.fuel}</span>
+                      </div>
+                      <p className="text-lg font-bold text-amber-500">€{s.price?.toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
-      {/* JSON-LD */}
+      {/* JSON-LD Vehicle structured data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Vehicle",
@@ -718,17 +769,21 @@ export default function CarityListingDetail() {
         "brand": { "@type": "Brand", "name": listing.make },
         "model": listing.model,
         "modelDate": String(listing.year),
+        "vehicleConfiguration": listing.fuel,
         "mileageFromOdometer": { "@type": "QuantitativeValue", "value": listing.mileage, "unitCode": "KMT" },
         "fuelType": listing.fuel,
+        "itemCondition": "https://schema.org/UsedCondition",
         "offers": {
           "@type": "Offer",
           "price": listing.price,
           "priceCurrency": "EUR",
           "availability": "https://schema.org/InStock",
-          "url": `https://garageflow.pt/market/car/${listing.id}`
+          "url": `https://garageflow.pt/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },
         "image": listing.photos[0] || undefined,
-        "description": listing.description || `${listing.make} ${listing.model} ${listing.year} com inspeção certificada GarageFlow Market`,
+        "description": `${listing.make} ${listing.model} ${listing.year} — €${listing.price?.toLocaleString()}, ${listing.mileage?.toLocaleString()} km. Inspeção certificada GarageFlow Market.`,
+        ...(shopInfo ? { "provider": { "@type": "AutoRepair", "name": shopInfo.name } } : {}),
       })}} />
     </div>
   );

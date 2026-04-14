@@ -81,6 +81,7 @@ const CarityShopInspections = lazyRetry(() => import("@/pages/CarityShopInspecti
 const CarityAuth = lazyRetry(() => import("@/pages/CarityAuth"));
 const CarityByMake = lazyRetry(() => import("@/pages/CarityByMake"));
 const CarityByCity = lazyRetry(() => import("@/pages/CarityByCity"));
+const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -272,6 +273,7 @@ const publicRoutes = [
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
+  { path: "/market/carros/:slug", element: <Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
   { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },

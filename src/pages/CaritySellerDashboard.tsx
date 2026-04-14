@@ -379,6 +379,6 @@ export default function CaritySellerDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </MarketLayout>
   );
 }

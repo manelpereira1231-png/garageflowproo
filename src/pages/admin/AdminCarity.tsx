@@ -160,6 +160,17 @@ export default function AdminCarity() {
     loadData();
   };
 
+  // Haversine distance in km
+  const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
   const sendOfferToPartners = async (listingId: string, gifted = false) => {
     setSendingOffer(listingId);
     const partnerShops = shops.filter(s => s.is_carity_partner && s.carity_active);
@@ -168,24 +179,100 @@ export default function AdminCarity() {
       setSendingOffer(null);
       return;
     }
+
+    // Get the listing details for notification text
+    const listing = listings.find(l => l.id === listingId);
+    const listingLabel = listing
+      ? `${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}`
+      : "Veículo";
+
+    // Get seller profile for GPS-based sorting
+    let sellerLat: number | null = null;
+    let sellerLon: number | null = null;
+    if (listing?.seller_id) {
+      const { data: sellerProfile } = await supabase
+        .from("carity_seller_profiles")
+        .select("location")
+        .eq("user_id", listing.seller_id)
+        .single();
+      // Try to parse location or use listing metadata if available
+    }
+
+    // Sort by GPS distance if shops have coordinates, fallback to priority
+    let sorted = [...partnerShops];
+    const shopsWithCoords = sorted.filter(s => s.latitude && s.longitude);
+    const shopsWithoutCoords = sorted.filter(s => !s.latitude || !s.longitude);
+
+    if (shopsWithCoords.length > 0) {
+      // If we have seller coords, sort by distance; otherwise sort by priority then coords first
+      shopsWithCoords.sort((a, b) => {
+        if (sellerLat && sellerLon) {
+          const distA = haversineKm(sellerLat, sellerLon, a.latitude, a.longitude);
+          const distB = haversineKm(sellerLat, sellerLon, b.latitude, b.longitude);
+          return distA - distB;
+        }
+        return (b.carity_priority || 5) - (a.carity_priority || 5);
+      });
+      // Prioritize shops with GPS, then the rest by priority
+      shopsWithoutCoords.sort((a, b) => (b.carity_priority || 5) - (a.carity_priority || 5));
+      sorted = [...shopsWithCoords, ...shopsWithoutCoords];
+    } else {
+      sorted.sort((a, b) => (b.carity_priority || 5) - (a.carity_priority || 5));
+    }
+
+    const topShops = sorted.slice(0, 5);
+
+    // Create inspection record
     const { data: inspection } = await supabase.from("carity_inspections").insert({
       listing_id: listingId,
-      shop_id: partnerShops[0].id,
+      shop_id: topShops[0].id,
       payment_status: gifted ? "gifted" : "paid",
       payment_amount: gifted ? 0 : 24.90,
       shop_share: gifted ? 0 : 16.19,
       platform_share: gifted ? 0 : 8.72,
       status: "pending",
-      notes: gifted ? "Inspeção oferecida pelo administrador" : null,
+      notes: gifted
+        ? `Inspeção oferecida pelo administrador — ${listingLabel}`
+        : `Inspeção paga — ${listingLabel}`,
     }).select().single();
-    if (!inspection) { toast.error("Erro"); setSendingOffer(null); return; }
+    if (!inspection) { toast.error("Erro ao criar inspeção"); setSendingOffer(null); return; }
 
-    const sorted = [...partnerShops].sort((a, b) => (b.carity_priority || 5) - (a.carity_priority || 5));
-    const topShops = sorted.slice(0, 5);
+    // Create offers for all top shops
     await supabase.from("carity_inspection_offers").insert(
       topShops.map(s => ({ inspection_id: inspection.id, listing_id: listingId, shop_id: s.id, status: "pending" }))
     );
-    await supabase.from("carity_listings").update({ status: "pending_inspection" }).eq("id", listingId);
+
+    // Update listing status
+    await supabase.from("carity_listings").update({ status: "pending_inspection", shop_id: topShops[0].id }).eq("id", listingId);
+
+    // Create in-app notifications for each shop
+    await supabase.from("notifications").insert(
+      topShops.map(s => ({
+        shop_id: s.id,
+        title: gifted ? "🎁 Inspeção Market oferecida!" : "🚗 Nova inspeção Market disponível",
+        message: `Novo pedido de inspeção: ${listingLabel}. Aceite antes que outra oficina o faça!`,
+        type: "carity_inspection",
+        link: "/market/inspections",
+      }))
+    );
+
+    // Send push notifications (non-blocking)
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    if (projectId) {
+      for (const shop of topShops) {
+        fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            shop_id: shop.id,
+            title: gifted ? "🎁 Inspeção oferecida!" : "🚗 Nova inspeção Market",
+            body: `${listingLabel} — Aceite agora!`,
+            url: "/market/inspections",
+          }),
+        }).catch(() => {});
+      }
+    }
+
     toast.success(gifted
       ? `Inspeção OFERECIDA e enviada a ${topShops.length} oficinas! 🎁`
       : `Pedido enviado a ${topShops.length} oficinas!`

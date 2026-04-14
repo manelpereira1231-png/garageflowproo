@@ -1024,6 +1024,92 @@ export default function AdminCarity() {
               )}
             </CardContent>
           </Card>
+        {/* === ESCROW / DISPUTES === */}
+        <TabsContent value="escrows" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Escrow &amp; Disputas</CardTitle></CardHeader>
+            <CardContent>
+              {escrows.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Nenhuma transação escrow</p>
+              ) : (
+                <div className="space-y-4">
+                  {escrows.map((e: any) => {
+                    const l = e.carity_listings;
+                    const isDisputed = e.status === "disputed";
+                    const isPaid = e.status === "paid";
+                    const statusColor = isDisputed ? "bg-red-100 text-red-800" : e.status === "released" ? "bg-green-100 text-green-800" : e.status === "refunded" ? "bg-slate-100 text-slate-800" : isPaid ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800";
+                    return (
+                      <div key={e.id} className={`border rounded-lg p-4 space-y-3 ${isDisputed ? "border-red-300 bg-red-50/30 dark:bg-red-950/10" : ""}`}>
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{l?.make} {l?.model} ({l?.year}) — {l?.plate}</p>
+                            <p className="text-xs text-muted-foreground">€{Number(e.amount).toLocaleString()} • Comissão: €{Number(e.platform_fee).toFixed(2)} • Vendedor: €{Number(e.seller_amount).toFixed(2)}</p>
+                          </div>
+                          <Badge className={statusColor}>{e.status}</Badge>
+                        </div>
+
+                        {isDisputed && (
+                          <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg space-y-2 text-sm">
+                            <p className="font-medium text-red-700 dark:text-red-300">🚨 Razão do comprador:</p>
+                            <p className="text-red-600 dark:text-red-400">{e.buyer_dispute_reason || "Sem descrição"}</p>
+                            {e.seller_dispute_response && (
+                              <>
+                                <p className="font-medium text-blue-700 dark:text-blue-300 mt-2">📝 Resposta do vendedor:</p>
+                                <p className="text-blue-600 dark:text-blue-400">{e.seller_dispute_response}</p>
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        {e.resolution_notes && (
+                          <div className="bg-muted p-2 rounded text-xs">
+                            <span className="font-medium">Resolução:</span> {e.resolution_notes}
+                          </div>
+                        )}
+
+                        {(isDisputed || isPaid) && (
+                          <div className="flex items-end gap-3 pt-2 border-t">
+                            <div className="flex-1">
+                              <Label className="text-xs">Notas de resolução</Label>
+                              <Textarea
+                                value={resolvingEscrow === e.id ? resolveNotes : ""}
+                                onChange={ev => { setResolvingEscrow(e.id); setResolveNotes(ev.target.value); }}
+                                placeholder="Notas para registo interno..."
+                                rows={2}
+                                className="text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                disabled={resolvingEscrow === e.id && !resolveNotes}
+                                onClick={() => handleEscrowResolve(e.id, "release")}
+                              >
+                                {resolvingEscrow === e.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle className="h-3 w-3 mr-1" />}
+                                Libertar Fundos
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={resolvingEscrow === e.id && !resolveNotes}
+                                onClick={() => handleEscrowResolve(e.id, "refund")}
+                              >
+                                {resolvingEscrow === e.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+                                Reembolsar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <p className="text-[10px] text-muted-foreground">ID: {e.id} • Criado: {new Date(e.created_at).toLocaleString("pt-PT")} {e.delivery_deadline ? `• Deadline: ${new Date(e.delivery_deadline).toLocaleDateString("pt-PT")}` : ""}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
       </Tabs>

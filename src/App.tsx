@@ -371,6 +371,34 @@ function AuthenticatedRoutes() {
       ? "/market"
       : "/dashboard";
 
+  // Carity-only users (buyers/sellers) — NO access to SaaS shop routes
+  if (isCarityUser) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/admin/*" element={<Navigate to="/market" replace />} />
+            <Route path="/auth" element={<AuthRouteRedirect fallback="/market" />} />
+            {publicRoutes.map(r => (
+              <Route key={r.path} path={r.path} element={r.element} />
+            ))}
+            {/* Block ALL SaaS routes — redirect to market */}
+            <Route path="/dashboard" element={<Navigate to="/market" replace />} />
+            <Route path="/clients" element={<Navigate to="/market" replace />} />
+            <Route path="/vehicles" element={<Navigate to="/market" replace />} />
+            <Route path="/quotes/*" element={<Navigate to="/market" replace />} />
+            <Route path="/services/*" element={<Navigate to="/market" replace />} />
+            <Route path="/settings" element={<Navigate to="/market" replace />} />
+            <Route path="/billing" element={<Navigate to="/market" replace />} />
+            <Route path="/invoices/*" element={<Navigate to="/market" replace />} />
+            <Route path="/onboarding" element={<Navigate to="/market" replace />} />
+            <Route path="*" element={<Navigate to="/market" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
   return (
     <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>

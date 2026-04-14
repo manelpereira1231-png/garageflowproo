@@ -259,6 +259,21 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Anti-fuga warning */}
+        {fugaWarning && (
+          <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30 flex items-start gap-2">
+            <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs text-destructive font-medium">{fugaWarning}</p>
+              {fugaAttempts >= 2 && (
+                <p className="text-[10px] text-destructive/80 mt-1">
+                  ⚠️ Aviso {fugaAttempts}/3 — Após 3 tentativas a sua conta será restrita.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Pending offer banner (seller side) */}
         {isSeller && pendingOffer && (
           <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">

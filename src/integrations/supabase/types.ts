@@ -609,6 +609,10 @@ export type Database = {
           payment_amount: number
           payment_status: string
           platform_share: number
+          scheduled_date: string | null
+          scheduled_time: string | null
+          seller_contacted_at: string | null
+          seller_notified: boolean
           shop_id: string
           shop_share: number
           started_at: string | null
@@ -624,6 +628,10 @@ export type Database = {
           payment_amount?: number
           payment_status?: string
           platform_share?: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          seller_contacted_at?: string | null
+          seller_notified?: boolean
           shop_id: string
           shop_share?: number
           started_at?: string | null
@@ -639,6 +647,10 @@ export type Database = {
           payment_amount?: number
           payment_status?: string
           platform_share?: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          seller_contacted_at?: string | null
+          seller_notified?: boolean
           shop_id?: string
           shop_share?: number
           started_at?: string | null
@@ -2467,7 +2479,9 @@ export type Database = {
           is_carity_partner: boolean
           labor_rate: number
           language: string
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
           nif: string | null
           phone: string
@@ -2493,7 +2507,9 @@ export type Database = {
           is_carity_partner?: boolean
           labor_rate?: number
           language?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           nif?: string | null
           phone?: string
@@ -2519,7 +2535,9 @@ export type Database = {
           is_carity_partner?: boolean
           labor_rate?: number
           language?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           nif?: string | null
           phone?: string

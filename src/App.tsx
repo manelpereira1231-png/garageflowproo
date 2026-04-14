@@ -241,6 +241,7 @@ const publicRoutes = [
 
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
+  const [isCarityUser, setIsCarityUser] = useState(false);
   const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isReady: authReady, user } = useAuthReady();
@@ -265,7 +266,23 @@ function AuthenticatedRoutes() {
         return;
       }
 
-      // Shop exists — go directly to dashboard (progressive setup handles missing fields)
+      // Check if Carity-only user (buyer/seller with no shop)
+      const { data: roles } = await supabase
+        .from("user_roles" as any)
+        .select("role")
+        .eq("user_id", user.id);
+
+      const userRoles = (roles || []).map((r: any) => r.role);
+      const hasGarageRole = userRoles.includes("garage_owner");
+      const hasCarityRole = userRoles.includes("buyer") || userRoles.includes("seller");
+
+      // Also check user metadata as fallback
+      const isCarity = user.user_metadata?.carity_user === true || user.user_metadata?.account_type === "particular";
+
+      if (!hasGarageRole && (hasCarityRole || isCarity)) {
+        setIsCarityUser(true);
+      }
+
       setReady(true);
     };
     checkUserState();
@@ -302,7 +319,12 @@ function AuthenticatedRoutes() {
     );
   }
 
-  const defaultRoute = isAffiliate ? "/affiliate-dashboard" : "/dashboard";
+  // Role-based default route
+  const defaultRoute = isAffiliate
+    ? "/affiliate-dashboard"
+    : isCarityUser
+      ? "/carity"
+      : "/dashboard";
 
   return (
     <ChunkErrorBoundary>

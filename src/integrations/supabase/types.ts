@@ -2651,6 +2651,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicle_global_history: {
         Row: {
           created_at: string
@@ -3104,6 +3125,13 @@ export type Database = {
         }[]
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       next_invoice_number: { Args: { _shop_id: string }; Returns: string }
       next_number: {
@@ -3124,7 +3152,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "buyer" | "seller" | "garage_owner" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3251,6 +3279,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["buyer", "seller", "garage_owner", "admin"],
+    },
   },
 } as const

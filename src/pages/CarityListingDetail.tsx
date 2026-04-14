@@ -42,8 +42,9 @@ const ESCROW_STATUS_LABELS: Record<string, { label: string; color: string; icon:
   refunded: { label: "Reembolsado", color: "bg-slate-100 text-slate-800", icon: CreditCard },
 };
 
-export default function CarityListingDetail() {
-  const { id } = useParams();
+export default function CarityListingDetail({ overrideId }: { overrideId?: string } = {}) {
+  const { id: paramId } = useParams();
+  const id = overrideId || paramId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [listing, setListing] = useState<any>(null);

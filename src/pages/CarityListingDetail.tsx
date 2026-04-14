@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, Phone, Mail, MapPin, Star } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, Phone, MapPin, Star, Clock, Users } from "lucide-react";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "OK" },
@@ -34,8 +34,10 @@ export default function CarityListingDetail() {
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
+  const [shopInfo, setShopInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
+  const [totalVerified, setTotalVerified] = useState(0);
 
   useEffect(() => {
     if (id) loadData();
@@ -52,9 +54,15 @@ export default function CarityListingDetail() {
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    const [reportRes, sellerRes] = await Promise.all([
+    // Set SEO meta
+    document.title = `${listingData.make} ${listingData.model} ${listingData.year} — GarageFlow Market`;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", `${listingData.make} ${listingData.model} ${listingData.year} com ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada GarageFlow Market. €${listingData.price?.toLocaleString()}`);
+
+    const [reportRes, sellerRes, countRes] = await Promise.all([
       supabase.from("carity_inspection_reports").select("*").eq("listing_id", id).single(),
       supabase.from("carity_seller_profiles").select("*").eq("user_id", listingData.seller_id).single(),
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
     ]);
     
     if (reportRes.data) {
@@ -66,8 +74,15 @@ export default function CarityListingDetail() {
         engine_photos: Array.isArray(reportRes.data.engine_photos) ? reportRes.data.engine_photos : [],
         damage_photos: Array.isArray(reportRes.data.damage_photos) ? reportRes.data.damage_photos : [],
       });
+
+      // Load shop reputation
+      if (reportRes.data.shop_id) {
+        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", reportRes.data.shop_id).single();
+        if (shop) setShopInfo(shop);
+      }
     }
     if (sellerRes.data) setSeller(sellerRes.data);
+    setTotalVerified(countRes.count || 0);
     setLoading(false);
   };
 
@@ -90,6 +105,7 @@ export default function CarityListingDetail() {
   }
 
   const allPhotos = [...listing.photos, ...(report?.exterior_photos || []), ...(report?.interior_photos || []), ...(report?.engine_photos || [])];
+  const daysSincePublished = listing.published_at ? Math.floor((Date.now() - new Date(listing.published_at).getTime()) / 86400000) : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,9 +133,14 @@ export default function CarityListingDetail() {
                 ) : (
                   <div className="flex items-center justify-center h-full"><Car className="h-16 w-16 text-muted-foreground/30" /></div>
                 )}
-                <Badge className="absolute top-4 left-4 bg-slate-900 text-amber-400 border-0">
-                  <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Inspecionado
-                </Badge>
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <Badge className="bg-slate-900 text-amber-400 border-0">
+                    <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Inspecionado
+                  </Badge>
+                  {listing.boost_active && (
+                    <Badge className="bg-purple-600 text-white border-0">⭐ Destaque</Badge>
+                  )}
+                </div>
               </div>
               {allPhotos.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">
@@ -134,7 +155,14 @@ export default function CarityListingDetail() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-2xl">{listing.make} {listing.model}</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-2xl">{listing.make} {listing.model}</CardTitle>
+                {/* Urgency signals */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {daysSincePublished <= 3 && <Badge variant="outline" className="text-green-600 border-green-200">🆕 Publicado há {daysSincePublished || 1} dia{daysSincePublished !== 1 ? 's' : ''}</Badge>}
+                  {daysSincePublished > 3 && daysSincePublished <= 14 && <Badge variant="outline"><Clock className="h-3 w-3 mr-1" /> Publicado há {daysSincePublished} dias</Badge>}
+                </div>
+              </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="text-center p-3 bg-muted rounded-lg">
@@ -150,6 +178,22 @@ export default function CarityListingDetail() {
                     <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score || '-'}/10</p><p className="text-xs text-muted-foreground">Classificação</p>
                   </div>
                 </div>
+
+                {/* Trust badges */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Inspeção feita
+                  </Badge>
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
+                    <ShieldCheck className="h-3 w-3 mr-1" /> Sem surpresas
+                  </Badge>
+                  {totalVerified > 0 && (
+                    <Badge className="bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300">
+                      <Car className="h-3 w-3 mr-1" /> {totalVerified} carros verificados
+                    </Badge>
+                  )}
+                </div>
+
                 {listing.description && (
                   <>
                     <Separator className="my-4" />
@@ -176,6 +220,19 @@ export default function CarityListingDetail() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Shop reputation */}
+                  {shopInfo && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Inspecionado por <span className="text-amber-700 dark:text-amber-400 font-semibold">{shopInfo.name}</span></p>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        {shopInfo.carity_inspections_count > 0 && <span>📋 {shopInfo.carity_inspections_count} inspeções</span>}
+                        {shopInfo.carity_approval_rate > 0 && <span>✅ {shopInfo.carity_approval_rate}% aprovação</span>}
+                        {shopInfo.carity_rating > 0 && <span>⭐ {shopInfo.carity_rating}/5</span>}
+                        <span className="text-amber-600 dark:text-amber-400 font-medium">Oficina certificada GarageFlow</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="text-center py-4">
                     <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-6 py-3">
                       <Star className="h-8 w-8 text-amber-500 fill-amber-500" />
@@ -283,6 +340,36 @@ export default function CarityListingDetail() {
           </div>
         </div>
       </div>
+
+      {/* JSON-LD Vehicle Schema */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Vehicle",
+        "name": `${listing.make} ${listing.model} ${listing.year}`,
+        "brand": { "@type": "Brand", "name": listing.make },
+        "model": listing.model,
+        "modelDate": String(listing.year),
+        "mileageFromOdometer": {
+          "@type": "QuantitativeValue",
+          "value": listing.mileage,
+          "unitCode": "KMT"
+        },
+        "fuelType": listing.fuel,
+        "offers": {
+          "@type": "Offer",
+          "price": listing.price,
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock",
+          "url": `https://garageflow.pt/market/car/${listing.id}`
+        },
+        "image": listing.photos[0] || undefined,
+        "description": listing.description || `${listing.make} ${listing.model} ${listing.year} com inspeção certificada GarageFlow Market`,
+        "additionalProperty": {
+          "@type": "PropertyValue",
+          "name": "Inspeção certificada",
+          "value": "Sim"
+        }
+      })}} />
     </div>
   );
 }

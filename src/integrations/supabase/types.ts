@@ -2160,6 +2160,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_confirmations: {
+        Row: {
+          buyer_confirmed: boolean
+          buyer_email: string | null
+          buyer_phone: string | null
+          confirmation_token: string
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          sale_price: number
+          seller_confirmed: boolean
+          seller_id: string
+        }
+        Insert: {
+          buyer_confirmed?: boolean
+          buyer_email?: string | null
+          buyer_phone?: string | null
+          confirmation_token?: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          sale_price?: number
+          seller_confirmed?: boolean
+          seller_id: string
+        }
+        Update: {
+          buyer_confirmed?: boolean
+          buyer_email?: string | null
+          buyer_phone?: string | null
+          confirmation_token?: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          sale_price?: number
+          seller_confirmed?: boolean
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_confirmations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_catalog: {
         Row: {
           active: boolean
@@ -2284,6 +2334,50 @@ export type Database = {
           },
         ]
       }
+      shop_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          paid_at: string | null
+          reference: string | null
+          shop_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference?: string | null
+          shop_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference?: string | null
+          shop_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_payouts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_users: {
         Row: {
           created_at: string
@@ -2316,11 +2410,55 @@ export type Database = {
           },
         ]
       }
+      shop_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          shop_id: string
+          status: string
+          total_earned: number
+          total_paid: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          shop_id: string
+          status?: string
+          total_earned?: number
+          total_paid?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          shop_id?: string
+          status?: string
+          total_earned?: number
+          total_paid?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_wallets_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           address: string | null
           carity_active: boolean
+          carity_approval_rate: number
+          carity_inspections_count: number
           carity_priority: number
+          carity_rating: number
           country: string
           created_at: string
           currency: string
@@ -2343,7 +2481,10 @@ export type Database = {
         Insert: {
           address?: string | null
           carity_active?: boolean
+          carity_approval_rate?: number
+          carity_inspections_count?: number
           carity_priority?: number
+          carity_rating?: number
           country?: string
           created_at?: string
           currency?: string
@@ -2366,7 +2507,10 @@ export type Database = {
         Update: {
           address?: string | null
           carity_active?: boolean
+          carity_approval_rate?: number
+          carity_inspections_count?: number
           carity_priority?: number
+          carity_rating?: number
           country?: string
           created_at?: string
           currency?: string

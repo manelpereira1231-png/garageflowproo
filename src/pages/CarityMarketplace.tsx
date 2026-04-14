@@ -38,6 +38,8 @@ export default function CarityMarketplace() {
   const [search, setSearch] = useState("");
   const [fuelFilter, setFuelFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [totalVerified, setTotalVerified] = useState(0);
+  const [partnerShops, setPartnerShops] = useState(0);
 
   useEffect(() => {
     document.title = "GarageFlow Market — Carros Usados Inspecionados";
@@ -45,7 +47,17 @@ export default function CarityMarketplace() {
     if (meta) meta.setAttribute("content", "Compre carros usados com confiança. Todos os veículos no GarageFlow Market são inspecionados por oficinas certificadas com relatório técnico completo.");
 
     loadListings();
+    loadStats();
   }, []);
+
+  const loadStats = async () => {
+    const [countRes, shopsRes] = await Promise.all([
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+    ]);
+    setTotalVerified(countRes.count || 0);
+    setPartnerShops(shopsRes.count || 0);
+  };
 
   const loadListings = async () => {
     const { data } = await supabase
@@ -130,6 +142,24 @@ export default function CarityMarketplace() {
               Oficinas certificadas GarageFlow
             </div>
           </div>
+
+          {/* Real stats counters */}
+          {(totalVerified > 0 || partnerShops > 0) && (
+            <div className="flex flex-wrap justify-center gap-8 mt-8 pt-6 border-t border-white/10">
+              {totalVerified > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400">{totalVerified}</p>
+                  <p className="text-xs text-slate-400">Carros verificados</p>
+                </div>
+              )}
+              {partnerShops > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400">{partnerShops}</p>
+                  <p className="text-xs text-slate-400">Oficinas certificadas</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

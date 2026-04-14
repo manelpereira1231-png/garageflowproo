@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star,
   Loader2, Send, ClipboardCheck, User, MapPin, Phone, Eye, Edit, Trash2, Zap, Search,
-  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar,
+  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar, Wallet, Tag, BanknoteIcon,
 } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -51,6 +51,9 @@ export default function AdminCarity() {
   const [sellers, setSellers] = useState<any[]>([]);
   const [boosts, setBoosts] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [saleConfirmations, setSaleConfirmations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
   const [updatingShop, setUpdatingShop] = useState<string | null>(null);
@@ -69,15 +72,18 @@ export default function AdminCarity() {
   const [viewingReport, setViewingReport] = useState<any | null>(null);
 
   const loadData = useCallback(async () => {
-    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes] = await Promise.all([
+    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes, walletsRes, payoutsRes, confirmRes] = await Promise.all([
       supabase.from("carity_listings").select("*").order("created_at", { ascending: false }),
       supabase.from("carity_inspections").select("*, carity_listings(make, model, year, plate, seller_id)").order("assigned_at", { ascending: false }),
       supabase.from("carity_transactions").select("*").order("created_at", { ascending: false }),
-      supabase.from("shops").select("id, name, is_carity_partner, carity_priority, carity_active, email, phone").order("name"),
+      supabase.from("shops").select("id, name, is_carity_partner, carity_priority, carity_active, email, phone, carity_inspections_count, carity_approval_rate, carity_rating").order("name"),
       supabase.from("carity_inspection_offers").select("*, carity_listings(make, model, year, plate), shops(name)").order("offered_at", { ascending: false }).limit(100),
       supabase.from("carity_seller_profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("carity_boosts").select("*, carity_listings(make, model, year, plate)").order("created_at", { ascending: false }),
       supabase.from("carity_inspection_reports").select("*, carity_listings(make, model, year, plate), shops(name)").order("created_at", { ascending: false }),
+      supabase.from("shop_wallets").select("*, shops(name)").order("balance", { ascending: false }),
+      supabase.from("shop_payouts").select("*, shops(name)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("sale_confirmations").select("*, carity_listings(make, model, year, plate, price)").order("created_at", { ascending: false }),
     ]);
 
     setListings((listingsRes.data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
@@ -88,6 +94,9 @@ export default function AdminCarity() {
     setSellers(sellersRes.data || []);
     setBoosts(boostsRes.data || []);
     setReports(reportsRes.data || []);
+    setWallets(walletsRes.data || []);
+    setPayouts(payoutsRes.data || []);
+    setSaleConfirmations(confirmRes.data || []);
     setLoading(false);
   }, []);
 
@@ -346,6 +355,8 @@ export default function AdminCarity() {
           <TabsTrigger value="boosts">Boosts ({boosts.length})</TabsTrigger>
           <TabsTrigger value="offers">Ofertas ({offers.length})</TabsTrigger>
           <TabsTrigger value="transactions">Transações ({transactions.length})</TabsTrigger>
+          <TabsTrigger value="wallets">💰 Wallets ({wallets.length})</TabsTrigger>
+          <TabsTrigger value="sales">🏷️ Vendas ({saleConfirmations.length})</TabsTrigger>
         </TabsList>
 
         {/* === OVERVIEW === */}
@@ -754,6 +765,95 @@ export default function AdminCarity() {
             </Card>
           ))}
         </TabsContent>
+
+        {/* === WALLETS === */}
+        <TabsContent value="wallets" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Wallet className="h-4 w-4" /> Wallets das Oficinas Parceiras</CardTitle></CardHeader>
+            <CardContent>
+              {wallets.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma wallet criada. As wallets são criadas automaticamente quando uma oficina recebe o primeiro pagamento.</p>
+              ) : (
+                <div className="space-y-3">
+                  {wallets.map(w => (
+                    <div key={w.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{w.shops?.name || w.shop_id?.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">Ganho: €{Number(w.total_earned || 0).toFixed(2)} · Pago: €{Number(w.total_paid || 0).toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">€{Number(w.balance || 0).toFixed(2)}</p>
+                        <Badge className={w.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>{w.status === "active" ? "Ativa" : "Bloqueada"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BanknoteIcon className="h-4 w-4" /> Histórico de Payouts</CardTitle></CardHeader>
+            <CardContent>
+              {payouts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Sem payouts registados</p>
+              ) : (
+                <div className="space-y-2">
+                  {payouts.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-2 border rounded">
+                      <div>
+                        <p className="text-sm font-medium">{p.shops?.name || "—"}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-PT")} · {p.method}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">€{Number(p.amount || 0).toFixed(2)}</p>
+                        <Badge variant="outline" className="text-xs">{p.status === "paid" ? "✅ Pago" : p.status === "processing" ? "⏳ A processar" : "🕐 Pendente"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === SALES CONFIRMATIONS === */}
+        <TabsContent value="sales" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="h-4 w-4" /> Confirmações de Venda (Dupla Confirmação)</CardTitle></CardHeader>
+            <CardContent>
+              {saleConfirmations.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma venda registada. As vendas aparecem aqui quando o vendedor marca um carro como vendido.</p>
+              ) : (
+                <div className="space-y-3">
+                  {saleConfirmations.map(sc => (
+                    <div key={sc.id} className="p-3 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium">{sc.carity_listings?.make} {sc.carity_listings?.model} ({sc.carity_listings?.year})</p>
+                          <p className="text-xs text-muted-foreground">{sc.carity_listings?.plate} · €{Number(sc.sale_price || sc.carity_listings?.price || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge className={sc.seller_confirmed ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                            Vendedor: {sc.seller_confirmed ? "✅" : "⏳"}
+                          </Badge>
+                          <Badge className={sc.buyer_confirmed ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                            Comprador: {sc.buyer_confirmed ? "✅" : "⏳"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Comprador: {sc.buyer_email || "—"} {sc.buyer_phone ? `· ${sc.buyer_phone}` : ""} · {new Date(sc.created_at).toLocaleDateString("pt-PT")}
+                        {sc.confirmed_at && ` · Confirmado: ${new Date(sc.confirmed_at).toLocaleDateString("pt-PT")}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* === EDIT LISTING DIALOG === */}

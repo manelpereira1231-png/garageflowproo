@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag } from "lucide-react";
+import VehicleTimeline from "@/components/VehicleTimeline";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
@@ -18,9 +21,9 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 };
 
 const BOOST_OPTIONS = [
-  { type: "7d", label: "Destaque 7 dias", price: "4,99", description: "O seu anúncio aparece em destaque durante 7 dias" },
-  { type: "14d", label: "Destaque 14 dias", price: "7,99", description: "Maior visibilidade durante 14 dias" },
-  { type: "top", label: "Topo do marketplace", price: "9,99", description: "O seu anúncio aparece sempre no topo" },
+  { type: "7d", label: "Destaque 7 dias", price: "4,99" },
+  { type: "14d", label: "Destaque 14 dias", price: "7,99" },
+  { type: "top", label: "Topo do marketplace", price: "9,99" },
 ];
 
 export default function CaritySellerDashboard() {
@@ -28,6 +31,12 @@ export default function CaritySellerDashboard() {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [boostingId, setBoostingId] = useState<string | null>(null);
+  const [selectedListing, setSelectedListing] = useState<any | null>(null);
+  const [sellDialog, setSellDialog] = useState<{ listing: any } | null>(null);
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [salePrice, setSalePrice] = useState("");
+  const [submittingSale, setSubmittingSale] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -55,6 +64,35 @@ export default function CaritySellerDashboard() {
     }
   };
 
+  const handleMarkSold = async () => {
+    if (!sellDialog || !buyerEmail) return;
+    setSubmittingSale(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { error } = await supabase.from("sale_confirmations").insert({
+        listing_id: sellDialog.listing.id,
+        seller_id: user.id,
+        seller_confirmed: true,
+        buyer_email: buyerEmail,
+        buyer_phone: buyerPhone,
+        sale_price: parseFloat(salePrice) || sellDialog.listing.price,
+      });
+
+      if (error) throw error;
+      toast.success("Pedido de confirmação de venda enviado ao comprador!");
+      setSellDialog(null);
+      setBuyerEmail("");
+      setBuyerPhone("");
+      setSalePrice("");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao registar venda");
+    } finally {
+      setSubmittingSale(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <nav className="bg-slate-900 text-white px-4 py-3">
@@ -72,6 +110,9 @@ export default function CaritySellerDashboard() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="mb-2">
+          <p className="text-sm text-muted-foreground">Comprar e vender carros com inspeção certificada</p>
+        </div>
         <h1 className="text-2xl font-bold mb-6">Os meus anúncios</h1>
 
         {loading ? (
@@ -97,6 +138,7 @@ export default function CaritySellerDashboard() {
               const statusConfig = STATUS_MAP[listing.status] || STATUS_MAP.pending_payment;
               const StatusIcon = statusConfig.icon;
               const canBoost = listing.status === "published" && !listing.boost_active;
+              const canSell = listing.status === "published";
 
               return (
                 <Card key={listing.id} className="overflow-hidden">
@@ -117,11 +159,23 @@ export default function CaritySellerDashboard() {
                           </div>
                         </div>
 
-                        {listing.status === 'pending_payment' && (
-                          <Link to={`/market/pay/${listing.id}`}>
-                            <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
-                          </Link>
-                        )}
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" onClick={() => setSelectedListing(selectedListing?.id === listing.id ? null : listing)}>
+                            <Eye className="h-3 w-3 mr-1" /> {selectedListing?.id === listing.id ? "Ocultar progresso" : "Ver progresso"}
+                          </Button>
+
+                          {listing.status === 'pending_payment' && (
+                            <Link to={`/market/pay/${listing.id}`}>
+                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€19,90)</Button>
+                            </Link>
+                          )}
+
+                          {canSell && (
+                            <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => { setSellDialog({ listing }); setSalePrice(listing.price?.toString() || ""); }}>
+                              <Tag className="h-3 w-3 mr-1" /> Marcar como vendido
+                            </Button>
+                          )}
+                        </div>
 
                         {canBoost && (
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -142,6 +196,13 @@ export default function CaritySellerDashboard() {
                         )}
                       </div>
                     </div>
+
+                    {selectedListing?.id === listing.id && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-semibold mb-2">Progresso do veículo</h4>
+                        <VehicleTimeline status={listing.status} />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -149,6 +210,39 @@ export default function CaritySellerDashboard() {
           </div>
         )}
       </div>
+
+      {/* Mark as Sold Dialog */}
+      <Dialog open={!!sellDialog} onOpenChange={o => !o && setSellDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar venda — {sellDialog?.listing?.make} {sellDialog?.listing?.model}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            Insira os dados do comprador. Enviaremos um link de confirmação para validar a venda. A comissão só será gerada após confirmação dupla.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">Email do comprador *</label>
+              <Input value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} placeholder="comprador@email.com" type="email" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Telefone do comprador</label>
+              <Input value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} placeholder="912345678" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Preço de venda (€)</label>
+              <Input value={salePrice} onChange={e => setSalePrice(e.target.value)} type="number" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSellDialog(null)}>Cancelar</Button>
+            <Button onClick={handleMarkSold} disabled={!buyerEmail || submittingSale} className="bg-green-600 hover:bg-green-500 text-white">
+              {submittingSale ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Confirmar venda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

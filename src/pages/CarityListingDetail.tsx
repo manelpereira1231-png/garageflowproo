@@ -175,7 +175,7 @@ export default function CarityListingDetail() {
                     <Fuel className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.fuel}</p><p className="text-xs text-muted-foreground">Combustível</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
-                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score || '-'}/10</p><p className="text-xs text-muted-foreground">Classificação</p>
+                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score || '-'}/100</p><p className="text-xs text-muted-foreground">Classificação</p>
                   </div>
                 </div>
 
@@ -234,12 +234,25 @@ export default function CarityListingDetail() {
                   )}
 
                   <div className="text-center py-4">
-                    <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-6 py-3">
-                      <Star className="h-8 w-8 text-amber-500 fill-amber-500" />
-                      <span className="text-4xl font-bold text-slate-800 dark:text-amber-400">{report.overall_score}</span>
-                      <span className="text-xl text-muted-foreground">/10</span>
+                    <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
+                      report.overall_score >= 80 ? 'bg-green-50 dark:bg-green-900/20' :
+                      report.overall_score >= 60 ? 'bg-amber-50 dark:bg-amber-900/20' :
+                      'bg-red-50 dark:bg-red-900/20'
+                    }`}>
+                      <Star className={`h-8 w-8 ${report.overall_score >= 80 ? 'text-green-500 fill-green-500' : report.overall_score >= 60 ? 'text-amber-500 fill-amber-500' : 'text-red-500 fill-red-500'}`} />
+                      <span className={`text-4xl font-bold ${
+                        report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
+                        report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                        'text-red-700 dark:text-red-400'
+                      }`}>{report.overall_score}</span>
+                      <span className="text-xl text-muted-foreground">/100</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">Classificação geral da oficina</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {report.overall_score >= 80 ? '🟢 Premium — Excelente estado' :
+                       report.overall_score >= 60 ? '🟡 Bom estado geral' :
+                       '🔴 Necessita atenção'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Motor 30% · Travões 20% · Suspensão 20% · Pneus 15% · Eletrónica 15%</p>
                   </div>
 
                   <Separator />

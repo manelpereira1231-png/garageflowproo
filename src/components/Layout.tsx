@@ -187,7 +187,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
   const visibleNavItems = isGuidedMode
-    ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path))
+    ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : navItems;
 
   const simpleModeLabel = t("nav.simpleStart") === "nav.simpleStart" ? "Arranque guiado" : t("nav.simpleStart");

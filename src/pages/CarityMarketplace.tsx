@@ -180,7 +180,7 @@ export default function CarityMarketplace() {
               </Button>
             </Link>
             <Link to="/market/sell">
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white font-semibold backdrop-blur-sm">
                 Vender carro
               </Button>
             </Link>

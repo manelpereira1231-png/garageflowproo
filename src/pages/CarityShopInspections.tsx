@@ -48,6 +48,11 @@ export default function CarityShopInspections() {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [shopData, setShopData] = useState<any>(null);
 
+  // Partner enrollment state
+  const [isPartner, setIsPartner] = useState<boolean | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [enrolling, setEnrolling] = useState(false);
+
   // Schedule dialog
   const [scheduleDialog, setScheduleDialog] = useState<any>(null);
   const [schedDate, setSchedDate] = useState("");
@@ -71,7 +76,26 @@ export default function CarityShopInspections() {
   const loadData = useCallback(async () => {
     if (!shopId) return;
 
-    const [offersRes, inspectionsRes, shopRes] = await Promise.all([
+    // First check partner status
+    const { data: shopInfo } = await supabase
+      .from("shops")
+      .select("id, name, address, phone, latitude, longitude, is_carity_partner, carity_active, email, nif")
+      .eq("id", shopId)
+      .single();
+
+    if (shopInfo) {
+      setShopData(shopInfo);
+      setIsPartner(shopInfo.is_carity_partner === true);
+      setIsActive(shopInfo.carity_active === true);
+    }
+
+    // If not partner, don't load inspections
+    if (!shopInfo?.is_carity_partner) {
+      setLoading(false);
+      return;
+    }
+
+    const [offersRes, inspectionsRes] = await Promise.all([
       supabase
         .from("carity_inspection_offers")
         .select("*, carity_listings(*)")
@@ -83,14 +107,7 @@ export default function CarityShopInspections() {
         .select("*, carity_listings(*)")
         .eq("shop_id", shopId)
         .order("assigned_at", { ascending: false }),
-      supabase
-        .from("shops")
-        .select("id, name, address, phone, latitude, longitude")
-        .eq("id", shopId)
-        .single(),
     ]);
-
-    if (shopRes.data) setShopData(shopRes.data);
 
     setOffers((offersRes.data || []).map((o: any) => ({
       ...o,

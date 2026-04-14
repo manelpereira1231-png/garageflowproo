@@ -1024,6 +1024,8 @@ export default function AdminCarity() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
         {/* === ESCROW / DISPUTES === */}
         <TabsContent value="escrows" className="mt-4 space-y-4">
           <Card>

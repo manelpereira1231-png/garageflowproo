@@ -112,8 +112,16 @@ export default function CarityListingDetail() {
         if (shop) setShopInfo(shop);
       }
     }
-    if (sellerRes.data) setSeller(sellerRes.data);
-    setTotalVerified(countRes.count || 0);
+    if (sellerRes.data) {
+      setSeller(sellerRes.data);
+      // Load trust score
+      const { data: ts } = await supabase
+        .from("seller_trust_scores" as any)
+        .select("*")
+        .eq("user_id", listingData.seller_id)
+        .maybeSingle();
+      if (ts) setTrustScore(ts);
+    }
 
     // Load escrow status for this listing (if buyer or seller)
     if (currentUserId) {

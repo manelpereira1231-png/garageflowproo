@@ -423,10 +423,59 @@ export default function CarityShopInspections() {
         completed_at: new Date().toISOString(),
       };
 
+      let reportId: string;
       if (existing) {
         await supabase.from("carity_inspection_reports").update(reportData).eq("id", existing.id);
+        reportId = existing.id;
       } else {
-        await supabase.from("carity_inspection_reports").insert(reportData);
+        const { data: newReport } = await supabase.from("carity_inspection_reports").insert(reportData).select("id").single();
+        reportId = newReport?.id || "";
+      }
+
+      // === COHERENCE VALIDATION ===
+      if (reportId) {
+        const { data: coherenceResult } = await supabase.rpc("validate_inspection_coherence", {
+          _listing_id: activeInspection.listing_id,
+          _report_id: reportId,
+        });
+        
+        const coherence = coherenceResult as any;
+        if (coherence && coherence.warnings && coherence.warning_count > 0) {
+          const warnings = coherence.warnings as any[];
+          const criticalWarnings = warnings.filter((w: any) => w.severity === 'critical' || w.severity === 'high');
+          
+          if (criticalWarnings.length > 0) {
+            toast.warning(
+              `⚠️ Validação de coerência: ${coherence.warning_count} aviso(s) detetado(s). Score de coerência: ${coherence.coherence_score}/100`,
+              { duration: 8000 }
+            );
+            criticalWarnings.forEach((w: any) => {
+              toast.warning(w.message, { duration: 6000 });
+            });
+          }
+
+          // Log coherence issues to audit
+          await supabase.from("audit_logs").insert({
+            action: "inspection_coherence_check",
+            entity_type: "carity_inspection_reports",
+            entity_id: reportId,
+            details: coherence,
+          });
+
+          // Block publication if coherence fails critically
+          if (!coherence.can_publish) {
+            await supabase.from("carity_inspections")
+              .update({ status: 'completed', completed_at: new Date().toISOString() })
+              .eq("id", activeInspection.id);
+            await supabase.from("carity_listings")
+              .update({ status: 'rejected' })
+              .eq("id", activeInspection.listing_id);
+            toast.error(`Relatório rejeitado pela validação de coerência (score: ${coherence.coherence_score}/100). Corrija os problemas identificados.`, { duration: 10000 });
+            setActiveInspection(null);
+            loadData();
+            return;
+          }
+        }
       }
 
       await supabase.from("carity_inspections")

@@ -52,6 +52,7 @@ export default function CarityShopInspections() {
   const [isPartner, setIsPartner] = useState<boolean | null>(null);
   const [isActive, setIsActive] = useState<boolean>(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [partnerChecked, setPartnerChecked] = useState(false);
 
   // Schedule dialog
   const [scheduleDialog, setScheduleDialog] = useState<any>(null);
@@ -73,27 +74,37 @@ export default function CarityShopInspections() {
   });
   const [uploading, setUploading] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  // Step 1: Fast partner check (renders enrollment screen immediately)
+  useEffect(() => {
     if (!shopId) return;
-
-    // First check partner status
-    const { data: shopInfo } = await supabase
+    let cancelled = false;
+    supabase
       .from("shops")
       .select("id, name, address, phone, latitude, longitude, is_carity_partner, carity_active, email, nif")
       .eq("id", shopId)
-      .single();
+      .single()
+      .then(({ data: shopInfo }) => {
+        if (cancelled) return;
+        if (shopInfo) {
+          setShopData(shopInfo);
+          setIsPartner(shopInfo.is_carity_partner === true);
+          setIsActive(shopInfo.carity_active === true);
+        } else {
+          setIsPartner(false);
+          setIsActive(false);
+        }
+        setPartnerChecked(true);
+      });
+    return () => { cancelled = true; };
+  }, [shopId]);
 
-    if (shopInfo) {
-      setShopData(shopInfo);
-      setIsPartner(shopInfo.is_carity_partner === true);
-      setIsActive(shopInfo.carity_active === true);
-    }
-
-    // If not partner, don't load inspections
-    if (!shopInfo?.is_carity_partner) {
+  // Step 2: Load inspections only if active partner
+  const loadInspectionData = useCallback(async () => {
+    if (!shopId || !isPartner || !isActive) {
       setLoading(false);
       return;
     }
+    setLoading(true);
 
     const [offersRes, inspectionsRes] = await Promise.all([
       supabase
@@ -114,13 +125,11 @@ export default function CarityShopInspections() {
       listing: o.carity_listings ? { ...o.carity_listings, photos: Array.isArray(o.carity_listings.photos) ? o.carity_listings.photos : [] } : null,
     })));
 
-    // Fetch seller profiles for inspections
     const inspArr = (inspectionsRes.data || []).map((i: any) => ({
       ...i,
       listing: i.carity_listings ? { ...i.carity_listings, photos: Array.isArray(i.carity_listings.photos) ? i.carity_listings.photos : [] } : null,
     }));
 
-    // Get seller info for each listing
     const sellerIds = [...new Set(inspArr.filter((i: any) => i.listing?.seller_id).map((i: any) => i.listing.seller_id))];
     let sellersMap: Record<string, any> = {};
     if (sellerIds.length > 0) {
@@ -131,16 +140,20 @@ export default function CarityShopInspections() {
       (sellers || []).forEach((s: any) => { sellersMap[s.user_id] = s; });
     }
 
-    const enriched = inspArr.map((i: any) => ({
+    setInspections(inspArr.map((i: any) => ({
       ...i,
       seller: i.listing?.seller_id ? sellersMap[i.listing.seller_id] || null : null,
-    }));
+    })));
 
-    setInspections(enriched);
     setLoading(false);
-  }, [shopId]);
+  }, [shopId, isPartner, isActive]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    if (partnerChecked) loadInspectionData();
+  }, [partnerChecked, loadInspectionData]);
+
+  // Alias for callbacks that call loadData
+  const loadData = loadInspectionData;
 
   // Accept inspection offer
   const acceptOffer = async (offer: any) => {
@@ -743,7 +756,7 @@ export default function CarityShopInspections() {
   }
 
   // --- LOADING STATE ---
-  if (loading || isPartner === null) {
+  if (!partnerChecked || (isPartner && isActive && loading)) {
     return (
       <div className="flex justify-center py-20">
         <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />

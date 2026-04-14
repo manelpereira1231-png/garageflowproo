@@ -66,7 +66,7 @@ export default function AdminReports() {
     const months = parseInt(period);
     const [shopsRes, subsRes, woRes, invRes, clientsRes, vehiclesRes, quotesRes, trialRes] = await Promise.all([
       supabase.from("shops").select("id, name, status, created_at"),
-      supabase.from("subscriptions").select("plan, status, trial_end, created_at, discount_percent, discount_expires_at"),
+      supabase.from("subscriptions").select("plan, status, trial_end, created_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id"),
       supabase.from("work_orders" as any).select("total, status, created_at, shop_id"),
       supabase.from("invoices").select("total, status, created_at, shop_id"),
       supabase.from("clients").select("id", { count: "exact", head: true }),
@@ -106,11 +106,14 @@ export default function AdminReports() {
     const totalRevenue = completedOrders.reduce((sum, wo) => sum + Number(wo.total || 0), 0);
     const avgTicket = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
 
-    // === MRR/ARR WITH DISCOUNTS ===
+    // === MRR/ARR — APENAS STRIPE PAID (receita real) ===
     const activeSubs = subscriptions.filter(s => s.status === "active" || s.status === "trialing");
+    const stripePaidSubs = activeSubs.filter(s => 
+      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== 'free')
+    );
     let mrrReal = 0;
     let discountImpact = 0;
-    activeSubs.forEach(s => {
+    stripePaidSubs.forEach(s => {
       const base = PLAN_PRICES[s.plan] || 0;
       const disc = Number(s.discount_percent || 0);
       const expired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
@@ -159,7 +162,7 @@ export default function AdminReports() {
     const totalAccounts = shops.length;
     const freeSubs = subscriptions.filter(s => s.plan === "free").length;
     const trialingSubs = subscriptions.filter(s => s.status === "trialing").length;
-    const paidSubs = subscriptions.filter(s => (s.plan === "pro" || s.plan === "garage") && s.status === "active").length;
+    const paidSubs = stripePaidSubs.filter(s => s.status === "active").length;
     const cancelledSubs = subscriptions.filter(s => s.status === "cancelled" || s.status === "canceled").length;
     const funnelMax = Math.max(totalAccounts, 1);
     const funnel = [

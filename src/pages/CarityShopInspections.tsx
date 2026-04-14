@@ -582,6 +582,175 @@ export default function CarityShopInspections() {
     );
   }
 
+  // --- ENROLLMENT HANDLER ---
+  const handleEnroll = async () => {
+    if (!shopId || !shopData) return;
+
+    // Validate requirements
+    if (!shopData.name?.trim()) { toast.error("A oficina precisa de ter um nome configurado nas Definições."); return; }
+    if (!shopData.phone?.trim()) { toast.error("Adicione um número de telefone nas Definições da oficina."); return; }
+    if (!shopData.address?.trim()) { toast.error("Adicione a morada completa nas Definições da oficina."); return; }
+
+    setEnrolling(true);
+    try {
+      const { error } = await supabase.from("shops").update({
+        is_carity_partner: true,
+        carity_active: true,
+      }).eq("id", shopId);
+
+      if (error) throw error;
+
+      setIsPartner(true);
+      setIsActive(true);
+      toast.success("Oficina inscrita com sucesso no GarageFlow Market! 🎉");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao inscrever oficina");
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  // --- ENROLLMENT SCREEN ---
+  if (isPartner === false) {
+    const hasName = !!shopData?.name?.trim();
+    const hasPhone = !!shopData?.phone?.trim();
+    const hasAddress = !!shopData?.address?.trim();
+    const allReady = hasName && hasPhone && hasAddress;
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="text-center pt-8">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="h-8 w-8 text-amber-600" />
+          </div>
+          <h1 className="text-2xl font-bold">GarageFlow Market</h1>
+          <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+            Junte-se à rede de oficinas certificadas e ganhe por cada inspeção realizada a veículos do marketplace.
+          </p>
+        </div>
+
+        {/* Benefits */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Como funciona</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <ClipboardCheck className="h-6 w-6 mx-auto text-amber-500 mb-2" />
+                <h3 className="font-semibold text-sm">Receba pedidos</h3>
+                <p className="text-xs text-muted-foreground mt-1">Vendedores pedem inspeção e o sistema atribui à oficina mais próxima</p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <Camera className="h-6 w-6 mx-auto text-blue-500 mb-2" />
+                <h3 className="font-semibold text-sm">Faça a inspeção</h3>
+                <p className="text-xs text-muted-foreground mt-1">Checklist mecânico, fotos reais e relatório técnico completo</p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <Euro className="h-6 w-6 mx-auto text-green-500 mb-2" />
+                <h3 className="font-semibold text-sm">Receba por inspeção</h3>
+                <p className="text-xs text-muted-foreground mt-1">70% do valor da inspeção é creditado à sua oficina automaticamente</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Revenue info */}
+        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Euro className="h-5 w-5 text-amber-600" />
+              <div>
+                <p className="font-semibold text-sm">Ganhos por inspeção: <span className="text-amber-600">~€13,93</span></p>
+                <p className="text-xs text-muted-foreground">O vendedor paga €19,90 — 70% fica para a oficina, 30% para a plataforma</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Requirements checklist */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Requisitos para inscrição</CardTitle>
+            <CardDescription>A sua oficina precisa de ter os dados completos nas Definições</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className={`flex items-center gap-3 p-3 rounded-lg ${hasName ? "bg-green-50 dark:bg-green-900/10" : "bg-red-50 dark:bg-red-900/10"}`}>
+              {hasName ? <CheckCircle className="h-5 w-5 text-green-600 shrink-0" /> : <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />}
+              <div className="flex-1">
+                <p className="text-sm font-medium">Nome da oficina</p>
+                <p className="text-xs text-muted-foreground">{hasName ? shopData?.name : "Não configurado — vá às Definições"}</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-3 p-3 rounded-lg ${hasPhone ? "bg-green-50 dark:bg-green-900/10" : "bg-red-50 dark:bg-red-900/10"}`}>
+              {hasPhone ? <CheckCircle className="h-5 w-5 text-green-600 shrink-0" /> : <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />}
+              <div className="flex-1">
+                <p className="text-sm font-medium">Telefone</p>
+                <p className="text-xs text-muted-foreground">{hasPhone ? shopData?.phone : "Não configurado — vá às Definições"}</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-3 p-3 rounded-lg ${hasAddress ? "bg-green-50 dark:bg-green-900/10" : "bg-red-50 dark:bg-red-900/10"}`}>
+              {hasAddress ? <CheckCircle className="h-5 w-5 text-green-600 shrink-0" /> : <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />}
+              <div className="flex-1">
+                <p className="text-sm font-medium">Morada completa</p>
+                <p className="text-xs text-muted-foreground">{hasAddress ? shopData?.address : "Não configurada — vá às Definições"}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button
+          onClick={handleEnroll}
+          disabled={!allReady || enrolling}
+          size="lg"
+          className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-base"
+        >
+          {enrolling ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
+          {allReady ? "Inscrever oficina no GarageFlow Market" : "Complete os requisitos acima para se inscrever"}
+        </Button>
+
+        {!allReady && (
+          <p className="text-center text-sm text-muted-foreground">
+            Aceda às <a href="/settings" className="text-primary underline font-medium">Definições</a> para completar os dados em falta.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // --- PENDING APPROVAL SCREEN ---
+  if (isPartner && !isActive) {
+    return (
+      <div className="max-w-lg mx-auto text-center space-y-6 pt-12">
+        <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+          <ShieldCheck className="h-8 w-8 text-amber-600" />
+        </div>
+        <h1 className="text-2xl font-bold">Inscrição em análise</h1>
+        <p className="text-muted-foreground">
+          A sua candidatura ao GarageFlow Market está a ser analisada. Receberá uma notificação assim que for aprovada.
+        </p>
+        <Card className="border-amber-200">
+          <CardContent className="p-4 text-left space-y-2">
+            <p className="text-sm"><strong>Oficina:</strong> {shopData?.name}</p>
+            <p className="text-sm"><strong>Morada:</strong> {shopData?.address}</p>
+            <p className="text-sm"><strong>Telefone:</strong> {shopData?.phone}</p>
+          </CardContent>
+        </Card>
+        <p className="text-xs text-muted-foreground">Se precisar de ajuda, contacte o suporte.</p>
+      </div>
+    );
+  }
+
+  // --- LOADING STATE ---
+  if (loading || isPartner === null) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   // --- MAIN LIST VIEW ---
   const pendingOffers = offers.length;
   const activeInspections = inspections.filter(i => !['completed'].includes(i.status)).length;

@@ -286,7 +286,6 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [{
         price: "price_1TMGdCE1zL2Sl1ZThIJWpIbG",
-        },
         quantity: 1,
       }],
       mode: "payment",

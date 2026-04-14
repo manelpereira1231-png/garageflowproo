@@ -236,9 +236,9 @@ export default function AdminCarity() {
       listing_id: listingId,
       shop_id: topShops[0].id,
       payment_status: gifted ? "gifted" : "paid",
-      payment_amount: gifted ? 0 : 24.90,
-      shop_share: gifted ? 0 : 16.19,
-      platform_share: gifted ? 0 : 8.72,
+      payment_amount: gifted ? 0 : 19.90,
+      shop_share: gifted ? 0 : 12.94,
+      platform_share: gifted ? 0 : 6.97,
       status: "pending",
       notes: gifted
         ? `Inspeção oferecida pelo administrador — ${listingLabel}`

@@ -73,7 +73,7 @@ export default function CarityPayInspection() {
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex justify-between">
                 <span>Taxa de inspeção GarageFlow Market</span>
-                <span className="font-semibold">€24,90</span>
+                <span className="font-semibold">€19,90</span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Inclui inspeção mecânica completa, relatório fotográfico e classificação oficial por uma oficina certificada GarageFlow.
@@ -94,7 +94,7 @@ export default function CarityPayInspection() {
 
             <Button onClick={handlePayment} disabled={paying} size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
               {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
-              Pagar €24,90
+              Pagar €19,90
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">Pagamento seguro processado por Stripe. Pode cancelar a qualquer momento.</p>

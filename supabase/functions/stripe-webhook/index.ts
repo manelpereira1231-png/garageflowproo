@@ -127,7 +127,7 @@ serve(async (req) => {
         if (sub) {
           await supabaseAdmin
             .from("subscriptions")
-            .update({ status: "active", updated_at: new Date().toISOString() })
+            .update({ status: "active", revenue_type: "stripe_paid", updated_at: new Date().toISOString() })
             .eq("id", sub.id);
           log("Invoice paid — subscription activated", { customerId, subId: sub.id });
         } else {
@@ -184,6 +184,7 @@ serve(async (req) => {
               plan,
               billing_cycle: billingCycle,
               stripe_subscription_id: subscription.id,
+              revenue_type: status === "trialing" ? "trial" : "stripe_paid",
               current_period_end: subscription.current_period_end
                 ? new Date(subscription.current_period_end * 1000).toISOString()
                 : null,
@@ -211,6 +212,7 @@ serve(async (req) => {
               status: "canceled",
               plan: "free",
               stripe_subscription_id: null,
+              revenue_type: "free",
               current_period_end: null,
               trial_end: null,
               updated_at: new Date().toISOString(),

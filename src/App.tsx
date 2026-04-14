@@ -81,6 +81,7 @@ const CarityShopInspections = lazyRetry(() => import("@/pages/CarityShopInspecti
 const CarityAuth = lazyRetry(() => import("@/pages/CarityAuth"));
 const CarityByMake = lazyRetry(() => import("@/pages/CarityByMake"));
 const CarityByCity = lazyRetry(() => import("@/pages/CarityByCity"));
+const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));

@@ -99,7 +99,7 @@ export default function CaritySellCar() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Vender o meu carro</h1>
           <p className="text-muted-foreground">
-            Preencha os dados do veículo. Depois será necessário pagar €24,90 para a inspeção oficial.
+            Preencha os dados do veículo. Depois será necessário pagar €19,90 para a inspeção oficial.
           </p>
         </div>
 
@@ -158,7 +158,7 @@ export default function CaritySellCar() {
               <div className="flex items-center gap-3 mb-3">
                 <ShieldCheck className="h-8 w-8 text-amber-500" />
                 <div>
-                  <h3 className="font-semibold">Taxa de Inspeção: €24,90</h3>
+                  <h3 className="font-semibold">Taxa de Inspeção: €19,90</h3>
                   <p className="text-sm text-muted-foreground">Após submeter, será redirecionado para pagamento. Uma oficina certificada fará a inspeção completa do seu carro.</p>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function CaritySellCar() {
 
           <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            Submeter e pagar inspeção (€24,90)
+            Submeter e pagar inspeção (€19,90)
           </Button>
         </form>
       </div>

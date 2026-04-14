@@ -61,6 +61,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [trustScore, setTrustScore] = useState<any>(null);
+  const [similarListings, setSimilarListings] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));

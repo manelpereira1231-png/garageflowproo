@@ -263,7 +263,7 @@ export default function CarityShopInspections() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <ClipboardCheck className="h-6 w-6 text-amber-500" />
-              Inspeção Carity
+              Inspeção GarageFlow Market
             </h1>
             <p className="text-muted-foreground">
               {activeListing.make} {activeListing.model} ({activeListing.year}) · {activeListing.plate}
@@ -422,8 +422,8 @@ export default function CarityShopInspections() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-amber-500" />
-            Inspeções Carity
+             <ShieldCheck className="h-6 w-6 text-amber-500" />
+             Inspeções Market
           </h1>
           <p className="text-muted-foreground">Aceite pedidos de inspeção e ganhe por cada carro inspecionado</p>
         </div>

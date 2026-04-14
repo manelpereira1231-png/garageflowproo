@@ -143,6 +143,16 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       if (escrowData) setEscrow(escrowData);
     }
 
+    // Load similar cars (same make or similar price range, exclude current)
+    const { data: similar } = await supabase
+      .from("carity_listings")
+      .select("id, make, model, year, mileage, fuel, price, photos")
+      .eq("status", "published")
+      .neq("id", id!)
+      .or(`make.eq.${listingData.make},price.gte.${Math.max(0, listingData.price - 5000)}.price.lte.${listingData.price + 5000}`)
+      .limit(6);
+    setSimilarListings((similar || []).map((s: any) => ({ ...s, photos: Array.isArray(s.photos) ? s.photos : [] })));
+
     setLoading(false);
   };
 

@@ -615,27 +615,74 @@ export default function AdminCarity() {
 
         {/* === INSPECTIONS === */}
         <TabsContent value="inspections" className="space-y-3 mt-4">
-          {inspections.length === 0 ? <Card><CardContent className="py-8 text-center text-muted-foreground">Sem inspeções</CardContent></Card> : inspections.map(insp => (
-            <Card key={insp.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <h3 className="font-semibold">{insp.carity_listings?.make} {insp.carity_listings?.model} ({insp.carity_listings?.year})</h3>
-                    <p className="text-sm text-muted-foreground">{insp.carity_listings?.plate} · Atribuída: {new Date(insp.assigned_at).toLocaleDateString("pt-PT")}</p>
+          {inspections.length === 0 ? <Card><CardContent className="py-8 text-center text-muted-foreground">Sem inspeções</CardContent></Card> : inspections.map(insp => {
+            const shopName = shops.find(s => s.id === insp.shop_id)?.name || "—";
+            const assignedDate = new Date(insp.assigned_at);
+            const contactedAt = insp.seller_contacted_at ? new Date(insp.seller_contacted_at) : null;
+            const startedAt = insp.started_at ? new Date(insp.started_at) : null;
+            const completedAt = insp.completed_at ? new Date(insp.completed_at) : null;
+            const scheduledDate = (insp as any).scheduled_date;
+            const scheduledTime = (insp as any).scheduled_time;
+
+            // Time between steps
+            const contactDelay = contactedAt ? Math.round((contactedAt.getTime() - assignedDate.getTime()) / 3600000) : null;
+            const inspDuration = startedAt && completedAt ? Math.round((completedAt.getTime() - startedAt.getTime()) / 60000) : null;
+            const noContact = !contactedAt && insp.status === "pending" && (Date.now() - assignedDate.getTime()) > 24 * 3600000;
+
+            return (
+              <Card key={insp.id} className={noContact ? "border-red-300" : ""}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h3 className="font-semibold">{insp.carity_listings?.make} {insp.carity_listings?.model} ({insp.carity_listings?.year})</h3>
+                      <p className="text-sm text-muted-foreground">{insp.carity_listings?.plate} · Oficina: {shopName}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={
+                        insp.status === "pending" ? "bg-amber-100 text-amber-800" :
+                        insp.status === "scheduled" ? "bg-blue-100 text-blue-800" :
+                        insp.status === "in_progress" ? "bg-purple-100 text-purple-800" :
+                        insp.status === "completed" ? "bg-green-100 text-green-800" :
+                        "bg-gray-100 text-gray-800"
+                      }>
+                        {insp.status === "pending" ? "Aguarda contacto" : insp.status === "scheduled" ? "Agendada" : insp.status === "in_progress" ? "Em curso" : insp.status === "completed" ? "Concluída" : insp.status}
+                      </Badge>
+                      <Badge variant="outline">{insp.payment_status === "paid" ? "Pago" : insp.payment_status}</Badge>
+                      <span className="text-sm font-medium">
+                        <span className="text-amber-600">€{Number(insp.platform_share).toFixed(2)}</span>
+                        {" / "}
+                        <span className="text-green-600">€{Number(insp.shop_share).toFixed(2)}</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge>{insp.status === "pending" ? "Pendente" : insp.status === "in_progress" ? "Em curso" : insp.status === "completed" ? "Concluída" : insp.status}</Badge>
-                    <Badge variant="outline">{insp.payment_status === "paid" ? "Pago" : insp.payment_status}</Badge>
-                    <span className="text-sm font-medium">
-                      <span className="text-amber-600">€{Number(insp.platform_share).toFixed(2)}</span>
-                      {" / "}
-                      <span className="text-green-600">€{Number(insp.shop_share).toFixed(2)}</span>
-                    </span>
+
+                  {/* Timeline tracking */}
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="text-muted-foreground">📋 Atribuída: {assignedDate.toLocaleDateString("pt-PT")} {assignedDate.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
+                    {contactedAt && (
+                      <span className="text-blue-600">📱 Contacto: {contactedAt.toLocaleDateString("pt-PT")} ({contactDelay}h depois)</span>
+                    )}
+                    {scheduledDate && (
+                      <span className="text-indigo-600">📅 Agendada: {scheduledDate}{scheduledTime ? ` às ${scheduledTime}` : ""}</span>
+                    )}
+                    {startedAt && (
+                      <span className="text-purple-600">🔧 Iniciada: {startedAt.toLocaleDateString("pt-PT")} {startedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
+                    )}
+                    {completedAt && (
+                      <span className="text-green-600">✅ Concluída: {completedAt.toLocaleDateString("pt-PT")} ({inspDuration}min)</span>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {noContact && (
+                    <p className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      ⚠️ Oficina não contactou o vendedor há mais de 24h — considerar reatribuição
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </TabsContent>
 
         {/* === REPORTS === */}

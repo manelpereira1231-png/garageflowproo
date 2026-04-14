@@ -1,8 +1,10 @@
-import { CheckCircle, Clock, Eye, Search, ShieldCheck, Rocket, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Eye, Search, ShieldCheck, Rocket, XCircle, Phone, CalendarCheck, MapPin } from "lucide-react";
 
 const STEPS = [
   { key: "pending_payment", label: "Submetido", desc: "Aguarda pagamento da inspeção" },
-  { key: "pending_inspection", label: "A aguardar oficina", desc: "Pagamento confirmado, à espera de atribuição" },
+  { key: "pending_inspection", label: "Oficina atribuída", desc: "Pagamento confirmado, oficina selecionada" },
+  { key: "awaiting_contact", label: "A aguardar contacto", desc: "Oficina vai contactar para agendar" },
+  { key: "scheduled", label: "Inspeção agendada", desc: "Data e hora confirmadas" },
   { key: "inspecting", label: "Em inspeção", desc: "Oficina a realizar inspeção" },
   { key: "pending_approval", label: "Aguarda aprovação", desc: "Inspeção concluída, a aguardar validação" },
   { key: "published", label: "Publicado", desc: "Carro visível no marketplace" },
@@ -12,6 +14,8 @@ const STEPS = [
 const ICON_MAP: Record<string, any> = {
   pending_payment: Clock,
   pending_inspection: Search,
+  awaiting_contact: Phone,
+  scheduled: CalendarCheck,
   inspecting: Eye,
   pending_approval: ShieldCheck,
   published: Rocket,
@@ -19,8 +23,34 @@ const ICON_MAP: Record<string, any> = {
   rejected: XCircle,
 };
 
-export default function VehicleTimeline({ status }: { status: string }) {
-  const currentIdx = STEPS.findIndex(s => s.key === status);
+// Map real inspection statuses to timeline steps
+function getTimelineStep(listingStatus: string, inspectionStatus?: string): string {
+  if (listingStatus === "pending_payment") return "pending_payment";
+  if (listingStatus === "pending_inspection") {
+    if (inspectionStatus === "scheduled") return "scheduled";
+    if (inspectionStatus === "pending") return "awaiting_contact";
+    return "pending_inspection";
+  }
+  if (listingStatus === "inspecting" || inspectionStatus === "in_progress") return "inspecting";
+  if (listingStatus === "pending_approval") return "pending_approval";
+  if (listingStatus === "published") return "published";
+  if (listingStatus === "sold") return "sold";
+  if (listingStatus === "rejected") return "rejected";
+  return listingStatus;
+}
+
+interface Props {
+  status: string;
+  inspectionStatus?: string;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  shopName?: string | null;
+  shopAddress?: string | null;
+}
+
+export default function VehicleTimeline({ status, inspectionStatus, scheduledDate, scheduledTime, shopName, shopAddress }: Props) {
+  const effectiveStep = getTimelineStep(status, inspectionStatus);
+  const currentIdx = STEPS.findIndex(s => s.key === effectiveStep);
   const isRejected = status === "rejected";
 
   return (
@@ -30,6 +60,17 @@ export default function VehicleTimeline({ status }: { status: string }) {
           const isDone = i < currentIdx;
           const isCurrent = i === currentIdx;
           const Icon = ICON_MAP[step.key] || Clock;
+
+          // Enrich description with real data
+          let desc = step.desc;
+          if (step.key === "scheduled" && (isDone || isCurrent) && scheduledDate) {
+            desc = `${scheduledDate}${scheduledTime ? ` às ${scheduledTime}` : ""}`;
+            if (shopName) desc += ` — ${shopName}`;
+          }
+          if ((step.key === "awaiting_contact" || step.key === "pending_inspection") && (isDone || isCurrent) && shopName) {
+            desc = `Oficina: ${shopName}`;
+            if (shopAddress) desc += ` · ${shopAddress}`;
+          }
 
           return (
             <div key={step.key} className="flex items-start gap-3 mb-0">
@@ -51,7 +92,7 @@ export default function VehicleTimeline({ status }: { status: string }) {
                   {isDone && <CheckCircle className="inline h-3 w-3 ml-1" />}
                 </p>
                 {(isCurrent || isDone) && (
-                  <p className="text-xs text-muted-foreground">{step.desc}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
                 )}
               </div>
             </div>

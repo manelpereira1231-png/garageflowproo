@@ -5,7 +5,7 @@ import CommandPalette from "@/components/CommandPalette";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
@@ -176,6 +176,33 @@ const PageLoader = () => (
   </div>
 );
 
+const getSafeRedirectPath = (candidate: string | null, fallback: string) => {
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+    return fallback;
+  }
+
+  return candidate;
+};
+
+function LoginRouteRedirect() {
+  const location = useLocation();
+  const redirect = `${location.pathname}${location.search}${location.hash}`;
+  const params = new URLSearchParams({ mode: "login" });
+
+  if (redirect !== "/auth" && redirect !== "/auth?mode=login") {
+    params.set("redirect", redirect);
+  }
+
+  return <Navigate to={`/auth?${params.toString()}`} replace />;
+}
+
+function AuthRouteRedirect({ fallback }: { fallback: string }) {
+  const location = useLocation();
+  const redirect = getSafeRedirectPath(new URLSearchParams(location.search).get("redirect"), fallback);
+
+  return <Navigate to={redirect} replace />;
+}
+
 const adminRoutes = [
   { path: "/admin", element: <AdminDashboard /> },
   { path: "/admin/shops", element: <AdminShops /> },
@@ -319,6 +346,7 @@ function AuthenticatedRoutes() {
             {publicRoutes.map(r => (
               <Route key={r.path} path={r.path} element={r.element} />
             ))}
+            <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" />} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -340,7 +368,7 @@ function AuthenticatedRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
-          <Route path="/auth" element={<Navigate to={defaultRoute} replace />} />
+          <Route path="/auth" element={<AuthRouteRedirect fallback={defaultRoute} />} />
           {publicRoutes.map(r => (
             <Route key={r.path} path={r.path} element={r.element} />
           ))}
@@ -401,6 +429,7 @@ function AppRoutes() {
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />

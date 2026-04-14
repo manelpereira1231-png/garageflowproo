@@ -2405,6 +2405,48 @@ export type Database = {
           },
         ]
       }
+      seller_trust_scores: {
+        Row: {
+          avg_rating: number
+          created_at: string
+          disputed_sales: number
+          id: string
+          score_points: number
+          successful_sales: number
+          total_inspections: number
+          total_sales: number
+          trust_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_rating?: number
+          created_at?: string
+          disputed_sales?: number
+          id?: string
+          score_points?: number
+          successful_sales?: number
+          total_inspections?: number
+          total_sales?: number
+          trust_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_rating?: number
+          created_at?: string
+          disputed_sales?: number
+          id?: string
+          score_points?: number
+          successful_sales?: number
+          total_inspections?: number
+          total_sales?: number
+          trust_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_catalog: {
         Row: {
           active: boolean
@@ -3544,6 +3586,10 @@ export type Database = {
       next_number: {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
+      }
+      recalculate_trust_score: {
+        Args: { _seller_id: string }
+        Returns: undefined
       }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }

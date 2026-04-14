@@ -756,7 +756,7 @@ export default function CarityShopInspections() {
   }
 
   // --- LOADING STATE ---
-  if (loading || isPartner === null) {
+  if (!partnerChecked || (isPartner && isActive && loading)) {
     return (
       <div className="flex justify-center py-20">
         <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />

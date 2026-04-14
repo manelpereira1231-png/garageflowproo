@@ -105,6 +105,7 @@ export default function AdminCarity() {
     setPayouts(payoutsRes.data || []);
     setSaleConfirmations(confirmRes.data || []);
     setEscrows(escrowRes.data || []);
+    setRiskFlags((riskFlagsRes.data as any[]) || []);
     setLoading(false);
   }, []);
 

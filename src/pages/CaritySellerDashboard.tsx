@@ -345,7 +345,8 @@ export default function CaritySellerDashboard() {
             })}
           </div>
         )}
-      </div>
+
+
 
       {/* Mark as Sold Dialog */}
       <Dialog open={!!sellDialog} onOpenChange={o => !o && setSellDialog(null)}>

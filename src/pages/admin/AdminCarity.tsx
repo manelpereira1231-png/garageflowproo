@@ -135,8 +135,12 @@ export default function AdminCarity() {
   // Stats
   const totalListings = listings.length;
   const published = listings.filter(l => l.status === "published").length;
+  const sold = listings.filter(l => l.status === "sold").length;
   const pendingApproval = listings.filter(l => l.status === "pending_approval").length;
-  const totalRevenue = transactions.filter(t => t.status === 'paid').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const paidTransactions = transactions.filter(t => t.status === 'paid');
+  const totalRevenue = paidTransactions.reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const totalInspectionRevenue = paidTransactions.filter(t => t.type === 'inspection_fee').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
+  const totalCommissionRevenue = paidTransactions.filter(t => t.type === 'sale_commission').reduce((sum, t) => sum + Number(t.platform_amount || 0), 0);
   const partnerShops = shops.filter(s => s.is_carity_partner);
 
   // Shop performance
@@ -152,21 +156,21 @@ export default function AdminCarity() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-emerald-600" />
+          <ShieldCheck className="h-6 w-6 text-amber-500" />
           Carity — Gestão Completa
         </h1>
         <p className="text-muted-foreground">Controlo total: carros, inspeções, oficinas parceiras e receita</p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Financial KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card><CardContent className="pt-4 pb-4 text-center">
           <Car className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
           <p className="text-2xl font-bold">{totalListings}</p>
@@ -178,21 +182,53 @@ export default function AdminCarity() {
           <p className="text-xs text-muted-foreground">Publicados</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Clock className="h-5 w-5 mx-auto text-amber-500 mb-1" />
-          <p className="text-2xl font-bold">{pendingApproval}</p>
-          <p className="text-xs text-muted-foreground">Aguardam Aprovação</p>
+          <TrendingUp className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-2xl font-bold">{sold}</p>
+          <p className="text-xs text-muted-foreground">Vendidos</p>
+        </CardContent></Card>
+        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5"><CardContent className="pt-4 pb-4 text-center">
+          <Euro className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+          <p className="text-2xl font-bold text-amber-600">€{totalRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Receita Total</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Building2 className="h-5 w-5 mx-auto text-blue-500 mb-1" />
-          <p className="text-2xl font-bold">{partnerShops.length}</p>
-          <p className="text-xs text-muted-foreground">Oficinas Parceiras</p>
+          <ClipboardCheck className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-2xl font-bold">€{totalInspectionRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Inspeções (35%)</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <Euro className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-          <p className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground">Receita Plataforma</p>
+          <Star className="h-5 w-5 mx-auto text-purple-500 mb-1" />
+          <p className="text-2xl font-bold">€{totalCommissionRevenue.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Comissões (2%)</p>
         </CardContent></Card>
       </div>
+
+      {/* Funnel */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{totalListings}</p>
+              <p className="text-xs text-muted-foreground">Carros Submetidos</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{inspections.length}</p>
+              <p className="text-xs text-muted-foreground">Inspecionados</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold">{published}</p>
+              <p className="text-xs text-muted-foreground">Publicados</p>
+            </div>
+            <span className="text-muted-foreground">→</span>
+            <div className="text-center flex-1">
+              <p className="text-2xl font-bold text-green-600">{sold}</p>
+              <p className="text-xs text-muted-foreground">Vendidos</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>

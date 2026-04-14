@@ -33,7 +33,7 @@ export default function CaritySellerDashboard() {
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth?from=market"); return; }
+    if (!user) { navigate("/market/auth"); return; }
     const { data } = await supabase.from("carity_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false });
     setListings((data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
     setLoading(false);

@@ -405,7 +405,7 @@ export default function LandingPage() {
                 Explorar carros <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link to="/auth?mode=signup&from=market">
+            <Link to="/market/auth?mode=signup">
               <Button size="lg" variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10 h-14 px-8 text-base">
                 Vender o meu carro
               </Button>

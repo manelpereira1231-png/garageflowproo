@@ -75,7 +75,7 @@ export default function AdminCarity() {
   const [viewingReport, setViewingReport] = useState<any | null>(null);
 
   const loadData = useCallback(async () => {
-    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes, walletsRes, payoutsRes, confirmRes] = await Promise.all([
+    const [listingsRes, inspectionsRes, transactionsRes, shopsRes, offersRes, sellersRes, boostsRes, reportsRes, walletsRes, payoutsRes, confirmRes, escrowRes] = await Promise.all([
       supabase.from("carity_listings").select("*").order("created_at", { ascending: false }),
       supabase.from("carity_inspections").select("*, carity_listings(make, model, year, plate, seller_id)").order("assigned_at", { ascending: false }),
       supabase.from("carity_transactions").select("*").order("created_at", { ascending: false }),
@@ -87,6 +87,7 @@ export default function AdminCarity() {
       supabase.from("shop_wallets").select("*, shops(name)").order("balance", { ascending: false }),
       supabase.from("shop_payouts").select("*, shops(name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("sale_confirmations").select("*, carity_listings(make, model, year, plate, price)").order("created_at", { ascending: false }),
+      supabase.from("market_escrow").select("*, carity_listings(make, model, year, plate, price)").order("created_at", { ascending: false }),
     ]);
 
     setListings((listingsRes.data || []).map((l: any) => ({ ...l, photos: Array.isArray(l.photos) ? l.photos : [] })));
@@ -100,6 +101,7 @@ export default function AdminCarity() {
     setWallets(walletsRes.data || []);
     setPayouts(payoutsRes.data || []);
     setSaleConfirmations(confirmRes.data || []);
+    setEscrows(escrowRes.data || []);
     setLoading(false);
   }, []);
 

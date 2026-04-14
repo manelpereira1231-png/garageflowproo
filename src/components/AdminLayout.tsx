@@ -39,9 +39,9 @@ const navSections = [
     ],
   },
   {
-    label: "Marketplace",
+    label: "GarageFlow Market",
     items: [
-      { path: "/admin/carity", label: "GF Market", icon: Car },
+      { path: "/admin/market", label: "Controlo Market", icon: Car },
     ],
   },
   {

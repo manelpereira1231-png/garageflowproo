@@ -92,7 +92,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    document.title = `${listingData.make} ${listingData.model} ${listingData.year} — GarageFlow Market`;
+    document.title = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
+    // Dynamic meta description with real data
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — €${listingData.price?.toLocaleString()}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
+    if (metaDesc) metaDesc.setAttribute("content", descText);
+    else { const m = document.createElement("meta"); m.name = "description"; m.content = descText; document.head.appendChild(m); }
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
       supabase.from("carity_inspection_reports").select("*").eq("listing_id", id).single(),

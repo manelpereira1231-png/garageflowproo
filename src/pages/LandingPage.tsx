@@ -368,6 +368,52 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* GarageFlow Market Section */}
+      <section className="py-16 sm:py-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
+            <Shield className="w-3.5 h-3.5" />
+            Novo: GarageFlow Market
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold mb-4">
+            Marketplace de carros <span className="text-amber-400">certificados</span>
+          </h2>
+          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto mb-8">
+            Todos os carros no GarageFlow Market são inspecionados por oficinas certificadas. 
+            Compre com confiança ou venda mais rápido com inspeção profissional.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 max-w-3xl mx-auto text-left">
+            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+              <CheckCircle className="w-6 h-6 text-amber-400 mb-3" />
+              <h3 className="font-semibold mb-1">Inspeção certificada</h3>
+              <p className="text-sm text-slate-400">Relatório técnico completo por oficinas reais</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+              <Shield className="w-6 h-6 text-amber-400 mb-3" />
+              <h3 className="font-semibold mb-1">Compra segura</h3>
+              <p className="text-sm text-slate-400">Score de qualidade transparente em cada carro</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+              <Zap className="w-6 h-6 text-amber-400 mb-3" />
+              <h3 className="font-semibold mb-1">Venda rápida</h3>
+              <p className="text-sm text-slate-400">Carros certificados vendem até 3x mais rápido</p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/market">
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold h-14 px-10 text-base">
+                Explorar carros <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link to="/auth?mode=signup&from=market">
+              <Button size="lg" variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10 h-14 px-8 text-base">
+                Vender o meu carro
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Final */}
       <section className="py-16 sm:py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="max-w-2xl mx-auto">
@@ -379,11 +425,6 @@ export default function LandingPage() {
             <Link to="/auth?mode=signup" className="w-full sm:w-auto">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto btn-interactive">
-                {t('landing.ctaButton')}
               </Button>
             </Link>
           </div>

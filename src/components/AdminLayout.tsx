@@ -41,7 +41,7 @@ const navSections = [
   {
     label: "Marketplace",
     items: [
-      { path: "/admin/carity", label: "Carity", icon: Car },
+      { path: "/admin/carity", label: "GF Market", icon: Car },
     ],
   },
   {

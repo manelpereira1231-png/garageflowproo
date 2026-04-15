@@ -107,6 +107,18 @@ export default function AdminCarity() {
     setSaleConfirmations(confirmRes.data || []);
     setEscrows(escrowRes.data || []);
     setRiskFlags((riskFlagsRes.data as any[]) || []);
+
+    // Fetch seller emails via secure function
+    const sellerUserIds = (sellersRes.data || []).map((s: any) => s.user_id).filter(Boolean);
+    if (sellerUserIds.length > 0) {
+      const { data: emailData } = await supabase.rpc("get_seller_emails", { seller_ids: sellerUserIds });
+      if (emailData) {
+        const emailMap: Record<string, string> = {};
+        (emailData as any[]).forEach((e: any) => { emailMap[e.user_id] = e.email; });
+        setSellerEmails(emailMap);
+      }
+    }
+
     setLoading(false);
   }, []);
 

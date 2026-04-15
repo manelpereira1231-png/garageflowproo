@@ -346,67 +346,79 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* LAYER 1: SIMPLIFIED VIEW (Quick Decision) */}
-                  <div className="border-2 border-amber-200 dark:border-amber-800 rounded-xl p-6 bg-amber-50/30 dark:bg-amber-900/5">
-                    <p className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 mb-4">📊 Visão Rápida — Decisão de Compra</p>
+                  {/* LAYER 1: EXECUTIVE SUMMARY */}
+                  <div className="border border-border rounded-xl p-6 bg-muted/20">
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="h-1 w-6 bg-amber-500 rounded-full" />
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Resumo Executivo da Inspeção</p>
+                    </div>
                     
-                    <div className="flex items-center justify-center gap-6 mb-4">
+                    <div className="flex items-center justify-center gap-6 mb-6">
                       <div className="text-center">
-                        <div className={`inline-flex items-center gap-2 rounded-xl px-6 py-3 ${
-                          report.overall_score >= 80 ? 'bg-green-100 dark:bg-green-900/30' :
-                          report.overall_score >= 60 ? 'bg-amber-100 dark:bg-amber-900/30' :
-                          'bg-red-100 dark:bg-red-900/30'
+                        <div className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 border-2 ${
+                          report.overall_score >= 80 ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20' :
+                          report.overall_score >= 60 ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20' :
+                          'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
                         }`}>
-                          <Star className={`h-8 w-8 ${report.overall_score >= 80 ? 'text-green-500 fill-green-500' : report.overall_score >= 60 ? 'text-amber-500 fill-amber-500' : 'text-red-500 fill-red-500'}`} />
-                          <span className={`text-4xl font-bold ${
+                          <ShieldCheck className={`h-7 w-7 ${report.overall_score >= 80 ? 'text-green-600' : report.overall_score >= 60 ? 'text-amber-600' : 'text-red-600'}`} />
+                          <span className={`text-4xl font-bold tracking-tight ${
                             report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
                             report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
                             'text-red-700 dark:text-red-400'
                           }`}>{report.overall_score}</span>
-                          <span className="text-xl text-muted-foreground">/100</span>
+                          <span className="text-lg text-muted-foreground font-medium">/100</span>
                         </div>
-                        <p className="text-sm font-semibold mt-2">
-                          {report.overall_score >= 80 ? '🟢 Excelente estado' :
-                           report.overall_score >= 60 ? '🟡 Bom estado — verificar detalhes' :
-                           '🔴 Necessita atenção significativa'}
+                        <p className="text-sm font-medium mt-3 text-foreground">
+                          {report.overall_score >= 80 ? 'Veículo em excelente estado geral' :
+                           report.overall_score >= 60 ? 'Estado aceitável — consultar detalhes técnicos' :
+                           'Necessita intervenção — análise detalhada recomendada'}
                         </p>
                       </div>
                     </div>
 
-                    {/* Risk summary */}
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-2 rounded-lg bg-background">
-                        <p className="text-xs text-muted-foreground">Nível de Risco</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-background border text-center">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Nível de Risco</p>
                         <p className={`font-bold text-sm ${report.overall_score >= 80 ? 'text-green-600' : report.overall_score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                           {report.overall_score >= 80 ? 'Baixo' : report.overall_score >= 60 ? 'Moderado' : 'Elevado'}
                         </p>
                       </div>
-                      <div className="p-2 rounded-lg bg-background">
-                        <p className="text-xs text-muted-foreground">Problemas</p>
-                        <p className="font-bold text-sm">{report.defects?.length || 0} encontrado{(report.defects?.length || 0) !== 1 ? 's' : ''}</p>
+                      <div className="p-3 rounded-lg bg-background border text-center">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Anomalias</p>
+                        <p className="font-bold text-sm">{report.defects?.length || 0} registada{(report.defects?.length || 0) !== 1 ? 's' : ''}</p>
                       </div>
-                      <div className="p-2 rounded-lg bg-background">
-                        <p className="text-xs text-muted-foreground">Certificação</p>
-                        <p className="font-bold text-sm text-green-600">✓ Verificado</p>
+                      <div className="p-3 rounded-lg bg-background border text-center">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Certificação</p>
+                        <p className="font-bold text-sm text-green-600 flex items-center justify-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Validado</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Workshop info with reputation */}
                   {shopInfo && (
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-lg border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <FileCheck className="h-5 w-5 text-amber-500" />
-                        <p className="font-semibold">Inspecionado por <span className="text-amber-700 dark:text-amber-400">{shopInfo.name}</span></p>
+                    <div className="p-4 bg-muted/30 rounded-lg border">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                          <FileCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">Inspeção realizada por <span className="text-amber-700 dark:text-amber-400">{shopInfo.name}</span></p>
+                          <p className="text-xs text-muted-foreground">Oficina parceira certificada GarageFlow</p>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                        {shopInfo.carity_inspections_count > 0 && <span>📋 {shopInfo.carity_inspections_count} inspeções realizadas</span>}
-                        {shopInfo.carity_approval_rate > 0 && <span>✅ {shopInfo.carity_approval_rate}% taxa de aprovação</span>}
-                        {shopInfo.carity_rating > 0 && <span>⭐ {shopInfo.carity_rating}/5 classificação</span>}
-                        <span className="text-amber-600 dark:text-amber-400 font-medium">Oficina certificada GarageFlow</span>
+                      <Separator className="my-3" />
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        {shopInfo.carity_inspections_count > 0 && (
+                          <span className="flex items-center gap-1.5"><FileCheck className="h-3.5 w-3.5" /> {shopInfo.carity_inspections_count} inspeções realizadas</span>
+                        )}
+                        {shopInfo.carity_approval_rate > 0 && (
+                          <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5" /> {shopInfo.carity_approval_rate}% taxa de aprovação</span>
+                        )}
+                        {shopInfo.carity_rating > 0 && (
+                          <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5" /> {shopInfo.carity_rating}/5 classificação</span>
+                        )}
                       </div>
                       {(report as any).technician_name && (
-                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 pt-2 border-t">
                           <Lock className="h-3 w-3" />
                           Técnico responsável: <strong>{(report as any).technician_name}</strong>
                         </p>
@@ -414,36 +426,36 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     </div>
                   )}
 
-                  {/* LAYER 2: DETAILED VIEW (Full Transparency) */}
                   <div className="border rounded-lg">
                     <button 
                       onClick={() => {
                         const el = document.getElementById('detailed-report');
                         if (el) el.classList.toggle('hidden');
                       }}
-                      className="w-full p-3 flex items-center justify-between hover:bg-muted/50 rounded-t-lg"
+                      className="w-full p-4 flex items-center justify-between hover:bg-muted/50 rounded-t-lg transition-colors"
                     >
                       <span className="text-sm font-semibold flex items-center gap-2">
-                        <Eye className="h-4 w-4" /> Ver Relatório Técnico Completo
+                        <Eye className="h-4 w-4" /> Relatório Técnico Completo
                       </span>
-                      <span className="text-xs text-muted-foreground">Checklist · Fotos · Defeitos · Assinatura Digital</span>
+                      <span className="text-[11px] text-muted-foreground">Checklist mecânico · Documentação fotográfica · Anomalias · Certificação digital</span>
                     </button>
 
-                    <div id="detailed-report" className="hidden border-t p-4 space-y-6">
-                      {/* Mechanical checklist */}
+                    <div id="detailed-report" className="hidden border-t p-5 space-y-6">
                       <div>
-                        <h3 className="font-semibold mb-3">Checklist Mecânico</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+                          <div className="h-1 w-4 bg-primary rounded-full" /> Checklist de Inspeção Mecânica
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
                             const status = report[key] || 'ok';
                             const config = STATUS_ICON[status] || STATUS_ICON.ok;
                             const Icon = config.icon;
                             return (
-                              <div key={key} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                <span className="font-medium">{label}</span>
+                              <div key={key} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+                                <span className="font-medium text-sm">{label}</span>
                                 <div className={`flex items-center gap-1.5 ${config.color}`}>
                                   <Icon className="h-4 w-4" />
-                                  <span className="text-sm font-medium">{config.label}</span>
+                                  <span className="text-xs font-semibold">{config.label}</span>
                                 </div>
                               </div>
                             );
@@ -451,16 +463,17 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         </div>
                       </div>
 
-                      {/* Defects with evidence */}
                       {report.defects.length > 0 && (
                         <div>
-                          <h3 className="font-semibold mb-3">Problemas Identificados ({report.defects.length})</h3>
+                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+                            <div className="h-1 w-4 bg-destructive rounded-full" /> Anomalias Identificadas ({report.defects.length})
+                          </h3>
                           <div className="space-y-2">
                             {report.defects.map((defect: any, i: number) => (
-                              <div key={i} className={`flex items-start gap-2 p-3 rounded-lg ${
-                                defect.severity === 'grave' ? 'bg-red-50 dark:bg-red-900/10' :
-                                defect.severity === 'medio' ? 'bg-amber-50 dark:bg-amber-900/10' :
-                                'bg-blue-50 dark:bg-blue-900/10'
+                              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${
+                                defect.severity === 'grave' ? 'border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-900/10' :
+                                defect.severity === 'medio' ? 'border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/10' :
+                                'border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/10'
                               }`}>
                                 <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
                                   defect.severity === 'grave' ? 'text-red-500' :
@@ -469,8 +482,8 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                                 <div>
                                   <p className="font-medium text-sm">{defect.description || defect}</p>
                                   {defect.severity && (
-                                    <Badge variant="outline" className="mt-1 text-xs">
-                                      {defect.severity === 'grave' ? '⚠️ Grave — Segurança/Estrutural' : defect.severity === 'medio' ? '⚡ Médio — Funcional' : '💡 Leve — Cosmético'}
+                                    <Badge variant="outline" className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider">
+                                      {defect.severity === 'grave' ? 'Gravidade: Alta — Segurança / Estrutural' : defect.severity === 'medio' ? 'Gravidade: Média — Funcional' : 'Gravidade: Baixa — Cosmético'}
                                     </Badge>
                                   )}
                                 </div>
@@ -480,43 +493,67 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         </div>
                       )}
 
-                      {/* Damage photos */}
                       {report.damage_photos.length > 0 && (
                         <div>
-                          <h3 className="font-semibold mb-3">📸 Prova Fotográfica de Danos</h3>
+                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+                            <div className="h-1 w-4 bg-amber-500 rounded-full" /> Documentação Fotográfica de Anomalias
+                          </h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {report.damage_photos.map((photo: string, i: number) => (
-                              <img key={i} src={photo} alt="Dano documentado" className="rounded-lg w-full aspect-square object-cover border" />
+                              <img key={i} src={photo} alt={`Anomalia documentada ${i + 1}`} className="rounded-lg w-full aspect-square object-cover border" />
                             ))}
                           </div>
                         </div>
                       )}
 
-                      {/* Inspector notes */}
                       {report.inspector_notes && (
                         <div>
-                          <h3 className="font-semibold mb-2">Notas do Inspetor</h3>
-                          <p className="text-muted-foreground whitespace-pre-line">{report.inspector_notes}</p>
+                          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-foreground">
+                            <div className="h-1 w-4 bg-primary rounded-full" /> Observações do Técnico
+                          </h3>
+                          <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{report.inspector_notes}</p>
+                          </div>
                         </div>
                       )}
 
-                      {/* Digital signature / integrity */}
-                      <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-4 border">
-                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
-                          <Hash className="h-3.5 w-3.5" /> Assinatura Digital do Relatório
+                      <div className="bg-muted/40 rounded-lg p-4 border">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                          <Hash className="h-3.5 w-3.5" /> Certificação Digital e Integridade
                         </p>
-                        <div className="space-y-1 text-xs text-muted-foreground">
-                          <p>📌 ID: <code className="bg-muted px-1 rounded">{report.id?.slice(0, 8)}...</code></p>
-                          {(report as any).technician_name && <p>👤 Técnico: <strong>{(report as any).technician_name}</strong></p>}
-                          {shopInfo && <p>🏪 Oficina: <strong>{shopInfo.name}</strong></p>}
-                          {report.completed_at && <p>📅 Data: <strong>{new Date(report.completed_at).toLocaleString('pt-PT')}</strong></p>}
+                        <div className="space-y-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground/70 w-20 flex-shrink-0">Referência</span>
+                            <code className="bg-muted px-1.5 py-0.5 rounded text-[11px]">{report.id?.slice(0, 8)}...</code>
+                          </div>
+                          {(report as any).technician_name && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground/70 w-20 flex-shrink-0">Técnico</span>
+                              <strong>{(report as any).technician_name}</strong>
+                            </div>
+                          )}
+                          {shopInfo && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground/70 w-20 flex-shrink-0">Oficina</span>
+                              <strong>{shopInfo.name}</strong>
+                            </div>
+                          )}
+                          {report.completed_at && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground/70 w-20 flex-shrink-0">Data</span>
+                              <strong>{new Date(report.completed_at).toLocaleString('pt-PT')}</strong>
+                            </div>
+                          )}
                           {(report as any).report_hash && (
-                            <p>🔐 Hash SHA-256: <code className="bg-muted px-1 rounded text-[10px] break-all">{(report as any).report_hash?.slice(0, 32)}...</code></p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground/70 w-20 flex-shrink-0">Hash</span>
+                              <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] break-all font-mono">{(report as any).report_hash?.slice(0, 32)}...</code>
+                            </div>
                           )}
                           {(report as any).is_locked && (
-                            <p className="text-green-600 dark:text-green-400 font-semibold mt-1 flex items-center gap-1">
-                              <Lock className="h-3 w-3" /> Relatório bloqueado e imutável — integridade garantida
-                            </p>
+                            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold mt-2 pt-2 border-t border-border/50">
+                              <Lock className="h-3 w-3" /> Relatório selado — integridade garantida e imutável
+                            </div>
                           )}
                         </div>
                       </div>

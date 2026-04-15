@@ -672,7 +672,8 @@ export default function AdminCarity() {
                         <h3 className="font-semibold">{seller.name || "Sem nome"}</h3>
                         {seller.verified && <Badge className="bg-green-100 text-green-800 border-0 text-xs">Verificado</Badge>}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                        {sellerEmails[seller.user_id] && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {sellerEmails[seller.user_id]}</span>}
                         {seller.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {seller.phone}</span>}
                         {seller.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {seller.location}</span>}
                         <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(seller.created_at).toLocaleDateString("pt-PT")}</span>

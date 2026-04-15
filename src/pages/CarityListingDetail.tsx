@@ -303,7 +303,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <Fuel className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.fuel}</p><p className="text-xs text-muted-foreground">Combustível</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
-                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score || '-'}/100</p><p className="text-xs text-muted-foreground">Classificação</p>
+                    <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score ? (report.overall_score / 10).toFixed(1) : '-'}/10</p><p className="text-xs text-muted-foreground">Classificação</p>
                   </div>
                 </div>
 
@@ -367,8 +367,8 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                             report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
                             report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
                             'text-red-700 dark:text-red-400'
-                          }`}>{report.overall_score}</span>
-                          <span className="text-lg text-muted-foreground font-medium">/100</span>
+                          }`}>{(report.overall_score / 10).toFixed(1)}</span>
+                          <span className="text-lg text-muted-foreground font-medium">/10</span>
                         </div>
                         <p className="text-sm font-medium mt-3 text-foreground">
                           {report.overall_score >= 80 ? 'Veículo em excelente estado geral' :
@@ -595,15 +595,20 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {buying ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
                       ) : (
-                        <><CreditCard className="h-5 w-5 mr-2" /> Comprar com Escrow — €{listing.price.toLocaleString()}</>
+                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — €{listing.price.toLocaleString()}</>
                       )}
                     </Button>
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                       <div className="flex items-start gap-2">
                         <Shield className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                          <p className="font-semibold">Proteção Escrow GarageFlow</p>
-                          <p>O seu dinheiro fica retido até confirmar a entrega do veículo. Sem surpresas.</p>
+                          <p className="font-semibold">Pagamento Protegido GarageFlow</p>
+                          <p>O valor fica retido em segurança. Só é libertado quando confirmar a receção do veículo. Se algo correr mal, pode abrir disputa.</p>
+                          <ol className="list-decimal list-inside mt-1 space-y-0.5 text-[10px]">
+                            <li>Paga com segurança (Stripe)</li>
+                            <li>Dinheiro retido até entrega</li>
+                            <li>Confirma receção → vendedor recebe</li>
+                          </ol>
                         </div>
                       </div>
                     </div>
@@ -725,7 +730,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 )}
 
-                <p className="text-xs text-center text-muted-foreground">🛡️ Escrow seguro via Stripe • Comissão de 2% incluída</p>
+                <p className="text-xs text-center text-muted-foreground">🛡️ Pagamento protegido via Stripe • Comissão de 2% incluída</p>
               </CardContent>
             </Card>
 

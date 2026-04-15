@@ -175,7 +175,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       const { data, error } = await supabase.functions.invoke("market-escrow-checkout", {
         body: { listing_id: id },
       });
-      if (error) throw error;
+
+      const functionMessage = (error as any)?.context?.error || (error as any)?.context?.message || data?.error;
+      if (error) throw new Error(functionMessage || error.message || "Erro ao iniciar pagamento");
       if (data?.url) {
         window.location.href = data.url;
       } else {

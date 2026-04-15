@@ -53,3 +53,9 @@ verify_jwt = false
 
 [functions.carity-pay-inspection]
 verify_jwt = false
+
+[functions.market-escrow-checkout]
+verify_jwt = false
+
+[functions.market-escrow-manage]
+verify_jwt = false

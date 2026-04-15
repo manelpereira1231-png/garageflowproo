@@ -805,7 +805,17 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         )}
       </div>
 
-      {/* JSON-LD Vehicle structured data */}
+      {/* JSON-LD: BreadcrumbList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "GarageFlow Market", "item": "https://garageflow.pt/market" },
+          { "@type": "ListItem", "position": 2, "name": listing.make, "item": `https://garageflow.pt/market/make/${encodeURIComponent(listing.make)}` },
+          { "@type": "ListItem", "position": 3, "name": `${listing.make} ${listing.model} ${listing.year}` },
+        ]
+      })}} />
+      {/* JSON-LD: Vehicle + Product */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Vehicle",
@@ -826,8 +836,15 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },
         "image": listing.photos[0] || undefined,
-        "description": `${listing.make} ${listing.model} ${listing.year} — €${listing.price?.toLocaleString()}, ${listing.mileage?.toLocaleString()} km. Inspeção certificada GarageFlow Market.`,
+        "description": `${listing.make} ${listing.model} ${listing.year} — €${listing.price?.toLocaleString()}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção certificada GarageFlow Market.`,
         ...(shopInfo ? { "provider": { "@type": "AutoRepair", "name": shopInfo.name } } : {}),
+        ...(report ? {
+          "additionalProperty": [
+            { "@type": "PropertyValue", "name": "Classificação de Inspeção", "value": `${(report.overall_score / 10).toFixed(1)}/10` },
+            { "@type": "PropertyValue", "name": "Recomendação", "value": report.recommendation === 'recommended' ? 'Recomendado' : report.recommendation === 'acceptable' ? 'Aceitável' : 'Não recomendado' },
+            { "@type": "PropertyValue", "name": "Anomalias", "value": `${report.defects?.length || 0} registadas` },
+          ]
+        } : {}),
       })}} />
     </div>
   );

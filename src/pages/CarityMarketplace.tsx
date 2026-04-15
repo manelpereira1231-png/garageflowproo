@@ -325,10 +325,19 @@ export default function CarityMarketplace() {
                       <div className="flex items-center justify-center h-full"><Car className="h-12 w-12 text-muted-foreground/30" /></div>
                     )}
                     <Badge className="absolute top-3 left-3 bg-green-600 text-white border-0 shadow-md">
-                      <ShieldCheck className="h-3 w-3 mr-1" /> Inspecionado ✓
+                      <ShieldCheck className="h-3 w-3 mr-1" /> Inspecionado
                     </Badge>
+                    {listing.inspection_score != null && (
+                      <Badge className={`absolute top-3 right-3 border-0 shadow-md font-bold ${
+                        listing.inspection_score >= 80 ? 'bg-green-600 text-white' :
+                        listing.inspection_score >= 60 ? 'bg-amber-500 text-white' :
+                        'bg-red-600 text-white'
+                      }`}>
+                        {(listing.inspection_score / 10).toFixed(1)}/10
+                      </Badge>
+                    )}
                     {listing.boost_active && (
-                      <Badge className="absolute top-3 right-3 bg-purple-600 text-white border-0">⚡ Destaque</Badge>
+                      <Badge className="absolute bottom-3 right-3 bg-purple-600 text-white border-0">⚡ Destaque</Badge>
                     )}
                   </div>
                   <CardContent className="p-4">
@@ -338,18 +347,34 @@ export default function CarityMarketplace() {
                       <span className="flex items-center gap-1"><Gauge className="h-3.5 w-3.5" />{listing.mileage.toLocaleString()} km</span>
                       <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" />{listing.fuel}</span>
                     </div>
+                    {/* Estado geral do veículo */}
+                    {listing.inspection_score != null && (
+                      <p className={`text-xs font-semibold mb-2 ${
+                        listing.inspection_score >= 80 ? 'text-green-600 dark:text-green-400' :
+                        listing.inspection_score >= 60 ? 'text-amber-600 dark:text-amber-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {listing.inspection_score >= 80 ? '● Excelente estado' :
+                         listing.inspection_score >= 60 ? '● Bom estado' :
+                         '● Necessita atenção'}
+                      </p>
+                    )}
                     {/* Oficina responsável */}
                     {listing.shop_name && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
                         <Wrench className="h-3 w-3 text-amber-500" />
                         Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span>
                       </p>
                     )}
-                    {listing.published_at && (
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Publicado a {new Date(listing.published_at).toLocaleDateString("pt-PT")}
-                      </p>
-                    )}
+                    {/* Publicado há X dias */}
+                    {listing.published_at && (() => {
+                      const days = Math.floor((Date.now() - new Date(listing.published_at!).getTime()) / 86400000);
+                      return (
+                        <p className={`text-xs mb-2 ${days <= 3 ? 'text-green-600 font-semibold' : 'text-muted-foreground'}`}>
+                          {days === 0 ? '🔥 Publicado hoje' : days <= 3 ? `🆕 Publicado há ${days} dia${days > 1 ? 's' : ''}` : `Publicado há ${days} dias`}
+                        </p>
+                      );
+                    })()}
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</span>
                       <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400">

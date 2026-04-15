@@ -48,14 +48,22 @@ serve(async (req) => {
     if (listing.price <= 0) throw new Error("Preço inválido");
 
     // Check if there's already an active escrow for this listing
-    const { data: existingEscrow } = await supabaseAdmin
+    const { data: existingEscrows } = await supabaseAdmin
       .from("market_escrow")
-      .select("id, status")
+      .select("id, status, stripe_session_id, created_at")
       .eq("listing_id", listing_id)
       .in("status", ["pending", "paid", "delivery_confirmed"])
-      .maybeSingle();
+      .order("created_at", { ascending: false });
 
-    if (existingEscrow) throw new Error("Já existe uma transação ativa para este carro");
+    const blockingEscrow = (existingEscrows || []).find((item) => item.status !== "pending")
+      || (existingEscrows || []).find((item) => {
+        if (item.status !== "pending") return false;
+        const createdAt = new Date(item.created_at).getTime();
+        const ageMs = Date.now() - createdAt;
+        return ageMs < 30 * 60 * 1000;
+      });
+
+    if (blockingEscrow) throw new Error("Já existe uma transação ativa para este carro");
 
     // Calculate amounts
     const commissionRate = 2; // 2%

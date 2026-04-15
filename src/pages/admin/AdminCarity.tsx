@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star,
   Loader2, Send, ClipboardCheck, User, MapPin, Phone, Eye, Edit, Trash2, Zap, Search,
-  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar, Wallet, Tag, BanknoteIcon, Shield,
+  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar, Wallet, Tag, BanknoteIcon, Shield, Mail,
 } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {

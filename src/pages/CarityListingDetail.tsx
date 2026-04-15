@@ -262,11 +262,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   <div className="flex items-center justify-center h-full"><Car className="h-16 w-16 text-muted-foreground/30" /></div>
                 )}
                 <div className="absolute top-4 left-4 flex gap-2">
-                  <Badge className="bg-slate-900 text-amber-400 border-0">
-                    <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Inspecionado
+                  <Badge className="bg-white/95 backdrop-blur-sm text-slate-800 border-0 shadow-sm font-semibold">
+                    <ShieldCheck className="h-3.5 w-3.5 mr-1 text-green-600" /> Veículo Inspecionado
                   </Badge>
                   {listing.boost_active && (
-                    <Badge className="bg-purple-600 text-white border-0">⭐ Destaque</Badge>
+                    <Badge className="bg-purple-600/90 backdrop-blur-sm text-white border-0">Destaque</Badge>
                   )}
                 </div>
               </div>
@@ -285,10 +285,10 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             {/* Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">{listing.make} {listing.model}</CardTitle>
+                <CardTitle className="text-2xl">{listing.make} {listing.model} <span className="text-muted-foreground font-normal text-lg ml-1">{listing.year}</span></CardTitle>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {daysSincePublished <= 3 && <Badge variant="outline" className="text-green-600 border-green-200">🆕 Publicado há {daysSincePublished || 1} dia{daysSincePublished !== 1 ? 's' : ''}</Badge>}
-                  {daysSincePublished > 3 && daysSincePublished <= 14 && <Badge variant="outline"><Clock className="h-3 w-3 mr-1" /> Publicado há {daysSincePublished} dias</Badge>}
+                  {daysSincePublished <= 3 && <Badge variant="outline" className="text-green-600 border-green-200 text-[11px]">Novo — publicado há {daysSincePublished || 1} dia{daysSincePublished !== 1 ? 's' : ''}</Badge>}
+                  {daysSincePublished > 3 && daysSincePublished <= 14 && <Badge variant="outline" className="text-[11px]"><Clock className="h-3 w-3 mr-1" /> Publicado há {daysSincePublished} dias</Badge>}
                 </div>
               </CardHeader>
               <CardContent>
@@ -312,7 +312,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <CheckCircle className="h-3 w-3 mr-1" /> Inspeção feita
                   </Badge>
                   <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
-                    <Shield className="h-3 w-3 mr-1" /> Proteção Escrow
+                    <Shield className="h-3 w-3 mr-1" /> Pagamento Protegido
                   </Badge>
                   {totalVerified > 0 && (
                     <Badge className="bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300">
@@ -663,15 +663,15 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 {/* Seller sees escrow notification */}
                 {isSellerInEscrow && escrow?.status === "paid" && (
                   <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-300">💰 Comprador pagou €{escrow.amount?.toLocaleString()}</p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Os fundos estão em escrow. Serão libertados quando o comprador confirmar a entrega.</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-300">Comprador pagou €{escrow.amount?.toLocaleString()}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Os fundos estão retidos em segurança. Serão libertados quando o comprador confirmar a receção do veículo.</p>
                   </div>
                 )}
 
                 {/* Dispute info for seller */}
                 {isSellerInEscrow && escrow?.status === "disputed" && (
                   <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg text-sm space-y-2">
-                    <p className="font-medium text-red-800 dark:text-red-300">⚠️ Disputa aberta pelo comprador</p>
+                    <p className="font-medium text-red-800 dark:text-red-300">Disputa aberta pelo comprador</p>
                     <p className="text-xs text-red-600 dark:text-red-400">{escrow.buyer_dispute_reason}</p>
                     {!escrow.seller_dispute_response && (
                       <Textarea
@@ -730,7 +730,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 )}
 
-                <p className="text-xs text-center text-muted-foreground">🛡️ Pagamento protegido via Stripe • Comissão de 2% incluída</p>
+                <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1.5"><Shield className="h-3 w-3" /> Pagamento protegido via Stripe · Comissão de 2% incluída</p>
               </CardContent>
             </Card>
 

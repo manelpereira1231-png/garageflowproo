@@ -324,70 +324,81 @@ export default function CarityMarketplace() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(listing => (
               <Link key={listing.id} to={listingUrl(listing)}>
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
-                  <div className="aspect-video bg-muted relative overflow-hidden">
+                <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 shadow-sm">
+                  <div className="aspect-[16/10] bg-muted relative overflow-hidden">
                     {listing.photos[0] ? (
-                      <img src={listing.photos[0] as string} alt={`${listing.make} ${listing.model} ${listing.year}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      <img src={listing.photos[0] as string} alt={`${listing.make} ${listing.model} ${listing.year}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                     ) : (
-                      <div className="flex items-center justify-center h-full"><Car className="h-12 w-12 text-muted-foreground/30" /></div>
+                      <div className="flex items-center justify-center h-full bg-slate-100 dark:bg-slate-800"><Car className="h-12 w-12 text-muted-foreground/20" /></div>
                     )}
-                    <Badge className="absolute top-3 left-3 bg-green-600 text-white border-0 shadow-md">
-                      <ShieldCheck className="h-3 w-3 mr-1" /> Inspecionado
-                    </Badge>
-                    {listing.inspection_score != null && (
-                      <Badge className={`absolute top-3 right-3 border-0 shadow-md font-bold ${
-                        listing.inspection_score >= 80 ? 'bg-green-600 text-white' :
-                        listing.inspection_score >= 60 ? 'bg-amber-500 text-white' :
-                        'bg-red-600 text-white'
-                      }`}>
-                        {(listing.inspection_score / 10).toFixed(1)}/10
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    <div className="absolute top-3 left-3 flex gap-2">
+                      <Badge className="bg-white/95 text-slate-800 border-0 shadow-sm text-[11px] font-semibold backdrop-blur-sm">
+                        <ShieldCheck className="h-3 w-3 mr-1 text-green-600" /> Inspecionado
                       </Badge>
+                    </div>
+                    {listing.inspection_score != null && (
+                      <div className={`absolute top-3 right-3 h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg ${
+                        listing.inspection_score >= 80 ? 'bg-green-500 text-white' :
+                        listing.inspection_score >= 60 ? 'bg-amber-500 text-white' :
+                        'bg-red-500 text-white'
+                      }`}>
+                        {(listing.inspection_score / 10).toFixed(1)}
+                      </div>
                     )}
                     {listing.boost_active && (
-                      <Badge className="absolute bottom-3 right-3 bg-purple-600 text-white border-0">⚡ Destaque</Badge>
+                      <Badge className="absolute bottom-3 left-3 bg-purple-600/90 text-white border-0 backdrop-blur-sm text-[10px]">Destaque</Badge>
                     )}
+                    {/* Price overlay */}
+                    <div className="absolute bottom-3 right-3">
+                      <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
+                        €{listing.price.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-1">{listing.make} {listing.model}</h3>
-                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{listing.year}</span>
-                      <span className="flex items-center gap-1"><Gauge className="h-3.5 w-3.5" />{listing.mileage.toLocaleString()} km</span>
-                      <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" />{listing.fuel}</span>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-bold text-base leading-tight">{listing.make} {listing.model}</h3>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span>{listing.year}</span>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span>{listing.mileage.toLocaleString()} km</span>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span>{listing.fuel}</span>
+                        </div>
+                      </div>
                     </div>
-                    {/* Estado geral do veículo */}
+                    {/* Estado geral */}
                     {listing.inspection_score != null && (
-                      <p className={`text-xs font-semibold mb-2 ${
-                        listing.inspection_score >= 80 ? 'text-green-600 dark:text-green-400' :
-                        listing.inspection_score >= 60 ? 'text-amber-600 dark:text-amber-400' :
-                        'text-red-600 dark:text-red-400'
+                      <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 ${
+                        listing.inspection_score >= 80 ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                        listing.inspection_score >= 60 ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
+                        'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                       }`}>
-                        {listing.inspection_score >= 80 ? '● Excelente estado' :
-                         listing.inspection_score >= 60 ? '● Bom estado' :
-                         '● Necessita atenção'}
-                      </p>
+                        <CheckCircle className="h-3 w-3" />
+                        {listing.inspection_score >= 80 ? 'Excelente estado mecânico' :
+                         listing.inspection_score >= 60 ? 'Bom estado geral' :
+                         'Necessita intervenção'}
+                      </div>
                     )}
-                    {/* Oficina responsável */}
+                    {/* Oficina */}
                     {listing.shop_name && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                        <Wrench className="h-3 w-3 text-amber-500" />
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
+                        <Wrench className="h-3 w-3 text-slate-400" />
                         Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span>
                       </p>
                     )}
-                    {/* Publicado há X dias */}
+                    {/* Publicado há X dias — sem emojis */}
                     {listing.published_at && (() => {
                       const days = Math.floor((Date.now() - new Date(listing.published_at!).getTime()) / 86400000);
                       return (
-                        <p className={`text-xs mb-2 ${days <= 3 ? 'text-green-600 font-semibold' : 'text-muted-foreground'}`}>
-                          {days === 0 ? '🔥 Publicado hoje' : days <= 3 ? `🆕 Publicado há ${days} dia${days > 1 ? 's' : ''}` : `Publicado há ${days} dias`}
+                        <p className={`text-[11px] ${days <= 3 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
+                          {days === 0 ? 'Publicado hoje' : `Publicado há ${days} dia${days > 1 ? 's' : ''}`}
                         </p>
                       );
                     })()}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</span>
-                      <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400">
-                        Ver detalhes <Eye className="ml-1 h-3.5 w-3.5" />
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </Link>
@@ -397,15 +408,16 @@ export default function CarityMarketplace() {
       </section>
 
       {/* CTA Sell */}
-      <section className="py-16 bg-slate-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold mb-4">Quer vender o seu carro?</h2>
-          <p className="text-slate-300 mb-6">
-            Submeta o seu carro, pague apenas €24,90 pela inspeção oficial e venda com a confiança de um relatório técnico completo.
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">Para vendedores</p>
+          <h2 className="text-3xl font-bold mb-4">Venda com relatório de inspeção profissional</h2>
+          <p className="text-slate-400 mb-8 leading-relaxed">
+            Taxa única de €24,90. Uma oficina certificada inspeciona o veículo, gera o relatório técnico e o anúncio é publicado com total credibilidade.
           </p>
           <Link to="/market/sell">
-            <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-              Começar a vender <ArrowRight className="ml-2 h-5 w-5" />
+            <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-8">
+              Publicar veículo <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </div>

@@ -280,12 +280,12 @@ serve(async (req) => {
 
     if (listingErr || !listing) throw new Error("Anúncio não encontrado ou já pago");
 
-    // Inspection: 19.90€
+    // Inspection: 24.90€
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [{
-        price: "price_1TMGdCE1zL2Sl1ZThIJWpIbG",
+        price: "price_1TMcvCE1zL2Sl1ZTiWqWuGfZ",
         quantity: 1,
       }],
       mode: "payment",
@@ -343,9 +343,9 @@ serve(async (req) => {
           shop_id: primaryShop.id,
           status: "pending",
           payment_status: "paid",
-          payment_amount: 19.90,
-          shop_share: 12.94,
-          platform_share: 6.97,
+           payment_amount: 24.90,
+           shop_share: 16.18,
+           platform_share: 8.72,
           stripe_session_id: session.id,
           notes: `Inspeção auto-atribuída após pagamento. ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}`,
         })

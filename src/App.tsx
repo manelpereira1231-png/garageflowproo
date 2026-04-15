@@ -188,6 +188,18 @@ const getSafeRedirectPath = (candidate: string | null, fallback: string) => {
   return candidate;
 };
 
+const isMarketPath = (path: string) => path === "/market" || path.startsWith("/market/");
+
+const getSafeGarageRedirectPath = (candidate: string | null, fallback: string) => {
+  const safePath = getSafeRedirectPath(candidate, fallback);
+  return isMarketPath(safePath) ? fallback : safePath;
+};
+
+const getSafeMarketRedirectPath = (candidate: string | null, fallback: string) => {
+  const safePath = getSafeRedirectPath(candidate, fallback);
+  return isMarketPath(safePath) ? safePath : fallback;
+};
+
 function LoginRouteRedirect() {
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
@@ -200,19 +212,53 @@ function LoginRouteRedirect() {
   return <Navigate to={`/auth?${params.toString()}`} replace />;
 }
 
-function AuthRouteRedirect({ fallback }: { fallback: string }) {
+function MarketLoginRouteRedirect() {
+  const location = useLocation();
+  const redirect = `${location.pathname}${location.search}${location.hash}`;
+  const params = new URLSearchParams({ mode: "login" });
+
+  if (redirect !== "/market/auth" && redirect !== "/market/auth?mode=login") {
+    params.set("redirect", redirect);
+  }
+
+  return <Navigate to={`/market/auth?${params.toString()}`} replace />;
+}
+
+function AuthRouteRedirect({
+  fallback,
+  realm = "garage",
+}: {
+  fallback: string;
+  realm?: "garage" | "market";
+}) {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const redirectParam = params.get("redirect");
-  
-  // If explicit redirect provided, use it
+
   if (redirectParam) {
-    return <Navigate to={getSafeRedirectPath(redirectParam, fallback)} replace />;
+    const nextPath = realm === "market"
+      ? getSafeMarketRedirectPath(redirectParam, fallback)
+      : getSafeGarageRedirectPath(redirectParam, fallback);
+
+    return <Navigate to={nextPath} replace />;
   }
 
-  // /auth (GarageFlow ERP) always goes to dashboard, never market
-  // Only /market/auth should redirect to market
   return <Navigate to={fallback} replace />;
+}
+
+function AuthContextSwitch({ message }: { message: string }) {
+  useEffect(() => {
+    void supabase.auth.signOut();
+  }, []);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">{message}</p>
+      </div>
+    </div>
+  );
 }
 
 const adminRoutes = [
@@ -285,11 +331,12 @@ const publicRoutes = [
   { path: "/market/profile", element: <Suspense fallback={<PageLoader />}><MarketProfile /></Suspense> },
   { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
-  // Legacy redirects
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },
 ];
+
+const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
 
 function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(false);
@@ -300,12 +347,17 @@ function AuthenticatedRoutes() {
 
   useEffect(() => {
     if (adminLoading || !authReady) return;
-    if (isSuperAdmin) { setReady(true); return; }
+    if (isSuperAdmin) {
+      setReady(true);
+      return;
+    }
 
     const checkUserState = async () => {
-      if (!user) { setReady(true); return; }
+      if (!user) {
+        setReady(true);
+        return;
+      }
 
-      // Check if affiliate
       const { data: partnerData } = await supabase
         .from("partners")
         .select("id")
@@ -318,7 +370,6 @@ function AuthenticatedRoutes() {
         return;
       }
 
-      // Check if Carity-only user (buyer/seller with no shop)
       const { data: roles } = await supabase
         .from("user_roles" as any)
         .select("role")
@@ -327,8 +378,6 @@ function AuthenticatedRoutes() {
       const userRoles = (roles || []).map((r: any) => r.role);
       const hasGarageRole = userRoles.includes("garage_owner");
       const hasCarityRole = userRoles.includes("buyer") || userRoles.includes("seller");
-
-      // Also check user metadata as fallback
       const isCarity = user.user_metadata?.carity_user === true || user.user_metadata?.account_type === "particular";
 
       if (!hasGarageRole && (hasCarityRole || isCarity)) {
@@ -337,7 +386,8 @@ function AuthenticatedRoutes() {
 
       setReady(true);
     };
-    checkUserState();
+
+    void checkUserState();
   }, [isSuperAdmin, adminLoading, authReady, user]);
 
   if (adminLoading || !authReady || !ready) {
@@ -353,16 +403,20 @@ function AuthenticatedRoutes() {
       <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {adminRoutes.map(r => (
-              <Route key={r.path} path={r.path} element={<AdminLayout>{r.element}</AdminLayout>} />
+            {adminRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={<AdminLayout>{route.element}</AdminLayout>} />
             ))}
-            {shopRoutes.map(r => (
-              <Route key={r.path} path={r.path} element={r.element} />
+            {shopRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
             ))}
-            {publicRoutes.map(r => (
-              <Route key={r.path} path={r.path} element={r.element} />
+            <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" realm="garage" />} />
+            <Route
+              path="/market/auth"
+              element={<AuthContextSwitch message="A terminar a sessão do GarageFlow para abrir o login do Market..." />}
+            />
+            {publicRoutesWithoutMarketAuth.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
             ))}
-            <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" />} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -372,25 +426,26 @@ function AuthenticatedRoutes() {
     );
   }
 
-  // Role-based default route
   const defaultRoute = isAffiliate
     ? "/affiliate-dashboard"
     : isCarityUser
       ? "/market/dashboard"
       : "/dashboard";
 
-  // Carity-only users (buyers/sellers) — NO access to SaaS shop routes
   if (isCarityUser) {
     return (
       <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/admin/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route path="/auth" element={<AuthRouteRedirect fallback="/market/dashboard" />} />
-            {publicRoutes.map(r => (
-              <Route key={r.path} path={r.path} element={r.element} />
+            <Route
+              path="/auth"
+              element={<AuthContextSwitch message="A terminar a sessão do Market para abrir o login do GarageFlow..." />}
+            />
+            <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
+            {publicRoutesWithoutMarketAuth.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
             ))}
-            {/* Block ALL SaaS routes — redirect to market dashboard */}
             <Route path="/dashboard" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/clients" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/vehicles" element={<Navigate to="/market/dashboard" replace />} />
@@ -412,13 +467,17 @@ function AuthenticatedRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
-          <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} />} />
-          {publicRoutes.map(r => (
-            <Route key={r.path} path={r.path} element={r.element} />
+          <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} realm="garage" />} />
+          <Route
+            path="/market/auth"
+            element={<AuthContextSwitch message="A terminar a sessão do GarageFlow para abrir o login do Market..." />}
+          />
+          {publicRoutesWithoutMarketAuth.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
-          {shopRoutes.map(r => (
-            <Route key={r.path} path={r.path} element={r.element} />
+          {shopRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="*" element={<Navigate to={defaultRoute} replace />} />
@@ -439,19 +498,21 @@ function AppRoutes() {
   }, [loading]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
       setLoading(false);
     });
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error && error.message?.includes('session_not_found')) {
+
+    supabase.auth.getSession().then(({ data: { session: nextSession }, error }) => {
+      if (error && error.message?.includes("session_not_found")) {
         supabase.auth.signOut();
         setSession(null);
       } else {
-        setSession(session);
+        setSession(nextSession);
       }
       setLoading(false);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -477,16 +538,18 @@ function AppRoutes() {
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
-            {/* GarageFlow Market routes */}
             <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
             <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
+            <Route path="/market/carros/:slug" element={<Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense>} />
             <Route path="/market/sell" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
-            <Route path="/market/pay/:id" element={<Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense>} />
-            <Route path="/market/my-listings" element={<Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense>} />
+            <Route path="/market/dashboard" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/messages" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/my-listings" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/pay/:id" element={<MarketLoginRouteRedirect />} />
             <Route path="/market/make/:make" element={<Suspense fallback={<PageLoader />}><CarityByMake /></Suspense>} />
             <Route path="/market/city/:city" element={<Suspense fallback={<PageLoader />}><CarityByCity /></Suspense>} />
-            {/* Legacy redirects */}
             <Route path="/carity" element={<Navigate to="/market" replace />} />
             <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />

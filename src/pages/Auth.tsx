@@ -38,6 +38,20 @@ export default function Auth() {
     return urlPartnerId || localStorage.getItem(PARTNER_STORAGE_KEY);
   };
 
+  const isGarageContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
+    const { data: roles } = await supabase
+      .from("user_roles" as any)
+      .select("role")
+      .eq("user_id", userId);
+
+    const userRoles = (roles || []).map((role: any) => role.role);
+    const hasGarageRole = userRoles.includes("garage_owner") || userRoles.includes("super_admin");
+    const hasMarketRole = userRoles.includes("buyer") || userRoles.includes("seller");
+    const isMarketAccount = userMetadata?.carity_user === true || userMetadata?.account_type === "particular";
+
+    return hasGarageRole || (!hasMarketRole && !isMarketAccount);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -50,11 +64,16 @@ export default function Auth() {
         toast.success(t('auth.resetSent'));
         setMode('login');
       } else if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        if (!signInData.user || !(await isGarageContextAccount(signInData.user.id, signInData.user.user_metadata))) {
+          await supabase.auth.signOut();
+          throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
+        }
+
         toast.success(t('auth.welcomeBack'));
       } else {
-        // Signup — always garage/workshop
         const refCode = searchParams.get('ref') || '';
 
         const { data: signUpData, error } = await supabase.auth.signUp({
@@ -75,7 +94,6 @@ export default function Auth() {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });
         }
 
-        // Referral tracking
         if (refCode && signUpData?.user) {
           try {
             const { data: codeData } = await supabase
@@ -97,7 +115,6 @@ export default function Auth() {
           }
         }
 
-        // Partner/affiliate tracking
         const partnerId = getPartnerId();
         if (partnerId && signUpData?.user) {
           try {

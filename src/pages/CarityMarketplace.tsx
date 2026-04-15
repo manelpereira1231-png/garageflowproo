@@ -33,6 +33,8 @@ interface Listing {
   shop_id: string | null;
   shop_name?: string;
   shop_location?: string;
+  inspection_score?: number | null;
+  inspection_recommendation?: string | null;
 }
 
 interface RealStats {

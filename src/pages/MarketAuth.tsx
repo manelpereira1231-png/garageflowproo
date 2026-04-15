@@ -14,7 +14,10 @@ export default function MarketAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
-  const redirect = searchParams.get("redirect") || "/market/dashboard";
+  const redirectParam = searchParams.get("redirect");
+  const redirect = redirectParam && redirectParam.startsWith("/market") && !redirectParam.startsWith("//")
+    ? redirectParam
+    : "/market/dashboard";
 
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [loading, setLoading] = useState(false);
@@ -25,12 +28,44 @@ export default function MarketAuth() {
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
 
-  // Check if already logged in
+  const isMarketContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
+    const { data: roles } = await supabase
+      .from("user_roles" as any)
+      .select("role")
+      .eq("user_id", userId);
+
+    const userRoles = (roles || []).map((role: any) => role.role);
+    const hasGarageRole = userRoles.includes("garage_owner") || userRoles.includes("super_admin");
+    const hasMarketRole = userRoles.includes("buyer") || userRoles.includes("seller");
+    const isMarketAccount = userMetadata?.carity_user === true || userMetadata?.account_type === "particular";
+
+    return !hasGarageRole && (hasMarketRole || isMarketAccount);
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate(redirect, { replace: true });
-    });
-  }, []);
+    let active = true;
+
+    const syncExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active || !session?.user) return;
+
+      const isAllowed = await isMarketContextAccount(session.user.id, session.user.user_metadata);
+      if (!active) return;
+
+      if (isAllowed) {
+        navigate(redirect, { replace: true });
+        return;
+      }
+
+      await supabase.auth.signOut();
+    };
+
+    void syncExistingSession();
+
+    return () => {
+      active = false;
+    };
+  }, [navigate, redirect]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +82,19 @@ export default function MarketAuth() {
       }
 
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
+          await supabase.auth.signOut();
+          throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
+        }
+
         toast.success("Bem-vindo de volta!");
         navigate(redirect, { replace: true });
         return;
       }
 
-      // Signup — always "particular" (buyer/seller)
       const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
@@ -72,12 +112,10 @@ export default function MarketAuth() {
       if (error) throw error;
 
       if (signUpData?.user) {
-        // Assign buyer + seller roles
         await supabase.from("user_roles" as any).insert([
           { user_id: signUpData.user.id, role: "buyer" },
           { user_id: signUpData.user.id, role: "seller" },
         ]);
-        // Create seller profile
         await supabase.from("carity_seller_profiles").insert({
           user_id: signUpData.user.id,
           name,

@@ -75,10 +75,23 @@ export default function CarityMarketplace() {
       (shops || []).forEach((s: any) => { shopMap[s.id] = { name: s.name, address: s.address }; });
     }
 
+    // Get inspection scores for all listed IDs
+    const listingIds = rawListings.map((l: any) => l.id);
+    let scoreMap: Record<string, { score: number; recommendation: string }> = {};
+    if (listingIds.length > 0) {
+      const { data: reports } = await supabase
+        .from("carity_inspection_reports")
+        .select("listing_id, overall_score, recommendation")
+        .in("listing_id", listingIds);
+      (reports || []).forEach((r: any) => { scoreMap[r.listing_id] = { score: r.overall_score, recommendation: r.recommendation }; });
+    }
+
     setListings(rawListings.map(l => ({
       ...l,
       shop_name: l.shop_id ? shopMap[l.shop_id]?.name : undefined,
       shop_location: l.shop_id ? shopMap[l.shop_id]?.address : undefined,
+      inspection_score: scoreMap[l.id]?.score ?? null,
+      inspection_recommendation: scoreMap[l.id]?.recommendation ?? null,
     })));
 
     // Load real stats in parallel

@@ -3622,6 +3622,13 @@ export type Database = {
       detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }
+      get_seller_emails: {
+        Args: { seller_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       get_shop_member_emails: {
         Args: { _shop_id: string }
         Returns: {

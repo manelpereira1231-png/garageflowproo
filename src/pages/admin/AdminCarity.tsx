@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   ShieldCheck, Car, Euro, CheckCircle, XCircle, Clock, Building2, Users, TrendingUp, Star,
   Loader2, Send, ClipboardCheck, User, MapPin, Phone, Eye, Edit, Trash2, Zap, Search,
-  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar, Wallet, Tag, BanknoteIcon, Shield,
+  FileText, AlertTriangle, RefreshCw, Filter, ArrowUpDown, BarChart3, Calendar, Wallet, Tag, BanknoteIcon, Shield, Mail,
 } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -56,6 +56,7 @@ export default function AdminCarity() {
   const [saleConfirmations, setSaleConfirmations] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
   const [riskFlags, setRiskFlags] = useState<any[]>([]);
+  const [sellerEmails, setSellerEmails] = useState<Record<string, string>>({});
   const [scanningRisks, setScanningRisks] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
@@ -106,6 +107,18 @@ export default function AdminCarity() {
     setSaleConfirmations(confirmRes.data || []);
     setEscrows(escrowRes.data || []);
     setRiskFlags((riskFlagsRes.data as any[]) || []);
+
+    // Fetch seller emails via secure function
+    const sellerUserIds = (sellersRes.data || []).map((s: any) => s.user_id).filter(Boolean);
+    if (sellerUserIds.length > 0) {
+      const { data: emailData } = await supabase.rpc("get_seller_emails", { seller_ids: sellerUserIds });
+      if (emailData) {
+        const emailMap: Record<string, string> = {};
+        (emailData as any[]).forEach((e: any) => { emailMap[e.user_id] = e.email; });
+        setSellerEmails(emailMap);
+      }
+    }
+
     setLoading(false);
   }, []);
 
@@ -350,7 +363,8 @@ export default function AdminCarity() {
   const filteredSellers = sellers.filter(s => {
     if (!sellerSearch) return true;
     const q = sellerSearch.toLowerCase();
-    return s.name?.toLowerCase().includes(q) || s.phone?.includes(q) || s.location?.toLowerCase().includes(q);
+    const email = sellerEmails[s.user_id] || "";
+    return s.name?.toLowerCase().includes(q) || s.phone?.includes(q) || s.location?.toLowerCase().includes(q) || email.toLowerCase().includes(q);
   });
 
   const getShopPerformance = (shopId: string) => {
@@ -658,7 +672,8 @@ export default function AdminCarity() {
                         <h3 className="font-semibold">{seller.name || "Sem nome"}</h3>
                         {seller.verified && <Badge className="bg-green-100 text-green-800 border-0 text-xs">Verificado</Badge>}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                        {sellerEmails[seller.user_id] && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {sellerEmails[seller.user_id]}</span>}
                         {seller.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {seller.phone}</span>}
                         {seller.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {seller.location}</span>}
                         <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(seller.created_at).toLocaleDateString("pt-PT")}</span>

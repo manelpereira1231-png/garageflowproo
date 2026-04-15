@@ -363,7 +363,8 @@ export default function AdminCarity() {
   const filteredSellers = sellers.filter(s => {
     if (!sellerSearch) return true;
     const q = sellerSearch.toLowerCase();
-    return s.name?.toLowerCase().includes(q) || s.phone?.includes(q) || s.location?.toLowerCase().includes(q);
+    const email = sellerEmails[s.user_id] || "";
+    return s.name?.toLowerCase().includes(q) || s.phone?.includes(q) || s.location?.toLowerCase().includes(q) || email.toLowerCase().includes(q);
   });
 
   const getShopPerformance = (shopId: string) => {

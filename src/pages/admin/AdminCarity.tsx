@@ -56,6 +56,7 @@ export default function AdminCarity() {
   const [saleConfirmations, setSaleConfirmations] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
   const [riskFlags, setRiskFlags] = useState<any[]>([]);
+  const [sellerEmails, setSellerEmails] = useState<Record<string, string>>({});
   const [scanningRisks, setScanningRisks] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);

@@ -155,8 +155,8 @@ export default function CarityMarketplace() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* HERO — Comunicar confiança em 3 segundos */}
-      <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      {/* HERO */}
+      <header className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-amber-400" />
@@ -176,66 +176,69 @@ export default function CarityMarketplace() {
           </div>
         </nav>
 
-        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <Badge className="mb-4 bg-amber-400/20 text-amber-300 border-amber-400/30 text-sm">
-            <ShieldCheck className="h-3.5 w-3.5 mr-1" />
-            Inspeção real por oficinas certificadas
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight">
-            Carros usados com <span className="text-amber-400">inspeção real</span>
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300 text-sm font-medium">
+            <ShieldCheck className="h-4 w-4" />
+            Cada veículo é inspecionado antes de ser publicado
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold mb-5 tracking-tight leading-tight">
+            Carros usados com<br className="hidden md:block" /> <span className="text-amber-400">inspeção certificada</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-            Cada veículo é verificado antes de ser publicado — dados técnicos completos e auditáveis.
+          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Relatório técnico completo, classificação mecânica e pagamento protegido. Compre com total transparência.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
             <Link to="#listings">
-              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-lg px-8 shadow-lg shadow-amber-500/30 border-2 border-amber-400">
-                Ver carros <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-lg px-8 shadow-lg shadow-amber-500/20">
+                Ver veículos disponíveis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link to="/market/sell">
-              <Button size="lg" variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white font-semibold backdrop-blur-sm">
-                Vender carro
+              <Button size="lg" variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white font-medium backdrop-blur-sm">
+                Vender o meu carro
               </Button>
             </Link>
           </div>
 
-          {/* Trust layer — badges */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-300">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-amber-400" />
-              Inspeção Real
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-amber-400" />
-              Oficina Certificada
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-amber-400" />
-              Relatório Técnico Incluído
-            </div>
+          {/* Trust pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            {[
+              { icon: ShieldCheck, title: "Inspeção Real", desc: "Verificação mecânica presencial por oficina parceira" },
+              { icon: FileCheck, title: "Relatório Técnico", desc: "Classificação 0–10, anomalias e documentação fotográfica" },
+              { icon: Eye, title: "Pagamento Protegido", desc: "Fundos retidos até confirmação de entrega" },
+            ].map((p, i) => (
+              <div key={i} className="flex items-start gap-3 text-left bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="h-9 w-9 rounded-lg bg-amber-400/15 flex items-center justify-center flex-shrink-0">
+                  <p.icon className="h-4.5 w-4.5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-white">{p.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{p.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* REAL STATS — only shown when data exists */}
+          {/* Stats */}
           {hasAnyStats && (
-            <div className="flex flex-wrap justify-center gap-8 mt-8 pt-6 border-t border-white/10">
+            <div className="flex flex-wrap justify-center gap-10 mt-10 pt-8 border-t border-white/10">
               {stats.totalPublished > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400">{stats.totalPublished}</p>
-                  <p className="text-xs text-slate-400">Carros publicados</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalPublished}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Veículos publicados</p>
                 </div>
               )}
               {stats.totalInspections > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400">{stats.totalInspections}</p>
-                  <p className="text-xs text-slate-400">Inspeções concluídas</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalInspections}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Inspeções realizadas</p>
                 </div>
               )}
               {stats.totalPartnerShops > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400">{stats.totalPartnerShops}</p>
-                  <p className="text-xs text-slate-400">Oficinas certificadas</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalPartnerShops}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Oficinas parceiras</p>
                 </div>
               )}
             </div>
@@ -244,25 +247,29 @@ export default function CarityMarketplace() {
       </header>
 
       {/* How it works */}
-      <section className="py-12 bg-muted/50 border-b">
+      <section className="py-14 bg-muted/30 border-b">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-center text-2xl font-bold mb-8">Como funciona o GarageFlow Market?</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">Como funciona</p>
+          <h2 className="text-center text-2xl font-bold mb-10">Processo transparente em 4 etapas</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "1", title: "Vendedor submete", desc: "O vendedor cria o anúncio e paga a taxa de inspeção", icon: Car },
-              { step: "2", title: "Oficina inspeciona", desc: "Uma oficina certificada GarageFlow faz a inspeção completa", icon: Wrench },
-              { step: "3", title: "Relatório gerado", desc: "Checklist mecânico, fotos e classificação automática", icon: FileCheck },
-              { step: "4", title: "Compre com confiança", desc: "Só carros aprovados aparecem no marketplace", icon: ShieldCheck },
+              { step: "01", title: "Submissão", desc: "O vendedor cria o anúncio com fotos estruturadas e paga €24,90 de taxa de inspeção.", icon: Car },
+              { step: "02", title: "Inspeção Técnica", desc: "Uma oficina certificada GarageFlow realiza a verificação mecânica completa.", icon: Wrench },
+              { step: "03", title: "Relatório & Classificação", desc: "Checklist de 7 sistemas, documentação fotográfica e classificação de 0 a 10.", icon: FileCheck },
+              { step: "04", title: "Compra Protegida", desc: "Pagamento retido em segurança. Fundos libertados apenas após confirmação.", icon: ShieldCheck },
             ].map(s => (
-              <Card key={s.step} className="text-center border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3 dark:bg-amber-900/30 dark:text-amber-400">
-                    <s.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-semibold mb-1">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground">{s.desc}</p>
-                </CardContent>
-              </Card>
+              <div key={s.step} className="relative">
+                <Card className="text-center border shadow-none hover:shadow-md transition-shadow h-full">
+                  <CardContent className="pt-8 pb-6 px-5">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-amber-500 text-slate-900 px-2.5 py-0.5 rounded-full tracking-wider">{s.step}</span>
+                    <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center mx-auto mb-3">
+                      <s.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-semibold text-sm mb-1.5">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         </div>

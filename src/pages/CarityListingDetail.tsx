@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
 
 const STATUS_ICON: Record<string, any> = {
-  ok: { icon: CheckCircle, color: "text-green-600", label: "OK" },
-  problems: { icon: AlertTriangle, color: "text-amber-500", label: "Problemas" },
-  critical: { icon: XCircle, color: "text-red-600", label: "Crítico" },
+  ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },
+  problems: { icon: AlertTriangle, color: "text-amber-500", label: "Anomalia Detetada" },
+  critical: { icon: XCircle, color: "text-red-600", label: "Reprovado" },
 };
 
 const CHECKLIST_LABELS: Record<string, string> = {
@@ -28,9 +28,9 @@ const CHECKLIST_LABELS: Record<string, string> = {
 };
 
 const RECOMMENDATION_LABELS: Record<string, { label: string; color: string }> = {
-  recommended: { label: "Recomendado", color: "bg-green-100 text-green-800" },
-  acceptable: { label: "Aceitável", color: "bg-amber-100 text-amber-800" },
-  not_recommended: { label: "Não Recomendado", color: "bg-red-100 text-red-800" },
+  recommended: { label: "Aprovado — Recomendado para compra", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  acceptable: { label: "Aprovado com reservas", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+  not_recommended: { label: "Não recomendado para compra", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 };
 
 const ESCROW_STATUS_LABELS: Record<string, { label: string; color: string; icon: any }> = {

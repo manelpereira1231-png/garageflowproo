@@ -72,6 +72,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [canReviewShop, setCanReviewShop] = useState(false);
   const [activeInspectionId, setActiveInspectionId] = useState<string | null>(null);
+  const [contractLoading, setContractLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
@@ -202,7 +203,6 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     toast.success("PDF do certificado descarregado");
   };
 
-  const [contractLoading, setContractLoading] = useState(false);
   const handleDownloadContract = async () => {
     if (!escrow) return;
     setContractLoading(true);

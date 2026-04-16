@@ -465,6 +465,25 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <p className="text-muted-foreground whitespace-pre-line">{listing.description}</p>
                   </>
                 )}
+
+                {/* Market price comparison */}
+                <Separator className="my-4" />
+                <MarketPriceCompare
+                  listingId={listing.id}
+                  make={listing.make}
+                  model={listing.model}
+                  year={listing.year}
+                  price={listing.price}
+                />
+
+                {/* Location map */}
+                <Separator className="my-4" />
+                <MarketLocationMap
+                  lat={listing.location_lat}
+                  lng={listing.location_lng}
+                  label={listing.location_label}
+                  fallbackCity={seller?.location}
+                />
               </CardContent>
             </Card>
 

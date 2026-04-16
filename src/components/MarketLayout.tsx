@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
+import LegalFooter from "@/components/LegalFooter";
 
 const NAV_ITEMS = [
   { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
@@ -98,6 +99,7 @@ export default function MarketLayout({ children }: { children: React.ReactNode }
       <div className="max-w-6xl mx-auto px-4 py-6">
         {children}
       </div>
+      <LegalFooter />
     </div>
   );
 }

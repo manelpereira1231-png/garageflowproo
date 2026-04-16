@@ -90,6 +90,14 @@ const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 
+// Legal pages (RGPD)
+const PrivacyPolicy = lazyRetry(() => import("@/pages/legal/PrivacyPolicy"));
+const TermsOfService = lazyRetry(() => import("@/pages/legal/TermsOfService"));
+const CookiePolicy = lazyRetry(() => import("@/pages/legal/CookiePolicy"));
+const DPA = lazyRetry(() => import("@/pages/legal/DPA"));
+const MyData = lazyRetry(() => import("@/pages/legal/MyData"));
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
 const AdminShops = lazyRetry(() => import("@/pages/admin/AdminShops"));
@@ -346,6 +354,12 @@ const publicRoutes = [
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },
+  // Legal / RGPD
+  { path: "/legal/privacy", element: <Suspense fallback={<PageLoader />}><PrivacyPolicy /></Suspense> },
+  { path: "/legal/terms", element: <Suspense fallback={<PageLoader />}><TermsOfService /></Suspense> },
+  { path: "/legal/cookies", element: <Suspense fallback={<PageLoader />}><CookiePolicy /></Suspense> },
+  { path: "/legal/dpa", element: <Suspense fallback={<PageLoader />}><DPA /></Suspense> },
+  { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
 ];
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
@@ -584,6 +598,7 @@ const App = () => (
         <BrowserRouter>
           <CommandPalette />
           <AppRoutes />
+          <CookieConsentBanner />
         </BrowserRouter>
         <PWAInstallPrompt />
       </LanguageProvider>

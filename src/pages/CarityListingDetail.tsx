@@ -12,6 +12,11 @@ import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
 import ShopReviews from "@/components/ShopReviews";
 import PhotoLightbox from "@/components/PhotoLightbox";
+import MarketLocationMap from "@/components/MarketLocationMap";
+import MarketPriceCompare from "@/components/MarketPriceCompare";
+import MarketContractSigning from "@/components/MarketContractSigning";
+import MarketSatisfactionWindow from "@/components/MarketSatisfactionWindow";
+import MarketAlertSubscribe from "@/components/MarketAlertSubscribe";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
@@ -73,6 +78,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [canReviewShop, setCanReviewShop] = useState(false);
   const [activeInspectionId, setActiveInspectionId] = useState<string | null>(null);
   const [contractLoading, setContractLoading] = useState(false);
+  const [contract, setContract] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));

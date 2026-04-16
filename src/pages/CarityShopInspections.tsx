@@ -1015,10 +1015,15 @@ export default function CarityShopInspections() {
           </h1>
           <p className="text-muted-foreground">Aceite pedidos de inspeção e ganhe por cada carro inspecionado</p>
         </div>
-        <Badge variant="outline" className="text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800">
-          <Euro className="h-3.5 w-3.5 mr-1" />
-          €{totalEarnings.toFixed(2)} ganhos
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-amber-600 border-amber-200 dark:text-amber-400 dark:border-amber-800">
+            <Euro className="h-3.5 w-3.5 mr-1" />
+            €{totalEarnings.toFixed(2)} ganhos
+          </Badge>
+          <Button asChild variant="outline" size="sm">
+            <a href="/market/payouts">Como recebo?</a>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

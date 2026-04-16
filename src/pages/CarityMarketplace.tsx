@@ -6,7 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp } from "lucide-react";
+import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp, Heart } from "lucide-react";
+import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
+import { formatRelativePT } from "@/lib/relativeTime";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',
@@ -163,6 +165,11 @@ export default function CarityMarketplace() {
             <span className="text-2xl font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link to="/market/favoritos">
+              <Button variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-800" aria-label="Os meus favoritos">
+                <Heart className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/market/sell">
               <Button variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10">
                 Vender Carro
@@ -302,9 +309,7 @@ export default function CarityMarketplace() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <MarketListingGridSkeleton count={6} />
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
@@ -390,12 +395,13 @@ export default function CarityMarketplace() {
                         Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span>
                       </p>
                     )}
-                    {/* Publicado há X dias — sem emojis */}
+                    {/* Publicado relativa */}
                     {listing.published_at && (() => {
                       const days = Math.floor((Date.now() - new Date(listing.published_at!).getTime()) / 86400000);
+                      const isFresh = days <= 3;
                       return (
-                        <p className={`text-[11px] ${days <= 3 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
-                          {days === 0 ? 'Publicado hoje' : `Publicado há ${days} dia${days > 1 ? 's' : ''}`}
+                        <p className={`text-[11px] ${isFresh ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
+                          Publicado {formatRelativePT(listing.published_at)}
                         </p>
                       );
                     })()}
@@ -407,12 +413,12 @@ export default function CarityMarketplace() {
         )}
       </section>
 
-      {/* SEO Internal Linking: Popular Makes & Cities */}
+      {/* SEO Internal Linking: Marcas, Cidades, Faixas de preço */}
       <section className="py-12 bg-muted/20 border-t">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
-              <h2 className="text-lg font-bold mb-4">Carros usados por marca</h2>
+              <h2 className="text-lg font-bold mb-4">Por marca</h2>
               <div className="flex flex-wrap gap-2">
                 {['BMW', 'Audi', 'Mercedes-Benz', 'Volkswagen', 'Renault', 'Peugeot', 'Toyota', 'Citroën', 'Ford', 'Opel', 'Seat', 'Volvo', 'Fiat', 'Nissan', 'Hyundai', 'Kia'].map(m => (
                   <Link key={m} to={`/market/make/${encodeURIComponent(m)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
@@ -422,11 +428,27 @@ export default function CarityMarketplace() {
               </div>
             </div>
             <div>
-              <h2 className="text-lg font-bold mb-4">Carros usados por cidade</h2>
+              <h2 className="text-lg font-bold mb-4">Por cidade</h2>
               <div className="flex flex-wrap gap-2">
                 {['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Faro', 'Aveiro', 'Setúbal', 'Leiria', 'Viseu', 'Évora', 'Funchal', 'Guimarães'].map(c => (
                   <Link key={c} to={`/market/city/${encodeURIComponent(c)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
                     {c}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold mb-4">Por faixa de preço</h2>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { url: 'ate-5000-euros', txt: 'até €5.000' },
+                  { url: 'ate-10000-euros', txt: 'até €10.000' },
+                  { url: '10000-a-20000-euros', txt: '€10k–€20k' },
+                  { url: '20000-a-35000-euros', txt: '€20k–€35k' },
+                  { url: 'acima-35000-euros', txt: 'acima de €35k' },
+                ].map(p => (
+                  <Link key={p.url} to={`/market/preco/${p.url}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
+                    {p.txt}
                   </Link>
                 ))}
               </div>

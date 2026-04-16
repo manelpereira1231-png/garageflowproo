@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag, MapPin, Phone, MessageCircle, CalendarCheck } from "lucide-react";
+import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag, MapPin, Phone, MessageCircle, CalendarCheck, Heart, TrendingUp } from "lucide-react";
 import VehicleTimeline from "@/components/VehicleTimeline";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
@@ -80,11 +80,32 @@ export default function CaritySellerDashboard() {
       (inspections || []).forEach((i: any) => { inspectionsMap[i.listing_id] = i; });
     }
 
+    // Fetch view + favorite analytics per listing
+    const today = new Date().toISOString().slice(0, 10);
+    const [viewsTotalRes, viewsTodayRes, favsRes] = await Promise.all([
+      supabase.from("listing_views" as any).select("listing_id").in("listing_id", listingIds),
+      supabase.from("listing_views" as any).select("listing_id").in("listing_id", listingIds).eq("viewed_date", today),
+      supabase.from("listing_favorites" as any).select("listing_id").in("listing_id", listingIds),
+    ]);
+    const countBy = (rows: any[] | null) => {
+      const m: Record<string, number> = {};
+      (rows || []).forEach((r: any) => { m[r.listing_id] = (m[r.listing_id] || 0) + 1; });
+      return m;
+    };
+    const viewsTotalMap = countBy(viewsTotalRes.data);
+    const viewsTodayMap = countBy(viewsTodayRes.data);
+    const favsMap = countBy(favsRes.data);
+
     // Enrich listings
     const enriched = listingsArr.map((l: any) => ({
       ...l,
       shop: l.shop_id ? shopsMap[l.shop_id] || null : null,
       inspection: inspectionsMap[l.id] || null,
+      stats: {
+        viewsTotal: viewsTotalMap[l.id] || 0,
+        viewsToday: viewsTodayMap[l.id] || 0,
+        favorites: favsMap[l.id] || 0,
+      },
     }));
 
     setListings(enriched);
@@ -193,11 +214,31 @@ export default function CaritySellerDashboard() {
                             <h3 className="font-semibold">{listing.make} {listing.model} ({listing.year})</h3>
                             <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage?.toLocaleString()} km · €{listing.price?.toLocaleString()}</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             {listing.boost_active && <Badge className="bg-purple-100 text-purple-800"><Rocket className="h-3 w-3 mr-1" />Destaque</Badge>}
                             <Badge className={statusConfig.color}><StatusIcon className="h-3 w-3 mr-1" />{statusConfig.label}</Badge>
                           </div>
                         </div>
+
+                        {/* Analytics row */}
+                        {listing.status === "published" && listing.stats && (
+                          <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
+                            <span className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                              <Eye className="h-3 w-3" />
+                              <strong className="text-foreground">{listing.stats.viewsTotal}</strong> visualizações
+                            </span>
+                            {listing.stats.viewsToday > 0 && (
+                              <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded font-medium">
+                                <TrendingUp className="h-3 w-3" />
+                                {listing.stats.viewsToday} hoje
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                              <Heart className={`h-3 w-3 ${listing.stats.favorites > 0 ? "fill-red-500 text-red-500" : ""}`} />
+                              <strong className="text-foreground">{listing.stats.favorites}</strong> {listing.stats.favorites === 1 ? "favorito" : "favoritos"}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex gap-2 mt-2 flex-wrap">
                           <Button size="sm" variant="outline" onClick={() => setSelectedListing(selectedListing?.id === listing.id ? null : listing)}>

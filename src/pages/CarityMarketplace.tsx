@@ -165,6 +165,11 @@ export default function CarityMarketplace() {
             <span className="text-2xl font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link to="/market/favoritos">
+              <Button variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-800" aria-label="Os meus favoritos">
+                <Heart className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/market/sell">
               <Button variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10">
                 Vender Carro

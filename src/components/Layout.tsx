@@ -176,9 +176,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
       ]);
 
+      // Only auto-exit guided mode after the user has completed the FULL flow:
+      // at least one client AND one vehicle AND one quote. Otherwise we keep the
+      // simplified sidebar so new users aren't overwhelmed by the full SaaS.
       const onboardingCompleted =
-        (clientsCountRes.count ?? 0) > 0 ||
-        (vehiclesCountRes.count ?? 0) > 0 ||
+        (clientsCountRes.count ?? 0) > 0 &&
+        (vehiclesCountRes.count ?? 0) > 0 &&
         (quotesCountRes.count ?? 0) > 0;
 
       if (onboardingCompleted) {

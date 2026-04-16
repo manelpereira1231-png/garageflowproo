@@ -202,6 +202,33 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     toast.success("PDF do certificado descarregado");
   };
 
+  const [contractLoading, setContractLoading] = useState(false);
+  const handleDownloadContract = async () => {
+    if (!escrow) return;
+    setContractLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-sale-contract", {
+        body: { escrow_id: escrow.id },
+      });
+      if (error) throw new Error((error as any)?.context?.error || error.message);
+      if (data?.error) throw new Error(data.error);
+      const contract = data?.contract;
+      if (!contract) throw new Error("Contrato indisponível");
+      generateContractPDF({
+        contract,
+        listing: contract.listing || listing,
+        buyer: contract.buyer_snapshot || {},
+        seller: contract.seller_snapshot || seller || {},
+        amount: Number(contract.amount || escrow.amount),
+      });
+      toast.success("Contrato de compra/venda descarregado");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar contrato");
+    } finally {
+      setContractLoading(false);
+    }
+  };
+
   const handleToggleFavorite = async () => {
     if (!currentUserId) {
       toast.error("Inicie sessão para guardar favoritos");

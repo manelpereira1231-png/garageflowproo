@@ -309,9 +309,7 @@ export default function CarityMarketplace() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <MarketListingGridSkeleton count={6} />
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />

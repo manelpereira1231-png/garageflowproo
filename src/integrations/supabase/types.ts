@@ -3375,6 +3375,63 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          admin_response: string | null
+          category: string
+          contact_email: string
+          contact_name: string | null
+          contact_phone: string | null
+          context: string
+          created_at: string
+          id: string
+          message: string
+          priority: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          category?: string
+          contact_email: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          context?: string
+          created_at?: string
+          id?: string
+          message: string
+          priority?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          category?: string
+          contact_email?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          context?: string
+          created_at?: string
+          id?: string
+          message?: string
+          priority?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       trial_records: {
         Row: {
           created_at: string

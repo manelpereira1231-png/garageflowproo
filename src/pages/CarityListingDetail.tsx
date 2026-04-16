@@ -65,6 +65,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [actionLoading, setActionLoading] = useState(false);
   const [trustScore, setTrustScore] = useState<any>(null);
   const [similarListings, setSimilarListings] = useState<any[]>([]);
+  const [viewStats, setViewStats] = useState<{ today: number; total: number }>({ today: 0, total: 0 });
+  const [favorited, setFavorited] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [canReviewShop, setCanReviewShop] = useState(false);
+  const [activeInspectionId, setActiveInspectionId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));

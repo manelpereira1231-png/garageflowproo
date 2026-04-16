@@ -7,9 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock, CreditCard, Loader2, Shield, MessageCircle, PackageCheck, AlertCircle, Hash, FileCheck, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock, CreditCard, Loader2, Shield, MessageCircle, PackageCheck, AlertCircle, Hash, FileCheck, Eye, EyeOff, Download, Heart, TrendingUp, Ban } from "lucide-react";
 import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
+import ShopReviews from "@/components/ShopReviews";
+import { generateInspectionPDF } from "@/lib/inspectionPdf";
+import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },

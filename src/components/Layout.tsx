@@ -107,28 +107,45 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [activeShopId]);
 
-  // Global realtime listener for new inspection offers (Market)
+  // Global realtime listener for new inspection offers (Market) + pending count
   useEffect(() => {
-    if (!activeShopId || !isCarityPartner) return;
+    if (!activeShopId || !isCarityPartner) {
+      setPendingMarketCount(0);
+      return;
+    }
+
+    const loadPendingMarket = async () => {
+      const { count } = await supabase
+        .from("carity_inspection_offers")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeShopId)
+        .eq("status", "pending");
+      setPendingMarketCount(count || 0);
+    };
+    loadPendingMarket();
+
     const channel = supabase
       .channel(`global-offers-${activeShopId}`)
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "carity_inspection_offers",
           filter: `shop_id=eq.${activeShopId}`,
         },
-        () => {
-          toast.info("🚗 Nova inspeção Market disponível!", {
-            description: "Tem um novo pedido de inspeção para aceitar.",
-            action: {
-              label: "Ver",
-              onClick: () => window.location.assign("/inspections"),
-            },
-            duration: 15000,
-          });
+        (payload: any) => {
+          loadPendingMarket();
+          if (payload.eventType === "INSERT") {
+            toast.info("🚗 Nova inspeção Market disponível!", {
+              description: "Tem um novo pedido de inspeção para aceitar.",
+              action: {
+                label: "Ver",
+                onClick: () => window.location.assign("/market/inspections"),
+              },
+              duration: 15000,
+            });
+          }
         }
       )
       .subscribe();
@@ -186,7 +203,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    { path: "/market/inspections", label: "Market", icon: ShieldCheck },
+    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },

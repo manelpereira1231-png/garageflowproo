@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { Link, useLocation } from "react-router-dom";
+import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
   LayoutDashboard,
   Users,
@@ -76,6 +77,7 @@ const isEssentialPath = (pathname: string) =>
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
+  const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");
   const [isCarityPartner, setIsCarityPartner] = useState(false);
   const location = useLocation();

@@ -721,6 +721,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         </div>
                       </div>
                     </div>
+                    <div className="bg-muted/40 border border-border rounded-lg p-2.5 flex items-start gap-2">
+                      <Ban className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <strong className="text-foreground">Sem financiamento próprio.</strong> O GarageFlow Market é uma plataforma de transação direta — não é instituição financeira nem oferece crédito. Compre apenas com valores que tem disponíveis ou recorra ao seu banco.
+                      </p>
+                    </div>
                   </div>
                 )}
 

@@ -655,6 +655,17 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 </CardContent>
               </Card>
             )}
+
+            {/* Shop reviews */}
+            {report?.shop_id && (
+              <ShopReviews
+                shopId={report.shop_id}
+                shopName={shopInfo?.name}
+                inspectionId={activeInspectionId || undefined}
+                currentUserId={currentUserId}
+                canReview={canReviewShop}
+              />
+            )}
           </div>
 
           {/* Sidebar */}

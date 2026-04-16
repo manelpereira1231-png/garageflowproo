@@ -495,6 +495,7 @@ export default function CarityMarketplace() {
               <Link to="/legal/cookies" className="hover:text-white transition-colors">Cookies</Link>
               <Link to="/legal/dpa" className="hover:text-white transition-colors">DPA</Link>
               <Link to="/legal/my-data" className="hover:text-white transition-colors">Os Meus Dados</Link>
+              <Link to="/support?context=market" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">Suporte</Link>
             </nav>
             <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
           </div>

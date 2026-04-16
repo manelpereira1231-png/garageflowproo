@@ -12,6 +12,7 @@ export default function LegalFooter() {
           <Link to="/legal/cookies" className="hover:text-foreground">Cookies</Link>
           <Link to="/legal/dpa" className="hover:text-foreground">DPA</Link>
           <Link to="/legal/my-data" className="hover:text-foreground">Os Meus Dados</Link>
+          <Link to="/support" className="hover:text-foreground font-medium text-primary">Suporte</Link>
         </nav>
       </div>
     </footer>

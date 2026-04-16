@@ -98,7 +98,9 @@ const CookiePolicy = lazyRetry(() => import("@/pages/legal/CookiePolicy"));
 const DPA = lazyRetry(() => import("@/pages/legal/DPA"));
 const MyData = lazyRetry(() => import("@/pages/legal/MyData"));
 const MarketTerms = lazyRetry(() => import("@/pages/legal/MarketTerms"));
+const Support = lazyRetry(() => import("@/pages/Support"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import SupportFab from "@/components/SupportFab";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -364,6 +366,7 @@ const publicRoutes = [
   { path: "/legal/dpa", element: <Suspense fallback={<PageLoader />}><DPA /></Suspense> },
   { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
   { path: "/legal/market-terms", element: <Suspense fallback={<PageLoader />}><MarketTerms /></Suspense> },
+  { path: "/support", element: <Suspense fallback={<PageLoader />}><Support /></Suspense> },
 ];
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
@@ -602,6 +605,7 @@ const App = () => (
         <BrowserRouter>
           <CommandPalette />
           <AppRoutes />
+          <SupportFab />
           <CookieConsentBanner />
         </BrowserRouter>
         <PWAInstallPrompt />

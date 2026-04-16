@@ -100,35 +100,45 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
 
       {/* Footer */}
       <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-              <Wrench className="w-3 h-3 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-semibold">GarageFlow</span>
-          </Link>
-          <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
-            <Link to="/#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</Link>
-            <Link to="/#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</Link>
-            <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
-            <div className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" />
-              {languages.map((lang, i) => (
-                <span key={lang}>
-                  <button
-                    onClick={() => setLanguage(lang)}
-                    className={`hover:text-foreground transition-colors ${language === lang ? 'text-primary font-semibold' : ''}`}
-                  >
-                    {langLabels[lang]}
-                  </button>
-                  {i < languages.length - 1 && <span className="mx-0.5">|</span>}
-                </span>
-              ))}
+        <div className="max-w-6xl mx-auto flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
+                <Wrench className="w-3 h-3 text-primary-foreground" />
+              </div>
+              <span className="text-sm font-semibold">GarageFlow</span>
+            </Link>
+            <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
+              <Link to="/#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</Link>
+              <Link to="/#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</Link>
+              <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" />
+                {languages.map((lang, i) => (
+                  <span key={lang}>
+                    <button
+                      onClick={() => setLanguage(lang)}
+                      className={`hover:text-foreground transition-colors ${language === lang ? 'text-primary font-semibold' : ''}`}
+                    >
+                      {langLabels[lang]}
+                    </button>
+                    {i < languages.length - 1 && <span className="mx-0.5">|</span>}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}
-          </p>
+          <div className="border-t border-border pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <Link to="/legal/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>
+              <Link to="/legal/terms" className="hover:text-foreground transition-colors">Termos</Link>
+              <Link to="/legal/market-terms" className="hover:text-foreground transition-colors">Termos Market</Link>
+              <Link to="/legal/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+              <Link to="/legal/dpa" className="hover:text-foreground transition-colors">DPA</Link>
+              <Link to="/legal/my-data" className="hover:text-foreground transition-colors">Os Meus Dados</Link>
+            </nav>
+            <p>© {new Date().getFullYear()} GarageFlow. {t('landing.footer')}</p>
+          </div>
         </div>
       </footer>
     </div>

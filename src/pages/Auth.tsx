@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Wrench, Mail, Lock, User, ArrowLeft, Building2, Globe, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 
@@ -92,6 +93,8 @@ export default function Auth() {
 
         if (signUpData?.user) {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });
+          // Force guided mode for every brand-new account so the SaaS starts simplified
+          setOnboardingStatus("guided");
         }
 
         if (refCode && signUpData?.user) {

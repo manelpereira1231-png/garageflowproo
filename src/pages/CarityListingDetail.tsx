@@ -251,7 +251,16 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Breadcrumb */}
+        <nav className="text-xs text-muted-foreground mb-5" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-1.5">
+            <li><Link to="/market" className="hover:text-foreground transition-colors">GarageFlow Market</Link></li>
+            <li>/</li>
+            <li><Link to={`/market/make/${encodeURIComponent(listing.make)}`} className="hover:text-foreground transition-colors">{listing.make}</Link></li>
+            <li>/</li>
+            <li className="text-foreground font-medium">{listing.make} {listing.model} {listing.year}</li>
+          </ol>
+        </nav>
           <div className="lg:col-span-2 space-y-6">
             {/* Photo gallery */}
             <Card className="overflow-hidden">

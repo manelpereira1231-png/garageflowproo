@@ -407,6 +407,34 @@ export default function CarityMarketplace() {
         )}
       </section>
 
+      {/* SEO Internal Linking: Popular Makes & Cities */}
+      <section className="py-12 bg-muted/20 border-t">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div>
+              <h2 className="text-lg font-bold mb-4">Carros usados por marca</h2>
+              <div className="flex flex-wrap gap-2">
+                {['BMW', 'Audi', 'Mercedes-Benz', 'Volkswagen', 'Renault', 'Peugeot', 'Toyota', 'Citroën', 'Ford', 'Opel', 'Seat', 'Volvo', 'Fiat', 'Nissan', 'Hyundai', 'Kia'].map(m => (
+                  <Link key={m} to={`/market/make/${encodeURIComponent(m)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
+                    {m}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold mb-4">Carros usados por cidade</h2>
+              <div className="flex flex-wrap gap-2">
+                {['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Faro', 'Aveiro', 'Setúbal', 'Leiria', 'Viseu', 'Évora', 'Funchal', 'Guimarães'].map(c => (
+                  <Link key={c} to={`/market/city/${encodeURIComponent(c)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
+                    {c}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Sell */}
       <section className="py-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
@@ -430,18 +458,70 @@ export default function CarityMarketplace() {
             <ShieldCheck className="h-5 w-5 text-amber-400" />
             <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
           </div>
+          <div className="flex items-center gap-4 text-xs">
+            <Link to="/market/sell" className="hover:text-white transition-colors">Vender</Link>
+            <Link to="/market/auth" className="hover:text-white transition-colors">Entrar</Link>
+            <Link to="/" className="hover:text-white transition-colors">GarageFlow ERP</Link>
+          </div>
           <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
         </div>
       </footer>
 
-      {/* JSON-LD */}
+      {/* JSON-LD: WebSite */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "GarageFlow Market",
         "url": "https://garageflow.pt/market",
-        "description": "Marketplace de carros usados com inspeção técnica obrigatória por oficinas certificadas.",
-        "publisher": { "@type": "Organization", "name": "GarageFlow", "url": "https://garageflow.pt" }
+        "description": "Marketplace de carros usados com inspeção mecânica obrigatória por oficinas certificadas em Portugal. Relatório técnico, classificação e pagamento protegido.",
+        "publisher": { "@type": "Organization", "name": "GarageFlow", "url": "https://garageflow.pt" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://garageflow.pt/market?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      })}} />
+      {/* JSON-LD: ItemList for current listings */}
+      {filtered.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "Carros Usados Inspecionados — GarageFlow Market",
+          "numberOfItems": filtered.length,
+          "itemListElement": filtered.slice(0, 30).map((l, i) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "url": `https://garageflow.pt/market/carros/${l.make.toLowerCase()}-${l.model.toLowerCase().replace(/\s+/g, "-")}-${l.id}`,
+            "name": `${l.make} ${l.model} ${l.year}`,
+          })),
+        })}} />
+      )}
+      {/* JSON-LD: FAQ */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Como funciona a inspeção de carros no GarageFlow Market?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Cada veículo publicado no GarageFlow Market é inspecionado presencialmente por uma oficina parceira certificada. A inspeção inclui 7 sistemas mecânicos, documentação fotográfica e um relatório com classificação de 0 a 10." }
+          },
+          {
+            "@type": "Question",
+            "name": "Quanto custa publicar um carro no GarageFlow Market?",
+            "acceptedAnswer": { "@type": "Answer", "text": "A taxa de inspeção e publicação é de €24,90 (taxa única). Este valor cobre a inspeção mecânica completa e a publicação do anúncio com relatório técnico certificado." }
+          },
+          {
+            "@type": "Question",
+            "name": "O pagamento é seguro?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sim. Utilizamos pagamento protegido (escrow) via Stripe. O dinheiro fica retido até o comprador confirmar a receção do veículo. Em caso de problema, pode abrir uma disputa." }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso contactar o vendedor antes de comprar?",
+            "acceptedAnswer": { "@type": "Answer", "text": "O chat é ativado automaticamente após o pagamento em escrow, garantindo segurança para ambas as partes. Os contactos pessoais são protegidos para evitar fraudes." }
+          }
+        ]
       })}} />
     </div>
   );

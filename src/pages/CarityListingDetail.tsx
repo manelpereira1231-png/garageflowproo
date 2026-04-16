@@ -983,6 +983,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 </CardContent>
               </Card>
             )}
+
+            {/* Listing alert subscription */}
+            <MarketAlertSubscribe make={listing.make} model={listing.model} maxPrice={listing.price} />
           </div>
         </div>
 

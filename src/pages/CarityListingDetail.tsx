@@ -672,8 +672,15 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           <div className="space-y-6">
             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
+                  <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas</p>
+                  {(viewStats.total > 0 || viewStats.today > 0) && (
+                    <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
+                      <Eye className="h-3 w-3" />
+                      {viewStats.today > 0 ? `${viewStats.today} hoje · ` : ""}{viewStats.total} visualizações totais
+                    </p>
+                  )}
                 </div>
 
                 {/* Escrow status banner */}

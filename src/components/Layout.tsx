@@ -444,6 +444,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="flex-1 flex flex-col min-h-screen min-w-0">
+        <MarketInspectionBanner shopId={activeShopId} isPartner={isCarityPartner} />
         <header className="h-14 lg:h-16 border-b border-border flex items-center px-3 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 shrink-0">
           <Button variant="ghost" size="icon" className="lg:hidden mr-2 shrink-0 h-9 w-9" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />

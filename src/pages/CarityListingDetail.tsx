@@ -297,11 +297,22 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             <ShieldCheck className="h-6 w-6 text-amber-400" />
             <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/market">
-            <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-300 hover:bg-slate-800"
+              onClick={handleToggleFavorite}
+              aria-label="Guardar favorito"
+            >
+              <Heart className={`h-4 w-4 ${favorited ? "fill-red-500 text-red-500" : ""}`} />
             </Button>
-          </Link>
+            <Link to="/market">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
+                <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

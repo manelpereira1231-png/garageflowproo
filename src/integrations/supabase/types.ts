@@ -1339,6 +1339,70 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_views: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          session_id: string | null
+          user_id: string | null
+          viewed_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          session_id?: string | null
+          user_id?: string | null
+          viewed_date?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          session_id?: string | null
+          user_id?: string | null
+          viewed_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_views_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points: {
         Row: {
           client_id: string
@@ -2668,6 +2732,51 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "shop_payouts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          inspection_id: string | null
+          rating: number
+          reviewer_id: string
+          shop_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          inspection_id?: string | null
+          rating: number
+          reviewer_id: string
+          shop_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          inspection_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_reviews_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_reviews_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

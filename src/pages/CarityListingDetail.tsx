@@ -7,9 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock, CreditCard, Loader2, Shield, MessageCircle, PackageCheck, AlertCircle, Hash, FileCheck, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertTriangle, XCircle, MapPin, Star, Clock, Lock, CreditCard, Loader2, Shield, MessageCircle, PackageCheck, AlertCircle, Hash, FileCheck, Eye, EyeOff, Download, Heart, TrendingUp, Ban } from "lucide-react";
 import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
+import ShopReviews from "@/components/ShopReviews";
+import { generateInspectionPDF } from "@/lib/inspectionPdf";
+import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },
@@ -62,6 +65,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [actionLoading, setActionLoading] = useState(false);
   const [trustScore, setTrustScore] = useState<any>(null);
   const [similarListings, setSimilarListings] = useState<any[]>([]);
+  const [viewStats, setViewStats] = useState<{ today: number; total: number }>({ today: 0, total: 0 });
+  const [favorited, setFavorited] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [canReviewShop, setCanReviewShop] = useState(false);
+  const [activeInspectionId, setActiveInspectionId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
@@ -153,7 +161,54 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       .limit(6);
     setSimilarListings((similar || []).map((s: any) => ({ ...s, photos: Array.isArray(s.photos) ? s.photos : [] })));
 
+    // Track view + load view stats (in parallel)
+    trackListingView(id!);
+    const stats = await getListingViewCount(id!);
+    setViewStats(stats);
+
+    // Favorite state + review eligibility
+    if (currentUserId) {
+      isFavorite(id!, currentUserId).then(setFavorited);
+      // Check if user is a verified buyer of this listing's workshop
+      if (reportRes.data?.shop_id) {
+        const { data: completedEscrow } = await supabase
+          .from("market_escrow" as any)
+          .select("id")
+          .eq("buyer_id", currentUserId)
+          .eq("listing_id", id!)
+          .in("status", ["released", "delivery_confirmed"])
+          .maybeSingle();
+        if (completedEscrow) {
+          setCanReviewShop(true);
+          const { data: insp } = await supabase
+            .from("carity_inspections")
+            .select("id")
+            .eq("listing_id", id!)
+            .eq("shop_id", reportRes.data.shop_id)
+            .maybeSingle();
+          if (insp) setActiveInspectionId(insp.id);
+        }
+      }
+    }
+
     setLoading(false);
+  };
+
+  const handleDownloadPDF = () => {
+    if (!report) return;
+    generateInspectionPDF({ listing, report, shop: shopInfo, seller });
+    toast.success("PDF do certificado descarregado");
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!currentUserId) {
+      toast.error("Inicie sessão para guardar favoritos");
+      navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
+      return;
+    }
+    const next = await toggleFavorite(id!, currentUserId);
+    setFavorited(next);
+    toast.success(next ? "Adicionado aos favoritos" : "Removido dos favoritos");
   };
 
   const handleBuyNow = async () => {
@@ -242,11 +297,22 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             <ShieldCheck className="h-6 w-6 text-amber-400" />
             <span className="text-xl font-bold">GarageFlow <span className="text-amber-400">Market</span></span>
           </Link>
-          <Link to="/market">
-            <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-300 hover:bg-slate-800"
+              onClick={handleToggleFavorite}
+              aria-label="Guardar favorito"
+            >
+              <Heart className={`h-4 w-4 ${favorited ? "fill-red-500 text-red-500" : ""}`} />
             </Button>
-          </Link>
+            <Link to="/market">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
+                <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -265,9 +331,14 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           <div className="lg:col-span-2 space-y-6">
             {/* Photo gallery */}
             <Card className="overflow-hidden">
-              <div className="aspect-video bg-muted relative">
+              <button
+                type="button"
+                className="aspect-video bg-muted relative w-full block group"
+                onClick={() => allPhotos[selectedPhoto] && setLightboxOpen(true)}
+                aria-label="Ampliar fotografia"
+              >
                 {allPhotos[selectedPhoto] ? (
-                  <img src={allPhotos[selectedPhoto]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover" />
+                  <img src={allPhotos[selectedPhoto]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover transition-transform group-hover:scale-[1.01]" />
                 ) : (
                   <div className="flex items-center justify-center h-full"><Car className="h-16 w-16 text-muted-foreground/30" /></div>
                 )}
@@ -279,7 +350,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <Badge className="bg-purple-600/90 backdrop-blur-sm text-white border-0">Destaque</Badge>
                   )}
                 </div>
-              </div>
+                {viewStats.today > 0 && (
+                  <Badge className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-sm text-white border-0 font-medium">
+                    <TrendingUp className="h-3 w-3 mr-1" /> {viewStats.today} visualizações hoje
+                  </Badge>
+                )}
+              </button>
               {allPhotos.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">
                   {allPhotos.map((photo: string, i: number) => (
@@ -345,16 +421,21 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             {report && (
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <CardTitle className="flex items-center gap-2">
                       <ShieldCheck className="h-5 w-5 text-amber-500" />
                       Relatório de Inspeção Certificado
                     </CardTitle>
-                    {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
-                      <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
-                        {RECOMMENDATION_LABELS[report.recommendation].label}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
+                        <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
+                          {RECOMMENDATION_LABELS[report.recommendation].label}
+                        </Badge>
+                      )}
+                      <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="text-xs">
+                        <Download className="h-3.5 w-3.5 mr-1.5" /> Descarregar PDF
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -574,14 +655,32 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 </CardContent>
               </Card>
             )}
+
+            {/* Shop reviews */}
+            {report?.shop_id && (
+              <ShopReviews
+                shopId={report.shop_id}
+                shopName={shopInfo?.name}
+                inspectionId={activeInspectionId || undefined}
+                currentUserId={currentUserId}
+                canReview={canReviewShop}
+              />
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
+                  <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas</p>
+                  {(viewStats.total > 0 || viewStats.today > 0) && (
+                    <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
+                      <Eye className="h-3 w-3" />
+                      {viewStats.today > 0 ? `${viewStats.today} hoje · ` : ""}{viewStats.total} visualizações totais
+                    </p>
+                  )}
                 </div>
 
                 {/* Escrow status banner */}
@@ -621,6 +720,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           </ol>
                         </div>
                       </div>
+                    </div>
+                    <div className="bg-muted/40 border border-border rounded-lg p-2.5 flex items-start gap-2">
+                      <Ban className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <strong className="text-foreground">Sem financiamento próprio.</strong> O GarageFlow Market é uma plataforma de transação direta — não é instituição financeira nem oferece crédito. Compre apenas com valores que tem disponíveis ou recorra ao seu banco.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -856,6 +961,25 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           ]
         } : {}),
       })}} />
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-black border-0">
+          <DialogHeader className="sr-only"><DialogTitle>Fotografia ampliada</DialogTitle></DialogHeader>
+          {allPhotos[selectedPhoto] && (
+            <img src={allPhotos[selectedPhoto]} alt="" className="w-full h-auto max-h-[85vh] object-contain" />
+          )}
+          {allPhotos.length > 1 && (
+            <div className="flex gap-2 p-3 overflow-x-auto bg-black/80">
+              {allPhotos.map((p: string, i: number) => (
+                <button key={i} onClick={() => setSelectedPhoto(i)}
+                  className={`w-16 h-12 rounded overflow-hidden flex-shrink-0 border-2 ${i === selectedPhoto ? 'border-amber-400' : 'border-transparent'}`}>
+                  <img src={p} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

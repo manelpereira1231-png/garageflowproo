@@ -157,7 +157,18 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (escrowData) setEscrow(escrowData);
+      if (escrowData) {
+        setEscrow(escrowData);
+        // Auto-load contract if escrow is paid
+        if (["paid", "delivery_confirmed", "released"].includes((escrowData as any).status)) {
+          const { data: contractData } = await supabase
+            .from("market_contracts" as any)
+            .select("*")
+            .eq("escrow_id", (escrowData as any).id)
+            .maybeSingle();
+          if (contractData) setContract(contractData);
+        }
+      }
     }
 
     // Load similar cars (same make or similar price range, exclude current)

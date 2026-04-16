@@ -475,17 +475,29 @@ export default function CarityMarketplace() {
 
       {/* Footer */}
       <footer className="py-8 border-t bg-slate-950 text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-amber-400" />
-            <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col gap-4 text-sm">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-amber-400" />
+              <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <Link to="/market/sell" className="hover:text-white transition-colors">Vender</Link>
+              <Link to="/market/auth" className="hover:text-white transition-colors">Entrar</Link>
+              <Link to="/" className="hover:text-white transition-colors">GarageFlow ERP</Link>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <Link to="/market/sell" className="hover:text-white transition-colors">Vender</Link>
-            <Link to="/market/auth" className="hover:text-white transition-colors">Entrar</Link>
-            <Link to="/" className="hover:text-white transition-colors">GarageFlow ERP</Link>
+          <div className="border-t border-slate-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-3 text-xs">
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <Link to="/legal/privacy" className="hover:text-white transition-colors">Privacidade</Link>
+              <Link to="/legal/terms" className="hover:text-white transition-colors">Termos</Link>
+              <Link to="/legal/market-terms" className="hover:text-white transition-colors">Termos Market</Link>
+              <Link to="/legal/cookies" className="hover:text-white transition-colors">Cookies</Link>
+              <Link to="/legal/dpa" className="hover:text-white transition-colors">DPA</Link>
+              <Link to="/legal/my-data" className="hover:text-white transition-colors">Os Meus Dados</Link>
+            </nav>
+            <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
           </div>
-          <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
         </div>
       </footer>
 

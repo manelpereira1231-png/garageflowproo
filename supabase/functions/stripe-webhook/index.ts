@@ -107,13 +107,25 @@ serve(async (req) => {
 
     let event: Stripe.Event;
 
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-      log("Signature verified");
-    } else {
-      event = JSON.parse(body) as Stripe.Event;
-      log("WARNING: No webhook signature verification");
+    // SECURITY: webhook signature is mandatory. Reject unsigned payloads to
+    // prevent forged events from arbitrary callers (PCI-DSS / RGPD hardening).
+    if (!webhookSecret || !sig) {
+      log("REJECTED: missing webhook signature or secret");
+      return new Response(JSON.stringify({ error: "signature_required" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
+    } catch (sigErr: any) {
+      log("REJECTED: invalid signature", { error: sigErr.message });
+      return new Response(JSON.stringify({ error: "invalid_signature" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    log("Signature verified");
 
     log(`Received event: ${event.type}`);
 

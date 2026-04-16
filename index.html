@@ -143,6 +143,14 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+      // RGPD / ePrivacy: Google Consent Mode v2 — deny all until user opts in.
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500
+      });
       gtag('config', 'AW-18023581561', {
         allow_enhanced_conversions: true,
         conversion_linker: true,

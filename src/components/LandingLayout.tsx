@@ -136,6 +136,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <Link to="/legal/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
               <Link to="/legal/dpa" className="hover:text-foreground transition-colors">DPA</Link>
               <Link to="/legal/my-data" className="hover:text-foreground transition-colors">Os Meus Dados</Link>
+              <Link to="/support" className="text-primary hover:opacity-80 font-medium transition-colors">Suporte</Link>
             </nav>
             <p>© {new Date().getFullYear()} GarageFlow. {t('landing.footer')}</p>
           </div>

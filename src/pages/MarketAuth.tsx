@@ -374,6 +374,8 @@ export default function MarketAuth() {
             <Link to="/legal/dpa" className="hover:text-amber-400 transition-colors">DPA</Link>
             <span>·</span>
             <Link to="/legal/my-data" className="hover:text-amber-400 transition-colors">Os Meus Dados</Link>
+            <span>·</span>
+            <Link to="/support?context=market" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">Suporte</Link>
           </nav>
         </div>
       </div>

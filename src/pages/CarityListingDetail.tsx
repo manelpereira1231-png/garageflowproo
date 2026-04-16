@@ -725,6 +725,20 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 )}
 
+                {/* Sale Contract — available once escrow is paid (buyer or seller) */}
+                {escrow && ["paid", "delivery_confirmed", "released"].includes(escrow.status) &&
+                 (currentUserId === escrow.buyer_id || currentUserId === escrow.seller_id) && (
+                  <Button
+                    onClick={handleDownloadContract}
+                    disabled={contractLoading}
+                    variant="outline"
+                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                  >
+                    {contractLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileCheck className="h-4 w-4 mr-2" />}
+                    Descarregar Contrato Compra/Venda
+                  </Button>
+                )}
+
                 {/* Buy Now — only if no active escrow */}
                 {(!escrow || !["paid", "delivery_confirmed", "released"].includes(escrow.status)) && 
                  (!currentUserId || listing.seller_id !== currentUserId) && (

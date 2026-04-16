@@ -360,6 +360,21 @@ export default function MarketAuth() {
               GarageFlow
             </Link>
           </p>
+
+          {/* Legal links */}
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500 pt-3 border-t border-slate-800">
+            <Link to="/legal/privacy" className="hover:text-amber-400 transition-colors">Privacidade</Link>
+            <span>·</span>
+            <Link to="/legal/terms" className="hover:text-amber-400 transition-colors">Termos</Link>
+            <span>·</span>
+            <Link to="/legal/market-terms" className="hover:text-amber-400 transition-colors">Termos Market</Link>
+            <span>·</span>
+            <Link to="/legal/cookies" className="hover:text-amber-400 transition-colors">Cookies</Link>
+            <span>·</span>
+            <Link to="/legal/dpa" className="hover:text-amber-400 transition-colors">DPA</Link>
+            <span>·</span>
+            <Link to="/legal/my-data" className="hover:text-amber-400 transition-colors">Os Meus Dados</Link>
+          </nav>
         </div>
       </div>
     </div>

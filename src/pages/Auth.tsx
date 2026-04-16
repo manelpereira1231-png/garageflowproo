@@ -299,6 +299,19 @@ export default function Auth() {
         <p className="text-center text-xs text-muted-foreground mt-6">
           Quer comprar ou vender carros? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite o GarageFlow Market →</Link>
         </p>
+
+        {/* Legal links */}
+        <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <Link to="/legal/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>
+          <span>·</span>
+          <Link to="/legal/terms" className="hover:text-foreground transition-colors">Termos</Link>
+          <span>·</span>
+          <Link to="/legal/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+          <span>·</span>
+          <Link to="/legal/dpa" className="hover:text-foreground transition-colors">DPA</Link>
+          <span>·</span>
+          <Link to="/legal/my-data" className="hover:text-foreground transition-colors">Os Meus Dados</Link>
+        </nav>
       </div>
     </div>
   );

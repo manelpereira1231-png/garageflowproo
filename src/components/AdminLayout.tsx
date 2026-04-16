@@ -41,7 +41,9 @@ const navSections = [
   {
     label: "GarageFlow Market",
     items: [
+      { path: "/admin/market-dashboard", label: "Painel Market", icon: BarChart3 },
       { path: "/admin/market", label: "Controlo Market", icon: Car },
+      { path: "/admin/market-kyc", label: "Verificação KYC", icon: Shield },
     ],
   },
   {

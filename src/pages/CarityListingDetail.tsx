@@ -161,7 +161,54 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       .limit(6);
     setSimilarListings((similar || []).map((s: any) => ({ ...s, photos: Array.isArray(s.photos) ? s.photos : [] })));
 
+    // Track view + load view stats (in parallel)
+    trackListingView(id!);
+    const stats = await getListingViewCount(id!);
+    setViewStats(stats);
+
+    // Favorite state + review eligibility
+    if (currentUserId) {
+      isFavorite(id!, currentUserId).then(setFavorited);
+      // Check if user is a verified buyer of this listing's workshop
+      if (reportRes.data?.shop_id) {
+        const { data: completedEscrow } = await supabase
+          .from("market_escrow" as any)
+          .select("id")
+          .eq("buyer_id", currentUserId)
+          .eq("listing_id", id!)
+          .in("status", ["released", "delivery_confirmed"])
+          .maybeSingle();
+        if (completedEscrow) {
+          setCanReviewShop(true);
+          const { data: insp } = await supabase
+            .from("carity_inspections")
+            .select("id")
+            .eq("listing_id", id!)
+            .eq("shop_id", reportRes.data.shop_id)
+            .maybeSingle();
+          if (insp) setActiveInspectionId(insp.id);
+        }
+      }
+    }
+
     setLoading(false);
+  };
+
+  const handleDownloadPDF = () => {
+    if (!report) return;
+    generateInspectionPDF({ listing, report, shop: shopInfo, seller });
+    toast.success("PDF do certificado descarregado");
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!currentUserId) {
+      toast.error("Inicie sessão para guardar favoritos");
+      navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
+      return;
+    }
+    const next = await toggleFavorite(id!, currentUserId);
+    setFavorited(next);
+    toast.success(next ? "Adicionado aos favoritos" : "Removido dos favoritos");
   };
 
   const handleBuyNow = async () => {

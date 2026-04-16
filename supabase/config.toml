@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.market-escrow-manage]
 verify_jwt = false
+
+[functions.generate-sale-contract]
+verify_jwt = false

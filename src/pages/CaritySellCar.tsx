@@ -71,7 +71,12 @@ export default function CaritySellCar() {
         description: form.description, photos: photoUrls, status: 'pending_payment',
       }).select().single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("VIN_DUPLICATE") || error.code === "23505") {
+          throw new Error("Já existe um anúncio ativo com este VIN. Cada veículo só pode ter um anúncio ativo na plataforma.");
+        }
+        throw error;
+      }
       toast.success("Anúncio criado! Agora pague a taxa de inspeção para continuar.");
       navigate(`/market/pay/${listing.id}`);
     } catch (err: any) {

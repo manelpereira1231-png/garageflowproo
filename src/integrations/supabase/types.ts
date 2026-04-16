@@ -907,29 +907,59 @@ export type Database = {
       }
       carity_seller_profiles: {
         Row: {
+          address: string | null
           created_at: string
+          document_number: string | null
+          document_type: string | null
+          document_url: string | null
           id: string
+          kyc_rejection_reason: string | null
+          kyc_reviewed_at: string | null
+          kyc_status: string
+          kyc_submitted_at: string | null
           location: string
           name: string
+          nif: string | null
           phone: string
+          selfie_url: string | null
           user_id: string
           verified: boolean
         }
         Insert: {
+          address?: string | null
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
+          document_url?: string | null
           id?: string
+          kyc_rejection_reason?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           location?: string
           name?: string
+          nif?: string | null
           phone?: string
+          selfie_url?: string | null
           user_id: string
           verified?: boolean
         }
         Update: {
+          address?: string | null
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
+          document_url?: string | null
           id?: string
+          kyc_rejection_reason?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           location?: string
           name?: string
+          nif?: string | null
           phone?: string
+          selfie_url?: string | null
           user_id?: string
           verified?: boolean
         }
@@ -1339,6 +1369,51 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_alerts: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          fuel: string | null
+          id: string
+          last_sent_at: string | null
+          make: string | null
+          max_mileage: number | null
+          max_price: number | null
+          min_year: number | null
+          model: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          fuel?: string | null
+          id?: string
+          last_sent_at?: string | null
+          make?: string | null
+          max_mileage?: number | null
+          max_price?: number | null
+          min_year?: number | null
+          model?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          fuel?: string | null
+          id?: string
+          last_sent_at?: string | null
+          make?: string | null
+          max_mileage?: number | null
+          max_price?: number | null
+          min_year?: number | null
+          model?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       listing_favorites: {
         Row: {
           created_at: string
@@ -1545,6 +1620,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      market_contracts: {
+        Row: {
+          amount: number
+          buyer_id: string
+          buyer_signed_at: string | null
+          buyer_snapshot: Json
+          contract_hash: string | null
+          contract_number: string
+          created_at: string
+          escrow_id: string
+          id: string
+          listing_id: string
+          seller_id: string
+          seller_signed_at: string | null
+          seller_snapshot: Json
+          signed_status: string
+          vehicle_snapshot: Json
+        }
+        Insert: {
+          amount?: number
+          buyer_id: string
+          buyer_signed_at?: string | null
+          buyer_snapshot?: Json
+          contract_hash?: string | null
+          contract_number: string
+          created_at?: string
+          escrow_id: string
+          id?: string
+          listing_id: string
+          seller_id: string
+          seller_signed_at?: string | null
+          seller_snapshot?: Json
+          signed_status?: string
+          vehicle_snapshot?: Json
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          buyer_signed_at?: string | null
+          buyer_snapshot?: Json
+          contract_hash?: string | null
+          contract_number?: string
+          created_at?: string
+          escrow_id?: string
+          id?: string
+          listing_id?: string
+          seller_id?: string
+          seller_signed_at?: string | null
+          seller_snapshot?: Json
+          signed_status?: string
+          vehicle_snapshot?: Json
+        }
+        Relationships: []
       }
       market_escrow: {
         Row: {

@@ -11,7 +11,9 @@ import { ShieldCheck, ArrowLeft, Calendar, Gauge, Fuel, Car, CheckCircle, AlertT
 import { toast } from "sonner";
 import CarityChat from "@/components/CarityChat";
 import ShopReviews from "@/components/ShopReviews";
+import PhotoLightbox from "@/components/PhotoLightbox";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
+import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 
 const STATUS_ICON: Record<string, any> = {
@@ -70,6 +72,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [canReviewShop, setCanReviewShop] = useState(false);
   const [activeInspectionId, setActiveInspectionId] = useState<string | null>(null);
+  const [contractLoading, setContractLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null));
@@ -198,6 +201,32 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (!report) return;
     generateInspectionPDF({ listing, report, shop: shopInfo, seller });
     toast.success("PDF do certificado descarregado");
+  };
+
+  const handleDownloadContract = async () => {
+    if (!escrow) return;
+    setContractLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-sale-contract", {
+        body: { escrow_id: escrow.id },
+      });
+      if (error) throw new Error((error as any)?.context?.error || error.message);
+      if (data?.error) throw new Error(data.error);
+      const contract = data?.contract;
+      if (!contract) throw new Error("Contrato indisponível");
+      generateContractPDF({
+        contract,
+        listing: contract.listing || listing,
+        buyer: contract.buyer_snapshot || {},
+        seller: contract.seller_snapshot || seller || {},
+        amount: Number(contract.amount || escrow.amount),
+      });
+      toast.success("Contrato de compra/venda descarregado");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar contrato");
+    } finally {
+      setContractLoading(false);
+    }
   };
 
   const handleToggleFavorite = async () => {
@@ -342,10 +371,15 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 ) : (
                   <div className="flex items-center justify-center h-full"><Car className="h-16 w-16 text-muted-foreground/30" /></div>
                 )}
-                <div className="absolute top-4 left-4 flex gap-2">
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-2rem)]">
                   <Badge className="bg-white/95 backdrop-blur-sm text-slate-800 border-0 shadow-sm font-semibold">
                     <ShieldCheck className="h-3.5 w-3.5 mr-1 text-green-600" /> Veículo Inspecionado
                   </Badge>
+                  {report?.report_hash && report?.is_locked && (
+                    <Badge className="bg-emerald-600/95 backdrop-blur-sm text-white border-0 shadow-sm font-semibold">
+                      <Lock className="h-3 w-3 mr-1" /> Relatório Blindado · SHA-256
+                    </Badge>
+                  )}
                   {listing.boost_active && (
                     <Badge className="bg-purple-600/90 backdrop-blur-sm text-white border-0">Destaque</Badge>
                   )}
@@ -691,6 +725,20 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 )}
 
+                {/* Sale Contract — available once escrow is paid (buyer or seller) */}
+                {escrow && ["paid", "delivery_confirmed", "released"].includes(escrow.status) &&
+                 (currentUserId === escrow.buyer_id || currentUserId === escrow.seller_id) && (
+                  <Button
+                    onClick={handleDownloadContract}
+                    disabled={contractLoading}
+                    variant="outline"
+                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                  >
+                    {contractLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileCheck className="h-4 w-4 mr-2" />}
+                    Descarregar Contrato Compra/Venda
+                  </Button>
+                )}
+
                 {/* Buy Now — only if no active escrow */}
                 {(!escrow || !["paid", "delivery_confirmed", "released"].includes(escrow.status)) && 
                  (!currentUserId || listing.seller_id !== currentUserId) && (
@@ -962,24 +1010,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         } : {}),
       })}} />
 
-      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-black border-0">
-          <DialogHeader className="sr-only"><DialogTitle>Fotografia ampliada</DialogTitle></DialogHeader>
-          {allPhotos[selectedPhoto] && (
-            <img src={allPhotos[selectedPhoto]} alt="" className="w-full h-auto max-h-[85vh] object-contain" />
-          )}
-          {allPhotos.length > 1 && (
-            <div className="flex gap-2 p-3 overflow-x-auto bg-black/80">
-              {allPhotos.map((p: string, i: number) => (
-                <button key={i} onClick={() => setSelectedPhoto(i)}
-                  className={`w-16 h-12 rounded overflow-hidden flex-shrink-0 border-2 ${i === selectedPhoto ? 'border-amber-400' : 'border-transparent'}`}>
-                  <img src={p} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PhotoLightbox
+        photos={allPhotos}
+        open={lightboxOpen}
+        initialIndex={selectedPhoto}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 }

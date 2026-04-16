@@ -109,12 +109,29 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    document.title = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
+    const titleText = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
+    document.title = titleText;
     // Dynamic meta description with real data
-    const metaDesc = document.querySelector('meta[name="description"]');
     const descText = `${listingData.make} ${listingData.model} ${listingData.year} — €${listingData.price?.toLocaleString()}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
-    if (metaDesc) metaDesc.setAttribute("content", descText);
-    else { const m = document.createElement("meta"); m.name = "description"; m.content = descText; document.head.appendChild(m); }
+    const setMeta = (selector: string, attr: "name" | "property", key: string, content: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
+      el.setAttribute("content", content);
+    };
+    setMeta('meta[name="description"]', "name", "description", descText);
+    // Open Graph + Twitter (WhatsApp/Facebook/X preview)
+    const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+    const ogUrl = `https://${projectId}.supabase.co/functions/v1/market-og-image?listing_id=${listingData.id}`;
+    const pageUrl = `https://garageflow.pt/market/car/${listingData.id}`;
+    setMeta('meta[property="og:title"]', "property", "og:title", titleText);
+    setMeta('meta[property="og:description"]', "property", "og:description", descText);
+    setMeta('meta[property="og:image"]', "property", "og:image", ogUrl);
+    setMeta('meta[property="og:url"]', "property", "og:url", pageUrl);
+    setMeta('meta[property="og:type"]', "property", "og:type", "product");
+    setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
+    setMeta('meta[name="twitter:title"]', "name", "twitter:title", titleText);
+    setMeta('meta[name="twitter:description"]', "name", "twitter:description", descText);
+    setMeta('meta[name="twitter:image"]', "name", "twitter:image", ogUrl);
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
       supabase.from("carity_inspection_reports").select("*").eq("listing_id", id).single(),

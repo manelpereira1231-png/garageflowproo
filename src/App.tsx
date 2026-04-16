@@ -84,6 +84,9 @@ const MarketProfile = lazyRetry(() => import("@/pages/MarketProfile"));
 const CarityAuth = lazyRetry(() => import("@/pages/CarityAuth"));
 const CarityByMake = lazyRetry(() => import("@/pages/CarityByMake"));
 const CarityByCity = lazyRetry(() => import("@/pages/CarityByCity"));
+const CarityByModel = lazyRetry(() => import("@/pages/CarityByModel"));
+const CarityByPrice = lazyRetry(() => import("@/pages/CarityByPrice"));
+const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 
 // Admin pages
@@ -331,6 +334,9 @@ const publicRoutes = [
   { path: "/market/profile", element: <Suspense fallback={<PageLoader />}><MarketProfile /></Suspense> },
   { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
+  { path: "/market/modelo/:make/:model", element: <Suspense fallback={<PageLoader />}><CarityByModel /></Suspense> },
+  { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
+  { path: "/market/favoritos", element: <Suspense fallback={<PageLoader />}><CarityFavorites /></Suspense> },
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },

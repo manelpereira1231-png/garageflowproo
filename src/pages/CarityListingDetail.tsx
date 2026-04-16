@@ -331,9 +331,14 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           <div className="lg:col-span-2 space-y-6">
             {/* Photo gallery */}
             <Card className="overflow-hidden">
-              <div className="aspect-video bg-muted relative">
+              <button
+                type="button"
+                className="aspect-video bg-muted relative w-full block group"
+                onClick={() => allPhotos[selectedPhoto] && setLightboxOpen(true)}
+                aria-label="Ampliar fotografia"
+              >
                 {allPhotos[selectedPhoto] ? (
-                  <img src={allPhotos[selectedPhoto]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover" />
+                  <img src={allPhotos[selectedPhoto]} alt={`${listing.make} ${listing.model}`} className="w-full h-full object-cover transition-transform group-hover:scale-[1.01]" />
                 ) : (
                   <div className="flex items-center justify-center h-full"><Car className="h-16 w-16 text-muted-foreground/30" /></div>
                 )}
@@ -345,7 +350,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <Badge className="bg-purple-600/90 backdrop-blur-sm text-white border-0">Destaque</Badge>
                   )}
                 </div>
-              </div>
+                {viewStats.today > 0 && (
+                  <Badge className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-sm text-white border-0 font-medium">
+                    <TrendingUp className="h-3 w-3 mr-1" /> {viewStats.today} visualizações hoje
+                  </Badge>
+                )}
+              </button>
               {allPhotos.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">
                   {allPhotos.map((photo: string, i: number) => (

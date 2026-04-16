@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 const NAV_ITEMS = [
   { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
   { path: "/market/my-listings", label: "Anúncios", icon: Car },
+  { path: "/market/purchases", label: "Compras", icon: CreditCard },
   { path: "/market/messages", label: "Mensagens", icon: MessageCircle },
   { path: "/market/profile", label: "Perfil", icon: User },
 ];

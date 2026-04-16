@@ -961,6 +961,25 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           ]
         } : {}),
       })}} />
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-black border-0">
+          <DialogHeader className="sr-only"><DialogTitle>Fotografia ampliada</DialogTitle></DialogHeader>
+          {allPhotos[selectedPhoto] && (
+            <img src={allPhotos[selectedPhoto]} alt="" className="w-full h-auto max-h-[85vh] object-contain" />
+          )}
+          {allPhotos.length > 1 && (
+            <div className="flex gap-2 p-3 overflow-x-auto bg-black/80">
+              {allPhotos.map((p: string, i: number) => (
+                <button key={i} onClick={() => setSelectedPhoto(i)}
+                  className={`w-16 h-12 rounded overflow-hidden flex-shrink-0 border-2 ${i === selectedPhoto ? 'border-amber-400' : 'border-transparent'}`}>
+                  <img src={p} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

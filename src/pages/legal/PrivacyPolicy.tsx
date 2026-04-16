@@ -23,15 +23,23 @@ export default function PrivacyPolicy() {
           A presente Política de Privacidade descreve como o <strong>GarageFlow</strong> ("nós",
           "plataforma") recolhe, utiliza, conserva e protege os dados pessoais dos utilizadores
           do software de gestão para oficinas (<em>GarageFlow ERP</em>) e do marketplace de
-          veículos (<em>GarageFlow Market</em>), em conformidade com o Regulamento (UE) 2016/679
-          (RGPD) e a Lei n.º 58/2019 de Portugal.
+          veículos (<em>GarageFlow Market</em>), em conformidade com:
         </p>
+        <ul>
+          <li>Regulamento (UE) 2016/679 — <strong>RGPD</strong> (aplicável em toda a UE);</li>
+          <li><strong>Portugal:</strong> Lei n.º 58/2019 (execução do RGPD) e Lei n.º 41/2004 (privacidade nas comunicações eletrónicas);</li>
+          <li><strong>Espanha:</strong> Ley Orgánica 3/2018 de Protección de Datos Personales y garantía de los derechos digitales (<strong>LOPDGDD</strong>) e Ley 34/2002 de Servicios de la Sociedad de la Información y de Comercio Electrónico (<strong>LSSI-CE</strong>).</li>
+        </ul>
 
         <h2>1. Responsável pelo tratamento</h2>
         <p>
-          Responsável: <strong>GarageFlow</strong> — [Nome legal da entidade], NIF [—], com sede em
+          Responsável: <strong>GarageFlow</strong> — [Nome legal da entidade], NIF/CIF [—], com sede em
           [morada], Portugal. Contacto para questões de privacidade:{" "}
           <a href="mailto:privacidade@garageflow.pt">privacidade@garageflow.pt</a>.
+        </p>
+        <p>
+          Para utilizadores residentes em Espanha, este mesmo contacto serve como ponto único para
+          o exercício dos direitos previstos na LOPDGDD.
         </p>
 
         <h2>2. Que dados recolhemos</h2>

@@ -421,16 +421,21 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             {report && (
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <CardTitle className="flex items-center gap-2">
                       <ShieldCheck className="h-5 w-5 text-amber-500" />
                       Relatório de Inspeção Certificado
                     </CardTitle>
-                    {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
-                      <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
-                        {RECOMMENDATION_LABELS[report.recommendation].label}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
+                        <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
+                          {RECOMMENDATION_LABELS[report.recommendation].label}
+                        </Badge>
+                      )}
+                      <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="text-xs">
+                        <Download className="h-3.5 w-3.5 mr-1.5" /> Descarregar PDF
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">

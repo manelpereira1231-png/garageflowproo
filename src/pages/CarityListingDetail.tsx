@@ -761,6 +761,23 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 )}
 
+                {/* 48h Satisfaction window — buyer only */}
+                {escrow && escrow.status === "paid" && currentUserId === escrow.buyer_id && (
+                  <MarketSatisfactionWindow escrow={escrow} onCancelled={loadData} />
+                )}
+
+                {/* Digital contract signing — both parties */}
+                {contract && currentUserId && (currentUserId === contract.buyer_id || currentUserId === contract.seller_id) && (
+                  <MarketContractSigning
+                    contract={contract}
+                    listing={listing}
+                    isBuyer={currentUserId === contract.buyer_id}
+                    isSeller={currentUserId === contract.seller_id}
+                    userId={currentUserId}
+                    onSigned={loadData}
+                  />
+                )}
+
                 {/* Sale Contract — available once escrow is paid (buyer or seller) */}
                 {escrow && ["paid", "delivery_confirmed", "released"].includes(escrow.status) &&
                  (currentUserId === escrow.buyer_id || currentUserId === escrow.seller_id) && (

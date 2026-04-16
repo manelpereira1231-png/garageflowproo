@@ -261,6 +261,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             <li className="text-foreground font-medium">{listing.make} {listing.model} {listing.year}</li>
           </ol>
         </nav>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {/* Photo gallery */}
             <Card className="overflow-hidden">

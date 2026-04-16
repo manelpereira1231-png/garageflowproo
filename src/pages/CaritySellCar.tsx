@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, ArrowLeft, Car, Loader2 } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Car, Loader2, Lock } from "lucide-react";
 import StructuredPhotoUpload, { getDefaultPhotoSlots, getPhotoUrls, areRequiredPhotosFilled, type PhotoSlot } from "@/components/StructuredPhotoUpload";
+import MarketKYCFlow from "@/components/MarketKYCFlow";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 
@@ -49,9 +50,15 @@ export default function CaritySellCar() {
 
   // Photo upload is now handled by StructuredPhotoUpload component
 
+  const kycApproved = sellerProfile?.kyc_status === "approved";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!kycApproved) {
+      toast.error("Verificação de identidade obrigatória antes de publicar.");
+      return;
+    }
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error("Preencha todos os campos obrigatórios"); return; }
     if (!areRequiredPhotosFilled(photoSlots)) { toast.error("Preencha todas as fotos obrigatórias do veículo"); return; }
     if (!sellerForm.name || !sellerForm.phone) { toast.error("Preencha os dados de contacto do vendedor"); return; }
@@ -109,6 +116,15 @@ export default function CaritySellCar() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* KYC Gate — required before publishing */}
+          {user && (
+            <MarketKYCFlow
+              userId={user.id}
+              profile={sellerProfile}
+              onComplete={(updated) => setSellerProfile(updated)}
+            />
+          )}
+
           <Card>
             <CardHeader><CardTitle className="text-lg">Dados do Vendedor</CardTitle><CardDescription>As suas informações de contacto</CardDescription></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,9 +186,9 @@ export default function CaritySellCar() {
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold" disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            Submeter e pagar inspeção (€24,90)
+          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved}>
+            {!kycApproved ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
+            {!kycApproved ? "Verificação de identidade obrigatória" : "Submeter e pagar inspeção (€24,90)"}
           </Button>
         </form>
       </div>

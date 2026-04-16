@@ -62,3 +62,12 @@ verify_jwt = false
 
 [functions.generate-sale-contract]
 verify_jwt = false
+
+[functions.market-og-image]
+verify_jwt = false
+
+[functions.market-listing-alerts]
+verify_jwt = false
+
+[functions.market-satisfaction-cancel]
+verify_jwt = false

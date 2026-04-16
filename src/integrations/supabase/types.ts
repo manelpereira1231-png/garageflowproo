@@ -787,6 +787,9 @@ export type Database = {
           description: string
           fuel: string
           id: string
+          location_label: string | null
+          location_lat: number | null
+          location_lng: number | null
           make: string
           mileage: number
           model: string
@@ -809,6 +812,9 @@ export type Database = {
           description?: string
           fuel?: string
           id?: string
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           make?: string
           mileage?: number
           model?: string
@@ -831,6 +837,9 @@ export type Database = {
           description?: string
           fuel?: string
           id?: string
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           make?: string
           mileage?: number
           model?: string
@@ -922,6 +931,8 @@ export type Database = {
           nif: string | null
           phone: string
           selfie_url: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
           user_id: string
           verified: boolean
         }
@@ -941,6 +952,8 @@ export type Database = {
           nif?: string | null
           phone?: string
           selfie_url?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           user_id: string
           verified?: boolean
         }
@@ -960,6 +973,8 @@ export type Database = {
           nif?: string | null
           phone?: string
           selfie_url?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           user_id?: string
           verified?: boolean
         }
@@ -1625,6 +1640,7 @@ export type Database = {
         Row: {
           amount: number
           buyer_id: string
+          buyer_signature_url: string | null
           buyer_signed_at: string | null
           buyer_snapshot: Json
           contract_hash: string | null
@@ -1634,6 +1650,7 @@ export type Database = {
           id: string
           listing_id: string
           seller_id: string
+          seller_signature_url: string | null
           seller_signed_at: string | null
           seller_snapshot: Json
           signed_status: string
@@ -1642,6 +1659,7 @@ export type Database = {
         Insert: {
           amount?: number
           buyer_id: string
+          buyer_signature_url?: string | null
           buyer_signed_at?: string | null
           buyer_snapshot?: Json
           contract_hash?: string | null
@@ -1651,6 +1669,7 @@ export type Database = {
           id?: string
           listing_id: string
           seller_id: string
+          seller_signature_url?: string | null
           seller_signed_at?: string | null
           seller_snapshot?: Json
           signed_status?: string
@@ -1659,6 +1678,7 @@ export type Database = {
         Update: {
           amount?: number
           buyer_id?: string
+          buyer_signature_url?: string | null
           buyer_signed_at?: string | null
           buyer_snapshot?: Json
           contract_hash?: string | null
@@ -1668,6 +1688,7 @@ export type Database = {
           id?: string
           listing_id?: string
           seller_id?: string
+          seller_signature_url?: string | null
           seller_signed_at?: string | null
           seller_snapshot?: Json
           signed_status?: string
@@ -1680,6 +1701,7 @@ export type Database = {
           amount: number
           buyer_dispute_reason: string | null
           buyer_id: string
+          cancelled_within_window: boolean
           commission_rate: number
           created_at: string
           delivery_confirmed_at: string | null
@@ -1693,6 +1715,7 @@ export type Database = {
           resolution_notes: string | null
           resolved_at: string | null
           resolved_by: string | null
+          satisfaction_window_ends_at: string | null
           seller_amount: number
           seller_dispute_response: string | null
           seller_id: string
@@ -1706,6 +1729,7 @@ export type Database = {
           amount?: number
           buyer_dispute_reason?: string | null
           buyer_id: string
+          cancelled_within_window?: boolean
           commission_rate?: number
           created_at?: string
           delivery_confirmed_at?: string | null
@@ -1719,6 +1743,7 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          satisfaction_window_ends_at?: string | null
           seller_amount?: number
           seller_dispute_response?: string | null
           seller_id: string
@@ -1732,6 +1757,7 @@ export type Database = {
           amount?: number
           buyer_dispute_reason?: string | null
           buyer_id?: string
+          cancelled_within_window?: boolean
           commission_rate?: number
           created_at?: string
           delivery_confirmed_at?: string | null
@@ -1745,6 +1771,7 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          satisfaction_window_ends_at?: string | null
           seller_amount?: number
           seller_dispute_response?: string | null
           seller_id?: string
@@ -3840,7 +3867,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      listing_view_stats: {
+        Row: {
+          listing_id: string | null
+          views_today: number | null
+          views_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_views_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }

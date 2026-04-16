@@ -84,7 +84,13 @@ export default function PrivacyPolicy() {
           <li>Apagar a sua conta e dados associados (direito ao esquecimento), salvo obrigações legais de conservação;</li>
           <li>Limitar ou opor-se ao tratamento;</li>
           <li>Retirar o consentimento a qualquer momento;</li>
-          <li>Apresentar reclamação à <strong>CNPD — Comissão Nacional de Proteção de Dados</strong> (<a href="https://www.cnpd.pt" target="_blank" rel="noreferrer">cnpd.pt</a>).</li>
+          <li>
+            Apresentar reclamação à autoridade de controlo competente:
+            <ul>
+              <li><strong>Portugal:</strong> CNPD — Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noreferrer">cnpd.pt</a>).</li>
+              <li><strong>Espanha:</strong> AEPD — Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noreferrer">aepd.es</a>).</li>
+            </ul>
+          </li>
         </ul>
         <p>
           Pode exercer estes direitos através da página{" "}

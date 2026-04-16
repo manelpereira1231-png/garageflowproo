@@ -97,6 +97,7 @@ const TermsOfService = lazyRetry(() => import("@/pages/legal/TermsOfService"));
 const CookiePolicy = lazyRetry(() => import("@/pages/legal/CookiePolicy"));
 const DPA = lazyRetry(() => import("@/pages/legal/DPA"));
 const MyData = lazyRetry(() => import("@/pages/legal/MyData"));
+const MarketTerms = lazyRetry(() => import("@/pages/legal/MarketTerms"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 
 // Admin pages
@@ -362,6 +363,7 @@ const publicRoutes = [
   { path: "/legal/cookies", element: <Suspense fallback={<PageLoader />}><CookiePolicy /></Suspense> },
   { path: "/legal/dpa", element: <Suspense fallback={<PageLoader />}><DPA /></Suspense> },
   { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
+  { path: "/legal/market-terms", element: <Suspense fallback={<PageLoader />}><MarketTerms /></Suspense> },
 ];
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");

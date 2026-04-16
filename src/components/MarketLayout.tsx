@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
+import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 
 const NAV_ITEMS = [
   { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
@@ -26,6 +27,7 @@ export default function MarketLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen bg-background">
+      <MarketPendingPaymentBanner />
       {/* Top nav */}
       <nav className="bg-slate-900 text-white px-4 py-3 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

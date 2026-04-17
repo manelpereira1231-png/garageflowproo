@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp, Heart } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatRelativePT } from "@/lib/relativeTime";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',
@@ -46,6 +47,7 @@ interface RealStats {
 }
 
 export default function CarityMarketplace() {
+  const { pricing, formatPrice } = useCountryPricing();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

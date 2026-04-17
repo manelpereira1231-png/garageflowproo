@@ -49,36 +49,21 @@ serve(async (req) => {
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
 
-      // Verify the offer exists and is accepted
       const { data: offer, error: offerErr } = await adminClient
-        .from("carity_offers")
-        .select("*")
-        .eq("id", offer_id)
-        .eq("buyer_id", user.id)
-        .eq("status", "accepted")
-        .single();
-
+        .from("carity_offers").select("*").eq("id", offer_id)
+        .eq("buyer_id", user.id).eq("status", "accepted").single();
       if (offerErr || !offer) throw new Error("Proposta não encontrada ou já processada");
 
-      // Get listing info
       const { data: listing } = await adminClient
-        .from("carity_listings")
-        .select("*")
-        .eq("id", listing_id)
-        .single();
-
+        .from("carity_listings").select("*").eq("id", listing_id).single();
       if (!listing) throw new Error("Anúncio não encontrado");
 
-      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-        apiVersion: "2025-08-27.basil",
-      });
-
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
       const origin = req.headers.get("origin") || "https://garageflow.pt";
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       let customerId: string | undefined;
       if (customers.data.length > 0) customerId = customers.data[0].id;
 
-      // 2% commission
       const amountCents = Math.round(amount * 100);
       const commissionCents = Math.round(amountCents * 0.02);
 
@@ -100,60 +85,41 @@ serve(async (req) => {
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
-          listing_id,
-          offer_id,
-          type: "carity_car_purchase",
+          listing_id, offer_id, type: "carity_car_purchase",
           commission_cents: String(commissionCents),
-          buyer_id: user.id,
-          seller_id: listing.seller_id,
+          buyer_id: user.id, seller_id: listing.seller_id,
         },
       });
 
-      // Update offer with stripe session
       await adminClient.from("carity_offers")
         .update({ stripe_session_id: session.id, status: "payment_pending" })
         .eq("id", offer_id);
 
-      // Record transaction
       await adminClient.from("carity_transactions").insert({
-        listing_id,
-        type: "car_purchase",
-        amount,
-        platform_amount: commissionCents / 100,
-        shop_amount: 0,
-        status: "pending",
-        stripe_payment_id: session.id,
+        listing_id, type: "car_purchase", amount,
+        platform_amount: commissionCents / 100, shop_amount: 0,
+        status: "pending", stripe_payment_id: session.id,
       });
 
       return new Response(JSON.stringify({ url: session.url }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
     }
 
-    // Handle direct Buy Now (at full listed price, no offer needed)
+    // Handle direct Buy Now
     if (action === "buy_now") {
       if (!listing_id) throw new Error("listing_id é obrigatório");
-
       const adminClient = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
 
       const { data: listing } = await adminClient
-        .from("carity_listings")
-        .select("*")
-        .eq("id", listing_id)
-        .eq("status", "published")
-        .single();
-
+        .from("carity_listings").select("*").eq("id", listing_id).eq("status", "published").single();
       if (!listing) throw new Error("Anúncio não encontrado ou já vendido");
       if (listing.seller_id === user.id) throw new Error("Não pode comprar o seu próprio carro");
 
-      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-        apiVersion: "2025-08-27.basil",
-      });
-
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
       const origin = req.headers.get("origin") || "https://garageflow.pt";
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       let customerId: string | undefined;
@@ -180,28 +146,20 @@ serve(async (req) => {
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
-          listing_id,
-          type: "carity_car_purchase_direct",
+          listing_id, type: "carity_car_purchase_direct",
           commission_cents: String(commissionCents),
-          buyer_id: user.id,
-          seller_id: listing.seller_id,
+          buyer_id: user.id, seller_id: listing.seller_id,
         },
       });
 
-      // Record transaction
       await adminClient.from("carity_transactions").insert({
-        listing_id,
-        type: "car_purchase",
-        amount: listing.price,
-        platform_amount: commissionCents / 100,
-        shop_amount: 0,
-        status: "pending",
-        stripe_payment_id: session.id,
+        listing_id, type: "car_purchase", amount: listing.price,
+        platform_amount: commissionCents / 100, shop_amount: 0,
+        status: "pending", stripe_payment_id: session.id,
       });
 
       return new Response(JSON.stringify({ url: session.url }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
     }
 
@@ -212,20 +170,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
     const origin = req.headers.get("origin") || "https://garageflow.pt";
 
-    // Check/create customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
+    if (customers.data.length > 0) customerId = customers.data[0].id;
 
-    // Handle boost payments
+    // Boost payments (unchanged — EUR only for now)
     if (type === "boost") {
       const { boost_type } = body;
       const boostPrices: Record<string, { amount: number; label: string; days: number }> = {
@@ -233,7 +185,6 @@ serve(async (req) => {
         "14d": { amount: 999, label: "Destaque 14 dias", days: 14 },
         "top": { amount: 1299, label: "Topo do marketplace", days: 30 },
       };
-
       const boost = boostPrices[boost_type || "7d"];
       if (!boost) throw new Error("Tipo de boost inválido");
 
@@ -241,11 +192,7 @@ serve(async (req) => {
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         line_items: [{
-          price_data: {
-            currency: "eur",
-            product_data: { name: `Carity — ${boost.label}` },
-            unit_amount: boost.amount,
-          },
+          price_data: { currency: "eur", product_data: { name: `Carity — ${boost.label}` }, unit_amount: boost.amount },
           quantity: 1,
         }],
         mode: "payment",
@@ -255,126 +202,123 @@ serve(async (req) => {
       });
 
       await adminClient.from("carity_boosts").insert({
-        listing_id,
-        seller_id: user.id,
-        boost_type: boost_type || "7d",
-        price: boost.amount / 100,
-        status: "pending",
-        stripe_session_id: session.id,
+        listing_id, seller_id: user.id, boost_type: boost_type || "7d",
+        price: boost.amount / 100, status: "pending", stripe_session_id: session.id,
       });
 
       return new Response(JSON.stringify({ url: session.url }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
     }
 
-    // Handle inspection payment (default)
+    // ─────────── INSPECTION PAYMENT (DYNAMIC PER COUNTRY) ───────────
     const { data: listing, error: listingErr } = await adminClient
-      .from("carity_listings")
-      .select("*")
-      .eq("id", listing_id)
-      .eq("seller_id", user.id)
-      .eq("status", "pending_payment")
-      .single();
-
+      .from("carity_listings").select("*").eq("id", listing_id)
+      .eq("seller_id", user.id).eq("status", "pending_payment").single();
     if (listingErr || !listing) throw new Error("Anúncio não encontrado ou já pago");
 
-    // Inspection: 24.90€
+    // Detect seller country from profile (fallback PT)
+    const { data: sellerProfile } = await adminClient
+      .from("carity_seller_profiles")
+      .select("country_code, location")
+      .eq("user_id", user.id).maybeSingle();
+
+    const countryCode = (sellerProfile?.country_code || "PT").toUpperCase();
+
+    // Read country settings (currency, prices, splits)
+    const { data: country } = await adminClient
+      .from("country_settings")
+      .select("currency, inspection_price, inspection_shop_share, inspection_platform_share, active")
+      .eq("code", countryCode).maybeSingle();
+
+    if (!country || !country.active) {
+      throw new Error(`O país ${countryCode} ainda não está ativo. Contacte o suporte.`);
+    }
+
+    const currency = (country.currency || "EUR").toLowerCase();
+    const inspectionPrice = Number(country.inspection_price);
+    const shopShare = Number(country.inspection_shop_share);
+    const platformShare = Number(country.inspection_platform_share);
+
+    if (!inspectionPrice || inspectionPrice <= 0) {
+      throw new Error(`Preço de inspeção não configurado para ${countryCode}.`);
+    }
+
+    // INR has no decimals in Stripe; EUR/USD/BRL use cents
+    const zeroDecimal = ["jpy", "krw", "vnd", "clp"];
+    const unitAmount = zeroDecimal.includes(currency)
+      ? Math.round(inspectionPrice)
+      : Math.round(inspectionPrice * 100);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [{
-        price: "price_1TMcvCE1zL2Sl1ZTiWqWuGfZ",
+        price_data: {
+          currency,
+          product_data: {
+            name: `Inspeção GarageFlow Market`,
+            description: `${listing.make} ${listing.model} (${listing.year}) — ${listing.plate}`,
+          },
+          unit_amount: unitAmount,
+        },
         quantity: 1,
       }],
       mode: "payment",
-      success_url: `${origin}/carity/meus-anuncios?payment=success`,
-      cancel_url: `${origin}/carity/pagar/${listing_id}?payment=cancelled`,
-      metadata: { listing_id, type: "carity_inspection" },
+      success_url: `${origin}/market/my-listings?payment=success`,
+      cancel_url: `${origin}/market/pay/${listing_id}?payment=cancelled`,
+      metadata: { listing_id, type: "carity_inspection", country: countryCode },
     });
 
-    // Update listing status
     await adminClient.from("carity_listings")
-      .update({ status: "pending_inspection" })
-      .eq("id", listing_id);
+      .update({ status: "pending_inspection" }).eq("id", listing_id);
 
-    // ── AUTO-ASSIGN: Find partner shops and send inspection offers ──
-
-    // Get seller location from profile
-    const { data: sellerProfile } = await adminClient
-      .from("carity_seller_profiles")
-      .select("location")
-      .eq("user_id", user.id)
-      .single();
-
-    // Get all active partner shops
+    // ── AUTO-ASSIGN partner shops in same country ──
     const { data: partnerShops } = await adminClient
       .from("shops")
-      .select("id, name, email, phone, address, latitude, longitude")
-      .eq("is_carity_partner", true)
-      .eq("carity_active", true);
+      .select("id, name, email, phone, address, latitude, longitude, country_code")
+      .eq("is_carity_partner", true).eq("carity_active", true);
 
-    if (partnerShops && partnerShops.length > 0) {
-      // Sort by distance if seller has coords, otherwise take all
-      let sortedShops = [...partnerShops];
+    // Filter to same country (fallback: include shops with no country set)
+    const sameCountry = (partnerShops || []).filter(
+      s => !s.country_code || s.country_code.toUpperCase() === countryCode
+    );
 
-      // Try to find a shop with coordinates to calculate distance
-      const shopsWithCoords = sortedShops.filter(s => s.latitude && s.longitude);
-
-      if (shopsWithCoords.length > 0) {
-        // Use the first shop with coords as reference or seller location
-        // For now, sort shops with coords first (nearest logic ready for when seller has coords)
-        sortedShops = [
-          ...shopsWithCoords,
-          ...sortedShops.filter(s => !s.latitude || !s.longitude),
-        ];
-      }
-
-      // Take top 5 shops
+    if (sameCountry.length > 0) {
+      const shopsWithCoords = sameCountry.filter(s => s.latitude && s.longitude);
+      const sortedShops = shopsWithCoords.length > 0
+        ? [...shopsWithCoords, ...sameCountry.filter(s => !s.latitude || !s.longitude)]
+        : sameCountry;
       const topShops = sortedShops.slice(0, 5);
-
-      // Create inspection record assigned to nearest shop
       const primaryShop = topShops[0];
+
       const { data: inspection } = await adminClient
         .from("carity_inspections")
         .insert({
-          listing_id,
-          shop_id: primaryShop.id,
-          status: "pending",
-          payment_status: "paid",
-           payment_amount: 24.90,
-           shop_share: 16.18,
-           platform_share: 8.72,
+          listing_id, shop_id: primaryShop.id,
+          status: "pending", payment_status: "paid",
+          payment_amount: inspectionPrice,
+          shop_share: shopShare,
+          platform_share: platformShare,
           stripe_session_id: session.id,
-          notes: `Inspeção auto-atribuída após pagamento. ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}`,
-        })
-        .select()
-        .single();
+          notes: `Inspeção auto-atribuída [${countryCode}]. ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}`,
+        }).select().single();
 
       if (inspection) {
-        // Create offers for all top shops
         const offers = topShops.map(shop => ({
-          inspection_id: inspection.id,
-          listing_id,
-          shop_id: shop.id,
-          status: "pending",
+          inspection_id: inspection.id, listing_id, shop_id: shop.id, status: "pending",
         }));
-
         await adminClient.from("carity_inspection_offers").insert(offers);
 
-        // Create notification for each shop
         const notifications = topShops.map(shop => ({
           shop_id: shop.id,
           title: "🚗 Nova inspeção Market disponível",
-          message: `Novo pedido de inspeção: ${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}. Aceite antes que outra oficina o faça!`,
+          message: `${listing.make} ${listing.model} (${listing.year}) - ${listing.plate}. Aceite antes de outra oficina!`,
           type: "carity_inspection",
           link: "/market/inspections",
         }));
-
         await adminClient.from("notifications").insert(notifications);
 
-        // Try to send push notifications (non-blocking)
         try {
           const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
           for (const shop of topShops) {
@@ -389,26 +333,20 @@ serve(async (req) => {
               }),
             }).catch(() => {});
           }
-        } catch (_) {
-          // Push is non-blocking
-        }
+        } catch (_) {}
       }
 
-      // Update listing with the primary shop
       await adminClient.from("carity_listings")
-        .update({ shop_id: primaryShop.id })
-        .eq("id", listing_id);
+        .update({ shop_id: primaryShop.id }).eq("id", listing_id);
     }
 
     return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
     });
   } catch (error: any) {
     console.error("carity-pay-inspection error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500,
     });
   }
 });

@@ -917,6 +917,7 @@ export type Database = {
       carity_seller_profiles: {
         Row: {
           address: string | null
+          country_code: string
           created_at: string
           document_number: string | null
           document_type: string | null
@@ -938,6 +939,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          country_code?: string
           created_at?: string
           document_number?: string | null
           document_type?: string | null
@@ -959,6 +961,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          country_code?: string
           created_at?: string
           document_number?: string | null
           document_type?: string | null
@@ -978,7 +981,15 @@ export type Database = {
           user_id?: string
           verified?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       carity_transactions: {
         Row: {
@@ -1129,6 +1140,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      country_settings: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          currency_symbol: string
+          default_language: string
+          flag_emoji: string
+          inspection_platform_share: number
+          inspection_price: number
+          inspection_shop_share: number
+          launch_date: string | null
+          locale: string
+          market_commission_rate: number
+          name: string
+          notes: string | null
+          saas_garage_monthly: number
+          saas_garage_yearly: number
+          saas_pro_monthly: number
+          saas_pro_yearly: number
+          saas_trial_days: number
+          stripe_garage_monthly: string | null
+          stripe_garage_yearly: string | null
+          stripe_pro_monthly: string | null
+          stripe_pro_yearly: string | null
+          supported_languages: string[]
+          tax_label: string
+          timezones: string[]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          currency: string
+          currency_symbol: string
+          default_language?: string
+          flag_emoji?: string
+          inspection_platform_share?: number
+          inspection_price?: number
+          inspection_shop_share?: number
+          launch_date?: string | null
+          locale: string
+          market_commission_rate?: number
+          name: string
+          notes?: string | null
+          saas_garage_monthly?: number
+          saas_garage_yearly?: number
+          saas_pro_monthly?: number
+          saas_pro_yearly?: number
+          saas_trial_days?: number
+          stripe_garage_monthly?: string | null
+          stripe_garage_yearly?: string | null
+          stripe_pro_monthly?: string | null
+          stripe_pro_yearly?: string | null
+          supported_languages?: string[]
+          tax_label?: string
+          timezones?: string[]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          default_language?: string
+          flag_emoji?: string
+          inspection_platform_share?: number
+          inspection_price?: number
+          inspection_shop_share?: number
+          launch_date?: string | null
+          locale?: string
+          market_commission_rate?: number
+          name?: string
+          notes?: string | null
+          saas_garage_monthly?: number
+          saas_garage_yearly?: number
+          saas_pro_monthly?: number
+          saas_pro_yearly?: number
+          saas_trial_days?: number
+          stripe_garage_monthly?: string | null
+          stripe_garage_yearly?: string | null
+          stripe_pro_monthly?: string | null
+          stripe_pro_yearly?: string | null
+          supported_languages?: string[]
+          tax_label?: string
+          timezones?: string[]
+          updated_at?: string
+        }
+        Relationships: []
       }
       email_logs: {
         Row: {
@@ -2635,6 +2739,38 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_admin_countries: {
+        Row: {
+          country_code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_admin_countries_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       sale_confirmations: {
         Row: {
           buyer_confirmed: boolean
@@ -3077,6 +3213,7 @@ export type Database = {
           carity_priority: number
           carity_rating: number
           country: string
+          country_code: string
           created_at: string
           currency: string
           email: string
@@ -3105,6 +3242,7 @@ export type Database = {
           carity_priority?: number
           carity_rating?: number
           country?: string
+          country_code?: string
           created_at?: string
           currency?: string
           email?: string
@@ -3133,6 +3271,7 @@ export type Database = {
           carity_priority?: number
           carity_rating?: number
           country?: string
+          country_code?: string
           created_at?: string
           currency?: string
           email?: string
@@ -3153,7 +3292,15 @@ export type Database = {
           user_id?: string
           vat_rate?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shops_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -4014,6 +4161,46 @@ export type Database = {
       detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }
+      get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
+      get_country_config: {
+        Args: { _code: string }
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          currency_symbol: string
+          default_language: string
+          flag_emoji: string
+          inspection_platform_share: number
+          inspection_price: number
+          inspection_shop_share: number
+          launch_date: string | null
+          locale: string
+          market_commission_rate: number
+          name: string
+          notes: string | null
+          saas_garage_monthly: number
+          saas_garage_yearly: number
+          saas_pro_monthly: number
+          saas_pro_yearly: number
+          saas_trial_days: number
+          stripe_garage_monthly: string | null
+          stripe_garage_yearly: string | null
+          stripe_pro_monthly: string | null
+          stripe_pro_yearly: string | null
+          supported_languages: string[]
+          tax_label: string
+          timezones: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "country_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_seller_emails: {
         Args: { seller_ids: string[] }
         Returns: {
@@ -4041,6 +4228,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_regional_admin_for: {
+        Args: { _country_code: string; _user_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -4088,7 +4279,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "buyer" | "seller" | "garage_owner" | "admin"
+      app_role: "buyer" | "seller" | "garage_owner" | "admin" | "regional_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4216,7 +4407,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["buyer", "seller", "garage_owner", "admin"],
+      app_role: ["buyer", "seller", "garage_owner", "admin", "regional_admin"],
     },
   },
 } as const

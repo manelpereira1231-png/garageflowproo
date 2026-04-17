@@ -3,12 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Euro, Banknote, ShieldCheck, FileText, Clock, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 /**
  * Transparent breakdown of how partner workshops earn and receive money
  * from GarageFlow Market (inspections + commissions). Goal: zero ambiguity.
  */
 export default function MarketPayoutInfo() {
+  const { pricing, formatPrice } = useCountryPricing();
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="text-center space-y-2">
@@ -21,23 +23,23 @@ export default function MarketPayoutInfo() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Euro className="h-5 w-5 text-amber-500" /> 1. Inspeções pagas (24,90 €)
+            <Euro className="h-5 w-5 text-amber-500" /> 1. Inspeções pagas ({formatPrice(pricing.inspection_price)})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <p>
-            Sempre que um vendedor publica um carro no Market, paga <strong>24,90 €</strong> para que uma oficina
+            Sempre que um vendedor publica um carro no Market, paga <strong>{formatPrice(pricing.inspection_price)}</strong> para que uma oficina
             parceira faça uma inspeção física do veículo. Esse pagamento é dividido automaticamente:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="border rounded-lg p-4 bg-emerald-50 dark:bg-emerald-950/20">
               <p className="text-xs uppercase font-bold text-emerald-700 dark:text-emerald-400">Oficina recebe</p>
-              <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">16,18 €</p>
+              <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{formatPrice(pricing.inspection_shop_share)}</p>
               <p className="text-xs text-muted-foreground mt-1">por cada inspeção concluída</p>
             </div>
             <div className="border rounded-lg p-4 bg-muted/40">
               <p className="text-xs uppercase font-bold text-muted-foreground">GarageFlow (plataforma)</p>
-              <p className="text-3xl font-bold">8,72 €</p>
+              <p className="text-3xl font-bold">{formatPrice(pricing.inspection_platform_share)}</p>
               <p className="text-xs text-muted-foreground mt-1">cobre Stripe, IVA, suporte e infra</p>
             </div>
           </div>
@@ -107,7 +109,7 @@ export default function MarketPayoutInfo() {
               <div>
                 <p className="font-semibold">Pagamento processado</p>
                 <p className="text-muted-foreground text-xs">
-                  Os 16,18 € são creditados na sua conta no <strong>fecho do mês seguinte</strong> (até dia 10),
+                  Os {formatPrice(pricing.inspection_shop_share)} são creditados na sua conta no <strong>fecho do mês seguinte</strong> (até dia 10),
                   por transferência bancária para o IBAN registado nas Definições.
                 </p>
               </div>

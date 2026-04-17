@@ -63,7 +63,23 @@ export default function AdminCarity() {
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
-  const [tab, setTab] = useState("urgent");
+  const [tab, setTab] = useState(() => {
+    if (typeof window === "undefined") return "urgent";
+    return new URLSearchParams(window.location.search).get("tab") || "urgent";
+  });
+  useEffect(() => {
+    const onPop = () => {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t) setTab(t);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && t !== tab) setTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeof window !== "undefined" ? window.location.search : ""]);
   const [updatingShop, setUpdatingShop] = useState<string | null>(null);
   const [sendingOffer, setSendingOffer] = useState<string | null>(null);
   const [togglingSeller, setTogglingSeller] = useState<string | null>(null);

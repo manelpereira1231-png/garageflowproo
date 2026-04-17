@@ -8,10 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Mail, MessageCircle, LifeBuoy, Phone, Clock, ShieldCheck } from "lucide-react";
-
-const SUPPORT_EMAIL = "manelpereira11@gmail.com";
-const SUPPORT_WHATSAPP = "351933683304"; // ajusta se necessário
+import { ArrowLeft, LifeBuoy, Clock, ShieldCheck } from "lucide-react";
 
 export default function Support() {
   const navigate = useNavigate();
@@ -92,10 +89,6 @@ export default function Support() {
     toast.success("Pedido enviado. A administração foi notificada e responderá em breve.");
     setForm((f) => ({ ...f, subject: "", message: "" }));
   };
-
-  const waLink = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
-    `Olá, preciso de ajuda no GarageFlow ${form.context === "market" ? "Market" : "ERP"}.`,
-  )}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,20 +191,16 @@ export default function Support() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Contacto direto</CardTitle>
+              <CardTitle className="text-base">Como funciona</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <a href={`mailto:${SUPPORT_EMAIL}?subject=Suporte%20GarageFlow`} className="flex items-center gap-2 hover:text-primary">
-                <Mail className="w-4 h-4" /> {SUPPORT_EMAIL}
-              </a>
-              <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary">
-                <MessageCircle className="w-4 h-4" /> WhatsApp
-              </a>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="w-4 h-4" /> Resposta: até 24h úteis
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>A nossa equipa responde por email no prazo de até 24h úteis.</span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <ShieldCheck className="w-4 h-4" /> RGPD/LOPDGDD compliant
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>Pedidos tratados em conformidade com RGPD e LOPDGDD.</span>
               </div>
             </CardContent>
           </Card>

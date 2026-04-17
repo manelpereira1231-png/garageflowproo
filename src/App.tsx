@@ -122,6 +122,7 @@ const AdminCarity = lazyRetry(() => import("@/pages/admin/AdminCarity"));
 const AdminMarketDashboard = lazyRetry(() => import("@/pages/admin/AdminMarketDashboard"));
 const AdminMarketKYC = lazyRetry(() => import("@/pages/admin/AdminMarketKYC"));
 const AdminSupport = lazyRetry(() => import("@/pages/admin/AdminSupport"));
+const AdminCountries = lazyRetry(() => import("@/pages/admin/AdminCountries"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -300,6 +301,7 @@ const adminRoutes = [
   { path: "/admin/market-dashboard", element: <AdminMarketDashboard /> },
   { path: "/admin/market-kyc", element: <AdminMarketKYC /> },
   { path: "/admin/support", element: <AdminSupport /> },
+  { path: "/admin/countries", element: <AdminCountries /> },
 ];
 
 const shopRoutes = [

@@ -57,6 +57,12 @@ const navSections = [
     ],
   },
   {
+    label: "Global",
+    items: [
+      { path: "/admin/countries", label: "Países & Mercados", icon: Globe },
+    ],
+  },
+  {
     label: "Sistema",
     items: [
       { path: "/admin/partners", label: "Parceiros", icon: Shield },

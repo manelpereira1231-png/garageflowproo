@@ -2972,6 +2972,61 @@ export type Database = {
           },
         ]
       }
+      shop_wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          inspection_id: string | null
+          payout_id: string | null
+          shop_id: string
+          type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_id?: string | null
+          payout_id?: string | null
+          shop_id: string
+          type?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_id?: string | null
+          payout_id?: string | null
+          shop_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_wallet_transactions_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_wallet_transactions_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "shop_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_wallet_transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_wallets: {
         Row: {
           balance: number
@@ -3989,6 +4044,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_shop_payout_paid: {
+        Args: { _payout_id: string; _reference?: string }
+        Returns: undefined
+      }
       next_invoice_number: { Args: { _shop_id: string }; Returns: string }
       next_number: {
         Args: { _prefix: string; _shop_id: string }
@@ -3997,6 +4056,19 @@ export type Database = {
       recalculate_trust_score: {
         Args: { _seller_id: string }
         Returns: undefined
+      }
+      reject_shop_payout: {
+        Args: { _payout_id: string; _reason?: string }
+        Returns: undefined
+      }
+      request_shop_payout: {
+        Args: {
+          _amount: number
+          _method?: string
+          _notes?: string
+          _shop_id: string
+        }
+        Returns: string
       }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }

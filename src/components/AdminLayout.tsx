@@ -149,7 +149,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
               <div className="space-y-0.5">
                 {section.items.map((item: any) => {
-                  const isActive = location.pathname === item.path;
+                  const [itemPath, itemQuery] = item.path.split("?");
+                  const itemTab = itemQuery ? new URLSearchParams(itemQuery).get("tab") : null;
+                  const currentTab = new URLSearchParams(location.search).get("tab");
+                  const isActive = location.pathname === itemPath && (itemTab ? itemTab === currentTab : !currentTab || location.pathname !== "/admin/market");
                   return (
                     <Link key={item.path} to={item.path}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${

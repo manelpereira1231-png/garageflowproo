@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, LifeBuoy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const navSections = [
   {
     label: "Operações",
     items: [
+      { path: "/admin/support", label: "Suporte", icon: LifeBuoy, badgeKey: "support" as const },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
@@ -62,10 +63,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [searchResults, setSearchResults] = useState<{id: string; name: string; email: string}[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
+  const [openTickets, setOpenTickets] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Live counter of open/in_progress support tickets — drives the red badge
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("support_tickets" as any)
+        .select("*", { count: "exact", head: true })
+        .in("status", ["open", "in_progress"]);
+      setOpenTickets(count ?? 0);
+    };
+    fetchCount();
+    const ch = supabase
+      .channel("admin-support-badge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, fetchCount)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -145,16 +164,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div key={section.label}>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
               <div className="space-y-0.5">
-                {section.items.map((item) => {
+                {section.items.map((item: any) => {
                   const isActive = location.pathname === item.path;
+                  const showBadge = item.badgeKey === "support" && openTickets > 0;
                   return (
                     <Link key={item.path} to={item.path}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                         isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}>
                       <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                      {item.label}
-                      {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                      <span className="flex-1">{item.label}</span>
+                      {showBadge && (
+                        <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold animate-pulse">
+                          {openTickets > 99 ? "99+" : openTickets}
+                        </span>
+                      )}
+                      {isActive && !showBadge && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
                     </Link>
                   );
                 })}

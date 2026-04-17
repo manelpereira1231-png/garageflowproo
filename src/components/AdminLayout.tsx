@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, Wallet, AlertTriangle,
+  MessageCircle, Megaphone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";

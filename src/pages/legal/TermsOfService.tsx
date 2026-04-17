@@ -55,7 +55,7 @@ export default function TermsOfService() {
           <li>Apenas anúncios com inspeção física certificada por oficina parceira são publicados.</li>
           <li>É <strong>proibido partilhar contactos pessoais</strong> (telefone, e-mail, redes sociais) no chat. Tentativas reincidentes resultam em suspensão automática.</li>
           <li>O pagamento ocorre exclusivamente em escrow Stripe. Comissão da plataforma: 2% sobre o valor da venda.</li>
-          <li>Inspeção: 24,90€ pagos pelo comprador, com reembolso integral se o vendedor recusar a venda após relatório positivo. Split: 65% oficina / 35% plataforma.</li>
+          <li>Inspeção: valor variável por país (p. ex. 29,90€ em Portugal) pago pelo vendedor, com reembolso integral se o vendedor recusar a venda após relatório positivo. Distribuição transparente em <Link to="/market/payout-info" className="underline">Como recebo</Link>.</li>
           <li>Janela de satisfação de 48h após confirmação de entrega antes da libertação automática dos fundos ao vendedor.</li>
           <li>É proibido publicar anúncios fraudulentos, com VIN duplicado ou dados falsos. A plataforma reserva-se o direito de remover anúncios e suspender contas.</li>
         </ul>

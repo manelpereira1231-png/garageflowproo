@@ -47,8 +47,8 @@ export default function MarketTerms() {
         <h2>3. Inspeção obrigatória e taxas</h2>
         <ul>
           <li>Todos os anúncios exigem inspeção física por uma oficina parceira certificada.</li>
-          <li>Custo da inspeção: <strong>24,90 €</strong>, pago pelo comprador interessado.</li>
-          <li>Distribuição: 65% para a oficina (16,18 €), 35% para a plataforma (8,72 €).</li>
+          <li>Custo da inspeção: conforme indicado no momento da publicação (varia por país, p. ex. <strong>29,90 €</strong> em Portugal), pago pelo vendedor.</li>
+          <li>Distribuição: parte fica para a oficina parceira (p. ex. 17,00 € em Portugal), restante para a plataforma. Os valores exatos por país estão disponíveis em <Link to="/market/payout-info" className="underline">Como recebo</Link>.</li>
           <li>O comprador é integralmente reembolsado se o vendedor recusar a venda após relatório positivo ou se o veículo for considerado <em>não recomendado</em>.</li>
         </ul>
 

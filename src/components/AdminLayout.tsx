@@ -32,7 +32,6 @@ const navSections = [
   {
     label: "Operações",
     items: [
-      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },

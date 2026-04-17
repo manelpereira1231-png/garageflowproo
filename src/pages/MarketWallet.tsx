@@ -19,13 +19,22 @@ interface WalletData {
   status: string;
 }
 
-const MIN_PAYOUT = 20;
+interface CountryFmt {
+  currency: string;
+  currency_symbol: string;
+  locale: string;
+  code: string;
+}
+
+const DEFAULT_COUNTRY: CountryFmt = { currency: "EUR", currency_symbol: "€", locale: "pt-PT", code: "PT" };
 
 export default function MarketWallet() {
   const shopId = useActiveShopId();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
+  const [country, setCountry] = useState<CountryFmt>(DEFAULT_COUNTRY);
+  const [minPayout, setMinPayout] = useState<number>(20);
   const [loading, setLoading] = useState(true);
   const [requestOpen, setRequestOpen] = useState(false);
   const [reqAmount, setReqAmount] = useState("");
@@ -33,17 +42,37 @@ export default function MarketWallet() {
   const [reqNotes, setReqNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const fmt = (v: number) => new Intl.NumberFormat(country.locale, {
+    style: "currency", currency: country.currency,
+    minimumFractionDigits: country.currency === "INR" ? 0 : 2,
+  }).format(v);
+
   const load = useCallback(async () => {
     if (!shopId) return;
     setLoading(true);
-    const [w, t, p] = await Promise.all([
+    const [w, t, p, shopRow] = await Promise.all([
       supabase.from("shop_wallets").select("*").eq("shop_id", shopId).maybeSingle(),
       supabase.from("shop_wallet_transactions" as any).select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(50),
       supabase.from("shop_payouts").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(20),
+      supabase.from("shops").select("country_code").eq("id", shopId).maybeSingle(),
     ]);
     setWallet((w.data as WalletData) || { balance: 0, total_earned: 0, total_paid: 0, status: "active" });
     setTransactions((t.data as any[]) || []);
     setPayouts((p.data as any[]) || []);
+
+    const cc = (shopRow.data as any)?.country_code || "PT";
+    const { data: countryData } = await supabase
+      .from("country_settings")
+      .select("code, currency, currency_symbol, locale")
+      .eq("code", cc).maybeSingle();
+    if (countryData) {
+      setCountry(countryData as any);
+      // Min payout adapts: ~20 EUR equivalent — INR 1500, USD 25, BRL 100
+      if (countryData.currency === "INR") setMinPayout(1500);
+      else if (countryData.currency === "BRL") setMinPayout(100);
+      else if (countryData.currency === "USD") setMinPayout(25);
+      else setMinPayout(20);
+    }
     setLoading(false);
   }, [shopId]);
 

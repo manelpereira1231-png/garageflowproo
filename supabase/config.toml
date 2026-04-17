@@ -71,3 +71,5 @@ verify_jwt = false
 
 [functions.market-satisfaction-cancel]
 verify_jwt = false
+[functions.notify-support-ticket]
+verify_jwt = false

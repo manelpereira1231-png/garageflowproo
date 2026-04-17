@@ -51,23 +51,45 @@ export default function Support() {
     }
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("support_tickets" as any).insert({
-      user_id: user?.id ?? null,
-      contact_email: form.email,
-      contact_name: form.name || null,
-      contact_phone: form.phone || null,
-      context: form.context,
-      category: form.category,
-      priority: form.priority,
-      subject: form.subject,
-      message: form.message,
-    });
-    setLoading(false);
+    const { data: inserted, error } = await supabase
+      .from("support_tickets" as any)
+      .insert({
+        user_id: user?.id ?? null,
+        contact_email: form.email,
+        contact_name: form.name || null,
+        contact_phone: form.phone || null,
+        context: form.context,
+        category: form.category,
+        priority: form.priority,
+        subject: form.subject,
+        message: form.message,
+      })
+      .select("id")
+      .single();
+
     if (error) {
+      setLoading(false);
       toast.error("Erro ao enviar pedido. Tente novamente ou contacte por email.");
       return;
     }
-    toast.success("Pedido enviado. Vamos responder o mais rápido possível.");
+
+    // Notifica admin por email — não bloqueia o feedback ao utilizador
+    supabase.functions.invoke("notify-support-ticket", {
+      body: {
+        ticket_id: (inserted as any)?.id,
+        contact_email: form.email,
+        contact_name: form.name || null,
+        contact_phone: form.phone || null,
+        context: form.context,
+        category: form.category,
+        priority: form.priority,
+        subject: form.subject,
+        message: form.message,
+      },
+    }).catch((err) => console.warn("notify-support-ticket failed:", err));
+
+    setLoading(false);
+    toast.success("Pedido enviado. A administração foi notificada e responderá em breve.");
     setForm((f) => ({ ...f, subject: "", message: "" }));
   };
 

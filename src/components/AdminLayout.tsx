@@ -164,16 +164,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div key={section.label}>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
               <div className="space-y-0.5">
-                {section.items.map((item) => {
+                {section.items.map((item: any) => {
                   const isActive = location.pathname === item.path;
+                  const showBadge = item.badgeKey === "support" && openTickets > 0;
                   return (
                     <Link key={item.path} to={item.path}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                         isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}>
                       <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                      {item.label}
-                      {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                      <span className="flex-1">{item.label}</span>
+                      {showBadge && (
+                        <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold animate-pulse">
+                          {openTickets > 99 ? "99+" : openTickets}
+                        </span>
+                      )}
+                      {isActive && !showBadge && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
                     </Link>
                   );
                 })}

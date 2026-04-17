@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loader2, Tag, MapPin, Phone, MessageCircle, CalendarCheck, Heart, TrendingUp } from "lucide-react";
 import VehicleTimeline from "@/components/VehicleTimeline";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
@@ -30,6 +31,7 @@ const BOOST_OPTIONS = [
 
 export default function CaritySellerDashboard() {
   const navigate = useNavigate();
+  const { pricing, formatPrice } = useCountryPricing();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [boostingId, setBoostingId] = useState<string | null>(null);
@@ -247,7 +249,7 @@ export default function CaritySellerDashboard() {
 
                           {listing.status === 'pending_payment' && (
                             <Link to={`/market/pay/${listing.id}`}>
-                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">Pagar inspeção (€24,90)</Button>
+                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">{`Pagar inspeção (${formatPrice(pricing.inspection_price)})`}</Button>
                             </Link>
                           )}
 

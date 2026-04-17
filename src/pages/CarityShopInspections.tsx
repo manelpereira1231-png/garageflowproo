@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User, Lock, Hash, FileCheck } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },
@@ -45,6 +46,7 @@ const SEVERITY_IMPACT: Record<string, { label: string; weight: number; color: st
 
 export default function CarityShopInspections() {
   const shopId = useActiveShopId();
+  const { pricing, formatPrice } = useCountryPricing();
   const [tab, setTab] = useState("offers");
   const [offers, setOffers] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
@@ -910,8 +912,8 @@ export default function CarityShopInspections() {
             <div className="flex items-center gap-3">
               <Euro className="h-5 w-5 text-amber-600" />
               <div>
-                 <p className="font-semibold text-sm">Ganhos por inspeção: <span className="text-amber-600">~€12,94</span></p>
-                 <p className="text-xs text-muted-foreground">O vendedor paga €24,90 — 65% fica para a oficina (€16,18), 35% para a plataforma (€8,72)</p>
+                 <p className="font-semibold text-sm">Ganhos por inspeção: <span className="text-amber-600">{formatPrice(pricing.inspection_shop_share)}</span></p>
+                 <p className="text-xs text-muted-foreground">O vendedor paga {formatPrice(pricing.inspection_price)} — {formatPrice(pricing.inspection_shop_share)} fica para a oficina, {formatPrice(pricing.inspection_platform_share)} para a plataforma</p>
               </div>
             </div>
           </CardContent>

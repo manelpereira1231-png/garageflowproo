@@ -90,6 +90,7 @@ const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
+const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
 
 // Legal pages (RGPD)
 const PrivacyPolicy = lazyRetry(() => import("@/pages/legal/PrivacyPolicy"));
@@ -333,6 +334,7 @@ const shopRoutes = [
   { path: "/referrals", element: <Layout><Referrals /></Layout> },
   { path: "/warranties", element: <Layout><Warranties /></Layout> },
   { path: "/market/inspections", element: <Layout><CarityShopInspections /></Layout> },
+  { path: "/market/wallet", element: <Layout><MarketWallet /></Layout> },
   { path: "/market/payouts", element: <Layout><MarketPayoutInfo /></Layout> },
 ];
 

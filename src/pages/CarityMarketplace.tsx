@@ -262,7 +262,7 @@ export default function CarityMarketplace() {
           <h2 className="text-center text-2xl font-bold mb-10">Processo transparente em 4 etapas</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "01", title: "Submissão", desc: "O vendedor cria o anúncio com fotos estruturadas e paga €24,90 de taxa de inspeção.", icon: Car },
+              { step: "01", title: "Submissão", desc: `O vendedor cria o anúncio com fotos estruturadas e paga ${formatPrice(pricing.inspection_price)} de taxa de inspeção.`, icon: Car },
               { step: "02", title: "Inspeção Técnica", desc: "Uma oficina certificada GarageFlow realiza a verificação mecânica completa.", icon: Wrench },
               { step: "03", title: "Relatório & Classificação", desc: "Checklist de 7 sistemas, documentação fotográfica e classificação de 0 a 10.", icon: FileCheck },
               { step: "04", title: "Compra Protegida", desc: "Pagamento retido em segurança. Fundos libertados apenas após confirmação.", icon: ShieldCheck },
@@ -465,7 +465,7 @@ export default function CarityMarketplace() {
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">Para vendedores</p>
           <h2 className="text-3xl font-bold mb-4">Venda com relatório de inspeção profissional</h2>
           <p className="text-slate-400 mb-8 leading-relaxed">
-            Taxa única de €24,90. Uma oficina certificada inspeciona o veículo, gera o relatório técnico e o anúncio é publicado com total credibilidade.
+            Taxa única de {formatPrice(pricing.inspection_price)}. Uma oficina certificada inspeciona o veículo, gera o relatório técnico e o anúncio é publicado com total credibilidade.
           </p>
           <Link to="/market/sell">
             <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-8">
@@ -546,7 +546,7 @@ export default function CarityMarketplace() {
           {
             "@type": "Question",
             "name": "Quanto custa publicar um carro no GarageFlow Market?",
-            "acceptedAnswer": { "@type": "Answer", "text": "A taxa de inspeção e publicação é de €24,90 (taxa única). Este valor cobre a inspeção mecânica completa e a publicação do anúncio com relatório técnico certificado." }
+            "acceptedAnswer": { "@type": "Answer", "text": `A taxa de inspeção e publicação é de ${formatPrice(pricing.inspection_price)} (taxa única) em ${pricing.name || "Portugal"}. Este valor cobre a inspeção mecânica completa e a publicação do anúncio com relatório técnico certificado.` }
           },
           {
             "@type": "Question",

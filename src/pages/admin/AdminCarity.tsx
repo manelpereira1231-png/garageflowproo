@@ -27,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
   sold: "Vendido",
   rejected: "Rejeitado",
   draft: "Rascunho",
+  paused: "Pausado",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,6 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
   sold: "bg-emerald-100 text-emerald-800",
   rejected: "bg-red-100 text-red-800",
   draft: "bg-gray-100 text-gray-800",
+  paused: "bg-slate-100 text-slate-800",
 };
 
 const ALL_STATUSES = Object.keys(STATUS_LABELS);
@@ -61,9 +63,10 @@ export default function AdminCarity() {
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("urgent");
   const [updatingShop, setUpdatingShop] = useState<string | null>(null);
   const [sendingOffer, setSendingOffer] = useState<string | null>(null);
+  const [togglingSeller, setTogglingSeller] = useState<string | null>(null);
 
   // Filters
   const [listingStatusFilter, setListingStatusFilter] = useState("all");
@@ -173,6 +176,49 @@ export default function AdminCarity() {
     await supabase.from("carity_seller_profiles").update({ verified }).eq("id", sellerId);
     setSellers(prev => prev.map(s => s.id === sellerId ? { ...s, verified } : s));
     toast.success(verified ? "Vendedor verificado ✓" : "Verificação removida");
+  };
+
+  const toggleSellerSuspension = async (seller: any, suspend: boolean) => {
+    setTogglingSeller(seller.id);
+    try {
+      const { error } = await supabase
+        .from("carity_seller_profiles")
+        .update(
+          suspend
+            ? {
+                suspended_at: new Date().toISOString(),
+                suspension_reason: seller.suspension_reason || "Suspenso manualmente pelo administrador",
+              }
+            : {
+                suspended_at: null,
+                suspension_reason: null,
+              }
+        )
+        .eq("id", seller.id);
+
+      if (error) throw error;
+
+      if (suspend) {
+        const { error: listingsError } = await supabase
+          .from("carity_listings")
+          .update({ status: "paused" })
+          .eq("seller_id", seller.user_id)
+          .eq("status", "published");
+
+        if (listingsError) throw listingsError;
+      }
+
+      toast.success(
+        suspend
+          ? "Vendedor suspenso e anúncios publicados pausados"
+          : "Vendedor reativado"
+      );
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar vendedor");
+    } finally {
+      setTogglingSeller(null);
+    }
   };
 
   const deleteSellerProfile = async (id: string) => {
@@ -350,6 +396,13 @@ export default function AdminCarity() {
   const verifiedSellers = sellers.filter(s => s.verified).length;
   const activeBoosts = boosts.filter(b => b.status === "active").length;
   const completedInspections = inspections.filter(i => i.status === "completed").length;
+  const pendingKyc = sellers.filter(s => s.kyc_status === "submitted").length;
+  const urgentEscrows = escrows.filter(e => ["paid", "delivery_confirmed", "disputed"].includes(e.status));
+  const disputedEscrows = escrows.filter(e => e.status === "disputed").length;
+  const suspendedSellers = sellers.filter(s => !!s.suspended_at).length;
+  const sellersNeedingAttention = sellers.filter(s => !s.verified || !!s.suspended_at || s.kyc_status === "submitted");
+  const totalWalletBalance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance || 0), 0);
+  const pendingPayouts = payouts.filter(p => ["pending", "processing"].includes(p.status)).length;
 
   // Filtered data
   const filteredListings = listings
@@ -390,7 +443,7 @@ export default function AdminCarity() {
             <ShieldCheck className="h-6 w-6 text-amber-500" />
             GarageFlow Market — Controlo Total
           </h1>
-          <p className="text-muted-foreground">Carros, vendedores, inspeções, oficinas, boosts, relatórios e receita</p>
+          <p className="text-muted-foreground">Dinheiro, escrows, KYC, vendedores e operações críticas num só sítio</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => { setLoading(true); loadData(); }}>
           <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
@@ -483,6 +536,7 @@ export default function AdminCarity() {
       {/* === TABS === */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="urgent">⚡ Para Resolver</TabsTrigger>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="listings">Carros ({totalListings})</TabsTrigger>
           <TabsTrigger value="sellers">Vendedores ({sellers.length})</TabsTrigger>
@@ -497,6 +551,130 @@ export default function AdminCarity() {
           <TabsTrigger value="escrows">⚖️ Escrow ({escrows.length})</TabsTrigger>
           <TabsTrigger value="risk">🚨 Risco ({riskFlags.filter(f => !f.auto_resolved && !f.reviewed_by).length})</TabsTrigger>
         </TabsList>
+
+        {/* === URGENT === */}
+        <TabsContent value="urgent" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">{urgentEscrows.length}</p>
+                    <p className="text-xs text-muted-foreground">Escrows por resolver</p>
+                  </div>
+                  <Shield className="h-4 w-4 text-amber-500" />
+                </div>
+                <p className="text-xs text-muted-foreground">{disputedEscrows} disputa(s) abertas</p>
+                <Button size="sm" className="w-full" onClick={() => setTab("escrows")}>Abrir escrows</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">{pendingKyc}</p>
+                    <p className="text-xs text-muted-foreground">KYC pendentes</p>
+                  </div>
+                  <User className="h-4 w-4 text-violet-600" />
+                </div>
+                <p className="text-xs text-muted-foreground">Identidades à espera de revisão</p>
+                <Button size="sm" variant="outline" className="w-full" onClick={() => { window.location.href = "/admin/market-kyc"; }}>Abrir KYC</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">€{totalWalletBalance.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">Saldo em wallets</p>
+                  </div>
+                  <Wallet className="h-4 w-4 text-green-600" />
+                </div>
+                <p className="text-xs text-muted-foreground">{pendingPayouts} payout(s) pendentes</p>
+                <Button size="sm" variant="outline" className="w-full" onClick={() => setTab("wallets")}>Abrir dinheiro</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">{sellersNeedingAttention.length}</p>
+                    <p className="text-xs text-muted-foreground">Vendedores com ação</p>
+                  </div>
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                </div>
+                <p className="text-xs text-muted-foreground">{suspendedSellers} suspenso(s)</p>
+                <Button size="sm" variant="outline" className="w-full" onClick={() => setTab("sellers")}>Abrir vendedores</Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Escrows críticos</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {urgentEscrows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Sem escrows urgentes.</p>
+                ) : urgentEscrows.slice(0, 4).map((escrow: any) => (
+                  <div key={escrow.id} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold">{escrow.carity_listings?.make} {escrow.carity_listings?.model} ({escrow.carity_listings?.year})</p>
+                        <p className="text-xs text-muted-foreground">{escrow.carity_listings?.plate} · €{Number(escrow.amount || 0).toFixed(2)}</p>
+                      </div>
+                      <Badge className={escrow.status === "disputed" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}>{escrow.status}</Badge>
+                    </div>
+                    {escrow.buyer_dispute_reason && <p className="text-xs text-red-600">{escrow.buyer_dispute_reason}</p>}
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleEscrowResolve(escrow.id, "release")} disabled={resolvingEscrow === escrow.id}>
+                        {resolvingEscrow === escrow.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle className="h-3 w-3 mr-1" />} Libertar
+                      </Button>
+                      <Button size="sm" variant="destructive" className="flex-1" onClick={() => handleEscrowResolve(escrow.id, "refund")} disabled={resolvingEscrow === escrow.id}>
+                        {resolvingEscrow === escrow.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <XCircle className="h-3 w-3 mr-1" />} Reembolsar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> Vendedores a tratar</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {sellersNeedingAttention.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Sem ações pendentes nos vendedores.</p>
+                ) : sellersNeedingAttention.slice(0, 5).map((seller: any) => (
+                  <div key={seller.id} className="border rounded-lg p-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">{seller.name || "Sem nome"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {seller.suspended_at ? "Suspenso" : seller.kyc_status === "submitted" ? "KYC pendente" : !seller.verified ? "Por verificar" : "Ativo"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      {!seller.verified && (
+                        <Button size="sm" variant="outline" onClick={() => toggleSellerVerified(seller.id, true)}>
+                          Verificar
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={seller.suspended_at ? "outline" : "destructive"}
+                        onClick={() => toggleSellerSuspension(seller, !seller.suspended_at)}
+                        disabled={togglingSeller === seller.id}
+                      >
+                        {togglingSeller === seller.id ? <Loader2 className="h-3 w-3 animate-spin" /> : seller.suspended_at ? "Reativar" : "Suspender"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* === OVERVIEW === */}
         <TabsContent value="overview" className="mt-4 space-y-4">
@@ -661,7 +839,7 @@ export default function AdminCarity() {
             const publishedCount = sellerListings.filter(l => l.status === "published").length;
             const soldCount = sellerListings.filter(l => l.status === "sold").length;
             return (
-              <Card key={seller.id} className={seller.verified ? "border-green-200" : ""}>
+              <Card key={seller.id} className={seller.suspended_at ? "border-red-200" : seller.verified ? "border-green-200" : ""}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -671,6 +849,8 @@ export default function AdminCarity() {
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{seller.name || "Sem nome"}</h3>
                         {seller.verified && <Badge className="bg-green-100 text-green-800 border-0 text-xs">Verificado</Badge>}
+                        {seller.kyc_status === "submitted" && <Badge className="bg-violet-100 text-violet-800 border-0 text-xs">KYC pendente</Badge>}
+                        {seller.suspended_at && <Badge variant="destructive" className="text-xs">Suspenso</Badge>}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5 flex-wrap">
                         {sellerEmails[seller.user_id] && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {sellerEmails[seller.user_id]}</span>}
@@ -683,12 +863,27 @@ export default function AdminCarity() {
                         <span className="text-green-600">{publishedCount} ativos</span>
                         <span className="text-blue-600">{soldCount} vendidos</span>
                       </div>
+                      {seller.suspension_reason && <p className="text-xs text-red-600 mt-1">Motivo: {seller.suspension_reason}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Verificado</Label>
                         <Switch checked={seller.verified} onCheckedChange={v => toggleSellerVerified(seller.id, v)} />
                       </div>
+                      {seller.kyc_status === "submitted" && (
+                        <Button size="sm" variant="outline" className="h-8" onClick={() => { window.location.href = "/admin/market-kyc"; }}>
+                          KYC
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={seller.suspended_at ? "outline" : "destructive"}
+                        className="h-8"
+                        onClick={() => toggleSellerSuspension(seller, !seller.suspended_at)}
+                        disabled={togglingSeller === seller.id}
+                      >
+                        {togglingSeller === seller.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : seller.suspended_at ? "Reativar" : "Suspender"}
+                      </Button>
                       <Button size="sm" variant="outline" className="h-8" onClick={() => setViewingSeller(seller)}>
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
@@ -1051,6 +1246,12 @@ export default function AdminCarity() {
           <Card>
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Escrow &amp; Disputas</CardTitle></CardHeader>
             <CardContent>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge variant="outline">{urgentEscrows.length} por resolver</Badge>
+                <Badge variant="outline">{disputedEscrows} disputa(s)</Badge>
+                <Badge variant="outline">{escrows.filter(e => e.status === "released").length} libertados</Badge>
+                <Badge variant="outline">{escrows.filter(e => e.status === "refunded").length} reembolsados</Badge>
+              </div>
               {escrows.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">Nenhuma transação escrow</p>
               ) : (
@@ -1105,7 +1306,7 @@ export default function AdminCarity() {
                               <Button
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
-                                disabled={resolvingEscrow === e.id && !resolveNotes}
+                                disabled={resolvingEscrow === e.id}
                                 onClick={() => handleEscrowResolve(e.id, "release")}
                               >
                                 {resolvingEscrow === e.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle className="h-3 w-3 mr-1" />}
@@ -1114,7 +1315,7 @@ export default function AdminCarity() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                disabled={resolvingEscrow === e.id && !resolveNotes}
+                                disabled={resolvingEscrow === e.id}
                                 onClick={() => handleEscrowResolve(e.id, "refund")}
                               >
                                 {resolvingEscrow === e.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
@@ -1293,8 +1494,11 @@ export default function AdminCarity() {
                 <div><Label className="text-muted-foreground">Telefone</Label><p className="font-medium">{viewingSeller.phone || "—"}</p></div>
                 <div><Label className="text-muted-foreground">Localização</Label><p className="font-medium">{viewingSeller.location || "—"}</p></div>
                 <div><Label className="text-muted-foreground">Verificado</Label><p className="font-medium">{viewingSeller.verified ? "✅ Sim" : "❌ Não"}</p></div>
+                <div><Label className="text-muted-foreground">KYC</Label><p className="font-medium">{viewingSeller.kyc_status || "—"}</p></div>
+                <div><Label className="text-muted-foreground">Suspensão</Label><p className="font-medium">{viewingSeller.suspended_at ? "✅ Suspenso" : "Ativo"}</p></div>
                 <div><Label className="text-muted-foreground">Registo</Label><p className="font-medium">{new Date(viewingSeller.created_at).toLocaleDateString("pt-PT")}</p></div>
                 <div><Label className="text-muted-foreground">User ID</Label><p className="font-mono text-xs">{viewingSeller.user_id?.slice(0, 12)}...</p></div>
+                {viewingSeller.suspension_reason && <div className="col-span-2"><Label className="text-muted-foreground">Motivo da suspensão</Label><p className="font-medium">{viewingSeller.suspension_reason}</p></div>}
               </div>
               <div>
                 <Label className="text-muted-foreground">Anúncios deste vendedor</Label>

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, Wallet, AlertTriangle,
+  MessageCircle, Megaphone, Banknote, ClipboardCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,16 @@ const navSections = [
     label: "GarageFlow Market",
     items: [
       { path: "/admin/market-dashboard", label: "Painel Market", icon: BarChart3 },
-      { path: "/admin/market", label: "Controlo Market", icon: Car },
+      { path: "/admin/market?tab=urgent", label: "Urgente / A Resolver", icon: AlertTriangle },
+      { path: "/admin/market?tab=escrows", label: "Escrow & Reembolsos", icon: Wallet },
+      { path: "/admin/market?tab=transactions", label: "Transações & Comissões", icon: CreditCard },
+      { path: "/admin/market?tab=wallets", label: "Carteiras / Payouts", icon: Banknote },
+      { path: "/admin/market?tab=sellers", label: "Vendedores", icon: Users },
+      { path: "/admin/market?tab=listings", label: "Anúncios", icon: Car },
+      { path: "/admin/market?tab=partners", label: "Oficinas Market", icon: Building2 },
+      { path: "/admin/market?tab=inspections", label: "Inspeções", icon: ClipboardCheck },
+      { path: "/admin/market?tab=boosts", label: "Boosts & Destaques", icon: Megaphone },
+      { path: "/admin/market?tab=risk", label: "Risco & Disputas", icon: MessageCircle },
       { path: "/admin/market-kyc", label: "Verificação KYC", icon: Shield },
     ],
   },
@@ -139,7 +149,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
               <div className="space-y-0.5">
                 {section.items.map((item: any) => {
-                  const isActive = location.pathname === item.path;
+                  const [itemPath, itemQuery] = item.path.split("?");
+                  const itemTab = itemQuery ? new URLSearchParams(itemQuery).get("tab") : null;
+                  const currentTab = new URLSearchParams(location.search).get("tab");
+                  const isActive = location.pathname === itemPath && (itemTab ? itemTab === currentTab : !currentTab || location.pathname !== "/admin/market");
                   return (
                     <Link key={item.path} to={item.path}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,13 @@ export default function AdminCarity() {
   const [loading, setLoading] = useState(true);
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
-  const [tab, setTab] = useState("urgent");
+  const location = useLocation();
+  const [tab, setTab] = useState(() => new URLSearchParams(location.search).get("tab") || "urgent");
+  useEffect(() => {
+    const t = new URLSearchParams(location.search).get("tab");
+    if (t && t !== tab) setTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
   const [updatingShop, setUpdatingShop] = useState<string | null>(null);
   const [sendingOffer, setSendingOffer] = useState<string | null>(null);
   const [togglingSeller, setTogglingSeller] = useState<string | null>(null);

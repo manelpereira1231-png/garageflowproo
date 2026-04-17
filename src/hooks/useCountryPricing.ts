@@ -41,10 +41,10 @@ async function detectAndLoadCountry(): Promise<CountryPricing> {
           .select("country_code").eq("user_id", user.id).maybeSingle();
         if (profile?.country_code) countryCode = profile.country_code;
         else {
-          const { data: shop } = await supabase
+          const shopRes: any = await (supabase as any)
             .from("shops").select("country_code")
             .eq("owner_id", user.id).maybeSingle();
-          if ((shop as any)?.country_code) countryCode = (shop as any).country_code;
+          if (shopRes?.data?.country_code) countryCode = shopRes.data.country_code;
         }
       }
       // Fallback: detect by timezone

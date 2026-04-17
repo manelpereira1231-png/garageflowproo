@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, LifeBuoy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const navSections = [
   {
     label: "Operações",
     items: [
+      { path: "/admin/support", label: "Suporte", icon: LifeBuoy, badgeKey: "support" as const },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
@@ -62,10 +63,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [searchResults, setSearchResults] = useState<{id: string; name: string; email: string}[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
+  const [openTickets, setOpenTickets] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Live counter of open/in_progress support tickets — drives the red badge
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("support_tickets" as any)
+        .select("*", { count: "exact", head: true })
+        .in("status", ["open", "in_progress"]);
+      setOpenTickets(count ?? 0);
+    };
+    fetchCount();
+    const ch = supabase
+      .channel("admin-support-badge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, fetchCount)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

@@ -33,6 +33,7 @@ import {
   Gift,
   ShieldCheck,
   Lock,
+  Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -207,6 +208,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
     { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
+    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },

@@ -1187,21 +1187,38 @@ export default function AdminCarity() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BanknoteIcon className="h-4 w-4" /> Histórico de Payouts</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><BanknoteIcon className="h-4 w-4" /> Pedidos de Levantamento</CardTitle></CardHeader>
             <CardContent>
               {payouts.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">Sem payouts registados</p>
               ) : (
                 <div className="space-y-2">
                   {payouts.map(p => (
-                    <div key={p.id} className="flex items-center justify-between p-2 border rounded">
-                      <div>
+                    <div key={p.id} className="flex items-center justify-between p-3 border rounded gap-3 flex-wrap">
+                      <div className="min-w-0">
                         <p className="text-sm font-medium">{p.shops?.name || "—"}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-PT")} · {p.method}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleString("pt-PT")} · {p.method}</p>
+                        {p.notes && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-line bg-muted p-1.5 rounded">{p.notes}</p>}
+                        {p.reference && <p className="text-xs text-muted-foreground">Ref: {p.reference}</p>}
                       </div>
-                      <div className="text-right">
+                      <div className="flex flex-col items-end gap-1">
                         <p className="font-semibold">€{Number(p.amount || 0).toFixed(2)}</p>
-                        <Badge variant="outline" className="text-xs">{p.status === "paid" ? "✅ Pago" : p.status === "processing" ? "⏳ A processar" : "🕐 Pendente"}</Badge>
+                        <Badge variant="outline" className="text-xs">{p.status === "paid" ? "✅ Pago" : p.status === "rejected" ? "❌ Rejeitado" : p.status === "processing" ? "⏳ A processar" : "🕐 Pendente"}</Badge>
+                        {p.status === "pending" && (
+                          <div className="flex gap-1 mt-1">
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={async () => {
+                              const ref = window.prompt("Referência da transferência (opcional):") || "";
+                              const { error } = await supabase.rpc("mark_shop_payout_paid" as any, { _payout_id: p.id, _reference: ref });
+                              if (error) toast.error(error.message); else { toast.success("Marcado como pago"); loadData(); }
+                            }}>✅ Marcar pago</Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs text-red-600" onClick={async () => {
+                              const reason = window.prompt("Motivo da rejeição:") || "";
+                              if (!reason) return;
+                              const { error } = await supabase.rpc("reject_shop_payout" as any, { _payout_id: p.id, _reason: reason });
+                              if (error) toast.error(error.message); else { toast.success("Rejeitado — saldo devolvido"); loadData(); }
+                            }}>❌ Rejeitar</Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

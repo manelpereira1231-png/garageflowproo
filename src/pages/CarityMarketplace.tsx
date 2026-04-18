@@ -159,6 +159,26 @@ export default function CarityMarketplace() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        realm="market"
+        path="/market"
+        breadcrumbs={[
+          { name: "Home", url: "/" },
+          { name: "Market", url: "/market" },
+        ]}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "GarageFlow Market",
+          url: "https://garageflow.pt/market",
+          description: "Trusted used-car marketplace with mandatory inspection by certified workshops. Secure escrow payment.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://garageflow.pt/market?search={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
       {/* HERO */}
       <header className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">

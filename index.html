@@ -2,136 +2,133 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>Software Gestão Oficina Automóvel | GarageFlow Pro</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Default title/meta — will be overridden per route via react-helmet-async -->
+    <title>GarageFlow | Workshop Management Software & Used Car Marketplace</title>
+    <meta name="description" content="GarageFlow: workshop management software for auto repair shops + trusted used-car marketplace with mandatory inspection. Available worldwide. 30-day free trial.">
+    <meta name="keywords" content="workshop management software, garage software, auto repair ERP, used cars marketplace, inspected cars, GarageFlow">
+    <meta name="author" content="GarageFlow" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/og-image.jpg">
     <link rel="canonical" href="https://garageflow.pt/" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#e8930c" />
-    
-    <meta name="description" content="GarageFlow Pro: software de gestão para oficinas automóvel em Portugal. Orçamentos, ordens de serviço, faturação, clientes e alertas inteligentes. Teste grátis 30 dias.">
-    <meta name="keywords" content="software oficina, gestão oficina automóvel, ERP oficina mecânica, ordens de serviço Portugal, faturação oficina, programa oficinas mecânica, software gestão oficina, gestão clientes oficina, GarageFlow">
-    <meta name="author" content="GarageFlow Pro" />
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="application-name" content="GarageFlow" />
+    <meta name="apple-mobile-web-app-title" content="GarageFlow" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
 
+    <!-- Default Open Graph (overridden per page by SEOHead) -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://garageflow.pt/" />
-    <meta property="og:site_name" content="GarageFlow Pro" />
-    <meta property="og:title" content="Software Gestão Oficina Automóvel | GarageFlow Pro">
-    <meta property="og:description" content="Gestão completa para oficinas: orçamentos, ordens de serviço, faturação e clientes numa plataforma SaaS. Teste grátis.">
-    <meta property="og:image" content="https://garageflow.pt/favicon.ico">
+    <meta property="og:site_name" content="GarageFlow" />
+    <meta property="og:title" content="GarageFlow | Workshop Management & Car Marketplace">
+    <meta property="og:description" content="Workshop management software + trusted used-car marketplace with mandatory inspection. Available worldwide.">
+    <meta property="og:image" content="https://garageflow.pt/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="GarageFlow — Workshop Management Software">
     <meta property="og:locale" content="pt_PT" />
     <meta property="og:locale:alternate" content="pt_BR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="de_DE" />
+    <meta property="og:locale:alternate" content="it_IT" />
+    <meta property="og:locale:alternate" content="hi_IN" />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@GarageFlowPro" />
-    <meta name="twitter:title" content="Software Gestão Oficina | GarageFlow Pro">
-    <meta name="twitter:description" content="ERP para oficinas automóvel em Portugal. Orçamentos, serviços, faturação e alertas. Teste grátis.">
-    <meta name="twitter:image" content="https://garageflow.pt/favicon.ico">
+    <meta name="twitter:title" content="GarageFlow | Workshop Management & Car Marketplace">
+    <meta name="twitter:description" content="Workshop management software + trusted car marketplace. Available worldwide.">
+    <meta name="twitter:image" content="https://garageflow.pt/og-image.jpg">
 
-    <!-- JSON-LD SoftwareApplication -->
+    <!-- Default hreflang map (overridden per page) -->
+    <link rel="alternate" hreflang="pt-PT" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="en-US" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="en-GB" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="es-ES" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="es-MX" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="fr-FR" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="de-DE" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="it-IT" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="hi-IN" href="https://garageflow.pt/" />
+    <link rel="alternate" hreflang="x-default" href="https://garageflow.pt/" />
+
+    <!-- JSON-LD Organization (knowledge panel) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "GarageFlow",
+      "alternateName": ["GarageFlow Pro", "GarageFlow Market"],
+      "url": "https://garageflow.pt",
+      "logo": "https://garageflow.pt/og-image.jpg",
+      "description": "Worldwide SaaS platform: workshop management software for auto repair shops and trusted used-car marketplace with mandatory inspection.",
+      "foundingDate": "2024",
+      "areaServed": ["PT", "BR", "ES", "FR", "DE", "IT", "GB", "US", "IN", "MX"],
+      "knowsLanguage": ["pt", "pt-BR", "en", "es", "fr", "de", "it", "hi"],
+      "contactPoint": [{
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@garageflow.pt",
+        "availableLanguage": ["Portuguese", "English", "Spanish", "French", "German", "Italian", "Hindi"]
+      }],
+      "sameAs": [
+        "https://www.linkedin.com/company/garageflow",
+        "https://twitter.com/GarageFlowPro",
+        "https://www.facebook.com/garageflowpro",
+        "https://www.instagram.com/garageflow"
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD WebSite + SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "GarageFlow",
+      "url": "https://garageflow.pt",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://garageflow.pt/market?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "inLanguage": ["pt-PT", "pt-BR", "en-US", "en-GB", "es-ES", "fr-FR", "de-DE", "it-IT", "hi-IN"]
+    }
+    </script>
+
+    <!-- JSON-LD SoftwareApplication (multi-currency offers) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "GarageFlow Pro",
+      "name": "GarageFlow",
       "url": "https://garageflow.pt",
       "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "description": "Software SaaS de gestão para oficinas automóvel em Portugal. Orçamentos, ordens de serviço, faturação, gestão de clientes e alertas inteligentes.",
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "EUR",
-        "lowPrice": "0",
-        "highPrice": "99",
-        "offerCount": "3"
-      },
-      "creator": {
-        "@type": "Organization",
-        "name": "GarageFlow Pro",
-        "url": "https://garageflow.pt"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "120"
-      }
-    }
-    </script>
-
-    <!-- JSON-LD FAQ -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "O que é o GarageFlow Pro?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "O GarageFlow Pro é um software de gestão para oficinas automóvel que permite criar orçamentos, gerir ordens de serviço, faturação, clientes e veículos numa única plataforma online."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "O GarageFlow funciona em Portugal?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sim, o GarageFlow foi desenhado para oficinas em Portugal com suporte a IVA português, terminologia PT-PT e integração com processos fiscais locais."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Quanto custa o software de gestão de oficinas?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "O GarageFlow oferece um plano gratuito com funcionalidades básicas. O plano Pro custa 49€/mês e o plano Garage 99€/mês, ambos com teste grátis de 30 dias."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Posso usar o GarageFlow no telemóvel?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sim, o GarageFlow é uma aplicação web progressiva (PWA) que funciona em qualquer browser, incluindo telemóvel e tablet, sem necessidade de instalar uma app."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Como faço orçamentos para clientes?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No GarageFlow pode criar orçamentos profissionais com peças, mão de obra e IVA em poucos cliques. O cliente pode aprovar online com assinatura digital."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "O GarageFlow gere stock de peças?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sim, o sistema inclui gestão de stock com alertas de stock mínimo, movimentos automáticos ao fechar ordens de serviço e integração com fornecedores."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "É possível gerir várias oficinas?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Sim, o plano Garage permite gerir até 5 oficinas com utilizadores ilimitados, relatórios avançados e automações completas."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Como funciona a faturação no GarageFlow?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "O GarageFlow gera faturas profissionais a partir de ordens de serviço ou orçamentos aprovados, com cálculo automático de IVA e possibilidade de pagamento online."
-          }
-        }
-      ]
+      "applicationSubCategory": "Workshop Management Software",
+      "operatingSystem": "Web, iOS, Android",
+      "description": "Worldwide SaaS for auto repair shops: quotes, work orders, invoicing, customers, inventory and smart alerts. Available in 8 languages.",
+      "offers": [
+        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Pro", "price": "49", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Garage", "price": "99", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Pro BR", "price": "199", "priceCurrency": "BRL", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Pro US", "price": "59", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Pro UK", "price": "45", "priceCurrency": "GBP", "availability": "https://schema.org/InStock" },
+        { "@type": "Offer", "name": "Pro IN", "price": "1499", "priceCurrency": "INR", "availability": "https://schema.org/InStock" }
+      ],
+      "creator": { "@type": "Organization", "name": "GarageFlow", "url": "https://garageflow.pt" },
+      "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "120" }
     }
     </script>
 
@@ -154,7 +151,6 @@
       gtag('config', 'AW-18023581561', {
         allow_enhanced_conversions: true,
         conversion_linker: true,
-        phone_conversion_number: '+351',
         link_attribution: true
       });
     </script>
@@ -166,7 +162,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
-</head>
+  </head>
 
   <body>
     <div id="root"></div>

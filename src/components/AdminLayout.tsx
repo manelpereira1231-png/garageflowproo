@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, Wallet, AlertTriangle,
-  MessageCircle, Megaphone, Banknote, ClipboardCheck,
+  MessageCircle, Megaphone, Banknote, ClipboardCheck, LifeBuoy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ const navSections = [
   {
     label: "Operações",
     items: [
+      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },

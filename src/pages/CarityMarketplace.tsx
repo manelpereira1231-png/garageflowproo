@@ -10,6 +10,7 @@ import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircl
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatRelativePT } from "@/lib/relativeTime";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import SEOHead from "@/components/SEOHead";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',

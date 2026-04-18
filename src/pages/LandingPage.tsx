@@ -9,6 +9,7 @@ import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
+import SEOHead from "@/components/SEOHead";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];

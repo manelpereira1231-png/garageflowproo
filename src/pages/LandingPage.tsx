@@ -9,6 +9,7 @@ import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
+import SEOHead from "@/components/SEOHead";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -80,6 +81,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead realm="erp" path="/" />
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">

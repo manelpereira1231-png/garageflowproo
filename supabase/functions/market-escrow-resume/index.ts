@@ -68,6 +68,27 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Resolve currency dynamically from seller's country
+    const { data: sellerProfile } = await supabaseAdmin
+      .from("carity_seller_profiles")
+      .select("country_code")
+      .eq("user_id", escrow.seller_id)
+      .maybeSingle();
+    const countryCode = (sellerProfile?.country_code || "PT").toUpperCase();
+    const { data: country } = await supabaseAdmin
+      .from("country_settings")
+      .select("currency, active")
+      .eq("code", countryCode)
+      .maybeSingle();
+    if (!country || !country.active) {
+      throw new Error(`O país ${countryCode} ainda não está ativo no Market.`);
+    }
+    const currency = (country.currency || "EUR").toLowerCase();
+    const amountNum = Number(escrow.amount);
+    const unitAmount = ["jpy", "krw", "vnd", "clp"].includes(currency)
+      ? Math.round(amountNum)
+      : Math.round(amountNum * 100);
+
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     const customerId = customers.data[0]?.id;
 
@@ -78,12 +99,12 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "eur",
+            currency,
             product_data: {
               name: `${listing.make} ${listing.model} ${listing.year}`,
               description: `Compra com proteção escrow GarageFlow Market.`,
             },
-            unit_amount: Math.round(Number(escrow.amount) * 100),
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },

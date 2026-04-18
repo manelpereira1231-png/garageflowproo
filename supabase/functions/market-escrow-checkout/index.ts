@@ -65,11 +65,31 @@ serve(async (req) => {
 
     if (blockingEscrow) throw new Error("Já existe uma transação ativa para este carro");
 
-    // Calculate amounts
-    const commissionRate = 2; // 2%
+    // Resolve country & commission dynamically from country_settings
+    const { data: sellerProfile } = await supabaseAdmin
+      .from("carity_seller_profiles")
+      .select("country_code")
+      .eq("user_id", listing.seller_id)
+      .maybeSingle();
+    const countryCode = (sellerProfile?.country_code || "PT").toUpperCase();
+
+    const { data: country } = await supabaseAdmin
+      .from("country_settings")
+      .select("currency, market_commission_rate, active")
+      .eq("code", countryCode)
+      .maybeSingle();
+
+    if (!country || !country.active) {
+      throw new Error(`O país ${countryCode} ainda não está ativo no Market.`);
+    }
+
+    const currency = (country.currency || "EUR").toLowerCase();
+    const commissionRate = Number(country.market_commission_rate) > 0
+      ? Number(country.market_commission_rate)
+      : 2; // fallback safety
     const platformFee = Math.round(listing.price * commissionRate) / 100;
     const sellerAmount = listing.price - platformFee;
-    const totalCharge = listing.price; // Buyer pays full price
+    const totalCharge = listing.price;
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -110,12 +130,14 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "eur",
+            currency,
             product_data: {
               name: `${listing.make} ${listing.model} ${listing.year}`,
               description: `Compra com proteção escrow GarageFlow Market. Fundos retidos até confirmação de entrega.`,
             },
-            unit_amount: Math.round(totalCharge * 100), // cents
+            unit_amount: ["jpy", "krw", "vnd", "clp"].includes(currency)
+              ? Math.round(totalCharge)
+              : Math.round(totalCharge * 100),
           },
           quantity: 1,
         },

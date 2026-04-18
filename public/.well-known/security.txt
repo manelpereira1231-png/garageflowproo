@@ -1,0 +1,6 @@
+Contact: mailto:security@garageflow.pt
+Contact: mailto:support@garageflow.pt
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: pt, en, es
+Canonical: https://garageflow.pt/.well-known/security.txt
+Policy: https://garageflow.pt/legal/privacy

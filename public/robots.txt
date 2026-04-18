@@ -1,8 +1,40 @@
+# GarageFlow — Global SEO Robots
+# https://garageflow.pt
+
 User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /reset-password
+Disallow: /portal/
+Disallow: /quote/
+Disallow: /book/
+
+User-agent: Googlebot-Image
 Allow: /
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin/
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+
+User-agent: Yandex
+Allow: /
+Disallow: /admin/
+
+User-agent: Applebot
+Allow: /
+Disallow: /admin/
 
 User-agent: Twitterbot
 Allow: /
@@ -10,9 +42,46 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# Block AI scrapers (optional — keeps content for humans/search engines)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+# Default — allow all, block private areas
 User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /reset-password
+Disallow: /portal/
+Disallow: /quote/
+Disallow: /book/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /market/dashboard
+Disallow: /market/messages
+Disallow: /market/profile
+Disallow: /market/wallet
+
+Crawl-delay: 1
 
 Sitemap: https://garageflow.pt/sitemap.xml
+Sitemap: https://garageflow.pt/sitemap-erp.xml
+Sitemap: https://garageflow.pt/sitemap-market.xml

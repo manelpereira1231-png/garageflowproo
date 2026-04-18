@@ -1,0 +1,11 @@
+/* TEAM */
+Founder: GarageFlow Team
+Contact: hello [at] garageflow.pt
+From: Lisbon, Portugal
+Worldwide SaaS for automotive workshops & marketplace
+
+/* SITE */
+Last update: 2026-04-18
+Language: Portuguese, English, Spanish, French, German, Italian, Hindi
+Doctype: HTML5
+Components: React, TypeScript, Tailwind CSS, Vite, Supabase, Stripe

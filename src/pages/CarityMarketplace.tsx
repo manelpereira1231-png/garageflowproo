@@ -378,10 +378,10 @@ export default function CarityMarketplace() {
                     {listing.boost_active && (
                       <Badge className="absolute bottom-3 left-3 bg-purple-600/90 text-white border-0 backdrop-blur-sm text-[10px]">Destaque</Badge>
                     )}
-                    {/* Price overlay */}
+                    {/* Price overlay — formatted by user country (currency + locale) */}
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                        €{listing.price.toLocaleString()}
+                        {formatPrice(listing.price)}
                       </span>
                     </div>
                   </div>

@@ -143,6 +143,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
+      // Auto-enables Pix (BR), iDEAL (NL), Bancontact (BE), SEPA, Klarna, Apple/Google Pay, etc.
+      billing_address_collection: "auto",
       payment_intent_data: {
         metadata: {
           escrow_id: escrow.id,

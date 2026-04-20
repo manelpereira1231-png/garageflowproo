@@ -140,6 +140,11 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
+      // Auto-detect & enable all local payment methods Stripe supports for this country
+      // (Pix in BR, iDEAL in NL, Bancontact in BE, SEPA, Klarna, Apple/Google Pay, etc.)
+      automatic_tax: { enabled: false },
+      billing_address_collection: "auto",
+      allow_promotion_codes: true,
       success_url: `${origin}/billing?success=true`,
       cancel_url: `${origin}/billing?canceled=true`,
     };

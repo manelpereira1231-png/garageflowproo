@@ -350,6 +350,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
+        <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
+          <AppModeToggle className="w-full justify-between" />
+        </div>
+
         {isSuperAdmin && (
           <div className="px-2.5 pb-1">
             <Link

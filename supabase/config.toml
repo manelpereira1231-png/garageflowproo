@@ -73,3 +73,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.notify-support-ticket]
 verify_jwt = false
+[functions.detect-country]
+verify_jwt = false
+

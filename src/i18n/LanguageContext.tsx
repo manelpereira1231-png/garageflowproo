@@ -79,8 +79,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useLanguage() {
+export function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error("useLanguage must be used within LanguageProvider");
-  return context;
+  if (context) return context;
+  // Resilient fallback: never crash the app if a consumer mounts outside the
+  // provider (HMR boundaries, lazy chunks, error pages). Falls back to the
+  // user's stored language or PT.
+  const fallbackLang: Language = (typeof window !== "undefined"
+    ? (localStorage.getItem("garageflow_language") as Language | null)
+    : null) || "pt";
+  return {
+    language: fallbackLang,
+    setLanguage: () => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("garageflow_language", fallbackLang);
+        window.location.reload();
+      }
+    },
+    t: (key: string) => translations[fallbackLang]?.[key] || translations["pt"]?.[key] || key,
+  };
 }

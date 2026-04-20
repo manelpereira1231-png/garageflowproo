@@ -32,6 +32,11 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Nav
     'nav.dashboard': 'Dashboard',
+    'appMode.lite': 'Lite',
+    'appMode.pro': 'Pro',
+    'appMode.toggleAria': 'Alternar entre modo Lite e Pro',
+    'appMode.liteSidebarHint': 'Modo Lite ativo — só o essencial. Muda para Pro no topo para veres tudo.',
+    'appMode.switchToProHint': 'Pronto para mais? Muda para Pro no topo para veres tudo.',
     'nav.clients': 'Clientes',
     'nav.vehicles': 'Veículos',
     'nav.quotes': 'Orçamentos',
@@ -1786,6 +1791,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.backToLogin': 'Back to login',
 
     'nav.dashboard': 'Dashboard',
+    'appMode.lite': 'Lite',
+    'appMode.pro': 'Pro',
+    'appMode.toggleAria': 'Switch between Lite and Pro mode',
+    'appMode.liteSidebarHint': 'Lite mode active — essentials only. Switch to Pro at the top to see everything.',
+    'appMode.switchToProHint': 'Ready for more? Switch to Pro at the top to see everything.',
     'nav.clients': 'Clients',
     'nav.vehicles': 'Vehicles',
     'nav.quotes': 'Quotes',
@@ -3369,6 +3379,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.backToLogin': 'Volver al login',
 
     'nav.dashboard': 'Panel',
+    'appMode.lite': 'Lite',
+    'appMode.pro': 'Pro',
+    'appMode.toggleAria': 'Cambiar entre modo Lite y Pro',
+    'appMode.liteSidebarHint': 'Modo Lite activo — solo lo esencial. Cambia a Pro arriba para ver todo.',
+    'appMode.switchToProHint': '¿Listo para más? Cambia a Pro arriba para verlo todo.',
     'nav.clients': 'Clientes',
     'nav.vehicles': 'Vehículos',
     'nav.quotes': 'Presupuestos',
@@ -4955,6 +4970,11 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Nav
     'nav.dashboard': 'Painel',
+    'appMode.lite': 'Lite',
+    'appMode.pro': 'Pro',
+    'appMode.toggleAria': 'Alternar entre modo Lite e Pro',
+    'appMode.liteSidebarHint': 'Modo Lite ativo — apenas o essencial. Mude para Pro no topo para ver tudo.',
+    'appMode.switchToProHint': 'Pronto para mais? Mude para Pro no topo para ver tudo.',
     'nav.clients': 'Clientes',
     'nav.vehicles': 'Veículos',
     'nav.quotes': 'Orçamentos',

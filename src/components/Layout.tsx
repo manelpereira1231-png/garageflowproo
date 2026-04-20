@@ -45,6 +45,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
+import AppModeToggle from "@/components/AppModeToggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
@@ -87,7 +88,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { canUseFeature } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
-  const { isGuidedMode, completeOnboarding } = useOnboardingStatus();
+  const { isGuidedMode } = useOnboardingStatus();
 
   useEffect(() => {
     const loadAlertCount = async () => {
@@ -153,45 +154,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [activeShopId, isCarityPartner]);
 
-  useEffect(() => {
-    const checkOnboardingProgress = async () => {
-      if (!isReady || !user || !isGuidedMode) {
-        return;
-      }
-
-      let shopId = activeShopId || localStorage.getItem("garageflow_active_shop");
-
-      if (!shopId) {
-        const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-        if (shop?.id) {
-          shopId = shop.id;
-          localStorage.setItem("garageflow_active_shop", shop.id);
-        }
-      }
-
-      if (!shopId) return;
-
-      const [clientsCountRes, vehiclesCountRes, quotesCountRes] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
-        supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
-        supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
-      ]);
-
-      // Only auto-exit guided mode after the user has completed the FULL flow:
-      // at least one client AND one vehicle AND one quote. Otherwise we keep the
-      // simplified sidebar so new users aren't overwhelmed by the full SaaS.
-      const onboardingCompleted =
-        (clientsCountRes.count ?? 0) > 0 &&
-        (vehiclesCountRes.count ?? 0) > 0 &&
-        (quotesCountRes.count ?? 0) > 0;
-
-      if (onboardingCompleted) {
-        completeOnboarding();
-      }
-    };
-
-    checkOnboardingProgress();
-  }, [activeShopId, completeOnboarding, isGuidedMode, isReady, user]);
+  // Lite/Pro mode is fully user-controlled via the topbar toggle (Binance-style).
+  // We no longer auto-exit Lite based on data activity — keeps the experience
+  // predictable across sessions.
 
   const [financialOpen, setFinancialOpen] = useState(isFinancialRoute(location.pathname));
 
@@ -243,15 +208,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : navItems;
 
-  const simpleModeLabel = t("nav.simpleStart") === "nav.simpleStart" ? "Arranque guiado" : t("nav.simpleStart");
-  const simpleModeHint =
-    t("nav.simpleStartHint") === "nav.simpleStartHint"
-      ? "Mostramos só o essencial até criares o primeiro cliente ou veículo."
-      : t("nav.simpleStartHint");
-  const skipOnboardingLabel =
-    t("dashboard.skipOnboarding") === "dashboard.skipOnboarding"
-      ? "Saltar onboarding"
-      : t("dashboard.skipOnboarding");
+  const liteHintLabel =
+    t("appMode.liteSidebarHint") === "appMode.liteSidebarHint"
+      ? "Modo Lite ativo — mostramos só o essencial. Muda para Pro no topo para veres tudo."
+      : t("appMode.liteSidebarHint");
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -280,20 +240,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
           {isGuidedMode && (
-            <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-2.5">
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/60">
-                {simpleModeLabel}
+            <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  ✨ Lite
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-sidebar-foreground/75">
+                {liteHintLabel}
               </p>
-              <p className="px-2 pt-1 text-xs leading-relaxed text-sidebar-foreground/75">
-                {simpleModeHint}
-              </p>
-              <button
-                onClick={completeOnboarding}
-                className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-              >
-                <span>{skipOnboardingLabel}</span>
-                <ChevronRight className="ml-auto w-3.5 h-3.5" />
-              </button>
             </div>
           )}
 
@@ -469,6 +424,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex-1" />
+
+          {/* Lite ⇄ Pro mode toggle — Binance/Coinbase style, always visible */}
+          <AppModeToggle className="mr-2" compact />
 
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1">

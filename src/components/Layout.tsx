@@ -418,19 +418,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <span className="text-sm font-medium text-muted-foreground hidden lg:block truncate">{shopName}</span>
 
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
-            className="hidden lg:flex items-center gap-2 ml-4 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
-          >
-            <Search className="w-3.5 h-3.5" />
-            {t("common.search")}...
-            <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
-          </button>
-
           <div className="flex-1" />
 
-          {/* Lite ⇄ Pro mode toggle — Binance/Coinbase style, always visible */}
-          <AppModeToggle className="mr-2" compact />
 
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1">

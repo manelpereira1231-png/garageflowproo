@@ -11,6 +11,7 @@ import {
   CreditCard, FileCheck, Users, Package
 } from "lucide-react";
 import MarketLayout from "@/components/MarketLayout";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const STATUS_LABEL: Record<string, string> = {
   pending_payment: "Aguarda Pagamento",
@@ -32,6 +33,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function MarketDashboard() {
   const navigate = useNavigate();
+  const { formatPrice } = useCountryPricing();
   const [loading, setLoading] = useState(true);
   const [sellerName, setSellerName] = useState("");
   const [verified, setVerified] = useState(false);
@@ -409,7 +411,7 @@ export default function MarketDashboard() {
                     {offer.listing?.make} {offer.listing?.model}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Oferta: <span className="font-semibold text-foreground">€{offer.amount?.toLocaleString()}</span>
+                    Oferta: <span className="font-semibold text-foreground">{formatPrice(Number(offer.amount) || 0)}</span>
                   </p>
                 </div>
                 <Badge className="bg-amber-100 text-amber-800 text-xs">Pendente</Badge>
@@ -444,7 +446,7 @@ export default function MarketDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{listing.make} {listing.model} ({listing.year})</p>
-                  <p className="text-xs text-muted-foreground">€{listing.price?.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{formatPrice(Number(listing.price) || 0)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {listing.boost_active && (

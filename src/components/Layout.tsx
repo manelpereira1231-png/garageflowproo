@@ -45,6 +45,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
+import AppModeToggle from "@/components/AppModeToggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
@@ -87,7 +88,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { canUseFeature } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
-  const { isGuidedMode, completeOnboarding } = useOnboardingStatus();
+  const { isGuidedMode } = useOnboardingStatus();
 
   useEffect(() => {
     const loadAlertCount = async () => {
@@ -153,45 +154,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [activeShopId, isCarityPartner]);
 
-  useEffect(() => {
-    const checkOnboardingProgress = async () => {
-      if (!isReady || !user || !isGuidedMode) {
-        return;
-      }
-
-      let shopId = activeShopId || localStorage.getItem("garageflow_active_shop");
-
-      if (!shopId) {
-        const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-        if (shop?.id) {
-          shopId = shop.id;
-          localStorage.setItem("garageflow_active_shop", shop.id);
-        }
-      }
-
-      if (!shopId) return;
-
-      const [clientsCountRes, vehiclesCountRes, quotesCountRes] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
-        supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
-        supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
-      ]);
-
-      // Only auto-exit guided mode after the user has completed the FULL flow:
-      // at least one client AND one vehicle AND one quote. Otherwise we keep the
-      // simplified sidebar so new users aren't overwhelmed by the full SaaS.
-      const onboardingCompleted =
-        (clientsCountRes.count ?? 0) > 0 &&
-        (vehiclesCountRes.count ?? 0) > 0 &&
-        (quotesCountRes.count ?? 0) > 0;
-
-      if (onboardingCompleted) {
-        completeOnboarding();
-      }
-    };
-
-    checkOnboardingProgress();
-  }, [activeShopId, completeOnboarding, isGuidedMode, isReady, user]);
+  // Lite/Pro mode is fully user-controlled via the topbar toggle (Binance-style).
+  // We no longer auto-exit Lite based on data activity — keeps the experience
+  // predictable across sessions.
 
   const [financialOpen, setFinancialOpen] = useState(isFinancialRoute(location.pathname));
 

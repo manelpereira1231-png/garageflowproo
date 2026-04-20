@@ -88,7 +88,7 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
             {exists ? "Está a receber alertas" : "Avise-me de novos anúncios"}
           </p>
           <p className="text-[11px] text-muted-foreground truncate">
-            {make} {model}{maxPrice ? ` até €${maxPrice.toLocaleString("pt-PT")}` : ""}
+            {make} {model}{maxPrice ? ` até ${formatMarketPrice(maxPrice)}` : ""}
           </p>
         </div>
         <Button

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, Wrench } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 /**
  * SEO route: /market/preco/ate-:max-euros  e  /market/preco/:min-a-:max-euros
@@ -17,15 +18,15 @@ export default function CarityByPrice() {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Parse range
+  // Parse range — labels are now country-aware via formatMarketPrice
   const { min, max, label } = (() => {
     const r = (range || "").toLowerCase();
     const ate = r.match(/^ate-(\d+)-euros$/);
-    if (ate) return { min: 0, max: parseInt(ate[1]), label: `Até €${parseInt(ate[1]).toLocaleString()}` };
+    if (ate) return { min: 0, max: parseInt(ate[1]), label: `Até ${formatMarketPrice(parseInt(ate[1]))}` };
     const between = r.match(/^(\d+)-a-(\d+)-euros$/);
-    if (between) return { min: parseInt(between[1]), max: parseInt(between[2]), label: `De €${parseInt(between[1]).toLocaleString()} a €${parseInt(between[2]).toLocaleString()}` };
+    if (between) return { min: parseInt(between[1]), max: parseInt(between[2]), label: `De ${formatMarketPrice(parseInt(between[1]))} a ${formatMarketPrice(parseInt(between[2]))}` };
     const acima = r.match(/^acima-(\d+)-euros$/);
-    if (acima) return { min: parseInt(acima[1]), max: 9999999, label: `Acima de €${parseInt(acima[1]).toLocaleString()}` };
+    if (acima) return { min: parseInt(acima[1]), max: 9999999, label: `Acima de ${formatMarketPrice(parseInt(acima[1]))}` };
     return { min: 0, max: 9999999, label: "Todos os preços" };
   })();
 
@@ -164,7 +165,7 @@ export default function CarityByPrice() {
                     )}
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                        €{listing.price?.toLocaleString()}
+                        {formatMarketPrice(listing.price)}
                       </span>
                     </div>
                   </div>

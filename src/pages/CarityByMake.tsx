@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowLeft, ArrowRight, CheckCircle, Wrench } from "lucide-react";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 export default function CarityByMake() {
   const { make } = useParams();
@@ -137,7 +138,7 @@ export default function CarityByMake() {
                     )}
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                        €{listing.price?.toLocaleString()}
+                        {formatMarketPrice(listing.price)}
                       </span>
                     </div>
                   </div>

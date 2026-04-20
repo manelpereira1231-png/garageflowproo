@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Bell, BellOff, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 interface Props {
   make: string;
@@ -88,7 +89,7 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
             {exists ? "Está a receber alertas" : "Avise-me de novos anúncios"}
           </p>
           <p className="text-[11px] text-muted-foreground truncate">
-            {make} {model}{maxPrice ? ` até €${maxPrice.toLocaleString("pt-PT")}` : ""}
+            {make} {model}{maxPrice ? ` até ${formatMarketPrice(maxPrice)}` : ""}
           </p>
         </div>
         <Button

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, CheckCircle, Wrench, MapPin } from "lucide-react";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 export default function CarityByCity() {
   const { city } = useParams();
@@ -139,7 +140,7 @@ export default function CarityByCity() {
                     )}
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                        €{listing.price?.toLocaleString()}
+                        {formatMarketPrice(listing.price)}
                       </span>
                     </div>
                   </div>

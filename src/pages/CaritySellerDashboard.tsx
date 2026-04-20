@@ -214,7 +214,7 @@ export default function CaritySellerDashboard() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-semibold">{listing.make} {listing.model} ({listing.year})</h3>
-                            <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage?.toLocaleString()} km · €{listing.price?.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage?.toLocaleString()} km · {formatPrice(Number(listing.price) || 0)}</p>
                           </div>
                         <div className="flex items-center gap-2">
                             {listing.boost_active && <Badge className="bg-purple-100 text-purple-800"><Rocket className="h-3 w-3 mr-1" />Destaque</Badge>}
@@ -410,7 +410,7 @@ export default function CaritySellerDashboard() {
               <Input value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} placeholder="912345678" />
             </div>
             <div>
-              <label className="text-sm font-medium">Preço de venda (€)</label>
+              <label className="text-sm font-medium">Preço de venda ({pricing.currency_symbol})</label>
               <Input value={salePrice} onChange={e => setSalePrice(e.target.value)} type="number" />
             </div>
           </div>

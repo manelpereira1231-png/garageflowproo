@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Car, ShieldCheck, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 export default function CarityFavorites() {
+  const { formatPrice } = useCountryPricing();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -117,7 +119,7 @@ export default function CarityFavorites() {
                   )}
                   <div className="absolute bottom-3 right-3">
                     <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                      €{listing.price?.toLocaleString()}
+                      {formatPrice(Number(listing.price) || 0)}
                     </span>
                   </div>
                 </div>

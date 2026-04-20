@@ -151,7 +151,7 @@ export default function CaritySellCar() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>VIN (opcional)</Label><Input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder="Número de chassis" /></div>
-                <div><Label>Preço (€) *</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
+                <div><Label>Preço ({pricing.currency_symbol}) *</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
               </div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descreva o estado do carro, extras, histórico..." rows={4} /></div>
             </CardContent>

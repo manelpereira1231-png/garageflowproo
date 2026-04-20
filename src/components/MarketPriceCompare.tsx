@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { TrendingDown, TrendingUp, Minus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 interface Props {
   listingId: string;
@@ -101,7 +102,7 @@ export default function MarketPriceCompare({ listingId, make, model, year, price
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-semibold ${config.text}`}>{config.label}</p>
         <p className="text-[10px] text-muted-foreground">
-          {config.sub} · base: {stats.count} anúncio{stats.count > 1 ? "s" : ""} {make} {model} {year - 1}-{year + 1} (média €{Math.round(stats.avg).toLocaleString("pt-PT")})
+          {config.sub} · base: {stats.count} anúncio{stats.count > 1 ? "s" : ""} {make} {model} {year - 1}-{year + 1} (média {formatMarketPrice(Math.round(stats.avg))})
         </p>
       </div>
     </div>

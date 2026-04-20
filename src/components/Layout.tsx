@@ -208,15 +208,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : navItems;
 
-  const simpleModeLabel = t("nav.simpleStart") === "nav.simpleStart" ? "Arranque guiado" : t("nav.simpleStart");
-  const simpleModeHint =
-    t("nav.simpleStartHint") === "nav.simpleStartHint"
-      ? "Mostramos só o essencial até criares o primeiro cliente ou veículo."
-      : t("nav.simpleStartHint");
-  const skipOnboardingLabel =
-    t("dashboard.skipOnboarding") === "dashboard.skipOnboarding"
-      ? "Saltar onboarding"
-      : t("dashboard.skipOnboarding");
+  const liteHintLabel =
+    t("appMode.liteSidebarHint") === "appMode.liteSidebarHint"
+      ? "Modo Lite ativo — mostramos só o essencial. Muda para Pro no topo para veres tudo."
+      : t("appMode.liteSidebarHint");
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -245,20 +240,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
           {isGuidedMode && (
-            <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-2.5">
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/60">
-                {simpleModeLabel}
+            <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  ✨ Lite
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-sidebar-foreground/75">
+                {liteHintLabel}
               </p>
-              <p className="px-2 pt-1 text-xs leading-relaxed text-sidebar-foreground/75">
-                {simpleModeHint}
-              </p>
-              <button
-                onClick={completeOnboarding}
-                className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-              >
-                <span>{skipOnboardingLabel}</span>
-                <ChevronRight className="ml-auto w-3.5 h-3.5" />
-              </button>
             </div>
           )}
 

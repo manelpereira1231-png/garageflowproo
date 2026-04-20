@@ -410,7 +410,7 @@ export default function CaritySellerDashboard() {
               <Input value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} placeholder="912345678" />
             </div>
             <div>
-              <label className="text-sm font-medium">Preço de venda (€)</label>
+              <label className="text-sm font-medium">Preço de venda ({pricing.currency_symbol})</label>
               <Input value={salePrice} onChange={e => setSalePrice(e.target.value)} type="number" />
             </div>
           </div>

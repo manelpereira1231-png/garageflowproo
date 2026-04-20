@@ -31,13 +31,22 @@ export default function CarityPayInspection() {
     ]);
     setListing(listingData);
 
-    // Detect country from seller profile, fallback PT
+    // Country detection priority:
+    //  1) seller profile  → 2) browser-detected via regionConfig (timezone/locale/IP)
+    //  3) PT fallback. This guarantees a localized price for any country worldwide.
     let countryCode = "PT";
     if (user) {
       const { data: profile } = await supabase
         .from("carity_seller_profiles")
         .select("country_code").eq("user_id", user.id).maybeSingle();
       if (profile?.country_code) countryCode = profile.country_code;
+    }
+    if (countryCode === "PT") {
+      try {
+        const { getCountryCode } = await import("@/lib/regionConfig");
+        const detected = getCountryCode();
+        if (detected) countryCode = detected;
+      } catch { /* keep PT */ }
     }
 
     const { data: countryData } = await supabase

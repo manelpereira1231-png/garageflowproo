@@ -210,7 +210,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const liteHintLabel =
     t("appMode.liteSidebarHint") === "appMode.liteSidebarHint"
-      ? "Modo Lite ativo — mostramos só o essencial. Muda para Pro no topo para veres tudo."
+      ? "Modo Lite ativo — mostramos só o essencial. Usa o botão em baixo para mudar para Pro."
       : t("appMode.liteSidebarHint");
 
   return (

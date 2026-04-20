@@ -425,6 +425,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
+          {/* Lite ⇄ Pro mode toggle — Binance/Coinbase style, always visible */}
+          <AppModeToggle className="mr-2" compact />
+
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1">
               <Bell className="w-5 h-5 text-muted-foreground" />

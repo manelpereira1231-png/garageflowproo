@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { TrendingDown, TrendingUp, Minus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 interface Props {
   listingId: string;

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Bell, BellOff, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 interface Props {
   make: string;

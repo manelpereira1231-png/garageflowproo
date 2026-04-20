@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import AutoOnboarding, { OnboardingBackupButton } from "@/components/AutoOnboarding";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
@@ -42,7 +41,7 @@ export default function Dashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
-  const { isGuidedMode, completeOnboarding } = useOnboardingStatus();
+  const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -343,9 +342,8 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Auto Onboarding Bot */}
-      <AutoOnboarding />
-      <OnboardingBackupButton />
+      {/* Lite Mode = simplified guided dashboard. The Lite/Pro toggle lives in the topbar. */}
+
 
       {/* Welcome + Next Step for guided mode */}
       {isGuidedMode && dataLoaded && (
@@ -394,15 +392,10 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground"
-              onClick={completeOnboarding}
-            >
-              {t('dashboard.skipOnboarding') || 'Saltar introdução →'}
-            </Button>
+          <div className="text-center text-xs text-muted-foreground">
+            {t('appMode.switchToProHint') === 'appMode.switchToProHint'
+              ? 'Pronto para mais? Muda para Pro no topo da página para ver tudo.'
+              : t('appMode.switchToProHint')}
           </div>
         </div>
       )}

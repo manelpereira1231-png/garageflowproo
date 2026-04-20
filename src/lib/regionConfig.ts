@@ -190,6 +190,31 @@ export function listActiveCountries(): CountryConfig[] {
   return Object.values(getCountriesMap()).filter(c => c.active);
 }
 
+/**
+ * Detect country via server-side IP geolocation (Cloudflare/ipapi).
+ * Persists in localStorage. Skips silently if user already chose a country.
+ * Call once at app boot, AFTER loadCountriesFromDB().
+ */
+export async function detectCountryByIP(): Promise<void> {
+  if (localStorage.getItem(COUNTRY_KEY)) return; // respect explicit choice
+  try {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-country`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 2000);
+    const r = await fetch(url, {
+      method: "GET",
+      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "" },
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j?.country && getCountriesMap()[j.country]) {
+      localStorage.setItem(COUNTRY_KEY, j.country);
+    }
+  } catch { /* timezone fallback handles it */ }
+}
+
 // ─── Detection ────────────────────────────────────────────
 function detectCountryCode(): CountryCode {
   // 1. Stored override

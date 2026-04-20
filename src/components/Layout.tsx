@@ -239,10 +239,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
-          <div className="mb-3 flex justify-center px-1">
-            <AppModeToggle className="w-full justify-between" />
-          </div>
-
           {isGuidedMode && (
             <div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-3">
               <div className="flex items-center gap-2">
@@ -353,6 +349,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             return navLink;
           })}
         </nav>
+
+        <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
+          <AppModeToggle className="w-full justify-between" />
+        </div>
 
         {isSuperAdmin && (
           <div className="px-2.5 pb-1">

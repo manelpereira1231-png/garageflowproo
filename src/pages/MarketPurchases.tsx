@@ -12,6 +12,7 @@ import {
 import { Car, Clock, CheckCircle, XCircle, ShieldCheck, CreditCard, AlertTriangle, ArrowRight } from "lucide-react";
 import MarketLayout from "@/components/MarketLayout";
 import { toast } from "sonner";
+import { formatMarketPriceExact, getMarketLocale } from "@/lib/marketPrice";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pagamento pendente", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
@@ -175,10 +176,10 @@ export default function MarketPurchases() {
                       {p.carity_listings?.make} {p.carity_listings?.model} ({p.carity_listings?.year})
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      €{Number(p.amount).toLocaleString("pt-PT", { minimumFractionDigits: 2 })}
+                      {formatMarketPriceExact(p.amount)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Iniciada {new Date(p.created_at).toLocaleDateString("pt-PT")}
+                      Iniciada {new Date(p.created_at).toLocaleDateString(getMarketLocale())}
                     </p>
                     {!stillAvailable && (
                       <p className="text-xs text-destructive mt-1 flex items-center gap-1">
@@ -249,7 +250,7 @@ export default function MarketPurchases() {
                         {p.carity_listings?.make} {p.carity_listings?.model} ({p.carity_listings?.year})
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        €{Number(p.amount).toLocaleString("pt-PT", { minimumFractionDigits: 2 })} · {new Date(p.created_at).toLocaleDateString("pt-PT")}
+                        {formatMarketPriceExact(p.amount)} · {new Date(p.created_at).toLocaleDateString(getMarketLocale())}
                       </p>
                     </div>
                     <Badge className={`${cfg.color} text-xs`}>

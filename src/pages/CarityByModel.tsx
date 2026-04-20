@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, CheckCircle, Wrench } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
+import { formatMarketPrice } from "@/lib/marketPrice";
 
 /**
  * SEO route: /market/modelo/:make/:model
@@ -119,7 +120,7 @@ export default function CarityByModel() {
           <div className="grid grid-cols-3 gap-3 mb-8 max-w-2xl">
             <div className="border rounded-lg p-3 bg-muted/30">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço médio</p>
-              <p className="text-lg font-bold">€{stats.avgPrice.toLocaleString()}</p>
+              <p className="text-lg font-bold">{formatMarketPrice(stats.avgPrice)}</p>
             </div>
             <div className="border rounded-lg p-3 bg-muted/30">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ano médio</p>
@@ -179,7 +180,7 @@ export default function CarityByModel() {
                     )}
                     <div className="absolute bottom-3 right-3">
                       <span className="bg-white/95 backdrop-blur-sm text-slate-900 font-bold text-lg px-3 py-1 rounded-lg shadow-sm">
-                        €{listing.price?.toLocaleString()}
+                        {formatMarketPrice(listing.price)}
                       </span>
                     </div>
                   </div>

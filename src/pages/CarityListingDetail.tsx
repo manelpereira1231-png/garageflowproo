@@ -20,6 +20,7 @@ import MarketAlertSubscribe from "@/components/MarketAlertSubscribe";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
+import { formatMarketPrice, getMarketCurrency } from "@/lib/marketPrice";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },
@@ -112,7 +113,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     const titleText = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
     document.title = titleText;
     // Dynamic meta description with real data
-    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — €${listingData.price?.toLocaleString()}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
+    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatMarketPrice(listingData.price)}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
     const setMeta = (selector: string, attr: "name" | "property", key: string, content: string) => {
       let el = document.querySelector(selector) as HTMLMetaElement | null;
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
@@ -760,7 +761,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             <Card className="sticky top-4">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center space-y-1">
-                  <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">€{listing.price.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{formatMarketPrice(listing.price)}</p>
                   <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas</p>
                   {(viewStats.total > 0 || viewStats.today > 0) && (
                     <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
@@ -822,7 +823,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {buying ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
                       ) : (
-                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — €{listing.price.toLocaleString()}</>
+                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — {formatMarketPrice(listing.price)}</>
                       )}
                     </Button>
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
@@ -896,7 +897,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 {/* Seller sees escrow notification */}
                 {isSellerInEscrow && escrow?.status === "paid" && (
                   <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-300">Comprador pagou €{escrow.amount?.toLocaleString()}</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-300">Comprador pagou {formatMarketPrice(escrow.amount)}</p>
                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Os fundos estão retidos em segurança. Serão libertados quando o comprador confirmar a receção do veículo.</p>
                   </div>
                 )}
@@ -1031,7 +1032,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         <span>{s.mileage?.toLocaleString()} km</span><span>•</span>
                         <span>{s.fuel}</span>
                       </div>
-                      <p className="text-lg font-bold text-amber-500">€{s.price?.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-amber-500">{formatMarketPrice(s.price)}</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -1066,13 +1067,13 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         "offers": {
           "@type": "Offer",
           "price": listing.price,
-          "priceCurrency": "EUR",
+          "priceCurrency": getMarketCurrency(),
           "availability": "https://schema.org/InStock",
           "url": `https://garageflow.pt/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
           ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },
         "image": listing.photos[0] || undefined,
-        "description": `${listing.make} ${listing.model} ${listing.year} — €${listing.price?.toLocaleString()}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção certificada GarageFlow Market.`,
+        "description": `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção certificada GarageFlow Market.`,
         ...(shopInfo ? { "provider": { "@type": "AutoRepair", "name": shopInfo.name } } : {}),
         ...(report ? {
           "additionalProperty": [

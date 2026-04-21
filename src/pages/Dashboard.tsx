@@ -511,7 +511,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {!dataLoaded ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div key={i} className="bg-card border border-border/60 rounded-xl p-4 space-y-3 shadow-premium-sm">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-9 w-9 rounded-lg" />
@@ -521,14 +521,16 @@ export default function Dashboard() {
           ))
         ) : (
           stats.map((stat) => (
-            <div key={stat.label} className="stat-card group hover:shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.label}</span>
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+            <div key={stat.label} className="stat-card group relative overflow-hidden">
+              {/* Subtle gradient accent on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="relative flex items-center justify-between mb-3">
+                <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</span>
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 flex items-center justify-center group-hover:from-primary/25 group-hover:to-primary/10 group-hover:border-primary/20 transition-all duration-300">
                   <stat.icon className="w-4 h-4 text-primary" />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold mono">{stat.value}</div>
+              <div className="relative text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">{stat.value}</div>
             </div>
           ))
         )}
@@ -538,7 +540,7 @@ export default function Dashboard() {
       {plan !== 'free' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Monthly Revenue Chart */}
-          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-3 sm:p-5">
+          <div className="lg:col-span-2 card-premium p-3 sm:p-5">
             <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
               {t('dashboard.revenueChart')}
@@ -562,7 +564,7 @@ export default function Dashboard() {
           </div>
 
           {/* Status Distribution Pie */}
-          <div className="bg-card border border-border rounded-xl p-3 sm:p-5">
+          <div className="card-premium p-3 sm:p-5">
             <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <Wrench className="w-4 h-4 text-primary" />
               {t('dashboard.statusChart')}
@@ -598,17 +600,17 @@ export default function Dashboard() {
       {/* Conversion Rate + Top Parts */}
       {plan !== 'free' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="card-premium p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
               {t('dashboard.quoteConversion')}
             </h2>
             <div className="flex items-center gap-4">
-              <div className="text-4xl font-bold text-primary">{conversionRate}%</div>
+              <div className="text-4xl font-bold text-primary tabular-nums tracking-tight">{conversionRate}%</div>
               <p className="text-xs text-muted-foreground">{t('dashboard.last6months')}</p>
             </div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="card-premium p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
               {t('dashboard.topParts')}
@@ -631,7 +633,7 @@ export default function Dashboard() {
 
       {/* Alerts */}
       {pendingAlerts.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="card-premium p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
@@ -671,7 +673,7 @@ export default function Dashboard() {
       )}
 
       {/* Recent Services */}
-      <div className="bg-card border border-border rounded-xl p-5">
+      <div className="card-premium p-5">
         <h2 className="text-lg font-semibold mb-4">{t('dashboard.recentServices')}</h2>
         {recentServices.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-4">{t('dashboard.noServices')}</p>

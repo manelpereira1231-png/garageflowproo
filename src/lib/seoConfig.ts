@@ -69,44 +69,44 @@ export const ERP_META: Record<SeoLang, { title: string; description: string; key
 // Per-language meta content (Market)
 export const MARKET_META: Record<SeoLang, { title: string; description: string; keywords: string }> = {
   pt: {
-    title: "Comprar e Vender Carros com Inspeção | GarageFlow Market",
-    description: "Marketplace de carros usados com inspeção obrigatória por oficinas certificadas. Pagamento seguro com escrow. Compra e venda sem burlas.",
-    keywords: "comprar carro usado, vender carro, marketplace automóvel, carros com inspeção, pagamento seguro carro",
+    title: "GarageFlow Market — Comprar e Vender Carros com Inspeção",
+    description: "GarageFlow Market: marketplace de carros usados com inspeção obrigatória por oficinas certificadas e pagamento seguro com escrow. Sem burlas. Por GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, comprar carro usado, vender carro, marketplace automóvel, carros com inspeção, pagamento seguro carro",
   },
   "pt-BR": {
-    title: "Comprar e Vender Carros com Vistoria | GarageFlow Market",
-    description: "Marketplace de carros seminovos e usados com vistoria por oficinas credenciadas. Pagamento protegido. Sem golpes, sem surpresas.",
-    keywords: "comprar carro usado, vender carro, marketplace carros, vistoria carro, pagamento seguro carro",
+    title: "GarageFlow Market — Comprar e Vender Carros com Vistoria",
+    description: "GarageFlow Market: marketplace de carros seminovos e usados com vistoria por oficinas credenciadas e pagamento protegido. Sem golpes. Por GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, comprar carro usado, vender carro, marketplace carros, vistoria carro, pagamento seguro carro",
   },
   en: {
-    title: "Buy & Sell Inspected Used Cars | GarageFlow Market",
-    description: "Trusted used car marketplace with mandatory inspection by certified garages. Secure escrow payment. Buy and sell with confidence.",
-    keywords: "used cars marketplace, buy used car, sell my car, inspected used cars, secure car payment escrow",
+    title: "GarageFlow Market — Buy & Sell Inspected Used Cars",
+    description: "GarageFlow Market: trusted used-car marketplace with mandatory inspection by certified garages and secure escrow payment. By GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, used cars marketplace, buy used car, sell my car, inspected used cars, secure car payment escrow",
   },
   es: {
-    title: "Comprar y Vender Coches con Inspección | GarageFlow Market",
-    description: "Marketplace de coches usados con inspección obligatoria por talleres certificados. Pago seguro con escrow. Compra y venta sin estafas.",
-    keywords: "comprar coche usado, vender coche, marketplace coches, coches inspeccionados, pago seguro coche",
+    title: "GarageFlow Market — Comprar y Vender Coches con Inspección",
+    description: "GarageFlow Market: marketplace de coches usados con inspección obligatoria por talleres certificados y pago seguro con escrow. Por GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, comprar coche usado, vender coche, marketplace coches, coches inspeccionados, pago seguro coche",
   },
   fr: {
-    title: "Acheter et Vendre des Voitures Inspectées | GarageFlow Market",
-    description: "Marketplace de voitures d'occasion avec inspection obligatoire par garages certifiés. Paiement sécurisé. Achetez et vendez en toute confiance.",
-    keywords: "acheter voiture occasion, vendre voiture, marketplace auto, voitures inspectées, paiement sécurisé auto",
+    title: "GarageFlow Market — Acheter et Vendre des Voitures Inspectées",
+    description: "GarageFlow Market : marketplace de voitures d'occasion avec inspection obligatoire par garages certifiés et paiement sécurisé. Par GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, acheter voiture occasion, vendre voiture, marketplace auto, voitures inspectées, paiement sécurisé auto",
   },
   de: {
-    title: "Geprüfte Gebrauchtwagen Kaufen & Verkaufen | GarageFlow Market",
-    description: "Marktplatz für Gebrauchtwagen mit Pflichtinspektion durch zertifizierte Werkstätten. Sichere Treuhand-Zahlung. Kaufen und verkaufen ohne Risiko.",
-    keywords: "gebrauchtwagen kaufen, auto verkaufen, gebrauchtwagen marktplatz, geprüfte gebrauchtwagen, sichere autozahlung",
+    title: "GarageFlow Market — Geprüfte Gebrauchtwagen Kaufen & Verkaufen",
+    description: "GarageFlow Market: Marktplatz für Gebrauchtwagen mit Pflichtinspektion durch zertifizierte Werkstätten und sicherer Treuhand-Zahlung. Von GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, gebrauchtwagen kaufen, auto verkaufen, gebrauchtwagen marktplatz, geprüfte gebrauchtwagen, sichere autozahlung",
   },
   it: {
-    title: "Comprare e Vendere Auto Ispezionate | GarageFlow Market",
-    description: "Marketplace di auto usate con ispezione obbligatoria da officine certificate. Pagamento sicuro con escrow. Compra e vendi senza truffe.",
-    keywords: "comprare auto usata, vendere auto, marketplace auto, auto ispezionate, pagamento sicuro auto",
+    title: "GarageFlow Market — Comprare e Vendere Auto Ispezionate",
+    description: "GarageFlow Market: marketplace di auto usate con ispezione obbligatoria da officine certificate e pagamento sicuro con escrow. Da GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, comprare auto usata, vendere auto, marketplace auto, auto ispezionate, pagamento sicuro auto",
   },
   hi: {
-    title: "Buy & Sell Inspected Used Cars | GarageFlow Market",
-    description: "Trusted used car marketplace in India with mandatory inspection by certified garages. Secure escrow payment.",
-    keywords: "used cars India, buy second hand car, sell my car India, inspected used cars, secure car marketplace",
+    title: "GarageFlow Market — Buy & Sell Inspected Used Cars in India",
+    description: "GarageFlow Market: trusted used-car marketplace in India with mandatory inspection by certified garages and secure escrow payment. By GarageFlow.",
+    keywords: "GarageFlow Market, garageflowmarket, garage flow market, used cars India, buy second hand car, sell my car India, inspected used cars, secure car marketplace",
   },
 };
 

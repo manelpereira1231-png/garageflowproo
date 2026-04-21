@@ -529,35 +529,15 @@ function AuthenticatedRoutes() {
 }
 
 function AppRoutes() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { isReady, session } = useAuthReady();
 
   useEffect(() => {
-    if (!loading) {
+    if (isReady) {
       sessionStorage.removeItem(AUTO_RECOVERY_KEY);
     }
-  }, [loading]);
+  }, [isReady]);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session: nextSession }, error }) => {
-      if (error && error.message?.includes("session_not_found")) {
-        supabase.auth.signOut();
-        setSession(null);
-      } else {
-        setSession(nextSession);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
+  if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -591,6 +571,15 @@ function AppRoutes() {
             <Route path="/market/pay/:id" element={<MarketLoginRouteRedirect />} />
             <Route path="/market/make/:make" element={<Suspense fallback={<PageLoader />}><CarityByMake /></Suspense>} />
             <Route path="/market/city/:city" element={<Suspense fallback={<PageLoader />}><CarityByCity /></Suspense>} />
+            <Route path="/market/modelo/:make/:model" element={<Suspense fallback={<PageLoader />}><CarityByModel /></Suspense>} />
+            <Route path="/market/preco/:range" element={<Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense>} />
+            <Route path="/legal/privacy" element={<Suspense fallback={<PageLoader />}><PrivacyPolicy /></Suspense>} />
+            <Route path="/legal/terms" element={<Suspense fallback={<PageLoader />}><TermsOfService /></Suspense>} />
+            <Route path="/legal/cookies" element={<Suspense fallback={<PageLoader />}><CookiePolicy /></Suspense>} />
+            <Route path="/legal/dpa" element={<Suspense fallback={<PageLoader />}><DPA /></Suspense>} />
+            <Route path="/legal/my-data" element={<Suspense fallback={<PageLoader />}><MyData /></Suspense>} />
+            <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
+            <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
             <Route path="/carity" element={<Navigate to="/market" replace />} />
             <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />

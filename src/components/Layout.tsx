@@ -199,6 +199,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   const handleLogout = async () => {
+    sessionStorage.removeItem("garageflow_user_type_cache");
     await supabase.auth.signOut();
   };
 

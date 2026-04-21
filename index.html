@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Default title/meta — will be overridden per route via react-helmet-async -->
-    <title>GarageFlow | Workshop Management Software & Used Car Marketplace</title>
-    <meta name="description" content="GarageFlow: workshop management software for auto repair shops + trusted used-car marketplace with mandatory inspection. Available worldwide. 30-day free trial.">
-    <meta name="keywords" content="workshop management software, garage software, auto repair ERP, used cars marketplace, inspected cars, GarageFlow">
+    <title>GarageFlow & GarageFlow Market | Workshop Software + Inspected Used Cars</title>
+    <meta name="description" content="GarageFlow — workshop management software for auto repair shops. GarageFlow Market — trusted used-car marketplace with mandatory inspection and secure escrow payment. Worldwide. 30-day free trial.">
+    <meta name="keywords" content="GarageFlow, GarageFlow Market, garageflowmarket, workshop management software, garage software, auto repair ERP, used cars marketplace, inspected used cars, secure car escrow, comprar carro inspecionado">
     <meta name="author" content="GarageFlow" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow" />
@@ -69,8 +69,12 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "GarageFlow",
-      "alternateName": ["GarageFlow Pro", "GarageFlow Market"],
+      "alternateName": ["GarageFlow Pro", "GarageFlow Market", "GarageFlowMarket", "Garage Flow", "Garage Flow Market"],
       "url": "https://garageflow.pt",
+      "brand": [
+        { "@type": "Brand", "name": "GarageFlow", "url": "https://garageflow.pt/" },
+        { "@type": "Brand", "name": "GarageFlow Market", "url": "https://garageflow.pt/market" }
+      ],
       "logo": "https://garageflow.pt/og-image.jpg",
       "description": "Worldwide SaaS platform: workshop management software for auto repair shops and trusted used-car marketplace with mandatory inspection.",
       "foundingDate": "2024",
@@ -91,13 +95,33 @@
     }
     </script>
 
-    <!-- JSON-LD WebSite + SearchAction -->
+    <!-- JSON-LD WebSite (ERP) + SearchAction -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "GarageFlow",
+      "alternateName": ["GarageFlow Pro", "Garage Flow"],
       "url": "https://garageflow.pt",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://garageflow.pt/market?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "inLanguage": ["pt-PT", "pt-BR", "en-US", "en-GB", "es-ES", "fr-FR", "de-DE", "it-IT", "hi-IN"]
+    }
+    </script>
+
+    <!-- JSON-LD WebSite (GarageFlow Market) — sitelinks-eligible sub-brand -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "GarageFlow Market",
+      "alternateName": ["GarageFlowMarket", "Garage Flow Market", "GarageFlow Marketplace"],
+      "url": "https://garageflow.pt/market",
+      "description": "Marketplace of inspected used cars with mandatory shop inspection and secure escrow payment, by GarageFlow.",
+      "publisher": { "@type": "Organization", "name": "GarageFlow", "url": "https://garageflow.pt" },
       "potentialAction": {
         "@type": "SearchAction",
         "target": "https://garageflow.pt/market?search={search_term_string}",

@@ -379,12 +379,45 @@ const publicRoutes = [
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
 
+const USER_TYPE_CACHE_KEY = "garageflow_user_type_cache";
+
+type CachedUserType = {
+  userId: string;
+  isAffiliate: boolean;
+  isCarityUser: boolean;
+};
+
+function readCachedUserType(userId: string | undefined): CachedUserType | null {
+  if (!userId || typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(USER_TYPE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedUserType;
+    if (parsed?.userId !== userId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedUserType(value: CachedUserType) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(USER_TYPE_CACHE_KEY, JSON.stringify(value));
+  } catch {
+    /* storage full / disabled — ignore */
+  }
+}
+
 function AuthenticatedRoutes() {
-  const [isAffiliate, setIsAffiliate] = useState(false);
-  const [isCarityUser, setIsCarityUser] = useState(false);
-  const [ready, setReady] = useState(false);
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isReady: authReady, user } = useAuthReady();
+
+  // Hydrate from session cache to AVOID the "create-shop / wrong dashboard" flash.
+  const cached = readCachedUserType(user?.id);
+  const [isAffiliate, setIsAffiliate] = useState(cached?.isAffiliate ?? false);
+  const [isCarityUser, setIsCarityUser] = useState(cached?.isCarityUser ?? false);
+  const [ready, setReady] = useState(Boolean(cached));
 
   useEffect(() => {
     if (adminLoading || !authReady) return;
@@ -392,43 +425,38 @@ function AuthenticatedRoutes() {
       setReady(true);
       return;
     }
+    if (!user) {
+      setReady(true);
+      return;
+    }
 
+    let cancelled = false;
     const checkUserState = async () => {
-      if (!user) {
-        setReady(true);
-        return;
-      }
+      // Run partner + roles queries in PARALLEL (was sequential).
+      const [partnerRes, rolesRes] = await Promise.all([
+        supabase.from("partners").select("id").eq("auth_user_id", user.id).maybeSingle(),
+        supabase.from("user_roles" as any).select("role").eq("user_id", user.id),
+      ]);
 
-      const { data: partnerData } = await supabase
-        .from("partners")
-        .select("id")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+      if (cancelled) return;
 
-      if (partnerData) {
-        setIsAffiliate(true);
-        setReady(true);
-        return;
-      }
-
-      const { data: roles } = await supabase
-        .from("user_roles" as any)
-        .select("role")
-        .eq("user_id", user.id);
-
-      const userRoles = (roles || []).map((r: any) => r.role);
+      const isAff = !!partnerRes.data;
+      const userRoles = (rolesRes.data || []).map((r: any) => r.role);
       const hasGarageRole = userRoles.includes("garage_owner");
       const hasCarityRole = userRoles.includes("buyer") || userRoles.includes("seller");
-      const isCarity = user.user_metadata?.carity_user === true || user.user_metadata?.account_type === "particular";
+      const metaCarity =
+        user.user_metadata?.carity_user === true ||
+        user.user_metadata?.account_type === "particular";
+      const isCarity = !isAff && !hasGarageRole && (hasCarityRole || metaCarity);
 
-      if (!hasGarageRole && (hasCarityRole || isCarity)) {
-        setIsCarityUser(true);
-      }
-
+      setIsAffiliate(isAff);
+      setIsCarityUser(isCarity);
       setReady(true);
+      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity });
     };
 
     void checkUserState();
+    return () => { cancelled = true; };
   }, [isSuperAdmin, adminLoading, authReady, user]);
 
   if (adminLoading || !authReady || !ready) {

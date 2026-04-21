@@ -21,6 +21,7 @@ export default function MarketLayout({ children }: { children: React.ReactNode }
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
+    sessionStorage.removeItem("garageflow_user_type_cache");
     await supabase.auth.signOut();
     toast.success("Sessão terminada");
     navigate("/market");

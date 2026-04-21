@@ -116,6 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [location.pathname]);
 
   const handleLogout = async () => {
+    sessionStorage.removeItem("garageflow_user_type_cache");
     await supabase.auth.signOut();
   };
 

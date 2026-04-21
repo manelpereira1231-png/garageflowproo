@@ -10,6 +10,7 @@ import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircl
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatRelativePT } from "@/lib/relativeTime";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { useLanguage } from "@/i18n/LanguageContext";
 import SEOHead from "@/components/SEOHead";
 
 const FUEL_LABELS: Record<string, string> = {
@@ -49,6 +50,7 @@ interface RealStats {
 
 export default function CarityMarketplace() {
   const { pricing, formatPrice } = useCountryPricing();
+  const { t } = useLanguage();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -185,22 +187,22 @@ export default function CarityMarketplace() {
         <nav className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-amber-400" />
-            <span className="text-2xl font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
+            <span className="text-2xl font-bold tracking-tight">GarageFlow <span className="text-amber-400">{t('market.brand')}</span></span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/market/favoritos">
-              <Button variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-800" aria-label="Os meus favoritos">
+              <Button variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-800" aria-label={t('market.nav.favorites')}>
                 <Heart className="h-4 w-4" />
               </Button>
             </Link>
             <Link to="/market/sell">
               <Button variant="outline" className="border-amber-400/40 text-amber-300 hover:bg-amber-400/10">
-                Vender Carro
+                {t('market.nav.sellCar')}
               </Button>
             </Link>
             <Link to="/market/auth">
               <Button className="bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold">
-                Entrar
+                {t('market.nav.signIn')}
               </Button>
             </Link>
           </div>
@@ -209,24 +211,24 @@ export default function CarityMarketplace() {
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300 text-sm font-medium">
             <ShieldCheck className="h-4 w-4" />
-            Cada veículo é inspecionado antes de ser publicado
+            {t('market.hero.badge')}
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-5 tracking-tight leading-tight">
-            Carros usados com<br className="hidden md:block" /> <span className="text-amber-400">inspeção certificada</span>
+            {t('market.hero.title1')}<br className="hidden md:block" /> <span className="text-amber-400">{t('market.hero.title2')}</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Relatório técnico completo, classificação mecânica e pagamento protegido. Compre com total transparência.
+            {t('market.hero.subtitle')}
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             <Link to="#listings">
               <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-lg px-8 shadow-lg shadow-amber-500/20">
-                Ver veículos disponíveis <ArrowRight className="ml-2 h-5 w-5" />
+                {t('market.hero.ctaBuy')} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link to="/market/sell">
               <Button size="lg" variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white font-medium backdrop-blur-sm">
-                Vender o meu carro
+                {t('market.hero.ctaSell')}
               </Button>
             </Link>
           </div>
@@ -234,9 +236,9 @@ export default function CarityMarketplace() {
           {/* Trust pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
-              { icon: ShieldCheck, title: "Inspeção Real", desc: "Verificação mecânica presencial por oficina parceira" },
-              { icon: FileCheck, title: "Relatório Técnico", desc: "Classificação 0–10, anomalias e documentação fotográfica" },
-              { icon: Eye, title: "Pagamento Protegido", desc: "Fundos retidos até confirmação de entrega" },
+              { icon: ShieldCheck, title: t('market.trust.realInspection'), desc: t('market.trust.realInspectionDesc') },
+              { icon: FileCheck, title: t('market.trust.report'), desc: t('market.trust.reportDesc') },
+              { icon: Eye, title: t('market.trust.protectedPay'), desc: t('market.trust.protectedPayDesc') },
             ].map((p, i) => (
               <div key={i} className="flex items-start gap-3 text-left bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="h-9 w-9 rounded-lg bg-amber-400/15 flex items-center justify-center flex-shrink-0">
@@ -256,19 +258,19 @@ export default function CarityMarketplace() {
               {stats.totalPublished > 0 && (
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">{stats.totalPublished}</p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Veículos publicados</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">{t('market.stats.published')}</p>
                 </div>
               )}
               {stats.totalInspections > 0 && (
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">{stats.totalInspections}</p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Inspeções realizadas</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">{t('market.stats.inspections')}</p>
                 </div>
               )}
               {stats.totalPartnerShops > 0 && (
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">{stats.totalPartnerShops}</p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">Oficinas parceiras</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1">{t('market.stats.partners')}</p>
                 </div>
               )}
             </div>
@@ -279,14 +281,14 @@ export default function CarityMarketplace() {
       {/* How it works */}
       <section className="py-14 bg-muted/30 border-b">
         <div className="max-w-7xl mx-auto px-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">Como funciona</p>
-          <h2 className="text-center text-2xl font-bold mb-10">Processo transparente em 4 etapas</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground text-center mb-2">{t('market.how.eyebrow')}</p>
+          <h2 className="text-center text-2xl font-bold mb-10">{t('market.how.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "01", title: "Submissão", desc: `O vendedor cria o anúncio com fotos estruturadas e paga ${formatPrice(pricing.inspection_price)} de taxa de inspeção.`, icon: Car },
-              { step: "02", title: "Inspeção Técnica", desc: "Uma oficina certificada GarageFlow realiza a verificação mecânica completa.", icon: Wrench },
-              { step: "03", title: "Relatório & Classificação", desc: "Checklist de 7 sistemas, documentação fotográfica e classificação de 0 a 10.", icon: FileCheck },
-              { step: "04", title: "Compra Protegida", desc: "Pagamento retido em segurança. Fundos libertados apenas após confirmação.", icon: ShieldCheck },
+              { step: "01", title: t('market.how.s1Title'), desc: t('market.how.s1Desc').replace('{price}', formatPrice(pricing.inspection_price)), icon: Car },
+              { step: "02", title: t('market.how.s2Title'), desc: t('market.how.s2Desc'), icon: Wrench },
+              { step: "03", title: t('market.how.s3Title'), desc: t('market.how.s3Desc'), icon: FileCheck },
+              { step: "04", title: t('market.how.s4Title'), desc: t('market.how.s4Desc'), icon: ShieldCheck },
             ].map(s => (
               <div key={s.step} className="relative">
                 <Card className="text-center border shadow-none hover:shadow-md transition-shadow h-full">
@@ -310,23 +312,23 @@ export default function CarityMarketplace() {
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Pesquisar marca, modelo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+            <Input placeholder={t('market.filters.searchPh')} value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
           <Select value={fuelFilter} onValueChange={setFuelFilter}>
-            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Combustível" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder={t('market.filters.fuel')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="all">{t('market.filters.all')}</SelectItem>
               {Object.entries(FUEL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder={t('market.filters.sort')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Mais recentes</SelectItem>
-              <SelectItem value="price_asc">Preço: menor</SelectItem>
-              <SelectItem value="price_desc">Preço: maior</SelectItem>
-              <SelectItem value="year">Ano: mais novo</SelectItem>
-              <SelectItem value="mileage">Km: menos</SelectItem>
+              <SelectItem value="recent">{t('market.filters.recent')}</SelectItem>
+              <SelectItem value="price_asc">{t('market.filters.priceAsc')}</SelectItem>
+              <SelectItem value="price_desc">{t('market.filters.priceDesc')}</SelectItem>
+              <SelectItem value="year">{t('market.filters.year')}</SelectItem>
+              <SelectItem value="mileage">{t('market.filters.mileage')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -336,15 +338,15 @@ export default function CarityMarketplace() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum carro disponível</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('market.empty.title')}</h3>
             <p className="text-muted-foreground mb-6">
               {listings.length === 0
-                ? "Ainda não há carros publicados no GarageFlow Market. Seja o primeiro a vender!"
-                : "Nenhum resultado para os filtros selecionados."}
+                ? t('market.empty.firstSeller')
+                : t('market.empty.noResults')}
             </p>
             <Link to="/market/sell">
               <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
-                Vender o meu carro <ArrowRight className="ml-2 h-4 w-4" />
+                {t('market.hero.ctaSell')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -376,7 +378,7 @@ export default function CarityMarketplace() {
                       </div>
                     )}
                     {listing.boost_active && (
-                      <Badge className="absolute bottom-3 left-3 bg-purple-600/90 text-white border-0 backdrop-blur-sm text-[10px]">Destaque</Badge>
+                      <Badge className="absolute bottom-3 left-3 bg-purple-600/90 text-white border-0 backdrop-blur-sm text-[10px]">{t('market.badge.featured')}</Badge>
                     )}
                     {/* Price overlay — formatted by user country (currency + locale) */}
                     <div className="absolute bottom-3 right-3">
@@ -415,7 +417,7 @@ export default function CarityMarketplace() {
                     {listing.shop_name && (
                       <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
                         <Wrench className="h-3 w-3 text-slate-400" />
-                        Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span>
+                        {t('market.fav.inspectedBy')} <span className="font-medium text-foreground">{listing.shop_name}</span>
                       </p>
                     )}
                     {/* Publicado relativa */}
@@ -441,7 +443,7 @@ export default function CarityMarketplace() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
-              <h2 className="text-lg font-bold mb-4">Por marca</h2>
+              <h2 className="text-lg font-bold mb-4">{t('market.byMake')}</h2>
               <div className="flex flex-wrap gap-2">
                 {['BMW', 'Audi', 'Mercedes-Benz', 'Volkswagen', 'Renault', 'Peugeot', 'Toyota', 'Citroën', 'Ford', 'Opel', 'Seat', 'Volvo', 'Fiat', 'Nissan', 'Hyundai', 'Kia'].map(m => (
                   <Link key={m} to={`/market/make/${encodeURIComponent(m)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
@@ -451,7 +453,7 @@ export default function CarityMarketplace() {
               </div>
             </div>
             <div>
-              <h2 className="text-lg font-bold mb-4">Por cidade</h2>
+              <h2 className="text-lg font-bold mb-4">{t('market.byCity')}</h2>
               <div className="flex flex-wrap gap-2">
                 {['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Faro', 'Aveiro', 'Setúbal', 'Leiria', 'Viseu', 'Évora', 'Funchal', 'Guimarães'].map(c => (
                   <Link key={c} to={`/market/city/${encodeURIComponent(c)}`} className="px-3 py-1.5 text-xs font-medium bg-background border rounded-lg hover:border-amber-400 hover:text-amber-600 transition-colors">
@@ -461,7 +463,7 @@ export default function CarityMarketplace() {
               </div>
             </div>
             <div>
-              <h2 className="text-lg font-bold mb-4">Por faixa de preço</h2>
+              <h2 className="text-lg font-bold mb-4">{t('market.byPrice')}</h2>
               <div className="flex flex-wrap gap-2">
                 {[
                   { url: 'ate-5000-euros', txt: 'até €5.000' },
@@ -483,14 +485,14 @@ export default function CarityMarketplace() {
       {/* CTA Sell */}
       <section className="py-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         <div className="max-w-3xl mx-auto text-center px-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">Para vendedores</p>
-          <h2 className="text-3xl font-bold mb-4">Venda com relatório de inspeção profissional</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">{t('market.sellCta.eyebrow')}</p>
+          <h2 className="text-3xl font-bold mb-4">{t('market.sellCta.title')}</h2>
           <p className="text-slate-400 mb-8 leading-relaxed">
-            Taxa única de {formatPrice(pricing.inspection_price)}. Uma oficina certificada inspeciona o veículo, gera o relatório técnico e o anúncio é publicado com total credibilidade.
+            {t('market.sellCta.subtitle').replace('{price}', formatPrice(pricing.inspection_price))}
           </p>
           <Link to="/market/sell">
             <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-8">
-              Publicar veículo <ArrowRight className="ml-2 h-5 w-5" />
+              {t('market.sellCta.button')} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </div>
@@ -505,19 +507,19 @@ export default function CarityMarketplace() {
               <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
             </div>
             <div className="flex items-center gap-4 text-xs">
-              <Link to="/market/sell" className="hover:text-white transition-colors">Vender</Link>
-              <Link to="/market/auth" className="hover:text-white transition-colors">Entrar</Link>
-              <Link to="/" className="hover:text-white transition-colors">GarageFlow ERP</Link>
+              <Link to="/market/sell" className="hover:text-white transition-colors">{t('market.footer.sell')}</Link>
+              <Link to="/market/auth" className="hover:text-white transition-colors">{t('market.footer.signIn')}</Link>
+              <Link to="/" className="hover:text-white transition-colors">{t('market.footer.erp')}</Link>
             </div>
           </div>
           <div className="border-t border-slate-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-3 text-xs">
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <Link to="/legal/privacy" className="hover:text-white transition-colors">Privacidade</Link>
-              <Link to="/legal/terms" className="hover:text-white transition-colors">Termos</Link>
-              <Link to="/legal/market-terms" className="hover:text-white transition-colors">Termos Market</Link>
-              <Link to="/legal/cookies" className="hover:text-white transition-colors">Cookies</Link>
-              <Link to="/legal/dpa" className="hover:text-white transition-colors">DPA</Link>
-              <Link to="/legal/my-data" className="hover:text-white transition-colors">Os Meus Dados</Link>
+              <Link to="/legal/privacy" className="hover:text-white transition-colors">{t('market.footer.privacy')}</Link>
+              <Link to="/legal/terms" className="hover:text-white transition-colors">{t('market.footer.terms')}</Link>
+              <Link to="/legal/market-terms" className="hover:text-white transition-colors">{t('market.footer.marketTerms')}</Link>
+              <Link to="/legal/cookies" className="hover:text-white transition-colors">{t('market.footer.cookies')}</Link>
+              <Link to="/legal/dpa" className="hover:text-white transition-colors">{t('market.footer.dpa')}</Link>
+              <Link to="/legal/my-data" className="hover:text-white transition-colors">{t('market.footer.myData')}</Link>
               <Link to="/support?context=market" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">Suporte</Link>
             </nav>
             <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>

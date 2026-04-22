@@ -19,10 +19,23 @@ export function useAuthReady() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
+      // Skip events that don't change the actual user identity to avoid
+      // cascading re-renders / refetches across the app (Layout, Dashboard,
+      // useShopContext, etc.). TOKEN_REFRESHED fires every ~hour and was
+      // causing the UI to flash like a full reload, especially in Lite Mode.
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        setSession(nextSession ?? null);
+        setIsReady(true);
+        return;
+      }
       setSession(nextSession ?? null);
-      setUser(nextSession?.user ?? null);
+      setUser((prev) => {
+        const next = nextSession?.user ?? null;
+        if (prev?.id === next?.id) return prev; // keep same reference
+        return next;
+      });
       setIsReady(true);
     });
 

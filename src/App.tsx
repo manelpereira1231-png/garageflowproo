@@ -481,7 +481,8 @@ function AuthenticatedRoutes() {
 
   useEffect(() => {
     if (!authReady || !user || isSuperAdmin || isAffiliate || isCarityUser) return;
-    if (navigator.connection?.saveData) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
 
     const preload = () => {
       void Promise.allSettled(preloadGarageNavigationRoutes.map((loadRoute) => loadRoute()));
@@ -522,9 +523,11 @@ function AuthenticatedRoutes() {
             {adminRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<AdminLayout>{route.element}</AdminLayout>} />
             ))}
-            {shopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
-            ))}
+            <Route element={<Layout><Outlet /></Layout>}>
+              {shopRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+            </Route>
             <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" realm="garage" />} />
             <Route
               path="/market/auth"
@@ -592,9 +595,11 @@ function AuthenticatedRoutes() {
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
-          {shopRoutes.map((route) => (
-            <Route key={route.path} path={route.path} element={route.element} />
-          ))}
+          <Route element={<Layout><Outlet /></Layout>}>
+            {shopRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+          </Route>
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="*" element={<Navigate to={defaultRoute} replace />} />
         </Routes>

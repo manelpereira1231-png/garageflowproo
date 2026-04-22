@@ -236,6 +236,174 @@ serve(async (req) => {
         break;
       }
 
+      // ============= MARKET ESCROW HANDLERS =============
+      case "payment_intent.succeeded": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const escrowId = pi.metadata?.escrow_id;
+        const type = pi.metadata?.type;
+        if (!escrowId || type !== "market_escrow") break;
+
+        const { data: escrow } = await supabaseAdmin
+          .from("market_escrow")
+          .select("id, status, listing_id, seller_id, buyer_id, amount")
+          .eq("id", escrowId)
+          .single();
+
+        if (!escrow) {
+          log("Escrow not found for payment_intent.succeeded", { escrowId });
+          break;
+        }
+        if (escrow.status !== "pending") {
+          log("Escrow already processed", { escrowId, status: escrow.status });
+          break;
+        }
+
+        await supabaseAdmin
+          .from("market_escrow")
+          .update({
+            status: "paid",
+            stripe_payment_intent_id: pi.id,
+            stripe_verified: true,
+            satisfaction_window_ends_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", escrowId);
+
+        // Reserve listing
+        await supabaseAdmin
+          .from("carity_listings")
+          .update({ status: "reserved" })
+          .eq("id", escrow.listing_id);
+
+        // Notify seller
+        await supabaseAdmin.from("notifications").insert({
+          shop_id: escrow.seller_id, // notification per user fallback
+          user_id: escrow.seller_id,
+          type: "escrow_paid",
+          title: "Pagamento confirmado",
+          message: `Pagamento de €${escrow.amount} confirmado e retido em escrow.`,
+        }).then(() => {}, () => {});
+
+        log("Market escrow paid", { escrowId, amount: escrow.amount });
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const escrowId = pi.metadata?.escrow_id;
+        if (!escrowId || pi.metadata?.type !== "market_escrow") break;
+
+        await supabaseAdmin
+          .from("market_escrow")
+          .update({ status: "failed", updated_at: new Date().toISOString() })
+          .eq("id", escrowId)
+          .eq("status", "pending");
+        log("Market escrow payment failed", { escrowId });
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const piId = charge.payment_intent as string;
+        if (!piId) break;
+
+        const { data: escrow } = await supabaseAdmin
+          .from("market_escrow")
+          .select("id, listing_id, status")
+          .eq("stripe_payment_intent_id", piId)
+          .maybeSingle();
+
+        if (!escrow) break;
+
+        await supabaseAdmin
+          .from("market_escrow")
+          .update({
+            status: "refunded",
+            refunded_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", escrow.id);
+
+        // Re-publish listing
+        await supabaseAdmin
+          .from("carity_listings")
+          .update({ status: "published" })
+          .eq("id", escrow.listing_id);
+
+        log("Market escrow refunded", { escrowId: escrow.id, amount: charge.amount_refunded });
+        break;
+      }
+
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const piId = dispute.payment_intent as string;
+        if (!piId) break;
+
+        const { data: escrow } = await supabaseAdmin
+          .from("market_escrow")
+          .select("id, seller_id, buyer_id, amount")
+          .eq("stripe_payment_intent_id", piId)
+          .maybeSingle();
+        if (!escrow) break;
+
+        await supabaseAdmin
+          .from("market_escrow")
+          .update({
+            status: "disputed",
+            disputed_at: new Date().toISOString(),
+            buyer_dispute_reason: dispute.reason || "Disputa Stripe",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", escrow.id);
+
+        await supabaseAdmin.from("audit_risk_flags").insert({
+          flag_type: "stripe_dispute",
+          entity_type: "market_escrow",
+          entity_id: escrow.id,
+          severity: "critical",
+          description: `Disputa Stripe aberta: ${dispute.reason} — €${escrow.amount}`,
+          details: { dispute_id: dispute.id, reason: dispute.reason, status: dispute.status },
+        });
+
+        log("Stripe dispute opened on escrow", { escrowId: escrow.id, disputeId: dispute.id });
+        break;
+      }
+
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const piId = dispute.payment_intent as string;
+        if (!piId) break;
+
+        const { data: escrow } = await supabaseAdmin
+          .from("market_escrow")
+          .select("id, listing_id")
+          .eq("stripe_payment_intent_id", piId)
+          .maybeSingle();
+        if (!escrow) break;
+
+        const newStatus = dispute.status === "won" ? "paid" : "refunded";
+        await supabaseAdmin
+          .from("market_escrow")
+          .update({
+            status: newStatus,
+            resolved_at: new Date().toISOString(),
+            resolution_notes: `Disputa Stripe fechada: ${dispute.status}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", escrow.id);
+
+        if (newStatus === "refunded") {
+          await supabaseAdmin
+            .from("carity_listings")
+            .update({ status: "published" })
+            .eq("id", escrow.listing_id);
+        }
+
+        log("Stripe dispute closed", { escrowId: escrow.id, outcome: dispute.status });
+        break;
+      }
+      // ============= END MARKET ESCROW =============
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerId = session.customer as string;

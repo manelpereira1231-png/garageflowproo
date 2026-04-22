@@ -68,10 +68,12 @@ serve(async (req) => {
     // Resolve country & commission dynamically from country_settings
     const { data: sellerProfile } = await supabaseAdmin
       .from("carity_seller_profiles")
-      .select("country_code")
+      .select("country_code, stripe_connect_account_id, stripe_connect_charges_enabled")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
     const countryCode = (sellerProfile?.country_code || "PT").toUpperCase();
+    const sellerConnectAccountId = sellerProfile?.stripe_connect_account_id || null;
+    const sellerConnectReady = !!sellerProfile?.stripe_connect_charges_enabled && !!sellerConnectAccountId;
 
     const { data: country } = await supabaseAdmin
       .from("country_settings")

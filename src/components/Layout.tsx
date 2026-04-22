@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, useMemo } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
@@ -46,6 +46,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
 import AppModeToggle from "@/components/AppModeToggle";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 

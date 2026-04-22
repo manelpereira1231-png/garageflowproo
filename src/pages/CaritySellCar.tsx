@@ -133,6 +133,15 @@ export default function CaritySellCar() {
             />
           )}
 
+          {/* Connect Gate — required before publishing so seller can be paid out */}
+          {user && kycApproved && (
+            <ConnectOnboardingGate
+              role="seller"
+              returnPath="/market/sell"
+              onStatusChange={setConnectReady}
+            />
+          )}
+
           <Card>
             <CardHeader><CardTitle className="text-lg">Dados do Vendedor</CardTitle><CardDescription>As suas informações de contacto</CardDescription></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">

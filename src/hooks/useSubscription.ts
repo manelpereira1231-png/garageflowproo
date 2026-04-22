@@ -176,37 +176,27 @@ export function useSubscription() {
   }, []);
 
   // Load subscription from DB only (source of truth)
-  const loadSubscription = useCallback(async (resolvedShopId?: string) => {
-    const sid = resolvedShopId || await resolveShopId();
-    if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
-    setShopId(sid);
-
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("shop_id", sid)
-      .maybeSingle();
-
-    if (sub) {
-      console.log("[useSubscription] Loaded from DB:", {
-        plan: sub.plan,
-        status: sub.status,
-        stripe_subscription_id: sub.stripe_subscription_id,
-        shop_id: sid,
-      });
-      setSubscription(sub as unknown as Subscription);
-    } else {
-      console.log("[useSubscription] No subscription found for shop:", sid);
+  const loadSubscription = useCallback(async (resolvedShopId?: string, force = false) => {
+    const sid = resolvedShopId || activeShopId || await resolveShopId();
+    if (!sid) {
+      setShopId(null);
       setSubscription(null);
+      setLoading(false);
+      setSubscriptionLoaded(true);
+      return;
     }
+
+    setShopId((prev) => (prev === sid ? prev : sid));
+    const sub = await fetchSubscriptionForShop(sid, force);
+    setSubscription(sub);
     setSubscriptionLoaded(true);
     setLoading(false);
-  }, [resolveShopId]);
+  }, [activeShopId, resolveShopId]);
 
   // Sync with Stripe (only for Stripe-managed subscriptions, not admin overrides)
   const syncWithStripe = useCallback(async () => {
     try {
-      const sid = shopId || await resolveShopId();
+      const sid = shopId || activeShopId || await resolveShopId();
       if (sid) {
         const { data: sub } = await supabase
           .from("subscriptions")
@@ -221,11 +211,12 @@ export function useSubscription() {
         }
       }
       await supabase.functions.invoke('check-subscription');
-      await loadSubscription();
+      subscriptionCache.delete(sid || "");
+      await loadSubscription(sid, true);
     } catch (e) {
       console.warn("Failed to sync subscription with Stripe:", e);
     }
-  }, [loadSubscription, shopId, resolveShopId]);
+  }, [activeShopId, loadSubscription, shopId, resolveShopId]);
 
   // Setup Realtime channel filtered by shop_id
   const setupRealtime = useCallback((sid: string) => {
@@ -245,8 +236,8 @@ export function useSubscription() {
           filter: `shop_id=eq.${sid}`,
         },
         () => {
-          console.log("[useSubscription] Realtime update received for shop:", sid);
-          loadSubscription(sid);
+          subscriptionCache.delete(sid);
+          loadSubscription(sid, true);
         }
       )
       .subscribe();
@@ -258,7 +249,7 @@ export function useSubscription() {
     let mounted = true;
 
     const init = async () => {
-      const sid = await resolveShopId();
+      const sid = activeShopId || await resolveShopId();
       if (!mounted) return;
       if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
 
@@ -277,35 +268,26 @@ export function useSubscription() {
       
       if (sub?.stripe_subscription_id) {
         supabase.functions.invoke('check-subscription').then(() => {
-          if (mounted) loadSubscription(sid);
+          if (mounted) {
+            subscriptionCache.delete(sid);
+            loadSubscription(sid, true);
+          }
         }).catch(() => {});
       }
     };
 
+    setLoading(true);
+    setSubscriptionLoaded(false);
     init();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setLoading(true);
-        setSubscriptionLoaded(false);
-        resolveShopId().then(sid => {
-          if (!mounted || !sid) return;
-          loadSubscription(sid);
-          setupRealtime(sid);
-        });
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       mounted = false;
-      window.removeEventListener('storage', handleStorageChange);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [resolveShopId, loadSubscription, setupRealtime]);
+  }, [activeShopId, resolveShopId, loadSubscription, setupRealtime]);
 
   // CRITICAL: Calculate effectivePlan correctly
   // - While loading, don't calculate (loading state prevents UI from rendering wrong plan)

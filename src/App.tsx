@@ -350,17 +350,24 @@ const shopRoutes = [
 ];
 
 const preloadGarageNavigationRoutes = [
-  () => import("@/pages/Clients"),
-  () => import("@/pages/Vehicles"),
-  () => import("@/pages/Quotes"),
-  () => import("@/pages/Services"),
-  () => import("@/pages/Agenda"),
   () => import("@/pages/ServiceCatalog"),
   () => import("@/pages/Stock"),
   () => import("@/pages/Inspections"),
-  () => import("@/pages/Invoices"),
+  () => import("@/pages/Workshop"),
+  () => import("@/pages/Warranties"),
+  () => import("@/pages/Loyalty"),
+  () => import("@/pages/Marketing"),
+  () => import("@/pages/Automations"),
+  () => import("@/pages/Developers"),
+  () => import("@/pages/Alerts"),
+  () => import("@/pages/Team"),
+  () => import("@/pages/Chat"),
+  () => import("@/pages/Referrals"),
+  () => import("@/pages/Billing"),
   () => import("@/pages/FinancialReports"),
-  () => import("@/pages/Settings"),
+  () => import("@/pages/QuoteForm"),
+  () => import("@/pages/ServiceForm"),
+  () => import("@/pages/InvoiceForm"),
 ];
 
 const publicRoutes = [

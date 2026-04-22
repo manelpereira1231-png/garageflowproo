@@ -68,10 +68,12 @@ serve(async (req) => {
     // Resolve country & commission dynamically from country_settings
     const { data: sellerProfile } = await supabaseAdmin
       .from("carity_seller_profiles")
-      .select("country_code")
+      .select("country_code, stripe_connect_account_id, stripe_connect_charges_enabled")
       .eq("user_id", listing.seller_id)
       .maybeSingle();
     const countryCode = (sellerProfile?.country_code || "PT").toUpperCase();
+    const sellerConnectAccountId = sellerProfile?.stripe_connect_account_id || null;
+    const sellerConnectReady = !!sellerProfile?.stripe_connect_charges_enabled && !!sellerConnectAccountId;
 
     const { data: country } = await supabaseAdmin
       .from("country_settings")
@@ -104,6 +106,11 @@ serve(async (req) => {
     }
 
     // Create escrow record (pending)
+    const captureMethod = sellerConnectReady ? "manual" : "automatic";
+    const isZeroDecimal = ["jpy", "krw", "vnd", "clp"].includes(currency);
+    const stripeAmount = isZeroDecimal ? Math.round(totalCharge) : Math.round(totalCharge * 100);
+    const stripeAppFee = isZeroDecimal ? Math.round(platformFee) : Math.round(platformFee * 100);
+
     const { data: escrow, error: escrowError } = await supabaseAdmin
       .from("market_escrow")
       .insert({
@@ -114,6 +121,8 @@ serve(async (req) => {
         platform_fee: platformFee,
         seller_amount: sellerAmount,
         commission_rate: commissionRate,
+        capture_method: captureMethod,
+        application_fee_amount: platformFee,
         status: "pending",
         delivery_deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
       })
@@ -121,6 +130,22 @@ serve(async (req) => {
       .single();
 
     if (escrowError) throw new Error("Erro ao criar escrow: " + escrowError.message);
+
+    // Build payment_intent_data dynamically: Connect split + manual capture if seller is onboarded
+    const paymentIntentData: Record<string, any> = {
+      capture_method: captureMethod,
+      metadata: {
+        escrow_id: escrow.id,
+        listing_id,
+        buyer_id: user.id,
+        seller_id: listing.seller_id,
+        type: "market_escrow",
+      },
+    };
+    if (sellerConnectReady) {
+      paymentIntentData.application_fee_amount = stripeAppFee;
+      paymentIntentData.transfer_data = { destination: sellerConnectAccountId };
+    }
 
     // Create Stripe Checkout session
     const origin = req.headers.get("origin") || "https://garageflow.pt";
@@ -135,9 +160,7 @@ serve(async (req) => {
               name: `${listing.make} ${listing.model} ${listing.year}`,
               description: `Compra com proteção escrow GarageFlow Market. Fundos retidos até confirmação de entrega.`,
             },
-            unit_amount: ["jpy", "krw", "vnd", "clp"].includes(currency)
-              ? Math.round(totalCharge)
-              : Math.round(totalCharge * 100),
+            unit_amount: stripeAmount,
           },
           quantity: 1,
         },
@@ -145,15 +168,7 @@ serve(async (req) => {
       mode: "payment",
       // Auto-enables Pix (BR), iDEAL (NL), Bancontact (BE), SEPA, Klarna, Apple/Google Pay, etc.
       billing_address_collection: "auto",
-      payment_intent_data: {
-        metadata: {
-          escrow_id: escrow.id,
-          listing_id,
-          buyer_id: user.id,
-          seller_id: listing.seller_id,
-          type: "market_escrow",
-        },
-      },
+      payment_intent_data: paymentIntentData,
       metadata: {
         escrow_id: escrow.id,
         listing_id,

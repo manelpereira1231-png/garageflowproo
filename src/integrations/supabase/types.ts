@@ -1119,6 +1119,10 @@ export type Database = {
           nif: string | null
           phone: string
           selfie_url: string | null
+          stripe_connect_account_id: string | null
+          stripe_connect_charges_enabled: boolean
+          stripe_connect_onboarded: boolean
+          stripe_connect_payouts_enabled: boolean
           suspended_at: string | null
           suspension_reason: string | null
           user_id: string
@@ -1141,6 +1145,10 @@ export type Database = {
           nif?: string | null
           phone?: string
           selfie_url?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean
+          stripe_connect_onboarded?: boolean
+          stripe_connect_payouts_enabled?: boolean
           suspended_at?: string | null
           suspension_reason?: string | null
           user_id: string
@@ -1163,6 +1171,10 @@ export type Database = {
           nif?: string | null
           phone?: string
           selfie_url?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean
+          stripe_connect_onboarded?: boolean
+          stripe_connect_payouts_enabled?: boolean
           suspended_at?: string | null
           suspension_reason?: string | null
           user_id?: string
@@ -1990,9 +2002,12 @@ export type Database = {
       market_escrow: {
         Row: {
           amount: number
+          application_fee_amount: number
           buyer_dispute_reason: string | null
           buyer_id: string
           cancelled_within_window: boolean
+          capture_method: string
+          captured_at: string | null
           commission_rate: number
           created_at: string
           delivery_confirmed_at: string | null
@@ -2014,13 +2029,17 @@ export type Database = {
           stripe_payment_intent_id: string | null
           stripe_session_id: string | null
           stripe_verified: boolean
+          transfer_id: string | null
           updated_at: string
         }
         Insert: {
           amount?: number
+          application_fee_amount?: number
           buyer_dispute_reason?: string | null
           buyer_id: string
           cancelled_within_window?: boolean
+          capture_method?: string
+          captured_at?: string | null
           commission_rate?: number
           created_at?: string
           delivery_confirmed_at?: string | null
@@ -2042,13 +2061,17 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           stripe_verified?: boolean
+          transfer_id?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
+          application_fee_amount?: number
           buyer_dispute_reason?: string | null
           buyer_id?: string
           cancelled_within_window?: boolean
+          capture_method?: string
+          captured_at?: string | null
           commission_rate?: number
           created_at?: string
           delivery_confirmed_at?: string | null
@@ -2070,6 +2093,7 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           stripe_verified?: boolean
+          transfer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3417,6 +3441,10 @@ export type Database = {
           primary_color: string | null
           slug: string | null
           status: string
+          stripe_connect_account_id: string | null
+          stripe_connect_charges_enabled: boolean
+          stripe_connect_onboarded: boolean
+          stripe_connect_payouts_enabled: boolean
           timezone: string
           user_id: string
           vat_rate: number
@@ -3446,6 +3474,10 @@ export type Database = {
           primary_color?: string | null
           slug?: string | null
           status?: string
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean
+          stripe_connect_onboarded?: boolean
+          stripe_connect_payouts_enabled?: boolean
           timezone?: string
           user_id: string
           vat_rate?: number
@@ -3475,6 +3507,10 @@ export type Database = {
           primary_color?: string | null
           slug?: string | null
           status?: string
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean
+          stripe_connect_onboarded?: boolean
+          stripe_connect_payouts_enabled?: boolean
           timezone?: string
           user_id?: string
           vat_rate?: number

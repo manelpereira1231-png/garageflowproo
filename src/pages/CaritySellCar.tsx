@@ -63,6 +63,10 @@ export default function CaritySellCar() {
       toast.error("Verificação de identidade obrigatória antes de publicar.");
       return;
     }
+    if (!connectReady) {
+      toast.error("Ative a sua conta de pagamentos antes de publicar.");
+      return;
+    }
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error("Preencha todos os campos obrigatórios"); return; }
     if (!areRequiredPhotosFilled(photoSlots)) { toast.error("Preencha todas as fotos obrigatórias do veículo"); return; }
     if (!sellerForm.name || !sellerForm.phone) { toast.error("Preencha os dados de contacto do vendedor"); return; }

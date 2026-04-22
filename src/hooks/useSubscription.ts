@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 export type Plan = 'free' | 'pro' | 'garage';
 
@@ -110,8 +111,40 @@ const PLAN_PRICES = {
 };
 
 const STORAGE_KEY = "garageflow_active_shop";
+const subscriptionCache = new Map<string, Subscription | null>();
+const subscriptionInflight = new Map<string, Promise<Subscription | null>>();
+
+async function fetchSubscriptionForShop(shopId: string, force = false): Promise<Subscription | null> {
+  if (!force && subscriptionCache.has(shopId)) {
+    return subscriptionCache.get(shopId) ?? null;
+  }
+
+  if (!force && subscriptionInflight.has(shopId)) {
+    return subscriptionInflight.get(shopId) ?? null;
+  }
+
+  const request = supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("shop_id", shopId)
+    .maybeSingle()
+    .then(({ data }) => {
+      const next = (data as unknown as Subscription | null) ?? null;
+      subscriptionCache.set(shopId, next);
+      subscriptionInflight.delete(shopId);
+      return next;
+    })
+    .catch((error) => {
+      subscriptionInflight.delete(shopId);
+      throw error;
+    });
+
+  subscriptionInflight.set(shopId, request);
+  return request;
+}
 
 export function useSubscription() {
+  const activeShopId = useActiveShopId();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);

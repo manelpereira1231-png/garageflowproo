@@ -118,6 +118,89 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_coupon_redemptions: {
+        Row: {
+          applied_at: string
+          coupon_id: string
+          details: Json | null
+          id: string
+          shop_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          applied_at?: string
+          coupon_id: string
+          details?: Json | null
+          id?: string
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          applied_at?: string
+          coupon_id?: string
+          details?: Json | null
+          id?: string
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "admin_coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_coupons: {
+        Row: {
+          active: boolean
+          applies_to_plan: string
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_redemptions: number | null
+          redemptions_count: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to_plan?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_redemptions?: number | null
+          redemptions_count?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to_plan?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_redemptions?: number | null
+          redemptions_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           client_id: string | null
@@ -3738,6 +3821,134 @@ export type Database = {
         }
         Relationships: []
       }
+      system_broadcast_dismissals: {
+        Row: {
+          broadcast_id: string
+          dismissed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          broadcast_id: string
+          dismissed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          broadcast_id?: string
+          dismissed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_broadcast_dismissals_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "system_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_broadcasts: {
+        Row: {
+          active: boolean
+          audience: string
+          country_filter: string | null
+          created_at: string
+          created_by: string | null
+          dismissals_count: number
+          ends_at: string | null
+          id: string
+          level: string
+          link_label: string | null
+          link_url: string | null
+          message: string
+          starts_at: string
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          active?: boolean
+          audience?: string
+          country_filter?: string | null
+          created_at?: string
+          created_by?: string | null
+          dismissals_count?: number
+          ends_at?: string | null
+          id?: string
+          level?: string
+          link_label?: string | null
+          link_url?: string | null
+          message: string
+          starts_at?: string
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          active?: boolean
+          audience?: string
+          country_filter?: string | null
+          created_at?: string
+          created_by?: string | null
+          dismissals_count?: number
+          ends_at?: string | null
+          id?: string
+          level?: string
+          link_label?: string | null
+          link_url?: string | null
+          message?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
+      system_feature_flags: {
+        Row: {
+          category: string
+          countries: string[]
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          label: string
+          rollout_percent: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          countries?: string[]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          label: string
+          rollout_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          countries?: string[]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          label?: string
+          rollout_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       trial_records: {
         Row: {
           created_at: string
@@ -4351,6 +4562,10 @@ export type Database = {
       recalculate_trust_score: {
         Args: { _seller_id: string }
         Returns: undefined
+      }
+      redeem_coupon: {
+        Args: { _code: string; _shop_id: string }
+        Returns: Json
       }
       reject_shop_payout: {
         Args: { _payout_id: string; _reason?: string }

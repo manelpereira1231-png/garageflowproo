@@ -211,7 +211,7 @@ export function useSubscription() {
         }
       }
       await supabase.functions.invoke('check-subscription');
-      subscriptionCache.delete(sid || "");
+      if (sid) subscriptionCache.delete(sid);
       await loadSubscription(sid, true);
     } catch (e) {
       console.warn("Failed to sync subscription with Stripe:", e);

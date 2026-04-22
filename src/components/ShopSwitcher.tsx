@@ -67,8 +67,6 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         localStorage.setItem("garageflow_active_shop", shop.id);
       }
       onShopCreated?.();
-      // Reload the page to refresh all contexts
-      setTimeout(() => window.location.reload(), 300);
     } finally {
       setCreating(false);
     }

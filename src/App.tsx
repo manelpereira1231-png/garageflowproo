@@ -5,7 +5,7 @@ import CommandPalette from "@/components/CommandPalette";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
@@ -313,39 +313,53 @@ const adminRoutes = [
 ];
 
 const shopRoutes = [
-  { path: "/dashboard", element: <Layout><Dashboard /></Layout> },
-  { path: "/clients", element: <Layout><Clients /></Layout> },
-  { path: "/vehicles", element: <Layout><Vehicles /></Layout> },
-  { path: "/quotes", element: <Layout><Quotes /></Layout> },
-  { path: "/quotes/new", element: <Layout><QuoteForm /></Layout> },
-  { path: "/quotes/edit/:id", element: <Layout><QuoteForm /></Layout> },
-  { path: "/services", element: <Layout><Services /></Layout> },
-  { path: "/services/new", element: <Layout><ServiceForm /></Layout> },
-  { path: "/services/edit/:id", element: <Layout><ServiceForm /></Layout> },
-  { path: "/settings", element: <Layout><SettingsPage /></Layout> },
-  { path: "/billing", element: <Layout><Billing /></Layout> },
-  { path: "/alerts", element: <Layout><PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate></Layout> },
-  { path: "/team", element: <Layout><PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate></Layout> },
-  { path: "/chat", element: <Layout><PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate></Layout> },
-  { path: "/invoices", element: <Layout><Invoices /></Layout> },
-  { path: "/invoices/new", element: <Layout><InvoiceForm /></Layout> },
-  { path: "/invoices/:id", element: <Layout><InvoiceDetail /></Layout> },
-  { path: "/financial/reports", element: <Layout><PlanGate feature="basicReports" requiredPlan="pro"><FinancialReports /></PlanGate></Layout> },
-  { path: "/agenda", element: <Layout><Agenda /></Layout> },
-  { path: "/catalog", element: <Layout><ServiceCatalog /></Layout> },
-  { path: "/stock", element: <Layout><Stock /></Layout> },
-  { path: "/inspections", element: <Layout><Inspections /></Layout> },
-  { path: "/loyalty", element: <Layout><PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate></Layout> },
-  { path: "/marketing", element: <Layout><PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate></Layout> },
-  { path: "/workshop", element: <Layout><Workshop /></Layout> },
-  { path: "/automations", element: <Layout><PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate></Layout> },
-  { path: "/developers", element: <Layout><PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate></Layout> },
-  { path: "/partners", element: <Layout><PartnersPortal /></Layout> },
-  { path: "/referrals", element: <Layout><Referrals /></Layout> },
-  { path: "/warranties", element: <Layout><Warranties /></Layout> },
-  { path: "/market/inspections", element: <Layout><CarityShopInspections /></Layout> },
-  { path: "/market/wallet", element: <Layout><MarketWallet /></Layout> },
-  { path: "/market/payouts", element: <Layout><MarketPayoutInfo /></Layout> },
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/clients", element: <Clients /> },
+  { path: "/vehicles", element: <Vehicles /> },
+  { path: "/quotes", element: <Quotes /> },
+  { path: "/quotes/new", element: <QuoteForm /> },
+  { path: "/quotes/edit/:id", element: <QuoteForm /> },
+  { path: "/services", element: <Services /> },
+  { path: "/services/new", element: <ServiceForm /> },
+  { path: "/services/edit/:id", element: <ServiceForm /> },
+  { path: "/settings", element: <SettingsPage /> },
+  { path: "/billing", element: <Billing /> },
+  { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
+  { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },
+  { path: "/chat", element: <PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate> },
+  { path: "/invoices", element: <Invoices /> },
+  { path: "/invoices/new", element: <InvoiceForm /> },
+  { path: "/invoices/:id", element: <InvoiceDetail /> },
+  { path: "/financial/reports", element: <PlanGate feature="basicReports" requiredPlan="pro"><FinancialReports /></PlanGate> },
+  { path: "/agenda", element: <Agenda /> },
+  { path: "/catalog", element: <ServiceCatalog /> },
+  { path: "/stock", element: <Stock /> },
+  { path: "/inspections", element: <Inspections /> },
+  { path: "/loyalty", element: <PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate> },
+  { path: "/marketing", element: <PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate> },
+  { path: "/workshop", element: <Workshop /> },
+  { path: "/automations", element: <PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate> },
+  { path: "/developers", element: <PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate> },
+  { path: "/partners", element: <PartnersPortal /> },
+  { path: "/referrals", element: <Referrals /> },
+  { path: "/warranties", element: <Warranties /> },
+  { path: "/market/inspections", element: <CarityShopInspections /> },
+  { path: "/market/wallet", element: <MarketWallet /> },
+  { path: "/market/payouts", element: <MarketPayoutInfo /> },
+];
+
+const preloadGarageNavigationRoutes = [
+  () => import("@/pages/Clients"),
+  () => import("@/pages/Vehicles"),
+  () => import("@/pages/Quotes"),
+  () => import("@/pages/Services"),
+  () => import("@/pages/Agenda"),
+  () => import("@/pages/ServiceCatalog"),
+  () => import("@/pages/Stock"),
+  () => import("@/pages/Inspections"),
+  () => import("@/pages/Invoices"),
+  () => import("@/pages/FinancialReports"),
+  () => import("@/pages/Settings"),
 ];
 
 const publicRoutes = [
@@ -465,6 +479,34 @@ function AuthenticatedRoutes() {
     return () => { cancelled = true; };
   }, [isSuperAdmin, adminLoading, authReady, user]);
 
+  useEffect(() => {
+    if (!authReady || !user || isSuperAdmin || isAffiliate || isCarityUser) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+
+    const preload = () => {
+      void Promise.allSettled(preloadGarageNavigationRoutes.map((loadRoute) => loadRoute()));
+    };
+
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(preload, { timeout: 1200 });
+    } else {
+      timeoutId = window.setTimeout(preload, 800);
+    }
+
+    return () => {
+      if (idleId !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
+
   if (adminLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -481,9 +523,11 @@ function AuthenticatedRoutes() {
             {adminRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<AdminLayout>{route.element}</AdminLayout>} />
             ))}
-            {shopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
-            ))}
+            <Route element={<Layout><Outlet /></Layout>}>
+              {shopRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+            </Route>
             <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" realm="garage" />} />
             <Route
               path="/market/auth"
@@ -551,9 +595,11 @@ function AuthenticatedRoutes() {
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
-          {shopRoutes.map((route) => (
-            <Route key={route.path} path={route.path} element={route.element} />
-          ))}
+          <Route element={<Layout><Outlet /></Layout>}>
+            {shopRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+          </Route>
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
           <Route path="*" element={<Navigate to={defaultRoute} replace />} />
         </Routes>

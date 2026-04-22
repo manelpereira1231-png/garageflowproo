@@ -1,5 +1,5 @@
-import { useState, useEffect, Suspense } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, Suspense, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
   LayoutDashboard,
@@ -83,6 +83,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [shopName, setShopName] = useState("");
   const [isCarityPartner, setIsCarityPartner] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
   const { canUseFeature } = useSubscription();
@@ -160,7 +161,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const [financialOpen, setFinancialOpen] = useState(isFinancialRoute(location.pathname));
 
-  const navItems: NavItem[] = [
+  const navItems: NavItem[] = useMemo(() => [
     { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
     { path: "/clients", label: t("nav.clients"), icon: Users },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car },
@@ -191,12 +192,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/referrals", label: t("nav.referrals"), icon: Gift },
     { path: "/billing", label: t("nav.billing"), icon: CreditCard },
     { path: "/settings", label: t("nav.settings"), icon: Settings },
-  ];
+  ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
 
-  const financialSubItems: FinancialNavItem[] = [
+  const financialSubItems: FinancialNavItem[] = useMemo(() => [
     { path: "/invoices", label: t("nav.invoices") },
     { path: "/financial/reports", label: t("nav.financialReports"), planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
-  ];
+  ], [canUseFeature, t]);
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
@@ -374,7 +375,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             activeShopId={activeShopId}
             onSwitch={(id) => {
               switchShop(id);
-              setTimeout(() => window.location.reload(), 100);
+              navigate(location.pathname, { replace: true });
             }}
             showCreate={canUseFeature("multiShop")}
           />

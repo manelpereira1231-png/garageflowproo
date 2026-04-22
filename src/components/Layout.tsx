@@ -325,6 +325,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             key={fi.path}
                             to={fi.path}
                             onClick={() => setSidebarOpen(false)}
+                            onMouseEnter={() => handlePrefetch(fi.path)}
+                            onFocus={() => handlePrefetch(fi.path)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                               fiActive
                                 ? "bg-sidebar-primary text-sidebar-primary-foreground"

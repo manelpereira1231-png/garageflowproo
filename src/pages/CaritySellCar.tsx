@@ -203,9 +203,9 @@ export default function CaritySellCar() {
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved}>
-            {!kycApproved ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            {!kycApproved ? "Verificação de identidade obrigatória" : `Submeter e pagar inspeção (${formatPrice(pricing.inspection_price)})`}
+          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved || !connectReady}>
+            {!kycApproved || !connectReady ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
+            {!kycApproved ? "Verificação de identidade obrigatória" : !connectReady ? "Ative a conta de pagamentos para publicar" : `Submeter e pagar inspeção (${formatPrice(pricing.inspection_price)})`}
           </Button>
         </form>
       </div>

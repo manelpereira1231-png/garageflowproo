@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft, Car, Loader2, Lock } from "lucide-react";
 import StructuredPhotoUpload, { getDefaultPhotoSlots, getPhotoUrls, areRequiredPhotosFilled, type PhotoSlot } from "@/components/StructuredPhotoUpload";
 import MarketKYCFlow from "@/components/MarketKYCFlow";
+import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];

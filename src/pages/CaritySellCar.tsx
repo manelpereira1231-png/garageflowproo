@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft, Car, Loader2, Lock } from "lucide-react";
 import StructuredPhotoUpload, { getDefaultPhotoSlots, getPhotoUrls, areRequiredPhotosFilled, type PhotoSlot } from "@/components/StructuredPhotoUpload";
 import MarketKYCFlow from "@/components/MarketKYCFlow";
+import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
@@ -21,6 +22,7 @@ export default function CaritySellCar() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sellerProfile, setSellerProfile] = useState<any>(null);
+  const [connectReady, setConnectReady] = useState(false);
   const [photoSlots, setPhotoSlots] = useState<PhotoSlot[]>(getDefaultPhotoSlots());
 
   const [form, setForm] = useState({
@@ -59,6 +61,10 @@ export default function CaritySellCar() {
     if (!user) return;
     if (!kycApproved) {
       toast.error("Verificação de identidade obrigatória antes de publicar.");
+      return;
+    }
+    if (!connectReady) {
+      toast.error("Ative a sua conta de pagamentos antes de publicar.");
       return;
     }
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error("Preencha todos os campos obrigatórios"); return; }
@@ -127,6 +133,15 @@ export default function CaritySellCar() {
             />
           )}
 
+          {/* Connect Gate — required before publishing so seller can be paid out */}
+          {user && kycApproved && (
+            <ConnectOnboardingGate
+              role="seller"
+              returnPath="/market/sell"
+              onStatusChange={setConnectReady}
+            />
+          )}
+
           <Card>
             <CardHeader><CardTitle className="text-lg">Dados do Vendedor</CardTitle><CardDescription>As suas informações de contacto</CardDescription></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -188,9 +203,9 @@ export default function CaritySellCar() {
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved}>
-            {!kycApproved ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            {!kycApproved ? "Verificação de identidade obrigatória" : `Submeter e pagar inspeção (${formatPrice(pricing.inspection_price)})`}
+          <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved || !connectReady}>
+            {!kycApproved || !connectReady ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
+            {!kycApproved ? "Verificação de identidade obrigatória" : !connectReady ? "Ative a conta de pagamentos para publicar" : `Submeter e pagar inspeção (${formatPrice(pricing.inspection_price)})`}
           </Button>
         </form>
       </div>

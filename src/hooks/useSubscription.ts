@@ -123,21 +123,21 @@ async function fetchSubscriptionForShop(shopId: string, force = false): Promise<
     return subscriptionInflight.get(shopId) ?? null;
   }
 
-  const request = supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("shop_id", shopId)
-    .maybeSingle()
-    .then(({ data }) => {
+  const request = (async () => {
+    try {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("shop_id", shopId)
+        .maybeSingle();
+
       const next = (data as unknown as Subscription | null) ?? null;
       subscriptionCache.set(shopId, next);
-      subscriptionInflight.delete(shopId);
       return next;
-    })
-    .catch((error) => {
+    } finally {
       subscriptionInflight.delete(shopId);
-      throw error;
-    });
+    }
+  })();
 
   subscriptionInflight.set(shopId, request);
   return request;

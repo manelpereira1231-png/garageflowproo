@@ -205,6 +205,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const handlePrefetch = useCallback((path: string) => {
+    prefetchRoute(path);
+  }, []);
+
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
   const visibleNavItems = isGuidedMode
@@ -262,6 +266,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
+                onMouseEnter={() => handlePrefetch(item.path)}
+                onFocus={() => handlePrefetch(item.path)}
+                onTouchStart={() => handlePrefetch(item.path)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"

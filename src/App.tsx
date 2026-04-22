@@ -124,6 +124,9 @@ const AdminMarketKYC = lazyRetry(() => import("@/pages/admin/AdminMarketKYC"));
 const AdminSupport = lazyRetry(() => import("@/pages/admin/AdminSupport"));
 const AdminCountries = lazyRetry(() => import("@/pages/admin/AdminCountries"));
 const AdminMarketing = lazyRetry(() => import("@/pages/admin/AdminMarketing"));
+const AdminFinance = lazyRetry(() => import("@/pages/admin/AdminFinance"));
+const AdminSystemControl = lazyRetry(() => import("@/pages/admin/AdminSystemControl"));
+const AdminCoupons = lazyRetry(() => import("@/pages/admin/AdminCoupons"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -304,6 +307,9 @@ const adminRoutes = [
   { path: "/admin/support", element: <AdminSupport /> },
   { path: "/admin/countries", element: <AdminCountries /> },
   { path: "/admin/marketing", element: <AdminMarketing /> },
+  { path: "/admin/finance", element: <AdminFinance /> },
+  { path: "/admin/system", element: <AdminSystemControl /> },
+  { path: "/admin/coupons", element: <AdminCoupons /> },
 ];
 
 const shopRoutes = [

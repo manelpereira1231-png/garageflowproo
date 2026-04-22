@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, Wallet, AlertTriangle,
-  MessageCircle, Megaphone, Banknote, ClipboardCheck, LifeBuoy,
+  MessageCircle, Megaphone, Banknote, ClipboardCheck, LifeBuoy, TrendingUp, ToggleLeft, Tag,
 } from "lucide-react";
+import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,9 @@ const navSections = [
   {
     label: "Financeiro",
     items: [
+      { path: "/admin/finance", label: "Finanças & Crescimento", icon: TrendingUp },
       { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
+      { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
@@ -35,6 +38,7 @@ const navSections = [
     items: [
       { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
       { path: "/admin/marketing", label: "Marketing Global", icon: Megaphone },
+      { path: "/admin/system", label: "Feature Flags & Broadcasts", icon: ToggleLeft },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
@@ -273,6 +277,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
+        <SystemBroadcastBanner />
         <div className="flex-1 p-3 sm:p-4 lg:p-6">
           <Suspense fallback={
             <div className="flex items-center justify-center h-64">

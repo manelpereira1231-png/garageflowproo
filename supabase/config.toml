@@ -76,3 +76,13 @@ verify_jwt = false
 [functions.detect-country]
 verify_jwt = false
 
+[functions.connect-onboarding]
+verify_jwt = false
+
+[functions.connect-status]
+verify_jwt = false
+
+[functions.market-escrow-capture]
+verify_jwt = false
+
+

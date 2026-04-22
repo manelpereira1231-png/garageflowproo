@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ShieldCheck, Clock, Loader2, X } from "lucide-react";
+import { ShieldCheck, Clock, Loader2, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,6 +15,7 @@ export default function MarketSatisfactionWindow({ escrow, onCancelled }: Props)
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [now, setNow] = useState(Date.now());
 
   // Reference: delivery_confirmed_at if set, else paid created_at
@@ -56,6 +57,24 @@ export default function MarketSatisfactionWindow({ escrow, onCancelled }: Props)
     }
   };
 
+  const confirmDelivery = async () => {
+    if (!confirm("Confirma que recebeu o veículo e está tudo conforme? O pagamento será libertado imediatamente para o vendedor e não poderá cancelar.")) return;
+    setConfirmingDelivery(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("market-escrow-confirm-delivery", {
+        body: { escrow_id: escrow.id },
+      });
+      if (error) throw new Error((error as any)?.context?.error || error.message);
+      if (data?.error) throw new Error(data.error);
+      toast.success("Entrega confirmada — pagamento libertado ao vendedor");
+      onCancelled(); // reuse parent refresh
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao confirmar entrega");
+    } finally {
+      setConfirmingDelivery(false);
+    }
+  };
+
   if (expired) {
     return (
       <div className="p-2.5 rounded-lg bg-muted/50 border text-[11px] text-muted-foreground flex items-center gap-2">
@@ -77,15 +96,30 @@ export default function MarketSatisfactionWindow({ escrow, onCancelled }: Props)
         <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
           Pode cancelar e ser totalmente reembolsado nas próximas <strong>{remaining}</strong>, sem precisar de abrir disputa.
         </p>
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
-          onClick={() => setOpen(true)}
-        >
-          <X className="h-3.5 w-3.5 mr-1.5" />
-          Cancelar dentro da janela de satisfação
-        </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Button
+            size="sm"
+            className="w-full text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={confirmDelivery}
+            disabled={confirmingDelivery}
+          >
+            {confirmingDelivery ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+            )}
+            Confirmar entrega (libertar agora)
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
+            onClick={() => setOpen(true)}
+          >
+            <X className="h-3.5 w-3.5 mr-1.5" />
+            Cancelar com reembolso
+          </Button>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

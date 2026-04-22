@@ -454,13 +454,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="flex-1 p-3 sm:p-4 lg:p-6 page-in">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-          >
+          {/* No fallback — keeps the previous page visible until the next chunk
+              is ready. Combined with hover/idle prefetch, navigation feels instant. */}
+          <Suspense fallback={null}>
             {children}
           </Suspense>
         </div>

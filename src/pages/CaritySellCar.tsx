@@ -22,6 +22,7 @@ export default function CaritySellCar() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sellerProfile, setSellerProfile] = useState<any>(null);
+  const [connectReady, setConnectReady] = useState(false);
   const [photoSlots, setPhotoSlots] = useState<PhotoSlot[]>(getDefaultPhotoSlots());
 
   const [form, setForm] = useState({

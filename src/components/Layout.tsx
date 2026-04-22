@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, useMemo } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
@@ -46,6 +46,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
 import AppModeToggle from "@/components/AppModeToggle";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 
@@ -204,6 +205,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const handlePrefetch = useCallback((path: string) => {
+    prefetchRoute(path);
+  }, []);
+
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
   const visibleNavItems = isGuidedMode
@@ -261,6 +266,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
+                onMouseEnter={() => handlePrefetch(item.path)}
+                onFocus={() => handlePrefetch(item.path)}
+                onTouchStart={() => handlePrefetch(item.path)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
@@ -317,6 +325,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             key={fi.path}
                             to={fi.path}
                             onClick={() => setSidebarOpen(false)}
+                            onMouseEnter={() => handlePrefetch(fi.path)}
+                            onFocus={() => handlePrefetch(fi.path)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                               fiActive
                                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
@@ -444,13 +454,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="flex-1 p-3 sm:p-4 lg:p-6 page-in">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-          >
+          {/* No fallback — keeps the previous page visible until the next chunk
+              is ready. Combined with hover/idle prefetch, navigation feels instant. */}
+          <Suspense fallback={null}>
             {children}
           </Suspense>
         </div>

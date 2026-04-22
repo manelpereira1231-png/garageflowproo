@@ -17,6 +17,15 @@ const PlanGate = lazy(() => import("@/components/PlanGate"));
 // Critical path - eagerly loaded for instant navigation
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
+// Core GarageFlow pages — eager loaded (no chunk delay between menu clicks)
+import Dashboard from "@/pages/Dashboard";
+import Clients from "@/pages/Clients";
+import Vehicles from "@/pages/Vehicles";
+import Quotes from "@/pages/Quotes";
+import Services from "@/pages/Services";
+import SettingsPage from "@/pages/Settings";
+import Agenda from "@/pages/Agenda";
+import Invoices from "@/pages/Invoices";
 const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
@@ -40,23 +49,15 @@ import AdminLayout from "@/components/AdminLayout";
 
 // Lazy-loaded pages for code splitting & performance at scale
 const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
-const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
-const Clients = lazyRetry(() => import("@/pages/Clients"));
-const Vehicles = lazyRetry(() => import("@/pages/Vehicles"));
-const Quotes = lazyRetry(() => import("@/pages/Quotes"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
-const Services = lazyRetry(() => import("@/pages/Services"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
-const SettingsPage = lazyRetry(() => import("@/pages/Settings"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
 const Alerts = lazyRetry(() => import("@/pages/Alerts"));
 const Team = lazyRetry(() => import("@/pages/Team"));
 const Chat = lazyRetry(() => import("@/pages/Chat"));
-const Invoices = lazyRetry(() => import("@/pages/Invoices"));
 const InvoiceForm = lazyRetry(() => import("@/pages/InvoiceForm"));
 const InvoiceDetail = lazyRetry(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
-const Agenda = lazyRetry(() => import("@/pages/Agenda"));
 const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
 const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
 const ServiceCatalog = lazyRetry(() => import("@/pages/ServiceCatalog"));
@@ -349,17 +350,24 @@ const shopRoutes = [
 ];
 
 const preloadGarageNavigationRoutes = [
-  () => import("@/pages/Clients"),
-  () => import("@/pages/Vehicles"),
-  () => import("@/pages/Quotes"),
-  () => import("@/pages/Services"),
-  () => import("@/pages/Agenda"),
   () => import("@/pages/ServiceCatalog"),
   () => import("@/pages/Stock"),
   () => import("@/pages/Inspections"),
-  () => import("@/pages/Invoices"),
+  () => import("@/pages/Workshop"),
+  () => import("@/pages/Warranties"),
+  () => import("@/pages/Loyalty"),
+  () => import("@/pages/Marketing"),
+  () => import("@/pages/Automations"),
+  () => import("@/pages/Developers"),
+  () => import("@/pages/Alerts"),
+  () => import("@/pages/Team"),
+  () => import("@/pages/Chat"),
+  () => import("@/pages/Referrals"),
+  () => import("@/pages/Billing"),
   () => import("@/pages/FinancialReports"),
-  () => import("@/pages/Settings"),
+  () => import("@/pages/QuoteForm"),
+  () => import("@/pages/ServiceForm"),
+  () => import("@/pages/InvoiceForm"),
 ];
 
 const publicRoutes = [

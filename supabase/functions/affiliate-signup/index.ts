@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
       type: "affiliate",
       commission_percentage: 10,
       discount_percentage: 0,
+      country_code: cleanCountry,
       payout_method: payout_method || "bank_transfer",
       payout_holder_name: payout_holder_name?.trim() || "",
       payout_iban: payout_iban?.trim() || "",

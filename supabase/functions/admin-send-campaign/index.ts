@@ -81,13 +81,44 @@ serve(async (req: Request) => {
 
     // ERP shops
     if (["all", "erp", "erp_free", "erp_paid"].includes(audience)) {
-      let q = admin.from("shops").select("id, email, owner_id, plan, country");
-      if (country) q = q.eq("country", country);
-      if (audience === "erp_free") q = q.in("plan", ["free", "trial"]);
-      if (audience === "erp_paid") q = q.in("plan", ["pro", "garage"]);
-      const { data: shops } = await q;
-      shops?.forEach((s: any) => {
-        if (s.email) emails.set(s.email.toLowerCase(), { email: s.email, user_id: s.owner_id, segment: "erp" });
+      let q = admin.from("shops").select("id, email, user_id, country, country_code");
+      if (country) {
+        // Match either country (legacy) or country_code (new)
+        q = q.or(`country.eq.${country},country_code.eq.${country}`);
+      }
+      const { data: shops, error: shopsErr } = await q;
+      if (shopsErr) console.error("[admin-send-campaign] shops query error:", shopsErr);
+
+      let shopList = shops || [];
+
+      // Filter by plan via subscriptions table when needed
+      if (audience === "erp_free" || audience === "erp_paid") {
+        const shopIds = shopList.map((s: any) => s.id);
+        if (shopIds.length > 0) {
+          const { data: subs } = await admin
+            .from("subscriptions")
+            .select("shop_id, plan, status")
+            .in("shop_id", shopIds);
+          const planByShop = new Map<string, string>();
+          (subs || []).forEach((sub: any) => {
+            // Latest subscription wins (table has updated_at, but we just take first)
+            if (!planByShop.has(sub.shop_id)) planByShop.set(sub.shop_id, sub.plan || "free");
+          });
+          const wantPaid = audience === "erp_paid";
+          shopList = shopList.filter((s: any) => {
+            const plan = planByShop.get(s.id) || "free";
+            const isPaid = ["pro", "garage"].includes(plan);
+            return wantPaid ? isPaid : !isPaid;
+          });
+        } else if (audience === "erp_paid") {
+          shopList = [];
+        }
+      }
+
+      shopList.forEach((s: any) => {
+        if (s.email && s.email.includes("@")) {
+          emails.set(s.email.toLowerCase(), { email: s.email, user_id: s.user_id, segment: "erp" });
+        }
       });
     }
 

@@ -155,15 +155,21 @@ export default function CaritySellCar() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <VehicleMakeModelSelector
+                  make={form.make}
+                  model={form.model}
+                  onMakeChange={(v) => setForm(p => ({ ...p, make: v }))}
+                  onModelChange={(v) => setForm(p => ({ ...p, model: v }))}
+                />
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div><Label>Marca *</Label><Input value={form.make} onChange={e => setForm(p => ({ ...p, make: e.target.value }))} placeholder="BMW, Mercedes..." /></div>
-                <div><Label>Modelo *</Label><Input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="Série 3, Classe A..." /></div>
                 <div><Label>Ano *</Label><Input type="number" value={form.year} onChange={e => setForm(p => ({ ...p, year: parseInt(e.target.value) || 2020 }))} /></div>
                 <div><Label>Quilometragem *</Label><Input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))} /></div>
                 <div><Label>Combustível *</Label>
                   <Select value={form.fuel} onValueChange={v => setForm(p => ({ ...p, fuel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FUEL_OPTIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent></Select>
                 </div>
-                <div><Label>Matrícula *</Label><Input value={form.plate} onChange={e => setForm(p => ({ ...p, plate: e.target.value }))} placeholder="AA-00-BB" /></div>
+                <div className="col-span-2 md:col-span-3"><Label>Matrícula *</Label><Input value={form.plate} onChange={e => setForm(p => ({ ...p, plate: e.target.value }))} placeholder="AA-00-BB" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>VIN (opcional)</Label><Input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder="Número de chassis" /></div>

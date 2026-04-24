@@ -40,6 +40,23 @@ function getInitialLanguage(): Language {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
 
+  // React to IP-based country detection that finishes AFTER first paint.
+  // If the user hasn't explicitly chosen a language, switch to the country default.
+  useEffect(() => {
+    const onCountryDetected = (e: Event) => {
+      const country = (e as CustomEvent).detail?.country as string | undefined;
+      const explicit = localStorage.getItem('garageflow_language');
+      if (explicit) return; // respect user's choice
+      if (country === 'IN') setLanguageState('hi');
+      else if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
+      else if (country === 'BR') setLanguageState('pt-BR');
+      else if (country === 'PT') setLanguageState('pt');
+      else if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country || '')) setLanguageState('es');
+    };
+    window.addEventListener('garageflow:country-detected', onCountryDetected);
+    return () => window.removeEventListener('garageflow:country-detected', onCountryDetected);
+  }, []);
+
   useEffect(() => {
     const loadLanguage = async () => {
       const { data: { user } } = await supabase.auth.getUser();

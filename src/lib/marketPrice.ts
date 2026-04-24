@@ -50,3 +50,37 @@ export function getMarketCurrency(): string {
 export function getMarketLocale(): string {
   return getCountryConfig().locale;
 }
+
+/** Returns the currency symbol (€, ₹, R$, $, ...) for the user's country, with optional shop override. */
+export function getCurrencySymbol(shopCurrency?: string | null): string {
+  if (shopCurrency) {
+    const map: Record<string, string> = {
+      EUR: "€", USD: "$", GBP: "£", BRL: "R$", INR: "₹", JPY: "¥", CHF: "CHF", AUD: "A$", CAD: "C$",
+      MXN: "MX$", ZAR: "R", PLN: "zł", SEK: "kr", NOK: "kr", DKK: "kr", CZK: "Kč", HUF: "Ft",
+      TRY: "₺", AED: "د.إ", SAR: "﷼", SGD: "S$", HKD: "HK$", NZD: "NZ$", KRW: "₩", THB: "฿",
+      IDR: "Rp", PHP: "₱", MYR: "RM", VND: "₫", ILS: "₪", CLP: "$", COP: "$", ARS: "$", PEN: "S/",
+    };
+    return map[shopCurrency.toUpperCase()] || shopCurrency;
+  }
+  return getCountryConfig().currencySymbol;
+}
+
+/** Format a date string for the user's country locale (replaces hardcoded toLocaleDateString('pt-PT')). */
+export function formatLocalDate(value: string | Date | null | undefined, withTime = false): string {
+  if (!value) return "—";
+  try {
+    const d = typeof value === "string" ? new Date(value) : value;
+    const locale = getMarketLocale();
+    return withTime ? d.toLocaleString(locale) : d.toLocaleDateString(locale);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
+ * Returns the localized tax label (IVA, GST, VAT, MwSt, ...) for the user's country.
+ * Optionally accepts a shop override currency to compute the matching label.
+ */
+export function getTaxLabelLocal(): string {
+  return getCountryConfig().taxLabel;
+}

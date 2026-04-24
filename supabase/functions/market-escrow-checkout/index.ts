@@ -198,7 +198,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      // Auto-enables Pix (BR), iDEAL (NL), Bancontact (BE), SEPA, Klarna, Apple/Google Pay, etc.
+      // Explicit local payment methods per country (Pix, iDEAL, Bancontact, SEPA, Klarna, OXXO…)
+      payment_method_types: getPaymentMethods(countryCode),
       billing_address_collection: "auto",
       payment_intent_data: paymentIntentData,
       metadata: {

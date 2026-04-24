@@ -116,11 +116,13 @@ export default function MarketAuth() {
           { user_id: signUpData.user.id, role: "buyer" },
           { user_id: signUpData.user.id, role: "seller" },
         ]);
+        const detectedCountry = (typeof window !== "undefined" ? localStorage.getItem("garageflow_country") : null) || "PT";
         await supabase.from("carity_seller_profiles").insert({
           user_id: signUpData.user.id,
           name,
           phone: phone || "",
           location: location || "",
+          country_code: detectedCountry.toUpperCase(),
         });
       }
 

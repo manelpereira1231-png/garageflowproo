@@ -17,7 +17,12 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { name, email, phone, company, city, password, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank } = body;
+    const {
+      name, email, phone, company, city, password,
+      country_code, payout_method,
+      payout_holder_name, payout_iban, payout_mbway_phone, payout_bank,
+    } = body;
+    const cleanCountry = (country_code || "PT").toString().toUpperCase().slice(0, 4);
 
     // Validate required fields
     if (!name?.trim() || !email?.trim()) {
@@ -115,6 +120,7 @@ Deno.serve(async (req) => {
       type: "affiliate",
       commission_percentage: 10,
       discount_percentage: 0,
+      country_code: cleanCountry,
       payout_method: payout_method || "bank_transfer",
       payout_holder_name: payout_holder_name?.trim() || "",
       payout_iban: payout_iban?.trim() || "",
@@ -144,6 +150,7 @@ Deno.serve(async (req) => {
         phone: cleanPhone,
         company: company?.trim() || null,
         city: city?.trim() || null,
+        country_code: cleanCountry,
         affiliate_code: affiliateCode,
         payout_method: payout_method || "bank_transfer",
         source: "public_signup",

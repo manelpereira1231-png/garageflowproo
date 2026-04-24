@@ -2415,6 +2415,7 @@ export type Database = {
           commission_percentage: number
           contact_email: string
           contact_phone: string
+          country_code: string
           created_at: string
           discount_percentage: number
           id: string
@@ -2434,6 +2435,7 @@ export type Database = {
           commission_percentage?: number
           contact_email?: string
           contact_phone?: string
+          country_code?: string
           created_at?: string
           discount_percentage?: number
           id?: string
@@ -2453,6 +2455,7 @@ export type Database = {
           commission_percentage?: number
           contact_email?: string
           contact_phone?: string
+          country_code?: string
           created_at?: string
           discount_percentage?: number
           id?: string

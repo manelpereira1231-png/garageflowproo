@@ -7,6 +7,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Stripe currencies that have NO decimals (1 unit = 1 unit, not 1/100)
+const ZERO_DECIMAL = new Set(["jpy", "krw", "vnd", "clp", "idr", "huf"]);
+
+function toStripeAmount(price: number, currency: string): number {
+  const cur = currency.toLowerCase();
+  return ZERO_DECIMAL.has(cur) ? Math.round(price) : Math.round(price * 100);
+}
+
+// Resolve a country's currency (lowercased for Stripe). Falls back to EUR.
+async function resolveCountryCurrency(adminClient: any, countryCode: string): Promise<string> {
+  const { data } = await adminClient
+    .from("country_settings")
+    .select("currency, active")
+    .eq("code", countryCode.toUpperCase())
+    .maybeSingle();
+  if (data?.currency && data.active) return String(data.currency).toLowerCase();
+  return "eur";
+}
+
 // Haversine distance in km
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;

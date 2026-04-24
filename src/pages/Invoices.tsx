@@ -60,14 +60,14 @@ export default function Invoices() {
   const handleExportCsv = () => {
     const csvData = invoices.map(inv => ({
       Número: inv.number, Cliente: (inv.clients as any)?.name,
-      Status: inv.status, Subtotal: inv.subtotal, IVA: inv.vat_total,
+      Status: inv.status, Subtotal: inv.subtotal, [getTaxLabelLocal()]: inv.vat_total,
       Total: inv.total, Vencimento: inv.due_date, Data: inv.created_at?.slice(0, 10),
     }));
     exportToCsv(csvData, 'faturas');
     toast.success(t('common.exported'));
   };
 
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const cur = getCurrencySymbol(shop?.currency);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (

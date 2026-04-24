@@ -722,7 +722,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           {report.completed_at && (
                             <div className="flex items-center gap-2">
                               <span className="text-muted-foreground/70 w-20 flex-shrink-0">Data</span>
-                              <strong>{new Date(report.completed_at).toLocaleString('pt-PT')}</strong>
+                              <strong>{formatLocalDate(report.completed_at, true)}</strong>
                             </div>
                           )}
                           {(report as any).report_hash && (

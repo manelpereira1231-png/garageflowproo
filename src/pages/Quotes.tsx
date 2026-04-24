@@ -142,7 +142,7 @@ export default function Quotes() {
       const html = quoteEmailHtml({
         shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone, shopNif: shop.nif,
         shopAddress: shop.address, shopLogoUrl: shop.logo_url, clientName: (q.clients as any)?.name || '',
-        quoteNumber: q.number, quoteDate: q.date || new Date(q.created_at).toLocaleDateString('pt-PT'),
+        quoteNumber: q.number, quoteDate: q.date || formatLocalDate(q.created_at),
         validityDate: q.validity_date, lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total,
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
       });
@@ -177,7 +177,7 @@ export default function Quotes() {
     if (!shop) return;
     const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
     const doc = await generatePdf({
-      type: 'quote', number: q.number, date: q.date || new Date(q.created_at).toLocaleDateString('pt-PT'),
+      type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
       validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
       shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
       clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,

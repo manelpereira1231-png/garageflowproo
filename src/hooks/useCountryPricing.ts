@@ -32,15 +32,25 @@ async function detectAndLoadCountry(): Promise<CountryPricing> {
   if (cachePromise) return cachePromise;
 
   cachePromise = (async () => {
-    let countryCode = "PT";
+    let countryCode: string | null = null;
+
+    // 1) Highest priority: explicit user override (or IP-detection result) in localStorage
+    try {
+      const stored = (typeof window !== "undefined" ? localStorage.getItem("garageflow_country") : null);
+      if (stored) countryCode = stored.toUpperCase();
+    } catch {}
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from("carity_seller_profiles")
           .select("country_code").eq("user_id", user.id).maybeSingle();
-        if (profile?.country_code) countryCode = profile.country_code;
-        else {
+        // Only trust the profile if it isn't the default 'PT' OR no localStorage hint exists
+        if (profile?.country_code && (!countryCode || profile.country_code !== "PT")) {
+          countryCode = profile.country_code;
+        }
+        if (!countryCode) {
           const shopRes: any = await (supabase as any)
             .from("shops").select("country_code")
             .eq("owner_id", user.id).maybeSingle();
@@ -48,13 +58,19 @@ async function detectAndLoadCountry(): Promise<CountryPricing> {
         }
       }
       // Fallback: detect by timezone
-      if (countryCode === "PT") {
+      if (!countryCode) {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
         if (tz.includes("Sao_Paulo") || tz.includes("Brazil")) countryCode = "BR";
         else if (tz.includes("Kolkata") || tz.includes("Calcutta")) countryCode = "IN";
         else if (tz.includes("Madrid")) countryCode = "ES";
+        else if (tz === "Europe/London") countryCode = "UK";
+        else if (tz === "Europe/Paris") countryCode = "FR";
+        else if (tz === "Europe/Berlin") countryCode = "DE";
       }
-    } catch {}
+      if (!countryCode) countryCode = "PT";
+    } catch {
+      if (!countryCode) countryCode = "PT";
+    }
 
     const { data } = await supabase
       .from("country_settings")

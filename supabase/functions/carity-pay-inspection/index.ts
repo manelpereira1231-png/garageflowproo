@@ -139,6 +139,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(sellerCountry),
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {

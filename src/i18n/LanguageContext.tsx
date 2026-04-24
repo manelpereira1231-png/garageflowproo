@@ -14,11 +14,26 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem('garageflow_language');
   if (stored && ['pt', 'pt-BR', 'en', 'es'].includes(stored)) return stored as Language;
-  const browserLang = navigator.language;
-  if (browserLang === 'pt-BR') return 'pt-BR';
+
+  // Country override: if we already detected the user's country, use its default language
+  try {
+    const country = localStorage.getItem('garageflow_country');
+    if (country) {
+      // India / UK / US / global → English by default
+      if (['IN', 'UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country)) return 'en';
+      if (country === 'BR') return 'pt-BR';
+      if (country === 'PT') return 'pt';
+      if (country === 'ES' || country === 'MX' || country === 'AR' || country === 'CL' || country === 'CO' || country === 'PE') return 'es';
+    }
+  } catch {}
+
+  const browserLang = (navigator.language || '').toLowerCase();
+  if (browserLang === 'pt-br') return 'pt-BR';
+  // India: Hindi or English-India → use English (Hindi not yet supported)
+  if (browserLang === 'en-in' || browserLang.startsWith('hi')) return 'en';
   const shortLang = browserLang.slice(0, 2);
   if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
-  return 'pt';
+  return 'en'; // safer global default than 'pt'
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -50,11 +65,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('garageflow_language', lang);
-    // Sync region with language choice
-    if (lang === 'pt-BR') {
-      setRegion('br');
-    } else if (['pt', 'en', 'es'].includes(lang)) {
-      setRegion('eu');
+    // Sync legacy region ONLY when there's no detected country yet, otherwise
+    // we'd overwrite India/US/UK/etc. with PT just because they speak English.
+    const detectedCountry = localStorage.getItem('garageflow_country');
+    if (!detectedCountry) {
+      if (lang === 'pt-BR') setRegion('br');
+      else if (lang === 'pt') setRegion('eu');
+      // Don't force 'eu' for 'en'/'es' — let country detection decide.
     }
     // Update only the active shop's language, not all shops
     const activeShopId = localStorage.getItem("garageflow_active_shop");

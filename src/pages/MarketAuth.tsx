@@ -90,6 +90,12 @@ export default function MarketAuth() {
           throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
         }
 
+        // Refresh country/pricing cache so UI shows correct currency for this user
+        try {
+          const { clearPricingCache } = await import("@/hooks/useCountryPricing");
+          clearPricingCache();
+        } catch {}
+
         toast.success("Bem-vindo de volta!");
         navigate(redirect, { replace: true });
         return;

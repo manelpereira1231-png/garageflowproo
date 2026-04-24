@@ -93,8 +93,22 @@ export function useCountryPricing() {
   const [loading, setLoading] = useState(!cache);
 
   useEffect(() => {
-    if (cache) { setPricing(cache); setLoading(false); return; }
-    detectAndLoadCountry().then(p => { setPricing(p); setLoading(false); });
+    let cancelled = false;
+    if (cache) { setPricing(cache); setLoading(false); }
+    else {
+      detectAndLoadCountry().then(p => { if (!cancelled) { setPricing(p); setLoading(false); } });
+    }
+    // Re-fetch when IP detection finishes after first paint (e.g. India first visit)
+    const onCountryDetected = () => {
+      cache = null;
+      cachePromise = null;
+      detectAndLoadCountry().then(p => { if (!cancelled) setPricing(p); });
+    };
+    window.addEventListener("garageflow:country-detected", onCountryDetected);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("garageflow:country-detected", onCountryDetected);
+    };
   }, []);
 
   const formatPrice = (value: number) => {

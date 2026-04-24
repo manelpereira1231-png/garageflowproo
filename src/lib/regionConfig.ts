@@ -211,6 +211,11 @@ export async function detectCountryByIP(): Promise<void> {
     const j = await r.json();
     if (j?.country && getCountriesMap()[j.country]) {
       localStorage.setItem(COUNTRY_KEY, j.country);
+      // Notify listeners (LanguageContext, useCountryPricing) so UI updates
+      // without a page reload — critical for IN/BR/UK first-time visitors.
+      try {
+        window.dispatchEvent(new CustomEvent("garageflow:country-detected", { detail: { country: j.country } }));
+      } catch {}
     }
   } catch { /* timezone fallback handles it */ }
 }

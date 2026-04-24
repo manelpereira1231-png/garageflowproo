@@ -77,26 +77,32 @@ serve(async (req) => {
         .from("carity_listings").select("*").eq("id", listing_id).single();
       if (!listing) throw new Error("Anúncio não encontrado");
 
+      // Resolve currency from seller country
+      const { data: sellerProf } = await adminClient
+        .from("carity_seller_profiles").select("country_code").eq("user_id", listing.seller_id).maybeSingle();
+      const sellerCountry = (sellerProf?.country_code || "PT").toUpperCase();
+      const currency = await resolveCountryCurrency(adminClient, sellerCountry);
+
       const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
       const origin = req.headers.get("origin") || "https://garageflow.pt";
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       let customerId: string | undefined;
       if (customers.data.length > 0) customerId = customers.data[0].id;
 
-      const amountCents = Math.round(amount * 100);
-      const commissionCents = Math.round(amountCents * 0.02);
+      const unitAmount = toStripeAmount(amount, currency);
+      const commissionCents = Math.round(unitAmount * 0.02);
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         line_items: [{
           price_data: {
-            currency: "eur",
+            currency,
             product_data: {
               name: `${listing.make} ${listing.model} (${listing.year})`,
-              description: `Compra via GarageFlow Market — Matrícula: ${listing.plate}`,
+              description: `Compra via GarageFlow Market — ${listing.plate}`,
             },
-            unit_amount: amountCents,
+            unit_amount: unitAmount,
           },
           quantity: 1,
         }],
@@ -107,6 +113,7 @@ serve(async (req) => {
           listing_id, offer_id, type: "carity_car_purchase",
           commission_cents: String(commissionCents),
           buyer_id: user.id, seller_id: listing.seller_id,
+          country: sellerCountry, currency,
         },
       });
 
@@ -116,7 +123,8 @@ serve(async (req) => {
 
       await adminClient.from("carity_transactions").insert({
         listing_id, type: "car_purchase", amount,
-        platform_amount: commissionCents / 100, shop_amount: 0,
+        platform_amount: ZERO_DECIMAL.has(currency) ? commissionCents : commissionCents / 100,
+        shop_amount: 0,
         status: "pending", stripe_payment_id: session.id,
       });
 

@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 
-const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES' };
-const languages: Language[] = ['pt', 'pt-BR', 'en', 'es'];
+const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES', hi: 'हि' };
+const languages: Language[] = ['pt', 'pt-BR', 'en', 'es', 'hi'];
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
   const { t, language, setLanguage } = useLanguage();

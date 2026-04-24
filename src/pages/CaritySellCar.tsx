@@ -13,6 +13,7 @@ import StructuredPhotoUpload, { getDefaultPhotoSlots, getPhotoUrls, areRequiredP
 import MarketKYCFlow from "@/components/MarketKYCFlow";
 import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 

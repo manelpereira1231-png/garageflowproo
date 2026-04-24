@@ -85,7 +85,7 @@ export default function SEOHead({
 
   return (
     <Helmet>
-      <html lang={seoLang === "pt-BR" ? "pt-BR" : seoLang} />
+      <html lang={seoLang === "pt-BR" ? "pt-BR" : seoLang === "hi" ? "hi-IN" : seoLang} />
       <title>{finalTitle}</title>
       <meta name="description" content={finalDesc} />
       <meta name="keywords" content={dict.keywords} />

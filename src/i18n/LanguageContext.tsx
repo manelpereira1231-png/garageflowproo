@@ -13,14 +13,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem('garageflow_language');
-  if (stored && ['pt', 'pt-BR', 'en', 'es'].includes(stored)) return stored as Language;
+  if (stored && ['pt', 'pt-BR', 'en', 'es', 'hi'].includes(stored)) return stored as Language;
 
   // Country override: if we already detected the user's country, use its default language
   try {
     const country = localStorage.getItem('garageflow_country');
     if (country) {
-      // India / UK / US / global → English by default
-      if (['IN', 'UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country)) return 'en';
+      // India → Hindi by default (English available as alternative in selector)
+      if (country === 'IN') return 'hi';
+      if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country)) return 'en';
       if (country === 'BR') return 'pt-BR';
       if (country === 'PT') return 'pt';
       if (country === 'ES' || country === 'MX' || country === 'AR' || country === 'CL' || country === 'CO' || country === 'PE') return 'es';
@@ -29,8 +30,8 @@ function getInitialLanguage(): Language {
 
   const browserLang = (navigator.language || '').toLowerCase();
   if (browserLang === 'pt-br') return 'pt-BR';
-  // India: Hindi or English-India → use English (Hindi not yet supported)
-  if (browserLang === 'en-in' || browserLang.startsWith('hi')) return 'en';
+  // India: Hindi or English-India → Hindi (native), user can switch to EN
+  if (browserLang === 'hi' || browserLang.startsWith('hi-') || browserLang === 'en-in') return 'hi';
   const shortLang = browserLang.slice(0, 2);
   if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
   return 'en'; // safer global default than 'pt'
@@ -54,7 +55,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         const { data } = await supabase.from("shops").select("language").eq("user_id", user.id).maybeSingle();
         shop = data;
       }
-      if (shop?.language && ['pt', 'pt-BR', 'en', 'es'].includes(shop.language)) {
+      if (shop?.language && ['pt', 'pt-BR', 'en', 'es', 'hi'].includes(shop.language)) {
         setLanguageState(shop.language as Language);
         localStorage.setItem('garageflow_language', shop.language);
       }
@@ -86,7 +87,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: string): string => {
-    return translations[language]?.[key] || translations['pt']?.[key] || key;
+    // Hindi falls back to English first, then PT, so untranslated UI stays usable
+    return translations[language]?.[key]
+      || (language === 'hi' ? translations['en']?.[key] : undefined)
+      || translations['pt']?.[key]
+      || key;
   }, [language]);
 
   return (

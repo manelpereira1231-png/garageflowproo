@@ -250,6 +250,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                       <SelectItem value="pt-BR">🇧🇷 Português (BR)</SelectItem>
                       <SelectItem value="en">🇬🇧 English</SelectItem>
                       <SelectItem value="es">🇪🇸 Español</SelectItem>
+                      <SelectItem value="hi">🇮🇳 हिन्दी (Hindi)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { useSubscription } from "@/hooks/useSubscription";
+import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/marketPrice";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -63,7 +64,8 @@ export default function InvoiceDetail() {
 
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const remaining = invoice ? Number(invoice.total) - totalPaid : 0;
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const cur = getCurrencySymbol(shop?.currency);
+  const taxLbl = getTaxLabelLocal();
 
   const handlePayment = async () => {
     if (!invoice || !shop) return;
@@ -190,7 +192,7 @@ export default function InvoiceDetail() {
                 <TableHead>{t('invoices.description')}</TableHead>
                 <TableHead className="text-center">{t('invoices.qty')}</TableHead>
                 <TableHead className="text-right">{t('invoices.unitPrice')}</TableHead>
-                <TableHead className="text-center">IVA</TableHead>
+                <TableHead className="text-center">{taxLbl}</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
@@ -208,7 +210,7 @@ export default function InvoiceDetail() {
           </Table>
           <div className="flex flex-col items-end mt-4 gap-1">
             <p className="text-sm text-muted-foreground">Subtotal: <span className="font-semibold text-foreground">{cur}{Number(invoice.subtotal).toFixed(2)}</span></p>
-            <p className="text-sm text-muted-foreground">IVA: <span className="font-semibold text-foreground">{cur}{Number(invoice.vat_total).toFixed(2)}</span></p>
+            <p className="text-sm text-muted-foreground">{taxLbl}: <span className="font-semibold text-foreground">{cur}{Number(invoice.vat_total).toFixed(2)}</span></p>
             <p className="text-lg font-bold">Total: {cur}{Number(invoice.total).toFixed(2)}</p>
             {totalPaid > 0 && (
               <>
@@ -237,7 +239,7 @@ export default function InvoiceDetail() {
               <TableBody>
                 {payments.map(p => (
                   <TableRow key={p.id}>
-                    <TableCell>{new Date(p.paid_at).toLocaleDateString('pt-PT')}</TableCell>
+                    <TableCell>{formatLocalDate(p.paid_at)}</TableCell>
                     <TableCell className="capitalize">{p.method}</TableCell>
                     <TableCell>{p.reference || '—'}</TableCell>
                     <TableCell className="text-right mono font-medium text-success">{cur}{Number(p.amount).toFixed(2)}</TableCell>

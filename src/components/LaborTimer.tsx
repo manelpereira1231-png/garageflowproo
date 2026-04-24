@@ -43,6 +43,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
   const [elapsed, setElapsed] = useState<Record<string, number>>({});
   const [showAddNew, setShowAddNew] = useState(false);
   const [rate, setRate] = useState(laborRate);
+  const [currencySym, setCurrencySym] = useState<string>('€');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const runningTimers = timers.filter(t => t.status === 'running');
@@ -62,12 +63,16 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
 
   useEffect(() => { fetchTimers(); }, [fetchTimers]);
 
-  // Fetch shop labor rate if not provided
+  // Fetch shop labor rate + currency symbol
   useEffect(() => {
-    if (laborRate > 0) { setRate(laborRate); return; }
-    supabase.from("shops").select("labor_rate").eq("id", shopId).maybeSingle().then(({ data }) => {
-      if (data?.labor_rate) setRate(Number(data.labor_rate));
+    supabase.from("shops").select("labor_rate, currency").eq("id", shopId).maybeSingle().then(({ data }) => {
+      if (data?.labor_rate && laborRate <= 0) setRate(Number(data.labor_rate));
+      // Resolve currency symbol from shop
+      import("@/lib/marketPrice").then(({ getCurrencySymbol }) => {
+        setCurrencySym(getCurrencySymbol((data as any)?.currency));
+      });
     });
+    if (laborRate > 0) setRate(laborRate);
   }, [shopId, laborRate]);
 
   // Live tick for ALL running timers
@@ -179,8 +184,8 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
           {rate > 0 && totalSeconds > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <DollarSign className="w-3 h-3" />
-              <span className="font-medium">{totalCost.toFixed(2)}€</span>
-              <span>({formatHours(totalSeconds)}h × {rate}€/h)</span>
+              <span className="font-medium">{totalCost.toFixed(2)}{currencySym}</span>
+              <span>({formatHours(totalSeconds)}h × {rate}{currencySym}/h)</span>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -281,7 +286,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
               <span className="text-xs font-medium">{name}</span>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{formatDuration(secs)}</span>
-                {rate > 0 && <span className="text-xs text-primary font-medium">{((secs / 3600) * rate).toFixed(2)}€</span>}
+                {rate > 0 && <span className="text-xs text-primary font-medium">{((secs / 3600) * rate).toFixed(2)}{currencySym}</span>}
               </div>
             </div>
           ))}
@@ -306,7 +311,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
                 </span>
                 {rate > 0 && (
                   <span className="text-xs text-primary font-medium">
-                    {((timer.duration_seconds / 3600) * rate).toFixed(2)}€
+                    {((timer.duration_seconds / 3600) * rate).toFixed(2)}{currencySym}
                   </span>
                 )}
               </div>

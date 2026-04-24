@@ -16,6 +16,7 @@ import type { ServiceStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
+import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 
 const statusColors: Record<ServiceStatus, string> = {
@@ -170,7 +171,7 @@ export default function Services() {
     if (!shop) return;
     const lines = (Array.isArray(s.lines) ? s.lines : []) as any[];
     const doc = await generatePdf({
-      type: 'service', number: s.number, date: new Date(s.created_at).toLocaleDateString('pt-PT'),
+      type: 'service', number: s.number, date: formatLocalDate(s.created_at),
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
       shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
       clientName: (s.clients as any)?.name || '', clientEmail: (s.clients as any)?.email,
@@ -189,7 +190,7 @@ export default function Services() {
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
       Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
       IVA: s.vat_total, Total: s.total, Lucro: s.profit,
-      Data: new Date(s.created_at).toLocaleDateString('pt-PT'),
+      Data: formatLocalDate(s.created_at),
     }));
     exportToCsv(csvData, 'servicos');
     toast.success(t('common.exported'));

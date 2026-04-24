@@ -403,6 +403,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
                 <SelectItem value="en">🇬🇧 English</SelectItem>
                 <SelectItem value="es">🇪🇸 Español</SelectItem>
+                <SelectItem value="hi">🇮🇳 हिन्दी</SelectItem>
               </SelectContent>
             </Select>
           </div>

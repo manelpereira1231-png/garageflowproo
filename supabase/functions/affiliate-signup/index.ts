@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
         phone: cleanPhone,
         company: company?.trim() || null,
         city: city?.trim() || null,
+        country_code: cleanCountry,
         affiliate_code: affiliateCode,
         payout_method: payout_method || "bank_transfer",
         source: "public_signup",

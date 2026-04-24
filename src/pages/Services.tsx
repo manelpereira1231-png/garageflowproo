@@ -16,6 +16,7 @@ import type { ServiceStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
+import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 
 const statusColors: Record<ServiceStatus, string> = {

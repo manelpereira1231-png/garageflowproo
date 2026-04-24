@@ -11,6 +11,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
+import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

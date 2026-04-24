@@ -13,6 +13,7 @@ import type { QuoteStatus } from "@/types/garage";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
+import { formatLocalDate } from "@/lib/marketPrice";
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,

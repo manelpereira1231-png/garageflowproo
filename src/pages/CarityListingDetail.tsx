@@ -20,7 +20,7 @@ import MarketAlertSubscribe from "@/components/MarketAlertSubscribe";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
-import { formatMarketPrice, getMarketCurrency } from "@/lib/marketPrice";
+import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
 
 const STATUS_ICON: Record<string, any> = {
   ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },

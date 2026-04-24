@@ -146,26 +146,31 @@ serve(async (req) => {
       if (!listing) throw new Error("Anúncio não encontrado ou já vendido");
       if (listing.seller_id === user.id) throw new Error("Não pode comprar o seu próprio carro");
 
+      const { data: sellerProf2 } = await adminClient
+        .from("carity_seller_profiles").select("country_code").eq("user_id", listing.seller_id).maybeSingle();
+      const sellerCountry2 = (sellerProf2?.country_code || "PT").toUpperCase();
+      const currency2 = await resolveCountryCurrency(adminClient, sellerCountry2);
+
       const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
       const origin = req.headers.get("origin") || "https://garageflow.pt";
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       let customerId: string | undefined;
       if (customers.data.length > 0) customerId = customers.data[0].id;
 
-      const amountCents = Math.round(listing.price * 100);
-      const commissionCents = Math.round(amountCents * 0.02);
+      const unitAmount2 = toStripeAmount(Number(listing.price), currency2);
+      const commissionCents2 = Math.round(unitAmount2 * 0.02);
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         line_items: [{
           price_data: {
-            currency: "eur",
+            currency: currency2,
             product_data: {
               name: `${listing.make} ${listing.model} (${listing.year})`,
-              description: `Compra direta via GarageFlow Market — Matrícula: ${listing.plate}`,
+              description: `Compra direta via GarageFlow Market — ${listing.plate}`,
             },
-            unit_amount: amountCents,
+            unit_amount: unitAmount2,
           },
           quantity: 1,
         }],
@@ -174,14 +179,16 @@ serve(async (req) => {
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
           listing_id, type: "carity_car_purchase_direct",
-          commission_cents: String(commissionCents),
+          commission_cents: String(commissionCents2),
           buyer_id: user.id, seller_id: listing.seller_id,
+          country: sellerCountry2, currency: currency2,
         },
       });
 
       await adminClient.from("carity_transactions").insert({
         listing_id, type: "car_purchase", amount: listing.price,
-        platform_amount: commissionCents / 100, shop_amount: 0,
+        platform_amount: ZERO_DECIMAL.has(currency2) ? commissionCents2 : commissionCents2 / 100,
+        shop_amount: 0,
         status: "pending", stripe_payment_id: session.id,
       });
 

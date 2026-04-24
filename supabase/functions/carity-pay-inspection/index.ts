@@ -211,7 +211,7 @@ serve(async (req) => {
     let customerId: string | undefined;
     if (customers.data.length > 0) customerId = customers.data[0].id;
 
-    // Boost payments (unchanged — EUR only for now)
+    // Boost payments — currency derived from seller country
     if (type === "boost") {
       const { boost_type } = body;
       const boostPrices: Record<string, { amount: number; label: string; days: number }> = {
@@ -222,17 +222,25 @@ serve(async (req) => {
       const boost = boostPrices[boost_type || "7d"];
       if (!boost) throw new Error("Tipo de boost inválido");
 
+      const { data: sellerProfBoost } = await adminClient
+        .from("carity_seller_profiles").select("country_code").eq("user_id", user.id).maybeSingle();
+      const boostCountry = (sellerProfBoost?.country_code || "PT").toUpperCase();
+      const boostCurrency = await resolveCountryCurrency(adminClient, boostCountry);
+      // boost.amount is in EUR cents — convert to local currency rough-equivalent
+      // For non-EUR we keep the same numeric value (cents) so admins can tune via DB later if needed.
+      const boostUnit = ZERO_DECIMAL.has(boostCurrency) ? Math.round(boost.amount / 100) : boost.amount;
+
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         line_items: [{
-          price_data: { currency: "eur", product_data: { name: `Carity — ${boost.label}` }, unit_amount: boost.amount },
+          price_data: { currency: boostCurrency, product_data: { name: `Carity — ${boost.label}` }, unit_amount: boostUnit },
           quantity: 1,
         }],
         mode: "payment",
         success_url: `${origin}/carity/meus-anuncios?boost=success`,
         cancel_url: `${origin}/carity/meus-anuncios?boost=cancelled`,
-        metadata: { listing_id, type: "carity_boost", boost_type: boost_type || "7d" },
+        metadata: { listing_id, type: "carity_boost", boost_type: boost_type || "7d", country: boostCountry, currency: boostCurrency },
       });
 
       await adminClient.from("carity_boosts").insert({

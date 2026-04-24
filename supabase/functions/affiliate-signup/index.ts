@@ -17,7 +17,12 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { name, email, phone, company, city, password, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank } = body;
+    const {
+      name, email, phone, company, city, password,
+      country_code, payout_method,
+      payout_holder_name, payout_iban, payout_mbway_phone, payout_bank,
+    } = body;
+    const cleanCountry = (country_code || "PT").toString().toUpperCase().slice(0, 4);
 
     // Validate required fields
     if (!name?.trim() || !email?.trim()) {

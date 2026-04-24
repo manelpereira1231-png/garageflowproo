@@ -342,6 +342,7 @@ serve(async (req) => {
         quantity: 1,
       }],
       mode: "payment",
+      payment_method_types: getPaymentMethods(countryCode),
       success_url: `${origin}/market/my-listings?payment=success`,
       cancel_url: `${origin}/market/pay/${listing_id}?payment=cancelled`,
       metadata: { listing_id, type: "carity_inspection", country: countryCode },

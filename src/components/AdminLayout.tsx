@@ -258,15 +258,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <Select value={language} onValueChange={(v: 'pt' | 'en' | 'es') => setLanguage(v)}>
-              <SelectTrigger className="w-[70px] h-9">
+            <Select value={language} onValueChange={(v: any) => setLanguage(v)}>
+              <SelectTrigger className="w-[80px] h-9">
                 <Globe className="w-3.5 h-3.5 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pt">PT</SelectItem>
+                <SelectItem value="pt-BR">BR</SelectItem>
                 <SelectItem value="en">EN</SelectItem>
                 <SelectItem value="es">ES</SelectItem>
+                <SelectItem value="hi">हि</SelectItem>
               </SelectContent>
             </Select>
 

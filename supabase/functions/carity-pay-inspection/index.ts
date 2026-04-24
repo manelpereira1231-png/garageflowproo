@@ -208,6 +208,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(sellerCountry2),
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
@@ -271,6 +272,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(boostCountry),
         success_url: `${origin}/carity/meus-anuncios?boost=success`,
         cancel_url: `${origin}/carity/meus-anuncios?boost=cancelled`,
         metadata: { listing_id, type: "carity_boost", boost_type: boost_type || "7d", country: boostCountry, currency: boostCurrency },

@@ -10,6 +10,38 @@ const corsHeaders = {
 // Stripe currencies that have NO decimals (1 unit = 1 unit, not 1/100)
 const ZERO_DECIMAL = new Set(["jpy", "krw", "vnd", "clp", "idr", "huf"]);
 
+// ─── Local payment methods per country (one-time payment mode) ───
+const PAYMENT_METHODS: Record<string, string[]> = {
+  PT: ["card", "sepa_debit", "multibanco", "link"],
+  ES: ["card", "sepa_debit", "link"], FR: ["card", "sepa_debit", "link"],
+  DE: ["card", "sepa_debit", "klarna", "giropay", "sofort", "link"],
+  IT: ["card", "sepa_debit", "link"],
+  NL: ["card", "ideal", "sepa_debit", "klarna", "link"],
+  BE: ["card", "bancontact", "sepa_debit", "link"],
+  AT: ["card", "sepa_debit", "eps", "klarna", "link"],
+  IE: ["card", "sepa_debit", "link"], FI: ["card", "sepa_debit", "klarna", "link"],
+  GR: ["card", "sepa_debit", "link"], LU: ["card", "sepa_debit", "link"],
+  UK: ["card", "bacs_debit", "klarna", "link"], GB: ["card", "bacs_debit", "klarna", "link"],
+  PL: ["card", "p24", "blik", "klarna", "link"],
+  SE: ["card", "klarna", "link"], NO: ["card", "klarna", "link"], DK: ["card", "klarna", "link"],
+  CH: ["card", "link"], CZ: ["card", "link"],
+  US: ["card", "us_bank_account", "link", "cashapp", "klarna"],
+  CA: ["card", "acss_debit", "link"],
+  BR: ["card", "boleto"], MX: ["card", "oxxo", "link"],
+  AR: ["card", "link"], CL: ["card", "link"], CO: ["card", "link"], PE: ["card", "link"],
+  IN: ["card", "link"], JP: ["card", "konbini", "link"],
+  SG: ["card", "grabpay", "paynow", "link"], HK: ["card", "alipay", "link"],
+  MY: ["card", "fpx", "grabpay", "link"], TH: ["card", "promptpay", "link"],
+  ID: ["card", "link"], PH: ["card", "link"], VN: ["card", "link"], KR: ["card", "link"],
+  AU: ["card", "au_becs_debit", "afterpay_clearpay", "link"],
+  NZ: ["card", "afterpay_clearpay", "link"],
+  AE: ["card", "link"], SA: ["card", "link"], ZA: ["card", "link"],
+  EG: ["card", "link"], IL: ["card", "link"], TR: ["card", "link"], MA: ["card", "link"],
+};
+function getPaymentMethods(country: string): string[] {
+  return PAYMENT_METHODS[(country || "PT").toUpperCase()] || ["card", "link"];
+}
+
 function toStripeAmount(price: number, currency: string): number {
   const cur = currency.toLowerCase();
   return ZERO_DECIMAL.has(cur) ? Math.round(price) : Math.round(price * 100);
@@ -107,6 +139,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(sellerCountry),
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
@@ -175,6 +208,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(sellerCountry2),
         success_url: `${origin}/market/car/${listing_id}?purchase=success`,
         cancel_url: `${origin}/market/car/${listing_id}?purchase=cancelled`,
         metadata: {
@@ -238,6 +272,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
+        payment_method_types: getPaymentMethods(boostCountry),
         success_url: `${origin}/carity/meus-anuncios?boost=success`,
         cancel_url: `${origin}/carity/meus-anuncios?boost=cancelled`,
         metadata: { listing_id, type: "carity_boost", boost_type: boost_type || "7d", country: boostCountry, currency: boostCurrency },
@@ -307,6 +342,7 @@ serve(async (req) => {
         quantity: 1,
       }],
       mode: "payment",
+      payment_method_types: getPaymentMethods(countryCode),
       success_url: `${origin}/market/my-listings?payment=success`,
       cancel_url: `${origin}/market/pay/${listing_id}?payment=cancelled`,
       metadata: { listing_id, type: "carity_inspection", country: countryCode },

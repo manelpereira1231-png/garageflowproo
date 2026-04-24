@@ -17,17 +17,28 @@ const FALLBACK_EUR = {
 
 // Map legacy region codes to country codes
 const REGION_TO_COUNTRY: Record<string, string> = {
-  eu: "PT",
-  br: "BR",
-  pt: "PT",
-  in: "IN",
-  us: "US",
-  uk: "UK",
-  gb: "UK",
-  de: "DE",
-  es: "ES",
-  fr: "FR",
+  eu: "PT", br: "BR", pt: "PT", in: "IN", us: "US",
+  uk: "UK", gb: "UK", de: "DE", es: "ES", fr: "FR",
 };
+
+// ─── Local payment methods per country (subscription mode = recurring-compatible only) ───
+const SUBSCRIPTION_METHODS: Record<string, string[]> = {
+  PT: ["card", "sepa_debit", "link"],
+  ES: ["card", "sepa_debit", "link"], FR: ["card", "sepa_debit", "link"],
+  DE: ["card", "sepa_debit", "link"], IT: ["card", "sepa_debit", "link"],
+  NL: ["card", "sepa_debit", "link"], BE: ["card", "sepa_debit", "link"],
+  AT: ["card", "sepa_debit", "link"], IE: ["card", "sepa_debit", "link"],
+  FI: ["card", "sepa_debit", "link"], GR: ["card", "sepa_debit", "link"],
+  LU: ["card", "sepa_debit", "link"],
+  UK: ["card", "bacs_debit", "link"], GB: ["card", "bacs_debit", "link"],
+  US: ["card", "us_bank_account", "link"],
+  CA: ["card", "acss_debit", "link"],
+  AU: ["card", "au_becs_debit", "link"],
+  BR: ["card"], IN: ["card", "link"], MX: ["card", "link"],
+};
+function getSubscriptionMethods(country: string): string[] {
+  return SUBSCRIPTION_METHODS[country.toUpperCase()] || ["card", "link"];
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -140,8 +151,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      // Auto-detect & enable all local payment methods Stripe supports for this country
-      // (Pix in BR, iDEAL in NL, Bancontact in BE, SEPA, Klarna, Apple/Google Pay, etc.)
+      // Local recurring methods per country (SEPA EU, BACS UK, ACH US, BECS AU…)
+      payment_method_types: getSubscriptionMethods(resolvedCountry),
       automatic_tax: { enabled: false },
       billing_address_collection: "auto",
       allow_promotion_codes: true,

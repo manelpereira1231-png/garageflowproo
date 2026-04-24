@@ -90,6 +90,12 @@ export default function MarketAuth() {
           throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
         }
 
+        // Refresh country/pricing cache so UI shows correct currency for this user
+        try {
+          const { clearPricingCache } = await import("@/hooks/useCountryPricing");
+          clearPricingCache();
+        } catch {}
+
         toast.success("Bem-vindo de volta!");
         navigate(redirect, { replace: true });
         return;
@@ -116,11 +122,13 @@ export default function MarketAuth() {
           { user_id: signUpData.user.id, role: "buyer" },
           { user_id: signUpData.user.id, role: "seller" },
         ]);
+        const detectedCountry = (typeof window !== "undefined" ? localStorage.getItem("garageflow_country") : null) || "PT";
         await supabase.from("carity_seller_profiles").insert({
           user_id: signUpData.user.id,
           name,
           phone: phone || "",
           location: location || "",
+          country_code: detectedCountry.toUpperCase(),
         });
       }
 

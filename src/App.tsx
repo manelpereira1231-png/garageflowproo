@@ -599,6 +599,11 @@ function AuthenticatedRoutes() {
               element={<AuthContextSwitch message="A terminar a sessão do Market para abrir o login do GarageFlow..." />}
             />
             <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
+            <Route element={<MarketLayout />}>
+              {marketAuthedRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+            </Route>
             {publicRoutesWithoutMarketAuth.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}

@@ -33,6 +33,33 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   "/market/inspections": () => import("@/pages/CarityShopInspections"),
   "/market/wallet": () => import("@/pages/MarketWallet"),
   "/market/payouts": () => import("@/pages/MarketPayoutInfo"),
+  // Market authed routes (seller/buyer area)
+  "/market/dashboard": () => import("@/pages/MarketDashboard"),
+  "/market/my-listings": () => import("@/pages/CaritySellerDashboard"),
+  "/market/messages": () => import("@/pages/MarketMessages"),
+  "/market/profile": () => import("@/pages/MarketProfile"),
+  "/market/purchases": () => import("@/pages/MarketPurchases"),
+  "/market/favoritos": () => import("@/pages/CarityFavorites"),
+  "/market/sell": () => import("@/pages/CaritySellCar"),
+  // Admin panel routes
+  "/admin": () => import("@/pages/admin/AdminDashboard"),
+  "/admin/shops": () => import("@/pages/admin/AdminShops"),
+  "/admin/users": () => import("@/pages/admin/AdminUsers"),
+  "/admin/finance": () => import("@/pages/admin/AdminFinance"),
+  "/admin/billing": () => import("@/pages/admin/AdminBilling"),
+  "/admin/coupons": () => import("@/pages/admin/AdminCoupons"),
+  "/admin/traffic": () => import("@/pages/admin/AdminTraffic"),
+  "/admin/reports": () => import("@/pages/admin/AdminReports"),
+  "/admin/marketing": () => import("@/pages/admin/AdminMarketing"),
+  "/admin/system": () => import("@/pages/admin/AdminSystemControl"),
+  "/admin/alerts": () => import("@/pages/admin/AdminAlerts"),
+  "/admin/emails": () => import("@/pages/admin/AdminEmailLogs"),
+  "/admin/adoption": () => import("@/pages/admin/AdminFeatureAdoption"),
+  "/admin/system-health": () => import("@/pages/admin/AdminSystemHealth"),
+  "/admin/countries": () => import("@/pages/admin/AdminCountries"),
+  "/admin/partners": () => import("@/pages/admin/AdminPartners"),
+  "/admin/logs": () => import("@/pages/admin/AdminLogs"),
+  "/admin/settings": () => import("@/pages/admin/AdminSettings"),
 };
 
 export function prefetchRoute(path: string): void {

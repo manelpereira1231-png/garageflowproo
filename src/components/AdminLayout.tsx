@@ -8,6 +8,7 @@ import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 const navSections = [
   {
@@ -151,7 +152,12 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                   const currentTab = new URLSearchParams(location.search).get("tab");
                   const isActive = location.pathname === itemPath && (itemTab ? itemTab === currentTab : !currentTab || location.pathname !== "/admin/market");
                   return (
-                    <Link key={item.path} to={item.path}
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onMouseEnter={() => prefetchRoute(itemPath)}
+                      onFocus={() => prefetchRoute(itemPath)}
+                      onTouchStart={() => prefetchRoute(itemPath)}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
                         isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}>

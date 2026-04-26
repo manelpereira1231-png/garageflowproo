@@ -12,12 +12,13 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 function getInitialLanguage(): Language {
-  // INDIA HARD OVERRIDE: if country is IN, ALWAYS Hindi — never English, never PT.
+  // INDIA HARD OVERRIDE: country IN → ALWAYS English. No Hindi, no Portuguese.
+  // English is co-official and the standard for SaaS B2B in India.
   try {
     const country = localStorage.getItem('garageflow_country');
     if (country === 'IN') {
-      localStorage.setItem('garageflow_language', 'hi');
-      return 'hi';
+      localStorage.setItem('garageflow_language', 'en');
+      return 'en';
     }
   } catch {}
 
@@ -37,8 +38,8 @@ function getInitialLanguage(): Language {
 
   const browserLang = (navigator.language || '').toLowerCase();
   if (browserLang === 'pt-br') return 'pt-BR';
-  // India locale signals → Hindi (no English option auto)
-  if (browserLang === 'hi' || browserLang.startsWith('hi-') || browserLang === 'en-in' || browserLang.endsWith('-in')) return 'hi';
+  // India browser locales (en-IN, hi-IN, etc.) → English (per product decision)
+  if (browserLang === 'en-in' || browserLang.endsWith('-in') || browserLang === 'hi' || browserLang.startsWith('hi-')) return 'en';
   const shortLang = browserLang.slice(0, 2);
   if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
   return 'en';

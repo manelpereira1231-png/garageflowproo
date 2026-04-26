@@ -62,8 +62,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showResults, setShowResults] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  // Painel de administração — exclusivamente em PT-PT
+  const { language, setLanguage } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Painel de administração — força sempre PT-PT (regra obrigatória)
+  useEffect(() => {
+    if (language !== 'pt') {
+      setLanguage('pt');
+    }
+  }, [language, setLanguage]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

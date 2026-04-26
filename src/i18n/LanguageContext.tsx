@@ -104,13 +104,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: string): string => {
-    // Universal fallback: current lang → EN → PT-BR → PT → key
-    // PT only falls back to itself (no leak of PT into EN/HI/ES users)
+    // Hindi/India: STRICT — never fall back to English or PT.
+    // Show the Hindi value or the key itself (so we can spot gaps), never another language.
+    if (language === 'hi') {
+      return translations['hi']?.[key] || key;
+    }
     const v = translations[language]?.[key];
     if (v) return v;
     if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || key;
     if (language === 'pt') return translations['en']?.[key] || key;
-    // EN/ES/HI users: never show PT
+    // EN/ES users: never show PT
     return translations['en']?.[key] || key;
   }, [language]);
 

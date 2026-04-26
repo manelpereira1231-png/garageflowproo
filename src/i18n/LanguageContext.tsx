@@ -12,33 +12,28 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 function getInitialLanguage(): Language {
-  // INDIA HARD OVERRIDE: country IN → ALWAYS English. No Hindi, no Portuguese.
-  // English is co-official and the standard for SaaS B2B in India.
-  try {
-    const country = localStorage.getItem('garageflow_country');
-    if (country === 'IN') {
-      localStorage.setItem('garageflow_language', 'en');
-      return 'en';
-    }
-  } catch {}
-
-  const stored = localStorage.getItem('garageflow_language');
+  // Respect explicit user choice first (always wins)
+  const stored = (() => {
+    try { return localStorage.getItem('garageflow_language'); } catch { return null; }
+  })();
   if (stored && ['pt', 'pt-BR', 'en', 'es', 'hi'].includes(stored)) return stored as Language;
 
-  // Country override for non-India locales
+  // INDIA: do NOT auto-pick. Default to English provisionally; the choice
+  // popup will prompt the user (EN vs Hindi). Their selection is then stored.
   try {
     const country = localStorage.getItem('garageflow_country');
+    if (country === 'IN') return 'en';
     if (country) {
       if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country)) return 'en';
       if (country === 'BR') return 'pt-BR';
       if (country === 'PT') return 'pt';
-      if (country === 'ES' || country === 'MX' || country === 'AR' || country === 'CL' || country === 'CO' || country === 'PE') return 'es';
+      if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country)) return 'es';
     }
   } catch {}
 
   const browserLang = (navigator.language || '').toLowerCase();
   if (browserLang === 'pt-br') return 'pt-BR';
-  // India browser locales (en-IN, hi-IN, etc.) → English (per product decision)
+  // India browser locales: provisional English (popup will ask user)
   if (browserLang === 'en-in' || browserLang.endsWith('-in') || browserLang === 'hi' || browserLang.startsWith('hi-')) return 'en';
   const shortLang = browserLang.slice(0, 2);
   if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
@@ -53,14 +48,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onCountryDetected = (e: Event) => {
       const country = (e as CustomEvent).detail?.country as string | undefined;
-      // INDIA HARD OVERRIDE: always English, even if user previously had HI/PT cached.
-      if (country === 'IN') {
-        localStorage.setItem('garageflow_language', 'en');
-        setLanguageState('en');
-        return;
-      }
       const explicit = localStorage.getItem('garageflow_language');
-      if (explicit) return; // respect user's choice for non-India
+      if (explicit) return; // always respect user's explicit choice
+      // India: do NOT auto-pick — popup will ask. Provisional EN already set.
+      if (country === 'IN') return;
       if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
       else if (country === 'BR') setLanguageState('pt-BR');
       else if (country === 'PT') setLanguageState('pt');

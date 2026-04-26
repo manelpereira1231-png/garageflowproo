@@ -12,15 +12,22 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 function getInitialLanguage(): Language {
+  // INDIA HARD OVERRIDE: if country is IN, ALWAYS Hindi — never English, never PT.
+  try {
+    const country = localStorage.getItem('garageflow_country');
+    if (country === 'IN') {
+      localStorage.setItem('garageflow_language', 'hi');
+      return 'hi';
+    }
+  } catch {}
+
   const stored = localStorage.getItem('garageflow_language');
   if (stored && ['pt', 'pt-BR', 'en', 'es', 'hi'].includes(stored)) return stored as Language;
 
-  // Country override: if we already detected the user's country, use its default language
+  // Country override for non-India locales
   try {
     const country = localStorage.getItem('garageflow_country');
     if (country) {
-      // India → Hindi by default (English available as alternative in selector)
-      if (country === 'IN') return 'hi';
       if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country)) return 'en';
       if (country === 'BR') return 'pt-BR';
       if (country === 'PT') return 'pt';
@@ -30,11 +37,11 @@ function getInitialLanguage(): Language {
 
   const browserLang = (navigator.language || '').toLowerCase();
   if (browserLang === 'pt-br') return 'pt-BR';
-  // India: Hindi or English-India → Hindi (native), user can switch to EN
-  if (browserLang === 'hi' || browserLang.startsWith('hi-') || browserLang === 'en-in') return 'hi';
+  // India locale signals → Hindi (no English option auto)
+  if (browserLang === 'hi' || browserLang.startsWith('hi-') || browserLang === 'en-in' || browserLang.endsWith('-in')) return 'hi';
   const shortLang = browserLang.slice(0, 2);
   if (['pt', 'en', 'es'].includes(shortLang)) return shortLang as Language;
-  return 'en'; // safer global default than 'pt'
+  return 'en';
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -45,10 +52,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onCountryDetected = (e: Event) => {
       const country = (e as CustomEvent).detail?.country as string | undefined;
+      // INDIA HARD OVERRIDE: always Hindi, even if user previously had EN/PT cached.
+      if (country === 'IN') {
+        localStorage.setItem('garageflow_language', 'hi');
+        setLanguageState('hi');
+        return;
+      }
       const explicit = localStorage.getItem('garageflow_language');
-      if (explicit) return; // respect user's choice
-      if (country === 'IN') setLanguageState('hi');
-      else if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
+      if (explicit) return; // respect user's choice for non-India
+      if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
       else if (country === 'BR') setLanguageState('pt-BR');
       else if (country === 'PT') setLanguageState('pt');
       else if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country || '')) setLanguageState('es');
@@ -104,13 +116,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: string): string => {
-    // Universal fallback: current lang → EN → PT-BR → PT → key
-    // PT only falls back to itself (no leak of PT into EN/HI/ES users)
+    // Hindi/India: STRICT — never fall back to English or PT.
+    // Show the Hindi value or the key itself (so we can spot gaps), never another language.
+    if (language === 'hi') {
+      return translations['hi']?.[key] || key;
+    }
     const v = translations[language]?.[key];
     if (v) return v;
     if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || key;
     if (language === 'pt') return translations['en']?.[key] || key;
-    // EN/ES/HI users: never show PT
+    // EN/ES users: never show PT
     return translations['en']?.[key] || key;
   }, [language]);
 

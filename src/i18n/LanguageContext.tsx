@@ -129,7 +129,7 @@ export function useLanguage(): LanguageContextType {
   // user's stored language or PT.
   const fallbackLang: Language = (typeof window !== "undefined"
     ? (localStorage.getItem("garageflow_language") as Language | null)
-    : null) || "pt";
+    : null) || "en";
   return {
     language: fallbackLang,
     setLanguage: () => {
@@ -138,6 +138,6 @@ export function useLanguage(): LanguageContextType {
         window.location.reload();
       }
     },
-    t: (key: string) => translations[fallbackLang]?.[key] || translations["pt"]?.[key] || key,
+    t: (key: string) => translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key] || key,
   };
 }

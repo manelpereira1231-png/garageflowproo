@@ -1,0 +1,1 @@
+ALTER VIEW public.listing_view_stats SET (security_invoker = true);

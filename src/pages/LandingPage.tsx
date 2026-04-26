@@ -507,6 +507,7 @@ export default function LandingPage() {
           </Accordion>
         </div>
       </section>
+      </Reveal>
 
       {/* Sticky Mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">

@@ -67,7 +67,13 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
                 return (
-                  <Link key={item.path} to={item.path}>
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onMouseEnter={() => prefetchRoute(item.path)}
+                    onFocus={() => prefetchRoute(item.path)}
+                    onTouchStart={() => prefetchRoute(item.path)}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"

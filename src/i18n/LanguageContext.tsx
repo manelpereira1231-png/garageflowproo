@@ -52,10 +52,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onCountryDetected = (e: Event) => {
       const country = (e as CustomEvent).detail?.country as string | undefined;
+      // INDIA HARD OVERRIDE: always Hindi, even if user previously had EN/PT cached.
+      if (country === 'IN') {
+        localStorage.setItem('garageflow_language', 'hi');
+        setLanguageState('hi');
+        return;
+      }
       const explicit = localStorage.getItem('garageflow_language');
-      if (explicit) return; // respect user's choice
-      if (country === 'IN') setLanguageState('hi');
-      else if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
+      if (explicit) return; // respect user's choice for non-India
+      if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA'].includes(country || '')) setLanguageState('en');
       else if (country === 'BR') setLanguageState('pt-BR');
       else if (country === 'PT') setLanguageState('pt');
       else if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country || '')) setLanguageState('es');

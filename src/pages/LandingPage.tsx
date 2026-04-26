@@ -248,6 +248,7 @@ export default function LandingPage() {
       </section>
 
       {/* Stats counter */}
+      <Reveal>
       <section className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-sm text-muted-foreground mb-6 max-w-xl mx-auto">{t('landing.statsHeadline')}</p>
@@ -266,8 +267,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Features */}
+      <Reveal>
       <section id="features" className="py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -292,8 +295,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Testimonials */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -328,8 +333,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Pricing */}
+      <Reveal>
       <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border" onMouseEnter={() => trackPricingView()}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -408,8 +415,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* GarageFlow Market Section */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
@@ -454,8 +463,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* CTA Final */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h2>
@@ -472,8 +483,10 @@ export default function LandingPage() {
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </section>
+      </Reveal>
 
       {/* FAQ Section */}
+      <Reveal>
       <section id="faq" className="py-16 sm:py-20 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">

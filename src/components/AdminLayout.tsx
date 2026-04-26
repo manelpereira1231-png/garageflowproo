@@ -2,17 +2,11 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Car, Wallet, AlertTriangle,
-  MessageCircle, Megaphone, Banknote, ClipboardCheck, LifeBuoy, TrendingUp, ToggleLeft, Tag,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { useLanguage } from "@/i18n/LanguageContext";
 
 const navSections = [
   {
@@ -26,7 +20,7 @@ const navSections = [
   {
     label: "Financeiro",
     items: [
-      { path: "/admin/finance", label: "Finanças & Crescimento", icon: TrendingUp },
+      { path: "/admin/finance", label: "Finanças e Crescimento", icon: TrendingUp },
       { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
@@ -36,9 +30,8 @@ const navSections = [
   {
     label: "Operações",
     items: [
-      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
-      { path: "/admin/marketing", label: "Marketing Global", icon: Megaphone },
-      { path: "/admin/system", label: "Feature Flags & Broadcasts", icon: ToggleLeft },
+      { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
@@ -46,26 +39,9 @@ const navSections = [
     ],
   },
   {
-    label: "GarageFlow Market",
-    items: [
-      { path: "/admin/market-dashboard", label: "Painel Market", icon: BarChart3 },
-      { path: "/admin/market?tab=urgent", label: "Urgente / A Resolver", icon: AlertTriangle },
-      { path: "/admin/market?tab=escrows", label: "Escrow & Reembolsos", icon: Wallet },
-      { path: "/admin/market?tab=transactions", label: "Transações & Comissões", icon: CreditCard },
-      { path: "/admin/market?tab=wallets", label: "Carteiras / Payouts", icon: Banknote },
-      { path: "/admin/market?tab=sellers", label: "Vendedores", icon: Users },
-      { path: "/admin/market?tab=listings", label: "Anúncios", icon: Car },
-      { path: "/admin/market?tab=partners", label: "Oficinas Market", icon: Building2 },
-      { path: "/admin/market?tab=inspections", label: "Inspeções", icon: ClipboardCheck },
-      { path: "/admin/market?tab=boosts", label: "Boosts & Destaques", icon: Megaphone },
-      { path: "/admin/market?tab=risk", label: "Risco & Disputas", icon: MessageCircle },
-      { path: "/admin/market-kyc", label: "Verificação KYC", icon: Shield },
-    ],
-  },
-  {
     label: "Global",
     items: [
-      { path: "/admin/countries", label: "Países & Mercados", icon: Globe },
+      { path: "/admin/countries", label: "Países e Mercados", icon: Globe },
     ],
   },
   {

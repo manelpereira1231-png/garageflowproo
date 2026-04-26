@@ -383,6 +383,18 @@ const preloadGarageSecondaryRoutes = [
   () => import("@/pages/InvoiceForm"),
 ];
 
+// Market pages that share the authenticated MarketLayout chrome
+// (header, mobile nav, pending banner). Rendered via nested routing so the
+// header stays mounted while pages swap — no flicker between routes.
+const marketAuthedRoutes = [
+  { path: "/market/my-listings", element: <CaritySellerDashboard /> },
+  { path: "/market/dashboard", element: <MarketDashboard /> },
+  { path: "/market/messages", element: <MarketMessages /> },
+  { path: "/market/profile", element: <MarketProfile /> },
+  { path: "/market/favoritos", element: <CarityFavorites /> },
+  { path: "/market/purchases", element: <MarketPurchases /> },
+];
+
 const publicRoutes = [
   { path: "/quote/:token", element: <QuoteApproval /> },
   { path: "/portal/:token", element: <ClientPortal /> },
@@ -395,16 +407,10 @@ const publicRoutes = [
   { path: "/market/carros/:slug", element: <Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
-  { path: "/market/my-listings", element: <Suspense fallback={<PageLoader />}><CaritySellerDashboard /></Suspense> },
-  { path: "/market/dashboard", element: <Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense> },
-  { path: "/market/messages", element: <Suspense fallback={<PageLoader />}><MarketMessages /></Suspense> },
-  { path: "/market/profile", element: <Suspense fallback={<PageLoader />}><MarketProfile /></Suspense> },
   { path: "/market/make/:make", element: <Suspense fallback={<PageLoader />}><CarityByMake /></Suspense> },
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
   { path: "/market/modelo/:make/:model", element: <Suspense fallback={<PageLoader />}><CarityByModel /></Suspense> },
   { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
-  { path: "/market/favoritos", element: <Suspense fallback={<PageLoader />}><CarityFavorites /></Suspense> },
-  { path: "/market/purchases", element: <Suspense fallback={<PageLoader />}><MarketPurchases /></Suspense> },
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },

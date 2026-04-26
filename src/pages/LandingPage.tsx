@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -10,12 +10,12 @@ import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
 import SEOHead from "@/components/SEOHead";
-
-const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
-const featureKeys = ['1', '2', '3', '4', '5', '6'];
-
-const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES', hi: 'हि' };
-const languages: Language[] = ['pt', 'pt-BR', 'en', 'es', 'hi'];
+import LanguageDropdown from "@/components/LanguageDropdown";
+import ThemeToggle from "@/components/ThemeToggle";
+import Reveal from "@/components/Reveal";
+import heroMockup from "@/assets/landing-hero-mockup.jpg";
+import spreadsheetImg from "@/assets/landing-spreadsheet.jpg";
+import whatsappImg from "@/assets/landing-whatsapp.jpg";
 
 export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();

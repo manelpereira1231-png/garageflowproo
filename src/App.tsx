@@ -1,7 +1,6 @@
 import { useEffect, useState, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import CommandPalette from "@/components/CommandPalette";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,19 +13,11 @@ import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
+const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
 // Critical path - eagerly loaded for instant navigation
 import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
-// Core GarageFlow pages — eager loaded (no chunk delay between menu clicks)
-import Dashboard from "@/pages/Dashboard";
-import Clients from "@/pages/Clients";
-import Vehicles from "@/pages/Vehicles";
-import Quotes from "@/pages/Quotes";
-import Services from "@/pages/Services";
-import SettingsPage from "@/pages/Settings";
-import Agenda from "@/pages/Agenda";
-import Invoices from "@/pages/Invoices";
 const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
@@ -49,6 +40,14 @@ import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
 
 // Lazy-loaded pages for code splitting & performance at scale
+const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
+const Clients = lazyRetry(() => import("@/pages/Clients"));
+const Vehicles = lazyRetry(() => import("@/pages/Vehicles"));
+const Quotes = lazyRetry(() => import("@/pages/Quotes"));
+const Services = lazyRetry(() => import("@/pages/Services"));
+const SettingsPage = lazyRetry(() => import("@/pages/Settings"));
+const Agenda = lazyRetry(() => import("@/pages/Agenda"));
+const Invoices = lazyRetry(() => import("@/pages/Invoices"));
 const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
@@ -353,6 +352,15 @@ const shopRoutes = [
 ];
 
 const preloadGarageNavigationRoutes = [
+  () => import("@/pages/Dashboard"),
+  () => import("@/pages/Clients"),
+  () => import("@/pages/Vehicles"),
+  () => import("@/pages/Quotes"),
+  () => import("@/pages/Services"),
+  () => import("@/pages/Settings"),
+];
+
+const preloadGarageSecondaryRoutes = [
   () => import("@/pages/ServiceCatalog"),
   () => import("@/pages/Stock"),
   () => import("@/pages/Inspections"),
@@ -497,6 +505,9 @@ function AuthenticatedRoutes() {
 
     const preload = () => {
       void Promise.allSettled(preloadGarageNavigationRoutes.map((loadRoute) => loadRoute()));
+      window.setTimeout(() => {
+        void Promise.allSettled(preloadGarageSecondaryRoutes.map((loadRoute) => loadRoute()));
+      }, 3500);
     };
 
     let timeoutId: number | null = null;
@@ -536,7 +547,7 @@ function AuthenticatedRoutes() {
             ))}
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
             <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" realm="garage" />} />
@@ -608,7 +619,7 @@ function AuthenticatedRoutes() {
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
+              <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}
           </Route>
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
@@ -692,7 +703,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <CommandPalette />
+          <Suspense fallback={null}>
+            <CommandPalette />
+          </Suspense>
           <AppRoutes />
           <SupportFab />
           <CookieConsentBanner />

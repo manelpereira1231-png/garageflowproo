@@ -7,18 +7,15 @@ export default function Reveal({
   children,
   className,
   delay = 0,
-  as: Tag = "div",
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
-  as?: keyof JSX.IntrinsicElements;
 }) {
   const { ref, visible } = useScrollReveal<HTMLDivElement>();
   return (
-    // @ts-expect-error dynamic tag
-    <Tag
-      ref={ref as any}
+    <div
+      ref={ref}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
       className={cn(
         "transition-all duration-700 ease-out will-change-transform",
@@ -27,6 +24,6 @@ export default function Reveal({
       )}
     >
       {children}
-    </Tag>
+    </div>
   );
 }

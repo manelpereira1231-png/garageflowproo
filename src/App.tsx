@@ -543,9 +543,11 @@ function AuthenticatedRoutes() {
       <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {adminRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={<AdminLayout>{route.element}</AdminLayout>} />
-            ))}
+            <Route element={<AdminLayout />}>
+              {adminRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+            </Route>
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -10,6 +10,12 @@ import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
 import SEOHead from "@/components/SEOHead";
+import LanguageDropdown from "@/components/LanguageDropdown";
+import ThemeToggle from "@/components/ThemeToggle";
+import Reveal from "@/components/Reveal";
+import heroMockup from "@/assets/landing-hero-mockup.jpg";
+import spreadsheetImg from "@/assets/landing-spreadsheet.jpg";
+import whatsappImg from "@/assets/landing-whatsapp.jpg";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -98,22 +104,9 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
-            <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-              {languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                    language === lang
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {langLabels[lang]}
-                </button>
-              ))}
-            </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <LanguageDropdown />
+            <ThemeToggle />
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
@@ -123,12 +116,18 @@ export default function LandingPage() {
               </Button>
             </Link>
           </div>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="sm:hidden flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
@@ -136,18 +135,8 @@ export default function LandingPage() {
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
             <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>
-            <div className="flex items-center gap-1 py-2">
-              {languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => { setLanguage(lang); setMobileMenuOpen(false); }}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    language === lang ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {langLabels[lang]}
-                </button>
-              ))}
+            <div className="py-2">
+              <LanguageDropdown />
             </div>
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
               <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
@@ -190,10 +179,25 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
+
+          {/* Hero product mockup */}
+          <Reveal delay={150} className="mt-12 sm:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
+            <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+              <img
+                src={heroMockup}
+                alt="GarageFlow workshop dashboard and mobile chat preview"
+                width={1280}
+                height={896}
+                className="w-full h-auto"
+              />
+              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-foreground/5 rounded-2xl" />
+            </div>
+          </Reveal>
         </div>
       </header>
 
       {/* Ideal For section */}
+      <Reveal>
       <section className="py-10 sm:py-14 px-4 border-b border-border">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-xl sm:text-2xl font-bold mb-6">{t('landing.idealForTitle')}</h2>
@@ -207,8 +211,44 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
+
+      {/* Visual showcase: Spreadsheet + WhatsApp */}
+      <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background border-b border-border overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.featuresTitle')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">{t('landing.featuresSubtitle')}</p>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <Reveal delay={100}>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card">
+                <img src={spreadsheetImg} alt="Quotes and invoices spreadsheet preview" loading="lazy" width={1024} height={768} className="w-full h-auto" />
+              </div>
+              <div className="mt-5">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" /> {t('landing.feat1Title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('landing.feat1Desc')}</p>
+              </div>
+            </Reveal>
+            <Reveal delay={250}>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card flex items-center justify-center p-6 sm:p-8">
+                <img src={whatsappImg} alt="WhatsApp chat with client preview" loading="lazy" width={768} height={1024} className="max-h-[420px] w-auto object-contain" />
+              </div>
+              <div className="mt-5">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-primary" /> WhatsApp + SMS
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('landing.feat3Desc')}</p>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
 
       {/* Stats counter */}
+      <Reveal>
       <section className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-sm text-muted-foreground mb-6 max-w-xl mx-auto">{t('landing.statsHeadline')}</p>
@@ -227,8 +267,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Features */}
+      <Reveal>
       <section id="features" className="py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -253,8 +295,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Testimonials */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -289,8 +333,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Pricing */}
+      <Reveal>
       <section id="pricing" className="py-16 sm:py-20 px-4 bg-muted/30 border-t border-border" onMouseEnter={() => trackPricingView()}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
@@ -369,8 +415,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* GarageFlow Market Section */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-amber-400/20 text-amber-300 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
@@ -415,8 +463,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* CTA Final */}
+      <Reveal>
       <section className="py-16 sm:py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h2>
@@ -433,8 +483,10 @@ export default function LandingPage() {
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
         </div>
       </section>
+      </Reveal>
 
       {/* FAQ Section */}
+      <Reveal>
       <section id="faq" className="py-16 sm:py-20 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
@@ -455,6 +507,7 @@ export default function LandingPage() {
           </Accordion>
         </div>
       </section>
+      </Reveal>
 
       {/* Sticky Mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
@@ -477,20 +530,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
-            <div className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" />
-              {languages.map((lang, i) => (
-                <span key={lang}>
-                  <button
-                    onClick={() => setLanguage(lang)}
-                    className={`hover:text-foreground transition-colors ${language === lang ? 'text-primary font-semibold' : ''}`}
-                  >
-                    {langLabels[lang]}
-                  </button>
-                  {i < languages.length - 1 && <span className="mx-0.5">|</span>}
-                </span>
-              ))}
-            </div>
+            <LanguageDropdown variant="ghost" size="sm" />
+            <ThemeToggle />
           </div>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}

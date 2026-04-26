@@ -45,6 +45,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -433,6 +434,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
+          <ThemeToggle className="mr-1" />
 
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1 group">

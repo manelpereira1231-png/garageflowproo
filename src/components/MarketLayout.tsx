@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
   { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
@@ -62,6 +63,9 @@ export default function MarketLayout({ children }: { children: React.ReactNode }
                 <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
               </Button>
             </Link>
+            <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
+              <ThemeToggle />
+            </div>
             <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/[0.08] ml-1" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>

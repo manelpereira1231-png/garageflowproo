@@ -41,7 +41,7 @@ export default function LanguageDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[180px]">
-        {LANGS.map((l) => (
+        {visibleLangs.map((l) => (
           <DropdownMenuItem
             key={l.code}
             onClick={() => setLanguage(l.code)}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { applyConsentToTracking, createCookieConsent, getCookieConsent, saveCookieConsent } from "@/lib/cookieConsent";
+import { applyConsentToTracking, createCookieConsent, getCookieConsent, saveCookieConsent, type CookieConsent } from "@/lib/cookieConsent";
 
 type Strings = {
   title: string;
@@ -152,8 +152,7 @@ export default function CookieConsentBanner() {
 
   const persist = (consent: CookieConsent) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
-      applyConsentToTracking(consent);
+      saveCookieConsent(consent);
     } catch {}
   };
 

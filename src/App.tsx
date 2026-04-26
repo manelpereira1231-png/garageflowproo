@@ -146,12 +146,14 @@ const AUTO_RECOVERY_KEY = "garageflow_auto_recover_attempted";
 
 const isRecoverableLoadError = (message: string) => {
   const normalized = message.toLowerCase();
+  // Tight match: only chunk/dynamic-import load failures, never generic errors
+  // that happen to mention "import" somewhere in the stack.
   return (
     normalized.includes("loading chunk") ||
-    normalized.includes("failed to fetch") ||
+    normalized.includes("failed to fetch dynamically imported module") ||
     normalized.includes("dynamically imported module") ||
-    normalized.includes("module script") ||
-    normalized.includes("import")
+    normalized.includes("importing a module script failed") ||
+    normalized.includes("error loading dynamically imported module")
   );
 };
 

@@ -144,10 +144,11 @@ export function useLanguage(): LanguageContextType {
     : null) || "en";
   return {
     language: fallbackLang,
-    setLanguage: () => {
+    setLanguage: (lang: Language) => {
+      // No reload — just persist; consumers using the fallback will re-mount
+      // naturally when the real provider mounts.
       if (typeof window !== "undefined") {
-        localStorage.setItem("garageflow_language", fallbackLang);
-        window.location.reload();
+        try { localStorage.setItem("garageflow_language", lang); } catch {}
       }
     },
     t: (key: string) => translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key] || key,

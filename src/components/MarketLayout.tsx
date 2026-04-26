@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
 import ThemeToggle from "@/components/ThemeToggle";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 const NAV_ITEMS = [
   { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },

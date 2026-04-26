@@ -85,7 +85,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
                   </Link>
                 );
               })}
-              <Link to="/market/sell">
+              <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
                 <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
                   <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
                 </Button>

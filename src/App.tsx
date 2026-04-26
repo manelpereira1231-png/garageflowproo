@@ -691,7 +691,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <CommandPalette />
+          <Suspense fallback={null}>
+            <CommandPalette />
+          </Suspense>
           <AppRoutes />
           <SupportFab />
           <CookieConsentBanner />

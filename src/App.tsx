@@ -535,7 +535,7 @@ function AuthenticatedRoutes() {
             ))}
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
             <Route path="/auth" element={<AuthRouteRedirect fallback="/admin" realm="garage" />} />
@@ -607,7 +607,7 @@ function AuthenticatedRoutes() {
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
+              <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}
           </Route>
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />

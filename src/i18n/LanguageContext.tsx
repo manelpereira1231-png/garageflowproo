@@ -53,10 +53,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onCountryDetected = (e: Event) => {
       const country = (e as CustomEvent).detail?.country as string | undefined;
-      // INDIA HARD OVERRIDE: always Hindi, even if user previously had EN/PT cached.
+      // INDIA HARD OVERRIDE: always English, even if user previously had HI/PT cached.
       if (country === 'IN') {
-        localStorage.setItem('garageflow_language', 'hi');
-        setLanguageState('hi');
+        localStorage.setItem('garageflow_language', 'en');
+        setLanguageState('en');
         return;
       }
       const explicit = localStorage.getItem('garageflow_language');

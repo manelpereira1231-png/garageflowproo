@@ -7,6 +7,7 @@ import {
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const navSections = [
   {

@@ -545,7 +545,7 @@ function AuthenticatedRoutes() {
           <Routes>
             <Route element={<AdminLayout />}>
               {adminRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
             <Route element={<Layout><Outlet /></Layout>}>

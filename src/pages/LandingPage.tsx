@@ -17,6 +17,12 @@ import heroMockup from "@/assets/landing-hero-mockup.jpg";
 import spreadsheetImg from "@/assets/landing-spreadsheet.jpg";
 import whatsappImg from "@/assets/landing-whatsapp.jpg";
 
+const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
+const featureKeys = ['1', '2', '3', '4', '5', '6'];
+
+const langLabels: Record<Language, string> = { pt: 'PT', 'pt-BR': 'BR', en: 'EN', es: 'ES', hi: 'हि' };
+const languages: Language[] = ['pt', 'pt-BR', 'en', 'es', 'hi'];
+
 export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

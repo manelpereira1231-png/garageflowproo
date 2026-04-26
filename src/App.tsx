@@ -352,6 +352,15 @@ const shopRoutes = [
 ];
 
 const preloadGarageNavigationRoutes = [
+  () => import("@/pages/Dashboard"),
+  () => import("@/pages/Clients"),
+  () => import("@/pages/Vehicles"),
+  () => import("@/pages/Quotes"),
+  () => import("@/pages/Services"),
+  () => import("@/pages/Settings"),
+];
+
+const preloadGarageSecondaryRoutes = [
   () => import("@/pages/ServiceCatalog"),
   () => import("@/pages/Stock"),
   () => import("@/pages/Inspections"),
@@ -496,6 +505,9 @@ function AuthenticatedRoutes() {
 
     const preload = () => {
       void Promise.allSettled(preloadGarageNavigationRoutes.map((loadRoute) => loadRoute()));
+      window.setTimeout(() => {
+        void Promise.allSettled(preloadGarageSecondaryRoutes.map((loadRoute) => loadRoute()));
+      }, 3500);
     };
 
     let timeoutId: number | null = null;

@@ -59,39 +59,45 @@ export default function CarityMarketplace() {
   const [stats, setStats] = useState<RealStats>({ totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 
   const loadAll = useCallback(async () => {
-    // Load listings with shop info
-    const { data: listingsData } = await supabase
-      .from("carity_listings")
-      .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id")
-      .eq("status", "published")
-      .order("published_at", { ascending: false });
+    // Load visible listings + headline stats in parallel so the Market opens faster.
+    const [listingsRes, publishedRes, inspectionsRes, shopsRes] = await Promise.all([
+      supabase
+        .from("carity_listings")
+        .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id")
+        .eq("status", "published")
+        .order("published_at", { ascending: false }),
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
+      supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("status", "completed"),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+    ]);
 
-    const rawListings = (listingsData || []).map((l: any) => ({
+    const rawListings = (listingsRes.data || []).map((l: any) => ({
       ...l,
       photos: Array.isArray(l.photos) ? l.photos : [],
     }));
 
-    // Get shop info for listings that have shop_id
-    const shopIds = [...new Set(rawListings.filter(l => l.shop_id).map(l => l.shop_id))];
-    let shopMap: Record<string, { name: string; address: string | null }> = {};
-    if (shopIds.length > 0) {
-      const { data: shops } = await supabase
-        .from("shops")
-        .select("id, name, address")
-        .in("id", shopIds);
-      (shops || []).forEach((s: any) => { shopMap[s.id] = { name: s.name, address: s.address }; });
-    }
+    setStats({
+      totalPublished: publishedRes.count || 0,
+      totalInspections: inspectionsRes.count || 0,
+      totalPartnerShops: shopsRes.count || 0,
+    });
 
-    // Get inspection scores for all listed IDs
+    // Get shop info + inspection scores in parallel for listings that are visible.
+    const shopIds = [...new Set(rawListings.filter(l => l.shop_id).map(l => l.shop_id))];
     const listingIds = rawListings.map((l: any) => l.id);
+    const [listingShopsRes, reportsRes] = await Promise.all([
+      shopIds.length > 0
+        ? supabase.from("shops").select("id, name, address").in("id", shopIds)
+        : Promise.resolve({ data: [] as any[] }),
+      listingIds.length > 0
+        ? supabase.from("carity_inspection_reports").select("listing_id, overall_score, recommendation").in("listing_id", listingIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    let shopMap: Record<string, { name: string; address: string | null }> = {};
+    (listingShopsRes.data || []).forEach((s: any) => { shopMap[s.id] = { name: s.name, address: s.address }; });
     let scoreMap: Record<string, { score: number; recommendation: string }> = {};
-    if (listingIds.length > 0) {
-      const { data: reports } = await supabase
-        .from("carity_inspection_reports")
-        .select("listing_id, overall_score, recommendation")
-        .in("listing_id", listingIds);
-      (reports || []).forEach((r: any) => { scoreMap[r.listing_id] = { score: r.overall_score, recommendation: r.recommendation }; });
-    }
+    (reportsRes.data || []).forEach((r: any) => { scoreMap[r.listing_id] = { score: r.overall_score, recommendation: r.recommendation }; });
 
     setListings(rawListings.map(l => ({
       ...l,
@@ -100,19 +106,6 @@ export default function CarityMarketplace() {
       inspection_score: scoreMap[l.id]?.score ?? null,
       inspection_recommendation: scoreMap[l.id]?.recommendation ?? null,
     })));
-
-    // Load real stats in parallel
-    const [publishedRes, inspectionsRes, shopsRes] = await Promise.all([
-      supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("status", "completed"),
-      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
-    ]);
-
-    setStats({
-      totalPublished: publishedRes.count || 0,
-      totalInspections: inspectionsRes.count || 0,
-      totalPartnerShops: shopsRes.count || 0,
-    });
 
     setLoading(false);
   }, []);

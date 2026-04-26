@@ -110,7 +110,7 @@ serve(async (req) => {
       limit: 10,
     });
 
-    const activeSub = subscriptions.data.find(s => ["active", "trialing"].includes(s.status));
+    const activeSub = subscriptions.data.find((s: any) => ["active", "trialing"].includes(s.status));
 
     if (!activeSub) {
       // No active subscription — downgrade to free

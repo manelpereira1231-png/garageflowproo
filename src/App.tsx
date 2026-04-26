@@ -39,6 +39,7 @@ const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
 const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
+import MarketLayout from "@/components/MarketLayout";
 
 // Lazy-loaded pages for code splitting & performance at scale
 const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));

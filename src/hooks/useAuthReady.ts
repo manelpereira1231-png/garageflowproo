@@ -2,48 +2,60 @@ import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+type AuthReadyState = {
+  isReady: boolean;
+  session: Session | null;
+  user: User | null;
+};
+
+const listeners = new Set<() => void>();
+let authState: AuthReadyState = { isReady: false, session: null, user: null };
+let initialized = false;
+
+function emit() {
+  listeners.forEach((listener) => listener());
+}
+
+function setAuthState(next: Partial<AuthReadyState>) {
+  authState = { ...authState, ...next };
+  emit();
+}
+
+function ensureAuthReadySubscription() {
+  if (initialized) return;
+  initialized = true;
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setAuthState({ session: session ?? null, user: session?.user ?? null, isReady: true });
+  });
+
+  supabase.auth.onAuthStateChange((event, nextSession) => {
+    if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+      setAuthState({ session: nextSession ?? null, isReady: true });
+      return;
+    }
+
+    const nextUser = nextSession?.user ?? null;
+    setAuthState({
+      session: nextSession ?? null,
+      user: authState.user?.id === nextUser?.id ? authState.user : nextUser,
+      isReady: true,
+    });
+  });
+}
+
 export function useAuthReady() {
-  const [isReady, setIsReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [snapshot, setSnapshot] = useState<AuthReadyState>(authState);
 
   useEffect(() => {
-    let mounted = true;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session ?? null);
-      setUser(session?.user ?? null);
-      setIsReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!mounted) return;
-      // Skip events that don't change the actual user identity to avoid
-      // cascading re-renders / refetches across the app (Layout, Dashboard,
-      // useShopContext, etc.). TOKEN_REFRESHED fires every ~hour and was
-      // causing the UI to flash like a full reload, especially in Lite Mode.
-      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-        setSession(nextSession ?? null);
-        setIsReady(true);
-        return;
-      }
-      setSession(nextSession ?? null);
-      setUser((prev) => {
-        const next = nextSession?.user ?? null;
-        if (prev?.id === next?.id) return prev; // keep same reference
-        return next;
-      });
-      setIsReady(true);
-    });
-
+    ensureAuthReadySubscription();
+    const update = () => setSnapshot(authState);
+    listeners.add(update);
+    update();
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      listeners.delete(update);
     };
   }, []);
 
-  return { isReady, session, user };
+  return snapshot;
 }

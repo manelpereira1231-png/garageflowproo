@@ -530,20 +530,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
-            <div className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" />
-              {languages.map((lang, i) => (
-                <span key={lang}>
-                  <button
-                    onClick={() => setLanguage(lang)}
-                    className={`hover:text-foreground transition-colors ${language === lang ? 'text-primary font-semibold' : ''}`}
-                  >
-                    {langLabels[lang]}
-                  </button>
-                  {i < languages.length - 1 && <span className="mx-0.5">|</span>}
-                </span>
-              ))}
-            </div>
+            <LanguageDropdown variant="ghost" size="sm" />
+            <ThemeToggle />
           </div>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}

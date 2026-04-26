@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
@@ -684,6 +685,7 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <ThemeProvider>
       <LanguageProvider>
         <Toaster />
         <Sonner />
@@ -695,6 +697,7 @@ const App = () => (
         </BrowserRouter>
         <PWAInstallPrompt />
       </LanguageProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function enrichContract(admin: ReturnType<typeof createClient>, contract: Record<string, unknown>, _escrow: Record<string, unknown>) {
+async function enrichContract(admin: any, contract: Record<string, unknown>, _escrow: Record<string, unknown>) {
   const { data: listing } = await admin
     .from("carity_listings")
     .select("*")

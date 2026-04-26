@@ -104,22 +104,9 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
-            <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-              {languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                    language === lang
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {langLabels[lang]}
-                </button>
-              ))}
-            </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <LanguageDropdown />
+            <ThemeToggle />
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
@@ -129,12 +116,18 @@ export default function LandingPage() {
               </Button>
             </Link>
           </div>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="sm:hidden flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
@@ -142,18 +135,8 @@ export default function LandingPage() {
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
             <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>
-            <div className="flex items-center gap-1 py-2">
-              {languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => { setLanguage(lang); setMobileMenuOpen(false); }}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    language === lang ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {langLabels[lang]}
-                </button>
-              ))}
+            <div className="py-2">
+              <LanguageDropdown />
             </div>
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
               <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>

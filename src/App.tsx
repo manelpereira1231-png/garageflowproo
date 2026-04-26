@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
@@ -709,6 +710,7 @@ const App = () => (
           <AppRoutes />
           <SupportFab />
           <CookieConsentBanner />
+          <IndiaLanguagePrompt />
         </BrowserRouter>
         <PWAInstallPrompt />
       </LanguageProvider>

@@ -27,10 +27,10 @@ export default function LanguageDropdown({
   showLabel?: boolean;
 }) {
   const { language, setLanguage } = useLanguage();
-  // INDIA: English only — hide Hindi and Portuguese variants.
+  // INDIA: only English + Hindi (no Portuguese / Spanish).
   const country = typeof window !== "undefined" ? localStorage.getItem("garageflow_country") : null;
   const visibleLangs = country === "IN"
-    ? LANGS.filter((l) => l.code === "en")
+    ? LANGS.filter((l) => l.code === "en" || l.code === "hi")
     : LANGS;
   const current = visibleLangs.find((l) => l.code === language) ?? LANGS.find((l) => l.code === language) ?? LANGS[0];
 

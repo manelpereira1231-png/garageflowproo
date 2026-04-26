@@ -179,10 +179,25 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
+
+          {/* Hero product mockup */}
+          <Reveal delay={150} className="mt-12 sm:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
+            <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+              <img
+                src={heroMockup}
+                alt="GarageFlow workshop dashboard and mobile chat preview"
+                width={1280}
+                height={896}
+                className="w-full h-auto"
+              />
+              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-foreground/5 rounded-2xl" />
+            </div>
+          </Reveal>
         </div>
       </header>
 
       {/* Ideal For section */}
+      <Reveal>
       <section className="py-10 sm:py-14 px-4 border-b border-border">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-xl sm:text-2xl font-bold mb-6">{t('landing.idealForTitle')}</h2>
@@ -193,6 +208,41 @@ export default function LandingPage() {
                 <span className="text-sm text-muted-foreground">{t(key)}</span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+      </Reveal>
+
+      {/* Visual showcase: Spreadsheet + WhatsApp */}
+      <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background border-b border-border overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.featuresTitle')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">{t('landing.featuresSubtitle')}</p>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <Reveal delay={100}>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card">
+                <img src={spreadsheetImg} alt="Quotes and invoices spreadsheet preview" loading="lazy" width={1024} height={768} className="w-full h-auto" />
+              </div>
+              <div className="mt-5">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" /> {t('landing.feat1Title')}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('landing.feat1Desc')}</p>
+              </div>
+            </Reveal>
+            <Reveal delay={250}>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card flex items-center justify-center p-6 sm:p-8">
+                <img src={whatsappImg} alt="WhatsApp chat with client preview" loading="lazy" width={768} height={1024} className="max-h-[420px] w-auto object-contain" />
+              </div>
+              <div className="mt-5">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-primary" /> WhatsApp + SMS
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('landing.feat3Desc')}</p>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>

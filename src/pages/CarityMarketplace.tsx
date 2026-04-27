@@ -153,12 +153,41 @@ export default function CarityMarketplace() {
     return () => { supabase.removeChannel(channel); };
   }, [loadAll]);
 
+  // Derived filter options (only from real data)
+  const availableMakes = useMemo(() => {
+    const set = new Set(listings.map(l => l.make).filter(Boolean));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [listings]);
+
+  const availableCities = useMemo(() => {
+    const set = new Set<string>();
+    listings.forEach(l => {
+      const city = l.location_label || l.shop_location;
+      if (city) set.add(city.split(",")[0].trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [listings]);
+
   const filtered = listings
     .filter(l => {
       const q = search.toLowerCase();
       const matchSearch = !q || `${l.make} ${l.model} ${l.year}`.toLowerCase().includes(q);
+      const matchMake = makeFilter === "all" || l.make === makeFilter;
+      const cityVal = (l.location_label || l.shop_location || "").split(",")[0].trim();
+      const matchCity = cityFilter === "all" || cityVal === cityFilter;
       const matchFuel = fuelFilter === "all" || l.fuel === fuelFilter;
-      return matchSearch && matchFuel;
+      const matchPrice = l.price >= priceRange[0] && l.price <= priceRange[1];
+      const matchYear = l.year >= yearRange[0] && l.year <= yearRange[1];
+      const matchKm = l.mileage >= kmRange[0] && l.mileage <= kmRange[1];
+      const matchScore = !l.inspection_score ? minScore === 0 : l.inspection_score >= minScore;
+      const matchInspection =
+        inspectionStatus === "all" ? true :
+        inspectionStatus === "approved" ? l.inspection_recommendation === "recommended" :
+        l.inspection_recommendation === "acceptable";
+      const matchCertified = !certifiedOnly || (!!l.inspection_score && !!l.inspection_recommendation && l.inspection_recommendation !== "not_recommended");
+      const days = l.published_at ? Math.floor((Date.now() - new Date(l.published_at).getTime()) / 86400000) : 9999;
+      const matchFreshness = freshness === "any" || (freshness === "7d" ? days <= 7 : days <= 30);
+      return matchSearch && matchMake && matchCity && matchFuel && matchPrice && matchYear && matchKm && matchScore && matchInspection && matchCertified && matchFreshness;
     })
     .sort((a, b) => {
       const aBoost = a.boost_active ? 1 : 0;
@@ -167,9 +196,38 @@ export default function CarityMarketplace() {
       if (sortBy === "price_asc") return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
       if (sortBy === "year") return b.year - a.year;
-      if (sortBy === "mileage") return a.mileage - b.mileage;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "mileage_asc") return a.mileage - b.mileage;
+      if (sortBy === "score_desc") return (b.inspection_score || 0) - (a.inspection_score || 0);
+      return new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime();
     });
+
+  const activeFilterCount = [
+    makeFilter !== "all",
+    cityFilter !== "all",
+    fuelFilter !== "all",
+    priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX,
+    yearRange[0] !== YEAR_MIN || yearRange[1] !== YEAR_MAX,
+    kmRange[0] !== KM_MIN || kmRange[1] !== KM_MAX,
+    minScore > 0,
+    inspectionStatus !== "all",
+    !certifiedOnly, // counts as active when user explicitly turned OFF default
+    freshness !== "any",
+  ].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setMakeFilter("all");
+    setCityFilter("all");
+    setFuelFilter("all");
+    setPriceRange([PRICE_MIN, PRICE_MAX]);
+    setYearRange([YEAR_MIN, YEAR_MAX]);
+    setKmRange([KM_MIN, KM_MAX]);
+    setMinScore(0);
+    setInspectionStatus("all");
+    setCertifiedOnly(true);
+    setFreshness("any");
+    setSearch("");
+  };
+
 
   const hasAnyStats = stats.totalPublished > 0 || stats.totalInspections > 0 || stats.totalPartnerShops > 0;
 

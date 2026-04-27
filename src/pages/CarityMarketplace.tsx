@@ -770,3 +770,214 @@ export default function CarityMarketplace() {
     </div>
   );
 }
+
+// ───────────────────── Filters body (shared desktop sidebar + mobile sheet)
+interface FiltersBodyProps {
+  makeFilter: string; setMakeFilter: (v: string) => void; availableMakes: string[];
+  cityFilter: string; setCityFilter: (v: string) => void; availableCities: string[];
+  fuelFilter: string; setFuelFilter: (v: string) => void;
+  priceRange: [number, number]; setPriceRange: (v: [number, number]) => void;
+  yearRange: [number, number]; setYearRange: (v: [number, number]) => void;
+  kmRange: [number, number]; setKmRange: (v: [number, number]) => void;
+  minScore: number; setMinScore: (v: number) => void;
+  inspectionStatus: "all" | "approved" | "reserved"; setInspectionStatus: (v: "all" | "approved" | "reserved") => void;
+  certifiedOnly: boolean; setCertifiedOnly: (v: boolean) => void;
+  freshness: "any" | "7d" | "30d"; setFreshness: (v: "any" | "7d" | "30d") => void;
+  formatPrice: (n: number) => string;
+  onReset: () => void;
+  onApply: () => void;
+  resultCount: number;
+  isMobile?: boolean;
+}
+
+function FiltersBody(props: FiltersBodyProps) {
+  const {
+    makeFilter, setMakeFilter, availableMakes,
+    cityFilter, setCityFilter, availableCities,
+    fuelFilter, setFuelFilter,
+    priceRange, setPriceRange,
+    yearRange, setYearRange,
+    kmRange, setKmRange,
+    minScore, setMinScore,
+    inspectionStatus, setInspectionStatus,
+    certifiedOnly, setCertifiedOnly,
+    freshness, setFreshness,
+    formatPrice, onReset, onApply, resultCount, isMobile,
+  } = props;
+
+  return (
+    <div className="space-y-5">
+      {/* Certificado (destaque no topo) */}
+      <div className="rounded-lg border-2 border-amber-300/60 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox checked={certifiedOnly} onCheckedChange={(v) => setCertifiedOnly(!!v)} className="mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" /> Apenas carros certificados
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">Recomendado — só carros com inspeção concluída e validada.</p>
+          </div>
+        </label>
+      </div>
+
+      {/* Marca */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Marca</label>
+        <Select value={makeFilter} onValueChange={setMakeFilter}>
+          <SelectTrigger><SelectValue placeholder="Todas as marcas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as marcas</SelectItem>
+            {availableMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Localização */}
+      {availableCities.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <MapPin className="h-3 w-3" /> Localização
+          </label>
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger><SelectValue placeholder="Todas as cidades" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as cidades</SelectItem>
+              {availableCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Preço */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preço</label>
+          <span className="text-[11px] tabular-nums text-foreground font-medium">
+            {formatPrice(priceRange[0])} — {priceRange[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(priceRange[1])}
+          </span>
+        </div>
+        <Slider
+          value={priceRange}
+          min={PRICE_MIN}
+          max={PRICE_MAX}
+          step={500}
+          onValueChange={(v) => setPriceRange([v[0], v[1]] as [number, number])}
+          className="py-2"
+        />
+      </div>
+
+      {/* Ano */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ano</label>
+          <span className="text-[11px] tabular-nums font-medium">{yearRange[0]} — {yearRange[1]}</span>
+        </div>
+        <Slider
+          value={yearRange}
+          min={YEAR_MIN}
+          max={YEAR_MAX}
+          step={1}
+          onValueChange={(v) => setYearRange([v[0], v[1]] as [number, number])}
+          className="py-2"
+        />
+      </div>
+
+      {/* Quilometragem */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quilometragem</label>
+          <span className="text-[11px] tabular-nums font-medium">
+            {kmRange[0].toLocaleString()} — {kmRange[1] >= KM_MAX ? `${KM_MAX.toLocaleString()}+` : kmRange[1].toLocaleString()} km
+          </span>
+        </div>
+        <Slider
+          value={kmRange}
+          min={KM_MIN}
+          max={KM_MAX}
+          step={5000}
+          onValueChange={(v) => setKmRange([v[0], v[1]] as [number, number])}
+          className="py-2"
+        />
+      </div>
+
+      {/* Combustível */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Combustível</label>
+        <Select value={fuelFilter} onValueChange={setFuelFilter}>
+          <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {Object.entries(FUEL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Estado da Inspeção */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <ShieldCheck className="h-3 w-3" /> Estado da Inspeção
+        </label>
+        <Select value={inspectionStatus} onValueChange={(v) => setInspectionStatus(v as any)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="approved">✔ Aprovado</SelectItem>
+            <SelectItem value="reserved">⚠ Com observações</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Score mínimo */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Score mínimo</label>
+          <span className="text-[11px] tabular-nums font-medium">{minScore === 0 ? "Qualquer" : `${minScore}/100`}</span>
+        </div>
+        <Slider
+          value={[minScore]}
+          min={0}
+          max={100}
+          step={5}
+          onValueChange={(v) => setMinScore(v[0])}
+          className="py-2"
+        />
+      </div>
+
+      {/* Tempo no market */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tempo no market</label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            { v: "any", label: "Todos" },
+            { v: "7d", label: "< 7 dias" },
+            { v: "30d", label: "< 30 dias" },
+          ] as const).map(opt => (
+            <button
+              key={opt.v}
+              onClick={() => setFreshness(opt.v)}
+              className={`text-xs font-medium py-2 rounded-md border transition-colors ${
+                freshness === opt.v
+                  ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                  : "border-border hover:bg-muted"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer actions */}
+      {isMobile ? (
+        <div className="flex gap-2 pt-2 sticky bottom-0 bg-background pb-2">
+          <Button variant="outline" onClick={onReset} className="flex-1 gap-1.5">
+            <RotateCcw className="h-3.5 w-3.5" /> Limpar
+          </Button>
+          <Button onClick={onApply} className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
+            Ver {resultCount} {resultCount === 1 ? "carro" : "carros"}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}

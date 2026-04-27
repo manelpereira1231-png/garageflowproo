@@ -506,76 +506,120 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               </CardContent>
             </Card>
 
-            {/* Inspection report — 2 LAYER VIEW */}
-            {report && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <CardTitle className="flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-amber-500" />
-                      Relatório de Inspeção Certificado
-                    </CardTitle>
+            {/* Inspection report — PROFESSIONAL CERTIFIED VIEW */}
+            {report && (() => {
+              // Derive REAL coherence (anti-facilitação) from the actual checklist + defects
+              const checklistEntries = Object.keys(CHECKLIST_LABELS).map(k => ({
+                key: k,
+                label: CHECKLIST_LABELS[k],
+                status: (report as any)[k] || "ok",
+              }));
+              const criticalCount = checklistEntries.filter(e => e.status === "critical").length;
+              const problemCount = checklistEntries.filter(e => e.status === "problems").length;
+              const conformCount = checklistEntries.filter(e => e.status === "ok").length;
+              const totalAnomalies = (report.defects?.length || 0) + criticalCount + problemCount;
+              const hasCritical = criticalCount > 0;
+              const hasProblems = problemCount > 0 || (report.defects?.length || 0) > 0;
+              // Coerência: a oficina marcou "recommended" mas há críticos? Mostrar override público.
+              const recommendationOverride = hasCritical && report.recommendation === "recommended";
+              const effectiveRecommendation = hasCritical ? "not_recommended" : report.recommendation;
+              // Risco real
+              const realRisk = hasCritical ? "Elevado" : (hasProblems || report.overall_score < 60) ? "Moderado" : "Baixo";
+              const realRiskColor = hasCritical ? "text-red-600" : (hasProblems || report.overall_score < 60) ? "text-amber-600" : "text-green-600";
+              // Ordenar checklist: críticos -> problemas -> conformes
+              const sortedChecklist = [...checklistEntries].sort((a, b) => {
+                const order: Record<string, number> = { critical: 0, problems: 1, ok: 2 };
+                return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+              });
+
+              return (
+              <Card className="border-2 border-amber-200/60 dark:border-amber-900/40 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-slate-50 to-amber-50/40 dark:from-slate-900/60 dark:to-amber-950/20 border-b">
+                  <div className="flex items-start justify-between flex-wrap gap-3">
+                    <div className="space-y-1">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <div className="h-9 w-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                          <ShieldCheck className="h-5 w-5 text-amber-600" />
+                        </div>
+                        Certificado de Inspeção Independente
+                      </CardTitle>
+                      <p className="text-[11px] text-muted-foreground pl-11 flex items-center gap-1.5">
+                        <Lock className="h-3 w-3" /> Documento técnico emitido por oficina parceira · selado e imutável
+                      </p>
+                    </div>
                     <div className="flex items-center gap-2">
-                      {report.recommendation && RECOMMENDATION_LABELS[report.recommendation] && (
-                        <Badge className={RECOMMENDATION_LABELS[report.recommendation].color}>
-                          {RECOMMENDATION_LABELS[report.recommendation].label}
+                      {effectiveRecommendation && RECOMMENDATION_LABELS[effectiveRecommendation] && (
+                        <Badge className={`${RECOMMENDATION_LABELS[effectiveRecommendation].color} text-xs px-3 py-1`}>
+                          {RECOMMENDATION_LABELS[effectiveRecommendation].label}
                         </Badge>
                       )}
                       <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="text-xs">
-                        <Download className="h-3.5 w-3.5 mr-1.5" /> Descarregar PDF
+                        <Download className="h-3.5 w-3.5 mr-1.5" /> PDF Oficial
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* LAYER 1: EXECUTIVE SUMMARY */}
-                  <div className="border border-border rounded-xl p-6 bg-muted/20">
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="h-1 w-6 bg-amber-500 rounded-full" />
-                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Resumo Executivo da Inspeção</p>
-                    </div>
-                    
-                    <div className="flex items-center justify-center gap-6 mb-6">
-                      <div className="text-center">
-                        <div className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 border-2 ${
-                          report.overall_score >= 80 ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20' :
-                          report.overall_score >= 60 ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20' :
-                          'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
-                        }`}>
-                          <ShieldCheck className={`h-7 w-7 ${report.overall_score >= 80 ? 'text-green-600' : report.overall_score >= 60 ? 'text-amber-600' : 'text-red-600'}`} />
-                          <span className={`text-4xl font-bold tracking-tight ${
-                            report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
-                            report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
-                            'text-red-700 dark:text-red-400'
-                          }`}>{(report.overall_score / 10).toFixed(1)}</span>
-                          <span className="text-lg text-muted-foreground font-medium">/10</span>
-                        </div>
-                        <p className="text-sm font-medium mt-3 text-foreground">
-                          {report.overall_score >= 80 ? 'Veículo em excelente estado geral' :
-                           report.overall_score >= 60 ? 'Estado aceitável — consultar detalhes técnicos' :
-                           'Necessita intervenção — análise detalhada recomendada'}
+                <CardContent className="space-y-5 pt-6">
+                  {/* PUBLIC ANTI-FACILITATION ALERT */}
+                  {recommendationOverride && (
+                    <div className="border-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 rounded-lg p-4 flex items-start gap-3">
+                      <ShieldAlert className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-sm text-red-800 dark:text-red-300">Atenção — incoerência detetada pelo sistema GarageFlow</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 leading-relaxed">
+                          A oficina classificou este veículo como recomendado, mas o checklist regista <strong>{criticalCount} componente{criticalCount > 1 ? "s" : ""} crítico{criticalCount > 1 ? "s" : ""} reprovado{criticalCount > 1 ? "s" : ""}</strong>. O sistema obriga a marcar como <strong>"Não recomendado"</strong> até justificação adicional. Reveja o relatório técnico antes de avançar.
                         </p>
                       </div>
                     </div>
+                  )}
+                  {hasCritical && !recommendationOverride && (
+                    <div className="border-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 rounded-lg p-4 flex items-start gap-3">
+                      <ShieldAlert className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-sm text-red-800 dark:text-red-300">Componentes críticos reprovados — leitura obrigatória</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 leading-relaxed">
+                          Este veículo apresenta <strong>{criticalCount} reprovação{criticalCount > 1 ? "ões" : ""} no checklist mecânico</strong>. Consulte o relatório técnico completo abaixo antes de qualquer decisão de compra.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
+                  {/* SCORE PANEL — refletindo coerência */}
+                  <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 items-center border rounded-xl p-5 bg-gradient-to-br from-background to-muted/30">
+                    <div className={`flex flex-col items-center justify-center w-full md:w-auto md:px-8 py-3 rounded-lg border-2 ${
+                      hasCritical ? 'border-red-300 bg-red-50/70 dark:border-red-800/60 dark:bg-red-950/20' :
+                      report.overall_score >= 80 ? 'border-green-300 bg-green-50/70 dark:border-green-800/60 dark:bg-green-950/20' :
+                      report.overall_score >= 60 ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/20' :
+                      'border-red-300 bg-red-50/70 dark:border-red-800/60 dark:bg-red-950/20'
+                    }`}>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-5xl font-bold tracking-tight ${
+                          hasCritical ? 'text-red-700 dark:text-red-400' :
+                          report.overall_score >= 80 ? 'text-green-700 dark:text-green-400' :
+                          report.overall_score >= 60 ? 'text-amber-700 dark:text-amber-400' :
+                          'text-red-700 dark:text-red-400'
+                        }`}>{(report.overall_score / 10).toFixed(1)}</span>
+                        <span className="text-base text-muted-foreground font-medium">/10</span>
+                      </div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">Score técnico</p>
+                    </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-background border text-center">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Nível de Risco</p>
-                        <p className={`font-bold text-sm ${report.overall_score >= 80 ? 'text-green-600' : report.overall_score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
-                          {report.overall_score >= 80 ? 'Baixo' : report.overall_score >= 60 ? 'Moderado' : 'Elevado'}
-                        </p>
+                      <div className="p-3 rounded-lg bg-background border">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Risco real</p>
+                        <p className={`font-bold text-sm ${realRiskColor}`}>{realRisk}</p>
                       </div>
-                      <div className="p-3 rounded-lg bg-background border text-center">
+                      <div className="p-3 rounded-lg bg-background border">
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Anomalias</p>
-                        <p className="font-bold text-sm">{report.defects?.length || 0} registada{(report.defects?.length || 0) !== 1 ? 's' : ''}</p>
+                        <p className={`font-bold text-sm ${totalAnomalies > 0 ? "text-amber-600" : ""}`}>{totalAnomalies} registada{totalAnomalies !== 1 ? "s" : ""}</p>
                       </div>
-                      <div className="p-3 rounded-lg bg-background border text-center">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Certificação</p>
-                        <p className="font-bold text-sm text-green-600 flex items-center justify-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Validado</p>
+                      <div className="p-3 rounded-lg bg-background border">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Reprovados</p>
+                        <p className={`font-bold text-sm ${criticalCount > 0 ? "text-red-600" : "text-green-600"}`}>{criticalCount} de {checklistEntries.length}</p>
                       </div>
                     </div>
                   </div>
 
+                  {/* Workshop credentials */}
                   {shopInfo && (
                     <div className="p-4 bg-muted/30 rounded-lg border">
                       <div className="flex items-center gap-3 mb-3">
@@ -584,7 +628,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         </div>
                         <div>
                           <p className="font-semibold text-sm">Inspeção realizada por <span className="text-amber-700 dark:text-amber-400">{shopInfo.name}</span></p>
-                          <p className="text-xs text-muted-foreground">Oficina parceira certificada GarageFlow</p>
+                          <p className="text-xs text-muted-foreground">Oficina parceira certificada GarageFlow · responsabilidade técnica</p>
                         </div>
                       </div>
                       <Separator className="my-3" />
@@ -608,43 +652,54 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     </div>
                   )}
 
-                  <div className="border rounded-lg">
-                    <button 
-                      onClick={() => {
-                        const el = document.getElementById('detailed-report');
-                        if (el) el.classList.toggle('hidden');
-                      }}
-                      className="w-full p-4 flex items-center justify-between hover:bg-muted/50 rounded-t-lg transition-colors"
-                    >
+                  {/* MECHANICAL CHECKLIST — sempre visível, ordenado por gravidade */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <div className="h-1 w-4 bg-primary rounded-full" /> Checklist Mecânico
+                      </h3>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> {conformCount} conformes</span>
+                        {problemCount > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> {problemCount} anomalias</span>}
+                        {criticalCount > 0 && <span className="flex items-center gap-1 font-semibold text-red-600"><span className="h-2 w-2 rounded-full bg-red-500" /> {criticalCount} reprovados</span>}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border overflow-hidden divide-y">
+                      {sortedChecklist.map(({ key, label, status }) => {
+                        const config = STATUS_ICON[status] || STATUS_ICON.ok;
+                        const Icon = config.icon;
+                        const sideColor = status === "critical" ? "bg-red-500" : status === "problems" ? "bg-amber-500" : "bg-green-500";
+                        return (
+                          <div key={key} className="flex items-stretch">
+                            <div className={`w-1 ${sideColor} flex-shrink-0`} />
+                            <div className="flex-1 flex items-center justify-between py-3 px-4 bg-background hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-medium text-sm">{label}</span>
+                                {status === "critical" && (
+                                  <Badge variant="outline" className="text-[9px] uppercase tracking-wider border-red-300 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-950/40">Segurança</Badge>
+                                )}
+                              </div>
+                              <div className={`flex items-center gap-1.5 ${config.color} text-xs font-semibold`}>
+                                <Icon className="h-4 w-4" />
+                                <span>{config.label}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* TECHNICAL DETAILS — collapsible (open by default if críticos) */}
+                  <details className="border rounded-lg group" open={hasCritical}>
+                    <summary className="w-full p-4 flex items-center justify-between hover:bg-muted/50 rounded-t-lg transition-colors cursor-pointer list-none">
                       <span className="text-sm font-semibold flex items-center gap-2">
                         <Eye className="h-4 w-4" /> Relatório Técnico Completo
                       </span>
-                      <span className="text-[11px] text-muted-foreground">Checklist mecânico · Documentação fotográfica · Anomalias · Certificação digital</span>
-                    </button>
+                      <span className="text-[11px] text-muted-foreground hidden sm:inline">Documentação fotográfica · Anomalias · Certificação digital</span>
+                    </summary>
 
-                    <div id="detailed-report" className="hidden border-t p-5 space-y-6">
-                      <div>
-                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
-                          <div className="h-1 w-4 bg-primary rounded-full" /> Checklist de Inspeção Mecânica
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
-                            const status = report[key] || 'ok';
-                            const config = STATUS_ICON[status] || STATUS_ICON.ok;
-                            const Icon = config.icon;
-                            return (
-                              <div key={key} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
-                                <span className="font-medium text-sm">{label}</span>
-                                <div className={`flex items-center gap-1.5 ${config.color}`}>
-                                  <Icon className="h-4 w-4" />
-                                  <span className="text-xs font-semibold">{config.label}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
+                    <div className="border-t p-5 space-y-6">
                       {report.defects.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
@@ -740,10 +795,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </details>
                 </CardContent>
               </Card>
-            )}
+              );
+            })()}
 
             {/* Shop reviews */}
             {report?.shop_id && (

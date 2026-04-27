@@ -1025,42 +1025,54 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               </CardContent>
             </Card>
 
-            {/* Chat — ONLY active when escrow is paid */}
-            {isChatActive ? (
-              <CarityChat
-                listingId={id!}
-                sellerId={listing.seller_id}
-                listingPrice={listing.price}
-                listingLabel={`${listing.make} ${listing.model}`}
-                currentUserId={currentUserId}
-              />
-            ) : (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-6 space-y-3">
-                    <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground/30" />
-                    <div>
-                      <p className="font-medium text-sm">Chat indisponível</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {escrow?.status === "released" || escrow?.status === "refunded"
-                          ? "Esta transação foi concluída."
-                          : "O chat é ativado automaticamente após o pagamento em escrow."}
-                      </p>
-                    </div>
-                    {!escrow && !currentUserId && (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/market/auth?mode=login&redirect=/market/car/${id}`}>
-                          Entrar para comprar
-                        </Link>
-                      </Button>
+            {/* Communication & Alerts — unified tabs (no overlap, professional) */}
+            <Card>
+              <CardContent className="pt-5">
+                <Tabs defaultValue={isChatActive ? "chat" : "alerts"} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 h-9">
+                    <TabsTrigger value="chat" className="text-xs gap-1.5">
+                      <MessageCircle className="h-3.5 w-3.5" /> Mensagens
+                    </TabsTrigger>
+                    <TabsTrigger value="alerts" className="text-xs gap-1.5">
+                      <BellRing className="h-3.5 w-3.5" /> Alertas
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="chat" className="mt-4">
+                    {isChatActive ? (
+                      <CarityChat
+                        listingId={id!}
+                        sellerId={listing.seller_id}
+                        listingPrice={listing.price}
+                        listingLabel={`${listing.make} ${listing.model}`}
+                        currentUserId={currentUserId}
+                      />
+                    ) : (
+                      <div className="text-center py-8 space-y-3 border rounded-lg bg-muted/20">
+                        <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground/30" />
+                        <div>
+                          <p className="font-medium text-sm">Chat indisponível</p>
+                          <p className="text-xs text-muted-foreground mt-1 px-4">
+                            {escrow?.status === "released" || escrow?.status === "refunded"
+                              ? "Esta transação foi concluída."
+                              : "O chat é ativado automaticamente após o pagamento em escrow para proteger ambas as partes."}
+                          </p>
+                        </div>
+                        {!escrow && !currentUserId && (
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/market/auth?mode=login&redirect=/market/car/${id}`}>
+                              Entrar para comprar
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Listing alert subscription */}
-            <MarketAlertSubscribe make={listing.make} model={listing.model} maxPrice={listing.price} />
+                  </TabsContent>
+                  <TabsContent value="alerts" className="mt-4">
+                    <MarketAlertSubscribe make={listing.make} model={listing.model} maxPrice={listing.price} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
         </div>
 

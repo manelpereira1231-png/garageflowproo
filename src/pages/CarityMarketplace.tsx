@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp, Heart } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Search, ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowRight, CheckCircle, Eye, Wrench, MapPin, FileCheck, TrendingUp, Heart, SlidersHorizontal, X, RotateCcw, Sparkles } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatRelativePT } from "@/lib/relativeTime";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
@@ -20,6 +23,14 @@ const FUEL_LABELS: Record<string, string> = {
   'Elétrico': 'Elétrico',
   'GPL': 'GPL',
 };
+
+const CURRENT_YEAR = new Date().getFullYear();
+const PRICE_MIN = 0;
+const PRICE_MAX = 100000;
+const YEAR_MIN = 1990;
+const YEAR_MAX = CURRENT_YEAR;
+const KM_MIN = 0;
+const KM_MAX = 400000;
 
 interface Listing {
   id: string;
@@ -36,6 +47,7 @@ interface Listing {
   published_at: string | null;
   boost_active?: boolean;
   shop_id: string | null;
+  location_label?: string | null;
   shop_name?: string;
   shop_location?: string;
   inspection_score?: number | null;
@@ -53,10 +65,24 @@ export default function CarityMarketplace() {
   const { t } = useLanguage();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
   const [search, setSearch] = useState("");
+  const [makeFilter, setMakeFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
   const [fuelFilter, setFuelFilter] = useState("all");
+  const [priceRange, setPriceRange] = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
+  const [yearRange, setYearRange] = useState<[number, number]>([YEAR_MIN, YEAR_MAX]);
+  const [kmRange, setKmRange] = useState<[number, number]>([KM_MIN, KM_MAX]);
+  const [minScore, setMinScore] = useState<number>(0);
+  const [inspectionStatus, setInspectionStatus] = useState<"all" | "approved" | "reserved">("all");
+  const [certifiedOnly, setCertifiedOnly] = useState<boolean>(true); // ON by default
+  const [freshness, setFreshness] = useState<"any" | "7d" | "30d">("any");
   const [sortBy, setSortBy] = useState("recent");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [stats, setStats] = useState<RealStats>({ totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
+
 
   const loadAll = useCallback(async () => {
     // Load visible listings + headline stats in parallel so the Market opens faster.

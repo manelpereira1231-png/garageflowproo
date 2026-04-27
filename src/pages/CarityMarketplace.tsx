@@ -391,134 +391,236 @@ export default function CarityMarketplace() {
 
       {/* Listings */}
       <section id="listings" className="max-w-7xl mx-auto px-4 py-8">
+        {/* Top bar: search + sort + mobile filter trigger */}
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder={t('market.filters.searchPh')} value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+            <Input
+              placeholder="Pesquisar marca, modelo, versão…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10 h-11"
+            />
           </div>
-          <Select value={fuelFilter} onValueChange={setFuelFilter}>
-            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder={t('market.filters.fuel')} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('market.filters.all')}</SelectItem>
-              {Object.entries(FUEL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-44"><SelectValue placeholder={t('market.filters.sort')} /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-56 h-11">
+              <SelectValue placeholder="Ordenar" />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">{t('market.filters.recent')}</SelectItem>
-              <SelectItem value="price_asc">{t('market.filters.priceAsc')}</SelectItem>
-              <SelectItem value="price_desc">{t('market.filters.priceDesc')}</SelectItem>
-              <SelectItem value="year">{t('market.filters.year')}</SelectItem>
-              <SelectItem value="mileage">{t('market.filters.mileage')}</SelectItem>
+              <SelectItem value="recent">Mais recentes</SelectItem>
+              <SelectItem value="price_asc">Preço: menor primeiro</SelectItem>
+              <SelectItem value="price_desc">Preço: maior primeiro</SelectItem>
+              <SelectItem value="score_desc">Melhor score técnico</SelectItem>
+              <SelectItem value="mileage_asc">Menor quilometragem</SelectItem>
+              <SelectItem value="year">Mais novos</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Mobile filter trigger */}
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="lg:hidden h-11 gap-2 relative">
+                <SlidersHorizontal className="h-4 w-4" />
+                Filtros
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-1 h-5 min-w-5 px-1.5 bg-amber-500 text-slate-900 hover:bg-amber-500">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader className="mb-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" /> Filtros
+                </SheetTitle>
+              </SheetHeader>
+              <FiltersBody
+                makeFilter={makeFilter} setMakeFilter={setMakeFilter} availableMakes={availableMakes}
+                cityFilter={cityFilter} setCityFilter={setCityFilter} availableCities={availableCities}
+                fuelFilter={fuelFilter} setFuelFilter={setFuelFilter}
+                priceRange={priceRange} setPriceRange={setPriceRange}
+                yearRange={yearRange} setYearRange={setYearRange}
+                kmRange={kmRange} setKmRange={setKmRange}
+                minScore={minScore} setMinScore={setMinScore}
+                inspectionStatus={inspectionStatus} setInspectionStatus={setInspectionStatus}
+                certifiedOnly={certifiedOnly} setCertifiedOnly={setCertifiedOnly}
+                freshness={freshness} setFreshness={setFreshness}
+                formatPrice={formatPrice}
+                onReset={resetFilters}
+                onApply={() => setFiltersOpen(false)}
+                resultCount={filtered.length}
+                isMobile
+              />
+            </SheetContent>
+          </Sheet>
         </div>
 
-        {loading ? (
-          <MarketListingGridSkeleton count={6} />
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{t('market.empty.title')}</h3>
-            <p className="text-muted-foreground mb-6">
-              {listings.length === 0
-                ? t('market.empty.firstSeller')
-                : t('market.empty.noResults')}
-            </p>
-            <Link to="/market/sell">
-              <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
-                {t('market.hero.ctaSell')} <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map(listing => (
-              <Link key={listing.id} to={listingUrl(listing)} className="block">
-                <Card className="overflow-hidden cursor-pointer group border border-border/60 rounded-xl shadow-premium-sm hover:shadow-premium-lg hover:border-border hover:-translate-y-1 transition-all duration-300">
-                  <div className="aspect-[16/10] bg-muted relative overflow-hidden">
-                    {listing.photos[0] ? (
-                      <img src={listing.photos[0] as string} alt={`${listing.make} ${listing.model} ${listing.year}`} className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out" loading="lazy" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"><Car className="h-12 w-12 text-muted-foreground/20" /></div>
-                    )}
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <Badge className="bg-white/95 text-slate-800 border-0 shadow-md text-[11px] font-semibold backdrop-blur-md">
-                        <ShieldCheck className="h-3 w-3 mr-1 text-green-600" /> Inspecionado
-                      </Badge>
-                    </div>
-                    {listing.inspection_score != null && (
-                      <div className={`absolute top-3 right-3 h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shadow-lg ring-2 ring-white/40 ${
-                        listing.inspection_score >= 80 ? 'bg-gradient-to-br from-green-500 to-green-600 text-white' :
-                        listing.inspection_score >= 60 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white' :
-                        'bg-gradient-to-br from-red-500 to-red-600 text-white'
-                      }`}>
-                        {(listing.inspection_score / 10).toFixed(1)}
-                      </div>
-                    )}
-                    {listing.boost_active && (
-                      <Badge className="absolute bottom-3 left-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white border-0 backdrop-blur-sm text-[10px] shadow-md">{t('market.badge.featured')}</Badge>
-                    )}
-                    {/* Price overlay */}
-                    <div className="absolute bottom-3 right-3">
-                      <span className="bg-white/95 backdrop-blur-md text-slate-900 font-bold text-lg px-3.5 py-1.5 rounded-lg shadow-lg tabular-nums">
-                        {formatPrice(listing.price)}
-                      </span>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-bold text-base leading-tight tracking-tight">{listing.make} {listing.model}</h3>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5">
-                          <span className="tabular-nums">{listing.year}</span>
-                          <span className="text-muted-foreground/40">·</span>
-                          <span className="tabular-nums">{listing.mileage.toLocaleString()} km</span>
-                          <span className="text-muted-foreground/40">·</span>
-                          <span>{listing.fuel}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          {/* Desktop sidebar */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-4 border rounded-xl p-5 bg-card shadow-premium-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold flex items-center gap-2 text-sm">
+                  <SlidersHorizontal className="h-4 w-4 text-amber-500" /> Filtros
+                  {activeFilterCount > 0 && (
+                    <Badge variant="outline" className="ml-1 text-[10px] h-5 px-1.5">{activeFilterCount}</Badge>
+                  )}
+                </h3>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 text-xs gap-1 text-muted-foreground">
+                    <RotateCcw className="h-3 w-3" /> Limpar
+                  </Button>
+                )}
+              </div>
+              <FiltersBody
+                makeFilter={makeFilter} setMakeFilter={setMakeFilter} availableMakes={availableMakes}
+                cityFilter={cityFilter} setCityFilter={setCityFilter} availableCities={availableCities}
+                fuelFilter={fuelFilter} setFuelFilter={setFuelFilter}
+                priceRange={priceRange} setPriceRange={setPriceRange}
+                yearRange={yearRange} setYearRange={setYearRange}
+                kmRange={kmRange} setKmRange={setKmRange}
+                minScore={minScore} setMinScore={setMinScore}
+                inspectionStatus={inspectionStatus} setInspectionStatus={setInspectionStatus}
+                certifiedOnly={certifiedOnly} setCertifiedOnly={setCertifiedOnly}
+                freshness={freshness} setFreshness={setFreshness}
+                formatPrice={formatPrice}
+                onReset={resetFilters}
+                onApply={() => {}}
+                resultCount={filtered.length}
+              />
+            </div>
+          </aside>
+
+          {/* Results */}
+          <div>
+            {/* Result counter + active chips */}
+            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+              <span className="text-muted-foreground">
+                <strong className="text-foreground tabular-nums">{filtered.length}</strong> {filtered.length === 1 ? "carro encontrado" : "carros encontrados"}
+              </span>
+              {certifiedOnly && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 gap-1">
+                  <ShieldCheck className="h-3 w-3" /> Apenas certificados
+                  <button onClick={() => setCertifiedOnly(false)} className="ml-1 hover:bg-green-100 dark:hover:bg-green-900/40 rounded p-0.5"><X className="h-3 w-3" /></button>
+                </Badge>
+              )}
+            </div>
+
+            {loading ? (
+              <MarketListingGridSkeleton count={6} />
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-20 border rounded-xl bg-muted/20">
+                <Car className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">{t('market.empty.title')}</h3>
+                <p className="text-muted-foreground mb-6 px-4">
+                  {listings.length === 0
+                    ? t('market.empty.firstSeller')
+                    : "Nenhum carro corresponde aos filtros atuais. Experimente alargar os critérios."}
+                </p>
+                {listings.length > 0 ? (
+                  <Button variant="outline" onClick={resetFilters} className="gap-2">
+                    <RotateCcw className="h-4 w-4" /> Limpar filtros
+                  </Button>
+                ) : (
+                  <Link to="/market/sell">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold">
+                      {t('market.hero.ctaSell')} <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filtered.map(listing => {
+                  const days = listing.published_at ? Math.floor((Date.now() - new Date(listing.published_at).getTime()) / 86400000) : 9999;
+                  const isNew = days <= 3;
+                  const inspBadge =
+                    listing.inspection_recommendation === "recommended" ? { label: "Aprovado", color: "bg-green-600 text-white" } :
+                    listing.inspection_recommendation === "acceptable" ? { label: "Com observações", color: "bg-amber-500 text-slate-900" } :
+                    listing.inspection_recommendation === "not_recommended" ? { label: "Reprovado", color: "bg-red-600 text-white" } :
+                    null;
+                  return (
+                    <Link key={listing.id} to={listingUrl(listing)} className="block">
+                      <Card className="overflow-hidden cursor-pointer group border border-border/60 rounded-xl shadow-premium-sm hover:shadow-premium-lg hover:border-border hover:-translate-y-1 transition-all duration-300">
+                        <div className="aspect-[16/10] bg-muted relative overflow-hidden">
+                          {listing.photos[0] ? (
+                            <img src={listing.photos[0] as string} alt={`${listing.make} ${listing.model} ${listing.year}`} className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out" loading="lazy" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"><Car className="h-12 w-12 text-muted-foreground/20" /></div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                            {inspBadge && (
+                              <Badge className={`${inspBadge.color} border-0 shadow-md text-[10px] font-bold uppercase tracking-wider backdrop-blur-md`}>
+                                <ShieldCheck className="h-3 w-3 mr-1" /> {inspBadge.label}
+                              </Badge>
+                            )}
+                            {isNew && (
+                              <Badge className="bg-amber-400 text-slate-900 border-0 shadow-md text-[10px] font-bold uppercase tracking-wider backdrop-blur-md gap-1">
+                                <Sparkles className="h-2.5 w-2.5" /> Novo
+                              </Badge>
+                            )}
+                          </div>
+                          {listing.inspection_score != null && (
+                            <div className={`absolute top-3 right-3 h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shadow-lg ring-2 ring-white/40 ${
+                              listing.inspection_score >= 80 ? 'bg-gradient-to-br from-green-500 to-green-600 text-white' :
+                              listing.inspection_score >= 60 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white' :
+                              'bg-gradient-to-br from-red-500 to-red-600 text-white'
+                            }`}>
+                              {(listing.inspection_score / 10).toFixed(1)}
+                            </div>
+                          )}
+                          {listing.boost_active && (
+                            <Badge className="absolute bottom-3 left-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white border-0 backdrop-blur-sm text-[10px] shadow-md">{t('market.badge.featured')}</Badge>
+                          )}
+                          <div className="absolute bottom-3 right-3">
+                            <span className="bg-white/95 backdrop-blur-md text-slate-900 font-bold text-lg px-3.5 py-1.5 rounded-lg shadow-lg tabular-nums">
+                              {formatPrice(listing.price)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    {/* Estado geral */}
-                    {listing.inspection_score != null && (
-                      <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 ${
-                        listing.inspection_score >= 80 ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
-                        listing.inspection_score >= 60 ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
-                        'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                      }`}>
-                        <CheckCircle className="h-3 w-3" />
-                        {listing.inspection_score >= 80 ? 'Excelente estado mecânico' :
-                         listing.inspection_score >= 60 ? 'Bom estado geral' :
-                         'Necessita intervenção'}
-                      </div>
-                    )}
-                    {/* Oficina */}
-                    {listing.shop_name && (
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
-                        <Wrench className="h-3 w-3 text-slate-400" />
-                        {t('market.fav.inspectedBy')} <span className="font-medium text-foreground">{listing.shop_name}</span>
-                      </p>
-                    )}
-                    {/* Publicado relativa */}
-                    {listing.published_at && (() => {
-                      const days = Math.floor((Date.now() - new Date(listing.published_at!).getTime()) / 86400000);
-                      const isFresh = days <= 3;
-                      return (
-                        <p className={`text-[11px] ${isFresh ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
-                          Publicado {formatRelativePT(listing.published_at)}
-                        </p>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h3 className="font-bold text-base leading-tight tracking-tight">{listing.make} {listing.model}</h3>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5">
+                                <span className="tabular-nums">{listing.year}</span>
+                                <span className="text-muted-foreground/40">·</span>
+                                <span className="tabular-nums">{listing.mileage.toLocaleString()} km</span>
+                                <span className="text-muted-foreground/40">·</span>
+                                <span>{listing.fuel}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {(listing.location_label || listing.shop_location) && (
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
+                              <MapPin className="h-3 w-3 text-slate-400" />
+                              {(listing.location_label || listing.shop_location)?.split(",")[0]}
+                            </p>
+                          )}
+                          {listing.shop_name && (
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
+                              <Wrench className="h-3 w-3 text-slate-400" />
+                              {t('market.fav.inspectedBy')} <span className="font-medium text-foreground">{listing.shop_name}</span>
+                            </p>
+                          )}
+                          {listing.published_at && (
+                            <p className={`text-[11px] ${isNew ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
+                              Publicado {formatRelativePT(listing.published_at)}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </section>
+
 
       {/* SEO Internal Linking: Marcas, Cidades, Faixas de preço */}
       <section className="py-12 bg-muted/20 border-t">

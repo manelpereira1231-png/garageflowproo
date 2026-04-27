@@ -815,7 +815,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card className="sticky top-4">
+            <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{formatMarketPrice(listing.price)}</p>

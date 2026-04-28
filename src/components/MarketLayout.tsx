@@ -8,13 +8,14 @@ import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner"
 import LegalFooter from "@/components/LegalFooter";
 import ThemeToggle from "@/components/ThemeToggle";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const NAV_ITEMS = [
-  { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
-  { path: "/market/my-listings", label: "Anúncios", icon: Car },
-  { path: "/market/purchases", label: "Compras", icon: CreditCard },
-  { path: "/market/messages", label: "Mensagens", icon: MessageCircle },
-  { path: "/market/profile", label: "Perfil", icon: User },
+const NAV_ITEM_DEFS = [
+  { path: "/market/dashboard", labelKey: "market.nav.dashboard", icon: LayoutDashboard },
+  { path: "/market/my-listings", labelKey: "market.nav.listings", icon: Car },
+  { path: "/market/purchases", labelKey: "market.nav.purchases", icon: CreditCard },
+  { path: "/market/messages", labelKey: "market.nav.messages", icon: MessageCircle },
+  { path: "/market/profile", labelKey: "market.nav.profile", icon: User },
 ];
 
 // Context to detect when MarketLayout is already mounted higher up.
@@ -33,6 +34,8 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useMarketT();
+  const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
 
   // If another MarketLayout is already mounted above (router-level), this
   // instance becomes a transparent passthrough — keeps page-level `<MarketLayout>`
@@ -44,7 +47,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
     await supabase.auth.signOut();
-    toast.success("Sessão terminada");
+    toast.success(t("market.toast.signedOut"));
     navigate("/market");
   };
 
@@ -87,7 +90,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               })}
               <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
                 <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
-                  <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
+                  <Plus className="h-4 w-4 mr-1" /> {t("market.nav.newListing")}
                 </Button>
               </Link>
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
@@ -120,11 +123,11 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               })}
               <Link to="/market/sell" onClick={() => setMobileOpen(false)}>
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-amber-400 font-semibold hover:bg-amber-400/10 transition-colors">
-                  <Plus className="h-4 w-4" /> Novo Anúncio
+                  <Plus className="h-4 w-4" /> {t("market.nav.newListing")}
                 </div>
               </Link>
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] w-full text-left transition-colors">
-                <LogOut className="h-4 w-4" /> Sair
+                <LogOut className="h-4 w-4" /> {t("market.nav.logout")}
               </button>
             </div>
           )}

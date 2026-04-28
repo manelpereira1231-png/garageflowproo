@@ -90,7 +90,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               })}
               <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
                 <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
-                  <Plus className="h-4 w-4 mr-1" /> Novo Anúncio
+                  <Plus className="h-4 w-4 mr-1" /> {t("market.nav.newListing")}
                 </Button>
               </Link>
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
@@ -123,11 +123,11 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               })}
               <Link to="/market/sell" onClick={() => setMobileOpen(false)}>
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-amber-400 font-semibold hover:bg-amber-400/10 transition-colors">
-                  <Plus className="h-4 w-4" /> Novo Anúncio
+                  <Plus className="h-4 w-4" /> {t("market.nav.newListing")}
                 </div>
               </Link>
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] w-full text-left transition-colors">
-                <LogOut className="h-4 w-4" /> Sair
+                <LogOut className="h-4 w-4" /> {t("market.nav.logout")}
               </button>
             </div>
           )}

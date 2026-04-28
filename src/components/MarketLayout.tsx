@@ -8,13 +8,14 @@ import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner"
 import LegalFooter from "@/components/LegalFooter";
 import ThemeToggle from "@/components/ThemeToggle";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const NAV_ITEMS = [
-  { path: "/market/dashboard", label: "Painel", icon: LayoutDashboard },
-  { path: "/market/my-listings", label: "Anúncios", icon: Car },
-  { path: "/market/purchases", label: "Compras", icon: CreditCard },
-  { path: "/market/messages", label: "Mensagens", icon: MessageCircle },
-  { path: "/market/profile", label: "Perfil", icon: User },
+const NAV_ITEM_DEFS = [
+  { path: "/market/dashboard", labelKey: "market.nav.dashboard", icon: LayoutDashboard },
+  { path: "/market/my-listings", labelKey: "market.nav.listings", icon: Car },
+  { path: "/market/purchases", labelKey: "market.nav.purchases", icon: CreditCard },
+  { path: "/market/messages", labelKey: "market.nav.messages", icon: MessageCircle },
+  { path: "/market/profile", labelKey: "market.nav.profile", icon: User },
 ];
 
 // Context to detect when MarketLayout is already mounted higher up.
@@ -33,6 +34,8 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useMarketT();
+  const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
 
   // If another MarketLayout is already mounted above (router-level), this
   // instance becomes a transparent passthrough — keeps page-level `<MarketLayout>`
@@ -44,7 +47,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
     await supabase.auth.signOut();
-    toast.success("Sessão terminada");
+    toast.success(t("market.toast.signedOut"));
     navigate("/market");
   };
 

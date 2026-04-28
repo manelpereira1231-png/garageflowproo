@@ -255,7 +255,7 @@ export function useMarketT() {
       key;
     if (!vars) return raw;
     return Object.keys(vars).reduce(
-      (acc, k) => acc.replaceAll(`{${k}}`, String(vars[k])),
+      (acc, k) => acc.split(`{${k}}`).join(String(vars[k])),
       raw,
     );
   };

@@ -84,7 +84,7 @@ export default function MarketMessages() {
       const photos = listing?.photos ? (Array.isArray(listing.photos) ? listing.photos : []) : [];
       return {
         ...c,
-        listingTitle: listing ? `${listing.make} ${listing.model} (${listing.year})` : "Veículo",
+        listingTitle: listing ? `${listing.make} ${listing.model} (${listing.year})` : t("msg.vehicle"),
         listingPhoto: photos[0] || null,
       };
     });

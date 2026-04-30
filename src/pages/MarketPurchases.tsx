@@ -13,6 +13,7 @@ import { Car, Clock, CheckCircle, XCircle, ShieldCheck, CreditCard, AlertTriangl
 import MarketLayout from "@/components/MarketLayout";
 import { toast } from "sonner";
 import { formatMarketPriceExact, getMarketLocale } from "@/lib/marketPrice";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pagamento pendente", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },

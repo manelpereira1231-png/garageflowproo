@@ -121,7 +121,7 @@ export default function MarketProfile() {
 
   return (
     <MarketLayout>
-      <h1 className="text-2xl font-bold mb-6">O Meu Perfil</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("profile.title")}</h1>
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Profile form */}
@@ -130,39 +130,39 @@ export default function MarketProfile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Dados Pessoais
+                {t("profile.personal")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Email</Label>
+                <Label>{t("profile.email")}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{email}</span>
                 </div>
               </div>
               <div>
-                <Label htmlFor="name">Nome</Label>
-                <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="O seu nome" />
+                <Label htmlFor="name">{t("profile.name")}</Label>
+                <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder={t("profile.namePh")} />
               </div>
               <div>
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone">{t("profile.phone")}</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+351..." className="pl-9" />
                 </div>
               </div>
               <div>
-                <Label htmlFor="location">Localização</Label>
+                <Label htmlFor="location">{t("profile.location")}</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="Cidade, Distrito" className="pl-9" />
+                  <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder={t("profile.locationPh")} className="pl-9" />
                 </div>
               </div>
 
               <Button onClick={handleSave} disabled={saving} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                Guardar
+                {t("profile.save")}
               </Button>
             </CardContent>
           </Card>
@@ -173,25 +173,25 @@ export default function MarketProfile() {
           <Card>
             <CardContent className="pt-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Estado</span>
+                <span className="text-sm font-medium">{t("profile.status")}</span>
                 {verified ? (
                   <Badge className="bg-green-100 text-green-800">
-                    <ShieldCheck className="h-3 w-3 mr-1" /> Verificado
+                    <ShieldCheck className="h-3 w-3 mr-1" /> {t("profile.verified")}
                   </Badge>
                 ) : (
-                  <Badge variant="outline">Não verificado</Badge>
+                  <Badge variant="outline">{t("profile.notVerified")}</Badge>
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Anúncios criados</span>
+                <span className="text-sm text-muted-foreground">{t("profile.listingsCount")}</span>
                 <span className="font-semibold">{stats.listings}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Vendidos</span>
+                <span className="text-sm text-muted-foreground">{t("profile.soldCount")}</span>
                 <span className="font-semibold">{stats.sold}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Inspeções concluídas</span>
+                <span className="text-sm text-muted-foreground">{t("profile.inspCount")}</span>
                 <span className="font-semibold">{stats.inspections}</span>
               </div>
             </CardContent>
@@ -200,7 +200,7 @@ export default function MarketProfile() {
           <Card className="bg-muted/30">
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">
-                A verificação do perfil é automática após a primeira inspeção aprovada com sucesso.
+                {t("profile.verifyNote")}
               </p>
             </CardContent>
           </Card>

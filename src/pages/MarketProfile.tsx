@@ -12,6 +12,7 @@ import MarketLayout from "@/components/MarketLayout";
 import { useMarketT } from "@/i18n/marketTranslations";
 
 export default function MarketProfile() {
+  const t = useMarketT();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

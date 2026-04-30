@@ -22,6 +22,7 @@ interface Conversation {
 }
 
 export default function MarketMessages() {
+  const t = useMarketT();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);

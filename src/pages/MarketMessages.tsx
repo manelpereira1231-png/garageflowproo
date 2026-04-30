@@ -106,12 +106,12 @@ export default function MarketMessages() {
 
   return (
     <MarketLayout>
-      <h1 className="text-2xl font-bold mb-6">Mensagens</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("msg.title")}</h1>
 
       {activeConvo && userId ? (
         <div>
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setActiveConvo(null)}>
-            ← Voltar às conversas
+            {t("msg.back")}
           </Button>
           <Card>
             <CardContent className="p-0">

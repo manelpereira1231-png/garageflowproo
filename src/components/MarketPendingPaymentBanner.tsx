@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 /**
  * Banner global que aparece no topo do Market quando o utilizador autenticado
  * tem pelo menos uma compra com status "pending" (pagamento não concluído).
- * Permite auto-recovery em qualquer página do Market.
  */
 export default function MarketPendingPaymentBanner() {
+  const t = useMarketT();
   const [pendingCount, setPendingCount] = useState(0);
   const [dismissed, setDismissed] = useState(false);
 
@@ -29,7 +30,6 @@ export default function MarketPendingPaymentBanner() {
     };
 
     check();
-    // Re-check em cada navegação ou regresso ao tab
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
 
@@ -48,8 +48,8 @@ export default function MarketPendingPaymentBanner() {
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span className="truncate">
             {pendingCount === 1
-              ? "Tem 1 pagamento pendente — conclua para garantir o veículo."
-              : `Tem ${pendingCount} pagamentos pendentes — conclua para garantir os veículos.`}
+              ? t("banner.pendingOne")
+              : t("banner.pendingMany", { n: pendingCount })}
           </span>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -57,12 +57,12 @@ export default function MarketPendingPaymentBanner() {
             to="/market/purchases"
             className="inline-flex items-center gap-1 bg-slate-900 text-amber-400 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-800"
           >
-            Concluir <ArrowRight className="h-3 w-3" />
+            {t("banner.finish")} <ArrowRight className="h-3 w-3" />
           </Link>
           <button
             onClick={() => setDismissed(true)}
             className="p-1 hover:bg-amber-600/40 rounded"
-            aria-label="Fechar"
+            aria-label={t("banner.close")}
           >
             <X className="h-4 w-4" />
           </button>

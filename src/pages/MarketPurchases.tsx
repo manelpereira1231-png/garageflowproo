@@ -88,11 +88,11 @@ export default function MarketPurchases() {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (!data?.url) throw new Error("Não foi possível abrir o pagamento");
+      if (!data?.url) throw new Error(t("pur.toast.openErr"));
 
       window.location.href = data.url;
     } catch (err: any) {
-      toast.error(err.message || "Erro ao retomar pagamento");
+      toast.error(err.message || t("pur.toast.resumeErr"));
       setActionLoading(null);
     }
   };

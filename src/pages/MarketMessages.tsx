@@ -135,8 +135,8 @@ export default function MarketMessages() {
         <Card>
           <CardContent className="py-12 text-center">
             <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="font-semibold mb-2">Sem mensagens</h3>
-            <p className="text-muted-foreground">As conversas com compradores/vendedores aparecerão aqui.</p>
+            <h3 className="font-semibold mb-2">{t("msg.empty.title")}</h3>
+            <p className="text-muted-foreground">{t("msg.empty.desc")}</p>
           </CardContent>
         </Card>
       ) : (

@@ -117,9 +117,9 @@ export default function MarketWallet() {
   };
 
   const statusBadge = (status: string) => {
-    if (status === "paid") return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1"><CheckCircle className="h-3 w-3" />Pago</Badge>;
-    if (status === "pending") return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 gap-1"><Clock className="h-3 w-3" />Em análise</Badge>;
-    if (status === "rejected") return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Rejeitado</Badge>;
+    if (status === "paid") return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1"><CheckCircle className="h-3 w-3" />{t("wallet.status.paid")}</Badge>;
+    if (status === "pending") return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 gap-1"><Clock className="h-3 w-3" />{t("wallet.status.pending")}</Badge>;
+    if (status === "rejected") return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />{t("wallet.status.rejected")}</Badge>;
     return <Badge variant="outline">{status}</Badge>;
   };
 

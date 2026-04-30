@@ -64,6 +64,7 @@ interface RealStats {
 export default function CarityMarketplace() {
   const { pricing, formatPrice } = useCountryPricing();
   const { t } = useLanguage();
+  const mt = useMarketT();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -41,6 +41,7 @@ interface Purchase {
 }
 
 export default function MarketPurchases() {
+  const t = useMarketT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -49,9 +50,10 @@ export default function MarketPurchases() {
 
   useEffect(() => {
     if (searchParams.get("escrow") === "cancelled") {
-      toast.info("Pagamento cancelado. Pode retomar a qualquer momento.");
+      toast.info(t("pur.toast.cancelled"));
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const load = async () => {

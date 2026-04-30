@@ -423,7 +423,7 @@ export default function CarityMarketplace() {
             <SheetTrigger asChild>
               <Button variant="outline" className="lg:hidden h-11 gap-2 relative">
                 <SlidersHorizontal className="h-4 w-4" />
-                Filtros
+                {mt("mkt.filters")}
                 {activeFilterCount > 0 && (
                   <Badge className="ml-1 h-5 min-w-5 px-1.5 bg-amber-500 text-slate-900 hover:bg-amber-500">
                     {activeFilterCount}

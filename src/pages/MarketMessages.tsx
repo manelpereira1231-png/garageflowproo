@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import MarketLayout from "@/components/MarketLayout";
 import CarityChat from "@/components/CarityChat";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface Conversation {
   listingId: string;
@@ -21,6 +22,7 @@ interface Conversation {
 }
 
 export default function MarketMessages() {
+  const t = useMarketT();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function MarketMessages() {
       const photos = listing?.photos ? (Array.isArray(listing.photos) ? listing.photos : []) : [];
       return {
         ...c,
-        listingTitle: listing ? `${listing.make} ${listing.model} (${listing.year})` : "Veículo",
+        listingTitle: listing ? `${listing.make} ${listing.model} (${listing.year})` : t("msg.vehicle"),
         listingPhoto: photos[0] || null,
       };
     });
@@ -104,12 +106,12 @@ export default function MarketMessages() {
 
   return (
     <MarketLayout>
-      <h1 className="text-2xl font-bold mb-6">Mensagens</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("msg.title")}</h1>
 
       {activeConvo && userId ? (
         <div>
           <Button variant="ghost" size="sm" className="mb-4" onClick={() => setActiveConvo(null)}>
-            ← Voltar às conversas
+            {t("msg.back")}
           </Button>
           <Card>
             <CardContent className="p-0">
@@ -133,8 +135,8 @@ export default function MarketMessages() {
         <Card>
           <CardContent className="py-12 text-center">
             <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="font-semibold mb-2">Sem mensagens</h3>
-            <p className="text-muted-foreground">As conversas com compradores/vendedores aparecerão aqui.</p>
+            <h3 className="font-semibold mb-2">{t("msg.empty.title")}</h3>
+            <p className="text-muted-foreground">{t("msg.empty.desc")}</p>
           </CardContent>
         </Card>
       ) : (

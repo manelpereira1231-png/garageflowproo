@@ -70,7 +70,7 @@ export default function MarketPurchases() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error("Erro ao carregar compras");
+      toast.error(t("pur.toast.loadErr"));
       setLoading(false);
       return;
     }

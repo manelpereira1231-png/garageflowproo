@@ -107,10 +107,10 @@ export default function MarketPurchases() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Compra cancelada");
+      toast.success(t("pur.toast.cancelOk"));
       await load();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao cancelar");
+      toast.error(err.message || t("pur.toast.cancelErr"));
     } finally {
       setActionLoading(null);
     }

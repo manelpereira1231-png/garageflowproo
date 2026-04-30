@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { User, Phone, MapPin, Mail, ShieldCheck, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import MarketLayout from "@/components/MarketLayout";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 export default function MarketProfile() {
   const navigate = useNavigate();

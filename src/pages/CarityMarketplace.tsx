@@ -398,7 +398,7 @@ export default function CarityMarketplace() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Pesquisar marca, modelo, versão…"
+              placeholder={mt("mkt.searchPh")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-10 h-11"
@@ -406,15 +406,15 @@ export default function CarityMarketplace() {
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full md:w-56 h-11">
-              <SelectValue placeholder="Ordenar" />
+              <SelectValue placeholder={mt("mkt.sort")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Mais recentes</SelectItem>
-              <SelectItem value="price_asc">Preço: menor primeiro</SelectItem>
-              <SelectItem value="price_desc">Preço: maior primeiro</SelectItem>
-              <SelectItem value="score_desc">Melhor score técnico</SelectItem>
-              <SelectItem value="mileage_asc">Menor quilometragem</SelectItem>
-              <SelectItem value="year">Mais novos</SelectItem>
+              <SelectItem value="recent">{mt("mkt.sort.recent")}</SelectItem>
+              <SelectItem value="price_asc">{mt("mkt.sort.priceAsc")}</SelectItem>
+              <SelectItem value="price_desc">{mt("mkt.sort.priceDesc")}</SelectItem>
+              <SelectItem value="score_desc">{mt("mkt.sort.score")}</SelectItem>
+              <SelectItem value="mileage_asc">{mt("mkt.sort.kmAsc")}</SelectItem>
+              <SelectItem value="year">{mt("mkt.sort.year")}</SelectItem>
             </SelectContent>
           </Select>
 

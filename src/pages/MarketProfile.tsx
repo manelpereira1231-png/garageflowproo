@@ -101,9 +101,9 @@ export default function MarketProfile() {
         setProfileExists(true);
       }
 
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success(t("profile.toast.saved"));
     } catch (err: any) {
-      toast.error(err.message || "Erro ao guardar perfil");
+      toast.error(err.message || t("profile.toast.err"));
     } finally {
       setSaving(false);
     }

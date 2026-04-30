@@ -15,14 +15,14 @@ import { toast } from "sonner";
 import { formatMarketPriceExact, getMarketLocale } from "@/lib/marketPrice";
 import { useMarketT } from "@/i18n/marketTranslations";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "Pagamento pendente", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
-  paid: { label: "Pago — aguarda entrega", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", icon: ShieldCheck },
-  delivery_confirmed: { label: "Entrega confirmada", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400", icon: CheckCircle },
-  released: { label: "Concluída", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
-  disputed: { label: "Em disputa", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", icon: AlertTriangle },
-  refunded: { label: "Reembolsada", color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: XCircle },
-  cancelled: { label: "Cancelada", color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: XCircle },
+const STATUS_ICONS: Record<string, { color: string; icon: any }> = {
+  pending: { color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
+  paid: { color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", icon: ShieldCheck },
+  delivery_confirmed: { color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400", icon: CheckCircle },
+  released: { color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
+  disputed: { color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", icon: AlertTriangle },
+  refunded: { color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: XCircle },
+  cancelled: { color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: XCircle },
 };
 
 interface Purchase {

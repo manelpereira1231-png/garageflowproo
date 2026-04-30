@@ -30,6 +30,7 @@ interface CountryFmt {
 const DEFAULT_COUNTRY: CountryFmt = { currency: "EUR", currency_symbol: "€", locale: "pt-PT", code: "PT" };
 
 export default function MarketWallet() {
+  const t = useMarketT();
   const shopId = useActiveShopId();
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);

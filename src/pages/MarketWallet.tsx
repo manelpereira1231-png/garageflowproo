@@ -84,11 +84,11 @@ export default function MarketWallet() {
     if (!shopId) return;
     const amount = parseFloat(reqAmount);
     if (isNaN(amount) || amount < minPayout) {
-      toast.error(`Valor mínimo para levantamento: ${fmt(minPayout)}`);
+      toast.error(t("wallet.toast.minErr", { amount: fmt(minPayout) }));
       return;
     }
     if (!wallet || amount > Number(wallet.balance)) {
-      toast.error("Saldo insuficiente");
+      toast.error(t("wallet.toast.insuf"));
       return;
     }
     setSubmitting(true);
@@ -100,13 +100,13 @@ export default function MarketWallet() {
     });
     setSubmitting(false);
     if (error) {
-      const msg = error.message?.includes("min_payout") ? `Mínimo ${fmt(minPayout)}` :
-                  error.message?.includes("insufficient") ? "Saldo insuficiente" :
-                  error.message || "Erro ao solicitar";
+      const msg = error.message?.includes("min_payout") ? t("wallet.dialog.min", { amount: fmt(minPayout) }) :
+                  error.message?.includes("insufficient") ? t("wallet.toast.insuf") :
+                  error.message || t("wallet.toast.reqErr");
       toast.error(msg);
       return;
     }
-    toast.success("Pedido de levantamento enviado! O administrador vai rever.");
+    toast.success(t("wallet.toast.sent"));
     setRequestOpen(false);
     setReqAmount(""); setReqNotes("");
     load();

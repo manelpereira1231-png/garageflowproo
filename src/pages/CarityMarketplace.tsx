@@ -14,6 +14,7 @@ import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleto
 import { formatRelativePT } from "@/lib/relativeTime";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
 
 const FUEL_LABELS: Record<string, string> = {

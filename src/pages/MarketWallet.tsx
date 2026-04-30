@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Wallet, ArrowDownToLine, History, Loader2, CheckCircle, Clock, XCircle, Euro } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface WalletData {
   balance: number;

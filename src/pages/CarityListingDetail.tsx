@@ -22,36 +22,37 @@ import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const STATUS_ICON: Record<string, any> = {
-  ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },
-  problems: { icon: AlertTriangle, color: "text-amber-500", label: "Anomalia Detetada" },
-  critical: { icon: XCircle, color: "text-red-600", label: "Reprovado" },
+const CHECKLIST_KEYS = [
+  ["engine_status", "ld.checklist.engine"],
+  ["transmission_status", "ld.checklist.transmission"],
+  ["brakes_status", "ld.checklist.brakes"],
+  ["suspension_status", "ld.checklist.suspension"],
+  ["steering_status", "ld.checklist.steering"],
+  ["tires_status", "ld.checklist.tires"],
+  ["electrical_status", "ld.checklist.electrical"],
+] as const;
+
+const STATUS_META: Record<string, { icon: any; color: string; labelKey: string }> = {
+  ok: { icon: CheckCircle, color: "text-green-600", labelKey: "ld.status.ok" },
+  problems: { icon: AlertTriangle, color: "text-amber-500", labelKey: "ld.status.problems" },
+  critical: { icon: XCircle, color: "text-red-600", labelKey: "ld.status.critical" },
 };
 
-const CHECKLIST_LABELS: Record<string, string> = {
-  engine_status: "Motor",
-  transmission_status: "Transmissão",
-  brakes_status: "Travões",
-  suspension_status: "Suspensão",
-  steering_status: "Direção",
-  tires_status: "Pneus",
-  electrical_status: "Sistema Elétrico",
+const RECOMMENDATION_META: Record<string, { color: string; labelKey: string }> = {
+  recommended: { labelKey: "ld.rec.recommended", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  acceptable: { labelKey: "ld.rec.acceptable", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+  not_recommended: { labelKey: "ld.rec.not_recommended", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 };
 
-const RECOMMENDATION_LABELS: Record<string, { label: string; color: string }> = {
-  recommended: { label: "Aprovado — Recomendado para compra", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  acceptable: { label: "Aprovado com reservas", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
-  not_recommended: { label: "Não recomendado para compra", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
-};
-
-const ESCROW_STATUS_LABELS: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "Pagamento pendente", color: "bg-amber-100 text-amber-800", icon: Clock },
-  paid: { label: "Fundos em escrow — a aguardar entrega", color: "bg-blue-100 text-blue-800", icon: Shield },
-  delivery_confirmed: { label: "Entrega confirmada — fundos a libertar", color: "bg-green-100 text-green-800", icon: PackageCheck },
-  disputed: { label: "Disputa aberta — em análise", color: "bg-red-100 text-red-800", icon: AlertCircle },
-  released: { label: "Transação concluída", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  refunded: { label: "Reembolsado", color: "bg-slate-100 text-slate-800", icon: CreditCard },
+const ESCROW_STATUS_META: Record<string, { color: string; icon: any; labelKey: string }> = {
+  pending: { labelKey: "ld.escrow.pending", color: "bg-amber-100 text-amber-800", icon: Clock },
+  paid: { labelKey: "ld.escrow.paid", color: "bg-blue-100 text-blue-800", icon: Shield },
+  delivery_confirmed: { labelKey: "ld.escrow.delivery_confirmed", color: "bg-green-100 text-green-800", icon: PackageCheck },
+  disputed: { labelKey: "ld.escrow.disputed", color: "bg-red-100 text-red-800", icon: AlertCircle },
+  released: { labelKey: "ld.escrow.released", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  refunded: { labelKey: "ld.escrow.refunded", color: "bg-slate-100 text-slate-800", icon: CreditCard },
 };
 
 export default function CarityListingDetail({ overrideId }: { overrideId?: string } = {}) {

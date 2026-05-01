@@ -60,6 +60,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const id = overrideId || paramId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const t = useMarketT();
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
@@ -510,9 +511,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             {/* Inspection report — PROFESSIONAL CERTIFIED VIEW */}
             {report && (() => {
               // Derive REAL coherence (anti-facilitação) from the actual checklist + defects
-              const checklistEntries = Object.keys(CHECKLIST_LABELS).map(k => ({
+              const checklistEntries = CHECKLIST_KEYS.map(([k, lk]) => ({
                 key: k,
-                label: CHECKLIST_LABELS[k],
+                label: t(lk),
                 status: (report as any)[k] || "ok",
               }));
               const criticalCount = checklistEntries.filter(e => e.status === "critical").length;
@@ -549,9 +550,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {effectiveRecommendation && RECOMMENDATION_LABELS[effectiveRecommendation] && (
-                        <Badge className={`${RECOMMENDATION_LABELS[effectiveRecommendation].color} text-xs px-3 py-1`}>
-                          {RECOMMENDATION_LABELS[effectiveRecommendation].label}
+                      {effectiveRecommendation && RECOMMENDATION_META[effectiveRecommendation] && (
+                        <Badge className={`${RECOMMENDATION_META[effectiveRecommendation].color} text-xs px-3 py-1`}>
+                          {t(RECOMMENDATION_META[effectiveRecommendation].labelKey)}
                         </Badge>
                       )}
                       <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="text-xs">
@@ -667,7 +668,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     </div>
                     <div className="rounded-lg border overflow-hidden divide-y">
                       {sortedChecklist.map(({ key, label, status }) => {
-                        const config = STATUS_ICON[status] || STATUS_ICON.ok;
+                        const config = STATUS_META[status] || STATUS_META.ok;
                         const Icon = config.icon;
                         const sideColor = status === "critical" ? "bg-red-500" : status === "problems" ? "bg-amber-500" : "bg-green-500";
                         return (
@@ -830,10 +831,10 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 </div>
 
                 {/* Escrow status banner */}
-                {escrow && ESCROW_STATUS_LABELS[escrow.status] && (
-                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm font-medium ${ESCROW_STATUS_LABELS[escrow.status].color}`}>
-                    {(() => { const Icon = ESCROW_STATUS_LABELS[escrow.status].icon; return <Icon className="h-4 w-4 flex-shrink-0" />; })()}
-                    {ESCROW_STATUS_LABELS[escrow.status].label}
+                {escrow && ESCROW_STATUS_META[escrow.status] && (
+                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm font-medium ${ESCROW_STATUS_META[escrow.status].color}`}>
+                    {(() => { const Icon = ESCROW_STATUS_META[escrow.status].icon; return <Icon className="h-4 w-4 flex-shrink-0" />; })()}
+                    {t(ESCROW_STATUS_META[escrow.status].labelKey)}
                   </div>
                 )}
 

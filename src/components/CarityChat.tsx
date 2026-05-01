@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Send, MessageCircle, Loader2, Lock, ShieldAlert, Shield } from "lucide-react";
 import { filterMessage, getViolationSeverity, type ViolationType } from "@/lib/chatSafetyFilter";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface CarityChatProps {
   listingId: string;
@@ -32,6 +33,7 @@ interface ChatMessage {
  * No offers, no payment buttons. All transactions go through escrow.
  */
 export default function CarityChat({ listingId, sellerId, listingPrice, listingLabel, currentUserId }: CarityChatProps) {
+  const t = useMarketT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);

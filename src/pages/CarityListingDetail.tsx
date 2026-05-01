@@ -269,7 +269,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
   const handleToggleFavorite = async () => {
     if (!currentUserId) {
-      toast.error("Inicie sessão para guardar favoritos");
+      toast.error(t("ld.toast.loginFav"));
       navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
       return;
     }
@@ -285,11 +285,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       return;
     }
     if (listing?.seller_id === currentUserId) {
-      toast.error("Não pode comprar o seu próprio carro.");
+      toast.error(t("ld.toast.cantBuyOwn"));
       return;
     }
     if (escrow && ["paid", "delivery_confirmed"].includes(escrow.status)) {
-      toast.error("Já existe uma transação ativa para este carro.");
+      toast.error(t("ld.toast.activeTx"));
       return;
     }
     setBuying(true);
@@ -320,11 +320,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(data?.message || "Ação processada!");
+      toast.success(data?.message || t("ld.toast.processed"));
       setDisputeOpen(false);
       loadData(); // Reload to update state
     } catch (err: any) {
-      toast.error(err.message || "Erro ao processar ação");
+      toast.error(err.message || t("ld.toast.actionError"));
     } finally {
       setActionLoading(false);
     }
@@ -415,7 +415,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </Badge>
                   {report?.report_hash && report?.is_locked && (
                     <Badge className="bg-emerald-600/95 backdrop-blur-sm text-white border-0 shadow-sm font-semibold">
-                      <Lock className="h-3 w-3 mr-1" /> Relatório Blindado · SHA-256
+                      <Lock className="h-3 w-3 mr-1" /> {t("ld.report.sha")}
                     </Badge>
                   )}
                   {listing.boost_active && (
@@ -525,7 +525,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               // Coerência: a oficina marcou "recommended" mas há críticos? Mostrar override público.
               const recommendationOverride = hasCritical && report.recommendation === "recommended";
               const effectiveRecommendation = hasCritical ? "not_recommended" : report.recommendation;
-              // Risco real
+              // {t("ld.report.risk")}
               const realRisk = hasCritical ? "Elevado" : (hasProblems || report.overall_score < 60) ? "Moderado" : "Baixo";
               const realRiskColor = hasCritical ? "text-red-600" : (hasProblems || report.overall_score < 60) ? "text-amber-600" : "text-green-600";
               // Ordenar checklist: críticos -> problemas -> conformes
@@ -603,19 +603,19 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         }`}>{(report.overall_score / 10).toFixed(1)}</span>
                         <span className="text-base text-muted-foreground font-medium">/10</span>
                       </div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">Score técnico</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">{t("ld.report.score")}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Risco real</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.risk")}</p>
                         <p className={`font-bold text-sm ${realRiskColor}`}>{realRisk}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Anomalias</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.anomalies")}</p>
                         <p className={`font-bold text-sm ${totalAnomalies > 0 ? "text-amber-600" : ""}`}>{totalAnomalies} registada{totalAnomalies !== 1 ? "s" : ""}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Reprovados</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.rejected")}</p>
                         <p className={`font-bold text-sm ${criticalCount > 0 ? "text-red-600" : "text-green-600"}`}>{criticalCount} de {checklistEntries.length}</p>
                       </div>
                     </div>
@@ -658,7 +658,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                        <div className="h-1 w-4 bg-primary rounded-full" /> Checklist Mecânico
+                        <div className="h-1 w-4 bg-primary rounded-full" /> {t("ld.report.checklist")}
                       </h3>
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> {conformCount} conformes</span>
@@ -698,14 +698,14 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       <span className="text-sm font-semibold flex items-center gap-2">
                         <Eye className="h-4 w-4" /> Relatório Técnico Completo
                       </span>
-                      <span className="text-[11px] text-muted-foreground hidden sm:inline">Documentação fotográfica · Anomalias · Certificação digital</span>
+                      <span className="text-[11px] text-muted-foreground hidden sm:inline">{t("ld.report.fullDesc")}</span>
                     </summary>
 
                     <div className="border-t p-5 space-y-6">
                       {report.defects.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
-                            <div className="h-1 w-4 bg-destructive rounded-full" /> Anomalias Identificadas ({report.defects.length})
+                            <div className="h-1 w-4 bg-destructive rounded-full" /> {t("ld.report.anomaliesIdentified", { count: report.defects.length })}
                           </h3>
                           <div className="space-y-2">
                             {report.defects.map((defect: any, i: number) => (
@@ -735,7 +735,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {report.damage_photos.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
-                            <div className="h-1 w-4 bg-amber-500 rounded-full" /> Documentação Fotográfica de Anomalias
+                            <div className="h-1 w-4 bg-amber-500 rounded-full" /> {t("ld.report.photoDocs")}
                           </h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {report.damage_photos.map((photo: string, i: number) => (
@@ -758,7 +758,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
                       <div className="bg-muted/40 rounded-lg p-4 border">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                          <Hash className="h-3.5 w-3.5" /> Certificação Digital e Integridade
+                          <Hash className="h-3.5 w-3.5" /> {t("ld.report.digitalCert")}
                         </p>
                         <div className="space-y-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-2">
@@ -791,7 +791,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           )}
                           {(report as any).is_locked && (
                             <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold mt-2 pt-2 border-t border-border/50">
-                              <Lock className="h-3 w-3" /> Relatório selado — integridade garantida e imutável
+                              <Lock className="h-3 w-3" /> {t("ld.report.sealed")}
                             </div>
                           )}
                         </div>
@@ -1033,7 +1033,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 <Tabs defaultValue={isChatActive ? "chat" : "alerts"} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 h-9">
                     <TabsTrigger value="chat" className="text-xs gap-1.5">
-                      <MessageCircle className="h-3.5 w-3.5" /> Mensagens
+                      <MessageCircle className="h-3.5 w-3.5" /> {t("ld.actions.messages")}
                     </TabsTrigger>
                     <TabsTrigger value="alerts" className="text-xs gap-1.5">
                       <BellRing className="h-3.5 w-3.5" /> Alertas
@@ -1055,8 +1055,8 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           <p className="font-medium text-sm">Chat indisponível</p>
                           <p className="text-xs text-muted-foreground mt-1 px-4">
                             {escrow?.status === "released" || escrow?.status === "refunded"
-                              ? "Esta transação foi concluída."
-                              : "O chat é ativado automaticamente após o pagamento em escrow para proteger ambas as partes."}
+                              ? t("ld.chat.completed")
+                              : t("ld.chat.escrowGate")}
                           </p>
                         </div>
                         {!escrow && !currentUserId && (

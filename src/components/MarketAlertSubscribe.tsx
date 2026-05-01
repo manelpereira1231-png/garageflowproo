@@ -5,6 +5,7 @@ import { Bell, BellOff, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface Props {
   make: string;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
+  const t = useMarketT();
   const [user, setUser] = useState<any>(null);
   const [exists, setExists] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
 
   const subscribe = async () => {
     if (!user) {
-      toast.info("Inicie sessão para receber alertas");
+      toast.info(t("alert.loginNeeded"));
       return;
     }
     setSaving(true);
@@ -54,9 +56,9 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
       });
       if (error) throw error;
       setExists(true);
-      toast.success("Alerta criado. Receberá emails quando aparecerem novos carros.");
+      toast.success(t("alert.created"));
     } catch (e: any) {
-      toast.error(e.message || "Erro ao criar alerta");
+      toast.error(e.message || t("alert.error"));
     } finally {
       setSaving(false);
     }
@@ -68,9 +70,9 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
       await supabase.from("listing_alerts").update({ active: false })
         .eq("user_id", user.id).eq("make", make).eq("model", model);
       setExists(false);
-      toast.success("Alerta desativado");
+      toast.success(t("alert.disabled"));
     } catch (e: any) {
-      toast.error(e.message || "Erro");
+      toast.error(e.message || t("alert.error"));
     } finally {
       setSaving(false);
     }
@@ -86,10 +88,10 @@ export default function MarketAlertSubscribe({ make, model, maxPrice }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold">
-            {exists ? "Está a receber alertas" : "Avise-me de novos anúncios"}
+            {exists ? t("alert.receiving") : t("alert.notifyMe")}
           </p>
           <p className="text-[11px] text-muted-foreground truncate">
-            {make} {model}{maxPrice ? ` até ${formatMarketPrice(maxPrice)}` : ""}
+            {make} {model}{maxPrice ? ` ${t("alert.upTo", { price: formatMarketPrice(maxPrice) })}` : ""}
           </p>
         </div>
         <Button

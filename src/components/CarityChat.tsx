@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Send, MessageCircle, Loader2, Lock, ShieldAlert, Shield } from "lucide-react";
 import { filterMessage, getViolationSeverity, type ViolationType } from "@/lib/chatSafetyFilter";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface CarityChatProps {
   listingId: string;
@@ -32,6 +33,7 @@ interface ChatMessage {
  * No offers, no payment buttons. All transactions go through escrow.
  */
 export default function CarityChat({ listingId, sellerId, listingPrice, listingLabel, currentUserId }: CarityChatProps) {
+  const t = useMarketT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -124,7 +126,7 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
       const severity = getViolationSeverity(newCount);
       if (severity === "suspension") {
         setRestricted(true);
-        toast.error("A sua conta de chat foi suspensa por tentativas repetidas de evasão.", { duration: 10000 });
+        toast.error(t("chat.suspended"), { duration: 10000 });
       } else if (severity === "restriction") {
         toast.error("⚠️ Último aviso — a próxima tentativa suspenderá o seu chat.", { duration: 8000 });
       } else {
@@ -137,7 +139,7 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
     setSending(true);
     try {
       const receiverId = isSeller ? messages.find(m => m.sender_id !== currentUserId)?.sender_id : sellerId;
-      if (!receiverId) { toast.error("Não foi possível identificar o destinatário"); setSending(false); return; }
+      if (!receiverId) { toast.error(t("chat.noReceiver")); setSending(false); return; }
       await supabase.from("carity_chat_messages" as any).insert({
         listing_id: listingId,
         sender_id: currentUserId,
@@ -182,11 +184,11 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-amber-500" />
-          {isSeller ? "Mensagens do comprador" : `Chat sobre ${listingLabel}`}
+          {isSeller ? t("chat.title.seller") : t("chat.title.buyer", { label: listingLabel })}
         </CardTitle>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1">
           <Shield className="h-3 w-3 text-green-500" />
-          Comunicação protegida — transação via escrow
+          {t("chat.protected")}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -198,7 +200,7 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
               <p className="text-xs text-destructive font-medium">{fugaWarning}</p>
               {fugaAttempts >= 2 && (
                 <p className="text-[10px] text-destructive/80 mt-1">
-                  ⚠️ Aviso {fugaAttempts}/3 — Após 3 tentativas a sua conta será restrita.
+                  ⚠️ {t("chat.warn", { n: fugaAttempts })}
                 </p>
               )}
             </div>
@@ -208,12 +210,12 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
         {/* Messages list */}
         <div ref={scrollRef} className="max-h-72 overflow-y-auto space-y-2 p-2">
           {loading ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">A carregar...</div>
+            <div className="text-center py-6 text-muted-foreground text-sm">{t("chat.loading")}</div>
           ) : messages.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-sm">
               {isBuyer
-                ? "Envie uma mensagem ao vendedor para combinar a entrega."
-                : "Aguarde mensagens do comprador."}
+                ? t("chat.empty.buyer")
+                : t("chat.empty.seller")}
             </div>
           ) : (
             messages.map(msg => (
@@ -236,7 +238,7 @@ export default function CarityChat({ listingId, sellerId, listingPrice, listingL
         {/* Input area — same for buyer and seller, communication only */}
         <div className="flex gap-2">
           <Input
-            placeholder={isSeller ? "Responder ao comprador..." : "Escreva uma mensagem..."}
+            placeholder={isSeller ? t("chat.placeholder.seller") : t("chat.placeholder.buyer")}
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
             onKeyDown={e => e.key === "Enter" && sendMessage()}

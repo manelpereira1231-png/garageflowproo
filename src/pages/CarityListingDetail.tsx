@@ -22,36 +22,37 @@ import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const STATUS_ICON: Record<string, any> = {
-  ok: { icon: CheckCircle, color: "text-green-600", label: "Conforme" },
-  problems: { icon: AlertTriangle, color: "text-amber-500", label: "Anomalia Detetada" },
-  critical: { icon: XCircle, color: "text-red-600", label: "Reprovado" },
+const CHECKLIST_KEYS = [
+  ["engine_status", "ld.checklist.engine"],
+  ["transmission_status", "ld.checklist.transmission"],
+  ["brakes_status", "ld.checklist.brakes"],
+  ["suspension_status", "ld.checklist.suspension"],
+  ["steering_status", "ld.checklist.steering"],
+  ["tires_status", "ld.checklist.tires"],
+  ["electrical_status", "ld.checklist.electrical"],
+] as const;
+
+const STATUS_META: Record<string, { icon: any; color: string; labelKey: string }> = {
+  ok: { icon: CheckCircle, color: "text-green-600", labelKey: "ld.status.ok" },
+  problems: { icon: AlertTriangle, color: "text-amber-500", labelKey: "ld.status.problems" },
+  critical: { icon: XCircle, color: "text-red-600", labelKey: "ld.status.critical" },
 };
 
-const CHECKLIST_LABELS: Record<string, string> = {
-  engine_status: "Motor",
-  transmission_status: "Transmissão",
-  brakes_status: "Travões",
-  suspension_status: "Suspensão",
-  steering_status: "Direção",
-  tires_status: "Pneus",
-  electrical_status: "Sistema Elétrico",
+const RECOMMENDATION_META: Record<string, { color: string; labelKey: string }> = {
+  recommended: { labelKey: "ld.rec.recommended", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  acceptable: { labelKey: "ld.rec.acceptable", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+  not_recommended: { labelKey: "ld.rec.not_recommended", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 };
 
-const RECOMMENDATION_LABELS: Record<string, { label: string; color: string }> = {
-  recommended: { label: "Aprovado — Recomendado para compra", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  acceptable: { label: "Aprovado com reservas", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
-  not_recommended: { label: "Não recomendado para compra", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
-};
-
-const ESCROW_STATUS_LABELS: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "Pagamento pendente", color: "bg-amber-100 text-amber-800", icon: Clock },
-  paid: { label: "Fundos em escrow — a aguardar entrega", color: "bg-blue-100 text-blue-800", icon: Shield },
-  delivery_confirmed: { label: "Entrega confirmada — fundos a libertar", color: "bg-green-100 text-green-800", icon: PackageCheck },
-  disputed: { label: "Disputa aberta — em análise", color: "bg-red-100 text-red-800", icon: AlertCircle },
-  released: { label: "Transação concluída", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  refunded: { label: "Reembolsado", color: "bg-slate-100 text-slate-800", icon: CreditCard },
+const ESCROW_STATUS_META: Record<string, { color: string; icon: any; labelKey: string }> = {
+  pending: { labelKey: "ld.escrow.pending", color: "bg-amber-100 text-amber-800", icon: Clock },
+  paid: { labelKey: "ld.escrow.paid", color: "bg-blue-100 text-blue-800", icon: Shield },
+  delivery_confirmed: { labelKey: "ld.escrow.delivery_confirmed", color: "bg-green-100 text-green-800", icon: PackageCheck },
+  disputed: { labelKey: "ld.escrow.disputed", color: "bg-red-100 text-red-800", icon: AlertCircle },
+  released: { labelKey: "ld.escrow.released", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  refunded: { labelKey: "ld.escrow.refunded", color: "bg-slate-100 text-slate-800", icon: CreditCard },
 };
 
 export default function CarityListingDetail({ overrideId }: { overrideId?: string } = {}) {
@@ -59,6 +60,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const id = overrideId || paramId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const t = useMarketT();
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
@@ -267,7 +269,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
   const handleToggleFavorite = async () => {
     if (!currentUserId) {
-      toast.error("Inicie sessão para guardar favoritos");
+      toast.error(t("ld.toast.loginFav"));
       navigate(`/market/auth?mode=signup&redirect=/market/car/${id}`);
       return;
     }
@@ -283,11 +285,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       return;
     }
     if (listing?.seller_id === currentUserId) {
-      toast.error("Não pode comprar o seu próprio carro.");
+      toast.error(t("ld.toast.cantBuyOwn"));
       return;
     }
     if (escrow && ["paid", "delivery_confirmed"].includes(escrow.status)) {
-      toast.error("Já existe uma transação ativa para este carro.");
+      toast.error(t("ld.toast.activeTx"));
       return;
     }
     setBuying(true);
@@ -318,11 +320,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(data?.message || "Ação processada!");
+      toast.success(data?.message || t("ld.toast.processed"));
       setDisputeOpen(false);
       loadData(); // Reload to update state
     } catch (err: any) {
-      toast.error(err.message || "Erro ao processar ação");
+      toast.error(err.message || t("ld.toast.actionError"));
     } finally {
       setActionLoading(false);
     }
@@ -413,7 +415,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </Badge>
                   {report?.report_hash && report?.is_locked && (
                     <Badge className="bg-emerald-600/95 backdrop-blur-sm text-white border-0 shadow-sm font-semibold">
-                      <Lock className="h-3 w-3 mr-1" /> Relatório Blindado · SHA-256
+                      <Lock className="h-3 w-3 mr-1" /> {t("ld.report.sha")}
                     </Badge>
                   )}
                   {listing.boost_active && (
@@ -509,9 +511,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             {/* Inspection report — PROFESSIONAL CERTIFIED VIEW */}
             {report && (() => {
               // Derive REAL coherence (anti-facilitação) from the actual checklist + defects
-              const checklistEntries = Object.keys(CHECKLIST_LABELS).map(k => ({
+              const checklistEntries = CHECKLIST_KEYS.map(([k, lk]) => ({
                 key: k,
-                label: CHECKLIST_LABELS[k],
+                label: t(lk),
                 status: (report as any)[k] || "ok",
               }));
               const criticalCount = checklistEntries.filter(e => e.status === "critical").length;
@@ -523,7 +525,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               // Coerência: a oficina marcou "recommended" mas há críticos? Mostrar override público.
               const recommendationOverride = hasCritical && report.recommendation === "recommended";
               const effectiveRecommendation = hasCritical ? "not_recommended" : report.recommendation;
-              // Risco real
+              // {t("ld.report.risk")}
               const realRisk = hasCritical ? "Elevado" : (hasProblems || report.overall_score < 60) ? "Moderado" : "Baixo";
               const realRiskColor = hasCritical ? "text-red-600" : (hasProblems || report.overall_score < 60) ? "text-amber-600" : "text-green-600";
               // Ordenar checklist: críticos -> problemas -> conformes
@@ -548,9 +550,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {effectiveRecommendation && RECOMMENDATION_LABELS[effectiveRecommendation] && (
-                        <Badge className={`${RECOMMENDATION_LABELS[effectiveRecommendation].color} text-xs px-3 py-1`}>
-                          {RECOMMENDATION_LABELS[effectiveRecommendation].label}
+                      {effectiveRecommendation && RECOMMENDATION_META[effectiveRecommendation] && (
+                        <Badge className={`${RECOMMENDATION_META[effectiveRecommendation].color} text-xs px-3 py-1`}>
+                          {t(RECOMMENDATION_META[effectiveRecommendation].labelKey)}
                         </Badge>
                       )}
                       <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="text-xs">
@@ -601,19 +603,19 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                         }`}>{(report.overall_score / 10).toFixed(1)}</span>
                         <span className="text-base text-muted-foreground font-medium">/10</span>
                       </div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">Score técnico</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">{t("ld.report.score")}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Risco real</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.risk")}</p>
                         <p className={`font-bold text-sm ${realRiskColor}`}>{realRisk}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Anomalias</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.anomalies")}</p>
                         <p className={`font-bold text-sm ${totalAnomalies > 0 ? "text-amber-600" : ""}`}>{totalAnomalies} registada{totalAnomalies !== 1 ? "s" : ""}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background border">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Reprovados</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("ld.report.rejected")}</p>
                         <p className={`font-bold text-sm ${criticalCount > 0 ? "text-red-600" : "text-green-600"}`}>{criticalCount} de {checklistEntries.length}</p>
                       </div>
                     </div>
@@ -656,7 +658,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                        <div className="h-1 w-4 bg-primary rounded-full" /> Checklist Mecânico
+                        <div className="h-1 w-4 bg-primary rounded-full" /> {t("ld.report.checklist")}
                       </h3>
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> {conformCount} conformes</span>
@@ -666,7 +668,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     </div>
                     <div className="rounded-lg border overflow-hidden divide-y">
                       {sortedChecklist.map(({ key, label, status }) => {
-                        const config = STATUS_ICON[status] || STATUS_ICON.ok;
+                        const config = STATUS_META[status] || STATUS_META.ok;
                         const Icon = config.icon;
                         const sideColor = status === "critical" ? "bg-red-500" : status === "problems" ? "bg-amber-500" : "bg-green-500";
                         return (
@@ -681,7 +683,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                               </div>
                               <div className={`flex items-center gap-1.5 ${config.color} text-xs font-semibold`}>
                                 <Icon className="h-4 w-4" />
-                                <span>{config.label}</span>
+                                <span>{t(config.labelKey)}</span>
                               </div>
                             </div>
                           </div>
@@ -696,14 +698,14 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       <span className="text-sm font-semibold flex items-center gap-2">
                         <Eye className="h-4 w-4" /> Relatório Técnico Completo
                       </span>
-                      <span className="text-[11px] text-muted-foreground hidden sm:inline">Documentação fotográfica · Anomalias · Certificação digital</span>
+                      <span className="text-[11px] text-muted-foreground hidden sm:inline">{t("ld.report.fullDesc")}</span>
                     </summary>
 
                     <div className="border-t p-5 space-y-6">
                       {report.defects.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
-                            <div className="h-1 w-4 bg-destructive rounded-full" /> Anomalias Identificadas ({report.defects.length})
+                            <div className="h-1 w-4 bg-destructive rounded-full" /> {t("ld.report.anomaliesIdentified", { count: report.defects.length })}
                           </h3>
                           <div className="space-y-2">
                             {report.defects.map((defect: any, i: number) => (
@@ -733,7 +735,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {report.damage_photos.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
-                            <div className="h-1 w-4 bg-amber-500 rounded-full" /> Documentação Fotográfica de Anomalias
+                            <div className="h-1 w-4 bg-amber-500 rounded-full" /> {t("ld.report.photoDocs")}
                           </h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {report.damage_photos.map((photo: string, i: number) => (
@@ -756,7 +758,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
                       <div className="bg-muted/40 rounded-lg p-4 border">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                          <Hash className="h-3.5 w-3.5" /> Certificação Digital e Integridade
+                          <Hash className="h-3.5 w-3.5" /> {t("ld.report.digitalCert")}
                         </p>
                         <div className="space-y-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-2">
@@ -789,7 +791,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           )}
                           {(report as any).is_locked && (
                             <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold mt-2 pt-2 border-t border-border/50">
-                              <Lock className="h-3 w-3" /> Relatório selado — integridade garantida e imutável
+                              <Lock className="h-3 w-3" /> {t("ld.report.sealed")}
                             </div>
                           )}
                         </div>
@@ -829,10 +831,10 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 </div>
 
                 {/* Escrow status banner */}
-                {escrow && ESCROW_STATUS_LABELS[escrow.status] && (
-                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm font-medium ${ESCROW_STATUS_LABELS[escrow.status].color}`}>
-                    {(() => { const Icon = ESCROW_STATUS_LABELS[escrow.status].icon; return <Icon className="h-4 w-4 flex-shrink-0" />; })()}
-                    {ESCROW_STATUS_LABELS[escrow.status].label}
+                {escrow && ESCROW_STATUS_META[escrow.status] && (
+                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm font-medium ${ESCROW_STATUS_META[escrow.status].color}`}>
+                    {(() => { const Icon = ESCROW_STATUS_META[escrow.status].icon; return <Icon className="h-4 w-4 flex-shrink-0" />; })()}
+                    {t(ESCROW_STATUS_META[escrow.status].labelKey)}
                   </div>
                 )}
 
@@ -1031,7 +1033,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 <Tabs defaultValue={isChatActive ? "chat" : "alerts"} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 h-9">
                     <TabsTrigger value="chat" className="text-xs gap-1.5">
-                      <MessageCircle className="h-3.5 w-3.5" /> Mensagens
+                      <MessageCircle className="h-3.5 w-3.5" /> {t("ld.actions.messages")}
                     </TabsTrigger>
                     <TabsTrigger value="alerts" className="text-xs gap-1.5">
                       <BellRing className="h-3.5 w-3.5" /> Alertas
@@ -1053,8 +1055,8 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                           <p className="font-medium text-sm">Chat indisponível</p>
                           <p className="text-xs text-muted-foreground mt-1 px-4">
                             {escrow?.status === "released" || escrow?.status === "refunded"
-                              ? "Esta transação foi concluída."
-                              : "O chat é ativado automaticamente após o pagamento em escrow para proteger ambas as partes."}
+                              ? t("ld.chat.completed")
+                              : t("ld.chat.escrowGate")}
                           </p>
                         </div>
                         {!escrow && !currentUserId && (

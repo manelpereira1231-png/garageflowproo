@@ -683,7 +683,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                               </div>
                               <div className={`flex items-center gap-1.5 ${config.color} text-xs font-semibold`}>
                                 <Icon className="h-4 w-4" />
-                                <span>{config.label}</span>
+                                <span>{t(config.labelKey)}</span>
                               </div>
                             </div>
                           </div>

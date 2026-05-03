@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { MapPin } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface Props {
   lat?: number | null;
@@ -34,6 +35,7 @@ function resolveCoords(city?: string | null): [number, number] {
 }
 
 export default function MarketLocationMap({ lat, lng, label, fallbackCity }: Props) {
+  const t = useMarketT();
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
@@ -98,17 +100,17 @@ export default function MarketLocationMap({ lat, lng, label, fallbackCity }: Pro
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-sm font-medium">
           <MapPin className="h-4 w-4 text-amber-500" />
-          {label || fallbackCity || "Localização"}
+          {label || fallbackCity || t("lm.location")}
         </div>
         {isApprox && (
           <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            Localização aproximada
+            {t("lm.approx")}
           </span>
         )}
       </div>
       <div ref={ref} className="w-full h-56 rounded-lg overflow-hidden border" />
       <p className="text-[10px] text-muted-foreground">
-        Localização exata partilhada após pagamento protegido.
+        {t("lm.exactAfter")}
       </p>
     </div>
   );

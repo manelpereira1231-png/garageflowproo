@@ -9,8 +9,10 @@ import { Heart, Car, ShieldCheck, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 export default function CarityFavorites() {
+  const t = useMarketT();
   const { formatPrice } = useCountryPricing();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function CarityFavorites() {
     if (!user) return;
     await supabase.from("listing_favorites" as any).delete().eq("listing_id", listingId).eq("user_id", user.id);
     setItems((prev) => prev.filter((i) => i.id !== listingId));
-    toast.success("Removido dos favoritos");
+    toast.success(t("fav.removed"));
   };
 
   return (
@@ -70,11 +72,11 @@ export default function CarityFavorites() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Heart className="h-5 w-5 text-red-500 fill-red-500" /> Os meus favoritos
+            <Heart className="h-5 w-5 text-red-500 fill-red-500" /> {t("fav.title")}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Carros guardados para acompanhar.</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("fav.subtitle")}</p>
         </div>
-        <Badge variant="outline">{items.length} {items.length === 1 ? "carro" : "carros"}</Badge>
+        <Badge variant="outline">{items.length} {items.length === 1 ? t("fav.car") : t("fav.cars")}</Badge>
       </div>
 
       {loading ? (
@@ -83,11 +85,11 @@ export default function CarityFavorites() {
         <Card>
           <CardContent className="py-16 text-center">
             <Heart className="h-14 w-14 mx-auto text-muted-foreground/20 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ainda não tem favoritos</h3>
-            <p className="text-muted-foreground mb-6">Toque no coração nos anúncios que lhe interessam para os guardar aqui.</p>
+            <h3 className="text-lg font-semibold mb-2">{t("fav.empty.title")}</h3>
+            <p className="text-muted-foreground mb-6">{t("fav.empty.desc")}</p>
             <Link to="/market">
               <Button className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-                Explorar marketplace <ArrowRight className="ml-2 h-4 w-4" />
+                {t("fav.empty.cta")} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </CardContent>
@@ -106,7 +108,7 @@ export default function CarityFavorites() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                   <div className="absolute top-3 left-3">
                     <Badge className="bg-white/95 text-slate-800 border-0 shadow-sm text-[11px] font-semibold backdrop-blur-sm">
-                      <ShieldCheck className="h-3 w-3 mr-1 text-green-600" /> Inspecionado
+                      <ShieldCheck className="h-3 w-3 mr-1 text-green-600" /> {t("fav.inspected")}
                     </Badge>
                   </div>
                   {listing.inspection_score != null && (
@@ -130,18 +132,18 @@ export default function CarityFavorites() {
                   <button
                     onClick={() => remove(listing.id)}
                     className="text-muted-foreground hover:text-red-500 transition-colors"
-                    aria-label="Remover dos favoritos"
+                    aria-label={t("fav.remove")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">{listing.year} · {listing.mileage?.toLocaleString()} km · {listing.fuel}</p>
                 {listing.shop_name && (
-                  <p className="text-[11px] text-muted-foreground mt-1">Inspecionado por <span className="font-medium text-foreground">{listing.shop_name}</span></p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t("fav.inspectedBy")} <span className="font-medium text-foreground">{listing.shop_name}</span></p>
                 )}
                 {listing.status !== "published" && (
                   <Badge variant="outline" className="mt-2 text-[10px] text-amber-600 border-amber-200">
-                    {listing.status === "sold" ? "Vendido" : "Não disponível"}
+                    {listing.status === "sold" ? t("fav.sold") : t("fav.unavailable")}
                   </Badge>
                 )}
               </CardContent>

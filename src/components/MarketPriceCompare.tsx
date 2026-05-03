@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { TrendingDown, TrendingUp, Minus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface Props {
   listingId: string;
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function MarketPriceCompare({ listingId, make, model, year, price }: Props) {
+  const t = useMarketT();
   const [stats, setStats] = useState<{ avg: number; count: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +48,7 @@ export default function MarketPriceCompare({ listingId, make, model, year, price
   if (loading) {
     return (
       <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> A comparar com mercado...
+        <Loader2 className="h-3 w-3 animate-spin" /> {t("pc.comparing")}
       </div>
     );
   }
@@ -55,13 +56,14 @@ export default function MarketPriceCompare({ listingId, make, model, year, price
   if (!stats) {
     return (
       <div className="text-[11px] text-muted-foreground italic">
-        Mercado ainda sem amostra suficiente para {make} {model} {year}.
+        {t("pc.notEnough", { make, model, year })}
       </div>
     );
   }
 
   const diffPct = ((price - stats.avg) / stats.avg) * 100;
   const absDiff = Math.abs(diffPct);
+  const pct = absDiff.toFixed(0);
 
   let variant: "good" | "neutral" | "high" = "neutral";
   if (diffPct < -3) variant = "good";
@@ -73,28 +75,29 @@ export default function MarketPriceCompare({ listingId, make, model, year, price
       border: "border-emerald-200 dark:border-emerald-900",
       text: "text-emerald-800 dark:text-emerald-300",
       icon: TrendingDown,
-      label: `${absDiff.toFixed(0)}% abaixo da média`,
-      sub: "Bom preço face ao mercado",
+      label: t("pc.below", { pct }),
+      sub: t("pc.belowSub"),
     },
     neutral: {
       bg: "bg-slate-50 dark:bg-slate-900/20",
       border: "border-slate-200 dark:border-slate-800",
       text: "text-slate-700 dark:text-slate-300",
       icon: Minus,
-      label: `Em linha com a média`,
-      sub: `${absDiff.toFixed(0)}% ${diffPct >= 0 ? "acima" : "abaixo"} da média de mercado`,
+      label: t("pc.inline"),
+      sub: t("pc.inlineSub", { pct, dir: diffPct >= 0 ? t("pc.dirAbove") : t("pc.dirBelow") }),
     },
     high: {
       bg: "bg-amber-50 dark:bg-amber-950/20",
       border: "border-amber-200 dark:border-amber-900",
       text: "text-amber-800 dark:text-amber-300",
       icon: TrendingUp,
-      label: `${absDiff.toFixed(0)}% acima da média`,
-      sub: "Pode estar com margem de negociação",
+      label: t("pc.above", { pct }),
+      sub: t("pc.aboveSub"),
     },
   }[variant];
 
   const Icon = config.icon;
+  const n = stats.count > 1 ? t("pc.listings") : t("pc.listing");
 
   return (
     <div className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${config.bg} ${config.border}`}>
@@ -102,7 +105,15 @@ export default function MarketPriceCompare({ listingId, make, model, year, price
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-semibold ${config.text}`}>{config.label}</p>
         <p className="text-[10px] text-muted-foreground">
-          {config.sub} · base: {stats.count} anúncio{stats.count > 1 ? "s" : ""} {make} {model} {year - 1}-{year + 1} (média {formatMarketPrice(Math.round(stats.avg))})
+          {config.sub} · {t("pc.basis", {
+            count: stats.count,
+            n,
+            make,
+            model,
+            y1: year - 1,
+            y2: year + 1,
+            avg: formatMarketPrice(Math.round(stats.avg)),
+          })}
         </p>
       </div>
     </div>

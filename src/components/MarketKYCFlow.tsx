@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Upload, Camera, Loader2, CheckCircle, Clock, XCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 interface KYCFlowProps {
   userId: string;
@@ -15,13 +16,8 @@ interface KYCFlowProps {
   onComplete: (updated: any) => void;
 }
 
-const DOC_TYPES = [
-  { value: "cc", label: "Cartão de Cidadão" },
-  { value: "passport", label: "Passaporte" },
-  { value: "driver_license", label: "Carta de Condução" },
-];
-
 export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowProps) {
+  const t = useMarketT();
   const [uploading, setUploading] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -36,10 +32,16 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
   const status = profile?.kyc_status || "not_submitted";
   const isLocked = ["submitted", "approved"].includes(status);
 
+  const DOC_TYPES = [
+    { value: "cc", label: t("kyc.doc.cc") },
+    { value: "passport", label: t("kyc.doc.passport") },
+    { value: "driver_license", label: t("kyc.doc.driver") },
+  ];
+
   const uploadFile = async (file: File, kind: "doc" | "selfie") => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ficheiro acima de 5MB. Tente novamente com imagem mais leve.");
+      toast.error(t("kyc.tooLarge"));
       return;
     }
     setUploading(kind);
@@ -51,7 +53,6 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
         upsert: true,
       });
       if (error) throw error;
-      // Privado, geramos signed URL para preview e guardamos path raw
       const { data: signed } = await supabase.storage
         .from("kyc-documents")
         .createSignedUrl(path, 60 * 60 * 24);
@@ -59,25 +60,24 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
         ...p,
         [kind === "doc" ? "document_url" : "selfie_url"]: path,
       }));
-      // For preview we use signed
       (window as any).__kycPreview = {
         ...(window as any).__kycPreview,
         [kind]: signed?.signedUrl,
       };
-      toast.success("Ficheiro carregado.");
+      toast.success(t("kyc.fileLoaded"));
     } catch (e: any) {
-      toast.error(e.message || "Erro no upload");
+      toast.error(e.message || t("kyc.uploadError"));
     } finally {
       setUploading(null);
     }
   };
 
   const handleSubmit = async () => {
-    if (!form.nif || form.nif.length < 9) return toast.error("NIF inválido");
-    if (!form.address) return toast.error("Indique a morada completa");
-    if (!form.document_number) return toast.error("Número do documento é obrigatório");
-    if (!form.document_url) return toast.error("Carregue uma foto do documento");
-    if (!form.selfie_url) return toast.error("Carregue uma selfie a segurar o documento");
+    if (!form.nif || form.nif.length < 9) return toast.error(t("kyc.invalidNif"));
+    if (!form.address) return toast.error(t("kyc.needAddress"));
+    if (!form.document_number) return toast.error(t("kyc.needDocNum"));
+    if (!form.document_url) return toast.error(t("kyc.needDocPhoto"));
+    if (!form.selfie_url) return toast.error(t("kyc.needSelfie"));
 
     setSubmitting(true);
     try {
@@ -100,10 +100,10 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             .select()
             .single();
       if (error) throw error;
-      toast.success("Identidade enviada para verificação. Será notificado em 24h.");
+      toast.success(t("kyc.submitted"));
       onComplete(data);
     } catch (e: any) {
-      toast.error(e.message || "Erro ao submeter");
+      toast.error(e.message || t("kyc.submitError"));
     } finally {
       setSubmitting(false);
     }
@@ -116,10 +116,10 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
           <ShieldCheck className="h-6 w-6 text-emerald-600" />
           <div>
             <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-              Identidade verificada
+              {t("kyc.verified.title")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Pode publicar anúncios sem restrições.
+              {t("kyc.verified.desc")}
             </p>
           </div>
           <Badge className="ml-auto bg-emerald-600 text-white">KYC ✓</Badge>
@@ -135,10 +135,10 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
           <Clock className="h-6 w-6 text-amber-600" />
           <div>
             <p className="font-semibold text-amber-800 dark:text-amber-300">
-              Identidade em análise
+              {t("kyc.review.title")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Análise manual em até 24h. Receberá um email quando aprovado.
+              {t("kyc.review.desc")}
             </p>
           </div>
         </CardContent>
@@ -154,10 +154,9 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             <ShieldCheck className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-base">Verificação de Identidade obrigatória</h3>
+            <h3 className="font-semibold text-base">{t("kyc.intro.title")}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Para proteger compradores e vendedores, validamos a identidade antes de publicar.
-              Os documentos são privados e usados apenas para verificação.
+              {t("kyc.intro.desc")}
             </p>
           </div>
         </div>
@@ -166,7 +165,7 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 flex items-start gap-2">
             <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="text-xs">
-              <p className="font-semibold text-red-800 dark:text-red-300">Submissão anterior recusada</p>
+              <p className="font-semibold text-red-800 dark:text-red-300">{t("kyc.rejected.title")}</p>
               <p className="text-red-700 dark:text-red-400 mt-0.5">{profile.kyc_rejection_reason}</p>
             </div>
           </div>
@@ -174,7 +173,7 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>NIF *</Label>
+            <Label>{t("kyc.field.nif")} *</Label>
             <Input
               value={form.nif}
               onChange={(e) => setForm((p) => ({ ...p, nif: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
@@ -183,16 +182,16 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             />
           </div>
           <div>
-            <Label>Morada Completa *</Label>
+            <Label>{t("kyc.field.address")} *</Label>
             <Input
               value={form.address}
               onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-              placeholder="Rua, número, código postal, cidade"
+              placeholder={t("kyc.field.addressPh")}
               disabled={isLocked}
             />
           </div>
           <div>
-            <Label>Tipo de Documento *</Label>
+            <Label>{t("kyc.field.docType")} *</Label>
             <Select
               value={form.document_type}
               onValueChange={(v) => setForm((p) => ({ ...p, document_type: v }))}
@@ -205,11 +204,11 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             </Select>
           </div>
           <div>
-            <Label>Nº do Documento *</Label>
+            <Label>{t("kyc.field.docNum")} *</Label>
             <Input
               value={form.document_number}
               onChange={(e) => setForm((p) => ({ ...p, document_number: e.target.value }))}
-              placeholder="Ex: 12345678 9 ZZ1"
+              placeholder={t("kyc.field.docNumPh")}
               disabled={isLocked}
             />
           </div>
@@ -217,27 +216,32 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FileSlot
-            label="Foto do Documento"
+            label={t("kyc.slot.doc")}
             icon={<FileText className="h-4 w-4" />}
             uploaded={!!form.document_url}
             uploading={uploading === "doc"}
             onChange={(f) => uploadFile(f, "doc")}
-            help="Frente ou frente+verso. JPG/PNG até 5MB."
+            help={t("kyc.slot.docHelp")}
+            uploadingLabel={t("kyc.slot.uploading")}
+            replaceLabel={t("kyc.slot.replace")}
+            uploadLabel={t("kyc.slot.upload")}
           />
           <FileSlot
-            label="Selfie com Documento"
+            label={t("kyc.slot.selfie")}
             icon={<Camera className="h-4 w-4" />}
             uploaded={!!form.selfie_url}
             uploading={uploading === "selfie"}
             onChange={(f) => uploadFile(f, "selfie")}
-            help="A sua cara visível e o documento ao lado."
+            help={t("kyc.slot.selfieHelp")}
+            uploadingLabel={t("kyc.slot.uploading")}
+            replaceLabel={t("kyc.slot.replace")}
+            uploadLabel={t("kyc.slot.upload")}
           />
         </div>
 
         <div className="flex items-center justify-between border-t pt-4">
           <p className="text-[10px] text-muted-foreground max-w-md">
-            Os seus documentos são armazenados de forma cifrada e privada.
-            Ao submeter aceita o tratamento dos dados para verificação de identidade.
+            {t("kyc.privacy")}
           </p>
           <Button
             onClick={handleSubmit}
@@ -245,7 +249,7 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             className="bg-amber-500 hover:bg-amber-400 text-slate-900"
           >
             {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-            Submeter para verificação
+            {t("kyc.submit")}
           </Button>
         </div>
       </CardContent>
@@ -255,9 +259,11 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
 
 function FileSlot({
   label, icon, uploaded, uploading, onChange, help,
+  uploadingLabel, replaceLabel, uploadLabel,
 }: {
   label: string; icon: React.ReactNode; uploaded: boolean; uploading: boolean;
   onChange: (f: File) => void; help: string;
+  uploadingLabel: string; replaceLabel: string; uploadLabel: string;
 }) {
   return (
     <label className={`block border-2 border-dashed rounded-xl p-4 cursor-pointer transition-colors ${uploaded ? "border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/20" : "border-border hover:border-amber-400"}`}>
@@ -276,7 +282,7 @@ function FileSlot({
       <p className="text-[11px] text-muted-foreground mb-2">{help}</p>
       <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
         {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-        {uploading ? "A carregar..." : uploaded ? "Substituir ficheiro" : "Carregar ficheiro"}
+        {uploading ? uploadingLabel : uploaded ? replaceLabel : uploadLabel}
       </div>
     </label>
   );

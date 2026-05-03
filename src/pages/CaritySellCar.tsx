@@ -14,10 +14,12 @@ import MarketKYCFlow from "@/components/MarketKYCFlow";
 import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
+import { useMarketT } from "@/i18n/marketTranslations";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 
 export default function CaritySellCar() {
+  const t = useMarketT();
   const navigate = useNavigate();
   const { pricing, formatPrice } = useCountryPricing();
   const [user, setUser] = useState<any>(null);
@@ -40,7 +42,7 @@ export default function CaritySellCar() {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Precisa de uma conta para vender. Faça login primeiro.");
+      toast.error(t("sell.toast.needAccount"));
       navigate("/market/auth?mode=signup&redirect=/market/sell");
       return;
     }
@@ -53,24 +55,16 @@ export default function CaritySellCar() {
     }
   };
 
-  // Photo upload is now handled by StructuredPhotoUpload component
-
   const kycApproved = sellerProfile?.kyc_status === "approved";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!kycApproved) {
-      toast.error("Verificação de identidade obrigatória antes de publicar.");
-      return;
-    }
-    if (!connectReady) {
-      toast.error("Ative a sua conta de pagamentos antes de publicar.");
-      return;
-    }
-    if (!form.make || !form.model || !form.price || !form.plate) { toast.error("Preencha todos os campos obrigatórios"); return; }
-    if (!areRequiredPhotosFilled(photoSlots)) { toast.error("Preencha todas as fotos obrigatórias do veículo"); return; }
-    if (!sellerForm.name || !sellerForm.phone) { toast.error("Preencha os dados de contacto do vendedor"); return; }
+    if (!kycApproved) { toast.error(t("sell.toast.kycRequired")); return; }
+    if (!connectReady) { toast.error(t("sell.toast.connectRequired")); return; }
+    if (!form.make || !form.model || !form.price || !form.plate) { toast.error(t("sell.toast.fillRequired")); return; }
+    if (!areRequiredPhotosFilled(photoSlots)) { toast.error(t("sell.toast.fillPhotos")); return; }
+    if (!sellerForm.name || !sellerForm.phone) { toast.error(t("sell.toast.fillContact")); return; }
 
     setLoading(true);
     try {
@@ -89,16 +83,18 @@ export default function CaritySellCar() {
 
       if (error) {
         if (error.message?.includes("VIN_DUPLICATE") || error.code === "23505") {
-          throw new Error("Já existe um anúncio ativo com este VIN. Cada veículo só pode ter um anúncio ativo na plataforma.");
+          throw new Error(t("sell.toast.vinDup"));
         }
         throw error;
       }
-      toast.success("Anúncio criado! Agora pague a taxa de inspeção para continuar.");
+      toast.success(t("sell.toast.created"));
       navigate(`/market/pay/${listing.id}`);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao criar anúncio");
+      toast.error(err.message || t("sell.toast.error"));
     } finally { setLoading(false); }
   };
+
+  const inspectionPrice = formatPrice(pricing.inspection_price);
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +106,7 @@ export default function CaritySellCar() {
           </Link>
           <Link to="/market">
             <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+              <ArrowLeft className="h-4 w-4 mr-1" /> {t("common.back")}
             </Button>
           </Link>
         </div>
@@ -118,14 +114,13 @@ export default function CaritySellCar() {
 
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Vender o meu carro</h1>
+          <h1 className="text-2xl font-bold">{t("sell.title")}</h1>
           <p className="text-muted-foreground">
-            Preencha os dados do veículo. Depois será necessário pagar {formatPrice(pricing.inspection_price)} para a inspeção oficial.
+            {t("sell.subtitle", { price: inspectionPrice })}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* KYC Gate — required before publishing */}
           {user && (
             <MarketKYCFlow
               userId={user.id}
@@ -134,7 +129,6 @@ export default function CaritySellCar() {
             />
           )}
 
-          {/* Connect Gate — required before publishing so seller can be paid out */}
           {user && kycApproved && (
             <ConnectOnboardingGate
               role="seller"
@@ -144,16 +138,16 @@ export default function CaritySellCar() {
           )}
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Dados do Vendedor</CardTitle><CardDescription>As suas informações de contacto</CardDescription></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("sell.section.seller")}</CardTitle><CardDescription>{t("sell.section.sellerDesc")}</CardDescription></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><Label>Nome *</Label><Input value={sellerForm.name} onChange={e => setSellerForm(p => ({ ...p, name: e.target.value }))} placeholder="Seu nome" /></div>
-              <div><Label>Telefone *</Label><Input value={sellerForm.phone} onChange={e => setSellerForm(p => ({ ...p, phone: e.target.value }))} placeholder="+351 9XX XXX XXX" /></div>
-              <div><Label>Localização</Label><Input value={sellerForm.location} onChange={e => setSellerForm(p => ({ ...p, location: e.target.value }))} placeholder="Lisboa, Porto..." /></div>
+              <div><Label>{t("sell.field.name")} *</Label><Input value={sellerForm.name} onChange={e => setSellerForm(p => ({ ...p, name: e.target.value }))} placeholder={t("sell.field.namePh")} /></div>
+              <div><Label>{t("sell.field.phone")} *</Label><Input value={sellerForm.phone} onChange={e => setSellerForm(p => ({ ...p, phone: e.target.value }))} placeholder="+351 9XX XXX XXX" /></div>
+              <div><Label>{t("sell.field.location")}</Label><Input value={sellerForm.location} onChange={e => setSellerForm(p => ({ ...p, location: e.target.value }))} placeholder={t("sell.field.locationPh")} /></div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Dados do Veículo</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("sell.section.vehicle")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <VehicleMakeModelSelector
@@ -164,28 +158,25 @@ export default function CaritySellCar() {
                 />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div><Label>Ano *</Label><Input type="number" value={form.year} onChange={e => setForm(p => ({ ...p, year: parseInt(e.target.value) || 2020 }))} /></div>
-                <div><Label>Quilometragem *</Label><Input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))} /></div>
-                <div><Label>Combustível *</Label>
+                <div><Label>{t("sell.field.year")} *</Label><Input type="number" value={form.year} onChange={e => setForm(p => ({ ...p, year: parseInt(e.target.value) || 2020 }))} /></div>
+                <div><Label>{t("sell.field.mileage")} *</Label><Input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))} /></div>
+                <div><Label>{t("sell.field.fuel")} *</Label>
                   <Select value={form.fuel} onValueChange={v => setForm(p => ({ ...p, fuel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FUEL_OPTIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent></Select>
                 </div>
-                <div className="col-span-2 md:col-span-3"><Label>Matrícula *</Label><Input value={form.plate} onChange={e => setForm(p => ({ ...p, plate: e.target.value }))} placeholder="AA-00-BB" /></div>
+                <div className="col-span-2 md:col-span-3"><Label>{t("sell.field.plate")} *</Label><Input value={form.plate} onChange={e => setForm(p => ({ ...p, plate: e.target.value }))} placeholder="AA-00-BB" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>VIN (opcional)</Label><Input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder="Número de chassis" /></div>
-                <div><Label>Preço ({pricing.currency_symbol}) *</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
+                <div><Label>{t("sell.field.vin")}</Label><Input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder={t("sell.field.vinPh")} /></div>
+                <div><Label>{t("sell.field.price", { sym: pricing.currency_symbol })} *</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
               </div>
-              <div><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descreva o estado do carro, extras, histórico..." rows={4} /></div>
+              <div><Label>{t("sell.field.description")}</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={t("sell.field.descriptionPh")} rows={4} /></div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Fotos do Veículo</CardTitle>
-              <CardDescription>
-                Upload estruturado obrigatório. Cada slot corresponde a uma vista específica do veículo.
-                As fotos não podem ser alteradas após submissão.
-              </CardDescription>
+              <CardTitle className="text-lg">{t("sell.section.photos")}</CardTitle>
+              <CardDescription>{t("sell.section.photosDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               {user && (
@@ -203,8 +194,8 @@ export default function CaritySellCar() {
               <div className="flex items-center gap-3 mb-3">
                 <ShieldCheck className="h-8 w-8 text-amber-500" />
                 <div>
-                  <h3 className="font-semibold">Taxa de Inspeção: {formatPrice(pricing.inspection_price)}</h3>
-                  <p className="text-sm text-muted-foreground">Após submeter, será redirecionado para pagamento. Uma oficina certificada fará a inspeção completa do seu carro.</p>
+                  <h3 className="font-semibold">{t("sell.fee.title", { price: inspectionPrice })}</h3>
+                  <p className="text-sm text-muted-foreground">{t("sell.fee.desc")}</p>
                 </div>
               </div>
             </CardContent>
@@ -212,7 +203,7 @@ export default function CaritySellCar() {
 
           <Button type="submit" size="lg" className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60" disabled={loading || !kycApproved || !connectReady}>
             {!kycApproved || !connectReady ? <Lock className="h-4 w-4 mr-2" /> : loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Car className="h-4 w-4 mr-2" />}
-            {!kycApproved ? "Verificação de identidade obrigatória" : !connectReady ? "Ative a conta de pagamentos para publicar" : `Submeter e pagar inspeção (${formatPrice(pricing.inspection_price)})`}
+            {!kycApproved ? t("sell.cta.kyc") : !connectReady ? t("sell.cta.connect") : t("sell.cta.submit", { price: inspectionPrice })}
           </Button>
         </form>
       </div>

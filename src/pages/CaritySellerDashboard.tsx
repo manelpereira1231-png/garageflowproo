@@ -12,25 +12,27 @@ import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loade
 import VehicleTimeline from "@/components/VehicleTimeline";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
-  pending_inspection: { label: "Aguarda Inspeção", color: "bg-blue-100 text-blue-800", icon: Clock },
-  inspecting: { label: "Em Inspeção", color: "bg-purple-100 text-purple-800", icon: Eye },
-  pending_approval: { label: "Aguarda Aprovação", color: "bg-orange-100 text-orange-800", icon: Clock },
-  published: { label: "Publicado", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  sold: { label: "Vendido", color: "bg-slate-100 text-slate-800", icon: CheckCircle },
-  rejected: { label: "Rejeitado", color: "bg-red-100 text-red-800", icon: XCircle },
+const STATUS_META: Record<string, { key: string; color: string; icon: any }> = {
+  pending_payment: { key: "sd.status.pending_payment", color: "bg-amber-100 text-amber-800", icon: Clock },
+  pending_inspection: { key: "sd.status.pending_inspection", color: "bg-blue-100 text-blue-800", icon: Clock },
+  inspecting: { key: "sd.status.inspecting", color: "bg-purple-100 text-purple-800", icon: Eye },
+  pending_approval: { key: "sd.status.pending_approval", color: "bg-orange-100 text-orange-800", icon: Clock },
+  published: { key: "sd.status.published", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  sold: { key: "sd.status.sold", color: "bg-slate-100 text-slate-800", icon: CheckCircle },
+  rejected: { key: "sd.status.rejected", color: "bg-red-100 text-red-800", icon: XCircle },
 };
 
 const BOOST_OPTIONS = [
-  { type: "7d", label: "Destaque 7 dias", price: "4,99" },
-  { type: "14d", label: "Destaque 14 dias", price: "7,99" },
-  { type: "top", label: "Topo do marketplace", price: "9,99" },
+  { type: "7d", labelKey: "sd.boost.7d", price: "4,99" },
+  { type: "14d", labelKey: "sd.boost.14d", price: "7,99" },
+  { type: "top", labelKey: "sd.boost.top", price: "9,99" },
 ];
 
 export default function CaritySellerDashboard() {
   const navigate = useNavigate();
+  const t = useMarketT();
   const { pricing, formatPrice } = useCountryPricing();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

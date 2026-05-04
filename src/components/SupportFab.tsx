@@ -21,6 +21,7 @@ export default function SupportFab() {
   const { language } = useLanguage();
 
   const hidden =
+    location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/support") ||
     location.pathname.startsWith("/reset-password") ||
     location.pathname.startsWith("/quote/") ||

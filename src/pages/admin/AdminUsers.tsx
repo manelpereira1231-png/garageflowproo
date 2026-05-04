@@ -122,7 +122,7 @@ export default function AdminUsers() {
   };
 
   const exportCSV = () => {
-    const headers = ["Email", t('admin.shops.shop'), "Role", "User ID", t('admin.shops.created')];
+    const headers = ["Email", t('admin.shops.shop'), "Função", "ID do Utilizador", t('admin.shops.created')];
     const rows = filtered.map(u => [
       u.email, u.shop_name, u.role, u.user_id, new Date(u.created_at).toLocaleDateString(),
     ]);
@@ -227,7 +227,7 @@ export default function AdminUsers() {
           <Input placeholder={t('admin.users.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="Role" /></SelectTrigger>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="Função" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
             <SelectItem value="super_admin">Super Admin</SelectItem>
@@ -244,8 +244,8 @@ export default function AdminUsers() {
             <TableRow>
               <TableHead>Email</TableHead>
               <TableHead>{t('admin.shops.shop')}</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>User ID</TableHead>
+              <TableHead>Função</TableHead>
+              <TableHead>ID do Utilizador</TableHead>
               <TableHead>{t('admin.shops.created')}</TableHead>
               <TableHead>{t('admin.shops.actions')}</TableHead>
             </TableRow>

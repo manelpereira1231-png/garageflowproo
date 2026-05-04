@@ -565,7 +565,7 @@ export default function AdminShopDetail() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Função</TableHead>
                   <TableHead>Desde</TableHead>
                 </TableRow>
               </TableHeader>

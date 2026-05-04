@@ -139,7 +139,7 @@ export default function AdminSystemControl() {
 
       <Tabs defaultValue="flags" className="w-full">
         <TabsList>
-          <TabsTrigger value="flags"><ToggleLeft className="w-4 h-4 mr-2" />Feature Flags</TabsTrigger>
+          <TabsTrigger value="flags"><ToggleLeft className="w-4 h-4 mr-2" />Funcionalidades</TabsTrigger>
           <TabsTrigger value="broadcasts"><Megaphone className="w-4 h-4 mr-2" />Broadcasts</TabsTrigger>
         </TabsList>
 

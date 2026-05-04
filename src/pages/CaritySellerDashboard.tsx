@@ -12,25 +12,27 @@ import { ShieldCheck, Plus, Car, Clock, CheckCircle, Eye, XCircle, Rocket, Loade
 import VehicleTimeline from "@/components/VehicleTimeline";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { useMarketT } from "@/i18n/marketTranslations";
 
-const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  pending_payment: { label: "Aguarda Pagamento", color: "bg-amber-100 text-amber-800", icon: Clock },
-  pending_inspection: { label: "Aguarda Inspeção", color: "bg-blue-100 text-blue-800", icon: Clock },
-  inspecting: { label: "Em Inspeção", color: "bg-purple-100 text-purple-800", icon: Eye },
-  pending_approval: { label: "Aguarda Aprovação", color: "bg-orange-100 text-orange-800", icon: Clock },
-  published: { label: "Publicado", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  sold: { label: "Vendido", color: "bg-slate-100 text-slate-800", icon: CheckCircle },
-  rejected: { label: "Rejeitado", color: "bg-red-100 text-red-800", icon: XCircle },
+const STATUS_META: Record<string, { key: string; color: string; icon: any }> = {
+  pending_payment: { key: "sd.status.pending_payment", color: "bg-amber-100 text-amber-800", icon: Clock },
+  pending_inspection: { key: "sd.status.pending_inspection", color: "bg-blue-100 text-blue-800", icon: Clock },
+  inspecting: { key: "sd.status.inspecting", color: "bg-purple-100 text-purple-800", icon: Eye },
+  pending_approval: { key: "sd.status.pending_approval", color: "bg-orange-100 text-orange-800", icon: Clock },
+  published: { key: "sd.status.published", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  sold: { key: "sd.status.sold", color: "bg-slate-100 text-slate-800", icon: CheckCircle },
+  rejected: { key: "sd.status.rejected", color: "bg-red-100 text-red-800", icon: XCircle },
 };
 
 const BOOST_OPTIONS = [
-  { type: "7d", label: "Destaque 7 dias", price: "4,99" },
-  { type: "14d", label: "Destaque 14 dias", price: "7,99" },
-  { type: "top", label: "Topo do marketplace", price: "9,99" },
+  { type: "7d", labelKey: "sd.boost.7d", price: "4,99" },
+  { type: "14d", labelKey: "sd.boost.14d", price: "7,99" },
+  { type: "top", labelKey: "sd.boost.top", price: "9,99" },
 ];
 
 export default function CaritySellerDashboard() {
   const navigate = useNavigate();
+  const t = useMarketT();
   const { pricing, formatPrice } = useCountryPricing();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function CaritySellerDashboard() {
       const { url } = res.data;
       if (url) window.location.href = url;
     } catch (err: any) {
-      toast.error(err.message || "Erro ao processar boost");
+      toast.error(err.message || t("sd.boost.error"));
     } finally {
       setBoostingId(null);
     }
@@ -147,20 +149,20 @@ export default function CaritySellerDashboard() {
       });
 
       if (error) throw error;
-      toast.success("Pedido de confirmação de venda enviado ao comprador!");
+      toast.success(t("sd.sale.success"));
       setSellDialog(null);
       setBuyerEmail("");
       setBuyerPhone("");
       setSalePrice("");
     } catch (err: any) {
-      toast.error(err.message || "Erro ao registar venda");
+      toast.error(err.message || t("sd.sale.error"));
     } finally {
       setSubmittingSale(false);
     }
   };
 
   const openWhatsAppToShop = (shop: any, listing: any) => {
-    if (!shop?.phone) { toast.error("Oficina sem telefone registado"); return; }
+    if (!shop?.phone) { toast.error(t("sd.shop.noPhone")); return; }
     const url = buildWhatsAppUrl({
       phone: shop.phone,
       clientName: shop.name,
@@ -172,7 +174,7 @@ export default function CaritySellerDashboard() {
 
   return (
     <MarketLayout>
-      <h1 className="text-2xl font-bold mb-6">Os meus anúncios</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("sd.title")}</h1>
 
 
         {loading ? (
@@ -183,11 +185,11 @@ export default function CaritySellerDashboard() {
           <Card>
             <CardContent className="py-12 text-center">
               <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-              <h3 className="font-semibold mb-2">Ainda não tem anúncios</h3>
-              <p className="text-muted-foreground mb-4">Comece a vender o seu carro com a confiança de uma inspeção oficial.</p>
+              <h3 className="font-semibold mb-2">{t("sd.empty.title")}</h3>
+              <p className="text-muted-foreground mb-4">{t("sd.empty.desc")}</p>
               <Link to="/market/sell">
                 <Button className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-                  <Plus className="h-4 w-4 mr-1" /> Criar anúncio
+                  <Plus className="h-4 w-4 mr-1" /> {t("sd.empty.cta")}
                 </Button>
               </Link>
             </CardContent>
@@ -195,7 +197,7 @@ export default function CaritySellerDashboard() {
         ) : (
           <div className="space-y-4">
             {listings.map(listing => {
-              const statusConfig = STATUS_MAP[listing.status] || STATUS_MAP.pending_payment;
+              const statusConfig = STATUS_META[listing.status] || STATUS_META.pending_payment;
               const StatusIcon = statusConfig.icon;
               const canBoost = listing.status === "published" && !listing.boost_active;
               const canSell = listing.status === "published";
@@ -217,8 +219,8 @@ export default function CaritySellerDashboard() {
                             <p className="text-sm text-muted-foreground">{listing.plate} · {listing.mileage?.toLocaleString()} km · {formatPrice(Number(listing.price) || 0)}</p>
                           </div>
                         <div className="flex items-center gap-2">
-                            {listing.boost_active && <Badge className="bg-purple-100 text-purple-800"><Rocket className="h-3 w-3 mr-1" />Destaque</Badge>}
-                            <Badge className={statusConfig.color}><StatusIcon className="h-3 w-3 mr-1" />{statusConfig.label}</Badge>
+                            {listing.boost_active && <Badge className="bg-purple-100 text-purple-800"><Rocket className="h-3 w-3 mr-1" />{t("sd.boost.badge")}</Badge>}
+                            <Badge className={statusConfig.color}><StatusIcon className="h-3 w-3 mr-1" />{t(statusConfig.key)}</Badge>
                           </div>
                         </div>
 
@@ -227,41 +229,41 @@ export default function CaritySellerDashboard() {
                           <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
                             <span className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
                               <Eye className="h-3 w-3" />
-                              <strong className="text-foreground">{listing.stats.viewsTotal}</strong> visualizações
+                              <strong className="text-foreground">{listing.stats.viewsTotal}</strong> {t("sd.stats.views")}
                             </span>
                             {listing.stats.viewsToday > 0 && (
                               <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded font-medium">
                                 <TrendingUp className="h-3 w-3" />
-                                {listing.stats.viewsToday} hoje
+                                {t("sd.stats.today", { count: listing.stats.viewsToday })}
                               </span>
                             )}
                             <span className="inline-flex items-center gap-1 text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
                               <Heart className={`h-3 w-3 ${listing.stats.favorites > 0 ? "fill-red-500 text-red-500" : ""}`} />
-                              <strong className="text-foreground">{listing.stats.favorites}</strong> {listing.stats.favorites === 1 ? "favorito" : "favoritos"}
+                              <strong className="text-foreground">{listing.stats.favorites}</strong> {listing.stats.favorites === 1 ? t("sd.stats.favorite") : t("sd.stats.favorites")}
                             </span>
                           </div>
                         )}
 
                         <div className="flex gap-2 mt-2 flex-wrap">
                           <Button size="sm" variant="outline" onClick={() => setSelectedListing(selectedListing?.id === listing.id ? null : listing)}>
-                            <Eye className="h-3 w-3 mr-1" /> {selectedListing?.id === listing.id ? "Ocultar" : "Ver progresso"}
+                            <Eye className="h-3 w-3 mr-1" /> {selectedListing?.id === listing.id ? t("sd.btn.hide") : t("sd.btn.show")}
                           </Button>
 
                           {listing.status === 'pending_payment' && (
                             <Link to={`/market/pay/${listing.id}`}>
-                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">{`Pagar inspeção (${formatPrice(pricing.inspection_price)})`}</Button>
+                              <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">{t("sd.btn.payInspection", { price: formatPrice(pricing.inspection_price) })}</Button>
                             </Link>
                           )}
 
                           {hasShop && (
                             <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => openWhatsAppToShop(shop, listing)}>
-                              <MessageCircle className="h-3 w-3 mr-1" /> Falar com oficina
+                              <MessageCircle className="h-3 w-3 mr-1" /> {t("sd.btn.contactShop")}
                             </Button>
                           )}
 
                           {canSell && (
                             <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => { setSellDialog({ listing }); setSalePrice(listing.price?.toString() || ""); }}>
-                              <Tag className="h-3 w-3 mr-1" /> Marcar como vendido
+                              <Tag className="h-3 w-3 mr-1" /> {t("sd.btn.markSold")}
                             </Button>
                           )}
                         </div>
@@ -278,7 +280,7 @@ export default function CaritySellerDashboard() {
                                 onClick={() => handleBoost(listing.id, opt.type)}
                               >
                                 {boostingId === listing.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Rocket className="h-3 w-3 mr-1" />}
-                                {opt.label} — €{opt.price}
+                                {t(opt.labelKey)} — €{opt.price}
                               </Button>
                             ))}
                           </div>
@@ -289,7 +291,7 @@ export default function CaritySellerDashboard() {
                     {/* Expanded detail panel */}
                     {selectedListing?.id === listing.id && (
                       <div className="mt-4 pt-4 border-t space-y-4">
-                        <h4 className="text-sm font-semibold mb-2">Progresso do veículo</h4>
+                        <h4 className="text-sm font-semibold mb-2">{t("sd.progress.title")}</h4>
                         <VehicleTimeline
                           status={listing.status}
                           inspectionStatus={inspection?.status}
@@ -305,7 +307,7 @@ export default function CaritySellerDashboard() {
                             <CardHeader className="pb-2 pt-3">
                               <CardTitle className="text-sm flex items-center gap-2">
                                 <ShieldCheck className="h-4 w-4 text-amber-500" />
-                                Oficina responsável
+                                {t("sd.shop.responsible")}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="pb-3 space-y-2">
@@ -327,7 +329,7 @@ export default function CaritySellerDashboard() {
                               {inspection?.scheduled_date && (
                                 <div className="flex items-center gap-1 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                                   <CalendarCheck className="h-3.5 w-3.5" />
-                                  Agendada: {inspection.scheduled_date}{inspection.scheduled_time ? ` às ${inspection.scheduled_time}` : ""}
+                                  {t("sd.shop.scheduled", { date: `${inspection.scheduled_date}${inspection.scheduled_time ? ` — ${inspection.scheduled_time}` : ""}` })}
                                 </div>
                               )}
 
@@ -340,7 +342,7 @@ export default function CaritySellerDashboard() {
                                     rel="noopener noreferrer"
                                   >
                                     <Button size="sm" variant="outline">
-                                      <MapPin className="h-3 w-3 mr-1" /> Abrir no Google Maps
+                                      <MapPin className="h-3 w-3 mr-1" /> {t("sd.shop.openMaps")}
                                     </Button>
                                   </a>
                                 ) : shop.address ? (
@@ -350,7 +352,7 @@ export default function CaritySellerDashboard() {
                                     rel="noopener noreferrer"
                                   >
                                     <Button size="sm" variant="outline">
-                                      <MapPin className="h-3 w-3 mr-1" /> Abrir no Google Maps
+                                      <MapPin className="h-3 w-3 mr-1" /> {t("sd.shop.openMaps")}
                                     </Button>
                                   </a>
                                 ) : null}
@@ -395,30 +397,30 @@ export default function CaritySellerDashboard() {
       <Dialog open={!!sellDialog} onOpenChange={o => !o && setSellDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar venda — {sellDialog?.listing?.make} {sellDialog?.listing?.model}</DialogTitle>
+            <DialogTitle>{t("sd.sale.dialog.title", { vehicle: `${sellDialog?.listing?.make ?? ""} ${sellDialog?.listing?.model ?? ""}`.trim() })}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground mb-4">
-            Insira os dados do comprador. Enviaremos um link de confirmação para validar a venda. A comissão só será gerada após confirmação dupla.
+            {t("sd.sale.dialog.desc")}
           </p>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium">Email do comprador *</label>
+              <label className="text-sm font-medium">{t("sd.sale.buyerEmail")}</label>
               <Input value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} placeholder="comprador@email.com" type="email" />
             </div>
             <div>
-              <label className="text-sm font-medium">Telefone do comprador</label>
+              <label className="text-sm font-medium">{t("sd.sale.buyerPhone")}</label>
               <Input value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} placeholder="912345678" />
             </div>
             <div>
-              <label className="text-sm font-medium">Preço de venda ({pricing.currency_symbol})</label>
+              <label className="text-sm font-medium">{t("sd.sale.price", { currency: pricing.currency_symbol })}</label>
               <Input value={salePrice} onChange={e => setSalePrice(e.target.value)} type="number" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSellDialog(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setSellDialog(null)}>{t("sd.sale.cancel")}</Button>
             <Button onClick={handleMarkSold} disabled={!buyerEmail || submittingSale} className="bg-green-600 hover:bg-green-500 text-white">
               {submittingSale ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-              Confirmar venda
+              {t("sd.sale.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

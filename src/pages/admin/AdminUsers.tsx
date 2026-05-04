@@ -122,7 +122,7 @@ export default function AdminUsers() {
   };
 
   const exportCSV = () => {
-    const headers = ["Email", t('admin.shops.shop'), "Role", "User ID", t('admin.shops.created')];
+    const headers = ["Email", t('admin.shops.shop'), "Função", "ID do Utilizador", t('admin.shops.created')];
     const rows = filtered.map(u => [
       u.email, u.shop_name, u.role, u.user_id, new Date(u.created_at).toLocaleDateString(),
     ]);

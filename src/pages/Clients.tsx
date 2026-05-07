@@ -7,9 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2 } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { openWhatsApp } from "@/lib/whatsapp";
+
+const sendWhatsAppHello = (client: { phone: string; name: string }) => {
+  if (!client.phone) {
+    toast.error("Cliente sem telefone");
+    return;
+  }
+  const ok = openWhatsApp({
+    phone: client.phone,
+    clientName: client.name,
+    type: "service",
+  });
+  if (!ok) toast.error("Não foi possível abrir o WhatsApp");
+};
 
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
@@ -189,9 +203,12 @@ export default function Clients() {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="h-7 w-7 p-0" title="Portal"><Link2 className="w-3.5 h-3.5 text-primary" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-7 w-7 p-0"><Pencil className="w-3.5 h-3.5" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+                {client.phone && (
+                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-11 p-0"><Pencil className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-11 p-0 text-destructive"><Trash2 className="w-4 h-4" /></Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -238,6 +255,11 @@ export default function Clients() {
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    {client.phone && (
+                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500" title="WhatsApp">
+                        <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>

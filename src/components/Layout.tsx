@@ -67,7 +67,9 @@ type FinancialNavItem = {
   locked?: boolean;
 };
 
-const ESSENTIAL_NAV_PATHS = ["/dashboard", "/clients", "/vehicles", "/quotes", "/settings"];
+// Lite Mode: only the 5 essentials a workshop needs daily.
+// Clientes, Veículos, Orçamentos, Serviços, Definições.
+const ESSENTIAL_NAV_PATHS = ["/clients", "/vehicles", "/quotes", "/services", "/settings"];
 
 const isFinancialRoute = (pathname: string) =>
   pathname.startsWith("/invoices") || pathname.startsWith("/financial");

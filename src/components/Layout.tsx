@@ -543,7 +543,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <span className="text-sm font-medium text-muted-foreground hidden lg:block truncate tracking-tight">{shopName}</span>
 
-          <div className="flex-1" />
+          <div className="flex-1 flex justify-center px-2 lg:px-6">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
+              className="group inline-flex items-center gap-2 w-full max-w-md h-9 px-3 rounded-lg border border-border/60 bg-muted/40 hover:bg-muted hover:border-border transition-colors text-left"
+              title={language === "pt" ? "Pesquisar (Ctrl+K)" : "Search (Ctrl+K)"}
+            >
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground truncate flex-1">
+                {language === "pt" ? "Pesquisar clientes, veículos, orçamentos…" : "Search clients, vehicles, quotes…"}
+              </span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground bg-background border border-border/60 rounded px-1.5 py-0.5">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </button>
+          </div>
 
           <ThemeToggle className="mr-1" />
 

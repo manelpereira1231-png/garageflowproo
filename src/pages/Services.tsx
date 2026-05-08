@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",

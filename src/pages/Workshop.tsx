@@ -357,20 +357,22 @@ export default function Workshop() {
                 </div>
               )}
 
-              {/* AI Diagnosis Panel */}
+              {/* AI Diagnosis Panel (lazy) */}
               {(selected.status === 'open' || selected.status === 'diagnosis') && activeShopId && (
-                <AIDiagnosisPanel
-                  vehicle={selected.vehicles ? {
-                    make: (selected.vehicles as any).make,
-                    model: (selected.vehicles as any).model,
-                    year: (selected.vehicles as any).year || 2024,
-                    fuel: (selected.vehicles as any).fuel || 'Gasolina',
-                    mileage: selected.entry_mileage || 0,
-                  } : undefined}
-                  clientDescription={selected.client_description || ''}
-                  shopId={activeShopId}
-                  onApplyDiagnosis={(text) => setDiagnosisText(prev => prev ? `${prev}\n\n${text}` : text)}
-                />
+                <Suspense fallback={<div className="h-20 bg-muted/40 rounded-xl animate-pulse" />}>
+                  <AIDiagnosisPanel
+                    vehicle={selected.vehicles ? {
+                      make: (selected.vehicles as any).make,
+                      model: (selected.vehicles as any).model,
+                      year: (selected.vehicles as any).year || 2024,
+                      fuel: (selected.vehicles as any).fuel || 'Gasolina',
+                      mileage: selected.entry_mileage || 0,
+                    } : undefined}
+                    clientDescription={selected.client_description || ''}
+                    shopId={activeShopId}
+                    onApplyDiagnosis={(text) => setDiagnosisText(prev => prev ? `${prev}\n\n${text}` : text)}
+                  />
+                </Suspense>
               )}
 
               {/* Existing diagnosis */}

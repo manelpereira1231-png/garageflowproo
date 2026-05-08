@@ -174,26 +174,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // We no longer auto-exit Lite based on data activity — keeps the experience
   // predictable across sessions.
 
-  const [financialOpen, setFinancialOpen] = useState(isFinancialRoute(location.pathname));
-
   const navItems: NavItem[] = useMemo(() => [
     { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    // Operação
     { path: "/clients", label: t("nav.clients"), icon: Users },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car },
     { path: "/quotes", label: t("nav.quotes"), icon: FileText },
     { path: "/services", label: t("nav.services"), icon: Wrench },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays },
-    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
-    { path: "/stock", label: t("nav.stock"), icon: Package },
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
+    // Catálogo
+    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
+    { path: "/stock", label: t("nav.stock"), icon: Package },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
-    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
-    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
+    // Financeiro
+    { path: "/invoices", label: t("nav.invoices"), icon: Receipt },
+    { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
+    { path: "/billing", label: t("nav.billing"), icon: CreditCard },
+    // Crescimento
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },
-    { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
+    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
+    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
     {
       path: "/alerts",
       label: t("nav.alerts"),
@@ -202,17 +206,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       planBadge: !canUseFeature("basicAlerts") ? "Pro" : undefined,
       locked: !canUseFeature("basicAlerts"),
     },
+    // Market
+    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
+    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
+    // Sistema
     { path: "/team", label: t("nav.team"), icon: UserPlus, planBadge: !canUseFeature("teamManagement") ? "Pro" : undefined, locked: !canUseFeature("teamManagement") },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
-    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
-    { path: "/billing", label: t("nav.billing"), icon: CreditCard },
+    { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
     { path: "/settings", label: t("nav.settings"), icon: Settings },
   ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
 
-  const financialSubItems: FinancialNavItem[] = useMemo(() => [
-    { path: "/invoices", label: t("nav.invoices") },
-    { path: "/financial/reports", label: t("nav.financialReports"), planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
-  ], [canUseFeature, t]);
+  // Logical grouping for premium SaaS feel (Linear/Notion-style).
+  const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
+    { id: "ops", label: "Operação", paths: ["/clients","/vehicles","/quotes","/services","/agenda","/inspections","/workshop"] },
+    { id: "catalog", label: "Catálogo & Stock", paths: ["/catalog","/stock","/warranties"] },
+    { id: "finance", label: "Financeiro", paths: ["/invoices","/financial/reports","/billing"] },
+    { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals","/chat","/alerts"] },
+    { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
+    { id: "system", label: "Sistema", paths: ["/team","/developers","/settings"] },
+  ], []);
+
+  const groupStateKey = `garageflow_sidebar_groups_${activeShopId || "global"}`;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(groupStateKey);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { ops: true, catalog: false, finance: false, growth: false, market: false, system: false };
+  });
+  useEffect(() => {
+    // Auto-open the group containing the current route for discoverability.
+    const activeGroup = NAV_GROUPS.find(g => g.paths.some(p => isPathActive(location.pathname, p)));
+    if (activeGroup && !openGroups[activeGroup.id]) {
+      setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+  const toggleGroup = (id: string) => {
+    setOpenGroups(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem(groupStateKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
@@ -360,79 +395,61 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
 
-              if (item.path === "/alerts" && !opts.fav) {
-                const finActive = isFinancialRoute(location.pathname);
-                return (
-                  <div key="fin-group">
-                    <button
-                      onClick={() => setFinancialOpen(!financialOpen)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full ${
-                        finActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      }`}
-                    >
-                      <Receipt className="w-[18px] h-[18px] shrink-0" />
-                      <span className="truncate">{t("nav.financial")}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform ${financialOpen ? "rotate-180" : ""}`} />
-                    </button>
-                    {financialOpen && (
-                      <div className="ml-7 mt-0.5 space-y-0.5">
-                        {financialSubItems.map((fi) => {
-                          const fiActive = isPathActive(location.pathname, fi.path);
-                          return (
-                            <Link
-                              key={fi.path}
-                              to={fi.path}
-                              onClick={() => setSidebarOpen(false)}
-                              onMouseEnter={() => handlePrefetch(fi.path)}
-                              onFocus={() => handlePrefetch(fi.path)}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                                fiActive
-                                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-                              }`}
-                            >
-                              <span className="truncate">{fi.label}</span>
-                              <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                                {fi.planBadge && (
-                                  <span
-                                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                                      fiActive
-                                        ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
-                                        : "bg-sidebar-accent text-sidebar-foreground/70"
-                                    }`}
-                                  >
-                                    {fi.planBadge}
-                                  </span>
-                                )}
-                                {fi.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <div key={item.path}>{navLink}</div>
-                  </div>
-                );
-              }
-
               return <div key={item.path}>{navLink}</div>;
             };
+
+            // Dashboard always pinned at very top (outside groups).
+            const dashboardItem = regularItems.find(i => i.path === "/dashboard");
+            const groupedRegular = regularItems.filter(i => i.path !== "/dashboard");
 
             return (
               <>
                 {favoriteItems.length > 0 && (
-                  <>
+                  <div className="mb-2">
                     <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
                       <StarIcon className="w-3 h-3 fill-current" /> Favoritos
                     </div>
                     {favoriteItems.map((it, i) => renderItem(it, { fav: true, index: i, total: favoriteItems.length }))}
-                    <div className="my-2 border-t border-sidebar-border/60" />
-                  </>
+                    <div className="mt-2 border-t border-sidebar-border/60" />
+                  </div>
                 )}
-                {regularItems.map((it) => renderItem(it, { fav: false }))}
+
+                {dashboardItem && (
+                  <div className="mb-2">{renderItem(dashboardItem, { fav: false })}</div>
+                )}
+
+                {isGuidedMode
+                  ? groupedRegular.map((it) => renderItem(it, { fav: false }))
+                  : NAV_GROUPS.map((group) => {
+                      const groupItems = groupedRegular.filter(i => group.paths.includes(i.path));
+                      if (groupItems.length === 0) return null;
+                      const open = openGroups[group.id];
+                      const hasActive = groupItems.some(i => isPathActive(location.pathname, i.path));
+                      const totalBadge = groupItems.reduce((sum, i) => sum + (!sidebarPrefs.isMuted(i.path) && i.badge ? i.badge : 0), 0);
+                      return (
+                        <div key={group.id} className="mb-1">
+                          <button
+                            onClick={() => toggleGroup(group.id)}
+                            className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
+                              hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55 hover:text-sidebar-foreground"
+                            }`}
+                          >
+                            <ChevronDown className={`w-3 h-3 mr-1.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+                            <span className="flex-1 text-left">{group.label}</span>
+                            {!open && totalBadge > 0 && (
+                              <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                                {totalBadge > 99 ? "99+" : totalBadge}
+                              </span>
+                            )}
+                          </button>
+                          {open && (
+                            <div className="space-y-0.5 mt-0.5 animate-accordion-down overflow-hidden">
+                              {groupItems.map((it) => renderItem(it, { fav: false }))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
               </>
             );
           })()}

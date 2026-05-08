@@ -331,15 +331,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground text-sm mt-0.5">{t('dashboard.subtitle')}</p>
           </div>
         </div>
-        {/* CMD+K hint - desktop only */}
-        <button
-          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-all"
-        >
-          <Search className="w-3.5 h-3.5" />
-          {t('dashboard.search') || 'Pesquisar'}
-          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background border border-border text-[10px] font-mono">⌘K</kbd>
-        </button>
+        {/* Search now lives permanently in the topbar — no duplicate pill here. */}
       </div>
 
       {/* Lite Mode = simplified guided dashboard. The Lite/Pro toggle lives in the topbar. */}

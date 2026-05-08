@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +11,14 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import AIDiagnosisPanel from "@/components/AIDiagnosisPanel";
-import LaborTimer from "@/components/LaborTimer";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 import { sendPushNotification } from "@/lib/pushNotifications";
+import { pageCache } from "@/lib/pageCache";
+
+// Lazy-load heavy panels — only when the detail dialog is opened
+const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
+const LaborTimer = lazy(() => import("@/components/LaborTimer"));
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 
@@ -38,9 +41,11 @@ export default function Workshop() {
     { key: 'completed', label: t('workshop.filterCompleted') },
     { key: 'all', label: t('workshop.filterAll') },
   ];
-  const [workOrders, setWorkOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
+  const _initShop = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _wCache = pageCache.get<any[]>(`workshop:${_initShop}:active`);
+  const [workOrders, setWorkOrders] = useState<any[]>(_wCache ?? []);
+  const [loading, setLoading] = useState(!_wCache);
   const [selected, setSelected] = useState<any>(null);
   const [checklist, setChecklist] = useState<any>(null);
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
@@ -52,12 +57,17 @@ export default function Workshop() {
 
   const fetchOrders = useCallback(async () => {
     if (!activeShopId) return;
+    const cacheKey = `workshop:${activeShopId}:${filter}`;
+    const c = pageCache.get<any[]>(cacheKey);
+    if (c) { setWorkOrders(c); setLoading(false); }
+
     let query = supabase
       .from("work_orders")
-      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, lines, clients(name, phone), vehicles(make, model, plate, year, fuel)")
+      // Drop heavy `lines` JSON from list — only fetched on demand for the dialog
+      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, clients(name, phone), vehicles(make, model, plate, year, fuel)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(50);
 
     if (filter === 'active') {
       query = query.in("status", ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress']);
@@ -66,7 +76,9 @@ export default function Workshop() {
     }
 
     const { data } = await query;
-    setWorkOrders(data || []);
+    const rows = data || [];
+    setWorkOrders(rows);
+    pageCache.set(cacheKey, rows);
     setLoading(false);
   }, [activeShopId, filter]);
 

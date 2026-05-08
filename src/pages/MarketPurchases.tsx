@@ -14,6 +14,9 @@ import MarketLayout from "@/components/MarketLayout";
 import { toast } from "sonner";
 import { formatMarketPriceExact, getMarketLocale } from "@/lib/marketPrice";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { pageCache } from "@/lib/pageCache";
+
+const PURCHASES_CACHE_KEY = "market:purchases:v1";
 
 const STATUS_ICONS: Record<string, { color: string; icon: any }> = {
   pending: { color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },

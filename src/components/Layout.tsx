@@ -225,9 +225,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
-  const visibleNavItems = isGuidedMode
+  const baseVisibleItems = isGuidedMode
     ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
-    : navItems;
+    : navItems.filter((item) => !sidebarPrefs.isHidden(item.path));
+
+  // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.
+  const favoriteItems = isGuidedMode
+    ? []
+    : sidebarPrefs.favorites
+        .map((p) => baseVisibleItems.find((i) => i.path === p))
+        .filter((x): x is NavItem => Boolean(x));
+  const regularItems = isGuidedMode
+    ? baseVisibleItems
+    : baseVisibleItems.filter((i) => !sidebarPrefs.isFavorite(i.path));
 
   const liteHintLabel =
     t("appMode.liteSidebarHint") === "appMode.liteSidebarHint"

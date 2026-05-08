@@ -69,8 +69,10 @@ export default function CarityMarketplace() {
   const { pricing, formatPrice } = useCountryPricing();
   const { t } = useLanguage();
   const mt = useMarketT();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedListings = pageCache.get<Listing[]>(MARKET_CACHE_KEY);
+  const cachedStats = pageCache.get<RealStats>(MARKET_STATS_CACHE_KEY);
+  const [listings, setListings] = useState<Listing[]>(cachedListings ?? []);
+  const [loading, setLoading] = useState(!cachedListings);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -87,7 +89,7 @@ export default function CarityMarketplace() {
   const [sortBy, setSortBy] = useState("recent");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [stats, setStats] = useState<RealStats>({ totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
+  const [stats, setStats] = useState<RealStats>(cachedStats ?? { totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 
 
   const loadAll = useCallback(async () => {

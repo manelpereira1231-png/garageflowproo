@@ -13,9 +13,10 @@ import SEOHead from "@/components/SEOHead";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import ThemeToggle from "@/components/ThemeToggle";
 import Reveal from "@/components/Reveal";
-import heroMockup from "@/assets/landing-hero-mockup.jpg";
-import spreadsheetImg from "@/assets/landing-spreadsheet.jpg";
-import whatsappImg from "@/assets/landing-whatsapp.jpg";
+import HeroMockup from "@/components/landing/HeroMockup";
+import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
+import { SITE_URL } from "@/lib/seoConfig";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];

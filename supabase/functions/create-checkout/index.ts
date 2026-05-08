@@ -154,7 +154,7 @@ serve(async (req) => {
 
     const sessionParams: any = {
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId || !validEmail ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       // Local recurring methods per country (SEPA EU, BACS UK, ACH US, BECS AU…)

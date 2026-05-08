@@ -150,6 +150,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         (payload: any) => {
           loadPendingMarket();
           if (payload.eventType === "INSERT") {
+            // Respect per-module notification mute (sidebar prefs)
+            try {
+              const raw = localStorage.getItem(`garageflow_sidebar_prefs_${activeShopId}`);
+              if (raw && JSON.parse(raw)?.mutedNotif?.includes("/market/inspections")) return;
+            } catch { /* ignore */ }
             toast.info("🚗 Nova inspeção Market disponível!", {
               description: "Tem um novo pedido de inspeção para aceitar.",
               action: {

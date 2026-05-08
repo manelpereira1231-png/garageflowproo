@@ -92,8 +92,30 @@ export default function Services() {
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dataLoading, setDataLoading] = useState(!_sCache);
+  const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
+  const [monthRevenue, setMonthRevenue] = useState<number>(0);
 
   const activeShopId = useActiveShopId();
+
+  const fetchStats = async (shopId: string) => {
+    const { data: allRows } = await supabase
+      .from("work_orders")
+      .select("status, total, completed_at")
+      .eq("shop_id", shopId)
+      .limit(2000);
+    if (!allRows) return;
+    const counts: Record<string, number> = {};
+    let revenue = 0;
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    for (const r of allRows as any[]) {
+      counts[r.status] = (counts[r.status] || 0) + 1;
+      if ((r.status === 'completed' || r.status === 'delivered') && r.completed_at && new Date(r.completed_at) >= monthStart) {
+        revenue += Number(r.total || 0);
+      }
+    }
+    setStatusCountsAll(counts);
+    setMonthRevenue(revenue);
+  };
 
   const fetchServices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
@@ -131,6 +153,7 @@ export default function Services() {
   };
 
   useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
+  useEffect(() => { if (activeShopId) fetchStats(activeShopId); }, [activeShopId]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);

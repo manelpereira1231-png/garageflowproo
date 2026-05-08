@@ -37,6 +37,7 @@ export default function Chat() {
   const [shopName, setShopName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,28 +84,33 @@ export default function Chat() {
   }, [shopId, messages]);
 
   const loadMessages = async () => {
-    if (!shopId) return;
-    let query = supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("shop_id", shopId)
-      .order("created_at", { ascending: true })
-      .limit(200);
-
-    if (selectedClient !== "all") {
-      query = query.eq("client_id", selectedClient);
-    }
-
-    const { data } = await query;
-    if (data) setMessages(data as ChatMessage[]);
-
-    // Mark as read
-    if (selectedClient !== "all") {
-      await supabase.from("chat_messages")
-        .update({ read: true } as any)
+    if (!shopId) { setMessagesLoading(false); return; }
+    setMessagesLoading(true);
+    try {
+      let query = supabase
+        .from("chat_messages")
+        .select("*")
         .eq("shop_id", shopId)
-        .eq("client_id", selectedClient)
-        .eq("read", false);
+        .order("created_at", { ascending: true })
+        .limit(200);
+
+      if (selectedClient !== "all") {
+        query = query.eq("client_id", selectedClient);
+      }
+
+      const { data } = await query;
+      if (data) setMessages(data as ChatMessage[]);
+
+      // Mark as read
+      if (selectedClient !== "all") {
+        await supabase.from("chat_messages")
+          .update({ read: true } as any)
+          .eq("shop_id", shopId)
+          .eq("client_id", selectedClient)
+          .eq("read", false);
+      }
+    } finally {
+      setMessagesLoading(false);
     }
   };
 
@@ -312,7 +318,11 @@ export default function Chat() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 ? (
+            {messagesLoading && messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                 <MessageCircle className="w-5 h-5 mr-2 opacity-50" />
                 {t('chat.empty')}

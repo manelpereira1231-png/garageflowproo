@@ -545,7 +545,9 @@ export default function Dashboard() {
               <BarChart3 className="w-4 h-4 text-primary" />
               {t('dashboard.revenueChart')}
             </h2>
-            {monthlyRevenue.length > 0 ? (
+            {!dataLoaded ? (
+              <Skeleton className="h-[180px] w-full rounded-xl" />
+            ) : monthlyRevenue.length > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={monthlyRevenue} barGap={2}>
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -569,7 +571,9 @@ export default function Dashboard() {
               <Wrench className="w-4 h-4 text-primary" />
               {t('dashboard.statusChart')}
             </h2>
-            {statusDistribution.length > 0 ? (
+            {!dataLoaded ? (
+              <Skeleton className="h-[160px] w-full rounded-xl" />
+            ) : statusDistribution.length > 0 ? (
               <div>
                 <ResponsiveContainer width="100%" height={160}>
                   <PieChart>

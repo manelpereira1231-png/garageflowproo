@@ -56,7 +56,11 @@ export default function Workshop() {
   const isPt = language === 'pt';
 
   const fetchOrders = useCallback(async () => {
-    if (!activeShopId) return;
+    if (!activeShopId) {
+      // No shop yet — don't keep skeletons forever
+      setLoading(false);
+      return;
+    }
     const cacheKey = `workshop:${activeShopId}:${filter}`;
     const c = pageCache.get<any[]>(cacheKey);
     if (c) { setWorkOrders(c); setLoading(false); }

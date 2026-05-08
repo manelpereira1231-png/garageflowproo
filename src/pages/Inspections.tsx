@@ -21,6 +21,7 @@ import { sendPushNotification } from "@/lib/pushNotifications";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import ListSkeleton from "@/components/ListSkeleton";
 
 interface ChecklistItem {
   name: string;
@@ -101,6 +102,7 @@ export default function Inspections() {
   const [generalNotes, setGeneralNotes] = useState("");
   const [clientRecommendation, setClientRecommendation] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({});
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
@@ -127,22 +129,27 @@ export default function Inspections() {
   }, [buildDefaultItems]);
 
   const load = async () => {
-    if (!activeShopId) return;
-    const [clRes, woRes] = await Promise.all([
-      supabase.from("inspection_checklists").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-      supabase.from("work_orders").select("id, number, status, client_id, vehicle_id, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-    ]);
-    if (clRes.data) setChecklists(clRes.data.map((c: any) => ({
-      ...c,
-      items: (Array.isArray(c.items) ? c.items : JSON.parse(c.items)).map((item: any) => ({
-        ...item,
-        key: item.key || '',
-        category: item.category || '',
-        notes: item.notes || '',
-        photoUrl: item.photoUrl || '',
-      })),
-    })) as Checklist[]);
-    if (woRes.data) setWorkOrders(woRes.data);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const [clRes, woRes] = await Promise.all([
+        supabase.from("inspection_checklists").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+        supabase.from("work_orders").select("id, number, status, client_id, vehicle_id, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+      ]);
+      if (clRes.data) setChecklists(clRes.data.map((c: any) => ({
+        ...c,
+        items: (Array.isArray(c.items) ? c.items : JSON.parse(c.items)).map((item: any) => ({
+          ...item,
+          key: item.key || '',
+          category: item.category || '',
+          notes: item.notes || '',
+          photoUrl: item.photoUrl || '',
+        })),
+      })) as Checklist[]);
+      if (woRes.data) setWorkOrders(woRes.data);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [activeShopId]);

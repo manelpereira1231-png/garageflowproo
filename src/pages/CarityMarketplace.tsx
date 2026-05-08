@@ -135,7 +135,7 @@ export default function CarityMarketplace() {
         .order("published_at", { ascending: false }),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
       supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("status", "completed"),
-      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true).eq("carity_active", true).not("name", "ilike", "TESTE%").not("name", "ilike", "test%"),
     ]);
 
     const rawListings = (listingsRes.data || []).map((l: any) => ({
@@ -322,6 +322,11 @@ export default function CarityMarketplace() {
             <Link to="/market/favoritos">
               <Button variant="ghost" size="icon" className="text-slate-300 hover:bg-white/10 hover:text-white" aria-label={t('market.nav.favorites')}>
                 <Heart className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/market/inspections" className="hidden md:block">
+              <Button variant="ghost" className="text-slate-300 hover:bg-white/10 hover:text-white">
+                Para Oficinas
               </Button>
             </Link>
             <Link to="/market/sell" className="hidden sm:block">
@@ -705,6 +710,78 @@ export default function CarityMarketplace() {
                     {p.txt}
                   </Link>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* For Workshops — recruit partner shops to the inspection network */}
+      <section className="py-20 bg-gradient-to-br from-slate-100 via-white to-slate-50 dark:from-slate-900/40 dark:via-slate-950 dark:to-slate-900/40 border-y border-border/60">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400 mb-3">Para Oficinas</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+                A tua oficina <span className="bg-gradient-to-br from-amber-500 to-amber-700 bg-clip-text text-transparent">ganha {formatPrice(pricing.inspection_shop_share)}</span> por cada inspeção
+              </h2>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Junta-te à rede de oficinas certificadas do GarageFlow Market. Recebes inspeções pagas, geradas por proximidade automaticamente, sem custos de marketing nem comissões sobre vendas.
+              </p>
+              <ul className="space-y-2.5 mb-7">
+                {[
+                  { t: "Inspeções pagas", d: `Recebes ${formatPrice(pricing.inspection_shop_share)} líquidos por cada inspeção concluída` },
+                  { t: "Routing por proximidade", d: "O sistema atribui automaticamente as inspeções mais próximas da tua oficina" },
+                  { t: "Zero custos fixos", d: "Sem mensalidade, sem fee de adesão, sem exclusividade" },
+                  { t: "Aumenta clientela local", d: "Cada inspeção é uma oportunidade de fidelizar um novo cliente para serviço" },
+                ].map((b, i) => (
+                  <li key={i} className="flex gap-3 items-start">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-sm">{b.t}</p>
+                      <p className="text-xs text-muted-foreground">{b.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Link to="/market/inspections">
+                  <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold shadow-lg shadow-amber-500/20">
+                    Inscrever a minha oficina <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/market/payout-info">
+                  <Button size="lg" variant="outline">Como funcionam os pagamentos</Button>
+                </Link>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="card-premium p-5 col-span-2 bg-gradient-to-br from-amber-500/10 to-transparent border-amber-400/40">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Por inspeção</p>
+                  <p className="text-4xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{formatPrice(pricing.inspection_shop_share)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pago no fim do mês via transferência bancária</p>
+                </div>
+                <div className="card-premium p-4">
+                  <Wrench className="h-5 w-5 text-amber-500 mb-2" />
+                  <p className="text-xs font-semibold">Sem exclusividade</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Continua a operar como sempre</p>
+                </div>
+                <div className="card-premium p-4">
+                  <MapPin className="h-5 w-5 text-amber-500 mb-2" />
+                  <p className="text-xs font-semibold">Por proximidade</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Inspeções perto de ti</p>
+                </div>
+                <div className="card-premium p-4">
+                  <ShieldCheck className="h-5 w-5 text-amber-500 mb-2" />
+                  <p className="text-xs font-semibold">Adesão grátis</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Sem fee inicial</p>
+                </div>
+                <div className="card-premium p-4">
+                  <TrendingUp className="h-5 w-5 text-amber-500 mb-2" />
+                  <p className="text-xs font-semibold">Mais clientes</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Fideliza para serviço</p>
+                </div>
               </div>
             </div>
           </div>

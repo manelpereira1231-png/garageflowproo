@@ -18,6 +18,7 @@ import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",

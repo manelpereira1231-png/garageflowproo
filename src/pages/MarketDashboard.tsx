@@ -13,16 +13,30 @@ import {
 import MarketLayout from "@/components/MarketLayout";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { pageCache } from "@/lib/pageCache";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DASH_CACHE_KEY = "market:dashboard:v1";
+
+interface DashSnapshot {
+  sellerName: string;
+  verified: boolean;
+  stats: any;
+  recentListings: any[];
+  activeInspections: any[];
+  recentOffers: any[];
+}
 
 export default function MarketDashboard() {
   const navigate = useNavigate();
   const { formatPrice } = useCountryPricing();
   const t = useMarketT();
-  const [loading, setLoading] = useState(true);
-  const [sellerName, setSellerName] = useState("");
-  const [verified, setVerified] = useState(false);
+  const cached = pageCache.get<DashSnapshot>(DASH_CACHE_KEY);
+  const [loading, setLoading] = useState(!cached);
+  const [sellerName, setSellerName] = useState(cached?.sellerName ?? "");
+  const [verified, setVerified] = useState(cached?.verified ?? false);
 
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState(cached?.stats ?? {
     total: 0,
     published: 0,
     pendingInspection: 0,
@@ -35,9 +49,9 @@ export default function MarketDashboard() {
     trustLevel: "new",
   });
 
-  const [recentListings, setRecentListings] = useState<any[]>([]);
-  const [activeInspections, setActiveInspections] = useState<any[]>([]);
-  const [recentOffers, setRecentOffers] = useState<any[]>([]);
+  const [recentListings, setRecentListings] = useState<any[]>(cached?.recentListings ?? []);
+  const [activeInspections, setActiveInspections] = useState<any[]>(cached?.activeInspections ?? []);
+  const [recentOffers, setRecentOffers] = useState<any[]>(cached?.recentOffers ?? []);
 
   useEffect(() => {
     loadDashboard();
@@ -106,7 +120,7 @@ export default function MarketDashboard() {
       listing: listingsMap[i.listing_id],
     }));
 
-    setStats({
+    const newStats = {
       total: all.length,
       published: all.filter(l => l.status === "published").length,
       pendingInspection: all.filter(l => ["pending_payment", "pending_inspection", "inspecting"].includes(l.status)).length,
@@ -117,14 +131,27 @@ export default function MarketDashboard() {
       activeBoosts: all.filter(l => l.boost_active).length,
       trustScore: trust?.score_points || 0,
       trustLevel: trust?.trust_level || "new",
-    });
-
-    setRecentListings(all.slice(0, 5));
-    setActiveInspections(enrichedInspections.slice(0, 3));
-    setRecentOffers((offers || []).map(o => ({
+    };
+    const newRecentListings = all.slice(0, 5);
+    const newActiveInspections = enrichedInspections.slice(0, 3);
+    const newRecentOffers = (offers || []).map(o => ({
       ...o,
       listing: listingsMap[o.listing_id],
-    })));
+    }));
+
+    setStats(newStats);
+    setRecentListings(newRecentListings);
+    setActiveInspections(newActiveInspections);
+    setRecentOffers(newRecentOffers);
+
+    pageCache.set<DashSnapshot>(DASH_CACHE_KEY, {
+      sellerName: profile?.name || user.user_metadata?.name || "—",
+      verified: profile?.verified || false,
+      stats: newStats,
+      recentListings: newRecentListings,
+      activeInspections: newActiveInspections,
+      recentOffers: newRecentOffers,
+    });
 
     setLoading(false);
   };
@@ -149,8 +176,23 @@ export default function MarketDashboard() {
   if (loading) {
     return (
       <MarketLayout>
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-56" />
+              <Skeleton className="h-4 w-72" />
+            </div>
+            <Skeleton className="h-6 w-20" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-64 lg:col-span-2" />
+            <Skeleton className="h-64" />
+          </div>
         </div>
       </MarketLayout>
     );

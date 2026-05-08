@@ -16,6 +16,10 @@ import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
+import { pageCache } from "@/lib/pageCache";
+
+const MARKET_CACHE_KEY = "market:listings:v1";
+const MARKET_STATS_CACHE_KEY = "market:stats:v1";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',
@@ -65,8 +69,10 @@ export default function CarityMarketplace() {
   const { pricing, formatPrice } = useCountryPricing();
   const { t } = useLanguage();
   const mt = useMarketT();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedListings = pageCache.get<Listing[]>(MARKET_CACHE_KEY);
+  const cachedStats = pageCache.get<RealStats>(MARKET_STATS_CACHE_KEY);
+  const [listings, setListings] = useState<Listing[]>(cachedListings ?? []);
+  const [loading, setLoading] = useState(!cachedListings);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -83,7 +89,7 @@ export default function CarityMarketplace() {
   const [sortBy, setSortBy] = useState("recent");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [stats, setStats] = useState<RealStats>({ totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
+  const [stats, setStats] = useState<RealStats>(cachedStats ?? { totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 
 
   const loadAll = useCallback(async () => {
@@ -104,11 +110,13 @@ export default function CarityMarketplace() {
       photos: Array.isArray(l.photos) ? l.photos : [],
     }));
 
-    setStats({
+    const newStats = {
       totalPublished: publishedRes.count || 0,
       totalInspections: inspectionsRes.count || 0,
       totalPartnerShops: shopsRes.count || 0,
-    });
+    };
+    setStats(newStats);
+    pageCache.set(MARKET_STATS_CACHE_KEY, newStats);
 
     // Get shop info + inspection scores in parallel for listings that are visible.
     const shopIds = [...new Set(rawListings.filter(l => l.shop_id).map(l => l.shop_id))];
@@ -127,13 +135,15 @@ export default function CarityMarketplace() {
     let scoreMap: Record<string, { score: number; recommendation: string }> = {};
     (reportsRes.data || []).forEach((r: any) => { scoreMap[r.listing_id] = { score: r.overall_score, recommendation: r.recommendation }; });
 
-    setListings(rawListings.map(l => ({
+    const enriched = rawListings.map(l => ({
       ...l,
       shop_name: l.shop_id ? shopMap[l.shop_id]?.name : undefined,
       shop_location: l.shop_id ? shopMap[l.shop_id]?.address : undefined,
       inspection_score: scoreMap[l.id]?.score ?? null,
       inspection_recommendation: scoreMap[l.id]?.recommendation ?? null,
-    })));
+    }));
+    setListings(enriched);
+    pageCache.set(MARKET_CACHE_KEY, enriched);
 
     setLoading(false);
   }, []);

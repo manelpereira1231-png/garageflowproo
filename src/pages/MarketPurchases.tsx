@@ -14,6 +14,9 @@ import MarketLayout from "@/components/MarketLayout";
 import { toast } from "sonner";
 import { formatMarketPriceExact, getMarketLocale } from "@/lib/marketPrice";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { pageCache } from "@/lib/pageCache";
+
+const PURCHASES_CACHE_KEY = "market:purchases:v1";
 
 const STATUS_ICONS: Record<string, { color: string; icon: any }> = {
   pending: { color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
@@ -44,8 +47,9 @@ export default function MarketPurchases() {
   const t = useMarketT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const cached = pageCache.get<Purchase[]>(PURCHASES_CACHE_KEY);
+  const [loading, setLoading] = useState(!cached);
+  const [purchases, setPurchases] = useState<Purchase[]>(cached ?? []);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,7 +79,9 @@ export default function MarketPurchases() {
       return;
     }
 
-    setPurchases((data || []) as any);
+    const rows = (data || []) as any;
+    setPurchases(rows);
+    pageCache.set(PURCHASES_CACHE_KEY, rows);
     setLoading(false);
   };
 

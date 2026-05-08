@@ -80,11 +80,17 @@ export default function Workshop() {
       query = query.in("status", ['completed', 'delivered']);
     }
 
-    const { data } = await query;
-    const rows = data || [];
-    setWorkOrders(rows);
-    pageCache.set(cacheKey, rows);
-    setLoading(false);
+    try {
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      setWorkOrders(rows);
+      pageCache.set(cacheKey, rows);
+    } catch (e) {
+      console.error('[Workshop] fetch failed', e);
+    } finally {
+      setLoading(false);
+    }
   }, [activeShopId, filter]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);

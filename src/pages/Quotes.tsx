@@ -44,6 +44,7 @@ export default function Quotes() {
   const [totalCount, setTotalCount] = useState(0);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 

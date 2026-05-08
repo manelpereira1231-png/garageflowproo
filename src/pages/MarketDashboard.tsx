@@ -236,10 +236,10 @@ export default function MarketDashboard() {
       {/* Setup checklist — onboarding for new sellers */}
       {(() => {
         const steps = [
-          { done: !!sellerName && sellerName !== "—" && hasPhone, label: "Completar perfil (nome e telefone)", to: "/market/profile", icon: User },
-          { done: verified, label: "Verificar identidade (KYC)", to: "/market/profile", icon: ShieldCheck },
-          { done: stats.total > 0, label: "Publicar 1.º anúncio", to: "/market/sell", icon: Car },
-          { done: stats.published > 0, label: "1.º anúncio aprovado e online", to: "/market/my-listings", icon: CheckCircle },
+          { done: !!sellerName && sellerName !== "—" && hasPhone, label: "Completar perfil (nome e telefone)", to: "/market/profile" },
+          { done: verified, label: "Verificar identidade (KYC)", to: "/market/profile" },
+          { done: stats.total > 0, label: "Publicar 1.º anúncio", to: "/market/sell" },
+          { done: stats.published > 0, label: "1.º anúncio aprovado e online", to: "/market/my-listings" },
         ];
         const completed = steps.filter(s => s.done).length;
         if (completed === steps.length) return null;

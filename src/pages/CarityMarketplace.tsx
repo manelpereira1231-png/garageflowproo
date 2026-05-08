@@ -110,11 +110,13 @@ export default function CarityMarketplace() {
       photos: Array.isArray(l.photos) ? l.photos : [],
     }));
 
-    setStats({
+    const newStats = {
       totalPublished: publishedRes.count || 0,
       totalInspections: inspectionsRes.count || 0,
       totalPartnerShops: shopsRes.count || 0,
-    });
+    };
+    setStats(newStats);
+    pageCache.set(MARKET_STATS_CACHE_KEY, newStats);
 
     // Get shop info + inspection scores in parallel for listings that are visible.
     const shopIds = [...new Set(rawListings.filter(l => l.shop_id).map(l => l.shop_id))];
@@ -133,13 +135,15 @@ export default function CarityMarketplace() {
     let scoreMap: Record<string, { score: number; recommendation: string }> = {};
     (reportsRes.data || []).forEach((r: any) => { scoreMap[r.listing_id] = { score: r.overall_score, recommendation: r.recommendation }; });
 
-    setListings(rawListings.map(l => ({
+    const enriched = rawListings.map(l => ({
       ...l,
       shop_name: l.shop_id ? shopMap[l.shop_id]?.name : undefined,
       shop_location: l.shop_id ? shopMap[l.shop_id]?.address : undefined,
       inspection_score: scoreMap[l.id]?.score ?? null,
       inspection_recommendation: scoreMap[l.id]?.recommendation ?? null,
-    })));
+    }));
+    setListings(enriched);
+    pageCache.set(MARKET_CACHE_KEY, enriched);
 
     setLoading(false);
   }, []);

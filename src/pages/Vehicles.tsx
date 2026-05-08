@@ -45,14 +45,19 @@ export default function Vehicles() {
   const activeShopId = useActiveShopId();
 
   const fetchData = async () => {
-    if (!activeShopId) return;
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
-    if (v) setVehicles(v);
-    if (count !== null) setTotalCount(count);
-    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
-    if (c) setClients(c);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
+      if (v) setVehicles(v);
+      if (count !== null) setTotalCount(count);
+      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
+      if (c) setClients(c);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchData(); }, [page, activeShopId]);

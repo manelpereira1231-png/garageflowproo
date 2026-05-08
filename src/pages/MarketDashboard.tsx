@@ -228,6 +228,26 @@ export default function MarketDashboard() {
         </div>
       </div>
 
+      {/* First-run empty state — primary CTA */}
+      {stats.total === 0 && (
+        <Card className="mb-6 border-2 border-dashed border-amber-400/60 bg-gradient-to-br from-amber-50/80 to-transparent dark:from-amber-950/20">
+          <CardContent className="py-10 px-6 text-center">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15 mb-4">
+              <Car className="h-7 w-7 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">{t("dash.empty.title") || "Ainda não tens nenhum carro à venda"}</h2>
+            <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+              {t("dash.empty.desc") || "Publica o teu 1.º anúncio em menos de 2 minutos. Inspeção certificada incluída e pagamento garantido por escrow."}
+            </p>
+            <Link to="/market/sell">
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold shadow-md shadow-amber-500/30">
+                <Plus className="h-4 w-4 mr-2" /> {t("dash.createListing")}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Primary stats row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <Card><CardContent className="pt-4 pb-3"><div className="flex items-center gap-2">

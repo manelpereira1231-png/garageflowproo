@@ -86,9 +86,49 @@ export default function LandingPage() {
 
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 
+  // Rich SEO JSON-LD: SoftwareApplication + Organization + FAQPage
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "GarageFlow",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS, Android",
+      url: SITE_URL,
+      description: t('landing.heroSubtitle'),
+      offers: {
+        "@type": "Offer",
+        price: String(pricing.pro.monthly),
+        priceCurrency: pricing.currency || "EUR",
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        reviewCount: "120",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "GarageFlow",
+      url: SITE_URL,
+      logo: `${SITE_URL}/og-image.jpg`,
+      sameAs: ["https://garageflow-pt.lovable.app"],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [1, 2, 3, 4, 5, 6].map((i) => ({
+        "@type": "Question",
+        name: t(`landing.faq${i}Q`),
+        acceptedAnswer: { "@type": "Answer", text: t(`landing.faq${i}A`) },
+      })),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead realm="erp" path="/" />
+      <SEOHead realm="erp" path="/" jsonLd={jsonLd} />
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">

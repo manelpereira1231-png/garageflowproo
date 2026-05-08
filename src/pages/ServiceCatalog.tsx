@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Pencil, BookOpen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import ListSkeleton from "@/components/ListSkeleton";
 
 interface CatalogService {
   id: string;
@@ -214,7 +215,9 @@ export default function ServiceCatalog() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {loading && services.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
+              ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('catalog.empty')}</TableCell></TableRow>
               ) : filtered.map(s => {
                 const margin = s.default_price > 0 ? ((s.default_price - s.internal_cost) / s.default_price * 100).toFixed(0) : "0";

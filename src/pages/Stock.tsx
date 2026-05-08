@@ -17,6 +17,7 @@ import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, Tren
 import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
@@ -43,9 +44,11 @@ const emptyForm = {
 
 export default function Stock() {
   const { t, language } = useLanguage();
-  const [parts, setParts] = useState<Part[]>([]);
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [orders, setOrders] = useState<PartsOrder[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _stCache = pageCache.get<{ parts: Part[]; movements: StockMovement[]; orders: PartsOrder[] }>(`stock:${_shopInit}`);
+  const [parts, setParts] = useState<Part[]>(_stCache?.parts ?? []);
+  const [movements, setMovements] = useState<StockMovement[]>(_stCache?.movements ?? []);
+  const [orders, setOrders] = useState<PartsOrder[]>(_stCache?.orders ?? []);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);
@@ -54,22 +57,30 @@ export default function Stock() {
   const [movForm, setMovForm] = useState({ type: "in", quantity: 1, reason: "" });
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_stCache);
 
   const activeShopId = useActiveShopId();
 
   const load = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `stock:${activeShopId}`;
+    const cc = pageCache.get<{ parts: Part[]; movements: StockMovement[]; orders: PartsOrder[] }>(key);
+    if (cc) {
+      setParts(cc.parts); setMovements(cc.movements); setOrders(cc.orders); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const [partsRes, movRes, ordersRes] = await Promise.all([
         supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
         supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
         supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
       ]);
-      if (partsRes.data) setParts(partsRes.data as Part[]);
-      if (movRes.data) setMovements(movRes.data as StockMovement[]);
-      if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
+      const p = (partsRes.data ?? []) as Part[];
+      const m = (movRes.data ?? []) as StockMovement[];
+      const o = (ordersRes.data ?? []) as PartsOrder[];
+      setParts(p); setMovements(m); setOrders(o);
+      pageCache.set(key, { parts: p, movements: m, orders: o });
     } finally {
       setDataLoading(false);
     }

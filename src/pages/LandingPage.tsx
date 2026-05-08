@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock, MessageCircle } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -100,11 +100,6 @@ export default function LandingPage() {
         "@type": "Offer",
         price: String(pricing.pro.monthly),
         priceCurrency: pricing.currency || "EUR",
-      },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "120",
       },
     },
     {

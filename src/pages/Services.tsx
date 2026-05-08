@@ -264,6 +264,26 @@ export default function Services() {
         </div>
       </div>
 
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.in_progress')}</p>
+          <p className="text-2xl font-bold mt-1">{statusCountsAll.in_progress || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.waiting_approval')}</p>
+          <p className="text-2xl font-bold mt-1 text-warning">{statusCountsAll.waiting_approval || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.open')}</p>
+          <p className="text-2xl font-bold mt-1 text-info">{statusCountsAll.open || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{shop?.currency === 'BRL' ? 'R$' : '€'} {(t('dashboard.thisMonth') || 'Este mês')}</p>
+          <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
+        </div>
+      </div>
+
       {/* Status Filter Tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <Button
@@ -272,10 +292,11 @@ export default function Services() {
           onClick={() => { setStatusFilter("all"); setPage(0); }}
           className="text-xs shrink-0"
         >
-          {t('services.allStatuses') || 'Todos'} ({totalCount})
+          {t('services.allStatuses') || 'Todos'} ({Object.values(statusCountsAll).reduce((a,b)=>a+b,0) || totalCount})
         </Button>
         {statusFlow.filter(s => s !== 'cancelled').map(s => {
           const Icon = statusIcons[s];
+          const c = statusCountsAll[s] || 0;
           return (
             <Button
               key={s}
@@ -286,6 +307,7 @@ export default function Services() {
             >
               <Icon className="w-3 h-3" />
               {t(`service.${s}`)}
+              {c > 0 && <span className="ml-1 opacity-70">({c})</span>}
             </Button>
           );
         })}

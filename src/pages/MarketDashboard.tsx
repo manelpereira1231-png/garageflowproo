@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Car, MessageCircle, Clock, CheckCircle, Plus, ArrowRight,
   ShieldCheck, Star, Eye, Rocket,
-  CreditCard, FileCheck, Package, Circle, Phone
+  CreditCard, FileCheck, Package, Circle
 } from "lucide-react";
 import MarketLayout from "@/components/MarketLayout";
 import { useCountryPricing } from "@/hooks/useCountryPricing";

@@ -204,11 +204,21 @@ export default function Workshop() {
 
       {/* Work orders grid - tablet optimized */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {loading ? (
-          <div className="col-span-full flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : workOrders.length === 0 ? (
+        {loading && workOrders.length === 0 ? (
+          <>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-card border-2 border-border rounded-2xl p-4 space-y-3 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="h-8 w-24 bg-muted rounded-lg" />
+                  <div className="h-6 w-20 bg-muted rounded-full" />
+                </div>
+                <div className="h-4 w-3/4 bg-muted rounded" />
+                <div className="h-3 w-1/2 bg-muted rounded" />
+                <div className="h-9 w-full bg-muted rounded-lg" />
+              </div>
+            ))}
+          </>
+        ) : !loading && workOrders.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground">
             {t('workshop.noOrders')}
           </div>

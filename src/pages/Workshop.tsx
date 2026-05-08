@@ -56,10 +56,15 @@ export default function Workshop() {
   const isPt = language === 'pt';
 
   const fetchOrders = useCallback(async () => {
-    if (!activeShopId) return;
+    if (!activeShopId) {
+      // No shop yet — don't keep skeletons forever
+      setLoading(false);
+      return;
+    }
     const cacheKey = `workshop:${activeShopId}:${filter}`;
     const c = pageCache.get<any[]>(cacheKey);
     if (c) { setWorkOrders(c); setLoading(false); }
+    else { setLoading(true); }
 
     let query = supabase
       .from("work_orders")
@@ -75,11 +80,17 @@ export default function Workshop() {
       query = query.in("status", ['completed', 'delivered']);
     }
 
-    const { data } = await query;
-    const rows = data || [];
-    setWorkOrders(rows);
-    pageCache.set(cacheKey, rows);
-    setLoading(false);
+    try {
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      setWorkOrders(rows);
+      pageCache.set(cacheKey, rows);
+    } catch (e) {
+      console.error('[Workshop] fetch failed', e);
+    } finally {
+      setLoading(false);
+    }
   }, [activeShopId, filter]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);

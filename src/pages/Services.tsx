@@ -92,8 +92,30 @@ export default function Services() {
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dataLoading, setDataLoading] = useState(!_sCache);
+  const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
+  const [monthRevenue, setMonthRevenue] = useState<number>(0);
 
   const activeShopId = useActiveShopId();
+
+  const fetchStats = async (shopId: string) => {
+    const { data: allRows } = await supabase
+      .from("work_orders")
+      .select("status, total, completed_at")
+      .eq("shop_id", shopId)
+      .limit(2000);
+    if (!allRows) return;
+    const counts: Record<string, number> = {};
+    let revenue = 0;
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    for (const r of allRows as any[]) {
+      counts[r.status] = (counts[r.status] || 0) + 1;
+      if ((r.status === 'completed' || r.status === 'delivered') && r.completed_at && new Date(r.completed_at) >= monthStart) {
+        revenue += Number(r.total || 0);
+      }
+    }
+    setStatusCountsAll(counts);
+    setMonthRevenue(revenue);
+  };
 
   const fetchServices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
@@ -131,6 +153,7 @@ export default function Services() {
   };
 
   useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
+  useEffect(() => { if (activeShopId) fetchStats(activeShopId); }, [activeShopId]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);
@@ -241,6 +264,26 @@ export default function Services() {
         </div>
       </div>
 
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.in_progress')}</p>
+          <p className="text-2xl font-bold mt-1">{statusCountsAll.in_progress || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.waiting_approval')}</p>
+          <p className="text-2xl font-bold mt-1 text-warning">{statusCountsAll.waiting_approval || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.open')}</p>
+          <p className="text-2xl font-bold mt-1 text-info">{statusCountsAll.open || 0}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{shop?.currency === 'BRL' ? 'R$' : '€'} {(t('dashboard.thisMonth') || 'Este mês')}</p>
+          <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
+        </div>
+      </div>
+
       {/* Status Filter Tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <Button
@@ -249,10 +292,11 @@ export default function Services() {
           onClick={() => { setStatusFilter("all"); setPage(0); }}
           className="text-xs shrink-0"
         >
-          {t('services.allStatuses') || 'Todos'} ({totalCount})
+          {t('services.allStatuses') || 'Todos'} ({Object.values(statusCountsAll).reduce((a,b)=>a+b,0) || totalCount})
         </Button>
         {statusFlow.filter(s => s !== 'cancelled').map(s => {
           const Icon = statusIcons[s];
+          const c = statusCountsAll[s] || 0;
           return (
             <Button
               key={s}
@@ -263,6 +307,7 @@ export default function Services() {
             >
               <Icon className="w-3 h-3" />
               {t(`service.${s}`)}
+              {c > 0 && <span className="ml-1 opacity-70">({c})</span>}
             </Button>
           );
         })}

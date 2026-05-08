@@ -216,13 +216,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
 
   // Logical grouping for premium SaaS feel (Linear/Notion-style).
+  // Order optimized for workshop daily priority: day-to-day ops first, money next,
+  // then growth/market/system. Catálogo & Stock goes LAST — it's reference data,
+  // not something a workshop opens every day.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
     { id: "ops", label: "Operação", paths: ["/clients","/vehicles","/quotes","/services","/agenda","/inspections","/workshop"] },
-    { id: "catalog", label: "Catálogo & Stock", paths: ["/catalog","/stock","/warranties"] },
     { id: "finance", label: "Financeiro", paths: ["/invoices","/financial/reports","/billing"] },
-    { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals","/chat","/alerts"] },
+    { id: "growth", label: "Crescimento", paths: ["/alerts","/marketing","/automations","/loyalty","/referrals","/chat"] },
     { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
     { id: "system", label: "Sistema", paths: ["/team","/developers","/settings"] },
+    { id: "catalog", label: "Catálogo & Stock", paths: ["/catalog","/stock","/warranties"] },
   ], []);
 
   const groupStateKey = `garageflow_sidebar_groups_${activeShopId || "global"}`;

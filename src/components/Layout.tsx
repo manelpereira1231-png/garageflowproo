@@ -174,26 +174,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // We no longer auto-exit Lite based on data activity — keeps the experience
   // predictable across sessions.
 
-  const [financialOpen, setFinancialOpen] = useState(isFinancialRoute(location.pathname));
-
   const navItems: NavItem[] = useMemo(() => [
     { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    // Operação
     { path: "/clients", label: t("nav.clients"), icon: Users },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car },
     { path: "/quotes", label: t("nav.quotes"), icon: FileText },
     { path: "/services", label: t("nav.services"), icon: Wrench },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays },
-    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
-    { path: "/stock", label: t("nav.stock"), icon: Package },
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
+    // Catálogo
+    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
+    { path: "/stock", label: t("nav.stock"), icon: Package },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
-    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
-    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
+    // Financeiro
+    { path: "/invoices", label: t("nav.invoices"), icon: Receipt },
+    { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
+    { path: "/billing", label: t("nav.billing"), icon: CreditCard },
+    // Crescimento
     { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
     { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },
-    { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
+    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
+    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
     {
       path: "/alerts",
       label: t("nav.alerts"),
@@ -202,17 +206,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       planBadge: !canUseFeature("basicAlerts") ? "Pro" : undefined,
       locked: !canUseFeature("basicAlerts"),
     },
+    // Market
+    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
+    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
+    // Sistema
     { path: "/team", label: t("nav.team"), icon: UserPlus, planBadge: !canUseFeature("teamManagement") ? "Pro" : undefined, locked: !canUseFeature("teamManagement") },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
-    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
-    { path: "/billing", label: t("nav.billing"), icon: CreditCard },
+    { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
     { path: "/settings", label: t("nav.settings"), icon: Settings },
   ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
 
-  const financialSubItems: FinancialNavItem[] = useMemo(() => [
-    { path: "/invoices", label: t("nav.invoices") },
-    { path: "/financial/reports", label: t("nav.financialReports"), planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
-  ], [canUseFeature, t]);
+  // Logical grouping for premium SaaS feel (Linear/Notion-style).
+  const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
+    { id: "ops", label: "Operação", paths: ["/clients","/vehicles","/quotes","/services","/agenda","/inspections","/workshop"] },
+    { id: "catalog", label: "Catálogo & Stock", paths: ["/catalog","/stock","/warranties"] },
+    { id: "finance", label: "Financeiro", paths: ["/invoices","/financial/reports","/billing"] },
+    { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals","/chat","/alerts"] },
+    { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
+    { id: "system", label: "Sistema", paths: ["/team","/developers","/settings"] },
+  ], []);
+
+  const groupStateKey = `garageflow_sidebar_groups_${activeShopId || "global"}`;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(groupStateKey);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { ops: true, catalog: false, finance: false, growth: false, market: false, system: false };
+  });
+  useEffect(() => {
+    // Auto-open the group containing the current route for discoverability.
+    const activeGroup = NAV_GROUPS.find(g => g.paths.some(p => isPathActive(location.pathname, p)));
+    if (activeGroup && !openGroups[activeGroup.id]) {
+      setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+  const toggleGroup = (id: string) => {
+    setOpenGroups(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem(groupStateKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");

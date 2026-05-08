@@ -672,6 +672,81 @@ export default function CarityMarketplace() {
         </div>
       </section>
 
+      {/* For Dealers / Stands */}
+      <section className="py-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white border-y border-amber-500/20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div className="order-2 md:order-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="card-premium p-5 col-span-2 bg-gradient-to-br from-amber-500/10 to-transparent border-amber-400/40">
+                  <p className="text-xs uppercase tracking-wider text-slate-400 mb-1">Plano Pro Stand</p>
+                  <p className="text-4xl font-bold text-amber-400 tabular-nums">99€<span className="text-base text-slate-400 font-normal">/mês</span></p>
+                  <p className="text-xs text-slate-400 mt-1">Até 30 carros + 20 inspeções incluídas</p>
+                </div>
+                <div className="p-4 rounded-lg bg-slate-800/40 border border-slate-700">
+                  <Package className="h-5 w-5 text-amber-500 mb-2" />
+                  <p className="text-xs font-semibold text-slate-200">Comissão 1%</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">vs 3% particular</p>
+                </div>
+                <div className="p-4 rounded-lg bg-slate-800/40 border border-slate-700">
+                  <ShieldCheck className="h-5 w-5 text-emerald-400 mb-2" />
+                  <p className="text-xs font-semibold text-slate-200">Inspeção independente</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Garantia anti-fraude</p>
+                </div>
+                <div className="p-4 rounded-lg bg-slate-800/40 border border-slate-700 col-span-2">
+                  <p className="text-xs text-slate-400 mb-2">Outros planos:</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div><p className="font-semibold text-slate-200">Starter</p><p className="text-amber-400">39€</p><p className="text-[10px] text-slate-500">10 carros</p></div>
+                    <div><p className="font-semibold text-slate-200">Pro</p><p className="text-amber-400">99€</p><p className="text-[10px] text-slate-500">30 carros</p></div>
+                    <div><p className="font-semibold text-slate-200">Unlimited</p><p className="text-amber-400">249€</p><p className="text-[10px] text-slate-500">∞ carros</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400 mb-3">Para Stands</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+                Publica os teus carros com <span className="bg-gradient-to-br from-amber-400 to-amber-600 bg-clip-text text-transparent">preço de volume</span>
+              </h2>
+              <p className="text-slate-400 mb-6 leading-relaxed">
+                Stands pagam menos por carro e ganham página própria com SEO otimizado. Em troca, todos os carros levam <strong className="text-amber-300">inspeção independente</strong> de uma oficina nossa — não da tua. Zero margem para mentiras, máxima confiança do comprador.
+              </p>
+              <ul className="space-y-2.5 mb-7">
+                {[
+                  { t: "Página pública do stand", d: "URL próprio /market/stand/o-teu-nome com SEO otimizado e listagem completa" },
+                  { t: "Inspeção independente garantida", d: "A inspeção é feita por oficina parceira — o stand nunca toca no relatório" },
+                  { t: "Comissão de venda só 1%", d: "Em vez de 3% para particulares. Mais margem para ti" },
+                  { t: "Bulk listing", d: "Publica vários carros de uma vez sem fricção" },
+                ].map((b, i) => (
+                  <li key={i} className="flex gap-3 items-start">
+                    <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-sm text-slate-100">{b.t}</p>
+                      <p className="text-xs text-slate-400">{b.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Link to="/market/auth?mode=signup&account=dealer&redirect=/market/profile">
+                  <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold shadow-lg shadow-amber-500/20">
+                    <Building2 className="h-4 w-4 mr-2" /> Registar o meu stand
+                  </Button>
+                </Link>
+                <Link to="/market/stands">
+                  <Button size="lg" variant="outline" className="border-slate-600 text-slate-200 hover:bg-slate-800">
+                    Ver stands ativos
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-4">
+                Inspeção independente é obrigatória por código no nosso sistema — não é apenas uma promessa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
       {/* SEO Internal Linking: Marcas, Cidades, Faixas de preço */}
       <section className="py-12 bg-muted/20 border-t">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, Globe, ArrowRight, CheckCircle, Menu, X, Star, Quote, Check, Lock, MessageCircle } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -100,11 +100,6 @@ export default function LandingPage() {
         "@type": "Offer",
         price: String(pricing.pro.monthly),
         priceCurrency: pricing.currency || "EUR",
-      },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "120",
       },
     },
     {
@@ -277,24 +272,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats counter */}
+      {/* Honest launch banner — early adopter */}
       <Reveal>
-      <section className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-sm text-muted-foreground mb-6 max-w-xl mx-auto">{t('landing.statsHeadline')}</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
-            {[
-              { value: '120+', labelKey: 'landing.statsShops' },
-              { value: '1.500+', labelKey: 'landing.statsVehicles' },
-              { value: '5.000+', labelKey: 'landing.statsQuotes' },
-              { value: '99,9%', labelKey: 'landing.statsUptime' },
-            ].map((stat, i) => (
-              <div key={i}>
-                <p className="text-2xl sm:text-4xl font-bold text-primary">{stat.value}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t(stat.labelKey)}</p>
-              </div>
-            ))}
+      <section aria-label="Em lançamento" className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full mb-4">
+            <Zap className="w-3 h-3" /> Em lançamento · early adopters
           </div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-3">Sê uma das primeiras oficinas a usar o GarageFlow</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Estamos a arrancar. Quem entrar agora ajuda a moldar o produto e fica com{" "}
+            <span className="font-semibold text-foreground">30 dias grátis no plano Pro</span>, sem cartão de crédito.
+          </p>
         </div>
       </section>
       </Reveal>
@@ -327,38 +316,29 @@ export default function LandingPage() {
       </section>
       </Reveal>
 
-      {/* Testimonials */}
+      {/* Built by people who know workshops — replaces fake testimonials */}
       <Reveal>
-      <section className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-14">
-            <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.testimonialsTitle')}</h2>
+      <section aria-labelledby="principles-title" className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10 sm:mb-12">
+            <h2 id="principles-title" className="text-2xl sm:text-4xl font-bold mb-4">Construído com oficinas reais</h2>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-              {t('landing.testimonialsSubtitle')}
+              Nada de promessas vazias. Estes são os princípios que guiam cada funcionalidade.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-5 sm:p-6 relative">
-                <Quote className="w-8 h-8 text-primary/15 absolute top-4 right-4" />
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-primary text-primary" />
-                  ))}
+            {[
+              { icon: Zap, title: "Rápido a usar", desc: "Criar um orçamento demora menos de 1 minuto. Tudo a 2 cliques." },
+              { icon: Shield, title: "Os teus dados são teus", desc: "RGPD, encriptação ponta-a-ponta, exporta tudo quando quiseres." },
+              { icon: CheckCircle, title: "Honesto", desc: "Sem letras pequenas. Cancela quando quiseres. 30 dias Pro grátis sem cartão." },
+            ].map(({ icon: Icon, title, desc }) => (
+              <article key={title} className="bg-card border border-border rounded-xl p-5 sm:p-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                  <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
-                  "{t(`landing.testimonial${i}Text`)}"
-                </p>
-                <div className="flex items-center gap-3 pt-3 border-t border-border">
-                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    {t(`landing.testimonial${i}Name`).charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">{t(`landing.testimonial${i}Name`)}</p>
-                    <p className="text-xs text-muted-foreground">{t(`landing.testimonial${i}Role`)}</p>
-                  </div>
-                </div>
-              </div>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+              </article>
             ))}
           </div>
         </div>
@@ -371,7 +351,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">Excel vs GarageFlow</h2>
-            <p className="text-muted-foreground text-base sm:text-lg">Porque é que centenas de oficinas deixaram a folha de cálculo.</p>
+            <p className="text-muted-foreground text-base sm:text-lg">Porque a folha de cálculo já não chega para gerir uma oficina moderna.</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <table className="w-full text-sm">

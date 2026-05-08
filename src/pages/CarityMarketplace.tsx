@@ -324,6 +324,11 @@ export default function CarityMarketplace() {
                 <Heart className="h-4 w-4" />
               </Button>
             </Link>
+            <Link to="/market/inspections" className="hidden md:block">
+              <Button variant="ghost" className="text-slate-300 hover:bg-white/10 hover:text-white">
+                Para Oficinas
+              </Button>
+            </Link>
             <Link to="/market/sell" className="hidden sm:block">
               <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white backdrop-blur-sm">
                 {t('market.nav.sellCar')}

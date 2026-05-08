@@ -80,14 +80,14 @@ export default function MarketDealerDashboard() {
     });
     setRecent(arr.slice(0, 6));
 
-    const { data: ins } = await supabase
+    const { data: ins } = await (supabase as any)
       .from("carity_inspections")
       .select("id, status, scheduled_at, listing_id, shop_id, carity_listings(title)")
       .eq("seller_id", user.id)
       .in("status", ["pending", "scheduled", "in_progress"])
       .order("scheduled_at", { ascending: true, nullsFirst: false })
       .limit(5);
-    setInspections(ins || []);
+    setInspections((ins as any[]) || []);
 
     setLoading(false);
 

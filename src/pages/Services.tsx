@@ -265,7 +265,9 @@ export default function Services() {
 
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {dataLoading && services.length === 0 ? (
+          <ListSkeleton rows={5} />
+        ) : filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
             {totalCount === 0 ? t('services.empty') : t('services.noResults')}
           </div>

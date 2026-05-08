@@ -362,7 +362,9 @@ export default function Stock() {
         <TabsContent value="orders">
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
-            {orders.length === 0 ? (
+            {dataLoading && orders.length === 0 ? (
+              <ListSkeleton rows={5} />
+            ) : orders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.orders.empty')}</div>
             ) : orders.map(o => (
               <div key={o.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
@@ -409,7 +411,11 @@ export default function Stock() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.length === 0 ? (
+                  {dataLoading && orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell>
+                    </TableRow>
+                  ) : orders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.orders.empty')}</TableCell>
                     </TableRow>
@@ -448,7 +454,9 @@ export default function Stock() {
         <TabsContent value="movements">
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
-            {movements.length === 0 ? (
+            {dataLoading && movements.length === 0 ? (
+              <ListSkeleton rows={5} />
+            ) : movements.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.noMovements')}</div>
             ) : movements.map(m => {
               const part = parts.find(p => p.id === m.part_id);
@@ -485,7 +493,9 @@ export default function Stock() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movements.length === 0 ? (
+                  {dataLoading && movements.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
+                  ) : movements.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('stock.noMovements')}</TableCell></TableRow>
                   ) : movements.map(m => {
                     const part = parts.find(p => p.id === m.part_id);

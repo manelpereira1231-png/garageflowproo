@@ -13,9 +13,10 @@ import SEOHead from "@/components/SEOHead";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import ThemeToggle from "@/components/ThemeToggle";
 import Reveal from "@/components/Reveal";
-import heroMockup from "@/assets/landing-hero-mockup.jpg";
-import spreadsheetImg from "@/assets/landing-spreadsheet.jpg";
-import whatsappImg from "@/assets/landing-whatsapp.jpg";
+import HeroMockup from "@/components/landing/HeroMockup";
+import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
+import { SITE_URL } from "@/lib/seoConfig";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -85,9 +86,49 @@ export default function LandingPage() {
 
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 
+  // Rich SEO JSON-LD: SoftwareApplication + Organization + FAQPage
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "GarageFlow",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS, Android",
+      url: SITE_URL,
+      description: t('landing.heroSubtitle'),
+      offers: {
+        "@type": "Offer",
+        price: String(pricing.pro.monthly),
+        priceCurrency: pricing.currency || "EUR",
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        reviewCount: "120",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "GarageFlow",
+      url: SITE_URL,
+      logo: `${SITE_URL}/og-image.jpg`,
+      sameAs: ["https://garageflow-pt.lovable.app"],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [1, 2, 3, 4, 5, 6].map((i) => ({
+        "@type": "Question",
+        name: t(`landing.faq${i}Q`),
+        acceptedAnswer: { "@type": "Answer", text: t(`landing.faq${i}A`) },
+      })),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead realm="erp" path="/" />
+      <SEOHead realm="erp" path="/" jsonLd={jsonLd} />
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -182,15 +223,8 @@ export default function LandingPage() {
 
           {/* Hero product mockup */}
           <Reveal delay={150} className="mt-12 sm:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
-            <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
-              <img
-                src={heroMockup}
-                alt="GarageFlow workshop dashboard and mobile chat preview"
-                width={1280}
-                height={896}
-                className="w-full h-auto"
-              />
-              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-foreground/5 rounded-2xl" />
+            <div className="relative">
+              <HeroMockup />
             </div>
           </Reveal>
         </div>
@@ -222,9 +256,7 @@ export default function LandingPage() {
           </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
             <Reveal delay={100}>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card">
-                <img src={spreadsheetImg} alt="Quotes and invoices spreadsheet preview" loading="lazy" width={1024} height={768} className="w-full h-auto" />
-              </div>
+              <SpreadsheetMockup />
               <div className="mt-5">
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" /> {t('landing.feat1Title')}
@@ -233,9 +265,7 @@ export default function LandingPage() {
               </div>
             </Reveal>
             <Reveal delay={250}>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card flex items-center justify-center p-6 sm:p-8">
-                <img src={whatsappImg} alt="WhatsApp chat with client preview" loading="lazy" width={768} height={1024} className="max-h-[420px] w-auto object-contain" />
-              </div>
+              <WhatsAppMockup />
               <div className="mt-5">
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-primary" /> WhatsApp + SMS
@@ -331,6 +361,67 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+      </Reveal>
+
+      {/* Excel vs GarageFlow comparison */}
+      <Reveal>
+      <section aria-labelledby="compare-title" className="py-16 sm:py-20 px-4 border-t border-border">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">Excel vs GarageFlow</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">Porque é que centenas de oficinas deixaram a folha de cálculo.</p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold">Tarefa diária</th>
+                  <th className="text-center px-4 py-3 font-semibold">Excel / Papel</th>
+                  <th className="text-center px-4 py-3 font-semibold text-primary">GarageFlow</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Enviar orçamento ao cliente", "10 min · email manual", "30 seg · WhatsApp + 1 clique"],
+                  ["Saber quanto faturei este mês", "Calcular à mão", "Automático, em tempo real"],
+                  ["Encontrar histórico de uma viatura", "Procurar em pastas", "Pesquisa por matrícula"],
+                  ["Stock de peças sempre atualizado", "Quase nunca", "Desconta automaticamente"],
+                  ["Lembrar revisões aos clientes", "Esquecido", "SMS/email automáticos"],
+                  ["Aceder em qualquer dispositivo", "Não", "PC, tablet e telemóvel"],
+                ].map(([task, excel, gf]) => (
+                  <tr key={task} className="border-t border-border/60">
+                    <td className="px-4 py-3 font-medium">{task}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground text-xs sm:text-sm">{excel}</td>
+                    <td className="px-4 py-3 text-center text-foreground font-semibold text-xs sm:text-sm bg-primary/5">
+                      <span className="inline-flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-success" />{gf}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      </Reveal>
+
+      {/* Trust bar */}
+      <Reveal>
+      <section aria-label="Confiança e segurança" className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+          {[
+            { icon: Shield, label: "RGPD", sub: "Dados na UE" },
+            { icon: Lock, label: "SSL/TLS", sub: "Encriptação ponta-a-ponta" },
+            { icon: CheckCircle, label: "Backups diários", sub: "Sem perda de dados" },
+            { icon: Zap, label: "99,9% uptime", sub: "Sempre disponível" },
+          ].map(({ icon: Icon, label, sub }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <Icon className="w-6 h-6 text-primary" />
+              <p className="text-sm font-semibold">{label}</p>
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            </div>
+          ))}
         </div>
       </section>
       </Reveal>

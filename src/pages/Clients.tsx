@@ -61,18 +61,23 @@ export default function Clients() {
 
   const fetchClients = async () => {
     const shopId = getActiveShopId();
-    if (!shopId) return;
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("clients")
-      .select("*", { count: "exact" })
-      .eq("shop_id", shopId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setClients(data);
-    if (count !== null) setTotalCount(count);
+    if (!shopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
+        .from("clients")
+        .select("*", { count: "exact" })
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setClients(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchClients(); }, [page, activeShopId]);

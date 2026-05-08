@@ -13,16 +13,30 @@ import {
 import MarketLayout from "@/components/MarketLayout";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { pageCache } from "@/lib/pageCache";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DASH_CACHE_KEY = "market:dashboard:v1";
+
+interface DashSnapshot {
+  sellerName: string;
+  verified: boolean;
+  stats: any;
+  recentListings: any[];
+  activeInspections: any[];
+  recentOffers: any[];
+}
 
 export default function MarketDashboard() {
   const navigate = useNavigate();
   const { formatPrice } = useCountryPricing();
   const t = useMarketT();
-  const [loading, setLoading] = useState(true);
-  const [sellerName, setSellerName] = useState("");
-  const [verified, setVerified] = useState(false);
+  const cached = pageCache.get<DashSnapshot>(DASH_CACHE_KEY);
+  const [loading, setLoading] = useState(!cached);
+  const [sellerName, setSellerName] = useState(cached?.sellerName ?? "");
+  const [verified, setVerified] = useState(cached?.verified ?? false);
 
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState(cached?.stats ?? {
     total: 0,
     published: 0,
     pendingInspection: 0,
@@ -35,9 +49,9 @@ export default function MarketDashboard() {
     trustLevel: "new",
   });
 
-  const [recentListings, setRecentListings] = useState<any[]>([]);
-  const [activeInspections, setActiveInspections] = useState<any[]>([]);
-  const [recentOffers, setRecentOffers] = useState<any[]>([]);
+  const [recentListings, setRecentListings] = useState<any[]>(cached?.recentListings ?? []);
+  const [activeInspections, setActiveInspections] = useState<any[]>(cached?.activeInspections ?? []);
+  const [recentOffers, setRecentOffers] = useState<any[]>(cached?.recentOffers ?? []);
 
   useEffect(() => {
     loadDashboard();

@@ -183,15 +183,8 @@ export default function LandingPage() {
 
           {/* Hero product mockup */}
           <Reveal delay={150} className="mt-12 sm:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
-            <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
-              <img
-                src={heroMockup}
-                alt="GarageFlow workshop dashboard and mobile chat preview"
-                width={1280}
-                height={896}
-                className="w-full h-auto"
-              />
-              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-foreground/5 rounded-2xl" />
+            <div className="relative">
+              <HeroMockup />
             </div>
           </Reveal>
         </div>
@@ -223,9 +216,7 @@ export default function LandingPage() {
           </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
             <Reveal delay={100}>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card">
-                <img src={spreadsheetImg} alt="Quotes and invoices spreadsheet preview" loading="lazy" width={1024} height={768} className="w-full h-auto" />
-              </div>
+              <SpreadsheetMockup />
               <div className="mt-5">
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" /> {t('landing.feat1Title')}
@@ -234,9 +225,7 @@ export default function LandingPage() {
               </div>
             </Reveal>
             <Reveal delay={250}>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-xl bg-card flex items-center justify-center p-6 sm:p-8">
-                <img src={whatsappImg} alt="WhatsApp chat with client preview" loading="lazy" width={768} height={1024} className="max-h-[420px] w-auto object-contain" />
-              </div>
+              <WhatsAppMockup />
               <div className="mt-5">
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-primary" /> WhatsApp + SMS

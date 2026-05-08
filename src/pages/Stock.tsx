@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import ListSkeleton from "@/components/ListSkeleton";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
@@ -53,19 +54,25 @@ export default function Stock() {
   const [movForm, setMovForm] = useState({ type: "in", quantity: 1, reason: "" });
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const load = async () => {
-    if (!activeShopId) return;
-    const [partsRes, movRes, ordersRes] = await Promise.all([
-      supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
-      supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
-      supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
-    ]);
-    if (partsRes.data) setParts(partsRes.data as Part[]);
-    if (movRes.data) setMovements(movRes.data as StockMovement[]);
-    if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const [partsRes, movRes, ordersRes] = await Promise.all([
+        supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
+        supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
+        supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
+      ]);
+      if (partsRes.data) setParts(partsRes.data as Part[]);
+      if (movRes.data) setMovements(movRes.data as StockMovement[]);
+      if (ordersRes.data) setOrders(ordersRes.data as PartsOrder[]);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [activeShopId]);

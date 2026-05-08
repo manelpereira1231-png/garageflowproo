@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
-import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Suspense, createContext, useContext, useEffect, useState } from "react";
@@ -38,8 +39,16 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
+  const [searchQ, setSearchQ] = useState("");
   const t = useMarketT();
   const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQ.trim();
+    navigate(q ? `/market?q=${encodeURIComponent(q)}` : "/market");
+    setMobileOpen(false);
+  };
 
   useEffect(() => {
     if (alreadyWrapped) return;
@@ -99,6 +108,17 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               <span className="text-lg font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
             </Link>
 
+            {/* Desktop search — quick listing finder */}
+            <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-md mx-6 relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+              <Input
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
+                className="h-9 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40 focus-visible:ring-amber-400/40 focus-visible:border-amber-400/40"
+              />
+            </form>
+
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-0.5">
               {NAV_ITEMS.map(item => {
@@ -150,6 +170,16 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
           {/* Mobile nav */}
           {mobileOpen && (
             <div className="md:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
+              {/* Mobile search */}
+              <form onSubmit={submitSearch} className="relative mb-2">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                <Input
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
+                  className="h-10 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40"
+                />
+              </form>
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);

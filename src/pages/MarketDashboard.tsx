@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Car, MessageCircle, Clock, CheckCircle, Plus, ArrowRight,
   ShieldCheck, Star, Eye, Rocket,
-  CreditCard, FileCheck, Package
+  CreditCard, FileCheck, Package, Circle
 } from "lucide-react";
 import MarketLayout from "@/components/MarketLayout";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
@@ -21,6 +21,7 @@ const DASH_CACHE_KEY = "market:dashboard:v1";
 interface DashSnapshot {
   sellerName: string;
   verified: boolean;
+  hasPhone: boolean;
   stats: any;
   recentListings: any[];
   activeInspections: any[];
@@ -35,6 +36,7 @@ export default function MarketDashboard() {
   const [loading, setLoading] = useState(!cached);
   const [sellerName, setSellerName] = useState(cached?.sellerName ?? "");
   const [verified, setVerified] = useState(cached?.verified ?? false);
+  const [hasPhone, setHasPhone] = useState(cached?.hasPhone ?? false);
 
   const [stats, setStats] = useState(cached?.stats ?? {
     total: 0,
@@ -63,12 +65,14 @@ export default function MarketDashboard() {
 
     const { data: profile } = await supabase
       .from("carity_seller_profiles")
-      .select("name, verified")
+      .select("name, phone, verified")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const phoneVal = profile?.phone || user.user_metadata?.phone || "";
     setSellerName(profile?.name || user.user_metadata?.name || "—");
     setVerified(profile?.verified || false);
+    setHasPhone(!!phoneVal);
 
     const { data: trust } = await supabase
       .from("seller_trust_scores")
@@ -147,6 +151,7 @@ export default function MarketDashboard() {
     pageCache.set<DashSnapshot>(DASH_CACHE_KEY, {
       sellerName: profile?.name || user.user_metadata?.name || "—",
       verified: profile?.verified || false,
+      hasPhone: !!phoneVal,
       stats: newStats,
       recentListings: newRecentListings,
       activeInspections: newActiveInspections,
@@ -227,6 +232,50 @@ export default function MarketDashboard() {
           </Badge>
         </div>
       </div>
+
+      {/* Setup checklist — onboarding for new sellers */}
+      {(() => {
+        const steps = [
+          { done: !!sellerName && sellerName !== "—" && hasPhone, label: "Completar perfil (nome e telefone)", to: "/market/profile" },
+          { done: verified, label: "Verificar identidade (KYC)", to: "/market/profile" },
+          { done: stats.total > 0, label: "Publicar 1.º anúncio", to: "/market/sell" },
+          { done: stats.published > 0, label: "1.º anúncio aprovado e online", to: "/market/my-listings" },
+        ];
+        const completed = steps.filter(s => s.done).length;
+        if (completed === steps.length) return null;
+        const pct = Math.round((completed / steps.length) * 100);
+        return (
+          <Card className="mb-6 border-amber-300/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50/60 to-transparent dark:from-amber-950/15">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Rocket className="h-4 w-4 text-amber-500" /> Configura a tua conta de vendedor
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">{completed} de {steps.length} passos concluídos</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-amber-600 tabular-nums">{pct}%</span>
+                </div>
+              </div>
+              <Progress value={pct} className="h-2 mt-2" />
+            </CardHeader>
+            <CardContent className="grid sm:grid-cols-2 gap-2">
+              {steps.map((s, i) => (
+                <Link key={i} to={s.to} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${s.done ? "bg-green-50/60 dark:bg-green-950/20 border-green-200/60 dark:border-green-800/40" : "bg-background hover:border-amber-400/60 hover:bg-amber-50/40 dark:hover:bg-amber-950/10"}`}>
+                  {s.done ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+                  )}
+                  <span className={`text-sm flex-1 ${s.done ? "text-muted-foreground line-through" : "font-medium"}`}>{s.label}</span>
+                  {!s.done && <ArrowRight className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />}
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* First-run empty state — primary CTA */}
       {stats.total === 0 && (

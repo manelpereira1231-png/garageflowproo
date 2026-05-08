@@ -31,24 +31,30 @@ export default function Invoices() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [shop, setShop] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const fetchInvoices = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("invoices")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setInvoices(data);
-    if (count !== null) setTotalCount(count);
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
+        .from("invoices")
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .eq("shop_id", activeShopId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setInvoices(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchInvoices(); }, [page, activeShopId]);

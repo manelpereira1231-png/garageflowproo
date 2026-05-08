@@ -99,6 +99,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
+  const sidebarPrefs = useSidebarPrefs(activeShopId);
 
   useEffect(() => {
     const loadAlertCount = async () => {

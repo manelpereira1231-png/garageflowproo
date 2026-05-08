@@ -95,6 +95,7 @@ const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
 const MarketStandsDirectory = lazyRetry(() => import("@/pages/MarketStandsDirectory"));
 const MarketStandPublic = lazyRetry(() => import("@/pages/MarketStandPublic"));
+const MarketDealerDashboard = lazyRetry(() => import("@/pages/MarketDealerDashboard"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
 
 // Legal pages (RGPD)
@@ -391,6 +392,7 @@ const preloadGarageSecondaryRoutes = [
 const marketAuthedRoutes = [
   { path: "/market/my-listings", element: <CaritySellerDashboard /> },
   { path: "/market/dashboard", element: <MarketDashboard /> },
+  { path: "/market/dealer-dashboard", element: <MarketDealerDashboard /> },
   { path: "/market/messages", element: <MarketMessages /> },
   { path: "/market/profile", element: <MarketProfile /> },
   { path: "/market/favoritos", element: <CarityFavorites /> },

@@ -19,7 +19,7 @@ export default function MarketAuth() {
   const redirectParam = searchParams.get("redirect");
   const redirect = redirectParam && redirectParam.startsWith("/market") && !redirectParam.startsWith("//")
     ? redirectParam
-    : (isDealer ? "/market/profile?welcome=dealer" : "/market/dashboard");
+    : (isDealer ? "/market/dealer-dashboard" : "/market/dashboard");
 
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(isDealer ? "signup" : initialMode);
   const [loading, setLoading] = useState(false);
@@ -133,7 +133,7 @@ export default function MarketAuth() {
             skip_shop_creation: true,
             is_dealer: isDealer,
           },
-          emailRedirectTo: window.location.origin + (isDealer ? "/market/profile?welcome=dealer" : "/market"),
+          emailRedirectTo: window.location.origin + (isDealer ? "/market/dealer-dashboard" : "/market"),
         },
       });
       if (error) throw error;

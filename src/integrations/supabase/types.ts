@@ -1119,6 +1119,10 @@ export type Database = {
           dealer_nif: string | null
           dealer_plan: string
           dealer_slug: string | null
+          dealer_stripe_customer_id: string | null
+          dealer_stripe_price_id: string | null
+          dealer_stripe_subscription_id: string | null
+          dealer_subscription_status: string | null
           document_number: string | null
           document_type: string | null
           document_url: string | null
@@ -1155,6 +1159,10 @@ export type Database = {
           dealer_nif?: string | null
           dealer_plan?: string
           dealer_slug?: string | null
+          dealer_stripe_customer_id?: string | null
+          dealer_stripe_price_id?: string | null
+          dealer_stripe_subscription_id?: string | null
+          dealer_subscription_status?: string | null
           document_number?: string | null
           document_type?: string | null
           document_url?: string | null
@@ -1191,6 +1199,10 @@ export type Database = {
           dealer_nif?: string | null
           dealer_plan?: string
           dealer_slug?: string | null
+          dealer_stripe_customer_id?: string | null
+          dealer_stripe_price_id?: string | null
+          dealer_stripe_subscription_id?: string | null
+          dealer_subscription_status?: string | null
           document_number?: string | null
           document_type?: string | null
           document_url?: string | null

@@ -65,9 +65,14 @@ export default function MarketDashboard() {
 
     const { data: profile } = await supabase
       .from("carity_seller_profiles")
-      .select("name, phone, verified")
+      .select("name, phone, verified, account_type")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if ((profile as any)?.account_type === "dealer") {
+      navigate("/market/dealer-dashboard", { replace: true });
+      return;
+    }
 
     const phoneVal = profile?.phone || user.user_metadata?.phone || "";
     setSellerName(profile?.name || user.user_metadata?.name || "—");

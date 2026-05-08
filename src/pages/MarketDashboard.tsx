@@ -36,6 +36,7 @@ export default function MarketDashboard() {
   const [loading, setLoading] = useState(!cached);
   const [sellerName, setSellerName] = useState(cached?.sellerName ?? "");
   const [verified, setVerified] = useState(cached?.verified ?? false);
+  const [hasPhone, setHasPhone] = useState(cached?.hasPhone ?? false);
 
   const [stats, setStats] = useState(cached?.stats ?? {
     total: 0,

@@ -36,8 +36,40 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [favCount, setFavCount] = useState(0);
   const t = useMarketT();
   const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+
+  useEffect(() => {
+    if (alreadyWrapped) return;
+    let cancelled = false;
+    let channel: any;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const [{ count: unread }, { count: favs }] = await Promise.all([
+        supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
+        supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
+      ]);
+      if (cancelled) return;
+      setUnreadCount(unread || 0);
+      setFavCount(favs || 0);
+      // Realtime: refresh badge on new incoming message
+      channel = supabase.channel(`market-nav-${user.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "carity_chat_messages", filter: `receiver_id=eq.${user.id}` }, () => {
+          setUnreadCount((c) => c + 1);
+        })
+        .subscribe();
+    })();
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [alreadyWrapped, location.pathname]);
+
+  const badgeFor = (path: string): number => {
+    if (path === "/market/messages") return unreadCount;
+    if (path === "/market/favoritos") return favCount;
+    return 0;
+  };
 
   // If another MarketLayout is already mounted above (router-level), this
   // instance becomes a transparent passthrough — keeps page-level `<MarketLayout>`

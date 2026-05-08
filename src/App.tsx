@@ -392,6 +392,7 @@ const preloadGarageSecondaryRoutes = [
 const marketAuthedRoutes = [
   { path: "/market/my-listings", element: <CaritySellerDashboard /> },
   { path: "/market/dashboard", element: <MarketDashboard /> },
+  { path: "/market/dealer-dashboard", element: <MarketDealerDashboard /> },
   { path: "/market/messages", element: <MarketMessages /> },
   { path: "/market/profile", element: <MarketProfile /> },
   { path: "/market/favoritos", element: <CarityFavorites /> },

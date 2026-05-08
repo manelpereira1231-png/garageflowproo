@@ -728,7 +728,7 @@ export default function CarityMarketplace() {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                <Link to="/market/auth?mode=signup&account=dealer&redirect=/market/profile">
+                <Link to="/market/auth?mode=signup&account=dealer&redirect=/market/dealer-dashboard">
                   <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold shadow-lg shadow-amber-500/20">
                     <Building2 className="h-4 w-4 mr-2" /> Registar o meu stand
                   </Button>

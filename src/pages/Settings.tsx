@@ -112,7 +112,9 @@ export default function SettingsPage() {
         toast.success(t('settings.saved'));
       }
     } else {
-      const { data, error } = await supabase.from("shops").insert(payload).select().single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error(t('common.sessionExpired') || "Sessão expirada"); setLoading(false); return; }
+      const { data, error } = await supabase.from("shops").insert({ ...payload, user_id: user.id }).select().single();
       if (error) toast.error(error.message);
       else {
         setShopId(data.id);

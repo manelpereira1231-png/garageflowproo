@@ -39,8 +39,16 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
+  const [searchQ, setSearchQ] = useState("");
   const t = useMarketT();
   const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQ.trim();
+    navigate(q ? `/market?q=${encodeURIComponent(q)}` : "/market");
+    setMobileOpen(false);
+  };
 
   useEffect(() => {
     if (alreadyWrapped) return;

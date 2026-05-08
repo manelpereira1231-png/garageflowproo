@@ -16,6 +16,10 @@ import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
+import { pageCache } from "@/lib/pageCache";
+
+const MARKET_CACHE_KEY = "market:listings:v1";
+const MARKET_STATS_CACHE_KEY = "market:stats:v1";
 
 const FUEL_LABELS: Record<string, string> = {
   'Gasóleo': 'Gasóleo',

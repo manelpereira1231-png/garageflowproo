@@ -588,7 +588,9 @@ export default function Inspections() {
       </div>
 
       {/* Checklist cards */}
-      {checklists.length === 0 ? (
+      {dataLoading && checklists.length === 0 ? (
+        <ListSkeleton rows={5} />
+      ) : checklists.length === 0 ? (
         <div className="text-center py-16 bg-card border border-border rounded-xl">
           <ClipboardCheck className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30" />
           <p className="font-medium text-foreground mb-1">{t('inspections.empty')}</p>

@@ -157,8 +157,7 @@ serve(async (req) => {
       customer_email: customerId || !validEmail ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      // Local recurring methods per country (SEPA EU, BACS UK, ACH US, BECS AU…)
-      payment_method_types: getSubscriptionMethods(resolvedCountry),
+      // Let Stripe auto-select activated payment methods from dashboard (avoids errors when a method isn't enabled)
       automatic_tax: { enabled: false },
       billing_address_collection: "auto",
       allow_promotion_codes: true,

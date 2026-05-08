@@ -186,7 +186,11 @@ export default function Clients() {
       </div>
 
       {/* Empty state CTA */}
-      {totalCount === 0 && (
+      {dataLoading && clients.length === 0 && (
+        <ListSkeleton rows={5} />
+      )}
+
+      {!dataLoading && totalCount === 0 && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">👤</span>
           <h3 className="text-lg font-bold mb-1">{t('clients.empty') || 'Ainda sem clientes'}</h3>

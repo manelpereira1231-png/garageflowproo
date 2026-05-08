@@ -284,7 +284,11 @@ export default function Alerts() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {dataLoading && alerts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {t('alerts.empty')}
@@ -357,7 +361,9 @@ export default function Alerts() {
 
       {/* Mobile cards */}
       <div className="sm:hidden space-y-3">
-        {filtered.length === 0 ? (
+        {dataLoading && alerts.length === 0 ? (
+          <ListSkeleton rows={5} />
+        ) : filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">{t('alerts.empty')}</div>
         ) : filtered.map(a => {
           const Icon = alertTypeIcons[a.type] || Bell;

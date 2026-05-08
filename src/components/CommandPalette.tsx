@@ -35,7 +35,7 @@ export default function CommandPalette() {
   const { activeShopId } = useShopContext();
   const isPt = language === "pt";
 
-  // Listen for CMD+K / Ctrl+K
+  // Listen for CMD+K / Ctrl+K and a global "open-command-palette" event
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -43,8 +43,13 @@ export default function CommandPalette() {
         setOpen((o) => !o);
       }
     };
+    const openEvt = () => setOpen(true);
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    window.addEventListener("open-command-palette", openEvt);
+    return () => {
+      document.removeEventListener("keydown", down);
+      window.removeEventListener("open-command-palette", openEvt);
+    };
   }, []);
 
   // Search across tables

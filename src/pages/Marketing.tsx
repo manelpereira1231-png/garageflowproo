@@ -15,6 +15,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useShopContext } from "@/hooks/useShopContext";
 import { toast } from "sonner";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -34,19 +35,25 @@ export default function Marketing() {
   const [detailCampaign, setDetailCampaign] = useState<any | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [dataLoading, setDataLoading] = useState(true);
   const [form, setForm] = useState({
     name: "", type: "email", subject: "", content: "",
     target_segment: "all", scheduled_at: "",
   });
 
   const load = async () => {
-    if (!activeShopId) return;
-    const [campRes, clientRes] = await Promise.all([
-      supabase.from("campaigns").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, email, name").eq("shop_id", activeShopId).is("deleted_at", null).neq("email", ""),
-    ]);
-    if (campRes.data) setCampaigns(campRes.data);
-    if (clientRes.data) setClients(clientRes.data);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const [campRes, clientRes] = await Promise.all([
+        supabase.from("campaigns").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, email, name").eq("shop_id", activeShopId).is("deleted_at", null).neq("email", ""),
+      ]);
+      if (campRes.data) setCampaigns(campRes.data);
+      if (clientRes.data) setClients(clientRes.data);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [activeShopId]);
@@ -233,7 +240,9 @@ export default function Marketing() {
       </div>
 
       {/* Campaigns */}
-      {filteredCampaigns.length === 0 ? (
+      {dataLoading && campaigns.length === 0 ? (
+        <ListSkeleton rows={5} />
+      ) : filteredCampaigns.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <Send className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />

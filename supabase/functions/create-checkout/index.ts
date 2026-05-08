@@ -107,11 +107,17 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
+    // Validate email — if invalid (test/legacy accounts), let Stripe collect a valid one at checkout
+    const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validEmail = EMAIL_RX.test(user.email || "");
+
     // Find or create customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+    if (validEmail) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      }
     }
 
     // --- ANTI-FRAUD TRIAL CHECK ---
@@ -148,11 +154,10 @@ serve(async (req) => {
 
     const sessionParams: any = {
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId || !validEmail ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      // Local recurring methods per country (SEPA EU, BACS UK, ACH US, BECS AU…)
-      payment_method_types: getSubscriptionMethods(resolvedCountry),
+      // Let Stripe auto-select activated payment methods from dashboard (avoids errors when a method isn't enabled)
       automatic_tax: { enabled: false },
       billing_address_collection: "auto",
       allow_promotion_codes: true,

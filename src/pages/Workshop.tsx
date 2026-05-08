@@ -64,6 +64,7 @@ export default function Workshop() {
     const cacheKey = `workshop:${activeShopId}:${filter}`;
     const c = pageCache.get<any[]>(cacheKey);
     if (c) { setWorkOrders(c); setLoading(false); }
+    else { setLoading(true); }
 
     let query = supabase
       .from("work_orders")

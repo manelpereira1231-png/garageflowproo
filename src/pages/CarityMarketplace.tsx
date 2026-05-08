@@ -746,14 +746,57 @@ export default function CarityMarketplace() {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                <Link to="/market/inspections">
+                <Link to="/market/auth?mode=signup&redirect=/market/inspections">
                   <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold shadow-lg shadow-amber-500/20">
-                    Inscrever a minha oficina <ArrowRight className="ml-2 h-4 w-4" />
+                    Registar a minha oficina <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link to="/market/payout-info">
-                  <Button size="lg" variant="outline">Como funcionam os pagamentos</Button>
-                </Link>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="lg" variant="outline">Como funcionam os pagamentos</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Como funcionam os pagamentos</DialogTitle>
+                      <DialogDescription>
+                        Transparência total: sem mensalidades, sem taxas escondidas.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 text-sm">
+                      <div className="flex gap-3">
+                        <div className="h-7 w-7 rounded-full bg-amber-500 text-slate-900 font-bold flex items-center justify-center shrink-0">1</div>
+                        <div>
+                          <p className="font-semibold">Cliente paga online a inspeção</p>
+                          <p className="text-muted-foreground">O comprador escolhe a sua oficina e paga via GarageFlow Market (Stripe).</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="h-7 w-7 rounded-full bg-amber-500 text-slate-900 font-bold flex items-center justify-center shrink-0">2</div>
+                        <div>
+                          <p className="font-semibold">Realiza a inspeção e submete o relatório</p>
+                          <p className="text-muted-foreground">Usa a app GarageFlow para checklist digital, fotos e PDF assinado.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="h-7 w-7 rounded-full bg-amber-500 text-slate-900 font-bold flex items-center justify-center shrink-0">3</div>
+                        <div>
+                          <p className="font-semibold">Recebe {formatPrice(pricing.inspection_shop_share)} por inspeção</p>
+                          <p className="text-muted-foreground">Pagamento agregado e transferido por SEPA no fim do mês para o IBAN da oficina (Stripe Connect).</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="h-7 w-7 rounded-full bg-amber-500 text-slate-900 font-bold flex items-center justify-center shrink-0">4</div>
+                        <div>
+                          <p className="font-semibold">Sem custos fixos</p>
+                          <p className="text-muted-foreground">Só paga quando trabalha. Zero mensalidade, zero exclusividade.</p>
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+                        Fatura fiscal emitida automaticamente todos os meses. Compatível com SAF-T PT.
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
             <div className="relative">

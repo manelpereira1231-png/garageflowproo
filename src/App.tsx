@@ -93,6 +93,8 @@ const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
+const MarketStandsDirectory = lazyRetry(() => import("@/pages/MarketStandsDirectory"));
+const MarketStandPublic = lazyRetry(() => import("@/pages/MarketStandPublic"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
 
 // Legal pages (RGPD)
@@ -411,6 +413,8 @@ const publicRoutes = [
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
   { path: "/market/modelo/:make/:model", element: <Suspense fallback={<PageLoader />}><CarityByModel /></Suspense> },
   { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
+  { path: "/market/stands", element: <Suspense fallback={<PageLoader />}><MarketStandsDirectory /></Suspense> },
+  { path: "/market/stand/:slug", element: <Suspense fallback={<PageLoader />}><MarketStandPublic /></Suspense> },
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },

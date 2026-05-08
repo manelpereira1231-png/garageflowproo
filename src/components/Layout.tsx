@@ -34,7 +34,12 @@ import {
   ShieldCheck,
   Lock,
   Wallet,
+  Star as StarIcon,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
+import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
+import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -94,6 +99,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
+  const sidebarPrefs = useSidebarPrefs(activeShopId);
 
   useEffect(() => {
     const loadAlertCount = async () => {
@@ -144,6 +150,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         (payload: any) => {
           loadPendingMarket();
           if (payload.eventType === "INSERT") {
+            // Respect per-module notification mute (sidebar prefs)
+            try {
+              const raw = localStorage.getItem(`garageflow_sidebar_prefs_${activeShopId}`);
+              if (raw && JSON.parse(raw)?.mutedNotif?.includes("/market/inspections")) return;
+            } catch { /* ignore */ }
             toast.info("🚗 Nova inspeção Market disponível!", {
               description: "Tem um novo pedido de inspeção para aceitar.",
               action: {
@@ -214,9 +225,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
-  const visibleNavItems = isGuidedMode
+  const baseVisibleItems = isGuidedMode
     ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
-    : navItems;
+    : navItems.filter((item) => !sidebarPrefs.isHidden(item.path));
+
+  // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.
+  const favoriteItems = isGuidedMode
+    ? []
+    : sidebarPrefs.favorites
+        .map((p) => baseVisibleItems.find((i) => i.path === p))
+        .filter((x): x is NavItem => Boolean(x));
+  const regularItems = isGuidedMode
+    ? baseVisibleItems
+    : baseVisibleItems.filter((i) => !sidebarPrefs.isFavorite(i.path));
 
   const liteHintLabel =
     t("appMode.liteSidebarHint") === "appMode.liteSidebarHint"
@@ -262,108 +283,169 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {visibleNavItems.map((item) => {
-            const isActive = isPathActive(location.pathname, item.path);
-            const navLink = (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                onMouseEnter={() => handlePrefetch(item.path)}
-                onFocus={() => handlePrefetch(item.path)}
-                onTouchStart={() => handlePrefetch(item.path)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
-                  isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <item.icon className="w-[18px] h-[18px] shrink-0" />
-                <span className="truncate">{item.label}</span>
-                <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                  {item.planBadge && (
-                    <span
-                      className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                        isActive
-                          ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
-                          : "bg-sidebar-accent text-sidebar-foreground/70"
+          {(() => {
+            const renderItem = (item: NavItem, opts: { fav: boolean; index?: number; total?: number }) => {
+              const isActive = isPathActive(location.pathname, item.path);
+              const muted = sidebarPrefs.isMuted(item.path);
+              const showBadge = !muted && item.badge && item.badge > 0;
+              const navLink = (
+                <Link
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  onMouseEnter={() => handlePrefetch(item.path)}
+                  onFocus={() => handlePrefetch(item.path)}
+                  onTouchStart={() => handlePrefetch(item.path)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  }`}
+                >
+                  <item.icon className="w-[18px] h-[18px] shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                  <div className="ml-auto flex items-center gap-1 shrink-0">
+                    {!isGuidedMode && opts.fav && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.moveFavorite(item.path, -1); }}
+                          disabled={opts.index === 0}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 disabled:opacity-20 disabled:hover:bg-transparent"
+                          title="Subir"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.moveFavorite(item.path, 1); }}
+                          disabled={opts.total !== undefined && opts.index === opts.total - 1}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 disabled:opacity-20 disabled:hover:bg-transparent"
+                          title="Descer"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                    {!isGuidedMode && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.toggleFavorite(item.path); }}
+                        className={`p-0.5 rounded hover:bg-background/20 transition-opacity ${
+                          opts.fav ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        }`}
+                        title={opts.fav ? "Remover dos favoritos" : "Fixar nos favoritos"}
+                      >
+                        <StarIcon className={`w-3.5 h-3.5 ${opts.fav ? "fill-current" : ""}`} />
+                      </button>
+                    )}
+                    {item.planBadge && (
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                          isActive
+                            ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
+                            : "bg-sidebar-accent text-sidebar-foreground/70"
+                        }`}
+                      >
+                        {item.planBadge}
+                      </span>
+                    )}
+                    {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                    {showBadge ? (
+                      <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {item.badge! > 99 ? "99+" : item.badge}
+                      </span>
+                    ) : null}
+                    {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
+                  </div>
+                </Link>
+              );
+
+              if (item.path === "/alerts" && !opts.fav) {
+                const finActive = isFinancialRoute(location.pathname);
+                return (
+                  <div key="fin-group">
+                    <button
+                      onClick={() => setFinancialOpen(!financialOpen)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full ${
+                        finActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       }`}
                     >
-                      {item.planBadge}
-                    </span>
-                  )}
-                  {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
-                  {item.badge && item.badge > 0 ? (
-                    <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {item.badge > 99 ? "99+" : item.badge}
-                    </span>
-                  ) : null}
-                  {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
-                </div>
-              </Link>
-            );
+                      <Receipt className="w-[18px] h-[18px] shrink-0" />
+                      <span className="truncate">{t("nav.financial")}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform ${financialOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {financialOpen && (
+                      <div className="ml-7 mt-0.5 space-y-0.5">
+                        {financialSubItems.map((fi) => {
+                          const fiActive = isPathActive(location.pathname, fi.path);
+                          return (
+                            <Link
+                              key={fi.path}
+                              to={fi.path}
+                              onClick={() => setSidebarOpen(false)}
+                              onMouseEnter={() => handlePrefetch(fi.path)}
+                              onFocus={() => handlePrefetch(fi.path)}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                fiActive
+                                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                  : "text-sidebar-foreground hover:bg-sidebar-accent"
+                              }`}
+                            >
+                              <span className="truncate">{fi.label}</span>
+                              <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                                {fi.planBadge && (
+                                  <span
+                                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                                      fiActive
+                                        ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
+                                        : "bg-sidebar-accent text-sidebar-foreground/70"
+                                    }`}
+                                  >
+                                    {fi.planBadge}
+                                  </span>
+                                )}
+                                {fi.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div key={item.path}>{navLink}</div>
+                  </div>
+                );
+              }
 
-            if (item.path === "/alerts") {
-              const finActive = isFinancialRoute(location.pathname);
-              return (
-                <div key="fin-group">
-                  <button
-                    onClick={() => setFinancialOpen(!financialOpen)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full ${
-                      finActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Receipt className="w-[18px] h-[18px] shrink-0" />
-                    <span className="truncate">{t("nav.financial")}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform ${financialOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {financialOpen && (
-                    <div className="ml-7 mt-0.5 space-y-0.5">
-                      {financialSubItems.map((fi) => {
-                        const fiActive = isPathActive(location.pathname, fi.path);
-                        return (
-                          <Link
-                            key={fi.path}
-                            to={fi.path}
-                            onClick={() => setSidebarOpen(false)}
-                            onMouseEnter={() => handlePrefetch(fi.path)}
-                            onFocus={() => handlePrefetch(fi.path)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                              fiActive
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                : "text-sidebar-foreground hover:bg-sidebar-accent"
-                            }`}
-                          >
-                            <span className="truncate">{fi.label}</span>
-                            <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                              {fi.planBadge && (
-                                <span
-                                  className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                                    fiActive
-                                      ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
-                                      : "bg-sidebar-accent text-sidebar-foreground/70"
-                                  }`}
-                                >
-                                  {fi.planBadge}
-                                </span>
-                              )}
-                              {fi.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
-                            </div>
-                          </Link>
-                        );
-                      })}
+              return <div key={item.path}>{navLink}</div>;
+            };
+
+            return (
+              <>
+                {favoriteItems.length > 0 && (
+                  <>
+                    <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
+                      <StarIcon className="w-3 h-3 fill-current" /> Favoritos
                     </div>
-                  )}
-                  {navLink}
-                </div>
-              );
-            }
-
-            return navLink;
-          })}
+                    {favoriteItems.map((it, i) => renderItem(it, { fav: true, index: i, total: favoriteItems.length }))}
+                    <div className="my-2 border-t border-sidebar-border/60" />
+                  </>
+                )}
+                {regularItems.map((it) => renderItem(it, { fav: false }))}
+              </>
+            );
+          })()}
         </nav>
+
+        {!isGuidedMode && (
+          <div className="px-2.5 pt-1 border-t border-sidebar-border">
+            <SidebarCustomizer
+              shopId={activeShopId}
+              items={navItems.map((i) => ({ path: i.path, label: i.label }))}
+            />
+          </div>
+        )}
 
         <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
           <AppModeToggle className="w-full justify-between" />

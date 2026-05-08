@@ -18,6 +18,7 @@ import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -43,35 +44,40 @@ export default function Quotes() {
   const [totalCount, setTotalCount] = useState(0);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const fetchQuotes = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("quotes")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setQuotes(data);
-    if (count !== null) setTotalCount(count);
-
-    // Count monthly quotes for limit display
-    if (limits.maxQuotesPerMonth !== Infinity) {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { count: monthCount } = await supabase
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
         .from("quotes")
-        .select("id", { count: "exact", head: true })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
         .eq("shop_id", activeShopId)
-        .gte("created_at", monthStart);
-      setMonthlyUsed(monthCount || 0);
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setQuotes(data);
+      if (count !== null) setTotalCount(count);
+
+      if (limits.maxQuotesPerMonth !== Infinity) {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const { count: monthCount } = await supabase
+          .from("quotes")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", activeShopId)
+          .gte("created_at", monthStart);
+        setMonthlyUsed(monthCount || 0);
+      }
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -251,7 +257,11 @@ export default function Quotes() {
       </div>
 
       {/* Empty state CTA */}
-      {totalCount === 0 && (
+      {dataLoading && quotes.length === 0 && (
+        <ListSkeleton rows={5} />
+      )}
+
+      {!dataLoading && totalCount === 0 && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">📋</span>
           <h3 className="text-lg font-bold mb-1">{t('quotes.empty') || 'Ainda sem orçamentos'}</h3>

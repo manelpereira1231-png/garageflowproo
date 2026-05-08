@@ -14,6 +14,7 @@ import VehiclePassport from "@/components/VehiclePassport";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -26,6 +27,7 @@ export default function Vehicles() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,14 +46,19 @@ export default function Vehicles() {
   const activeShopId = useActiveShopId();
 
   const fetchData = async () => {
-    if (!activeShopId) return;
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
-    if (v) setVehicles(v);
-    if (count !== null) setTotalCount(count);
-    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
-    if (c) setClients(c);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
+      if (v) setVehicles(v);
+      if (count !== null) setTotalCount(count);
+      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
+      if (c) setClients(c);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchData(); }, [page, activeShopId]);
@@ -187,7 +194,11 @@ export default function Vehicles() {
       </div>
 
       {/* Empty state CTA */}
-      {totalCount === 0 && (
+      {dataLoading && vehicles.length === 0 && (
+        <ListSkeleton rows={5} />
+      )}
+
+      {!dataLoading && totalCount === 0 && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">🚗</span>
           <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || 'Ainda sem veículos'}</h3>

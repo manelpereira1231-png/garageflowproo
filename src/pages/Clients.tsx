@@ -11,6 +11,7 @@ import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {
@@ -46,6 +47,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,18 +62,23 @@ export default function Clients() {
 
   const fetchClients = async () => {
     const shopId = getActiveShopId();
-    if (!shopId) return;
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("clients")
-      .select("*", { count: "exact" })
-      .eq("shop_id", shopId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setClients(data);
-    if (count !== null) setTotalCount(count);
+    if (!shopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
+        .from("clients")
+        .select("*", { count: "exact" })
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setClients(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchClients(); }, [page, activeShopId]);
@@ -179,7 +186,11 @@ export default function Clients() {
       </div>
 
       {/* Empty state CTA */}
-      {totalCount === 0 && (
+      {dataLoading && clients.length === 0 && (
+        <ListSkeleton rows={5} />
+      )}
+
+      {!dataLoading && totalCount === 0 && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">👤</span>
           <h3 className="text-lg font-bold mb-1">{t('clients.empty') || 'Ainda sem clientes'}</h3>

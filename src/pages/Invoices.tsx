@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -31,24 +32,30 @@ export default function Invoices() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [shop, setShop] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const fetchInvoices = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("invoices")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setInvoices(data);
-    if (count !== null) setTotalCount(count);
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
+        .from("invoices")
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .eq("shop_id", activeShopId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setInvoices(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { fetchInvoices(); }, [page, activeShopId]);
@@ -95,7 +102,9 @@ export default function Invoices() {
 
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {dataLoading && invoices.length === 0 ? (
+          <ListSkeleton rows={5} />
+        ) : filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
             {totalCount === 0 ? t('invoices.empty') : t('invoices.noResults')}
           </div>
@@ -145,7 +154,13 @@ export default function Invoices() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {dataLoading && invoices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0 ? t('invoices.empty') : t('invoices.noResults')}

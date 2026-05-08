@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -87,30 +88,36 @@ export default function Services() {
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const fetchServices = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    let query = supabase
-      .from("work_orders")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    
-    if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let query = supabase
+        .from("work_orders")
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .eq("shop_id", activeShopId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      const { data, count } = await query;
+      if (data) setServices(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
     }
-
-    const { data, count } = await query;
-    if (data) setServices(data);
-    if (count !== null) setTotalCount(count);
   };
 
   useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
@@ -258,7 +265,9 @@ export default function Services() {
 
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
-        {filtered.length === 0 ? (
+        {dataLoading && services.length === 0 ? (
+          <ListSkeleton rows={5} />
+        ) : filtered.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
             {totalCount === 0 ? t('services.empty') : t('services.noResults')}
           </div>
@@ -324,7 +333,13 @@ export default function Services() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {dataLoading && services.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0 ? t('services.empty') : t('services.noResults')}

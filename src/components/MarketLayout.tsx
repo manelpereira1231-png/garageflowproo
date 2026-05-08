@@ -170,6 +170,16 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
           {/* Mobile nav */}
           {mobileOpen && (
             <div className="md:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
+              {/* Mobile search */}
+              <form onSubmit={submitSearch} className="relative mb-2">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                <Input
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
+                  className="h-10 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40"
+                />
+              </form>
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);

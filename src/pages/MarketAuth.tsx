@@ -133,7 +133,7 @@ export default function MarketAuth() {
             skip_shop_creation: true,
             is_dealer: isDealer,
           },
-          emailRedirectTo: window.location.origin + (isDealer ? "/market/profile?welcome=dealer" : "/market"),
+          emailRedirectTo: window.location.origin + (isDealer ? "/market/dealer-dashboard" : "/market"),
         },
       });
       if (error) throw error;

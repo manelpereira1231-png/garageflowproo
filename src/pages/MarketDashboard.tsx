@@ -65,12 +65,14 @@ export default function MarketDashboard() {
 
     const { data: profile } = await supabase
       .from("carity_seller_profiles")
-      .select("name, verified")
+      .select("name, phone, verified")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const phoneVal = profile?.phone || user.user_metadata?.phone || "";
     setSellerName(profile?.name || user.user_metadata?.name || "—");
     setVerified(profile?.verified || false);
+    setHasPhone(!!phoneVal);
 
     const { data: trust } = await supabase
       .from("seller_trust_scores")

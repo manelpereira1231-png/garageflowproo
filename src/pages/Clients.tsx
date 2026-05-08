@@ -11,6 +11,7 @@ import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {

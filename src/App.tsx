@@ -93,6 +93,8 @@ const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
+const MarketStandsDirectory = lazyRetry(() => import("@/pages/MarketStandsDirectory"));
+const MarketStandPublic = lazyRetry(() => import("@/pages/MarketStandPublic"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
 
 // Legal pages (RGPD)

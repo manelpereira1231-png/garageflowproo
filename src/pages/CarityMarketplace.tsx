@@ -135,7 +135,7 @@ export default function CarityMarketplace() {
         .order("published_at", { ascending: false }),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
       supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("status", "completed"),
-      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true),
+      supabase.from("shops").select("id", { count: "exact", head: true }).eq("is_carity_partner", true).eq("carity_active", true).not("name", "ilike", "TESTE%").not("name", "ilike", "test%"),
     ]);
 
     const rawListings = (listingsRes.data || []).map((l: any) => ({

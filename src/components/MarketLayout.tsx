@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
-import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Suspense, createContext, useContext, useState } from "react";
+import { Suspense, createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
@@ -13,6 +14,7 @@ import { useMarketT } from "@/i18n/marketTranslations";
 const NAV_ITEM_DEFS = [
   { path: "/market/dashboard", labelKey: "market.nav.dashboard", icon: LayoutDashboard },
   { path: "/market/my-listings", labelKey: "market.nav.listings", icon: Car },
+  { path: "/market/favoritos", labelKey: "market.nav.favorites", icon: Heart },
   { path: "/market/purchases", labelKey: "market.nav.purchases", icon: CreditCard },
   { path: "/market/messages", labelKey: "market.nav.messages", icon: MessageCircle },
   { path: "/market/profile", labelKey: "market.nav.profile", icon: User },
@@ -34,8 +36,40 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [favCount, setFavCount] = useState(0);
   const t = useMarketT();
   const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+
+  useEffect(() => {
+    if (alreadyWrapped) return;
+    let cancelled = false;
+    let channel: any;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const [{ count: unread }, { count: favs }] = await Promise.all([
+        supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
+        supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
+      ]);
+      if (cancelled) return;
+      setUnreadCount(unread || 0);
+      setFavCount(favs || 0);
+      // Realtime: refresh badge on new incoming message
+      channel = supabase.channel(`market-nav-${user.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "carity_chat_messages", filter: `receiver_id=eq.${user.id}` }, () => {
+          setUnreadCount((c) => c + 1);
+        })
+        .subscribe();
+    })();
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [alreadyWrapped, location.pathname]);
+
+  const badgeFor = (path: string): number => {
+    if (path === "/market/messages") return unreadCount;
+    if (path === "/market/favoritos") return favCount;
+    return 0;
+  };
 
   // If another MarketLayout is already mounted above (router-level), this
   // instance becomes a transparent passthrough — keeps page-level `<MarketLayout>`
@@ -69,6 +103,7 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
             <div className="hidden md:flex items-center gap-0.5">
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
+                const badge = badgeFor(item.path);
                 return (
                   <Link
                     key={item.path}
@@ -80,10 +115,15 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`h-9 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? "bg-white/10 text-white" : ""}`}
+                      className={`relative h-9 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? "bg-white/10 text-white" : ""}`}
                     >
                       <item.icon className="h-4 w-4 mr-1.5" />
                       {item.label}
+                      {badge > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-900 text-[10px] font-bold">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
                     </Button>
                   </Link>
                 );
@@ -112,11 +152,17 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
             <div className="md:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
+                const badge = badgeFor(item.path);
                 return (
                   <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}>
                     <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors ${active ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.05]"}`}>
                       <item.icon className="h-4 w-4" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {badge > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-slate-900 text-xs font-bold">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 );

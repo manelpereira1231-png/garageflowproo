@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,25 +69,58 @@ export default function CarityMarketplace() {
   const { pricing, formatPrice } = useCountryPricing();
   const { t } = useLanguage();
   const mt = useMarketT();
+  const [searchParams, setSearchParams] = useSearchParams();
   const cachedListings = pageCache.get<Listing[]>(MARKET_CACHE_KEY);
   const cachedStats = pageCache.get<RealStats>(MARKET_STATS_CACHE_KEY);
   const [listings, setListings] = useState<Listing[]>(cachedListings ?? []);
   const [loading, setLoading] = useState(!cachedListings);
 
-  // Filters
-  const [search, setSearch] = useState("");
-  const [makeFilter, setMakeFilter] = useState<string>("all");
-  const [cityFilter, setCityFilter] = useState<string>("all");
-  const [fuelFilter, setFuelFilter] = useState("all");
-  const [priceRange, setPriceRange] = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
-  const [yearRange, setYearRange] = useState<[number, number]>([YEAR_MIN, YEAR_MAX]);
-  const [kmRange, setKmRange] = useState<[number, number]>([KM_MIN, KM_MAX]);
-  const [minScore, setMinScore] = useState<number>(0);
-  const [inspectionStatus, setInspectionStatus] = useState<"all" | "approved" | "reserved">("all");
-  const [certifiedOnly, setCertifiedOnly] = useState<boolean>(true); // ON by default
-  const [freshness, setFreshness] = useState<"any" | "7d" | "30d">("any");
-  const [sortBy, setSortBy] = useState("recent");
+  // Filters — initialized from URL so links/back-button preserve state
+  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [makeFilter, setMakeFilter] = useState<string>(searchParams.get("make") || "all");
+  const [cityFilter, setCityFilter] = useState<string>(searchParams.get("city") || "all");
+  const [fuelFilter, setFuelFilter] = useState(searchParams.get("fuel") || "all");
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    Number(searchParams.get("pmin")) || PRICE_MIN,
+    Number(searchParams.get("pmax")) || PRICE_MAX,
+  ]);
+  const [yearRange, setYearRange] = useState<[number, number]>([
+    Number(searchParams.get("ymin")) || YEAR_MIN,
+    Number(searchParams.get("ymax")) || YEAR_MAX,
+  ]);
+  const [kmRange, setKmRange] = useState<[number, number]>([
+    Number(searchParams.get("kmmin")) || KM_MIN,
+    Number(searchParams.get("kmmax")) || KM_MAX,
+  ]);
+  const [minScore, setMinScore] = useState<number>(Number(searchParams.get("score")) || 0);
+  const [inspectionStatus, setInspectionStatus] = useState<"all" | "approved" | "reserved">(
+    (searchParams.get("insp") as any) || "all"
+  );
+  const [certifiedOnly, setCertifiedOnly] = useState<boolean>(searchParams.get("cert") !== "0");
+  const [freshness, setFreshness] = useState<"any" | "7d" | "30d">((searchParams.get("fresh") as any) || "any");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "recent");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Sync filters → URL (replace to avoid history spam, shareable links)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (makeFilter !== "all") params.set("make", makeFilter);
+    if (cityFilter !== "all") params.set("city", cityFilter);
+    if (fuelFilter !== "all") params.set("fuel", fuelFilter);
+    if (priceRange[0] !== PRICE_MIN) params.set("pmin", String(priceRange[0]));
+    if (priceRange[1] !== PRICE_MAX) params.set("pmax", String(priceRange[1]));
+    if (yearRange[0] !== YEAR_MIN) params.set("ymin", String(yearRange[0]));
+    if (yearRange[1] !== YEAR_MAX) params.set("ymax", String(yearRange[1]));
+    if (kmRange[0] !== KM_MIN) params.set("kmmin", String(kmRange[0]));
+    if (kmRange[1] !== KM_MAX) params.set("kmmax", String(kmRange[1]));
+    if (minScore > 0) params.set("score", String(minScore));
+    if (inspectionStatus !== "all") params.set("insp", inspectionStatus);
+    if (!certifiedOnly) params.set("cert", "0");
+    if (freshness !== "any") params.set("fresh", freshness);
+    if (sortBy !== "recent") params.set("sort", sortBy);
+    setSearchParams(params, { replace: true });
+  }, [search, makeFilter, cityFilter, fuelFilter, priceRange, yearRange, kmRange, minScore, inspectionStatus, certifiedOnly, freshness, sortBy, setSearchParams]);
 
   const [stats, setStats] = useState<RealStats>(cachedStats ?? { totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 

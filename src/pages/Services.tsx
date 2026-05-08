@@ -87,30 +87,36 @@ export default function Services() {
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dataLoading, setDataLoading] = useState(true);
 
   const activeShopId = useActiveShopId();
 
   const fetchServices = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    let query = supabase
-      .from("work_orders")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    
-    if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let query = supabase
+        .from("work_orders")
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .eq("shop_id", activeShopId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      const { data, count } = await query;
+      if (data) setServices(data);
+      if (count !== null) setTotalCount(count);
+    } finally {
+      setDataLoading(false);
     }
-
-    const { data, count } = await query;
-    if (data) setServices(data);
-    if (count !== null) setTotalCount(count);
   };
 
   useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);

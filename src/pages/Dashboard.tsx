@@ -609,17 +609,21 @@ export default function Dashboard() {
               <TrendingUp className="w-4 h-4 text-primary" />
               {t('dashboard.quoteConversion')}
             </h2>
-            <div className="flex items-center gap-4">
+            {!dataLoaded ? (
+              <Skeleton className="h-12 w-full rounded-xl" />
+            ) : <div className="flex items-center gap-4">
               <div className="text-4xl font-bold text-primary tabular-nums tracking-tight">{conversionRate}%</div>
               <p className="text-xs text-muted-foreground">{t('dashboard.last6months')}</p>
-            </div>
+            </div>}
           </div>
           <div className="card-premium p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
               {t('dashboard.topParts')}
             </h2>
-            {topParts.length > 0 ? (
+            {!dataLoaded ? (
+              <Skeleton className="h-24 w-full rounded-xl" />
+            ) : topParts.length > 0 ? (
               <div className="space-y-2">
                 {topParts.map((p, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
@@ -679,7 +683,11 @@ export default function Dashboard() {
       {/* Recent Services */}
       <div className="card-premium p-5">
         <h2 className="text-lg font-semibold mb-4">{t('dashboard.recentServices')}</h2>
-        {recentServices.length === 0 ? (
+        {!dataLoaded ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+          </div>
+        ) : recentServices.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-4">{t('dashboard.noServices')}</p>
         ) : (
           <div className="space-y-3">

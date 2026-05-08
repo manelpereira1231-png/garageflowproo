@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
-import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Suspense, createContext, useContext, useState } from "react";
+import { Suspense, createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
@@ -13,6 +14,7 @@ import { useMarketT } from "@/i18n/marketTranslations";
 const NAV_ITEM_DEFS = [
   { path: "/market/dashboard", labelKey: "market.nav.dashboard", icon: LayoutDashboard },
   { path: "/market/my-listings", labelKey: "market.nav.listings", icon: Car },
+  { path: "/market/favoritos", labelKey: "market.nav.favorites", icon: Heart },
   { path: "/market/purchases", labelKey: "market.nav.purchases", icon: CreditCard },
   { path: "/market/messages", labelKey: "market.nav.messages", icon: MessageCircle },
   { path: "/market/profile", labelKey: "market.nav.profile", icon: User },

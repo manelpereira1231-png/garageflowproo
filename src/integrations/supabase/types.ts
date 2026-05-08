@@ -984,6 +984,7 @@ export type Database = {
           plate: string
           price: number
           published_at: string | null
+          requires_independent_inspection: boolean
           seller_id: string
           shop_id: string | null
           sold_at: string | null
@@ -1009,6 +1010,7 @@ export type Database = {
           plate?: string
           price?: number
           published_at?: string | null
+          requires_independent_inspection?: boolean
           seller_id: string
           shop_id?: string | null
           sold_at?: string | null
@@ -1034,6 +1036,7 @@ export type Database = {
           plate?: string
           price?: number
           published_at?: string | null
+          requires_independent_inspection?: boolean
           seller_id?: string
           shop_id?: string | null
           sold_at?: string | null
@@ -1103,9 +1106,19 @@ export type Database = {
       }
       carity_seller_profiles: {
         Row: {
+          account_type: string
           address: string | null
           country_code: string
           created_at: string
+          dealer_active_until: string | null
+          dealer_city: string | null
+          dealer_company_name: string | null
+          dealer_description: string | null
+          dealer_license: string | null
+          dealer_logo_url: string | null
+          dealer_nif: string | null
+          dealer_plan: string
+          dealer_slug: string | null
           document_number: string | null
           document_type: string | null
           document_url: string | null
@@ -1129,9 +1142,19 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          account_type?: string
           address?: string | null
           country_code?: string
           created_at?: string
+          dealer_active_until?: string | null
+          dealer_city?: string | null
+          dealer_company_name?: string | null
+          dealer_description?: string | null
+          dealer_license?: string | null
+          dealer_logo_url?: string | null
+          dealer_nif?: string | null
+          dealer_plan?: string
+          dealer_slug?: string | null
           document_number?: string | null
           document_type?: string | null
           document_url?: string | null
@@ -1155,9 +1178,19 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          account_type?: string
           address?: string | null
           country_code?: string
           created_at?: string
+          dealer_active_until?: string | null
+          dealer_city?: string | null
+          dealer_company_name?: string | null
+          dealer_description?: string | null
+          dealer_license?: string | null
+          dealer_logo_url?: string | null
+          dealer_nif?: string | null
+          dealer_plan?: string
+          dealer_slug?: string | null
           document_number?: string | null
           document_type?: string | null
           document_url?: string | null
@@ -4480,6 +4513,30 @@ export type Database = {
       }
     }
     Views: {
+      dealer_directory: {
+        Row: {
+          active_listings: number | null
+          country_code: string | null
+          dealer_city: string | null
+          dealer_company_name: string | null
+          dealer_description: string | null
+          dealer_logo_url: string | null
+          dealer_plan: string | null
+          dealer_slug: string | null
+          total_sold: number | null
+          user_id: string | null
+          verified: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       listing_view_stats: {
         Row: {
           listing_id: string | null
@@ -4512,6 +4569,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }

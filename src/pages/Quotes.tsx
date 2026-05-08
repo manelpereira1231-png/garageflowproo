@@ -19,6 +19,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -35,22 +36,30 @@ export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
-  const [quotes, setQuotes] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _qCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`quotes:${_shopInit}:0`);
+  const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);
   const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
-  const [shop, setShop] = useState<any>(null);
+  const [shop, setShop] = useState<any>(_qCache?.shop ?? null);
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(_qCache?.count ?? 0);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_qCache);
 
   const activeShopId = useActiveShopId();
 
   const fetchQuotes = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `quotes:${activeShopId}:${page}`;
+    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    if (cc) {
+      setQuotes(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
@@ -65,6 +74,7 @@ export default function Quotes() {
         .range(from, to);
       if (data) setQuotes(data);
       if (count !== null) setTotalCount(count);
+      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
 
       if (limits.maxQuotesPerMonth !== Infinity) {
         const now = new Date();

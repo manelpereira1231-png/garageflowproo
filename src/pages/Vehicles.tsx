@@ -15,6 +15,7 @@ import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -22,14 +23,16 @@ const PAGE_SIZE = 25;
 
 export default function Vehicles() {
   const { t, language } = useLanguage();
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _vCache = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(`vehicles:${_shopInit}:0`);
+  const [vehicles, setVehicles] = useState<any[]>(_vCache?.rows ?? []);
+  const [clients, setClients] = useState<any[]>(_vCache?.clients ?? []);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_vCache);
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(_vCache?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [passportId, setPassportId] = useState<string | null>(null);
@@ -47,7 +50,13 @@ export default function Vehicles() {
 
   const fetchData = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `vehicles:${activeShopId}:${page}`;
+    const cc = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(key);
+    if (cc) {
+      setVehicles(cc.rows); setClients(cc.clients); setTotalCount(cc.count); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -56,6 +65,7 @@ export default function Vehicles() {
       if (count !== null) setTotalCount(count);
       const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
+      pageCache.set(key, { rows: v ?? [], clients: c ?? [], count: count ?? 0 });
     } finally {
       setDataLoading(false);
     }

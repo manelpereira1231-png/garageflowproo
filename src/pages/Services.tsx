@@ -19,6 +19,7 @@ import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -79,22 +80,30 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
 export default function Services() {
   const { t } = useLanguage();
   const { limits, plan } = useSubscription();
-  const [services, setServices] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _sCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`services:${_shopInit}:0:all`);
+  const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
   const [search, setSearch] = useState("");
-  const [shop, setShop] = useState<any>(null);
+  const [shop, setShop] = useState<any>(_sCache?.shop ?? null);
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(_sCache?.count ?? 0);
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_sCache);
 
   const activeShopId = useActiveShopId();
 
   const fetchServices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `services:${activeShopId}:${page}:${statusFilter}`;
+    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    if (cc) {
+      setServices(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
@@ -115,6 +124,7 @@ export default function Services() {
       const { data, count } = await query;
       if (data) setServices(data);
       if (count !== null) setTotalCount(count);
+      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
     } finally {
       setDataLoading(false);
     }

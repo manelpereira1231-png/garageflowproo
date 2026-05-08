@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -27,18 +28,26 @@ const PAGE_SIZE = 25;
 export default function Invoices() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _iCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`invoices:${_shopInit}:0`);
+  const [invoices, setInvoices] = useState<any[]>(_iCache?.rows ?? []);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [shop, setShop] = useState<any>(null);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(_iCache?.count ?? 0);
+  const [shop, setShop] = useState<any>(_iCache?.shop ?? null);
+  const [dataLoading, setDataLoading] = useState(!_iCache);
 
   const activeShopId = useActiveShopId();
 
   const fetchInvoices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `invoices:${activeShopId}:${page}`;
+    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    if (cc) {
+      setInvoices(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
@@ -53,6 +62,7 @@ export default function Invoices() {
         .range(from, to);
       if (data) setInvoices(data);
       if (count !== null) setTotalCount(count);
+      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
     } finally {
       setDataLoading(false);
     }

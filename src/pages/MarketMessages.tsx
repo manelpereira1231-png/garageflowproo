@@ -98,8 +98,20 @@ export default function MarketMessages() {
   if (loading) {
     return (
       <MarketLayout>
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <Skeleton className="h-7 w-40 mb-6" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <Skeleton className="w-12 h-9 rounded" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
+                <Skeleton className="h-3 w-12" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </MarketLayout>
     );

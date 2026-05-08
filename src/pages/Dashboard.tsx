@@ -438,29 +438,50 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Plan Banner */}
-      {(plan === 'free' || isTrialing) && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Star className="w-5 h-5 text-primary" />
+      {/* Plan Banner — celebrates the auto-Pro trial, becomes urgent near the end */}
+      {(plan === 'free' || isTrialing) && (() => {
+        const ending = isTrialing && trialDaysLeft <= 5;
+        const expired = plan === 'free' && !isTrialing;
+        const tone = ending
+          ? "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/50"
+          : expired
+            ? "bg-destructive/5 border-destructive/30"
+            : "bg-primary/5 border-primary/20";
+        const iconWrap = ending
+          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+          : expired
+            ? "bg-destructive/10 text-destructive"
+            : "bg-primary/10 text-primary";
+        const title = isTrialing
+          ? trialDaysLeft > 0
+            ? `🎁 Plano Pro grátis ativo — ${trialDaysLeft} ${trialDaysLeft === 1 ? "dia" : "dias"} restantes`
+            : "O teu trial Pro termina hoje"
+          : "O teu trial Pro terminou — escolhe um plano para continuar";
+        const sub = isTrialing
+          ? ending
+            ? "Ativa um plano agora para não perderes alertas, automações e relatórios."
+            : "Tens acesso total a alertas, equipa, relatórios, exportação e mais. Sem cartão de crédito."
+          : "Mantém tudo o que ganhaste durante o trial. Cancela quando quiseres.";
+        return (
+          <div className={`border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${tone}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${iconWrap}`}>
+                <Star className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{title}</p>
+                <p className="text-xs text-muted-foreground">{sub}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {isTrialing
-                  ? `${t('dashboard.trialBanner')} — ${trialDaysLeft} ${t('dashboard.daysLeft')}`
-                  : t('dashboard.freeBanner')}
-              </p>
-              <p className="text-xs text-muted-foreground">{t('dashboard.upgradeBenefits')}</p>
-            </div>
+            <Link to="/billing">
+              <Button size="sm" className="shrink-0" variant={ending || expired ? "default" : "outline"}>
+                <CreditCard className="w-4 h-4 mr-1" />
+                {expired ? "Escolher plano" : ending ? "Renovar agora" : "Ver planos"}
+              </Button>
+            </Link>
           </div>
-          <Link to="/billing">
-            <Button size="sm" className="shrink-0">
-              <CreditCard className="w-4 h-4 mr-1" />{t('dashboard.upgrade')}
-            </Button>
-          </Link>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Usage Nudge for Free users */}
       {plan === 'free' && monthlyQuoteCount > 0 && (

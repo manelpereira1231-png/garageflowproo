@@ -14,6 +14,7 @@ import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, 
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
+import ListSkeleton from "@/components/ListSkeleton";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -57,6 +58,7 @@ export default function Alerts() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [newAlert, setNewAlert] = useState({
     title: "",
     message: "",
@@ -65,13 +67,18 @@ export default function Alerts() {
   });
 
   const fetchAlerts = async () => {
-    if (!shopId) return;
-    const { data } = await supabase
-      .from("alerts")
-      .select("*, clients(name), vehicles(make, model, plate)")
-      .eq("shop_id", shopId)
-      .order("created_at", { ascending: false });
-    if (data) setAlerts(data);
+    if (!shopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data } = await supabase
+        .from("alerts")
+        .select("*, clients(name), vehicles(make, model, plate)")
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: false });
+      if (data) setAlerts(data);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => { if (shopId) fetchAlerts(); }, [shopId]);

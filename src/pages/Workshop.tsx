@@ -385,11 +385,13 @@ export default function Workshop() {
 
               {/* Labor Timer */}
               {activeShopId && selected.status !== 'delivered' && (
-                <LaborTimer
-                  workOrderId={selected.id}
-                  shopId={activeShopId}
-                  technicianName={selected.technician || ''}
-                />
+                <Suspense fallback={<div className="h-16 bg-muted/40 rounded-xl animate-pulse" />}>
+                  <LaborTimer
+                    workOrderId={selected.id}
+                    shopId={activeShopId}
+                    technicianName={selected.technician || ''}
+                  />
+                </Suspense>
               )}
 
               {/* Checklist */}

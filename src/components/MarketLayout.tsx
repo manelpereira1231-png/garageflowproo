@@ -152,11 +152,17 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
             <div className="md:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
               {NAV_ITEMS.map(item => {
                 const active = location.pathname === item.path;
+                const badge = badgeFor(item.path);
                 return (
                   <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}>
                     <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors ${active ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.05]"}`}>
                       <item.icon className="h-4 w-4" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {badge > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-slate-900 text-xs font-bold">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 );

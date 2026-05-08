@@ -267,7 +267,9 @@ export default function Stock() {
           </div>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
-            {filtered.length === 0 ? (
+            {dataLoading && parts.length === 0 ? (
+              <ListSkeleton rows={5} />
+            ) : filtered.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.empty')}</div>
             ) : filtered.map(p => (
               <div key={p.id} className={`bg-card border border-border rounded-xl p-4 space-y-2 ${!p.active ? 'opacity-50' : ''}`}>
@@ -310,7 +312,9 @@ export default function Stock() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.length === 0 ? (
+                  {dataLoading && parts.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.empty')}</TableCell></TableRow>
                   ) : filtered.map(p => (
                     <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>

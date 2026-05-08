@@ -11,6 +11,7 @@ import { Code, Key, Plus, Copy, Trash2, Shield, Zap, ExternalLink } from "lucide
 import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const API_DOC_KEYS = [
   { method: "GET", path: "/clients", key: "developers.api.listClients" },
@@ -45,11 +46,17 @@ export default function Developers() {
   const [createDialog, setCreateDialog] = useState(false);
   const [newKeyName, setNewKeyName] = useState("Default API Key");
   const [generatedKey, setGeneratedKey] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    if (!activeShopId) return;
-    const { data } = await supabase.from("api_keys").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false });
-    if (data) setApiKeys(data);
+    if (!activeShopId) { setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data } = await supabase.from("api_keys").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false });
+      if (data) setApiKeys(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [activeShopId]);
@@ -116,7 +123,11 @@ export default function Developers() {
           <CardTitle className="flex items-center gap-2 text-base"><Key className="w-4 h-4" /> API Keys</CardTitle>
         </CardHeader>
         <CardContent>
-          {apiKeys.length === 0 ? (
+          {loading && apiKeys.length === 0 ? (
+            <div className="space-y-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+            </div>
+          ) : apiKeys.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">{t('developers.noKeys')}</p>
           ) : (
             <Table>

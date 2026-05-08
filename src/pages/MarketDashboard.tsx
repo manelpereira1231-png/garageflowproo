@@ -151,6 +151,7 @@ export default function MarketDashboard() {
     pageCache.set<DashSnapshot>(DASH_CACHE_KEY, {
       sellerName: profile?.name || user.user_metadata?.name || "—",
       verified: profile?.verified || false,
+      hasPhone: !!phoneVal,
       stats: newStats,
       recentListings: newRecentListings,
       activeInspections: newActiveInspections,

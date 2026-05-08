@@ -49,31 +49,35 @@ export default function Quotes() {
   const activeShopId = useActiveShopId();
 
   const fetchQuotes = async () => {
-    if (!activeShopId) return;
-    const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-    if (shopData) setShop(shopData);
+    if (!activeShopId) { setDataLoading(false); return; }
+    setDataLoading(true);
+    try {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (shopData) setShop(shopData);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, count } = await supabase
-      .from("quotes")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
-      .eq("shop_id", activeShopId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (data) setQuotes(data);
-    if (count !== null) setTotalCount(count);
-
-    // Count monthly quotes for limit display
-    if (limits.maxQuotesPerMonth !== Infinity) {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { count: monthCount } = await supabase
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, count } = await supabase
         .from("quotes")
-        .select("id", { count: "exact", head: true })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
         .eq("shop_id", activeShopId)
-        .gte("created_at", monthStart);
-      setMonthlyUsed(monthCount || 0);
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (data) setQuotes(data);
+      if (count !== null) setTotalCount(count);
+
+      if (limits.maxQuotesPerMonth !== Infinity) {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const { count: monthCount } = await supabase
+          .from("quotes")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", activeShopId)
+          .gte("created_at", monthStart);
+        setMonthlyUsed(monthCount || 0);
+      }
+    } finally {
+      setDataLoading(false);
     }
   };
 

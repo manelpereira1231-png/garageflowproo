@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import MarketLayout from "@/components/MarketLayout";
 import CarityChat from "@/components/CarityChat";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMarketT } from "@/i18n/marketTranslations";
 
 interface Conversation {

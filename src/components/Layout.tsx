@@ -176,28 +176,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems: NavItem[] = useMemo(() => [
     { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
-    // Operação
+
+    // ── Operação Diária (o que uma oficina abre todos os dias) ──
     { path: "/clients", label: t("nav.clients"), icon: Users },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car },
     { path: "/quotes", label: t("nav.quotes"), icon: FileText },
     { path: "/services", label: t("nav.services"), icon: Wrench },
+    { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays },
     { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
-    { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
-    // Catálogo
-    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
-    { path: "/stock", label: t("nav.stock"), icon: Package },
-    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-    // Financeiro
+
+    // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt },
     { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
     { path: "/billing", label: t("nav.billing"), icon: CreditCard },
-    // Crescimento
-    { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
-    { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },
-    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
-    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
+
+    // ── Comunicação ──
     {
       path: "/alerts",
       label: t("nav.alerts"),
@@ -206,26 +200,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       planBadge: !canUseFeature("basicAlerts") ? "Pro" : undefined,
       locked: !canUseFeature("basicAlerts"),
     },
-    // Market
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
+
+    // ── Crescimento ──
+    { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
+    { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },
+    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
+    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
+
+    // ── Market (canal externo) ──
     { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
     ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
-    // Sistema
+
+    // ── Administração (acesso pontual) ──
     { path: "/team", label: t("nav.team"), icon: UserPlus, planBadge: !canUseFeature("teamManagement") ? "Pro" : undefined, locked: !canUseFeature("teamManagement") },
     { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
     { path: "/settings", label: t("nav.settings"), icon: Settings },
+
+    // ── Inventário (dados de referência — fim) ──
+    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
+    { path: "/stock", label: t("nav.stock"), icon: Package },
+    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
   ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
 
-  // Logical grouping for premium SaaS feel (Linear/Notion-style).
-  // Order optimized for workshop daily priority: day-to-day ops first, money next,
-  // then growth/market/system. Catálogo & Stock goes LAST — it's reference data,
-  // not something a workshop opens every day.
+  // Linear/Notion-style grouping. Order = workshop daily priority.
+  // Inventário fica no fim — é dado de referência, não tarefa diária.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
-    { id: "ops", label: "Operação", paths: ["/clients","/vehicles","/quotes","/services","/agenda","/inspections","/workshop"] },
-    { id: "finance", label: "Financeiro", paths: ["/invoices","/financial/reports","/billing"] },
-    { id: "growth", label: "Crescimento", paths: ["/alerts","/marketing","/automations","/loyalty","/referrals","/chat"] },
+    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda","/inspections"] },
+    { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
+    { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
+    { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
-    { id: "system", label: "Sistema", paths: ["/team","/developers","/settings"] },
-    { id: "catalog", label: "Catálogo & Stock", paths: ["/catalog","/stock","/warranties"] },
+    { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
+    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
 
   const groupStateKey = `garageflow_sidebar_groups_${activeShopId || "global"}`;

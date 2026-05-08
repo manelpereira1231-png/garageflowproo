@@ -15,6 +15,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -52,13 +53,15 @@ const alertTypeColors: Record<string, string> = {
 export default function Alerts() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading, validatePlanAction } = useSubscription();
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _aCache = pageCache.get<any[]>(`alerts:${_shopInit}`);
+  const [alerts, setAlerts] = useState<any[]>(_aCache ?? []);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_aCache);
   const [newAlert, setNewAlert] = useState({
     title: "",
     message: "",
@@ -68,14 +71,16 @@ export default function Alerts() {
 
   const fetchAlerts = async () => {
     if (!shopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `alerts:${shopId}`;
+    const cc = pageCache.get<any[]>(key);
+    if (cc) { setAlerts(cc); setDataLoading(false); } else { setDataLoading(true); }
     try {
       const { data } = await supabase
         .from("alerts")
         .select("*, clients(name), vehicles(make, model, plate)")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false });
-      if (data) setAlerts(data);
+      if (data) { setAlerts(data); pageCache.set(key, data); }
     } finally {
       setDataLoading(false);
     }

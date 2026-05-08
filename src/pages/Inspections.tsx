@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 interface ChecklistItem {
   name: string;
@@ -93,8 +94,10 @@ interface Checklist {
 export default function Inspections() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [checklists, setChecklists] = useState<Checklist[]>([]);
-  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
+  const _inCache = pageCache.get<{ checklists: Checklist[]; workOrders: any[] }>(`inspections:${_shopInit}`);
+  const [checklists, setChecklists] = useState<Checklist[]>(_inCache?.checklists ?? []);
+  const [workOrders, setWorkOrders] = useState<any[]>(_inCache?.workOrders ?? []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewChecklist, setViewChecklist] = useState<Checklist | null>(null);
   const [selectedWO, setSelectedWO] = useState("");
@@ -102,7 +105,7 @@ export default function Inspections() {
   const [generalNotes, setGeneralNotes] = useState("");
   const [clientRecommendation, setClientRecommendation] = useState("");
   const [saving, setSaving] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!_inCache);
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({});
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
@@ -130,13 +133,19 @@ export default function Inspections() {
 
   const load = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `inspections:${activeShopId}`;
+    const cc = pageCache.get<{ checklists: Checklist[]; workOrders: any[] }>(key);
+    if (cc) {
+      setChecklists(cc.checklists); setWorkOrders(cc.workOrders); setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const [clRes, woRes] = await Promise.all([
         supabase.from("inspection_checklists").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
         supabase.from("work_orders").select("id, number, status, client_id, vehicle_id, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
       ]);
-      if (clRes.data) setChecklists(clRes.data.map((c: any) => ({
+      const cl = (clRes.data ?? []).map((c: any) => ({
         ...c,
         items: (Array.isArray(c.items) ? c.items : JSON.parse(c.items)).map((item: any) => ({
           ...item,
@@ -145,8 +154,11 @@ export default function Inspections() {
           notes: item.notes || '',
           photoUrl: item.photoUrl || '',
         })),
-      })) as Checklist[]);
-      if (woRes.data) setWorkOrders(woRes.data);
+      })) as Checklist[];
+      const wo = woRes.data ?? [];
+      setChecklists(cl);
+      setWorkOrders(wo);
+      pageCache.set(key, { checklists: cl, workOrders: wo });
     } finally {
       setDataLoading(false);
     }

@@ -21,6 +21,7 @@ const DASH_CACHE_KEY = "market:dashboard:v1";
 interface DashSnapshot {
   sellerName: string;
   verified: boolean;
+  hasPhone: boolean;
   stats: any;
   recentListings: any[];
   activeInspections: any[];

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
 import ListSkeleton from "@/components/ListSkeleton";
+import { pageCache } from "@/lib/pageCache";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {
@@ -43,13 +44,16 @@ const copyPortalLink = (portalToken: string | null, successMsg: string) => {
 
 export default function Clients() {
   const { t } = useLanguage();
-  const [clients, setClients] = useState<ClientRow[]>([]);
+  const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
+  const cacheKey = `clients:${activeShopIdInit}:0`;
+  const cached = pageCache.get<{ rows: ClientRow[]; count: number }>(cacheKey);
+  const [clients, setClients] = useState<ClientRow[]>(cached?.rows ?? []);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(!cached);
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(cached?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
@@ -63,7 +67,15 @@ export default function Clients() {
   const fetchClients = async () => {
     const shopId = getActiveShopId();
     if (!shopId) { setDataLoading(false); return; }
-    setDataLoading(true);
+    const key = `clients:${shopId}:${page}`;
+    const c = pageCache.get<{ rows: ClientRow[]; count: number }>(key);
+    if (c) {
+      setClients(c.rows);
+      setTotalCount(c.count);
+      setDataLoading(false);
+    } else {
+      setDataLoading(true);
+    }
     try {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -76,6 +88,7 @@ export default function Clients() {
         .range(from, to);
       if (data) setClients(data);
       if (count !== null) setTotalCount(count);
+      pageCache.set(key, { rows: data ?? [], count: count ?? 0 });
     } finally {
       setDataLoading(false);
     }

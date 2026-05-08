@@ -108,6 +108,17 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
               <span className="text-lg font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
             </Link>
 
+            {/* Desktop search — quick listing finder */}
+            <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-md mx-6 relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+              <Input
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
+                className="h-9 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40 focus-visible:ring-amber-400/40 focus-visible:border-amber-400/40"
+              />
+            </form>
+
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-0.5">
               {NAV_ITEMS.map(item => {

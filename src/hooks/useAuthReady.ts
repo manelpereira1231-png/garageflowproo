@@ -42,6 +42,31 @@ function ensureAuthReadySubscription() {
       isReady: true,
     });
   });
+
+  // Stay-logged-in hardening: proactively refresh the session when the user
+  // returns to the tab or regains connectivity. Prevents silent logouts after
+  // long idle periods (mobile PWAs especially).
+  if (typeof window !== "undefined") {
+    const refreshIfStale = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        if (!session) return;
+        const expiresAt = (session.expires_at ?? 0) * 1000;
+        // Refresh if token expires within the next 5 minutes
+        if (expiresAt - Date.now() < 5 * 60 * 1000) {
+          await supabase.auth.refreshSession();
+        }
+      } catch {
+        // Silent — autoRefreshToken will retry; never log the user out on transient errors.
+      }
+    };
+    window.addEventListener("focus", refreshIfStale);
+    window.addEventListener("online", refreshIfStale);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") refreshIfStale();
+    });
+  }
 }
 
 export function useAuthReady() {

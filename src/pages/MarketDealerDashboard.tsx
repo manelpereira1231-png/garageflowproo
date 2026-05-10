@@ -69,6 +69,7 @@ export default function MarketDealerDashboard() {
 
     const arr = listings || [];
     const totalViews = arr.reduce((s: number, l: any) => s + (l.views_count || 0), 0);
+    const pendingPayment = arr.filter((l: any) => l.status === "pending_payment");
     setStats({
       total: arr.length,
       published: arr.filter((l: any) => l.status === "published").length,
@@ -76,9 +77,10 @@ export default function MarketDealerDashboard() {
       sold: arr.filter((l: any) => l.status === "sold").length,
       views: totalViews,
       unread: 0,
-      offers: 0,
+      offers: pendingPayment.length,
     });
     setRecent(arr.slice(0, 6));
+    setPendingPay(pendingPayment);
 
     const { data: ins } = await (supabase as any)
       .from("carity_inspections")

@@ -226,6 +226,36 @@ export default function MarketDealerDashboard() {
           <KpiCard icon={CheckCircle2} label="Vendidos" value={stats.sold} color="emerald" />
         </div>
 
+        {pendingPay.length > 0 && (
+          <Card className="bg-gradient-to-br from-amber-500/15 to-slate-900 border-amber-500/40">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">{pendingPay.length} viatura(s) à espera de pagamento da inspeção</p>
+                    <p className="text-xs text-slate-400 mt-0.5">A inspeção independente é cobrada diretamente no teu cartão via Stripe — nunca há pagamentos manuais.</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  {pendingPay.slice(0, 3).map((l) => (
+                    <Button key={l.id} asChild size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+                      <Link to={`/market/pay/${l.id}`}>Pagar {l.plate || l.id.slice(0, 6)}</Link>
+                    </Button>
+                  ))}
+                  {pendingPay.length > 3 && (
+                    <Button asChild size="sm" variant="outline" className="border-amber-500/40 text-amber-300">
+                      <Link to="/market/profile">Ver todos ({pendingPay.length})</Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid lg:grid-cols-[1fr,360px] gap-6">
           {/* Recent listings + inspections */}
           <div className="space-y-6">

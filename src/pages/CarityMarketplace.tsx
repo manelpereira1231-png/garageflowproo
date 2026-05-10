@@ -929,12 +929,12 @@ export default function CarityMarketplace() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-amber-400" />
-              <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
+              <span>GarageFlow Market by <a href="/" target="_blank" rel="noopener" className="text-amber-400 hover:underline">GarageFlow</a></span>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <Link to="/market/sell" className="hover:text-white transition-colors">{t('market.footer.sell')}</Link>
               <Link to="/market/auth" className="hover:text-white transition-colors">{t('market.footer.signIn')}</Link>
-              <Link to="/" className="hover:text-white transition-colors">{t('market.footer.erp')}</Link>
+              <a href="/" target="_blank" rel="noopener" className="hover:text-white transition-colors">{t('market.footer.erp')}</a>
             </div>
           </div>
           <div className="border-t border-slate-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-3 text-xs">

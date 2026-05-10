@@ -97,8 +97,7 @@ export default function MarketDealerBulkAdd() {
         vin: r.vin || null,
         price: r.price,
         photos: [],
-        status: "draft",
-        title: `${r.make} ${r.model} ${r.year}`.trim(),
+        status: "pending_payment",
       } as any);
       if (error) {
         fail++;

@@ -29,6 +29,7 @@ export default function MarketDealerDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ total: 0, published: 0, pendingInspection: 0, sold: 0, views: 0, unread: 0, offers: 0 });
   const [recent, setRecent] = useState<any[]>([]);
+  const [pendingPay, setPendingPay] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -62,13 +63,14 @@ export default function MarketDealerDashboard() {
 
     const { data: listings } = await supabase
       .from("carity_listings")
-      .select("id, title, status, price, views_count, created_at, photos")
+      .select("id, title, status, price, views_count, created_at, photos, plate")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
 
     const arr = listings || [];
     const totalViews = arr.reduce((s: number, l: any) => s + (l.views_count || 0), 0);
+    const pendingPayment = arr.filter((l: any) => l.status === "pending_payment");
     setStats({
       total: arr.length,
       published: arr.filter((l: any) => l.status === "published").length,
@@ -76,9 +78,10 @@ export default function MarketDealerDashboard() {
       sold: arr.filter((l: any) => l.status === "sold").length,
       views: totalViews,
       unread: 0,
-      offers: 0,
+      offers: pendingPayment.length,
     });
     setRecent(arr.slice(0, 6));
+    setPendingPay(pendingPayment);
 
     const { data: ins } = await (supabase as any)
       .from("carity_inspections")
@@ -222,6 +225,36 @@ export default function MarketDealerDashboard() {
           <KpiCard icon={Eye} label="Visualizações" value={stats.views} color="violet" />
           <KpiCard icon={CheckCircle2} label="Vendidos" value={stats.sold} color="emerald" />
         </div>
+
+        {pendingPay.length > 0 && (
+          <Card className="bg-gradient-to-br from-amber-500/15 to-slate-900 border-amber-500/40">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">{pendingPay.length} viatura(s) à espera de pagamento da inspeção</p>
+                    <p className="text-xs text-slate-400 mt-0.5">A inspeção independente é cobrada diretamente no teu cartão via Stripe — nunca há pagamentos manuais.</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  {pendingPay.slice(0, 3).map((l) => (
+                    <Button key={l.id} asChild size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+                      <Link to={`/market/pay/${l.id}`}>Pagar {l.plate || l.id.slice(0, 6)}</Link>
+                    </Button>
+                  ))}
+                  {pendingPay.length > 3 && (
+                    <Button asChild size="sm" variant="outline" className="border-amber-500/40 text-amber-300">
+                      <Link to="/market/profile">Ver todos ({pendingPay.length})</Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-[1fr,360px] gap-6">
           {/* Recent listings + inspections */}

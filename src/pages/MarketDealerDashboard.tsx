@@ -63,7 +63,7 @@ export default function MarketDealerDashboard() {
 
     const { data: listings } = await supabase
       .from("carity_listings")
-      .select("id, title, status, price, views_count, created_at, photos")
+      .select("id, title, status, price, views_count, created_at, photos, plate")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);

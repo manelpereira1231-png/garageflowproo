@@ -181,7 +181,7 @@ export default function CarityByCity() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-amber-400" />
-            <span>GarageFlow Market by <Link to="/" className="text-amber-400 hover:underline">GarageFlow</Link></span>
+            <span>GarageFlow Market by <a href="/" target="_blank" rel="noopener" className="text-amber-400 hover:underline">GarageFlow</a></span>
           </div>
           <p>© {new Date().getFullYear()} GarageFlow. Todos os direitos reservados.</p>
         </div>

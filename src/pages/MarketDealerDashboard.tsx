@@ -185,9 +185,12 @@ export default function MarketDealerDashboard() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
               <Button asChild className="flex-1 sm:flex-none bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-semibold">
                 <Link to="/market/sell"><Plus className="w-4 h-4 mr-1" /> Publicar carro</Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 sm:flex-none border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-amber-500/10">
+                <Link to="/market/dealer/bulk"><Sparkles className="w-4 h-4 mr-1" /> Bulk listing</Link>
               </Button>
               {currentPlan !== "free" && (
                 <Button variant="outline" disabled={busy === "portal"} onClick={openPortal} className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">

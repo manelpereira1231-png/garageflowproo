@@ -29,6 +29,7 @@ export default function MarketDealerDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ total: 0, published: 0, pendingInspection: 0, sold: 0, views: 0, unread: 0, offers: 0 });
   const [recent, setRecent] = useState<any[]>([]);
+  const [pendingPay, setPendingPay] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
 

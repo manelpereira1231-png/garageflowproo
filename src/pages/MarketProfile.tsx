@@ -170,7 +170,7 @@ export default function MarketProfile() {
                 <p className="text-[10px] uppercase tracking-[0.25em] text-amber-400 font-bold">Conta Profissional</p>
                 <h1 className="text-2xl font-bold text-white truncate">{companyName || "O meu Stand"}</h1>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <Badge className={`text-[10px] ${dealerPlan === "free" ? "bg-zinc-700 text-zinc-300" : "bg-amber-500 text-zinc-900"}`}>
+                  <Badge className={`text-[10px] ${dealerPlan === "free" ? "bg-zinc-700 text-zinc-100" : "bg-amber-500 text-zinc-900"}`}>
                     {dealerPlan === "unlimited" && <Crown className="w-3 h-3 mr-1" />}
                     {planLabel}
                   </Badge>
@@ -180,7 +180,7 @@ export default function MarketProfile() {
                     </Badge>
                   )}
                   {nif && (
-                    <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                    <span className="text-[11px] text-zinc-200 flex items-center gap-1">
                       <Hash className="w-3 h-3" /> NIF {nif}
                     </span>
                   )}
@@ -206,19 +206,19 @@ export default function MarketProfile() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="bg-zinc-900/60 border-zinc-800">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1"><Car className="w-3.5 h-3.5" /> Inventário</div>
+              <div className="flex items-center gap-2 text-xs text-zinc-200 mb-1"><Car className="w-3.5 h-3.5" /> Inventário</div>
               <p className="text-2xl font-bold text-white">{stats.listings}</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900/60 border-zinc-800">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1"><Sparkles className="w-3.5 h-3.5" /> Vendidos</div>
+              <div className="flex items-center gap-2 text-xs text-zinc-200 mb-1"><Sparkles className="w-3.5 h-3.5" /> Vendidos</div>
               <p className="text-2xl font-bold text-white">{stats.sold}</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-900/60 border-zinc-800">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1"><ShieldCheck className="w-3.5 h-3.5" /> Inspeções</div>
+              <div className="flex items-center gap-2 text-xs text-zinc-200 mb-1"><ShieldCheck className="w-3.5 h-3.5" /> Inspeções</div>
               <p className="text-2xl font-bold text-white">{stats.inspections}</p>
             </CardContent>
           </Card>
@@ -236,45 +236,45 @@ export default function MarketProfile() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-zinc-300">Email profissional</Label>
+                  <Label className="text-zinc-100">Email profissional</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Mail className="h-4 w-4 text-zinc-500" />
-                    <span className="text-sm text-zinc-400">{email}</span>
+                    <Mail className="h-4 w-4 text-zinc-100" />
+                    <span className="text-sm text-zinc-200">{email}</span>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="company" className="text-zinc-300">Nome do Stand / Razão Social</Label>
+                  <Label htmlFor="company" className="text-zinc-100">Nome do Stand / Razão Social</Label>
                   <Input id="company" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Auto Stand Lisboa, Lda." className="bg-zinc-950/60 border-zinc-800 text-white" />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-zinc-300">NIF</Label>
+                    <Label className="text-zinc-100">NIF</Label>
                     <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-zinc-950/40 border border-zinc-800">
-                      <Hash className="h-4 w-4 text-zinc-500" />
-                      <span className="text-sm text-zinc-400">{nif || "—"}</span>
-                      <Badge variant="outline" className="ml-auto text-[9px] border-zinc-700 text-zinc-500">Bloqueado</Badge>
+                      <Hash className="h-4 w-4 text-zinc-100" />
+                      <span className="text-sm text-zinc-200">{nif || "—"}</span>
+                      <Badge variant="outline" className="ml-auto text-[9px] border-zinc-700 text-zinc-100">Bloqueado</Badge>
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="lic" className="text-zinc-300">Nº Licença IMT</Label>
+                    <Label htmlFor="lic" className="text-zinc-100">Nº Licença IMT</Label>
                     <div className="relative">
-                      <Award className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                      <Award className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
                       <Input id="lic" value={dealerLicense} onChange={e => setDealerLicense(e.target.value)} placeholder="Ex: 12345/CE" className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
                     </div>
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone" className="text-zinc-300">Telefone comercial</Label>
+                    <Label htmlFor="phone" className="text-zinc-100">Telefone comercial</Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
                       <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+351..." className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="location" className="text-zinc-300">Morada / Cidade</Label>
+                    <Label htmlFor="location" className="text-zinc-100">Morada / Cidade</Label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                      <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
                       <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="Lisboa, Porto..." className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
                     </div>
                   </div>
@@ -299,7 +299,7 @@ export default function MarketProfile() {
                 <div>
                   <p className="text-2xl font-bold text-white">{planLabel}</p>
                   {dealerActiveUntil && dealerPlan !== "free" && (
-                    <p className="text-[11px] text-zinc-400 mt-1">
+                    <p className="text-[11px] text-zinc-200 mt-1">
                       Renova em {new Date(dealerActiveUntil).toLocaleDateString("pt-PT")}
                     </p>
                   )}
@@ -316,8 +316,8 @@ export default function MarketProfile() {
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     <Globe className="w-4 h-4 text-amber-400" /> Página pública
                   </div>
-                  <p className="text-xs text-zinc-400 break-all">/market/stand/{dealerSlug}</p>
-                  <Button asChild size="sm" variant="outline" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                  <p className="text-xs text-zinc-200 break-all">/market/stand/{dealerSlug}</p>
+                  <Button asChild size="sm" variant="outline" className="w-full border-zinc-700 text-zinc-100 hover:bg-zinc-800">
                     <Link to={`/market/stand/${dealerSlug}`} target="_blank">
                       <ExternalLink className="w-3 h-3 mr-1" /> Ver
                     </Link>
@@ -328,7 +328,7 @@ export default function MarketProfile() {
 
             <Card className="bg-zinc-900/40 border-zinc-800">
               <CardContent className="pt-4">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+                <p className="text-xs text-zinc-100 leading-relaxed">
                   Conta empresarial: comissão reduzida de 1% por venda e inspeções obrigatórias por oficina independente — anti-fraude garantido.
                 </p>
               </CardContent>

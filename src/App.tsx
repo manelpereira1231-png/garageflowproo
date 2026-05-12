@@ -95,6 +95,7 @@ const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
 const MarketStandsDirectory = lazyRetry(() => import("@/pages/MarketStandsDirectory"));
 const MarketStandPublic = lazyRetry(() => import("@/pages/MarketStandPublic"));
+const MarketVerifyCertificate = lazyRetry(() => import("@/pages/MarketVerifyCertificate"));
 const MarketDealerDashboard = lazyRetry(() => import("@/pages/MarketDealerDashboard"));
 const MarketDealerBulkAdd = lazyRetry(() => import("@/pages/MarketDealerBulkAdd"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));

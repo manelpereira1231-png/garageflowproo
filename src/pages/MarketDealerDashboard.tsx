@@ -145,7 +145,7 @@ export default function MarketDealerDashboard() {
 
   if (loading) {
     return (
-      <MarketLayout>
+      <MarketLayout variant="dealer">
         <div className="container max-w-7xl mx-auto p-4 space-y-4">
           <Skeleton className="h-32 w-full" />
           <div className="grid sm:grid-cols-4 gap-3">
@@ -158,7 +158,7 @@ export default function MarketDealerDashboard() {
   }
 
   return (
-    <MarketLayout>
+    <MarketLayout variant="dealer">
       <div className="container max-w-7xl mx-auto p-4 space-y-6">
         {/* Hero header */}
         <div className="bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20 rounded-2xl p-5 sm:p-6">

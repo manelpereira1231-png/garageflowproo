@@ -115,14 +115,14 @@ export default function MarketDealerBulkAdd() {
 
   if (loading) {
     return (
-      <MarketLayout>
+      <MarketLayout variant="dealer">
         <div className="container max-w-6xl mx-auto p-6 text-slate-400">A carregar…</div>
       </MarketLayout>
     );
   }
 
   return (
-    <MarketLayout>
+    <MarketLayout variant="dealer">
       <div className="container max-w-6xl mx-auto p-4 space-y-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">

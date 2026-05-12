@@ -634,10 +634,7 @@ function AuthenticatedRoutes() {
         <Routes>
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
           <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} realm="garage" />} />
-          <Route
-            path="/market/auth"
-            element={<AuthContextSwitch message="A terminar a sessão do GarageFlow para abrir o login do Market..." />}
-          />
+          <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
           {publicRoutesWithoutMarketAuth.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}

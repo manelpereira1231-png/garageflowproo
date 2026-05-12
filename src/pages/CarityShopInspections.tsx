@@ -314,6 +314,28 @@ export default function CarityShopInspections() {
     }
   };
 
+  const captureGeolocation = async () => {
+    if (!navigator.geolocation) return;
+    setGeo(p => ({ ...p, capturing: true }));
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      });
+      const { latitude, longitude } = pos.coords;
+      let city = ""; let country = "";
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=pt`);
+        const j = await r.json();
+        city = j.address?.city || j.address?.town || j.address?.village || j.address?.municipality || "";
+        country = j.address?.country || "";
+      } catch {}
+      setGeo({ lat: latitude, lng: longitude, city, country, capturing: false });
+    } catch (err: any) {
+      toast.error("Não foi possível obter a localização GPS — necessária para certificar a inspeção.");
+      setGeo(p => ({ ...p, capturing: false }));
+    }
+  };
+
   const startInspection = async (inspection: any) => {
     setActiveInspection(inspection);
     setActiveListing(inspection.listing);
@@ -350,15 +372,34 @@ export default function CarityShopInspections() {
         exterior_photos: Array.isArray(existing.exterior_photos) ? existing.exterior_photos as string[] : [],
         interior_photos: Array.isArray(existing.interior_photos) ? existing.interior_photos as string[] : [],
         engine_photos: Array.isArray(existing.engine_photos) ? existing.engine_photos as string[] : [],
+        brakes_photos: Array.isArray((existing as any).brakes_photos) ? (existing as any).brakes_photos as string[] : [],
+        suspension_photos: Array.isArray((existing as any).suspension_photos) ? (existing as any).suspension_photos as string[] : [],
         tire_photos: Array.isArray(existing.tire_photos) ? existing.tire_photos as string[] : [],
         damage_photos: Array.isArray(existing.damage_photos) ? existing.damage_photos as string[] : [],
       });
+      setMileageAtInspection(((existing as any).mileage_at_inspection ?? inspection.listing?.mileage ?? "").toString());
+      setStartedAt((existing as any).started_at || null);
+      if ((existing as any).inspection_lat) {
+        setGeo({
+          lat: (existing as any).inspection_lat,
+          lng: (existing as any).inspection_lng,
+          city: (existing as any).inspection_city || "",
+          country: (existing as any).inspection_country || "",
+          capturing: false,
+        });
+      }
     } else {
       setReportLocked(false);
       setReport({ engine_status: "ok", transmission_status: "ok", brakes_status: "ok", suspension_status: "ok", steering_status: "ok", tires_status: "ok", electrical_status: "ok", overall_score: 7, recommendation: "recommended", inspector_notes: "" });
       setTechnicianName("");
       setDefects([]);
-      setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
+      setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], brakes_photos: [], suspension_photos: [], tire_photos: [], damage_photos: [] });
+      setMileageAtInspection((inspection.listing?.mileage ?? "").toString());
+      const nowIso = new Date().toISOString();
+      setStartedAt(nowIso);
+      setGeo({ lat: null, lng: null, city: "", country: "", capturing: false });
+      // Auto-capture GPS for new inspections
+      captureGeolocation();
     }
 
     if (inspection.status === 'pending' || inspection.status === 'scheduled') {

@@ -81,27 +81,17 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
 
     setSubmitting(true);
     try {
-      const payload = {
-        user_id: userId,
-        ...form,
-        kyc_status: "submitted",
-        kyc_submitted_at: new Date().toISOString(),
-      };
-      const { data, error } = profile?.id
-        ? await supabase
-            .from("carity_seller_profiles")
-            .update(payload)
-            .eq("id", profile.id)
-            .select()
-            .single()
-        : await supabase
-            .from("carity_seller_profiles")
-            .insert(payload)
-            .select()
-            .single();
+      const { data, error } = await supabase.functions.invoke("market-kyc-auto-verify", {
+        body: { ...form },
+      });
       if (error) throw error;
-      toast.success(t("kyc.submitted"));
-      onComplete(data);
+      if (data?.status === "approved") {
+        toast.success("Identidade verificada ✓");
+        onComplete(data.profile);
+      } else {
+        toast.error(data?.reason || "Verificação falhou. Tenta novamente.");
+        if (data?.profile) onComplete(data.profile);
+      }
     } catch (e: any) {
       toast.error(e.message || t("kyc.submitError"));
     } finally {
@@ -154,9 +144,9 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             <ShieldCheck className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-base">{t("kyc.intro.title")}</h3>
+            <h3 className="font-semibold text-base">Verificação rápida de identidade</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("kyc.intro.desc")}
+              Aprovação automática em segundos. Documento + selfie — tudo encriptado.
             </p>
           </div>
         </div>
@@ -249,7 +239,7 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             className="bg-amber-500 hover:bg-amber-400 text-slate-900"
           >
             {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-            {t("kyc.submit")}
+            {submitting ? "A verificar..." : "Verificar agora"}
           </Button>
         </div>
       </CardContent>

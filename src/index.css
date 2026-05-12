@@ -305,3 +305,95 @@
     animation: page-in 320ms var(--ease-smooth);
   }
 }
+
+/* ============================================================
+   GarageFlow Market — Light theme overrides
+   The Market is dark by default (slate/zinc palette). When the
+   user toggles light mode (.market-light), we remap the heaviest
+   dark utility classes to a high-contrast light palette without
+   touching every component.
+   ============================================================ */
+.market-light {
+  background-color: hsl(220 20% 98%) !important;
+  color: hsl(220 25% 12%);
+}
+.market-light.bg-zinc-950,
+.market-light .bg-zinc-950,
+.market-light .bg-zinc-900,
+.market-light .bg-slate-950,
+.market-light .bg-slate-900 {
+  background-color: hsl(0 0% 100%) !important;
+}
+.market-light .bg-zinc-950\/95,
+.market-light .bg-slate-950\/95,
+.market-light .bg-zinc-950\/80,
+.market-light .bg-zinc-950\/60,
+.market-light .bg-zinc-900\/80,
+.market-light .bg-zinc-900\/60,
+.market-light .bg-zinc-900\/50 {
+  background-color: hsl(0 0% 100% / 0.92) !important;
+}
+.market-light .bg-zinc-800,
+.market-light .bg-slate-800,
+.market-light .bg-zinc-800\/60,
+.market-light .bg-zinc-800\/40 {
+  background-color: hsl(220 14% 96%) !important;
+}
+.market-light .bg-white\/\[0\.06\],
+.market-light .bg-white\/\[0\.05\],
+.market-light .bg-white\/5,
+.market-light .bg-white\/10 {
+  background-color: hsl(220 14% 94%) !important;
+}
+
+/* Borders */
+.market-light .border-white\/\[0\.06\],
+.market-light .border-white\/\[0\.08\],
+.market-light .border-white\/10,
+.market-light .border-zinc-800,
+.market-light .border-zinc-700,
+.market-light .border-slate-800,
+.market-light .border-slate-700 {
+  border-color: hsl(220 13% 88%) !important;
+}
+
+/* Text colors */
+.market-light .text-white,
+.market-light .text-zinc-100,
+.market-light .text-zinc-200,
+.market-light .text-slate-100,
+.market-light .text-slate-200 {
+  color: hsl(220 25% 12%) !important;
+}
+.market-light .text-zinc-300,
+.market-light .text-zinc-400,
+.market-light .text-slate-300,
+.market-light .text-slate-400,
+.market-light .text-white\/65,
+.market-light .text-white\/70,
+.market-light .text-white\/60,
+.market-light .text-white\/50,
+.market-light .text-white\/40 {
+  color: hsl(220 12% 35%) !important;
+}
+.market-light .text-zinc-500,
+.market-light .text-zinc-600,
+.market-light .text-slate-500,
+.market-light .text-slate-600,
+.market-light .placeholder\:text-white\/40::placeholder,
+.market-light .placeholder\:text-zinc-500::placeholder {
+  color: hsl(220 10% 50%) !important;
+}
+
+/* Hover surfaces */
+.market-light .hover\:bg-white\/\[0\.08\]:hover,
+.market-light .hover\:bg-white\/\[0\.05\]:hover,
+.market-light .hover\:bg-white\/10:hover {
+  background-color: hsl(220 14% 92%) !important;
+}
+.market-light .hover\:text-white:hover {
+  color: hsl(220 25% 8%) !important;
+}
+
+/* Dealer signature bar keeps amber, but text contrasts already */
+/* Amber accents stay untouched on purpose for brand consistency */

@@ -4582,6 +4582,7 @@ export type Database = {
         Returns: boolean
       }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
+      dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
       detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }

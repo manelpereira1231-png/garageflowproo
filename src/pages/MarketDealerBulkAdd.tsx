@@ -116,7 +116,7 @@ export default function MarketDealerBulkAdd() {
   if (loading) {
     return (
       <MarketLayout variant="dealer">
-        <div className="container max-w-6xl mx-auto p-6 text-slate-400">A carregar…</div>
+        <div className="container max-w-6xl mx-auto p-6 text-slate-200">A carregar…</div>
       </MarketLayout>
     );
   }
@@ -126,7 +126,7 @@ export default function MarketDealerBulkAdd() {
       <div className="container max-w-6xl mx-auto p-4 space-y-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild className="text-slate-400 hover:text-white">
+            <Button variant="ghost" size="sm" asChild className="text-slate-200 hover:text-white">
               <Link to="/market/dealer-dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar ao painel</Link>
             </Button>
           </div>
@@ -152,52 +152,52 @@ export default function MarketDealerBulkAdd() {
             {rows.map((row, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end p-3 rounded-lg bg-slate-800/40 border border-slate-800">
                 <div className="col-span-12 sm:col-span-2">
-                  <Label className="text-[11px] text-slate-400">Marca *</Label>
+                  <Label className="text-[11px] text-slate-200">Marca *</Label>
                   <Input value={row.make} onChange={(e) => update(idx, { make: e.target.value })} className="h-9 bg-slate-900 border-slate-700 text-white" placeholder="BMW" />
                 </div>
                 <div className="col-span-12 sm:col-span-2">
-                  <Label className="text-[11px] text-slate-400">Modelo *</Label>
+                  <Label className="text-[11px] text-slate-200">Modelo *</Label>
                   <Input value={row.model} onChange={(e) => update(idx, { model: e.target.value })} className="h-9 bg-slate-900 border-slate-700 text-white" placeholder="320d" />
                 </div>
                 <div className="col-span-6 sm:col-span-1">
-                  <Label className="text-[11px] text-slate-400">Ano</Label>
+                  <Label className="text-[11px] text-slate-200">Ano</Label>
                   <Input type="number" value={row.year} onChange={(e) => update(idx, { year: Number(e.target.value) })} className="h-9 bg-slate-900 border-slate-700 text-white" />
                 </div>
                 <div className="col-span-6 sm:col-span-1">
-                  <Label className="text-[11px] text-slate-400">KM</Label>
+                  <Label className="text-[11px] text-slate-200">KM</Label>
                   <Input type="number" value={row.mileage} onChange={(e) => update(idx, { mileage: Number(e.target.value) })} className="h-9 bg-slate-900 border-slate-700 text-white" />
                 </div>
                 <div className="col-span-6 sm:col-span-1">
-                  <Label className="text-[11px] text-slate-400">Combust.</Label>
+                  <Label className="text-[11px] text-slate-200">Combust.</Label>
                   <Select value={row.fuel} onValueChange={(v) => update(idx, { fuel: v })}>
                     <SelectTrigger className="h-9 bg-slate-900 border-slate-700 text-white"><SelectValue /></SelectTrigger>
                     <SelectContent>{FUEL_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="col-span-6 sm:col-span-2">
-                  <Label className="text-[11px] text-slate-400">Matrícula *</Label>
+                  <Label className="text-[11px] text-slate-200">Matrícula *</Label>
                   <Input value={row.plate} onChange={(e) => update(idx, { plate: e.target.value })} className="h-9 bg-slate-900 border-slate-700 text-white uppercase" placeholder="00-AB-00" />
                 </div>
                 <div className="col-span-8 sm:col-span-2">
-                  <Label className="text-[11px] text-slate-400">Preço €*</Label>
+                  <Label className="text-[11px] text-slate-200">Preço €*</Label>
                   <Input type="number" value={row.price} onChange={(e) => update(idx, { price: Number(e.target.value) })} className="h-9 bg-slate-900 border-slate-700 text-white" />
                 </div>
                 <div className="col-span-4 sm:col-span-1 flex justify-end">
-                  <Button variant="ghost" size="icon" onClick={() => removeRow(idx)} className="h-9 w-9 text-slate-500 hover:text-red-400 hover:bg-red-500/10">
+                  <Button variant="ghost" size="icon" onClick={() => removeRow(idx)} className="h-9 w-9 text-slate-300 hover:text-red-400 hover:bg-red-500/10">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             ))}
 
-            <Button variant="outline" onClick={addRow} className="w-full border-dashed border-slate-700 text-slate-400 hover:text-amber-400 hover:border-amber-500/40">
+            <Button variant="outline" onClick={addRow} className="w-full border-dashed border-slate-700 text-slate-200 hover:text-amber-400 hover:border-amber-500/40">
               <Plus className="w-4 h-4 mr-1" /> Adicionar mais uma linha
             </Button>
           </CardContent>
         </Card>
 
         <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-slate-200">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span><span className="text-white font-semibold">{validRows.length}</span> viatura(s) prontas para criar</span>
           </div>
@@ -206,7 +206,7 @@ export default function MarketDealerBulkAdd() {
           </Button>
         </div>
 
-        <p className="text-[11px] text-slate-500 flex items-start gap-1.5">
+        <p className="text-[11px] text-slate-300 flex items-start gap-1.5">
           <AlertTriangle className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" />
           Para publicar cada viatura tens que adicionar fotos e pagar a inspeção independente. Comissão Stand: 1%.
         </p>

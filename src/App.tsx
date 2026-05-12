@@ -420,6 +420,7 @@ const publicRoutes = [
   { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
   { path: "/market/stands", element: <Suspense fallback={<PageLoader />}><MarketStandsDirectory /></Suspense> },
   { path: "/market/stand/:slug", element: <Suspense fallback={<PageLoader />}><MarketStandPublic /></Suspense> },
+  { path: "/market/verify/:token", element: <Suspense fallback={<PageLoader />}><MarketVerifyCertificate /></Suspense> },
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },

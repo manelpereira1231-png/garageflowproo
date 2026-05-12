@@ -731,6 +731,104 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
+        {/* Identidade da oficina + auditoria */}
+        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
+              Inspeção certificada por
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <span className="text-muted-foreground">Oficina:</span>{" "}
+                <strong>{shopData?.name || "—"}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">ID oficina:</span>{" "}
+                <code className="text-xs">{shopId?.slice(0, 8).toUpperCase()}</code>
+              </div>
+              {shopData?.nif && (
+                <div>
+                  <span className="text-muted-foreground">NIF:</span> <strong>{shopData.nif}</strong>
+                </div>
+              )}
+              {shopData?.address && (
+                <div className="md:col-span-2">
+                  <span className="text-muted-foreground">Morada:</span> {shopData.address}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Localização GPS + Km no momento */}
+        <Card className="border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              📍 Auditoria física da inspeção
+            </CardTitle>
+            <CardDescription>
+              Estes dados ficam imutáveis no certificado e provam que a inspeção foi feita fisicamente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Quilometragem registada agora *</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={mileageAtInspection}
+                  onChange={(e) => setMileageAtInspection(e.target.value)}
+                  placeholder="Ex: 145000"
+                  disabled={reportLocked}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Km do anúncio: {activeListing.mileage?.toLocaleString() || "—"}
+                </p>
+              </div>
+              <div>
+                <Label>Localização GPS *</Label>
+                {geo.lat && geo.lng ? (
+                  <div className="text-sm space-y-1 mt-1">
+                    <p className="font-mono text-xs">
+                      {geo.lat.toFixed(5)}, {geo.lng.toFixed(5)}
+                    </p>
+                    {(geo.city || geo.country) && (
+                      <p className="text-muted-foreground">
+                        {[geo.city, geo.country].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                    {!reportLocked && (
+                      <Button size="sm" variant="outline" onClick={captureGeolocation} disabled={geo.capturing}>
+                        {geo.capturing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Recapturar"}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={captureGeolocation}
+                    disabled={geo.capturing || reportLocked}
+                    className="mt-1"
+                  >
+                    {geo.capturing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "📡"}
+                    Capturar localização
+                  </Button>
+                )}
+              </div>
+            </div>
+            {startedAt && (
+              <p className="text-xs text-muted-foreground">
+                ⏱️ Inspeção iniciada em {new Date(startedAt).toLocaleString("pt-PT")} (timestamp imutável)
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Checklist Mecânico (Sistema Fechado)</CardTitle>

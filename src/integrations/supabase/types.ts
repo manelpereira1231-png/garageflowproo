@@ -780,6 +780,7 @@ export type Database = {
       }
       carity_inspection_reports: {
         Row: {
+          brakes_photos: Json
           brakes_status: string
           completed_at: string | null
           created_at: string
@@ -790,25 +791,34 @@ export type Database = {
           engine_status: string
           exterior_photos: Json
           id: string
+          inspection_city: string | null
+          inspection_country: string | null
           inspection_id: string
+          inspection_lat: number | null
+          inspection_lng: number | null
           inspector_notes: string | null
           interior_photos: Json
           is_locked: boolean
           listing_id: string
           locked_at: string | null
+          mileage_at_inspection: number | null
           overall_score: number
           recommendation: string
           report_hash: string | null
           shop_id: string
+          started_at: string | null
           steering_status: string
           submitted_by_user_id: string | null
+          suspension_photos: Json
           suspension_status: string
           technician_name: string | null
           tire_photos: Json
           tires_status: string
           transmission_status: string
+          verification_token: string | null
         }
         Insert: {
+          brakes_photos?: Json
           brakes_status?: string
           completed_at?: string | null
           created_at?: string
@@ -819,25 +829,34 @@ export type Database = {
           engine_status?: string
           exterior_photos?: Json
           id?: string
+          inspection_city?: string | null
+          inspection_country?: string | null
           inspection_id: string
+          inspection_lat?: number | null
+          inspection_lng?: number | null
           inspector_notes?: string | null
           interior_photos?: Json
           is_locked?: boolean
           listing_id: string
           locked_at?: string | null
+          mileage_at_inspection?: number | null
           overall_score?: number
           recommendation?: string
           report_hash?: string | null
           shop_id: string
+          started_at?: string | null
           steering_status?: string
           submitted_by_user_id?: string | null
+          suspension_photos?: Json
           suspension_status?: string
           technician_name?: string | null
           tire_photos?: Json
           tires_status?: string
           transmission_status?: string
+          verification_token?: string | null
         }
         Update: {
+          brakes_photos?: Json
           brakes_status?: string
           completed_at?: string | null
           created_at?: string
@@ -848,23 +867,31 @@ export type Database = {
           engine_status?: string
           exterior_photos?: Json
           id?: string
+          inspection_city?: string | null
+          inspection_country?: string | null
           inspection_id?: string
+          inspection_lat?: number | null
+          inspection_lng?: number | null
           inspector_notes?: string | null
           interior_photos?: Json
           is_locked?: boolean
           listing_id?: string
           locked_at?: string | null
+          mileage_at_inspection?: number | null
           overall_score?: number
           recommendation?: string
           report_hash?: string | null
           shop_id?: string
+          started_at?: string | null
           steering_status?: string
           submitted_by_user_id?: string | null
+          suspension_photos?: Json
           suspension_status?: string
           technician_name?: string | null
           tire_photos?: Json
           tires_status?: string
           transmission_status?: string
+          verification_token?: string | null
         }
         Relationships: [
           {
@@ -4706,6 +4733,7 @@ export type Database = {
         Args: { _action_type: string; _shop_id: string }
         Returns: boolean
       }
+      verify_inspection_certificate: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
       app_role: "buyer" | "seller" | "garage_owner" | "admin" | "regional_admin"

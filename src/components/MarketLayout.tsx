@@ -108,32 +108,47 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
   return (
     <MarketLayoutContext.Provider value={true}>
-      <div className="min-h-screen bg-background">
+      <div className={`min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
         <MarketPendingPaymentBanner />
+        {/* Dealer signature bar */}
+        {isDealer && (
+          <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-zinc-900 text-[11px] font-bold tracking-[0.2em] uppercase text-center py-1 shadow-md">
+            <Crown className="inline w-3 h-3 mr-1.5 -mt-0.5" /> Conta Profissional · GarageFlow Stand Pro
+          </div>
+        )}
         {/* Top nav — premium glass */}
-        <nav className="bg-slate-950/95 backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 border-b border-white/[0.06] shadow-lg">
+        <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link to="/market" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-lg bg-amber-400/15 border border-amber-400/30 flex items-center justify-center group-hover:bg-amber-400/25 transition-colors">
-                <ShieldCheck className="h-4 w-4 text-amber-400" />
+            <Link to={isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group">
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
+                {isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}
               </div>
-              <span className="text-lg font-bold tracking-tight">GarageFlow <span className="text-amber-400">Market</span></span>
+              <span className="text-lg font-bold tracking-tight">
+                GarageFlow <span className="text-amber-400">{isDealer ? "Stand" : "Market"}</span>
+              </span>
+              {isDealer && (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 ml-1 rounded text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 tracking-wider">
+                  PRO
+                </span>
+              )}
             </Link>
 
-            {/* Desktop search — quick listing finder */}
-            <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-md mx-6 relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-              <Input
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
-                className="h-9 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40 focus-visible:ring-amber-400/40 focus-visible:border-amber-400/40"
-              />
-            </form>
+            {/* Desktop search — only for particular */}
+            {!isDealer && (
+              <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-md mx-6 relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                <Input
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder={t("market.search.placeholder") || "Pesquisar marca, modelo ou cidade…"}
+                  className="h-9 pl-9 pr-3 bg-white/[0.06] border-white/10 text-white placeholder:text-white/40 focus-visible:ring-amber-400/40 focus-visible:border-amber-400/40"
+                />
+              </form>
+            )}
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-0.5">
-              {NAV_ITEMS.map(item => {
+              {NAV_ITEMS.map((item: any) => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);
                 return (
@@ -147,7 +162,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`relative h-9 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? "bg-white/10 text-white" : ""}`}
+                      className={`relative h-9 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? (isDealer ? "bg-amber-500/15 text-amber-300" : "bg-white/10 text-white") : ""}`}
                     >
                       <item.icon className="h-4 w-4 mr-1.5" />
                       {item.label}
@@ -160,11 +175,20 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   </Link>
                 );
               })}
-              <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
-                <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
-                  <Plus className="h-4 w-4 mr-1" /> {t("market.nav.newListing")}
-                </Button>
-              </Link>
+              {!isDealer && (
+                <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
+                  <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
+                    <Plus className="h-4 w-4 mr-1" /> {t("market.nav.newListing")}
+                  </Button>
+                </Link>
+              )}
+              {isDealer && (
+                <Link to="/market/dealer/bulk" onMouseEnter={() => prefetchRoute("/market/dealer/bulk")}>
+                  <Button size="sm" className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-900 hover:from-amber-400 hover:to-amber-500 font-semibold ml-2 shadow-md shadow-amber-500/30">
+                    <Sparkles className="h-4 w-4 mr-1" /> Publicar lote
+                  </Button>
+                </Link>
+              )}
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
                 <ThemeToggle />
               </div>

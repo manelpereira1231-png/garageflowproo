@@ -119,6 +119,17 @@ export default function MarketAuth() {
         if (!companyName.trim() || !nif.trim()) {
           throw new Error("Indique o nome do stand e o NIF.");
         }
+        const cleanNif = nif.trim().toUpperCase().replace(/\s+/g, "");
+        // Basic shape: PT NIFs are 9 digits; allow alphanumeric for other countries (max 20)
+        if (cleanNif.length < 8 || cleanNif.length > 20) {
+          throw new Error("NIF inválido. Verifique o número do contribuinte.");
+        }
+        // Anti-fraud: block duplicate NIF across the platform
+        const { data: nifOk, error: nifErr } = await supabase.rpc("dealer_nif_available" as any, { _nif: cleanNif });
+        if (nifErr) throw new Error("Não foi possível validar o NIF. Tente novamente.");
+        if (nifOk === false) {
+          throw new Error("Este NIF já está registado por outro Stand. Se acredita que é um erro, contacte o suporte.");
+        }
       }
 
       const { data: signUpData, error } = await supabase.auth.signUp({

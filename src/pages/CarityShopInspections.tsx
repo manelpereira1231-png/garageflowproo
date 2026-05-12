@@ -480,6 +480,19 @@ export default function CarityShopInspections() {
     if (photoSections.exterior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do exterior"); return; }
     if (photoSections.interior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do interior"); return; }
     if (photoSections.engine_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do motor"); return; }
+    if (photoSections.brakes_photos.length < 1) { toast.error("Carregue pelo menos 1 foto dos travões — prova obrigatória"); return; }
+    if (photoSections.suspension_photos.length < 1) { toast.error("Carregue pelo menos 1 foto da suspensão — prova obrigatória"); return; }
+    if (photoSections.tire_photos.length < 1) { toast.error("Carregue pelo menos 1 foto dos pneus — prova obrigatória"); return; }
+
+    // Validate mileage at inspection
+    const mileageNum = parseInt(mileageAtInspection, 10);
+    if (!mileageNum || mileageNum < 0) { toast.error("Indique a quilometragem registada no momento da inspeção."); return; }
+
+    // Validate GPS location captured
+    if (geo.lat === null || geo.lng === null) {
+      toast.error("Localização GPS obrigatória — clique em 'Capturar localização' antes de submeter.");
+      return;
+    }
 
     const autoScore = calculateAutoScore(report);
 
@@ -505,7 +518,8 @@ export default function CarityShopInspections() {
       // Auto-determine recommendation from score
       const autoRecommendation = finalScore >= 80 ? "recommended" : finalScore >= 60 ? "acceptable" : "not_recommended";
 
-      const reportData = {
+      const completedAtIso = new Date().toISOString();
+      const reportData: any = {
         inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
         overall_score: finalScore,
@@ -514,13 +528,21 @@ export default function CarityShopInspections() {
         exterior_photos: photoSections.exterior_photos as unknown as any,
         interior_photos: photoSections.interior_photos as unknown as any,
         engine_photos: photoSections.engine_photos as unknown as any,
+        brakes_photos: photoSections.brakes_photos as unknown as any,
+        suspension_photos: photoSections.suspension_photos as unknown as any,
         tire_photos: photoSections.tire_photos as unknown as any,
         damage_photos: photoSections.damage_photos as unknown as any,
-        completed_at: new Date().toISOString(),
+        started_at: startedAt || completedAtIso,
+        completed_at: completedAtIso,
+        inspection_lat: geo.lat,
+        inspection_lng: geo.lng,
+        inspection_city: geo.city || null,
+        inspection_country: geo.country || null,
+        mileage_at_inspection: mileageNum,
         technician_name: technicianName.trim(),
         submitted_by_user_id: currentUserId,
         is_locked: true,
-        locked_at: new Date().toISOString(),
+        locked_at: completedAtIso,
       };
 
       let reportId: string;

@@ -239,7 +239,7 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             className="bg-amber-500 hover:bg-amber-400 text-slate-900"
           >
             {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-            {t("kyc.submit")}
+            {submitting ? "A verificar..." : "Verificar agora"}
           </Button>
         </div>
       </CardContent>

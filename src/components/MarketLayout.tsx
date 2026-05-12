@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useTheme } from "@/components/ThemeProvider";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useMarketT } from "@/i18n/marketTranslations";
 
@@ -50,6 +51,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
   const t = useMarketT();
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
   const NAV_ITEMS = isDealer
     ? DEALER_NAV_DEFS
@@ -108,7 +111,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
   return (
     <MarketLayoutContext.Provider value={true}>
-      <div className={`min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
+      <div className={`market-root ${isLight ? "market-light" : "market-dark"} min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
         <MarketPendingPaymentBanner />
         {/* Dealer signature bar */}
         {isDealer && (

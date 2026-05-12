@@ -144,9 +144,9 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
             <ShieldCheck className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-base">{t("kyc.intro.title")}</h3>
+            <h3 className="font-semibold text-base">Verificação rápida de identidade</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("kyc.intro.desc")}
+              Aprovação automática em segundos. Documento + selfie — tudo encriptado.
             </p>
           </div>
         </div>

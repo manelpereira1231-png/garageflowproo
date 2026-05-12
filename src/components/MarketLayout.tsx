@@ -41,7 +41,7 @@ const PageFallback = () => (
   </div>
 );
 
-export default function MarketLayout({ children }: { children?: React.ReactNode }) {
+export default function MarketLayout({ children, variant }: { children?: React.ReactNode; variant?: "particular" | "dealer" }) {
   const alreadyWrapped = useContext(MarketLayoutContext);
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,7 +50,10 @@ export default function MarketLayout({ children }: { children?: React.ReactNode 
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
   const t = useMarketT();
-  const NAV_ITEMS = NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+  const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
+  const NAV_ITEMS = isDealer
+    ? DEALER_NAV_DEFS
+    : NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();

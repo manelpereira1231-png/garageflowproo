@@ -111,7 +111,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
   return (
     <MarketLayoutContext.Provider value={true}>
-      <div className={`min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
+      <div className={`market-root ${isLight ? "market-light" : "market-dark"} min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
         <MarketPendingPaymentBanner />
         {/* Dealer signature bar */}
         {isDealer && (

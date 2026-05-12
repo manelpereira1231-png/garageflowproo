@@ -241,8 +241,11 @@ export function generateInspectionPDF({ listing, report, shop, seller }: ReportD
   doc.setFontSize(7);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(100, 116, 139);
+  const verifyUrl = report.verification_token
+    ? `garageflow.pt/market/verify/${report.verification_token}`
+    : `garageflow.pt/market/car/${listing.id}`;
   doc.text(
-    `Verificável em garageflow.pt/market/car/${listing.id}  ·  Selado em ${
+    `Verificar autenticidade: ${verifyUrl}  ·  Selado em ${
       report.locked_at ? new Date(report.locked_at).toLocaleString("pt-PT") : "—"
     }`,
     margin + 4,

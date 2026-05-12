@@ -95,6 +95,7 @@ const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
 const MarketPayoutInfo = lazyRetry(() => import("@/pages/MarketPayoutInfo"));
 const MarketStandsDirectory = lazyRetry(() => import("@/pages/MarketStandsDirectory"));
 const MarketStandPublic = lazyRetry(() => import("@/pages/MarketStandPublic"));
+const MarketVerifyCertificate = lazyRetry(() => import("@/pages/MarketVerifyCertificate"));
 const MarketDealerDashboard = lazyRetry(() => import("@/pages/MarketDealerDashboard"));
 const MarketDealerBulkAdd = lazyRetry(() => import("@/pages/MarketDealerBulkAdd"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
@@ -419,6 +420,7 @@ const publicRoutes = [
   { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
   { path: "/market/stands", element: <Suspense fallback={<PageLoader />}><MarketStandsDirectory /></Suspense> },
   { path: "/market/stand/:slug", element: <Suspense fallback={<PageLoader />}><MarketStandPublic /></Suspense> },
+  { path: "/market/verify/:token", element: <Suspense fallback={<PageLoader />}><MarketVerifyCertificate /></Suspense> },
   { path: "/carity", element: <Navigate to="/market" replace /> },
   { path: "/carity/auth", element: <Navigate to="/market/auth" replace /> },
   { path: "/carity/*", element: <Navigate to="/market" replace /> },

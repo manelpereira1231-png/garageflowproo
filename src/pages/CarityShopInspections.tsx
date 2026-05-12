@@ -81,9 +81,15 @@ export default function CarityShopInspections() {
   const [reportLocked, setReportLocked] = useState(false);
   const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
     exterior_photos: [], interior_photos: [], engine_photos: [],
+    brakes_photos: [], suspension_photos: [],
     tire_photos: [], damage_photos: [],
   });
   const [uploading, setUploading] = useState<string | null>(null);
+  const [mileageAtInspection, setMileageAtInspection] = useState<string>("");
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [geo, setGeo] = useState<{ lat: number | null; lng: number | null; city: string; country: string; capturing: boolean }>({
+    lat: null, lng: null, city: "", country: "", capturing: false,
+  });
 
   // Step 1: Fast partner check (renders enrollment screen immediately)
   useEffect(() => {
@@ -308,6 +314,28 @@ export default function CarityShopInspections() {
     }
   };
 
+  const captureGeolocation = async () => {
+    if (!navigator.geolocation) return;
+    setGeo(p => ({ ...p, capturing: true }));
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      });
+      const { latitude, longitude } = pos.coords;
+      let city = ""; let country = "";
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=pt`);
+        const j = await r.json();
+        city = j.address?.city || j.address?.town || j.address?.village || j.address?.municipality || "";
+        country = j.address?.country || "";
+      } catch {}
+      setGeo({ lat: latitude, lng: longitude, city, country, capturing: false });
+    } catch (err: any) {
+      toast.error("Não foi possível obter a localização GPS — necessária para certificar a inspeção.");
+      setGeo(p => ({ ...p, capturing: false }));
+    }
+  };
+
   const startInspection = async (inspection: any) => {
     setActiveInspection(inspection);
     setActiveListing(inspection.listing);
@@ -344,15 +372,34 @@ export default function CarityShopInspections() {
         exterior_photos: Array.isArray(existing.exterior_photos) ? existing.exterior_photos as string[] : [],
         interior_photos: Array.isArray(existing.interior_photos) ? existing.interior_photos as string[] : [],
         engine_photos: Array.isArray(existing.engine_photos) ? existing.engine_photos as string[] : [],
+        brakes_photos: Array.isArray((existing as any).brakes_photos) ? (existing as any).brakes_photos as string[] : [],
+        suspension_photos: Array.isArray((existing as any).suspension_photos) ? (existing as any).suspension_photos as string[] : [],
         tire_photos: Array.isArray(existing.tire_photos) ? existing.tire_photos as string[] : [],
         damage_photos: Array.isArray(existing.damage_photos) ? existing.damage_photos as string[] : [],
       });
+      setMileageAtInspection(((existing as any).mileage_at_inspection ?? inspection.listing?.mileage ?? "").toString());
+      setStartedAt((existing as any).started_at || null);
+      if ((existing as any).inspection_lat) {
+        setGeo({
+          lat: (existing as any).inspection_lat,
+          lng: (existing as any).inspection_lng,
+          city: (existing as any).inspection_city || "",
+          country: (existing as any).inspection_country || "",
+          capturing: false,
+        });
+      }
     } else {
       setReportLocked(false);
       setReport({ engine_status: "ok", transmission_status: "ok", brakes_status: "ok", suspension_status: "ok", steering_status: "ok", tires_status: "ok", electrical_status: "ok", overall_score: 7, recommendation: "recommended", inspector_notes: "" });
       setTechnicianName("");
       setDefects([]);
-      setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], tire_photos: [], damage_photos: [] });
+      setPhotoSections({ exterior_photos: [], interior_photos: [], engine_photos: [], brakes_photos: [], suspension_photos: [], tire_photos: [], damage_photos: [] });
+      setMileageAtInspection((inspection.listing?.mileage ?? "").toString());
+      const nowIso = new Date().toISOString();
+      setStartedAt(nowIso);
+      setGeo({ lat: null, lng: null, city: "", country: "", capturing: false });
+      // Auto-capture GPS for new inspections
+      captureGeolocation();
     }
 
     if (inspection.status === 'pending' || inspection.status === 'scheduled') {
@@ -433,6 +480,19 @@ export default function CarityShopInspections() {
     if (photoSections.exterior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do exterior"); return; }
     if (photoSections.interior_photos.length < 2) { toast.error("Carregue pelo menos 2 fotos do interior"); return; }
     if (photoSections.engine_photos.length < 1) { toast.error("Carregue pelo menos 1 foto do motor"); return; }
+    if (photoSections.brakes_photos.length < 1) { toast.error("Carregue pelo menos 1 foto dos travões — prova obrigatória"); return; }
+    if (photoSections.suspension_photos.length < 1) { toast.error("Carregue pelo menos 1 foto da suspensão — prova obrigatória"); return; }
+    if (photoSections.tire_photos.length < 1) { toast.error("Carregue pelo menos 1 foto dos pneus — prova obrigatória"); return; }
+
+    // Validate mileage at inspection
+    const mileageNum = parseInt(mileageAtInspection, 10);
+    if (!mileageNum || mileageNum < 0) { toast.error("Indique a quilometragem registada no momento da inspeção."); return; }
+
+    // Validate GPS location captured
+    if (geo.lat === null || geo.lng === null) {
+      toast.error("Localização GPS obrigatória — clique em 'Capturar localização' antes de submeter.");
+      return;
+    }
 
     const autoScore = calculateAutoScore(report);
 
@@ -458,7 +518,8 @@ export default function CarityShopInspections() {
       // Auto-determine recommendation from score
       const autoRecommendation = finalScore >= 80 ? "recommended" : finalScore >= 60 ? "acceptable" : "not_recommended";
 
-      const reportData = {
+      const completedAtIso = new Date().toISOString();
+      const reportData: any = {
         inspection_id: activeInspection.id, listing_id: activeInspection.listing_id, shop_id: shopId,
         ...report,
         overall_score: finalScore,
@@ -467,13 +528,21 @@ export default function CarityShopInspections() {
         exterior_photos: photoSections.exterior_photos as unknown as any,
         interior_photos: photoSections.interior_photos as unknown as any,
         engine_photos: photoSections.engine_photos as unknown as any,
+        brakes_photos: photoSections.brakes_photos as unknown as any,
+        suspension_photos: photoSections.suspension_photos as unknown as any,
         tire_photos: photoSections.tire_photos as unknown as any,
         damage_photos: photoSections.damage_photos as unknown as any,
-        completed_at: new Date().toISOString(),
+        started_at: startedAt || completedAtIso,
+        completed_at: completedAtIso,
+        inspection_lat: geo.lat,
+        inspection_lng: geo.lng,
+        inspection_city: geo.city || null,
+        inspection_country: geo.country || null,
+        mileage_at_inspection: mileageNum,
         technician_name: technicianName.trim(),
         submitted_by_user_id: currentUserId,
         is_locked: true,
-        locked_at: new Date().toISOString(),
+        locked_at: completedAtIso,
       };
 
       let reportId: string;
@@ -662,6 +731,104 @@ export default function CarityShopInspections() {
           </CardContent>
         </Card>
 
+        {/* Identidade da oficina + auditoria */}
+        <Card className="border-amber-200 bg-amber-50/30 dark:bg-amber-900/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
+              Inspeção certificada por
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <span className="text-muted-foreground">Oficina:</span>{" "}
+                <strong>{shopData?.name || "—"}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">ID oficina:</span>{" "}
+                <code className="text-xs">{shopId?.slice(0, 8).toUpperCase()}</code>
+              </div>
+              {shopData?.nif && (
+                <div>
+                  <span className="text-muted-foreground">NIF:</span> <strong>{shopData.nif}</strong>
+                </div>
+              )}
+              {shopData?.address && (
+                <div className="md:col-span-2">
+                  <span className="text-muted-foreground">Morada:</span> {shopData.address}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Localização GPS + Km no momento */}
+        <Card className="border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              📍 Auditoria física da inspeção
+            </CardTitle>
+            <CardDescription>
+              Estes dados ficam imutáveis no certificado e provam que a inspeção foi feita fisicamente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Quilometragem registada agora *</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={mileageAtInspection}
+                  onChange={(e) => setMileageAtInspection(e.target.value)}
+                  placeholder="Ex: 145000"
+                  disabled={reportLocked}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Km do anúncio: {activeListing.mileage?.toLocaleString() || "—"}
+                </p>
+              </div>
+              <div>
+                <Label>Localização GPS *</Label>
+                {geo.lat && geo.lng ? (
+                  <div className="text-sm space-y-1 mt-1">
+                    <p className="font-mono text-xs">
+                      {geo.lat.toFixed(5)}, {geo.lng.toFixed(5)}
+                    </p>
+                    {(geo.city || geo.country) && (
+                      <p className="text-muted-foreground">
+                        {[geo.city, geo.country].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                    {!reportLocked && (
+                      <Button size="sm" variant="outline" onClick={captureGeolocation} disabled={geo.capturing}>
+                        {geo.capturing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Recapturar"}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={captureGeolocation}
+                    disabled={geo.capturing || reportLocked}
+                    className="mt-1"
+                  >
+                    {geo.capturing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "📡"}
+                    Capturar localização
+                  </Button>
+                )}
+              </div>
+            </div>
+            {startedAt && (
+              <p className="text-xs text-muted-foreground">
+                ⏱️ Inspeção iniciada em {new Date(startedAt).toLocaleString("pt-PT")} (timestamp imutável)
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Checklist Mecânico (Sistema Fechado)</CardTitle>
@@ -699,8 +866,10 @@ export default function CarityShopInspections() {
             {[
               { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
               { key: "interior_photos", label: "Interior — mín. 2 fotos (painel, bancos, quilometragem)", required: true },
-              { key: "engine_photos", label: "Motor — mín. 1 foto (compartimento do motor)", required: true },
-              { key: "tire_photos", label: "Pneus — estado do piso", required: false },
+              { key: "engine_photos", label: "Motor — mín. 1 foto do compartimento", required: true },
+              { key: "brakes_photos", label: "Travões — mín. 1 foto (discos / pastilhas)", required: true },
+              { key: "suspension_photos", label: "Suspensão — mín. 1 foto (amortecedores / triangulações)", required: true },
+              { key: "tire_photos", label: "Pneus — mín. 1 foto (estado do piso)", required: true },
               { key: "damage_photos", label: "Danos encontrados (obrigatório se defeitos graves)", required: false },
             ].map(section => (
               <div key={section.key}>

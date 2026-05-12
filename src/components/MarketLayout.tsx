@@ -51,6 +51,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
   const t = useMarketT();
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
   const NAV_ITEMS = isDealer
     ? DEALER_NAV_DEFS

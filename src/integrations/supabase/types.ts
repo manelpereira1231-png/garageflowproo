@@ -4656,6 +4656,27 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_risk_inspections: {
+        Args: { _filter?: string; _limit?: number }
+        Returns: {
+          audit_status: string
+          completed_at: string
+          id: string
+          listing_id: string
+          overall_score: number
+          recommendation: string
+          risk_flags: Json
+          risk_level: string
+          risk_score: number
+          shop_id: string
+          shop_name: string
+          technician_name: string
+        }[]
+      }
+      admin_set_audit_status: {
+        Args: { _new_status: string; _report_id: string }
+        Returns: undefined
+      }
       calculate_inspection_risk: {
         Args: { _report_id: string }
         Returns: undefined

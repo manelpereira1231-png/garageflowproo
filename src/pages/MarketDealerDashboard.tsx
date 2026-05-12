@@ -271,7 +271,7 @@ export default function MarketDealerDashboard() {
                 </div>
                 {recent.length === 0 ? (
                   <div className="text-center py-8 text-sm text-slate-200">
-                    <Car className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                    <Car className="w-10 h-10 mx-auto mb-2 text-amber-500/60" />
                     <p>Sem viaturas publicadas.</p>
                     <Button asChild size="sm" className="mt-3 bg-amber-500 hover:bg-amber-400 text-slate-900">
                       <Link to="/market/sell">Publicar a primeira</Link>

@@ -244,7 +244,7 @@ export default function MarketProfile() {
                 </div>
                 <div>
                   <Label htmlFor="company" className="text-zinc-100">Nome do Stand / Razão Social</Label>
-                  <Input id="company" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Auto Stand Lisboa, Lda." className="bg-zinc-950/60 border-zinc-800 text-white" />
+                  <Input id="company" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Auto Stand Lisboa, Lda." className="bg-zinc-950/80 border-zinc-700 text-white placeholder:text-zinc-500" />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -259,7 +259,7 @@ export default function MarketProfile() {
                     <Label htmlFor="lic" className="text-zinc-100">Nº Licença IMT</Label>
                     <div className="relative">
                       <Award className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
-                      <Input id="lic" value={dealerLicense} onChange={e => setDealerLicense(e.target.value)} placeholder="Ex: 12345/CE" className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
+                      <Input id="lic" value={dealerLicense} onChange={e => setDealerLicense(e.target.value)} placeholder="Ex: 12345/CE" className="pl-9 bg-zinc-950/80 border-zinc-700 text-white placeholder:text-zinc-500" />
                     </div>
                   </div>
                 </div>
@@ -268,14 +268,14 @@ export default function MarketProfile() {
                     <Label htmlFor="phone" className="text-zinc-100">Telefone comercial</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
-                      <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+351..." className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
+                      <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+351..." className="pl-9 bg-zinc-950/80 border-zinc-700 text-white placeholder:text-zinc-500" />
                     </div>
                   </div>
                   <div>
                     <Label htmlFor="location" className="text-zinc-100">Morada / Cidade</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-100" />
-                      <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="Lisboa, Porto..." className="pl-9 bg-zinc-950/60 border-zinc-800 text-white" />
+                      <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="Lisboa, Porto..." className="pl-9 bg-zinc-950/80 border-zinc-700 text-white placeholder:text-zinc-500" />
                     </div>
                   </div>
                 </div>

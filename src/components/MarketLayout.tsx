@@ -21,6 +21,15 @@ const NAV_ITEM_DEFS = [
   { path: "/market/profile", labelKey: "market.nav.profile", icon: User },
 ];
 
+// Dealer navigation — distinct from particular
+const DEALER_NAV_DEFS = [
+  { path: "/market/dealer-dashboard", label: "Painel Stand", icon: Building2 },
+  { path: "/market/dealer/bulk", label: "Bulk listing", icon: Sparkles },
+  { path: "/market/my-listings", label: "Inventário", icon: Car },
+  { path: "/market/messages", label: "Mensagens", icon: MessageCircle },
+  { path: "/market/profile", label: "Stand", icon: Settings },
+];
+
 // Context to detect when MarketLayout is already mounted higher up.
 // Lets pages keep `<MarketLayout>` wrappers without producing a double chrome
 // when the router-level layout is in use (nested routing path).

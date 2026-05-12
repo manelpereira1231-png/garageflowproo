@@ -104,7 +104,7 @@ export function generateInspectionPDF({ listing, report, shop, seller }: ReportD
   if (shop) {
     doc.setFillColor(254, 252, 232);
     doc.setDrawColor(254, 215, 170);
-    doc.roundedRect(margin, y, pageWidth - margin * 2, 18, 2, 2, "FD");
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 26, 2, 2, "FD");
     doc.setFontSize(8);
     doc.setTextColor(120, 53, 15);
     doc.setFont("helvetica", "bold");
@@ -113,12 +113,43 @@ export function generateInspectionPDF({ listing, report, shop, seller }: ReportD
     doc.setFontSize(11);
     doc.setTextColor(15, 23, 42);
     doc.text(shop.name || "Oficina parceira", margin + 4, y + 12);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`ID oficina: ${shop.id?.slice(0, 8).toUpperCase() || "—"}${shop.nif ? `  ·  NIF ${shop.nif}` : ""}`, margin + 4, y + 17);
     if (report.technician_name) {
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Técnico responsável: ${report.technician_name}`, margin + 4, y + 16);
+      doc.text(`Técnico responsável: ${report.technician_name}`, margin + 4, y + 21);
     }
-    y += 24;
+    y += 30;
+  }
+
+  // Audit / location block
+  if (report.inspection_lat || report.mileage_at_inspection || report.started_at) {
+    doc.setFillColor(239, 246, 255);
+    doc.setDrawColor(191, 219, 254);
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 26, 2, 2, "FD");
+    doc.setFontSize(8);
+    doc.setTextColor(30, 64, 175);
+    doc.setFont("helvetica", "bold");
+    doc.text("AUDITORIA FÍSICA DA INSPEÇÃO", margin + 4, y + 6);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    if (report.mileage_at_inspection) {
+      doc.text(`Km registada: ${Number(report.mileage_at_inspection).toLocaleString("pt-PT")} km`, margin + 4, y + 11);
+    }
+    if (report.inspection_lat && report.inspection_lng) {
+      const loc = [report.inspection_city, report.inspection_country].filter(Boolean).join(", ");
+      doc.text(
+        `GPS: ${Number(report.inspection_lat).toFixed(5)}, ${Number(report.inspection_lng).toFixed(5)}${loc ? "  ·  " + loc : ""}`,
+        margin + 4, y + 16
+      );
+    }
+    if (report.started_at && report.completed_at) {
+      doc.text(
+        `Início: ${new Date(report.started_at).toLocaleString("pt-PT")}  ·  Conclusão: ${new Date(report.completed_at).toLocaleString("pt-PT")}`,
+        margin + 4, y + 21
+      );
+    }
+    y += 30;
   }
 
   // Mechanical checklist

@@ -321,6 +321,7 @@ const adminRoutes = [
   { path: "/admin/finance", element: <AdminFinance /> },
   { path: "/admin/system", element: <AdminSystemControl /> },
   { path: "/admin/coupons", element: <AdminCoupons /> },
+  { path: "/admin/risk-engine", element: <AdminRiskEngine /> },
 ];
 
 const shopRoutes = [

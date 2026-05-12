@@ -196,13 +196,35 @@ export default function MarketAuth() {
   ]), []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${
+      isDealer
+        ? "bg-zinc-950"
+        : "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"
+    }`}>
+      {/* Background — distinct per account type */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl" />
+        {isDealer ? (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(245,158,11,0.10),transparent_45%),radial-gradient(circle_at_85%_85%,rgba(234,179,8,0.08),transparent_45%)]" />
+            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent 0 14px, rgba(245,158,11,0.6) 14px 15px)" }} />
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+          </>
+        ) : (
+          <>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl" />
+          </>
+        )}
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
+      {/* Top bar with account-type badge for clarity */}
+      {isDealer && (
+        <div className="absolute top-0 inset-x-0 z-10 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-zinc-900 py-1.5 text-center text-[11px] font-bold tracking-[0.25em] uppercase shadow-lg">
+          <Award className="inline w-3 h-3 mr-1.5 -mt-0.5" /> Conta Profissional · Stand · Comissão 1%
+        </div>
+      )}
+
+      <div className={`absolute ${isDealer ? "top-10" : "top-4"} right-4 z-10`}>
         <Select value={language} onValueChange={(v: any) => setLanguage(v)}>
           <SelectTrigger className="w-[100px] h-8 text-xs bg-slate-800/80 border-slate-700 text-slate-300">
             <Globe className="w-3.5 h-3.5 mr-1" />
@@ -219,39 +241,57 @@ export default function MarketAuth() {
       </div>
 
       <Link
-        to="/market"
-        className="absolute top-4 left-4 z-10 text-xs flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+        to={isDealer ? "/market" : "/market"}
+        className={`absolute ${isDealer ? "top-10" : "top-4"} left-4 z-10 text-xs flex items-center gap-1 text-slate-400 hover:text-white transition-colors`}
       >
         <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Market
       </Link>
 
-      <div className={`w-full ${isDealer ? "max-w-4xl" : "max-w-md"} relative z-10`}>
+      <div className={`w-full ${isDealer ? "max-w-5xl mt-8" : "max-w-md"} relative z-10`}>
         <div className="text-center mb-8">
-          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${isDealer ? "from-amber-300 to-amber-500" : "from-amber-400 to-amber-600"} flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/20`}>
-            {isDealer ? <Building2 className="w-8 h-8 text-slate-900" /> : <ShieldCheck className="w-8 h-8 text-slate-900" />}
-          </div>
-          <h1 className="text-2xl font-bold text-white">
-            {isDealer ? <>Registo de <span className="text-amber-400">Stand</span></> : <>GarageFlow <span className="text-amber-400">Market</span></>}
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {isDealer
-              ? "Conta profissional para stands com comissões reduzidas e ferramentas premium"
-              : mode === "signup"
-              ? "Crie a sua conta para comprar e vender carros certificados"
-              : mode === "forgot"
-              ? "Recupere o acesso à sua conta"
-              : "Aceda à sua conta de comprador ou vendedor"}
-          </p>
+          {isDealer ? (
+            <>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4">
+                <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-semibold text-amber-300 tracking-wider uppercase">Onboarding Profissional</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                Regista o teu <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">Stand</span>
+              </h1>
+              <p className="text-slate-400 text-sm mt-2 max-w-xl mx-auto">
+                Conta empresarial dedicada — fora do fluxo dos vendedores particulares. Ferramentas de inventário, página pública SEO e comissões reduzidas.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/20">
+                <ShieldCheck className="w-8 h-8 text-slate-900" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">
+                GarageFlow <span className="text-amber-400">Market</span>
+              </h1>
+              <p className="text-slate-400 text-sm mt-1">
+                {mode === "signup"
+                  ? "Crie a sua conta para comprar e vender carros certificados"
+                  : mode === "forgot"
+                  ? "Recupere o acesso à sua conta"
+                  : "Aceda à sua conta de comprador ou vendedor"}
+              </p>
+            </>
+          )}
         </div>
 
-        <div className={`grid ${isDealer ? "md:grid-cols-[1fr,360px]" : ""} gap-6`}>
+        <div className={`grid ${isDealer ? "md:grid-cols-[1fr,380px]" : ""} gap-6`}>
           {/* Form card */}
-          <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          <div className={`${isDealer ? "bg-zinc-900/90 border-amber-500/15" : "bg-slate-900/80 border-slate-800"} backdrop-blur-sm border rounded-2xl p-6 shadow-2xl`}>
             <div className="flex items-center gap-2 mb-6">
               {isDealer ? <Building2 className="w-5 h-5 text-amber-400" /> : <Car className="w-5 h-5 text-amber-400" />}
               <h2 className="text-lg font-semibold text-white">
-                {mode === "forgot" ? "Recuperar password" : mode === "login" ? "Entrar" : isDealer ? "Criar conta de Stand" : "Criar conta"}
+                {mode === "forgot" ? "Recuperar password" : mode === "login" ? "Entrar" : isDealer ? "Dados do Stand" : "Criar conta"}
               </h2>
+              {isDealer && mode === "signup" && (
+                <span className="ml-auto text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">B2B</span>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">

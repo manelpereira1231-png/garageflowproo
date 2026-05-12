@@ -81,27 +81,17 @@ export default function MarketKYCFlow({ userId, profile, onComplete }: KYCFlowPr
 
     setSubmitting(true);
     try {
-      const payload = {
-        user_id: userId,
-        ...form,
-        kyc_status: "submitted",
-        kyc_submitted_at: new Date().toISOString(),
-      };
-      const { data, error } = profile?.id
-        ? await supabase
-            .from("carity_seller_profiles")
-            .update(payload)
-            .eq("id", profile.id)
-            .select()
-            .single()
-        : await supabase
-            .from("carity_seller_profiles")
-            .insert(payload)
-            .select()
-            .single();
+      const { data, error } = await supabase.functions.invoke("market-kyc-auto-verify", {
+        body: { ...form },
+      });
       if (error) throw error;
-      toast.success(t("kyc.submitted"));
-      onComplete(data);
+      if (data?.status === "approved") {
+        toast.success("Identidade verificada ✓");
+        onComplete(data.profile);
+      } else {
+        toast.error(data?.reason || "Verificação falhou. Tenta novamente.");
+        if (data?.profile) onComplete(data.profile);
+      }
     } catch (e: any) {
       toast.error(e.message || t("kyc.submitError"));
     } finally {

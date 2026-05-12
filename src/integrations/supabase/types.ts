@@ -4656,6 +4656,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_inspection_risk: {
+        Args: { _report_id: string }
+        Returns: undefined
+      }
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
       check_shop_creation_limit: {
         Args: { _user_id: string }

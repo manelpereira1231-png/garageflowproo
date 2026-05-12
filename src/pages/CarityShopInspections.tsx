@@ -81,9 +81,15 @@ export default function CarityShopInspections() {
   const [reportLocked, setReportLocked] = useState(false);
   const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
     exterior_photos: [], interior_photos: [], engine_photos: [],
+    brakes_photos: [], suspension_photos: [],
     tire_photos: [], damage_photos: [],
   });
   const [uploading, setUploading] = useState<string | null>(null);
+  const [mileageAtInspection, setMileageAtInspection] = useState<string>("");
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [geo, setGeo] = useState<{ lat: number | null; lng: number | null; city: string; country: string; capturing: boolean }>({
+    lat: null, lng: null, city: "", country: "", capturing: false,
+  });
 
   // Step 1: Fast partner check (renders enrollment screen immediately)
   useEffect(() => {

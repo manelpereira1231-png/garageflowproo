@@ -780,6 +780,7 @@ export type Database = {
       }
       carity_inspection_reports: {
         Row: {
+          audit_status: string
           brakes_photos: Json
           brakes_status: string
           completed_at: string | null
@@ -793,6 +794,7 @@ export type Database = {
           id: string
           inspection_city: string | null
           inspection_country: string | null
+          inspection_duration_seconds: number | null
           inspection_id: string
           inspection_lat: number | null
           inspection_lng: number | null
@@ -805,6 +807,10 @@ export type Database = {
           overall_score: number
           recommendation: string
           report_hash: string | null
+          risk_calculated_at: string | null
+          risk_flags: Json
+          risk_level: string
+          risk_score: number
           shop_id: string
           started_at: string | null
           steering_status: string
@@ -818,6 +824,7 @@ export type Database = {
           verification_token: string | null
         }
         Insert: {
+          audit_status?: string
           brakes_photos?: Json
           brakes_status?: string
           completed_at?: string | null
@@ -831,6 +838,7 @@ export type Database = {
           id?: string
           inspection_city?: string | null
           inspection_country?: string | null
+          inspection_duration_seconds?: number | null
           inspection_id: string
           inspection_lat?: number | null
           inspection_lng?: number | null
@@ -843,6 +851,10 @@ export type Database = {
           overall_score?: number
           recommendation?: string
           report_hash?: string | null
+          risk_calculated_at?: string | null
+          risk_flags?: Json
+          risk_level?: string
+          risk_score?: number
           shop_id: string
           started_at?: string | null
           steering_status?: string
@@ -856,6 +868,7 @@ export type Database = {
           verification_token?: string | null
         }
         Update: {
+          audit_status?: string
           brakes_photos?: Json
           brakes_status?: string
           completed_at?: string | null
@@ -869,6 +882,7 @@ export type Database = {
           id?: string
           inspection_city?: string | null
           inspection_country?: string | null
+          inspection_duration_seconds?: number | null
           inspection_id?: string
           inspection_lat?: number | null
           inspection_lng?: number | null
@@ -881,6 +895,10 @@ export type Database = {
           overall_score?: number
           recommendation?: string
           report_hash?: string | null
+          risk_calculated_at?: string | null
+          risk_flags?: Json
+          risk_level?: string
+          risk_score?: number
           shop_id?: string
           started_at?: string | null
           steering_status?: string
@@ -4550,6 +4568,50 @@ export type Database = {
           },
         ]
       }
+      workshop_trust_scores: {
+        Row: {
+          approval_rate: number
+          audited_failed: number
+          avg_risk_score: number
+          flagged_inspections: number
+          last_recalculated_at: string
+          level: string
+          score: number
+          shop_id: string
+          total_inspections: number
+        }
+        Insert: {
+          approval_rate?: number
+          audited_failed?: number
+          avg_risk_score?: number
+          flagged_inspections?: number
+          last_recalculated_at?: string
+          level?: string
+          score?: number
+          shop_id: string
+          total_inspections?: number
+        }
+        Update: {
+          approval_rate?: number
+          audited_failed?: number
+          avg_risk_score?: number
+          flagged_inspections?: number
+          last_recalculated_at?: string
+          level?: string
+          score?: number
+          shop_id?: string
+          total_inspections?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_trust_scores_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       dealer_directory: {
@@ -4594,6 +4656,31 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_risk_inspections: {
+        Args: { _filter?: string; _limit?: number }
+        Returns: {
+          audit_status: string
+          completed_at: string
+          id: string
+          listing_id: string
+          overall_score: number
+          recommendation: string
+          risk_flags: Json
+          risk_level: string
+          risk_score: number
+          shop_id: string
+          shop_name: string
+          technician_name: string
+        }[]
+      }
+      admin_set_audit_status: {
+        Args: { _new_status: string; _report_id: string }
+        Returns: undefined
+      }
+      calculate_inspection_risk: {
+        Args: { _report_id: string }
+        Returns: undefined
+      }
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
       check_shop_creation_limit: {
         Args: { _user_id: string }
@@ -4698,6 +4785,10 @@ export type Database = {
       }
       recalculate_trust_score: {
         Args: { _seller_id: string }
+        Returns: undefined
+      }
+      recalculate_workshop_trust: {
+        Args: { _shop_id: string }
         Returns: undefined
       }
       redeem_coupon: {

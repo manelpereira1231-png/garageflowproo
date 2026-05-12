@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, FileText, BarChart3,
+  LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
@@ -50,6 +50,7 @@ const navSections = [
     label: "Sistema",
     items: [
       { path: "/admin/partners", label: "Parceiros", icon: Shield },
+      { path: "/admin/risk-engine", label: "Inspeções & Risk Engine", icon: ShieldAlert },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
       { path: "/admin/settings", label: "Configurações", icon: Settings },
     ],

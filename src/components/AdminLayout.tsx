@@ -50,6 +50,7 @@ const navSections = [
     label: "Sistema",
     items: [
       { path: "/admin/partners", label: "Parceiros", icon: Shield },
+      { path: "/admin/risk-engine", label: "Inspeções & Risk Engine", icon: ShieldAlert },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
       { path: "/admin/settings", label: "Configurações", icon: Settings },
     ],

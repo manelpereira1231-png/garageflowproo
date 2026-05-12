@@ -105,7 +105,6 @@ serve(async (req) => {
       kyc_submitted_at: new Date().toISOString(),
     };
     if (newStatus === "approved") {
-      update.kyc_approved_at = new Date().toISOString();
       update.kyc_rejection_reason = null;
     } else {
       update.kyc_rejection_reason = aiReason || "Verificação automática falhou. Tenta novamente com fotos mais nítidas.";

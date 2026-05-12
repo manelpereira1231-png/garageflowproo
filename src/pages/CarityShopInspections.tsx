@@ -768,8 +768,10 @@ export default function CarityShopInspections() {
             {[
               { key: "exterior_photos", label: "Exterior — mín. 2 fotos (frente, trás, laterais)", required: true },
               { key: "interior_photos", label: "Interior — mín. 2 fotos (painel, bancos, quilometragem)", required: true },
-              { key: "engine_photos", label: "Motor — mín. 1 foto (compartimento do motor)", required: true },
-              { key: "tire_photos", label: "Pneus — estado do piso", required: false },
+              { key: "engine_photos", label: "Motor — mín. 1 foto do compartimento", required: true },
+              { key: "brakes_photos", label: "Travões — mín. 1 foto (discos / pastilhas)", required: true },
+              { key: "suspension_photos", label: "Suspensão — mín. 1 foto (amortecedores / triangulações)", required: true },
+              { key: "tire_photos", label: "Pneus — mín. 1 foto (estado do piso)", required: true },
               { key: "damage_photos", label: "Danos encontrados (obrigatório se defeitos graves)", required: false },
             ].map(section => (
               <div key={section.key}>

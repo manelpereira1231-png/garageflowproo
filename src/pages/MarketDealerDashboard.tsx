@@ -206,7 +206,7 @@ export default function MarketDealerDashboard() {
           {/* Quota bar */}
           <div className="mt-5 bg-slate-900/60 rounded-xl p-3 border border-slate-800">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-slate-400">Quota de viaturas ({planMeta.label})</span>
+              <span className="text-slate-200">Quota de viaturas ({planMeta.label})</span>
               <span className="text-white font-semibold">{stats.total} / {planMeta.max === 9999 ? "∞" : planMeta.max}</span>
             </div>
             <Progress value={quotaPct} className="h-2 bg-slate-800" />
@@ -236,7 +236,7 @@ export default function MarketDealerDashboard() {
                   </div>
                   <div>
                     <p className="text-white font-semibold">{pendingPay.length} viatura(s) à espera de pagamento da inspeção</p>
-                    <p className="text-xs text-slate-400 mt-0.5">A inspeção independente é cobrada diretamente no teu cartão via Stripe — nunca há pagamentos manuais.</p>
+                    <p className="text-xs text-slate-200 mt-0.5">A inspeção independente é cobrada diretamente no teu cartão via Stripe — nunca há pagamentos manuais.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -270,7 +270,7 @@ export default function MarketDealerDashboard() {
                   </Link>
                 </div>
                 {recent.length === 0 ? (
-                  <div className="text-center py-8 text-sm text-slate-400">
+                  <div className="text-center py-8 text-sm text-slate-200">
                     <Car className="w-10 h-10 mx-auto mb-2 text-slate-600" />
                     <p>Sem viaturas publicadas.</p>
                     <Button asChild size="sm" className="mt-3 bg-amber-500 hover:bg-amber-400 text-slate-900">
@@ -291,8 +291,8 @@ export default function MarketDealerDashboard() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-white truncate">{l.title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-400">{l.status}</Badge>
-                            <span className="text-[11px] text-slate-500">{(l.views_count || 0)} vistas</span>
+                            <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-200">{l.status}</Badge>
+                            <span className="text-[11px] text-slate-300">{(l.views_count || 0)} vistas</span>
                           </div>
                         </div>
                         <span className="text-sm font-semibold text-amber-400">{Number(l.price || 0).toLocaleString("pt-PT")}€</span>
@@ -309,14 +309,14 @@ export default function MarketDealerDashboard() {
                   <ShieldCheck className="w-4 h-4 text-amber-400" /> Inspeções independentes
                 </h2>
                 {inspections.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-4">Sem inspeções agendadas.</p>
+                  <p className="text-sm text-slate-200 text-center py-4">Sem inspeções agendadas.</p>
                 ) : (
                   <div className="space-y-2">
                     {inspections.map((i) => (
                       <div key={i.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-800/40 border border-slate-800">
                         <div className="min-w-0">
                           <p className="text-sm text-white truncate">{i.carity_listings?.title || "Viatura"}</p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-300">
                             {i.scheduled_at ? new Date(i.scheduled_at).toLocaleString("pt-PT") : "Por agendar"}
                           </p>
                         </div>
@@ -325,7 +325,7 @@ export default function MarketDealerDashboard() {
                     ))}
                   </div>
                 )}
-                <p className="text-[11px] text-slate-500 mt-3 flex items-start gap-1.5">
+                <p className="text-[11px] text-slate-300 mt-3 flex items-start gap-1.5">
                   <ShieldCheck className="w-3 h-3 mt-0.5 text-amber-400 shrink-0" />
                   Inspeções obrigatoriamente feitas por oficinas independentes — anti-fraude garantido.
                 </p>
@@ -344,7 +344,7 @@ export default function MarketDealerDashboard() {
                 <p className="text-2xl font-bold text-white">{planMeta.label}</p>
                 <p className="text-amber-400 text-sm font-medium">{planMeta.price}</p>
                 {profile?.dealer_active_until && currentPlan !== "free" && (
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-200 mt-1">
                     Renova em {new Date(profile.dealer_active_until).toLocaleDateString("pt-PT")}
                   </p>
                 )}
@@ -359,7 +359,7 @@ export default function MarketDealerDashboard() {
             </Card>
 
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold px-1">
+              <p className="text-xs uppercase tracking-wider text-slate-300 font-semibold px-1">
                 {currentPlan === "free" ? "Ativar plano" : "Mudar de plano"}
               </p>
               {(["starter", "pro", "unlimited"] as DealerPlan[])
@@ -379,7 +379,7 @@ export default function MarketDealerDashboard() {
                           <Icon className="w-4 h-4 text-amber-400" />
                           <div>
                             <p className="text-sm font-semibold text-white">{m.label}</p>
-                            <p className="text-[11px] text-slate-400">Até {m.max === 9999 ? "ilimitados" : m.max} carros · 1% comissão</p>
+                            <p className="text-[11px] text-slate-200">Até {m.max === 9999 ? "ilimitados" : m.max} carros · 1% comissão</p>
                           </div>
                         </div>
                         <span className="text-amber-400 text-sm font-semibold">{m.price}</span>
@@ -390,7 +390,7 @@ export default function MarketDealerDashboard() {
             </div>
 
             <Card className="bg-slate-900/40 border-slate-800">
-              <CardContent className="p-4 text-[11px] text-slate-400 space-y-1.5">
+              <CardContent className="p-4 text-[11px] text-slate-200 space-y-1.5">
                 <div className="flex items-start gap-1.5"><Award className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" /> Comissão reduzida de 3% → 1% em todos os planos.</div>
                 <div className="flex items-start gap-1.5"><Globe className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" /> Página pública dedicada com SEO.</div>
                 <div className="flex items-start gap-1.5"><ShieldCheck className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" /> Inspeções independentes obrigatórias — confiança total.</div>
@@ -414,7 +414,7 @@ function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string
     <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-3.5`}>
       <Icon className="w-4 h-4 mb-1.5" />
       <p className="text-2xl font-bold text-white leading-none">{value}</p>
-      <p className="text-[11px] text-slate-400 mt-1">{label}</p>
+      <p className="text-[11px] text-slate-200 mt-1">{label}</p>
     </div>
   );
 }

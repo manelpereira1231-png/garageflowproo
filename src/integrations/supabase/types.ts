@@ -4766,6 +4766,10 @@ export type Database = {
         Args: { _seller_id: string }
         Returns: undefined
       }
+      recalculate_workshop_trust: {
+        Args: { _shop_id: string }
+        Returns: undefined
+      }
       redeem_coupon: {
         Args: { _code: string; _shop_id: string }
         Returns: Json

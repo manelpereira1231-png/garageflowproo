@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Lock, User, ArrowLeft, Globe, Car, ShieldCheck, Phone, MapPin, Eye, EyeOff, Building2, Hash, Award, Percent, Zap, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { getUserAccessProfile } from "@/lib/authRealm";
 
 export default function MarketAuth() {
   const { language, setLanguage } = useLanguage();
@@ -43,17 +44,9 @@ export default function MarketAuth() {
       .slice(0, 60);
 
   const isMarketContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
-    const { data: roles } = await supabase
-      .from("user_roles" as any)
-      .select("role")
-      .eq("user_id", userId);
-
-    const userRoles = (roles || []).map((role: any) => role.role);
-    const hasGarageRole = userRoles.includes("garage_owner") || userRoles.includes("super_admin");
-    const hasMarketRole = userRoles.includes("buyer") || userRoles.includes("seller");
-    const isMarketAccount = userMetadata?.carity_user === true || userMetadata?.account_type === "particular";
-
-    return !hasGarageRole && (hasMarketRole || isMarketAccount);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) return false;
+    return (await getUserAccessProfile(user)).isMarketUser;
   };
 
   useEffect(() => {
@@ -70,8 +63,6 @@ export default function MarketAuth() {
         navigate(redirect, { replace: true });
         return;
       }
-
-      await supabase.auth.signOut();
     };
 
     void syncExistingSession();
@@ -100,7 +91,6 @@ export default function MarketAuth() {
         if (error) throw error;
 
         if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
-          await supabase.auth.signOut();
           throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
         }
 

@@ -31,24 +31,28 @@ export type Realm = "erp" | "market";
 export const ERP_STORAGE_KEY = "gf-erp-auth";
 export const MARKET_STORAGE_KEY = "gf-market-auth";
 
-function makeClient(storageKey: string): SupabaseClient<Database> {
+function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> {
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
       storageKey,
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: detectRealm() === realm,
     },
   });
 }
 
-export const erpSupabase = makeClient(ERP_STORAGE_KEY);
-export const marketSupabase = makeClient(MARKET_STORAGE_KEY);
+export const erpSupabase = makeClient(ERP_STORAGE_KEY, "erp");
+export const marketSupabase = makeClient(MARKET_STORAGE_KEY, "market");
 
 /** Detect realm from current URL. Default = ERP. */
 export function detectRealm(pathname?: string): Realm {
-  const p = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/");
+  const p = pathname ?? (typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/");
+  const query = p.includes("?") ? p.slice(p.indexOf("?")) : "";
+  const realmParam = new URLSearchParams(query).get("realm");
+  if (realmParam === "market") return "market";
+  if (realmParam === "erp") return "erp";
   if (p.startsWith("/market")) return "market";
   // market.* subdomain support
   if (typeof window !== "undefined" && window.location.hostname.startsWith("market.")) return "market";

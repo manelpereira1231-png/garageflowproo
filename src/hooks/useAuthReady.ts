@@ -75,10 +75,10 @@ function ensureAuthReadySubscription() {
 }
 
 export function useAuthReady() {
-  ensureAuthReadySubscription();
   return useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
+      ensureAuthReadySubscription();
       return () => listeners.delete(listener);
     },
     () => authState,

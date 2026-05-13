@@ -4212,6 +4212,62 @@ export type Database = {
           },
         ]
       }
+      vehicle_trust_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          km_reported: number | null
+          plate: string | null
+          reference_id: string | null
+          reference_type: string | null
+          shop_id: string | null
+          source: string
+          vehicle_id: string | null
+          verified: boolean
+          vin: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          km_reported?: number | null
+          plate?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string | null
+          source?: string
+          vehicle_id?: string | null
+          verified?: boolean
+          vin?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          km_reported?: number | null
+          plate?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          shop_id?: string | null
+          source?: string
+          vehicle_id?: string | null
+          verified?: boolean
+          vin?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trust_events_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           client_id: string
@@ -4780,6 +4836,10 @@ export type Database = {
       mark_shop_payout_paid: {
         Args: { _payout_id: string; _reference?: string }
         Returns: undefined
+      }
+      market_vehicle_trust_check: {
+        Args: { _km_listing?: number; _plate?: string; _vin?: string }
+        Returns: Json
       }
       next_invoice_number: { Args: { _shop_id: string }; Returns: string }
       next_number: {

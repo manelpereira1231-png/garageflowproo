@@ -18,6 +18,7 @@ import MarketPriceCompare from "@/components/MarketPriceCompare";
 import MarketContractSigning from "@/components/MarketContractSigning";
 import MarketSatisfactionWindow from "@/components/MarketSatisfactionWindow";
 import MarketAlertSubscribe from "@/components/MarketAlertSubscribe";
+import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
@@ -463,6 +464,10 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <ShieldCheck className="h-5 w-5 mx-auto mb-1 text-amber-500" /><p className="font-semibold text-amber-600 dark:text-amber-400">{report?.overall_score ? (report.overall_score / 10).toFixed(1) : '-'}/10</p><p className="text-xs text-muted-foreground">Classificação</p>
                   </div>
+                </div>
+
+                <div className="mb-4">
+                  <VehicleTrustBadge vin={listing.vin} plate={listing.plate} listingKm={listing.mileage} />
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">

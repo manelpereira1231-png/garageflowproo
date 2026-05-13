@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +11,7 @@ type AuthReadyState = {
 const listeners = new Set<() => void>();
 let authState: AuthReadyState = { isReady: false, session: null, user: null };
 let initialized = false;
+let hydrationId = 0;
 
 function emit() {
   listeners.forEach((listener) => listener());
@@ -25,13 +26,17 @@ function ensureAuthReadySubscription() {
   if (initialized) return;
   initialized = true;
 
+  const initialHydrationId = ++hydrationId;
   supabase.auth.getSession().then(({ data: { session } }) => {
+    if (initialHydrationId !== hydrationId) return;
     setAuthState({ session: session ?? null, user: session?.user ?? null, isReady: true });
   });
 
   supabase.auth.onAuthStateChange((event, nextSession) => {
+    hydrationId++;
     if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-      setAuthState({ session: nextSession ?? null, isReady: true });
+      const nextUser = nextSession?.user ?? authState.user ?? null;
+      setAuthState({ session: nextSession ?? null, user: nextUser, isReady: true });
       return;
     }
 
@@ -70,17 +75,13 @@ function ensureAuthReadySubscription() {
 }
 
 export function useAuthReady() {
-  const [snapshot, setSnapshot] = useState<AuthReadyState>(authState);
-
-  useEffect(() => {
-    ensureAuthReadySubscription();
-    const update = () => setSnapshot(authState);
-    listeners.add(update);
-    update();
-    return () => {
-      listeners.delete(update);
-    };
-  }, []);
-
-  return snapshot;
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      ensureAuthReadySubscription();
+      return () => listeners.delete(listener);
+    },
+    () => authState,
+    () => authState,
+  );
 }

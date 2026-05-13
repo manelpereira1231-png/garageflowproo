@@ -5,14 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { getUserAccessProfile } from "@/lib/authRealm";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
 const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
@@ -282,21 +281,6 @@ function AuthRouteRedirect({
   return <Navigate to={fallback} replace />;
 }
 
-function AuthContextSwitch({ message }: { message: string }) {
-  useEffect(() => {
-    void supabase.auth.signOut();
-  }, []);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
-    </div>
-  );
-}
-
 const adminRoutes = [
   { path: "/admin", element: <AdminDashboard /> },
   { path: "/admin/shops", element: <AdminShops /> },
@@ -493,22 +477,12 @@ function AuthenticatedRoutes() {
 
     let cancelled = false;
     const checkUserState = async () => {
-      // Run partner + roles queries in PARALLEL (was sequential).
-      const [partnerRes, rolesRes] = await Promise.all([
-        supabase.from("partners").select("id").eq("auth_user_id", user.id).maybeSingle(),
-        supabase.from("user_roles" as any).select("role").eq("user_id", user.id),
-      ]);
+      const accessProfile = await getUserAccessProfile(user);
 
       if (cancelled) return;
 
-      const isAff = !!partnerRes.data;
-      const userRoles = (rolesRes.data || []).map((r: any) => r.role);
-      const hasGarageRole = userRoles.includes("garage_owner");
-      const hasCarityRole = userRoles.includes("buyer") || userRoles.includes("seller");
-      const metaCarity =
-        user.user_metadata?.carity_user === true ||
-        user.user_metadata?.account_type === "particular";
-      const isCarity = !isAff && !hasGarageRole && (hasCarityRole || metaCarity);
+      const isAff = accessProfile.isAffiliate;
+      const isCarity = accessProfile.isMarketUser;
 
       setIsAffiliate(isAff);
       setIsCarityUser(isCarity);
@@ -606,10 +580,7 @@ function AuthenticatedRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/admin/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route
-              path="/auth"
-              element={<AuthContextSwitch message="A terminar a sessão do Market para abrir o login do GarageFlow..." />}
-            />
+            <Route path="/auth" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
             <Route element={<MarketLayout />}>
               {marketAuthedRoutes.map((route) => (

@@ -10,6 +10,7 @@ import { Wrench, Mail, Lock, User, ArrowLeft, Building2, Globe, Eye, EyeOff } fr
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import { getUserAccessProfile } from "@/lib/authRealm";
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 
@@ -40,17 +41,9 @@ export default function Auth() {
   };
 
   const isGarageContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
-    const { data: roles } = await supabase
-      .from("user_roles" as any)
-      .select("role")
-      .eq("user_id", userId);
-
-    const userRoles = (roles || []).map((role: any) => role.role);
-    const hasGarageRole = userRoles.includes("garage_owner") || userRoles.includes("super_admin");
-    const hasMarketRole = userRoles.includes("buyer") || userRoles.includes("seller");
-    const isMarketAccount = userMetadata?.carity_user === true || userMetadata?.account_type === "particular";
-
-    return hasGarageRole || (!hasMarketRole && !isMarketAccount);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) return false;
+    return (await getUserAccessProfile(user)).isGarageUser;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +62,6 @@ export default function Auth() {
         if (error) throw error;
 
         if (!signInData.user || !(await isGarageContextAccount(signInData.user.id, signInData.user.user_metadata))) {
-          await supabase.auth.signOut();
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
         }
 

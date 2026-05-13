@@ -171,11 +171,13 @@ export default function MarketAuth() {
       if (signUpData?.user && !signUpData.session) {
         const { data: signInData } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (signInData?.session) {
+          await mirrorActiveRealmSession("market");
           toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
           navigate(redirect, { replace: true });
           return;
         }
       } else if (signUpData?.session) {
+        await mirrorActiveRealmSession("market");
         toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
         navigate(redirect, { replace: true });
         return;

@@ -330,6 +330,68 @@ export default function Agenda() {
         ))}
       </div>
 
+      {/* Pending portal bookings */}
+      {pendingPortalAppts.length > 0 && (
+        <Card className="border-amber-400/40 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <CalendarClock className="w-4 h-4" />
+              {pendingPortalAppts.length} {pendingPortalAppts.length === 1 ? 'marcação pendente do portal' : 'marcações pendentes do portal'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pb-3">
+            {pendingPortalAppts.map((a) => (
+              <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-md bg-card border border-border">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{a.client_name || 'Cliente'} <span className="text-muted-foreground font-normal">— {a.service_type}</span></p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.date} às {String(a.time).slice(0, 5)}
+                    {a.client_phone && <> · {a.client_phone}</>}
+                    {a.client_email && <> · {a.client_email}</>}
+                  </p>
+                  {a.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{a.notes}"</p>}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" onClick={() => acceptAppointment(a)} className="bg-green-600 hover:bg-green-700 text-white">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aceitar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => openReschedule(a)}>
+                    <CalendarClock className="w-3.5 h-3.5 mr-1" /> Reagendar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => rejectAppointment(a)} className="text-destructive hover:text-destructive">
+                    <CalendarX className="w-3.5 h-3.5 mr-1" /> Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reschedule dialog */}
+      <Dialog open={!!rescheduleAppt} onOpenChange={(o) => !o && setRescheduleAppt(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reagendar marcação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nova data</Label>
+              <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Nova hora</Label>
+              <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+            </div>
+            <p className="text-xs text-muted-foreground">O cliente recebe email com a nova data e a marcação fica confirmada.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleAppt(null)}>Cancelar</Button>
+            <Button onClick={submitReschedule}>Confirmar e notificar cliente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Booking link info */}
       {bookingUrl && (
         <Card className="border-primary/20 bg-primary/5">

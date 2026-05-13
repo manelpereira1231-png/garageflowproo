@@ -5,8 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import type { Session } from "@supabase/supabase-js";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";

@@ -34,6 +34,7 @@ interface Appointment {
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-500/15 text-amber-700 border-amber-300 dark:text-amber-400",
   scheduled: "bg-blue-500/15 text-blue-700 border-blue-300 dark:text-blue-400",
   confirmed: "bg-green-500/15 text-green-700 border-green-300 dark:text-green-400",
   completed: "bg-muted text-muted-foreground border-border",
@@ -41,6 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_DOT: Record<string, string> = {
+  pending: "bg-amber-500",
   scheduled: "bg-blue-500",
   confirmed: "bg-green-500",
   completed: "bg-muted-foreground",

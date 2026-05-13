@@ -105,7 +105,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
-    await supabase.auth.signOut();
+    // Sign out ONLY of the Market realm — ERP session (if any) stays intact.
+    await signOutRealm("market");
     toast.success(t("market.toast.signedOut"));
     navigate("/market");
   };

@@ -11,6 +11,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/pushNotifications";
+import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 
 interface InvoiceItem {
@@ -180,13 +181,20 @@ export default function InvoiceForm() {
     toast.success(issueNow ? t('invoices.issued') : t('invoices.saved'));
     // Push notification for new invoice
     if (issueNow && activeId) {
-      const clientName = clients.find(c => c.id === clientId)?.name || '';
+      const client = clients.find(c => c.id === clientId);
+      const clientName = client?.name || '';
       sendPushNotification(
         activeId,
         `Nova fatura ${number}`,
         `${clientName} — ${shop?.currency || '€'}${total.toFixed(2)}`,
         `/invoices/${invoice.id}`
       );
+      if (client?.email) {
+        void sendLifecycleEmail({
+          shopId: activeId, templateKey: "invoice_created", entityId: invoice.id, recipient: client.email,
+          data: { client_name: clientName, invoice_number: number, total: `${(shop?.currency || '€')}${total.toFixed(2)}` },
+        });
+      }
     }
     navigate(`/invoices/${invoice.id}`);
     setSaving(false);

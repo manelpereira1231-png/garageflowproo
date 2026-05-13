@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {
@@ -107,12 +108,19 @@ export default function Clients() {
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
     };
 
-    const { error } = editingId
-      ? await supabase.from("clients").update(payload).eq("id", editingId)
-      : await supabase.from("clients").insert(payload);
+    const result = editingId
+      ? await supabase.from("clients").update(payload).eq("id", editingId).select("id").single()
+      : await supabase.from("clients").insert(payload).select("id").single();
+    const { error } = result;
 
     if (error) toast.error(error.message);
     else {
+      if (!editingId && form.email && result.data?.id) {
+        void sendLifecycleEmail({
+          shopId, templateKey: "welcome", entityId: result.data.id, recipient: form.email,
+          data: { client_name: form.name },
+        });
+      }
       toast.success(editingId ? t('clients.updated') : t('clients.created'));
       setOpen(false);
       setEditingId(null);

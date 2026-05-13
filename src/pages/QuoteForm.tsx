@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { completeOnboarding } from "@/hooks/useOnboardingStatus";
+import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -146,17 +147,27 @@ export default function QuoteForm() {
       const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "ORC" });
       const num = numData || `ORC-${Date.now()}`;
 
-      const { error } = await supabase.from("quotes").insert({
+      const { data: inserted, error } = await supabase.from("quotes").insert({
         shop_id: shopId, number: num, date: now.toISOString().split('T')[0],
         validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
         lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),
-      });
+      }).select("id").single();
 
       if (error) toast.error(error.message);
       else {
         completeOnboarding();
         toast.success(t('quotes.created'));
+        // Lifecycle: first quote email
+        try {
+          const { data: cli } = await supabase.from("clients").select("name, email").eq("id", clientId).maybeSingle();
+          if (cli?.email && inserted?.id) {
+            void sendLifecycleEmail({
+              shopId, templateKey: "first_quote", entityId: inserted.id, recipient: cli.email,
+              data: { client_name: cli.name, quote_number: num, total: `${total.toFixed(2)} €` },
+            });
+          }
+        } catch {}
         navigate("/quotes");
       }
     }

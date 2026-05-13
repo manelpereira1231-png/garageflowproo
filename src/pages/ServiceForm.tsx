@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
+import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
@@ -121,16 +122,32 @@ export default function ServiceForm() {
       const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "SRV" });
       const num = numData || `SRV-${Date.now()}`;
 
-      const { error } = await supabase.from("work_orders").insert({
+      const { data: inserted, error } = await supabase.from("work_orders").insert({
         shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, status: 'open', notes: notes || null,
-      });
+      }).select("id").single();
 
       if (error) toast.error(error.message);
-      else { toast.success(t('services.created')); navigate("/services"); }
+      else {
+        toast.success(t('services.created'));
+        try {
+          const { data: cli } = await supabase.from("clients").select("name, email").eq("id", clientId).maybeSingle();
+          const { data: veh } = await supabase.from("vehicles").select("plate, brand, model").eq("id", vehicleId).maybeSingle();
+          if (cli?.email && inserted?.id) {
+            void sendLifecycleEmail({
+              shopId, templateKey: "first_work_order", entityId: inserted.id, recipient: cli.email,
+              data: {
+                client_name: cli.name, wo_number: num,
+                vehicle: veh ? `${veh.brand ?? ""} ${veh.model ?? ""} ${veh.plate ?? ""}`.trim() : "",
+              },
+            });
+          }
+        } catch {}
+        navigate("/services");
+      }
     }
     setLoading(false);
   };

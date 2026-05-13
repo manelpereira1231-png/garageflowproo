@@ -490,22 +490,12 @@ function AuthenticatedRoutes() {
 
     let cancelled = false;
     const checkUserState = async () => {
-      // Run partner + roles queries in PARALLEL (was sequential).
-      const [partnerRes, rolesRes] = await Promise.all([
-        supabase.from("partners").select("id").eq("auth_user_id", user.id).maybeSingle(),
-        supabase.from("user_roles" as any).select("role").eq("user_id", user.id),
-      ]);
+      const accessProfile = await getUserAccessProfile(user);
 
       if (cancelled) return;
 
-      const isAff = !!partnerRes.data;
-      const userRoles = (rolesRes.data || []).map((r: any) => r.role);
-      const hasGarageRole = userRoles.includes("garage_owner");
-      const hasCarityRole = userRoles.includes("buyer") || userRoles.includes("seller");
-      const metaCarity =
-        user.user_metadata?.carity_user === true ||
-        user.user_metadata?.account_type === "particular";
-      const isCarity = !isAff && !hasGarageRole && (hasCarityRole || metaCarity);
+      const isAff = accessProfile.isAffiliate;
+      const isCarity = accessProfile.isMarketUser;
 
       setIsAffiliate(isAff);
       setIsCarityUser(isCarity);
@@ -603,10 +593,7 @@ function AuthenticatedRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/admin/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route
-              path="/auth"
-              element={<AuthContextSwitch message="A terminar a sessão do Market para abrir o login do GarageFlow..." />}
-            />
+            <Route path="/auth" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
             <Route element={<MarketLayout />}>
               {marketAuthedRoutes.map((route) => (

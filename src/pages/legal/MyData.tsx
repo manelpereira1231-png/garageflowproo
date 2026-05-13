@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { myDataI18n } from "@/i18n/myDataI18n";
@@ -80,7 +81,7 @@ export default function MyData() {
       const { error } = await supabase.functions.invoke("user-data-delete");
       if (error) throw error;
       toast.success(t.deleteSuccess);
-      await supabase.auth.signOut();
+      await signOutRealm("erp");
       setTimeout(() => navigate("/"), 1500);
     } catch (e: any) {
       toast.error(t.deleteFailed + " " + (e.message || ""));

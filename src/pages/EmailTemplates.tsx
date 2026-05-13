@@ -44,7 +44,7 @@ const KEY_LABELS: Record<string, { label: string; help: string; vars: string[] }
 
 export default function EmailTemplates() {
   const navigate = useNavigate();
-  const { activeShopId } = useActiveShopId();
+  const activeShopId = useActiveShopId();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);

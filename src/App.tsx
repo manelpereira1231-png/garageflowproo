@@ -643,7 +643,8 @@ function AuthenticatedRoutes() {
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
           <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} realm="garage" />} />
           <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
-          {publicRoutesWithoutMarketAuth.map((route) => (
+          <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+          {publicRoutesAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />

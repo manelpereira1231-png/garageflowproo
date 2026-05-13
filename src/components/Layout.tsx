@@ -41,6 +41,7 @@ import {
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";

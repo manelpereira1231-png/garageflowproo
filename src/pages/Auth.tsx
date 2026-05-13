@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
 import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { erpSupabase } from "@/integrations/supabase/realmClients";
+import { mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

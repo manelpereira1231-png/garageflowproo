@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { getUserAccessProfile } from "@/lib/authRealm";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
 const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
@@ -283,10 +284,6 @@ function AuthRouteRedirect({
 }
 
 function AuthContextSwitch({ message }: { message: string }) {
-  useEffect(() => {
-    void supabase.auth.signOut();
-  }, []);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-6">
       <div className="flex flex-col items-center gap-3 text-center">

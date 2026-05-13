@@ -437,6 +437,8 @@ const publicRoutes = [
 ];
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
+// For authenticated users, "/" should redirect to their app dashboard — never show the landing page again.
+const publicRoutesAuthed = publicRoutesWithoutMarketAuth.filter((route) => route.path !== "/");
 
 const USER_TYPE_CACHE_KEY = "garageflow_user_type_cache";
 

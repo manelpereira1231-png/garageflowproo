@@ -337,6 +337,7 @@ export type Database = {
           notes: string | null
           service_type: string
           shop_id: string
+          source: string
           status: string
           time: string
           vehicle_id: string | null
@@ -353,6 +354,7 @@ export type Database = {
           notes?: string | null
           service_type?: string
           shop_id: string
+          source?: string
           status?: string
           time: string
           vehicle_id?: string | null
@@ -369,6 +371,7 @@ export type Database = {
           notes?: string | null
           service_type?: string
           shop_id?: string
+          source?: string
           status?: string
           time?: string
           vehicle_id?: string | null

@@ -581,7 +581,8 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={route.element} />
               ))}
             </Route>
-            {publicRoutesWithoutMarketAuth.map((route) => (
+            <Route path="/" element={<Navigate to="/admin" replace />} />
+            {publicRoutesAuthed.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />

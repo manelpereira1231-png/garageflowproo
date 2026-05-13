@@ -1,15 +1,22 @@
 import { useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { erpSupabase, marketSupabase, detectRealm, type Realm } from "@/integrations/supabase/realmClients";
+import { installRealmAuthListeners, mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 
 type AuthReadyState = {
   isReady: boolean;
   session: Session | null;
   user: User | null;
+  realm: Realm;
 };
 
 const listeners = new Set<() => void>();
-let authState: AuthReadyState = { isReady: false, session: null, user: null };
+let authState: AuthReadyState = {
+  isReady: false,
+  session: null,
+  user: null,
+  realm: detectRealm(),
+};
 let initialized = false;
 let hydrationId = 0;
 
@@ -22,21 +29,36 @@ function setAuthState(next: Partial<AuthReadyState>) {
   emit();
 }
 
+function pickClient(realm: Realm) {
+  return realm === "market" ? marketSupabase : erpSupabase;
+}
+
 function ensureAuthReadySubscription() {
   if (initialized) return;
   initialized = true;
 
+  installRealmAuthListeners();
+
+  const realm = detectRealm();
+  authState = { ...authState, realm };
+
+  const client = pickClient(realm);
   const initialHydrationId = ++hydrationId;
-  supabase.auth.getSession().then(({ data: { session } }) => {
+
+  client.auth.getSession().then(({ data: { session } }) => {
     if (initialHydrationId !== hydrationId) return;
     setAuthState({ session: session ?? null, user: session?.user ?? null, isReady: true });
+    void mirrorActiveRealmSession(realm);
   });
 
-  supabase.auth.onAuthStateChange((event, nextSession) => {
+  // Subscribe to the active realm's auth events. Other realm's events are
+  // intentionally ignored here — they belong to a different product surface.
+  client.auth.onAuthStateChange((event, nextSession) => {
     hydrationId++;
     if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
       const nextUser = nextSession?.user ?? authState.user ?? null;
       setAuthState({ session: nextSession ?? null, user: nextUser, isReady: true });
+      void mirrorActiveRealmSession(realm);
       return;
     }
 
@@ -46,21 +68,19 @@ function ensureAuthReadySubscription() {
       user: authState.user?.id === nextUser?.id ? authState.user : nextUser,
       isReady: true,
     });
+    void mirrorActiveRealmSession(realm);
   });
 
-  // Stay-logged-in hardening: proactively refresh the session when the user
-  // returns to the tab or regains connectivity. Prevents silent logouts after
-  // long idle periods (mobile PWAs especially).
+  // Stay-logged-in hardening: refresh active realm session on focus / online.
   if (typeof window !== "undefined") {
     const refreshIfStale = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await client.auth.getSession();
         const session = data.session;
         if (!session) return;
         const expiresAt = (session.expires_at ?? 0) * 1000;
-        // Refresh if token expires within the next 5 minutes
         if (expiresAt - Date.now() < 5 * 60 * 1000) {
-          await supabase.auth.refreshSession();
+          await client.auth.refreshSession();
         }
       } catch {
         // Silent — autoRefreshToken will retry; never log the user out on transient errors.

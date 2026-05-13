@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { marketSupabase } from "@/integrations/supabase/realmClients";
+import { mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

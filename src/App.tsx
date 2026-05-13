@@ -437,6 +437,8 @@ const publicRoutes = [
 ];
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
+// For authenticated users, "/" should redirect to their app dashboard — never show the landing page again.
+const publicRoutesAuthed = publicRoutesWithoutMarketAuth.filter((route) => route.path !== "/");
 
 const USER_TYPE_CACHE_KEY = "garageflow_user_type_cache";
 
@@ -579,7 +581,8 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={route.element} />
               ))}
             </Route>
-            {publicRoutesWithoutMarketAuth.map((route) => (
+            <Route path="/" element={<Navigate to="/admin" replace />} />
+            {publicRoutesAuthed.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
@@ -613,7 +616,8 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={route.element} />
               ))}
             </Route>
-            {publicRoutesWithoutMarketAuth.map((route) => (
+            <Route path="/" element={<Navigate to="/market/dashboard" replace />} />
+            {publicRoutesAuthed.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/dashboard" element={<Navigate to="/market/dashboard" replace />} />
@@ -639,7 +643,8 @@ function AuthenticatedRoutes() {
           <Route path="/admin/*" element={<Navigate to={defaultRoute} replace />} />
           <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} realm="garage" />} />
           <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
-          {publicRoutesWithoutMarketAuth.map((route) => (
+          <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+          {publicRoutesAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />

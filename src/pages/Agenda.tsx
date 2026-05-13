@@ -80,6 +80,87 @@ export default function Agenda() {
     loadData();
   }, [activeShopId, weekStart]);
 
+  // Realtime: instantly receive new portal bookings + status updates
+  useEffect(() => {
+    if (!activeShopId) return;
+    const channel = supabase
+      .channel(`agenda-${activeShopId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `shop_id=eq.${activeShopId}` }, (payload: any) => {
+        const row = payload.new || payload.old;
+        if (payload.eventType === 'INSERT' && row?.source === 'portal') {
+          toast({ title: t('agenda.newPortalBooking') || 'Nova marcação do portal', description: `${row.client_name || ''} — ${row.date} ${String(row.time).slice(0,5)}` });
+        }
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeShopId]);
+
+  // Reschedule dialog state
+  const [rescheduleAppt, setRescheduleAppt] = useState<Appointment | null>(null);
+  const [rescheduleData, setRescheduleData] = useState({ date: '', time: '09:00' });
+
+  const acceptAppointment = async (appt: Appointment) => {
+    const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', appt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (appt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: appt.client_email,
+          subject: `Marcação confirmada — ${appt.date} ${String(appt.time).slice(0,5)}`,
+          html: `<p>Olá ${appt.client_name || ''},</p><p>A sua marcação foi <strong>confirmada</strong> para <strong>${appt.date} às ${String(appt.time).slice(0,5)}</strong>.</p><p>Serviço: ${appt.service_type}</p><p>Obrigado.</p>`,
+        },
+      }).catch(() => {});
+    }
+    toast({ title: t('agenda.confirmed') || 'Confirmada' });
+    loadData();
+  };
+
+  const openReschedule = (appt: Appointment) => {
+    setRescheduleAppt(appt);
+    setRescheduleData({ date: appt.date, time: String(appt.time).slice(0, 5) });
+  };
+
+  const submitReschedule = async () => {
+    if (!rescheduleAppt) return;
+    const { error } = await supabase.from('appointments')
+      .update({ date: rescheduleData.date, time: rescheduleData.time, status: 'confirmed' } as any)
+      .eq('id', rescheduleAppt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (rescheduleAppt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: rescheduleAppt.client_email,
+          subject: `Marcação reagendada — ${rescheduleData.date} ${rescheduleData.time}`,
+          html: `<p>Olá ${rescheduleAppt.client_name || ''},</p><p>A sua marcação foi <strong>reagendada</strong> para <strong>${rescheduleData.date} às ${rescheduleData.time}</strong>.</p><p>Serviço: ${rescheduleAppt.service_type}</p>`,
+        },
+      }).catch(() => {});
+    }
+    setRescheduleAppt(null);
+    toast({ title: t('agenda.rescheduled') || 'Reagendada e cliente notificado' });
+    loadData();
+  };
+
+  const rejectAppointment = async (appt: Appointment) => {
+    const { error } = await supabase.from('appointments').update({ status: 'cancelled' } as any).eq('id', appt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (appt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: appt.client_email,
+          subject: 'Marcação não confirmada',
+          html: `<p>Olá ${appt.client_name || ''},</p><p>Lamentamos, a sua marcação para ${appt.date} ${String(appt.time).slice(0,5)} não pôde ser confirmada. Por favor escolha outra data no portal.</p>`,
+        },
+      }).catch(() => {});
+    }
+    loadData();
+  };
+
+  const pendingPortalAppts = useMemo(
+    () => appointments.filter(a => a.status === 'pending' && a.source === 'portal'),
+    [appointments]
+  );
+
   const loadData = async () => {
     if (!activeShopId) return;
     setLoading(true);

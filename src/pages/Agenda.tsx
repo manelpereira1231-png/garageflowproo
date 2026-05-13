@@ -31,6 +31,7 @@ interface Appointment {
   client_phone: string | null;
   client_email: string | null;
   created_at: string;
+  source?: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {

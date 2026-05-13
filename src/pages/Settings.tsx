@@ -27,6 +27,7 @@ const TIMEZONES = [
 
 export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
+  const navigate = useNavigate();
   const { plan, shopId: subShopId } = useSubscription();
   const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);

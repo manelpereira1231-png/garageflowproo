@@ -98,7 +98,7 @@ function ensureAuthReadySubscription(realm: Realm) {
 
 export function useAuthReady(realmOverride?: Realm) {
   const location = useLocation();
-  const realm = realmOverride ?? detectRealm(location.pathname);
+  const realm = realmOverride ?? detectRealm(`${location.pathname}${location.search}`);
 
   return useSyncExternalStore(
     (listener) => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,7 +102,7 @@ export default function AffiliateDashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOutRealm("erp");
     navigate("/");
   };
 

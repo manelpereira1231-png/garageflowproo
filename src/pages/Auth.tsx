@@ -3,7 +3,6 @@ import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/
 import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
-import { mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,7 +61,6 @@ export default function Auth() {
       } else if (mode === 'login') {
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await mirrorActiveRealmSession("erp");
 
         if (!signInData.user || !(await isGarageContextAccount(signInData.user.id, signInData.user.user_metadata))) {
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
@@ -85,7 +83,6 @@ export default function Auth() {
           }
         });
         if (error) throw error;
-        await mirrorActiveRealmSession("erp");
 
         if (signUpData?.user) {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });

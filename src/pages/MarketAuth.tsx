@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { marketSupabase } from "@/integrations/supabase/realmClients";
-import { mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,7 +90,6 @@ export default function MarketAuth() {
       if (mode === "login") {
         const { data: signInData, error } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await mirrorActiveRealmSession("market");
 
         if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
           throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
@@ -171,13 +169,11 @@ export default function MarketAuth() {
       if (signUpData?.user && !signUpData.session) {
         const { data: signInData } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (signInData?.session) {
-          await mirrorActiveRealmSession("market");
           toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
           navigate(redirect, { replace: true });
           return;
         }
       } else if (signUpData?.session) {
-        await mirrorActiveRealmSession("market");
         toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
         navigate(redirect, { replace: true });
         return;

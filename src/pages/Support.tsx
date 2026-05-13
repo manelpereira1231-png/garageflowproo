@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, LifeBuoy, Clock, ShieldCheck } from "lucide-react";
 import { useSupportI18n } from "@/i18n/supportI18n";
+import LanguageDropdown from "@/components/LanguageDropdown";
 
 export default function Support() {
   const navigate = useNavigate();
@@ -107,10 +108,11 @@ export default function Support() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("back")}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <LifeBuoy className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-semibold">{t("title")}</h1>
           </div>
+          <LanguageDropdown />
         </div>
       </div>
 

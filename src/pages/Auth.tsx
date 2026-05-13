@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
 import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { erpSupabase } from "@/integrations/supabase/realmClients";
+import { mirrorActiveRealmSession } from "@/integrations/supabase/realmBridge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,15 +53,16 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await erpSupabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
         toast.success(t('auth.resetSent'));
         setMode('login');
       } else if (mode === 'login') {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await mirrorActiveRealmSession("erp");
 
         if (!signInData.user || !(await isGarageContextAccount(signInData.user.id, signInData.user.user_metadata))) {
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
@@ -69,7 +72,7 @@ export default function Auth() {
       } else {
         const refCode = searchParams.get('ref') || '';
 
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await erpSupabase.auth.signUp({
           email, password,
           options: {
             data: {
@@ -82,6 +85,7 @@ export default function Auth() {
           }
         });
         if (error) throw error;
+        await mirrorActiveRealmSession("erp");
 
         if (signUpData?.user) {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { Suspense, createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
@@ -104,7 +105,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
-    await supabase.auth.signOut();
+    // Sign out ONLY of the Market realm — ERP session (if any) stays intact.
+    await signOutRealm("market");
     toast.success(t("market.toast.signedOut"));
     navigate("/market");
   };

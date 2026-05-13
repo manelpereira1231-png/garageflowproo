@@ -41,6 +41,7 @@ import {
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -261,7 +262,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
-    await supabase.auth.signOut();
+    // Sign out ONLY of the ERP realm — Market session (if any) stays intact.
+    await signOutRealm("erp");
   };
 
   const handlePrefetch = useCallback((path: string) => {

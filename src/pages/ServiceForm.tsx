@@ -135,13 +135,13 @@ export default function ServiceForm() {
         toast.success(t('services.created'));
         try {
           const { data: cli } = await supabase.from("clients").select("name, email").eq("id", clientId).maybeSingle();
-          const { data: veh } = await supabase.from("vehicles").select("plate, brand, model").eq("id", vehicleId).maybeSingle();
+          const { data: veh } = await supabase.from("vehicles").select("plate, make, model").eq("id", vehicleId).maybeSingle();
           if (cli?.email && inserted?.id) {
             void sendLifecycleEmail({
               shopId, templateKey: "first_work_order", entityId: inserted.id, recipient: cli.email,
               data: {
                 client_name: cli.name, wo_number: num,
-                vehicle: veh ? `${veh.brand ?? ""} ${veh.model ?? ""} ${veh.plate ?? ""}`.trim() : "",
+                vehicle: veh ? `${veh.make ?? ""} ${veh.model ?? ""} ${veh.plate ?? ""}`.trim() : "",
               },
             });
           }

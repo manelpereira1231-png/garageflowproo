@@ -466,6 +466,10 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                   </div>
                 </div>
 
+                <div className="mb-4">
+                  <VehicleTrustBadge vin={listing.vin} plate={listing.plate} listingKm={listing.mileage} />
+                </div>
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400">
                     <CheckCircle className="h-3 w-3 mr-1" /> Inspeção feita

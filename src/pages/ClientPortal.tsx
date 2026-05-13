@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Car, User, Wrench, FileText, Receipt, Clock, CheckCircle, Truck, XCircle, Calendar, Phone, Mail, Building2, CalendarPlus, ClipboardCheck, CreditCard, Eye, ChevronRight, AlertCircle } from "lucide-react";
+import { Loader2, Car, User, Wrench, FileText, Receipt, Clock, CheckCircle, Truck, XCircle, Calendar, Phone, Mail, Building2, CalendarPlus, ClipboardCheck, CreditCard, Eye, ChevronRight, AlertCircle, Globe, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PortalPushToggle } from "@/components/PortalPushToggle";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -298,7 +299,34 @@ export default function ClientPortal() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [lang, setLang] = useState<string>("pt");
+  const getInitialLang = (): string => {
+    try {
+      const stored = localStorage.getItem(`garageflow_portal_lang_${token}`);
+      if (stored && translations[stored]) return stored;
+    } catch {}
+    try {
+      const country = localStorage.getItem('garageflow_country');
+      if (country === 'PT') return 'pt';
+      if (country === 'BR') return 'pt-BR';
+      if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country || '')) return 'es';
+      if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA', 'IN'].includes(country || '')) return 'en';
+    } catch {}
+    const b = (typeof navigator !== 'undefined' ? navigator.language : '').toLowerCase();
+    if (b === 'pt-br') return 'pt-BR';
+    if (b.startsWith('pt')) return 'pt';
+    if (b.startsWith('es')) return 'es';
+    if (b.startsWith('en')) return 'en';
+    return 'en';
+  };
+  const [lang, setLangState] = useState<string>(getInitialLang);
+  const [langPicked, setLangPicked] = useState<boolean>(() => {
+    try { return !!localStorage.getItem(`garageflow_portal_lang_${token}`); } catch { return false; }
+  });
+  const setLang = (l: string) => {
+    setLangState(l);
+    setLangPicked(true);
+    try { localStorage.setItem(`garageflow_portal_lang_${token}`, l); } catch {}
+  };
   const [activeTab, setActiveTab] = useState<Tab>("services");
   
   // Service detail
@@ -335,7 +363,7 @@ export default function ClientPortal() {
         .eq("id", c.shop_id)
         .single();
 
-      if (s?.language && translations[s.language]) setLang(s.language);
+      if (!langPicked && s?.language && translations[s.language]) setLangState(s.language);
       setShop(s);
 
       const [woRes, qRes, iRes, vRes, icRes, pRes] = await Promise.all([
@@ -474,6 +502,28 @@ export default function ClientPortal() {
                 {shop?.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{shop.phone}</span>}
               </div>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold uppercase text-background/80 hover:bg-background/10 transition-colors" aria-label="Language">
+                  <Globe className="h-4 w-4" />
+                  <span>{lang === 'pt-BR' ? 'BR' : lang.toUpperCase()}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[180px]">
+                {[
+                  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+                  { code: 'pt-BR', label: 'Português (BR)', flag: '🇧🇷' },
+                  { code: 'en', label: 'English', flag: '🇬🇧' },
+                  { code: 'es', label: 'Español', flag: '🇪🇸' },
+                ].map((l) => (
+                  <DropdownMenuItem key={l.code} onClick={() => setLang(l.code)} className="cursor-pointer flex items-center gap-2">
+                    <span className="text-base leading-none">{l.flag}</span>
+                    <span className="flex-1">{l.label}</span>
+                    {l.code === lang && <Check className="h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

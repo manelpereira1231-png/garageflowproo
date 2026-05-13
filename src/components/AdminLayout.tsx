@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { prefetchRoute } from "@/lib/routePrefetch";
@@ -107,7 +108,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
-    await supabase.auth.signOut();
+    await signOutRealm("erp");
   };
 
   return (

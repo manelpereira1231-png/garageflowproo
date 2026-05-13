@@ -299,7 +299,34 @@ export default function ClientPortal() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [lang, setLang] = useState<string>("pt");
+  const getInitialLang = (): string => {
+    try {
+      const stored = localStorage.getItem(`garageflow_portal_lang_${token}`);
+      if (stored && translations[stored]) return stored;
+    } catch {}
+    try {
+      const country = localStorage.getItem('garageflow_country');
+      if (country === 'PT') return 'pt';
+      if (country === 'BR') return 'pt-BR';
+      if (['ES', 'MX', 'AR', 'CL', 'CO', 'PE'].includes(country || '')) return 'es';
+      if (['UK', 'US', 'AU', 'CA', 'IE', 'NZ', 'SG', 'ZA', 'IN'].includes(country || '')) return 'en';
+    } catch {}
+    const b = (typeof navigator !== 'undefined' ? navigator.language : '').toLowerCase();
+    if (b === 'pt-br') return 'pt-BR';
+    if (b.startsWith('pt')) return 'pt';
+    if (b.startsWith('es')) return 'es';
+    if (b.startsWith('en')) return 'en';
+    return 'en';
+  };
+  const [lang, setLangState] = useState<string>(getInitialLang);
+  const [langPicked, setLangPicked] = useState<boolean>(() => {
+    try { return !!localStorage.getItem(`garageflow_portal_lang_${token}`); } catch { return false; }
+  });
+  const setLang = (l: string) => {
+    setLangState(l);
+    setLangPicked(true);
+    try { localStorage.setItem(`garageflow_portal_lang_${token}`, l); } catch {}
+  };
   const [activeTab, setActiveTab] = useState<Tab>("services");
   
   // Service detail

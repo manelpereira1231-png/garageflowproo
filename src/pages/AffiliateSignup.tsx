@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -164,7 +165,7 @@ export default function AffiliateSignup() {
       if (!response.ok) throw new Error(data?.error || "Erro ao registar. Tente novamente.");
 
       if (data.session?.access_token && data.session?.refresh_token) {
-        await supabase.auth.setSession({
+        await erpSupabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });

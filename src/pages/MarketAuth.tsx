@@ -46,7 +46,7 @@ export default function MarketAuth() {
       .slice(0, 60);
 
   const isMarketContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await marketSupabase.auth.getUser();
     if (!user || user.id !== userId) return false;
     return (await getUserAccessProfile(user)).isMarketUser;
   };
@@ -55,7 +55,7 @@ export default function MarketAuth() {
     let active = true;
 
     const syncExistingSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await marketSupabase.auth.getSession();
       if (!active || !session?.user) return;
 
       const isAllowed = await isMarketContextAccount(session.user.id, session.user.user_metadata);
@@ -79,7 +79,7 @@ export default function MarketAuth() {
     setLoading(true);
     try {
       if (mode === "forgot") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await marketSupabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
@@ -89,7 +89,7 @@ export default function MarketAuth() {
       }
 
       if (mode === "login") {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
         if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
@@ -124,7 +124,7 @@ export default function MarketAuth() {
         }
       }
 
-      const { data: signUpData, error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await marketSupabase.auth.signUp({
         email,
         password,
         options: {
@@ -168,7 +168,7 @@ export default function MarketAuth() {
 
       // Auto sign-in (email auto-confirm enabled) so dealer goes straight to dashboard
       if (signUpData?.user && !signUpData.session) {
-        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (signInData?.session) {
           toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
           navigate(redirect, { replace: true });

@@ -1526,6 +1526,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_lifecycle_log: {
+        Row: {
+          entity_id: string
+          error: string | null
+          id: string
+          recipient: string
+          sent_at: string
+          shop_id: string
+          status: string
+          template_key: string
+        }
+        Insert: {
+          entity_id: string
+          error?: string | null
+          id?: string
+          recipient: string
+          sent_at?: string
+          shop_id: string
+          status?: string
+          template_key: string
+        }
+        Update: {
+          entity_id?: string
+          error?: string | null
+          id?: string
+          recipient?: string
+          sent_at?: string
+          shop_id?: string
+          status?: string
+          template_key?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -1561,6 +1594,47 @@ export type Database = {
           to_email?: string
         }
         Relationships: []
+      }
+      email_templates: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          html_body: string
+          id: string
+          shop_id: string
+          subject: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          html_body: string
+          id?: string
+          shop_id: string
+          subject: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          html_body?: string
+          id?: string
+          shop_id?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inspection_checklists: {
         Row: {
@@ -4870,6 +4944,10 @@ export type Database = {
           _shop_id: string
         }
         Returns: string
+      }
+      seed_email_templates_for_shop: {
+        Args: { _shop_id: string }
+        Returns: undefined
       }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }

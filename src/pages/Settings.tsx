@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ const TIMEZONES = [
 
 export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
+  const navigate = useNavigate();
   const { plan, shopId: subShopId } = useSubscription();
   const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);
@@ -136,6 +138,21 @@ export default function SettingsPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">{t('settings.subtitle')}</p>
       </div>
+
+      <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/settings/email-templates")}>
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-sm">Emails automáticos</p>
+              <p className="text-xs text-muted-foreground">Boas-vindas, orçamentos, serviços e faturas</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-muted-foreground" />
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Logo & Branding */}

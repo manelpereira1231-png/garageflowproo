@@ -363,7 +363,7 @@ export default function ClientPortal() {
         .eq("id", c.shop_id)
         .single();
 
-      if (s?.language && translations[s.language]) setLang(s.language);
+      if (!langPicked && s?.language && translations[s.language]) setLangState(s.language);
       setShop(s);
 
       const [woRes, qRes, iRes, vRes, icRes, pRes] = await Promise.all([

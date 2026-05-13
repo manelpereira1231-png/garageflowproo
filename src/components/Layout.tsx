@@ -171,6 +171,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [activeShopId, isCarityPartner]);
 
+  // Global realtime: notify on new portal appointment bookings (works in Lite mode too)
+  useEffect(() => {
+    if (!activeShopId) return;
+    const channel = supabase
+      .channel(`global-appts-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "appointments", filter: `shop_id=eq.${activeShopId}` },
+        (payload: any) => {
+          const row = payload.new;
+          if (row?.source !== "portal") return;
+          try {
+            const raw = localStorage.getItem(`garageflow_sidebar_prefs_${activeShopId}`);
+            if (raw && JSON.parse(raw)?.mutedNotif?.includes("/agenda")) return;
+          } catch { /* ignore */ }
+          toast.info("📅 Nova marcação do portal", {
+            description: `${row.client_name || "Cliente"} — ${row.date} ${String(row.time || "").slice(0, 5)}`,
+            action: { label: "Ver agenda", onClick: () => window.location.assign("/agenda") },
+            duration: 20000,
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeShopId]);
+
+
   // Lite/Pro mode is fully user-controlled via the topbar toggle (Binance-style).
   // We no longer auto-exit Lite based on data activity — keeps the experience
   // predictable across sessions.

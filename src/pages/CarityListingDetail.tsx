@@ -18,6 +18,7 @@ import MarketPriceCompare from "@/components/MarketPriceCompare";
 import MarketContractSigning from "@/components/MarketContractSigning";
 import MarketSatisfactionWindow from "@/components/MarketSatisfactionWindow";
 import MarketAlertSubscribe from "@/components/MarketAlertSubscribe";
+import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";

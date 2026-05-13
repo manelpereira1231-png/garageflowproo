@@ -430,8 +430,9 @@ export default function ClientPortal() {
         time: bookingData.time,
         service_type: bookingData.service_type,
         notes: bookingData.notes,
-        status: 'scheduled',
-      });
+        status: 'pending',
+        source: 'portal',
+      } as any);
       if (error) throw error;
       toast.success(t('appointmentSuccess'));
       setBookingOpen(false);

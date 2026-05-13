@@ -31,9 +31,11 @@ interface Appointment {
   client_phone: string | null;
   client_email: string | null;
   created_at: string;
+  source?: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-500/15 text-amber-700 border-amber-300 dark:text-amber-400",
   scheduled: "bg-blue-500/15 text-blue-700 border-blue-300 dark:text-blue-400",
   confirmed: "bg-green-500/15 text-green-700 border-green-300 dark:text-green-400",
   completed: "bg-muted text-muted-foreground border-border",
@@ -41,6 +43,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_DOT: Record<string, string> = {
+  pending: "bg-amber-500",
   scheduled: "bg-blue-500",
   confirmed: "bg-green-500",
   completed: "bg-muted-foreground",
@@ -76,6 +79,87 @@ export default function Agenda() {
     if (!activeShopId) return;
     loadData();
   }, [activeShopId, weekStart]);
+
+  // Realtime: instantly receive new portal bookings + status updates
+  useEffect(() => {
+    if (!activeShopId) return;
+    const channel = supabase
+      .channel(`agenda-${activeShopId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `shop_id=eq.${activeShopId}` }, (payload: any) => {
+        const row = payload.new || payload.old;
+        if (payload.eventType === 'INSERT' && row?.source === 'portal') {
+          toast({ title: t('agenda.newPortalBooking') || 'Nova marcação do portal', description: `${row.client_name || ''} — ${row.date} ${String(row.time).slice(0,5)}` });
+        }
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeShopId]);
+
+  // Reschedule dialog state
+  const [rescheduleAppt, setRescheduleAppt] = useState<Appointment | null>(null);
+  const [rescheduleData, setRescheduleData] = useState({ date: '', time: '09:00' });
+
+  const acceptAppointment = async (appt: Appointment) => {
+    const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', appt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (appt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: appt.client_email,
+          subject: `Marcação confirmada — ${appt.date} ${String(appt.time).slice(0,5)}`,
+          html: `<p>Olá ${appt.client_name || ''},</p><p>A sua marcação foi <strong>confirmada</strong> para <strong>${appt.date} às ${String(appt.time).slice(0,5)}</strong>.</p><p>Serviço: ${appt.service_type}</p><p>Obrigado.</p>`,
+        },
+      }).catch(() => {});
+    }
+    toast({ title: t('agenda.confirmed') || 'Confirmada' });
+    loadData();
+  };
+
+  const openReschedule = (appt: Appointment) => {
+    setRescheduleAppt(appt);
+    setRescheduleData({ date: appt.date, time: String(appt.time).slice(0, 5) });
+  };
+
+  const submitReschedule = async () => {
+    if (!rescheduleAppt) return;
+    const { error } = await supabase.from('appointments')
+      .update({ date: rescheduleData.date, time: rescheduleData.time, status: 'confirmed' } as any)
+      .eq('id', rescheduleAppt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (rescheduleAppt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: rescheduleAppt.client_email,
+          subject: `Marcação reagendada — ${rescheduleData.date} ${rescheduleData.time}`,
+          html: `<p>Olá ${rescheduleAppt.client_name || ''},</p><p>A sua marcação foi <strong>reagendada</strong> para <strong>${rescheduleData.date} às ${rescheduleData.time}</strong>.</p><p>Serviço: ${rescheduleAppt.service_type}</p>`,
+        },
+      }).catch(() => {});
+    }
+    setRescheduleAppt(null);
+    toast({ title: t('agenda.rescheduled') || 'Reagendada e cliente notificado' });
+    loadData();
+  };
+
+  const rejectAppointment = async (appt: Appointment) => {
+    const { error } = await supabase.from('appointments').update({ status: 'cancelled' } as any).eq('id', appt.id);
+    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
+    if (appt.client_email) {
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: appt.client_email,
+          subject: 'Marcação não confirmada',
+          html: `<p>Olá ${appt.client_name || ''},</p><p>Lamentamos, a sua marcação para ${appt.date} ${String(appt.time).slice(0,5)} não pôde ser confirmada. Por favor escolha outra data no portal.</p>`,
+        },
+      }).catch(() => {});
+    }
+    loadData();
+  };
+
+  const pendingPortalAppts = useMemo(
+    () => appointments.filter(a => a.status === 'pending' && a.source === 'portal'),
+    [appointments]
+  );
 
   const loadData = async () => {
     if (!activeShopId) return;
@@ -245,6 +329,68 @@ export default function Agenda() {
           </Card>
         ))}
       </div>
+
+      {/* Pending portal bookings */}
+      {pendingPortalAppts.length > 0 && (
+        <Card className="border-amber-400/40 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <CalendarClock className="w-4 h-4" />
+              {pendingPortalAppts.length} {pendingPortalAppts.length === 1 ? 'marcação pendente do portal' : 'marcações pendentes do portal'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pb-3">
+            {pendingPortalAppts.map((a) => (
+              <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-md bg-card border border-border">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{a.client_name || 'Cliente'} <span className="text-muted-foreground font-normal">— {a.service_type}</span></p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.date} às {String(a.time).slice(0, 5)}
+                    {a.client_phone && <> · {a.client_phone}</>}
+                    {a.client_email && <> · {a.client_email}</>}
+                  </p>
+                  {a.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{a.notes}"</p>}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" onClick={() => acceptAppointment(a)} className="bg-green-600 hover:bg-green-700 text-white">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aceitar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => openReschedule(a)}>
+                    <CalendarClock className="w-3.5 h-3.5 mr-1" /> Reagendar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => rejectAppointment(a)} className="text-destructive hover:text-destructive">
+                    <CalendarX className="w-3.5 h-3.5 mr-1" /> Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reschedule dialog */}
+      <Dialog open={!!rescheduleAppt} onOpenChange={(o) => !o && setRescheduleAppt(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reagendar marcação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nova data</Label>
+              <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Nova hora</Label>
+              <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+            </div>
+            <p className="text-xs text-muted-foreground">O cliente recebe email com a nova data e a marcação fica confirmada.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleAppt(null)}>Cancelar</Button>
+            <Button onClick={submitReschedule}>Confirmar e notificar cliente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Booking link info */}
       {bookingUrl && (

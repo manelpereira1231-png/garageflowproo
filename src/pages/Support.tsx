@@ -107,10 +107,11 @@ export default function Support() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("back")}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <LifeBuoy className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-semibold">{t("title")}</h1>
           </div>
+          <LanguageDropdown />
         </div>
       </div>
 

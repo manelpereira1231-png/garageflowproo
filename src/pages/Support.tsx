@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, LifeBuoy, Clock, ShieldCheck } from "lucide-react";
 import { useSupportI18n } from "@/i18n/supportI18n";
+import LanguageDropdown from "@/components/LanguageDropdown";
 
 export default function Support() {
   const navigate = useNavigate();

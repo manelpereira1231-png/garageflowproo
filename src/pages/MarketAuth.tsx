@@ -91,6 +91,7 @@ export default function MarketAuth() {
       if (mode === "login") {
         const { data: signInData, error } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await mirrorActiveRealmSession("market");
 
         if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
           throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");

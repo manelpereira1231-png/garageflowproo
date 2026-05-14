@@ -165,21 +165,14 @@ export default function MarketAuth() {
         await supabase.from("carity_seller_profiles").insert(profilePayload);
       }
 
-      // Auto sign-in (email auto-confirm enabled) so dealer goes straight to dashboard
-      if (signUpData?.user && !signUpData.session) {
-        const { data: signInData } = await marketSupabase.auth.signInWithPassword({ email, password });
-        if (signInData?.session) {
-          toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
-          navigate(redirect, { replace: true });
-          return;
-        }
-      } else if (signUpData?.session) {
+      if (signUpData?.session) {
         toast.success(isDealer ? "Stand criado! Bem-vindo." : "Conta criada! Bem-vindo.");
         navigate(redirect, { replace: true });
         return;
       }
 
-      toast.success("Conta criada com sucesso! Verifique o seu email.");
+      toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
+      setMode("login");
     } catch (err: any) {
       toast.error(err.message);
     } finally {

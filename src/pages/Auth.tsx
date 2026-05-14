@@ -133,7 +133,7 @@ export default function Auth() {
           toast.success(t('auth.accountCreated'));
         } else {
           toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
-          setIsSignUp(false);
+          setMode('login');
         }
       }
     } catch (err: any) {

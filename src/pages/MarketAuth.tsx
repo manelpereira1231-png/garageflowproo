@@ -10,6 +10,7 @@ import { Mail, Lock, User, ArrowLeft, Globe, Car, ShieldCheck, Phone, MapPin, Ey
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { getUserAccessProfile } from "@/lib/authRealm";
+import { ensureSignupAllowed } from "@/lib/signupGuard";
 
 export default function MarketAuth() {
   const { language, setLanguage } = useLanguage();
@@ -122,6 +123,9 @@ export default function MarketAuth() {
           throw new Error("Este NIF já está registado por outro Stand. Se acredita que é um erro, contacte o suporte.");
         }
       }
+
+      // Anti-flood: server-side rate limit by IP and email
+      await ensureSignupAllowed(email, "market");
 
       const { data: signUpData, error } = await marketSupabase.auth.signUp({
         email,

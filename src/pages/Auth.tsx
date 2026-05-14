@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { getUserAccessProfile } from "@/lib/authRealm";
+import { ensureSignupAllowed } from "@/lib/signupGuard";
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 
@@ -69,6 +70,9 @@ export default function Auth() {
         toast.success(t('auth.welcomeBack'));
       } else {
         const refCode = searchParams.get('ref') || '';
+
+        // Anti-flood: server-side rate limit by IP and email
+        await ensureSignupAllowed(email, "erp");
 
         const { data: signUpData, error } = await erpSupabase.auth.signUp({
           email, password,

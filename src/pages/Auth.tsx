@@ -129,7 +129,12 @@ export default function Auth() {
         }
 
         trackSignupConversion(email);
-        toast.success(t('auth.accountCreated'));
+        if (signUpData?.session) {
+          toast.success(t('auth.accountCreated'));
+        } else {
+          toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
+          setIsSignUp(false);
+        }
       }
     } catch (err: any) {
       toast.error(err.message);

@@ -126,8 +126,30 @@ serve(async (req) => {
       });
     }
     log("Signature verified");
+    log(`Received event: ${event.type} (${event.id})`);
 
-    log(`Received event: ${event.type}`);
+    // IDEMPOTENCY: Stripe retries failed deliveries. Without this guard the
+    // same event can be processed multiple times (double activation, duplicate
+    // alerts). We record event.id BEFORE processing; PK conflict = already done.
+    try {
+      const { error: dupErr } = await supabaseAdmin
+        .from("stripe_webhook_events")
+        .insert({ event_id: event.id, event_type: event.type });
+      if (dupErr) {
+        // 23505 = unique_violation → event already processed, ack with 200.
+        if ((dupErr as any).code === "23505") {
+          log("Duplicate event, skipping", { eventId: event.id });
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        // Other DB errors: log but continue — better to risk a duplicate than miss the event.
+        log("Idempotency insert error (continuing)", { error: dupErr.message });
+      }
+    } catch (e) {
+      log("Idempotency check threw (continuing)", { error: (e as Error).message });
+    }
 
     switch (event.type) {
       case "invoice.paid": {

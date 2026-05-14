@@ -3750,6 +3750,27 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          payload: Json | null
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          payload?: Json | null
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          payload?: Json | null
+          processed_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_cycle: string
@@ -4920,6 +4941,7 @@ export type Database = {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
       }
+      purge_old_stripe_webhook_events: { Args: never; Returns: undefined }
       recalculate_trust_score: {
         Args: { _seller_id: string }
         Returns: undefined

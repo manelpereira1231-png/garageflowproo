@@ -82,6 +82,9 @@ verify_jwt = false
 [functions.connect-status]
 verify_jwt = false
 
+[functions.signup-guard]
+verify_jwt = false
+
 [functions.market-escrow-capture]
 verify_jwt = false
 

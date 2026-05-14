@@ -3695,6 +3695,33 @@ export type Database = {
           },
         ]
       }
+      signup_attempts: {
+        Row: {
+          attempted_at: string
+          blocked: boolean
+          email: string | null
+          id: string
+          ip_address: string | null
+          realm: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          blocked?: boolean
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          realm?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          blocked?: boolean
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          realm?: string | null
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -4840,6 +4867,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      check_signup_rate_limit: {
+        Args: { _email: string; _ip: string }
+        Returns: Json
+      }
       check_trial_eligibility: {
         Args: {
           _email: string
@@ -4941,6 +4972,7 @@ export type Database = {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
       }
+      purge_old_signup_attempts: { Args: never; Returns: undefined }
       purge_old_stripe_webhook_events: { Args: never; Returns: undefined }
       recalculate_trust_score: {
         Args: { _seller_id: string }

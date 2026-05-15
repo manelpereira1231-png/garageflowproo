@@ -136,6 +136,9 @@ const AdminFinance = lazyRetry(() => import("@/pages/admin/AdminFinance"));
 const AdminSystemControl = lazyRetry(() => import("@/pages/admin/AdminSystemControl"));
 const AdminCoupons = lazyRetry(() => import("@/pages/admin/AdminCoupons"));
 const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"));
+const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesGlobal"));
+const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
+const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({

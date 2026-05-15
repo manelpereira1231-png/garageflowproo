@@ -1,65 +1,69 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 // Hardcoded super admin email — checked FIRST, before any DB query,
 // so deleting shops/users can never lock out the super admin.
 const SUPER_ADMIN_EMAIL = "manelpereira11@gmail.com";
 
+/**
+ * Reads from useAuthReady (single shared subscription) instead of calling
+ * supabase.auth.getUser() on every mount. This eliminates a redundant
+ * /auth/user round-trip per page navigation that previously caused
+ * perceived "flicker" and slow first paint.
+ */
 export function useSuperAdmin() {
+  const { user, isReady } = useAuthReady();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const dbCheckedFor = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!isReady) return;
+
+    if (!user) {
+      setIsSuperAdmin(false);
+      setLoading(false);
+      dbCheckedFor.current = null;
+      return;
+    }
+
+    // Email-based check — instant, cannot be broken by DB changes
+    if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      setIsSuperAdmin(true);
+      setLoading(false);
+      return;
+    }
+
+    // Avoid re-querying for the same user across re-mounts
+    if (dbCheckedFor.current === user.id) return;
+    dbCheckedFor.current = user.id;
+
     let cancelled = false;
-
-    const check = async () => {
+    (async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error || !user) {
-          if (!cancelled) {
-            setIsSuperAdmin(false);
-            setLoading(false);
-          }
-          return;
+        const { data } = await supabase
+          .from("shop_users")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "super_admin")
+          .maybeSingle();
+        if (!cancelled) {
+          setIsSuperAdmin(!!data);
+          setLoading(false);
         }
-
-        // 1) Email-based check — instant, cannot be broken by DB changes
-        if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-          if (!cancelled) {
-            setIsSuperAdmin(true);
-            setLoading(false);
-          }
-          return;
-        }
-
-        // 2) Fallback: DB role check for any other super_admins added later
-        try {
-          const { data } = await supabase
-            .from("shop_users")
-            .select("role")
-            .eq("user_id", user.id)
-            .eq("role", "super_admin")
-            .maybeSingle();
-          if (!cancelled) setIsSuperAdmin(!!data);
-        } catch {
-          // DB error — not super admin via DB, that's OK
-          if (!cancelled) setIsSuperAdmin(false);
-        }
-
-        if (!cancelled) setLoading(false);
       } catch {
-        // Total failure — still resolve loading to avoid infinite spinner
         if (!cancelled) {
           setIsSuperAdmin(false);
           setLoading(false);
         }
       }
-    };
+    })();
 
-    check();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, user]);
 
   return { isSuperAdmin, loading };
 }

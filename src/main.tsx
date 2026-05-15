@@ -4,6 +4,10 @@ import App from "./App.tsx";
 import "./index.css";
 import { loadCountriesFromDB, detectCountryByIP } from "@/lib/regionConfig";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
+import { initSentry } from "@/lib/sentry";
+
+// Boot Sentry as early as possible (no-op if VITE_SENTRY_DSN unset).
+initSentry();
 
 const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());

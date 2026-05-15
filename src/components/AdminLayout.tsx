@@ -237,14 +237,20 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
           <div className="relative flex-1 max-w-md" ref={searchRef}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Pesquisar oficinas..." 
+              placeholder="Pesquisar oficinas ou matrículas..." 
               value={globalSearch} 
               onChange={e => setGlobalSearch(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setShowResults(true)}
+              onFocus={() => globalSearch.length >= 2 && setShowResults(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && globalSearch.trim().length >= 2) {
+                  navigate(`/admin/vehicles?q=${encodeURIComponent(globalSearch.trim())}`);
+                  setShowResults(false);
+                }
+              }}
               className="pl-9 h-9 text-sm"
             />
-            {showResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+            {showResults && globalSearch.length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
                 {searchResults.map(s => (
                   <button key={s.id} onClick={() => { navigate(`/admin/shops/${s.id}`); setGlobalSearch(""); setShowResults(false); }}
                     className="w-full text-left px-4 py-2.5 hover:bg-accent text-sm flex flex-col gap-0.5 border-b border-border last:border-0">
@@ -252,11 +258,13 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                     <span className="text-xs text-muted-foreground">{s.email}</span>
                   </button>
                 ))}
-              </div>
-            )}
-            {showResults && globalSearch.length >= 2 && searchResults.length === 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 px-4 py-3 text-sm text-muted-foreground">
-                Nenhum resultado encontrado
+                <button
+                  onClick={() => { navigate(`/admin/vehicles?q=${encodeURIComponent(globalSearch.trim())}`); setShowResults(false); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-accent text-sm border-t border-border bg-accent/30"
+                >
+                  <span className="font-medium text-amber-600">Procurar veículo "{globalSearch}"</span>
+                  <span className="block text-xs text-muted-foreground">ERP + Market — por matrícula, VIN, marca/modelo</span>
+                </button>
               </div>
             )}
           </div>

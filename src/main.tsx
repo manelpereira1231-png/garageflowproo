@@ -18,7 +18,9 @@ if (typeof window.requestIdleCallback === "function") {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <App />
-  </HelmetProvider>
+  <RootErrorBoundary>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  </RootErrorBoundary>
 );

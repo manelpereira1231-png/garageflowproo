@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { captureError } from "@/lib/sentry";
 
 interface State {
   hasError: boolean;
@@ -57,6 +58,7 @@ export class RootErrorBoundary extends Component<{ children: ReactNode }, State>
     // Best-effort logging; never throws.
     try {
       console.error("[RootErrorBoundary]", error, info?.componentStack);
+      captureError(error, { componentStack: info?.componentStack });
     } catch {
       /* noop */
     }

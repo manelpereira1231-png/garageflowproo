@@ -19,6 +19,7 @@ import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
+import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<ServiceStatus, string> = {
@@ -323,9 +324,22 @@ export default function Services() {
         {dataLoading && services.length === 0 ? (
           <ListSkeleton rows={5} />
         ) : filtered.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">
-            {totalCount === 0 ? t('services.empty') : t('services.noResults')}
-          </div>
+          totalCount === 0 ? (
+            <EmptyState
+              icon="🔧"
+              title={t('services.empty') || 'Ainda sem serviços'}
+              description={t('services.emptyDesc') || 'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
+              action={
+                <Link to="/services/new">
+                  <Button size="lg" className="px-6">
+                    <Plus className="w-4 h-4 mr-2" />{t('services.new') || 'Novo serviço'}
+                  </Button>
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState variant="inline" icon="🔍" title={t('services.noResults') || 'Sem resultados'} />
+          )
         ) : filtered.map(s => (
           <div key={s.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -396,8 +410,23 @@ export default function Services() {
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0 ? t('services.empty') : t('services.noResults')}
+                <TableCell colSpan={7} className="py-2">
+                  {totalCount === 0 ? (
+                    <EmptyState
+                      icon="🔧"
+                      title={t('services.empty') || 'Ainda sem serviços'}
+                      description={t('services.emptyDesc') || 'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
+                      action={
+                        <Link to="/services/new">
+                          <Button size="lg" className="px-6">
+                            <Plus className="w-4 h-4 mr-2" />{t('services.new') || 'Novo serviço'}
+                          </Button>
+                        </Link>
+                      }
+                    />
+                  ) : (
+                    <EmptyState variant="inline" icon="🔍" title={t('services.noResults') || 'Sem resultados'} />
+                  )}
                 </TableCell>
               </TableRow>
             ) : filtered.map(s => (

@@ -3,6 +3,7 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import { loadCountriesFromDB, detectCountryByIP } from "@/lib/regionConfig";
+import RootErrorBoundary from "@/components/RootErrorBoundary";
 
 const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());
@@ -17,7 +18,9 @@ if (typeof window.requestIdleCallback === "function") {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <App />
-  </HelmetProvider>
+  <RootErrorBoundary>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  </RootErrorBoundary>
 );

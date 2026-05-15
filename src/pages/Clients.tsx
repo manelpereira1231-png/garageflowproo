@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { toastError } from "@/lib/errorMessages";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -113,7 +114,7 @@ export default function Clients() {
       : await supabase.from("clients").insert(payload).select("id").single();
     const { error } = result;
 
-    if (error) toast.error(error.message);
+    if (error) toastError(error, editingId ? "Não foi possível atualizar o cliente" : "Não foi possível criar o cliente");
     else {
       if (!editingId && form.email && result.data?.id) {
         void sendLifecycleEmail({
@@ -140,7 +141,7 @@ export default function Clients() {
   const handleDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId);
-    if (error) toast.error(error.message);
+    if (error) toastError(error, "Não foi possível eliminar o cliente");
     else { toast.success(t('clients.deleted')); fetchClients(); }
     setDeleteId(null);
   };

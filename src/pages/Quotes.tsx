@@ -12,6 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { toastError } from "@/lib/errorMessages";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
@@ -119,7 +120,7 @@ export default function Quotes() {
       lines: q.lines, notes: q.notes, subtotal: q.subtotal, vat_total: q.vat_total,
       total: q.total, cost_total: q.cost_total, profit: q.profit, status: 'draft',
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toastError(error, "Não foi possível duplicar o orçamento"); return; }
     toast.success(t('quotes.duplicated'));
     fetchQuotes();
   };
@@ -137,7 +138,7 @@ export default function Quotes() {
       lines: quote.lines, labor_hours: 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
       total: quote.total, cost_total: quote.cost_total, profit: quote.profit, status: 'approved', notes: quote.notes,
     });
-    if (insertError) { toast.error(insertError.message); setConverting(null); return; }
+    if (insertError) { toastError(insertError, "Não foi possível converter em serviço"); setConverting(null); return; }
     await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
     toast.success(t('quotes.converted'));
     setConverting(null);

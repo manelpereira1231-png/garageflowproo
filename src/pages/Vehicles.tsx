@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown, ScrollText } from "lucide-react";
 import { toast } from "sonner";
+import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -91,7 +92,7 @@ export default function Vehicles() {
       ? await supabase.from("vehicles").update(payload).eq("id", editingId)
       : await supabase.from("vehicles").insert(payload);
 
-    if (error) toast.error(error.message);
+    if (error) toastError(error, editingId ? "Não foi possível atualizar o veículo" : "Não foi possível criar o veículo");
     else {
       toast.success(editingId ? t('vehicles.updated') : t('vehicles.created'));
       setOpen(false);
@@ -114,7 +115,7 @@ export default function Vehicles() {
   const handleDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from("vehicles").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId);
-    if (error) toast.error(error.message);
+    if (error) toastError(error, "Não foi possível eliminar o veículo");
     else { toast.success(t('vehicles.deleted')); fetchData(); }
     setDeleteId(null);
   };

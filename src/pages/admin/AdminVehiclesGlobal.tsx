@@ -46,7 +46,9 @@ function normalizePlate(p: string) {
 }
 
 export default function AdminVehiclesGlobal() {
-  const [q, setQ] = useState("");
+  const [params] = useSearchParams();
+  const initial = params.get("q") || "";
+  const [q, setQ] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [searched, setSearched] = useState(false);

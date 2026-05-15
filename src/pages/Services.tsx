@@ -410,8 +410,23 @@ export default function Services() {
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0 ? t('services.empty') : t('services.noResults')}
+                <TableCell colSpan={7} className="py-2">
+                  {totalCount === 0 ? (
+                    <EmptyState
+                      icon="🔧"
+                      title={t('services.empty') || 'Ainda sem serviços'}
+                      description={t('services.emptyDesc') || 'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
+                      action={
+                        <Link to="/services/new">
+                          <Button size="lg" className="px-6">
+                            <Plus className="w-4 h-4 mr-2" />{t('services.new') || 'Novo serviço'}
+                          </Button>
+                        </Link>
+                      }
+                    />
+                  ) : (
+                    <EmptyState variant="inline" icon="🔍" title={t('services.noResults') || 'Sem resultados'} />
+                  )}
                 </TableCell>
               </TableRow>
             ) : filtered.map(s => (

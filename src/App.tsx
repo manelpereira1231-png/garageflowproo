@@ -12,6 +12,7 @@ import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { getUserAccessProfile } from "@/lib/authRealm";
+import { setSentryUser } from "@/lib/sentry";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
 const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
@@ -646,13 +647,17 @@ function AuthenticatedRoutes() {
 }
 
 function AppRoutes() {
-  const { isReady, session } = useAuthReady();
+  const { isReady, session, user } = useAuthReady();
 
   useEffect(() => {
     if (isReady) {
       sessionStorage.removeItem(AUTO_RECOVERY_KEY);
     }
   }, [isReady]);
+
+  useEffect(() => {
+    setSentryUser(user ? { id: user.id, email: user.email } : null);
+  }, [user]);
 
   if (!isReady) {
     return (

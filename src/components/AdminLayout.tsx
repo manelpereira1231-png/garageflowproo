@@ -19,6 +19,18 @@ const navSections = [
       { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
+      { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
+    ],
+  },
+  {
+    label: "GarageFlow Market",
+    items: [
+      { path: "/admin/market-dashboard", label: "Painel Market", icon: Store },
+      { path: "/admin/market-listings", label: "Anúncios", icon: Car },
+      { path: "/admin/market-escrows", label: "Escrow & Disputas", icon: ShieldCheck },
+      { path: "/admin/market", label: "Inspeções", icon: Wrench },
+      { path: "/admin/market-kyc", label: "KYC", icon: IdCard },
+      { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
     ],
   },
   {
@@ -52,7 +64,6 @@ const navSections = [
     label: "Sistema",
     items: [
       { path: "/admin/partners", label: "Parceiros", icon: Shield },
-      { path: "/admin/risk-engine", label: "Inspeções & Risk Engine", icon: ShieldAlert },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
       { path: "/admin/settings", label: "Configurações", icon: Settings },
     ],

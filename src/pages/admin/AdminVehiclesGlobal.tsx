@@ -53,6 +53,11 @@ export default function AdminVehiclesGlobal() {
   const [rows, setRows] = useState<Row[]>([]);
   const [searched, setSearched] = useState(false);
 
+  useEffect(() => {
+    if (initial.trim().length >= 2) void search();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const search = async () => {
     const term = q.trim();
     if (term.length < 2) return;

@@ -19,6 +19,7 @@ import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
+import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<ServiceStatus, string> = {

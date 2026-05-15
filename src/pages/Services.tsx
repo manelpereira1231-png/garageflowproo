@@ -15,6 +15,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { toastError } from "@/lib/errorMessages";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
@@ -173,7 +174,7 @@ export default function Services() {
     const updates: any = { status: nextStatus };
     if (nextStatus === 'delivered') updates.delivered_at = new Date().toISOString();
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
-    if (error) toast.error(error.message);
+    if (error) toastError(error, "Não foi possível atualizar o estado do serviço");
     else { toast.success(`${t(`service.${nextStatus}`)}`); fetchServices(); }
   };
 
@@ -182,7 +183,7 @@ export default function Services() {
     const service = reminderDialog;
     const updates: any = { status: 'completed', completed_at: new Date().toISOString() };
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toastError(error, "Não foi possível concluir o serviço"); return; }
 
     if (createReminder && reminderDate) {
       const activeId = localStorage.getItem("garageflow_active_shop");
@@ -204,7 +205,7 @@ export default function Services() {
 
   const cancelService = async (id: string) => {
     const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) toastError(error, "Não foi possível cancelar o serviço");
     else { toast.success(t('service.cancelled')); fetchServices(); }
   };
 

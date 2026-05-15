@@ -310,6 +310,9 @@ const adminRoutes = [
   { path: "/admin/system", element: <AdminSystemControl /> },
   { path: "/admin/coupons", element: <AdminCoupons /> },
   { path: "/admin/risk-engine", element: <AdminRiskEngine /> },
+  { path: "/admin/vehicles", element: <AdminVehiclesGlobal /> },
+  { path: "/admin/market-listings", element: <AdminMarketListings /> },
+  { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
 ];
 
 const shopRoutes = [

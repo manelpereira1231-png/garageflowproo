@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
-  Store, Car, Wrench, ShieldCheck, IdCard,
+  Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,59 +12,68 @@ import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { prefetchRoute } from "@/lib/routePrefetch";
 
+// Sidebar reorganizada por blocos mentais — "o que está a acontecer / como está o SaaS /
+// o que os utilizadores fazem / mercado / crescimento / sistema / configuração".
+// Apenas reorganização — nenhuma página foi removida.
 const navSections = [
   {
     label: "Principal",
     items: [
-      { path: "/admin", label: "Painel Geral", icon: LayoutDashboard },
+      { path: "/admin", label: "Centro de Controlo", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Negócio",
+    items: [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
-      { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
-    ],
-  },
-  {
-    label: "GarageFlow Market",
-    items: [
-      { path: "/admin/market-dashboard", label: "Painel Market", icon: Store },
-      { path: "/admin/market-listings", label: "Anúncios", icon: Car },
-      { path: "/admin/market-escrows", label: "Escrow & Disputas", icon: ShieldCheck },
-      { path: "/admin/market", label: "Inspeções", icon: Wrench },
-      { path: "/admin/market-kyc", label: "KYC", icon: IdCard },
-      { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
-    ],
-  },
-  {
-    label: "Financeiro",
-    items: [
-      { path: "/admin/finance", label: "Finanças e Crescimento", icon: TrendingUp },
-      { path: "/admin/billing", label: "Planos e Faturação", icon: CreditCard },
-      { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
-      { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
+      { path: "/admin/billing", label: "Planos e Subscrições", icon: CreditCard },
+      { path: "/admin/finance", label: "Receita e Crescimento", icon: TrendingUp },
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
     label: "Operações",
     items: [
-      { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
-      { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },
-      { path: "/admin/alerts", label: "Alertas", icon: Bell },
-      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
-      { path: "/admin/adoption", label: "Adoção", icon: Activity },
-      { path: "/admin/system-health", label: "Saúde do Sistema", icon: Activity },
+      { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
     ],
   },
   {
-    label: "Global",
+    label: "Marketplace",
     items: [
-      { path: "/admin/countries", label: "Países e Mercados", icon: Globe },
+      { path: "/admin/market-dashboard", label: "Marketplace", icon: Store },
+      { path: "/admin/market-listings", label: "Anúncios", icon: Car },
+      { path: "/admin/market", label: "Inspeções", icon: Wrench },
+      { path: "/admin/market-escrows", label: "Escrow e Disputas", icon: ShieldCheck },
+      { path: "/admin/market-kyc", label: "KYC e Verificações", icon: IdCard },
+      { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
+    ],
+  },
+  {
+    label: "Crescimento",
+    items: [
+      { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
+      { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
+      { path: "/admin/adoption", label: "Adoção", icon: Activity },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { path: "/admin/partners", label: "Parceiros", icon: Shield },
+      { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
+      { path: "/admin/alerts", label: "Alertas", icon: Bell },
+      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
+    ],
+  },
+  {
+    label: "Configuração",
+    items: [
+      { path: "/admin/countries", label: "Países e Mercados", icon: Globe },
+      { path: "/admin/partners", label: "Parceiros", icon: Handshake },
+      { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },
+      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
       { path: "/admin/settings", label: "Configurações", icon: Settings },
     ],
   },

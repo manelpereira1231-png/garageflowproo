@@ -404,6 +404,8 @@ const publicRoutes = [
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
+  { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
+  { path: "/affiliate-login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },

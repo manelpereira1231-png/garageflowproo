@@ -21,6 +21,7 @@ import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
 const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
+const AffiliateLogin = lazy(() => import("@/pages/AffiliateLogin"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
 // Non-critical lazy-loaded with retry

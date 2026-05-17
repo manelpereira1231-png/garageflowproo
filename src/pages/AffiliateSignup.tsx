@@ -212,10 +212,20 @@ export default function AffiliateSignup() {
               ))}
             </div>
 
-            <Button size="lg" onClick={scrollToForm} className="h-14 px-8 text-base font-semibold shadow-lg">
-              <Rocket className="w-5 h-5 mr-2" /> {t('affiliate.ctaStart') || "Start earning now"}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button size="lg" onClick={scrollToForm} className="h-14 px-8 text-base font-semibold shadow-lg">
+                <Rocket className="w-5 h-5 mr-2" /> {t('affiliate.ctaStart') || "Start earning now"}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate("/afiliados/login")}
+                className="h-14 px-6 text-base font-semibold"
+              >
+                Já tenho conta — Entrar
+              </Button>
+            </div>
           </div>
 
           {/* ── COMISSÕES ── */}

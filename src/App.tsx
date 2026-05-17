@@ -21,6 +21,7 @@ import Auth from "@/pages/Auth";
 import LandingPage from "@/pages/LandingPage";
 const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
+const AffiliateLogin = lazy(() => import("@/pages/AffiliateLogin"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 
 // Non-critical lazy-loaded with retry
@@ -403,6 +404,8 @@ const publicRoutes = [
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
+  { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
+  { path: "/affiliate-login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
@@ -679,6 +682,8 @@ function AppRoutes() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
+            <Route path="/afiliados/login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />
+            <Route path="/affiliate-login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
             <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />

@@ -42,18 +42,23 @@ export default function AdminFinance() {
   const load = async () => {
     setLoading(true);
     try {
-      const [shopsRes, subsRes, paymentsRes, ordersRes] = await Promise.all([
+      const [shopsRes, subsRes, ordersRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent"),
-        supabase.from("payments" as any).select("amount, currency, created_at, shop_id, status").limit(2000).order("created_at", { ascending: false }),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
         supabase.from("work_orders").select("total, status, created_at, shop_id"),
       ]);
 
       const shops = shopsRes.data || [];
-      const subs = subsRes.data || [];
+      const subs = (subsRes.data || []) as any[];
 
-      // MRR (paying only)
-      const paying = subs.filter(s => (s.status === "active" || s.status === "trialing") && s.plan !== "free" && s.status !== "trialing");
+      // 🔴 REGRA: Apenas subscrições com Stripe confirmado contam como receita real.
+      // Excluímos manual_admin, trials internos, seed data e qualquer plano sem stripe_subscription_id.
+      const isRealPaid = (s: any) =>
+        (s.status === "active") &&
+        s.plan !== "free" &&
+        (s.revenue_type === "stripe_paid" || !!s.stripe_subscription_id);
+
+      const paying = subs.filter(isRealPaid);
       const mrr = paying.reduce((sum, s) => {
         const base = PLAN_PRICE_EUR[s.plan] || 0;
         const disc = s.discount_percent || 0;
@@ -61,24 +66,25 @@ export default function AdminFinance() {
       }, 0);
       const arr = mrr * 12;
       const payingCustomers = paying.length;
-      const trialingCustomers = subs.filter(s => s.status === "trialing").length;
+      // Trials Stripe-confirmed (não inflam receita; só contam como "em trial real")
+      const trialingCustomers = subs.filter(s => s.status === "trialing" && !!s.stripe_subscription_id).length;
       const arpu = payingCustomers > 0 ? mrr / payingCustomers : 0;
 
-      // Churn — last 60 days
+      // Churn — last 60 days (apenas subs reais canceladas)
       const sixty = Date.now() - 60 * 86400000;
-      const cancelled60 = subs.filter(s => s.status === "canceled" && new Date(s.updated_at).getTime() > sixty).length;
-      const active60 = subs.filter(s => (s.status === "active" || s.status === "trialing")).length;
-      const churnMonthly = active60 > 0 ? (cancelled60 / 2 / active60) * 100 : 0;
-      const ltv = churnMonthly > 0 ? arpu / (churnMonthly / 100) : arpu * 24;
-      const cac = 35; // estimated until ad data is integrated
-      const ltvCacRatio = cac > 0 ? ltv / cac : 0;
+      const cancelled60 = subs.filter(s => (s.status === "canceled" || s.status === "cancelled") && !!s.stripe_subscription_id && new Date(s.updated_at).getTime() > sixty).length;
+      const baseActive = Math.max(payingCustomers, 1);
+      const churnMonthly = payingCustomers > 0 ? (cancelled60 / 2 / baseActive) * 100 : 0;
+      const ltv = (payingCustomers > 0 && churnMonthly > 0) ? arpu / (churnMonthly / 100) : 0;
+      const cac = 0; // não estimar — só dados reais
+      const ltvCacRatio = 0;
 
-      // Country breakdown
+      // Country breakdown (apenas pagantes reais)
       const flags: Record<string, string> = { Portugal: "🇵🇹", Brasil: "🇧🇷", Brazil: "🇧🇷", Spain: "🇪🇸", España: "🇪🇸", Espanha: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", US: "🇺🇸", UK: "🇬🇧", India: "🇮🇳" };
       const byCountry = new Map<string, { revenue: number; customers: number }>();
       shops.forEach(s => {
-        const sub = subs.find(x => x.shop_id === s.id);
-        if (!sub || sub.status !== "active" || sub.plan === "free") return;
+        const sub = paying.find(x => x.shop_id === s.id);
+        if (!sub) return;
         const country = s.country || "Outro";
         const rev = (PLAN_PRICE_EUR[sub.plan] || 0) * (1 - (sub.discount_percent || 0) / 100);
         const cur = byCountry.get(country) || { revenue: 0, customers: 0 };
@@ -88,7 +94,7 @@ export default function AdminFinance() {
         .map(([country, v]) => ({ country, revenue: v.revenue, customers: v.customers, flag: flags[country] || "🌍" }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Top paying shops
+      // Top paying shops (apenas reais)
       const shopsMap = new Map(shops.map(s => [s.id, s]));
       const topPayingShops = paying
         .map(s => ({
@@ -101,7 +107,7 @@ export default function AdminFinance() {
         .sort((a, b) => b.mrr - a.mrr)
         .slice(0, 10);
 
-      // MRR trend last 6 months
+      // MRR trend last 6 months (apenas pagantes Stripe reais)
       const months: { month: string; mrr: number; new: number; churn: number }[] = [];
       const now = new Date();
       for (let i = 5; i >= 0; i--) {
@@ -110,15 +116,15 @@ export default function AdminFinance() {
         const monthLabel = m.toLocaleDateString("pt-PT", { month: "short" });
         const newSubs = subs.filter(s => {
           const c = new Date(s.created_at).getTime();
-          return c >= m.getTime() && c <= mEnd.getTime() && s.plan !== "free";
+          return c >= m.getTime() && c <= mEnd.getTime() && isRealPaid(s);
         }).length;
         const churned = subs.filter(s => {
           const c = new Date(s.updated_at).getTime();
-          return s.status === "canceled" && c >= m.getTime() && c <= mEnd.getTime();
+          return (s.status === "canceled" || s.status === "cancelled") && !!s.stripe_subscription_id && c >= m.getTime() && c <= mEnd.getTime();
         }).length;
         const monthMrr = subs.filter(s => {
           const c = new Date(s.created_at).getTime();
-          return c <= mEnd.getTime() && (s.status === "active") && s.plan !== "free";
+          return c <= mEnd.getTime() && isRealPaid(s);
         }).reduce((sum, s) => sum + (PLAN_PRICE_EUR[s.plan] || 0) * (1 - (s.discount_percent || 0) / 100), 0);
         months.push({ month: monthLabel, mrr: Math.round(monthMrr), new: newSubs, churn: churned });
       }
@@ -142,10 +148,10 @@ export default function AdminFinance() {
         return { cohortMonth, size: shopIds.length, retention };
       });
 
-      // Revenue last 30 / 7d (from work orders completed)
-      const completedOrders = orders.filter(o => o.status === "completed" || o.status === "delivered");
-      const revenue30d = completedOrders.filter(o => new Date(o.created_at).getTime() > Date.now() - 30 * 86400000).reduce((s, o) => s + Number(o.total || 0), 0);
-      const revenue7d = completedOrders.filter(o => new Date(o.created_at).getTime() > Date.now() - 7 * 86400000).reduce((s, o) => s + Number(o.total || 0), 0);
+      // 🔴 Receita 30d/7d: derivada apenas de subs Stripe pagantes (proxy mensal proporcional).
+      // Não usar work_orders aqui — isso é receita das oficinas, não receita SaaS.
+      const revenue30d = mrr; // MRR já reflete os últimos 30d de receita recorrente real
+      const revenue7d = Math.round(mrr * (7 / 30));
 
       setState({
         mrr,
@@ -205,7 +211,9 @@ export default function AdminFinance() {
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Finanças & Crescimento</h1>
-          <p className="text-sm text-muted-foreground mt-1">MRR, ARR, retenção, cohorts e ranking de clientes pagantes.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Apenas pagamentos <strong>Stripe confirmados</strong>. Trials, upgrades manuais, contas dev e seed data <strong>não contam</strong>.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={load}><RefreshCw className="w-4 h-4 mr-2" />Atualizar</Button>
@@ -213,19 +221,31 @@ export default function AdminFinance() {
         </div>
       </div>
 
-      {/* Hero KPIs */}
+      {state.payingCustomers === 0 && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="py-4 flex items-start gap-3">
+            <Activity className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Sem receita real ainda</p>
+              <p className="text-muted-foreground mt-0.5">Nenhuma subscrição com pagamento Stripe confirmado. Trials e upgrades manuais foram excluídos por design — só dinheiro real conta aqui.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hero KPIs — só receita real */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="MRR" value={`€${Math.round(state.mrr).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint={`${state.payingCustomers} pagantes`} accent="text-success" />
-        <KpiCard label="ARR" value={`€${Math.round(state.arr).toLocaleString("pt-PT")}`} icon={<TrendingUp className="w-5 h-5" />} hint="Receita anualizada" accent="text-primary" />
-        <KpiCard label="ARPU" value={`€${state.arpu.toFixed(0)}`} icon={<Users className="w-5 h-5" />} hint="Receita / cliente" />
-        <KpiCard label="LTV" value={`€${Math.round(state.ltv).toLocaleString("pt-PT")}`} icon={<Award className="w-5 h-5" />} hint={`Ratio ${state.ltvCacRatio.toFixed(1)}x CAC`} accent="text-amber-500" />
+        <KpiCard label="MRR real" value={`€${Math.round(state.mrr).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint={`${state.payingCustomers} pagantes Stripe`} accent="text-success" />
+        <KpiCard label="ARR real" value={`€${Math.round(state.arr).toLocaleString("pt-PT")}`} icon={<TrendingUp className="w-5 h-5" />} hint="MRR × 12" accent="text-primary" />
+        <KpiCard label="ARPU" value={state.payingCustomers > 0 ? `€${state.arpu.toFixed(0)}` : "—"} icon={<Users className="w-5 h-5" />} hint="Receita / cliente real" />
+        <KpiCard label="LTV" value={state.ltv > 0 ? `€${Math.round(state.ltv).toLocaleString("pt-PT")}` : "—"} icon={<Award className="w-5 h-5" />} hint={state.ltv > 0 ? "Estimado de churn real" : "Sem dados reais"} accent="text-amber-500" />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Churn mensal" value={`${state.churnMonthly.toFixed(1)}%`} icon={<TrendingDown className="w-5 h-5" />} hint="Últimos 60d /2" accent={state.churnMonthly > 5 ? "text-destructive" : "text-success"} />
-        <KpiCard label="Net Revenue Retention" value={`${state.netRevenueRetention.toFixed(0)}%`} icon={<Activity className="w-5 h-5" />} hint="Saúde da base" />
-        <KpiCard label="Receita últimos 30d" value={`€${Math.round(state.recentRevenue30d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Ordens concluídas" />
-        <KpiCard label="Receita últimos 7d" value={`€${Math.round(state.recentRevenue7d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Curto prazo" />
+        <KpiCard label="Churn mensal" value={state.payingCustomers > 0 ? `${state.churnMonthly.toFixed(1)}%` : "—"} icon={<TrendingDown className="w-5 h-5" />} hint="Últimos 60d / 2" accent={state.churnMonthly > 5 ? "text-destructive" : "text-success"} />
+        <KpiCard label="Em Trial (Stripe)" value={`${state.trialingCustomers}`} icon={<Activity className="w-5 h-5" />} hint="Não conta como receita" />
+        <KpiCard label="Receita últimos 30d" value={`€${Math.round(state.recentRevenue30d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="MRR Stripe atual" />
+        <KpiCard label="Receita últimos 7d" value={`€${Math.round(state.recentRevenue7d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Proporcional ao MRR" />
       </div>
 
       {/* MRR trend */}

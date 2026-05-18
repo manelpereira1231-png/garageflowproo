@@ -211,7 +211,9 @@ export default function AdminFinance() {
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Finanças & Crescimento</h1>
-          <p className="text-sm text-muted-foreground mt-1">MRR, ARR, retenção, cohorts e ranking de clientes pagantes.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Apenas pagamentos <strong>Stripe confirmados</strong>. Trials, upgrades manuais, contas dev e seed data <strong>não contam</strong>.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={load}><RefreshCw className="w-4 h-4 mr-2" />Atualizar</Button>
@@ -219,19 +221,31 @@ export default function AdminFinance() {
         </div>
       </div>
 
-      {/* Hero KPIs */}
+      {state.payingCustomers === 0 && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="py-4 flex items-start gap-3">
+            <Activity className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Sem receita real ainda</p>
+              <p className="text-muted-foreground mt-0.5">Nenhuma subscrição com pagamento Stripe confirmado. Trials e upgrades manuais foram excluídos por design — só dinheiro real conta aqui.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hero KPIs — só receita real */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="MRR" value={`€${Math.round(state.mrr).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint={`${state.payingCustomers} pagantes`} accent="text-success" />
-        <KpiCard label="ARR" value={`€${Math.round(state.arr).toLocaleString("pt-PT")}`} icon={<TrendingUp className="w-5 h-5" />} hint="Receita anualizada" accent="text-primary" />
-        <KpiCard label="ARPU" value={`€${state.arpu.toFixed(0)}`} icon={<Users className="w-5 h-5" />} hint="Receita / cliente" />
-        <KpiCard label="LTV" value={`€${Math.round(state.ltv).toLocaleString("pt-PT")}`} icon={<Award className="w-5 h-5" />} hint={`Ratio ${state.ltvCacRatio.toFixed(1)}x CAC`} accent="text-amber-500" />
+        <KpiCard label="MRR real" value={`€${Math.round(state.mrr).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint={`${state.payingCustomers} pagantes Stripe`} accent="text-success" />
+        <KpiCard label="ARR real" value={`€${Math.round(state.arr).toLocaleString("pt-PT")}`} icon={<TrendingUp className="w-5 h-5" />} hint="MRR × 12" accent="text-primary" />
+        <KpiCard label="ARPU" value={state.payingCustomers > 0 ? `€${state.arpu.toFixed(0)}` : "—"} icon={<Users className="w-5 h-5" />} hint="Receita / cliente real" />
+        <KpiCard label="LTV" value={state.ltv > 0 ? `€${Math.round(state.ltv).toLocaleString("pt-PT")}` : "—"} icon={<Award className="w-5 h-5" />} hint={state.ltv > 0 ? "Estimado de churn real" : "Sem dados reais"} accent="text-amber-500" />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Churn mensal" value={`${state.churnMonthly.toFixed(1)}%`} icon={<TrendingDown className="w-5 h-5" />} hint="Últimos 60d /2" accent={state.churnMonthly > 5 ? "text-destructive" : "text-success"} />
-        <KpiCard label="Net Revenue Retention" value={`${state.netRevenueRetention.toFixed(0)}%`} icon={<Activity className="w-5 h-5" />} hint="Saúde da base" />
-        <KpiCard label="Receita últimos 30d" value={`€${Math.round(state.recentRevenue30d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Ordens concluídas" />
-        <KpiCard label="Receita últimos 7d" value={`€${Math.round(state.recentRevenue7d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Curto prazo" />
+        <KpiCard label="Churn mensal" value={state.payingCustomers > 0 ? `${state.churnMonthly.toFixed(1)}%` : "—"} icon={<TrendingDown className="w-5 h-5" />} hint="Últimos 60d / 2" accent={state.churnMonthly > 5 ? "text-destructive" : "text-success"} />
+        <KpiCard label="Em Trial (Stripe)" value={`${state.trialingCustomers}`} icon={<Activity className="w-5 h-5" />} hint="Não conta como receita" />
+        <KpiCard label="Receita últimos 30d" value={`€${Math.round(state.recentRevenue30d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="MRR Stripe atual" />
+        <KpiCard label="Receita últimos 7d" value={`€${Math.round(state.recentRevenue7d).toLocaleString("pt-PT")}`} icon={<DollarSign className="w-5 h-5" />} hint="Proporcional ao MRR" />
       </div>
 
       {/* MRR trend */}

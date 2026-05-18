@@ -42,18 +42,23 @@ export default function AdminFinance() {
   const load = async () => {
     setLoading(true);
     try {
-      const [shopsRes, subsRes, paymentsRes, ordersRes] = await Promise.all([
+      const [shopsRes, subsRes, ordersRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent"),
-        supabase.from("payments" as any).select("amount, currency, created_at, shop_id, status").limit(2000).order("created_at", { ascending: false }),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
         supabase.from("work_orders").select("total, status, created_at, shop_id"),
       ]);
 
       const shops = shopsRes.data || [];
-      const subs = subsRes.data || [];
+      const subs = (subsRes.data || []) as any[];
 
-      // MRR (paying only)
-      const paying = subs.filter(s => (s.status === "active" || s.status === "trialing") && s.plan !== "free" && s.status !== "trialing");
+      // 🔴 REGRA: Apenas subscrições com Stripe confirmado contam como receita real.
+      // Excluímos manual_admin, trials internos, seed data e qualquer plano sem stripe_subscription_id.
+      const isRealPaid = (s: any) =>
+        (s.status === "active") &&
+        s.plan !== "free" &&
+        (s.revenue_type === "stripe_paid" || !!s.stripe_subscription_id);
+
+      const paying = subs.filter(isRealPaid);
       const mrr = paying.reduce((sum, s) => {
         const base = PLAN_PRICE_EUR[s.plan] || 0;
         const disc = s.discount_percent || 0;
@@ -61,24 +66,25 @@ export default function AdminFinance() {
       }, 0);
       const arr = mrr * 12;
       const payingCustomers = paying.length;
-      const trialingCustomers = subs.filter(s => s.status === "trialing").length;
+      // Trials Stripe-confirmed (não inflam receita; só contam como "em trial real")
+      const trialingCustomers = subs.filter(s => s.status === "trialing" && !!s.stripe_subscription_id).length;
       const arpu = payingCustomers > 0 ? mrr / payingCustomers : 0;
 
-      // Churn — last 60 days
+      // Churn — last 60 days (apenas subs reais canceladas)
       const sixty = Date.now() - 60 * 86400000;
-      const cancelled60 = subs.filter(s => s.status === "canceled" && new Date(s.updated_at).getTime() > sixty).length;
-      const active60 = subs.filter(s => (s.status === "active" || s.status === "trialing")).length;
-      const churnMonthly = active60 > 0 ? (cancelled60 / 2 / active60) * 100 : 0;
-      const ltv = churnMonthly > 0 ? arpu / (churnMonthly / 100) : arpu * 24;
-      const cac = 35; // estimated until ad data is integrated
-      const ltvCacRatio = cac > 0 ? ltv / cac : 0;
+      const cancelled60 = subs.filter(s => (s.status === "canceled" || s.status === "cancelled") && !!s.stripe_subscription_id && new Date(s.updated_at).getTime() > sixty).length;
+      const baseActive = Math.max(payingCustomers, 1);
+      const churnMonthly = payingCustomers > 0 ? (cancelled60 / 2 / baseActive) * 100 : 0;
+      const ltv = (payingCustomers > 0 && churnMonthly > 0) ? arpu / (churnMonthly / 100) : 0;
+      const cac = 0; // não estimar — só dados reais
+      const ltvCacRatio = 0;
 
-      // Country breakdown
+      // Country breakdown (apenas pagantes reais)
       const flags: Record<string, string> = { Portugal: "🇵🇹", Brasil: "🇧🇷", Brazil: "🇧🇷", Spain: "🇪🇸", España: "🇪🇸", Espanha: "🇪🇸", France: "🇫🇷", Germany: "🇩🇪", US: "🇺🇸", UK: "🇬🇧", India: "🇮🇳" };
       const byCountry = new Map<string, { revenue: number; customers: number }>();
       shops.forEach(s => {
-        const sub = subs.find(x => x.shop_id === s.id);
-        if (!sub || sub.status !== "active" || sub.plan === "free") return;
+        const sub = paying.find(x => x.shop_id === s.id);
+        if (!sub) return;
         const country = s.country || "Outro";
         const rev = (PLAN_PRICE_EUR[sub.plan] || 0) * (1 - (sub.discount_percent || 0) / 100);
         const cur = byCountry.get(country) || { revenue: 0, customers: 0 };
@@ -88,7 +94,7 @@ export default function AdminFinance() {
         .map(([country, v]) => ({ country, revenue: v.revenue, customers: v.customers, flag: flags[country] || "🌍" }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      // Top paying shops
+      // Top paying shops (apenas reais)
       const shopsMap = new Map(shops.map(s => [s.id, s]));
       const topPayingShops = paying
         .map(s => ({

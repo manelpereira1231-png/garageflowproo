@@ -107,7 +107,7 @@ export default function AdminFinance() {
         .sort((a, b) => b.mrr - a.mrr)
         .slice(0, 10);
 
-      // MRR trend last 6 months
+      // MRR trend last 6 months (apenas pagantes Stripe reais)
       const months: { month: string; mrr: number; new: number; churn: number }[] = [];
       const now = new Date();
       for (let i = 5; i >= 0; i--) {
@@ -116,15 +116,15 @@ export default function AdminFinance() {
         const monthLabel = m.toLocaleDateString("pt-PT", { month: "short" });
         const newSubs = subs.filter(s => {
           const c = new Date(s.created_at).getTime();
-          return c >= m.getTime() && c <= mEnd.getTime() && s.plan !== "free";
+          return c >= m.getTime() && c <= mEnd.getTime() && isRealPaid(s);
         }).length;
         const churned = subs.filter(s => {
           const c = new Date(s.updated_at).getTime();
-          return s.status === "canceled" && c >= m.getTime() && c <= mEnd.getTime();
+          return (s.status === "canceled" || s.status === "cancelled") && !!s.stripe_subscription_id && c >= m.getTime() && c <= mEnd.getTime();
         }).length;
         const monthMrr = subs.filter(s => {
           const c = new Date(s.created_at).getTime();
-          return c <= mEnd.getTime() && (s.status === "active") && s.plan !== "free";
+          return c <= mEnd.getTime() && isRealPaid(s);
         }).reduce((sum, s) => sum + (PLAN_PRICE_EUR[s.plan] || 0) * (1 - (s.discount_percent || 0) / 100), 0);
         months.push({ month: monthLabel, mrr: Math.round(monthMrr), new: newSubs, churn: churned });
       }
@@ -148,10 +148,10 @@ export default function AdminFinance() {
         return { cohortMonth, size: shopIds.length, retention };
       });
 
-      // Revenue last 30 / 7d (from work orders completed)
-      const completedOrders = orders.filter(o => o.status === "completed" || o.status === "delivered");
-      const revenue30d = completedOrders.filter(o => new Date(o.created_at).getTime() > Date.now() - 30 * 86400000).reduce((s, o) => s + Number(o.total || 0), 0);
-      const revenue7d = completedOrders.filter(o => new Date(o.created_at).getTime() > Date.now() - 7 * 86400000).reduce((s, o) => s + Number(o.total || 0), 0);
+      // 🔴 Receita 30d/7d: derivada apenas de subs Stripe pagantes (proxy mensal proporcional).
+      // Não usar work_orders aqui — isso é receita das oficinas, não receita SaaS.
+      const revenue30d = mrr; // MRR já reflete os últimos 30d de receita recorrente real
+      const revenue7d = Math.round(mrr * (7 / 30));
 
       setState({
         mrr,

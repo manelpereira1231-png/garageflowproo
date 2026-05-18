@@ -75,6 +75,10 @@ Deno.serve(async (req) => {
       user_metadata: {
         name: name.trim(),
         is_affiliate: true,
+        // Prevents handle_new_user() trigger from auto-creating an ERP shop.
+        // Affiliates must NOT have a shop — only a partner record.
+        skip_shop_creation: "true",
+        account_type: "affiliate",
       },
     });
 

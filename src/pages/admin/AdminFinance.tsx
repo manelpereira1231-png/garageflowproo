@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, DollarSign, Users, TrendingDown, Award, Globe, Download, RefreshCw, Activity } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
 import { toast } from "sonner";
+import { useAdminStripeAutoSync } from "@/hooks/useAdminStripeAutoSync";
 
 interface Cohort {
   cohortMonth: string;
@@ -39,8 +40,8 @@ export default function AdminFinance() {
   const [state, setState] = useState<FinanceState | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [shopsRes, subsRes, ordersRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at"),
@@ -175,11 +176,13 @@ export default function AdminFinance() {
     } catch (e: any) {
       toast.error("Falha ao carregar finanças: " + (e?.message || ""));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(() => load(true));
+
+  useEffect(() => { load(); }, [load]);
 
   const exportCsv = () => {
     if (!state) return;

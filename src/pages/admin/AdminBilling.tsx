@@ -43,7 +43,6 @@ export default function AdminBilling() {
   const [planDialog, setPlanDialog] = useState<{ sub: SubRow; newPlan: string; durationType: string; durationValue: number } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(fetchSubs);
 
   const fetchSubs = async () => {
     setLoading(true);
@@ -62,6 +61,8 @@ export default function AdminBilling() {
     setSubs(rows);
     setLoading(false);
   };
+
+  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(fetchSubs);
 
   useEffect(() => {
     fetchSubs();

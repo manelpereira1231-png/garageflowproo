@@ -60,11 +60,17 @@ serve(async (req) => {
     // If no stripe_subscription_id exists, the plan was set manually by admin — DO NOT overwrite.
     const { data: existingSub } = await supabaseClient
       .from("subscriptions")
-      .select("stripe_subscription_id, plan, status")
+      .select("stripe_subscription_id, plan, status, revenue_type")
       .eq("shop_id", shop.id)
       .maybeSingle();
 
-    if (existingSub && !existingSub.stripe_subscription_id) {
+    const isManualAdminPlan = existingSub &&
+      !existingSub.stripe_subscription_id &&
+      existingSub.plan !== "free" &&
+      existingSub.status === "active" &&
+      existingSub.revenue_type === "manual_admin";
+
+    if (isManualAdminPlan) {
       log("Subscription is admin-managed (no stripe_subscription_id), skipping sync", {
         shopId: shop.id,
         plan: existingSub.plan,
@@ -88,6 +94,7 @@ serve(async (req) => {
         await supabaseClient.from("subscriptions").update({
           plan: "free",
           status: "active",
+          revenue_type: "free",
           stripe_customer_id: null,
           stripe_subscription_id: null,
           trial_end: null,
@@ -117,6 +124,7 @@ serve(async (req) => {
       await supabaseClient.from("subscriptions").update({
         plan: "free",
         status: "active",
+        revenue_type: "free",
         stripe_customer_id: customerId,
         stripe_subscription_id: null,
         trial_end: null,
@@ -144,6 +152,7 @@ serve(async (req) => {
       plan,
       billing_cycle: billingCycle,
       status,
+      revenue_type: status === "active" && plan !== "free" ? "stripe_paid" : status === "trialing" ? "trial" : "free",
       stripe_customer_id: customerId,
       stripe_subscription_id: activeSub.id,
       trial_end: trialEnd,

@@ -12,10 +12,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Download, ArrowUpDown, DollarSign, TrendingUp, Users, Clock, CreditCard, Search } from "lucide-react";
+import { Download, ArrowUpDown, DollarSign, TrendingUp, Users, Clock, CreditCard, Search, RefreshCw, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAdminStripeAutoSync } from "@/hooks/useAdminStripeAutoSync";
 
 interface SubRow {
   id: string;
@@ -43,8 +44,8 @@ export default function AdminBilling() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchSubs = async () => {
-    setLoading(true);
+  const fetchSubs = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [subsRes, shopsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("shops").select("id, name"),
@@ -58,8 +59,10 @@ export default function AdminBilling() {
     }));
     rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setSubs(rows);
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
+
+  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(() => fetchSubs(true));
 
   useEffect(() => {
     fetchSubs();
@@ -183,10 +186,23 @@ export default function AdminBilling() {
           <h1 className="page-title">{t('admin.billing.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('admin.billing.subtitle')} · {subs.length} {t('admin.shops.total')} · {t('admin.billing.realtime')}</p>
         </div>
-        <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
-          <Download className="w-4 h-4" /> {t('admin.billing.exportCsv')}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {lastSyncedAt && <span className="text-[11px] text-muted-foreground">Sync {lastSyncedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>}
+          <Button onClick={() => syncNow()} variant="outline" size="sm" className="gap-2" disabled={syncing}>
+            <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} /> Atualizar Stripe
+          </Button>
+          <Button onClick={exportCSV} variant="outline" size="sm" className="gap-2">
+            <Download className="w-4 h-4" /> {t('admin.billing.exportCsv')}
+          </Button>
+        </div>
       </div>
+
+      {syncError && (
+        <div className="border border-warning/40 bg-warning/10 text-warning rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>Não consegui sincronizar com Stripe agora. Os valores abaixo ficam protegidos e não inventam receita: {syncError}</span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">

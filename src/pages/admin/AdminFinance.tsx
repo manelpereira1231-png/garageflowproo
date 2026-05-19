@@ -218,11 +218,24 @@ export default function AdminFinance() {
             Apenas pagamentos <strong>Stripe confirmados</strong>. Trials, upgrades manuais, contas dev e seed data <strong>não contam</strong>.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={load}><RefreshCw className="w-4 h-4 mr-2" />Atualizar</Button>
+        <div className="flex gap-2 flex-wrap justify-end">
+          {lastSyncedAt && <span className="text-[11px] text-muted-foreground self-center">Sync {lastSyncedAt.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>}
+          <Button variant="outline" onClick={() => syncNow()} disabled={syncing}><RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />Atualizar Stripe</Button>
           <Button onClick={exportCsv}><Download className="w-4 h-4 mr-2" />Exportar CSV</Button>
         </div>
       </div>
+
+      {syncError && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="py-4 flex items-start gap-3">
+            <Activity className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Sincronização Stripe falhou</p>
+              <p className="text-muted-foreground mt-0.5">Os KPIs continuam sem estimativas falsas; vou mostrar apenas o último estado confirmado. {syncError}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {state.payingCustomers === 0 && (
         <Card className="border-warning/40 bg-warning/5">

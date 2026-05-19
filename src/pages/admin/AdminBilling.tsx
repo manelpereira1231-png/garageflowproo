@@ -152,12 +152,15 @@ export default function AdminBilling() {
     return `${Math.ceil(diff / (1000 * 60 * 60 * 24))} ${t('admin.billing.daysLeft')}`;
   };
 
-  const activeSubs = subs.filter(s => s.status === 'active' || s.status === 'trialing');
-  const mrr = activeSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+  // 🔴 REGRA: MRR/ARR/ARPU/Pagantes contam APENAS subscrições Stripe confirmadas.
+  // Manual_admin, trials internos e seed data NUNCA entram em receita real.
+  const realPaidSubs = subs.filter(s => s.status === 'active' && s.plan !== 'free' && !!s.stripe_subscription_id);
+  const mrr = realPaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
   const arr = mrr * 12;
-  const paidCount = activeSubs.filter(s => s.plan !== 'free').length;
+  const paidCount = realPaidSubs.length;
   const arpu = paidCount > 0 ? mrr / paidCount : 0;
-  const trialCount = subs.filter(s => s.status === 'trialing').length;
+  // "Em trial" só conta trials reais Stripe (com stripe_subscription_id), não trials internos free
+  const trialCount = subs.filter(s => s.status === 'trialing' && !!s.stripe_subscription_id).length;
   const stripeManaged = subs.filter(s => s.stripe_subscription_id).length;
   const manualManaged = subs.length - stripeManaged;
 

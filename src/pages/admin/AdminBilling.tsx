@@ -44,8 +44,8 @@ export default function AdminBilling() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchSubs = async () => {
-    setLoading(true);
+  const fetchSubs = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [subsRes, shopsRes] = await Promise.all([
       supabase.from("subscriptions").select("*"),
       supabase.from("shops").select("id, name"),
@@ -59,10 +59,10 @@ export default function AdminBilling() {
     }));
     rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setSubs(rows);
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
-  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(fetchSubs);
+  const { syncNow, syncing, syncError, lastSyncedAt } = useAdminStripeAutoSync(() => fetchSubs(true));
 
   useEffect(() => {
     fetchSubs();

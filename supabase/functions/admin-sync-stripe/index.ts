@@ -76,9 +76,11 @@ serve(async (req) => {
         if (!price) continue;
 
         const activeLike = ["active", "trialing", "past_due", "incomplete"].includes(sub.status);
-        const plan = activeLike ? normalizePlan(price) : "free";
+        if (!activeLike) continue;
+
+        const plan = normalizePlan(price);
         const billingCycle = price.recurring?.interval === "year" ? "yearly" : "monthly";
-        const status = activeLike ? sub.status : "canceled";
+        const status = sub.status;
         const revenueType = status === "active" && plan !== "free" ? "stripe_paid" : status === "trialing" ? "trial" : "free";
 
         const { error } = await supabaseClient.from("subscriptions").upsert({

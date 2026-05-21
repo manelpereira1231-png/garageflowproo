@@ -44,4 +44,32 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+
+  <!-- ===== SEO PT — Páginas de captação orgânica ===== -->
+  <url><loc>https://garageflow.pt/software-gestao-oficinas</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://garageflow.pt/erp-oficina-automovel</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://garageflow.pt/alternativa-excel-oficinas</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/programa-faturacao-oficinas</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/orcamentos-oficina-digital</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/como-gerir-oficina</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/como-fazer-orcamentos-oficina</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/como-controlar-clientes-oficina</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/como-organizar-oficina-automovel</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/software-oficinas-vs-excel</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/melhor-software-oficinas-portugal</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+
+  <!-- Cidades PT -->
+  <url><loc>https://garageflow.pt/oficinas/lisboa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/porto</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/braga</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/faro</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/coimbra</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/aveiro</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/setubal</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/leiria</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/viseu</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/evora</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/guimaraes</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/funchal</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>
+

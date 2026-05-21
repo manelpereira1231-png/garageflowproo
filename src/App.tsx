@@ -23,6 +23,8 @@ const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateLogin = lazy(() => import("@/pages/AffiliateLogin"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
+const SeoLandingPage = lazy(() => import("@/pages/seo/SeoLandingPage"));
+const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {

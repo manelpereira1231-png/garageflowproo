@@ -1,4 +1,4 @@
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, useLocation, Link, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CheckCircle2, ArrowRight, Wrench } from "lucide-react";
 import LandingLayout from "@/components/LandingLayout";
@@ -13,8 +13,10 @@ interface Props {
 }
 
 export default function SeoLandingPage({ page: forcedPage }: Props) {
-  const { slug } = useParams();
-  const page = forcedPage ?? (slug ? SEO_PAGE_BY_SLUG[slug] : undefined);
+  const { slug: slugParam } = useParams();
+  const { pathname } = useLocation();
+  const slug = slugParam ?? pathname.replace(/^\/+|\/+$/g, "");
+  const page = forcedPage ?? SEO_PAGE_BY_SLUG[slug];
 
   if (!page) {
     return <Navigate to="/" replace />;

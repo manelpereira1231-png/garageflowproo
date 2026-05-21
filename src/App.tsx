@@ -23,6 +23,8 @@ const MarketAuth = lazyRetry(() => import("@/pages/MarketAuth"));
 const AffiliateSignup = lazy(() => import("@/pages/AffiliateSignup"));
 const AffiliateLogin = lazy(() => import("@/pages/AffiliateLogin"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
+const SeoLandingPage = lazy(() => import("@/pages/seo/SeoLandingPage"));
+const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {
@@ -430,7 +432,31 @@ const publicRoutes = [
   { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
   { path: "/legal/market-terms", element: <Suspense fallback={<PageLoader />}><MarketTerms /></Suspense> },
   { path: "/support", element: <Suspense fallback={<PageLoader />}><Support /></Suspense> },
+
+  // ============ SEO PT (landing pages orgânicas) ============
+  { path: "/software-gestao-oficinas", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/erp-oficina-automovel", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/alternativa-excel-oficinas", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/programa-faturacao-oficinas", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/orcamentos-oficina-digital", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/como-gerir-oficina", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/como-fazer-orcamentos-oficina", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/como-controlar-clientes-oficina", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/como-organizar-oficina-automovel", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/software-oficinas-vs-excel", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/melhor-software-oficinas-portugal", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  // Cidades — URL canónica /oficinas/:cidade
+  { path: "/oficinas/:cidade", element: <Suspense fallback={<PageLoader />}><SeoCityPage /></Suspense> },
+  // Aliases com hífen → redirecionam para a URL canónica
+  { path: "/oficinas-lisboa", element: <Navigate to="/oficinas/lisboa" replace /> },
+  { path: "/oficinas-porto", element: <Navigate to="/oficinas/porto" replace /> },
+  { path: "/oficinas-braga", element: <Navigate to="/oficinas/braga" replace /> },
+  { path: "/oficinas-faro", element: <Navigate to="/oficinas/faro" replace /> },
+  { path: "/oficinas-coimbra", element: <Navigate to="/oficinas/coimbra" replace /> },
 ];
+
+// SeoLandingPage is matched via the explicit slug routes above; React Router resolves them
+// without a wildcard so authenticated users keep being redirected for unknown paths.
 
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
 // For authenticated users, "/" should redirect to their app dashboard — never show the landing page again.

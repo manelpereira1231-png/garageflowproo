@@ -1815,42 +1815,66 @@ export type Database = {
       landing_visits: {
         Row: {
           campaign: string | null
+          confidence: string | null
           country_hint: string | null
           created_at: string
           device_type: string | null
+          first_touch_source: string | null
           gclid: string | null
+          hostname: string | null
           id: string
+          internal_reason: string | null
+          is_internal: boolean | null
           landing_path: string | null
           medium: string | null
           referrer: string | null
+          scroll_depth: number | null
           session_id: string | null
           source: string | null
+          time_on_page: number | null
+          user_agent: string | null
         }
         Insert: {
           campaign?: string | null
+          confidence?: string | null
           country_hint?: string | null
           created_at?: string
           device_type?: string | null
+          first_touch_source?: string | null
           gclid?: string | null
+          hostname?: string | null
           id?: string
+          internal_reason?: string | null
+          is_internal?: boolean | null
           landing_path?: string | null
           medium?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           source?: string | null
+          time_on_page?: number | null
+          user_agent?: string | null
         }
         Update: {
           campaign?: string | null
+          confidence?: string | null
           country_hint?: string | null
           created_at?: string
           device_type?: string | null
+          first_touch_source?: string | null
           gclid?: string | null
+          hostname?: string | null
           id?: string
+          internal_reason?: string | null
+          is_internal?: boolean | null
           landing_path?: string | null
           medium?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           source?: string | null
+          time_on_page?: number | null
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -3241,6 +3265,45 @@ export type Database = {
           trust_level?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      seo_conversions: {
+        Row: {
+          conversion_type: string | null
+          created_at: string
+          first_touch_source: string | null
+          id: string
+          landing_path: string | null
+          last_touch_source: string | null
+          session_id: string | null
+          shop_id: string | null
+          user_id: string | null
+          utm_campaign: string | null
+        }
+        Insert: {
+          conversion_type?: string | null
+          created_at?: string
+          first_touch_source?: string | null
+          id?: string
+          landing_path?: string | null
+          last_touch_source?: string | null
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+        }
+        Update: {
+          conversion_type?: string | null
+          created_at?: string
+          first_touch_source?: string | null
+          id?: string
+          landing_path?: string | null
+          last_touch_source?: string | null
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
         }
         Relationships: []
       }
@@ -5001,6 +5064,10 @@ export type Database = {
       }
       seed_email_templates_for_shop: {
         Args: { _shop_id: string }
+        Returns: undefined
+      }
+      update_landing_visit_engagement: {
+        Args: { _scroll: number; _session_id: string; _time: number }
         Returns: undefined
       }
       user_is_shop_member: {

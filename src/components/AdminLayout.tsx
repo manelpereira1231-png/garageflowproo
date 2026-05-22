@@ -55,6 +55,7 @@ const navSections = [
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
+      { path: "/admin/seo", label: "SEO Portugal", icon: Search },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
     ],
   },

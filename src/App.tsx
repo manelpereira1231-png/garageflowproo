@@ -25,6 +25,8 @@ const AffiliateLogin = lazy(() => import("@/pages/AffiliateLogin"));
 const AffiliateDashboard = lazy(() => import("@/pages/AffiliateDashboard"));
 const SeoLandingPage = lazy(() => import("@/pages/seo/SeoLandingPage"));
 const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
+const SeoBlogIndex = lazy(() => import("@/pages/seo/SeoBlogIndex"));
+const SeoBlogPost = lazy(() => import("@/pages/seo/SeoBlogPost"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {
@@ -143,6 +145,7 @@ const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"))
 const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesGlobal"));
 const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
 const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
+const AdminSeo = lazyRetry(() => import("@/pages/admin/AdminSeo"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -317,6 +320,7 @@ const adminRoutes = [
   { path: "/admin/vehicles", element: <AdminVehiclesGlobal /> },
   { path: "/admin/market-listings", element: <AdminMarketListings /> },
   { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
+  { path: "/admin/seo", element: <AdminSeo /> },
 ];
 
 const shopRoutes = [
@@ -445,14 +449,25 @@ const publicRoutes = [
   { path: "/como-organizar-oficina-automovel", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
   { path: "/software-oficinas-vs-excel", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
   { path: "/melhor-software-oficinas-portugal", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
-  // Cidades — URL canónica /oficinas/:cidade
+  // Novas páginas SEO de intenção alta / problema / comparativa
+  { path: "/software-oficinas-preco", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/software-oficinas-cloud", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/como-gerir-viaturas-oficina", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  { path: "/erp-vs-excel-oficina", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
+  // Cidades — URL canónica e variantes de intenção (conteúdo único por combinação)
   { path: "/oficinas/:cidade", element: <Suspense fallback={<PageLoader />}><SeoCityPage /></Suspense> },
+  { path: "/gestao-oficinas/:cidade", element: <Suspense fallback={<PageLoader />}><SeoCityPage /></Suspense> },
+  { path: "/erp-automovel/:cidade", element: <Suspense fallback={<PageLoader />}><SeoCityPage /></Suspense> },
+  { path: "/software-oficinas/:cidade", element: <Suspense fallback={<PageLoader />}><SeoCityPage /></Suspense> },
   // Aliases com hífen → redirecionam para a URL canónica
   { path: "/oficinas-lisboa", element: <Navigate to="/oficinas/lisboa" replace /> },
   { path: "/oficinas-porto", element: <Navigate to="/oficinas/porto" replace /> },
   { path: "/oficinas-braga", element: <Navigate to="/oficinas/braga" replace /> },
   { path: "/oficinas-faro", element: <Navigate to="/oficinas/faro" replace /> },
   { path: "/oficinas-coimbra", element: <Navigate to="/oficinas/coimbra" replace /> },
+  // Blog SEO
+  { path: "/blog", element: <Suspense fallback={<PageLoader />}><SeoBlogIndex /></Suspense> },
+  { path: "/blog/:slug", element: <Suspense fallback={<PageLoader />}><SeoBlogPost /></Suspense> },
 ];
 
 // SeoLandingPage is matched via the explicit slug routes above; React Router resolves them

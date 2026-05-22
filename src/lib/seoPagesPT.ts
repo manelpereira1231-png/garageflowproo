@@ -315,6 +315,104 @@ export const SEO_PAGES: SeoPageContent[] = [
       { label: "ERP para oficina automóvel", to: "/erp-oficina-automovel" },
     ],
   },
+
+  // ============ NOVOS — INTENÇÃO ALTA ============
+  {
+    slug: "software-oficinas-preco",
+    h1: "Software para oficinas — preço",
+    title: "Software para Oficinas — Preço | GarageFlow",
+    description: "Quanto custa um software de gestão para oficinas auto em Portugal? Veja preços, planos e o que está incluído. Teste grátis 30 dias.",
+    keywords: "software oficinas preço, preço software oficina, mensalidade software oficina automóvel",
+    intro: [
+      "Antes de mudar de sistema, é normal querer saber quanto custa por mês — sem letras pequenas.",
+      "Há programas que cobram por utilizador, por viatura ou por fatura emitida — e a conta no fim do mês é uma surpresa.",
+    ],
+    solution: [
+      "O GarageFlow tem planos fixos por mês, sem limite de utilizadores nas versões superiores e sem custos por fatura.",
+      "Pode começar grátis, testar tudo durante 30 dias e só depois escolher o plano que faz sentido para a oficina.",
+    ],
+    benefits: COMMON_BENEFITS,
+    features: COMMON_FEATURES,
+    faqs: COMMON_FAQS,
+    related: [
+      { label: "Software de gestão de oficinas", to: "/software-gestao-oficinas" },
+      { label: "Software para oficinas na cloud", to: "/software-oficinas-cloud" },
+      { label: "ERP para oficina automóvel", to: "/erp-oficina-automovel" },
+    ],
+  },
+  {
+    slug: "software-oficinas-cloud",
+    h1: "Software para oficinas na cloud",
+    title: "Software para Oficinas na Cloud | GarageFlow",
+    description: "Software de oficina 100% na cloud: sem instalação, sem servidor, acessível no telemóvel ou no PC. Teste grátis 30 dias.",
+    keywords: "software oficinas cloud, software oficina online, oficina cloud Portugal",
+    intro: [
+      "Os programas antigos instalados no PC perdem dados quando o computador avaria e não funcionam fora da oficina.",
+      "Quem precisa de aceder aos dados fora do balcão, fica preso ao escritório.",
+    ],
+    solution: [
+      "O GarageFlow corre 100% na cloud. Os dados ficam seguros em servidores europeus, com cópias automáticas.",
+      "Aceda do telemóvel, tablet ou PC — em qualquer sítio com internet.",
+    ],
+    benefits: COMMON_BENEFITS,
+    features: COMMON_FEATURES,
+    faqs: COMMON_FAQS,
+    related: [
+      { label: "Software de gestão de oficinas", to: "/software-gestao-oficinas" },
+      { label: "Software para oficinas — preço", to: "/software-oficinas-preco" },
+      { label: "ERP para oficina automóvel", to: "/erp-oficina-automovel" },
+    ],
+  },
+
+  // ============ NOVOS — PROBLEMA ============
+  {
+    slug: "como-gerir-viaturas-oficina",
+    h1: "Como gerir viaturas numa oficina",
+    title: "Como Gerir Viaturas numa Oficina | GarageFlow",
+    description: "Organize as viaturas da oficina com histórico, revisões e fotos. Saiba sempre o estado de cada carro.",
+    keywords: "gerir viaturas oficina, histórico viatura oficina, ficheiro viaturas oficina",
+    intro: [
+      "Sem um sistema, é difícil saber o que foi feito a cada carro — e o cliente acaba a perguntar “já trocaram a correia?”.",
+      "Quando os dados estão em cabeças e cadernos, basta um mecânico sair para se perder tudo.",
+    ],
+    solution: [
+      "O GarageFlow guarda cada viatura com matrícula, marca, modelo, quilometragem e histórico completo de reparações.",
+      "Com fotos, peças usadas e mão-de-obra — pronto a consultar a qualquer momento.",
+    ],
+    benefits: COMMON_BENEFITS,
+    features: COMMON_FEATURES,
+    faqs: COMMON_FAQS,
+    related: [
+      { label: "Como controlar clientes da oficina", to: "/como-controlar-clientes-oficina" },
+      { label: "Como organizar uma oficina automóvel", to: "/como-organizar-oficina-automovel" },
+      { label: "Software de gestão de oficinas", to: "/software-gestao-oficinas" },
+    ],
+  },
+
+  // ============ NOVOS — COMPARATIVAS ============
+  {
+    slug: "erp-vs-excel-oficina",
+    h1: "ERP vs Excel para oficinas",
+    title: "ERP vs Excel para Oficinas | Comparação Honesta",
+    description: "Vale a pena trocar o Excel por um ERP na oficina? Veja diferenças reais em tempo, erros e custos.",
+    keywords: "ERP vs Excel oficina, trocar Excel ERP oficina, vantagens ERP oficina",
+    intro: [
+      "O Excel é simples ao início. Mas à medida que a oficina cresce, fica lento, partido e perigoso de partilhar.",
+      "Um ERP focado em oficinas resolve isto — mas só vale a pena se for simples de usar.",
+    ],
+    solution: [
+      "O GarageFlow é um ERP pensado para oficinas pequenas e médias em Portugal — sem treino, sem complicações.",
+      "Faz tudo o que o Excel faz e ainda liga clientes, viaturas, orçamentos e faturas no mesmo sítio.",
+    ],
+    benefits: COMMON_BENEFITS,
+    features: COMMON_FEATURES,
+    faqs: COMMON_FAQS,
+    related: [
+      { label: "Alternativa ao Excel para oficinas", to: "/alternativa-excel-oficinas" },
+      { label: "Software de oficinas vs Excel", to: "/software-oficinas-vs-excel" },
+      { label: "ERP para oficina automóvel", to: "/erp-oficina-automovel" },
+    ],
+  },
 ];
 
 export const SEO_PAGE_BY_SLUG: Record<string, SeoPageContent> = SEO_PAGES.reduce(

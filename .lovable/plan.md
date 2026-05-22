@@ -1,116 +1,107 @@
-# Plano — Stands (Dealers) no GarageFlow Market
+# SEO Portugal + Growth Engine — Plano de Implementação
 
-Objectivo: permitir que stands publiquem muitos carros com pacote de preço reduzido, garantindo que **as inspeções são SEMPRE feitas por oficinas parceiras nossas** (nunca pelo próprio stand), e promovendo os stands no SEO.
+Tudo aditivo. Nada existente é alterado ou removido.
 
----
+## 1. Expansão de páginas SEO (PT-PT)
 
-## 1. Conta "Stand" (novo tipo de vendedor)
+Adicionar ao `src/lib/seoPagesPT.ts` novas entradas (sem remover as atuais):
 
-Hoje o Market só tem `particular`. Vamos adicionar `dealer` (stand).
+**Intenção alta:**
+- `/melhor-software-oficinas-portugal`
+- `/software-oficinas-preco`
+- `/software-oficinas-cloud`
+- `/erp-oficina-automovel`
 
-**BD — `carity_seller_profiles`:**
-- `account_type` ∈ `particular | dealer` (default `particular`)
-- `dealer_company_name`, `dealer_nif`, `dealer_license` (alvará INCM/IMT)
-- `dealer_logo_url`, `dealer_slug` (para `/market/stand/:slug`)
-- `dealer_plan` ∈ `free | starter | pro | unlimited`
-- `dealer_active_until` (validade da subscrição)
+**Problema:**
+- `/como-gerir-oficina`
+- `/como-fazer-orcamentos-oficina`
+- `/como-controlar-clientes-oficina`
+- `/como-organizar-oficina-automovel`
+- `/como-gerir-viaturas-oficina`
 
-**Onboarding stand:** novo fluxo `/market/auth?mode=signup&account=dealer` que recolhe NIF, alvará, logo. KYC obrigatório antes de publicar.
+**Comparativas:**
+- `/software-oficinas-vs-excel`
+- `/erp-vs-excel-oficina`
 
----
+Cada uma com H1 único, FAQ próprio, CTA "Testar grátis 30 dias", links internos, JSON-LD FAQPage + SoftwareApplication + Breadcrumb.
 
-## 2. Pacotes de volume (preço em conta para stand)
+## 2. SEO programático local (sem duplicar conteúdo)
 
-Tabela nova `dealer_plans` lida do `country_settings` (multi-país):
+Adicionar rotas dinâmicas:
+- `/gestao-oficinas/:cidade`
+- `/erp-automovel/:cidade`
+- `/software-oficinas/:cidade`
 
-| Plano | Anúncios activos | Inspeções incluídas/mês | Preço/mês PT |
-|---|---|---|---|
-| Starter | até 10 | 5 | 39 € |
-| Pro | até 30 | 20 | 99 € |
-| Unlimited | ilimitado | ilimitado* | 249 € |
+Reutilizar `SeoCityPage.tsx` com variação por "intent" (gestão / erp / software) que altera H1, intro e FAQ — garantindo conteúdo parcialmente único por combinação.
 
-*Inspeções acima da quota: 19,90 € cada (vs 29,90 € particular).
-Comissão de venda: 1% (vs 3% particular).
+Adicionar LocalBusiness JSON-LD nas páginas locais.
 
-Pagamento via Stripe subscription. Quota verificada server-side por RPC `dealer_can_publish(user_id)`.
+## 3. Blog SEO (estrutura)
 
----
+Criar `src/lib/seoBlogPT.ts` com 6 artigos iniciais (categorias: Gestão, Faturação, Clientes, Viaturas, Produtividade, ERP):
+- como-organizar-uma-oficina-automovel
+- como-reduzir-erros-em-orcamentos
+- oficina-ainda-usa-excel
+- como-controlar-revisoes-automovel
+- como-aumentar-produtividade-oficina
+- como-gerir-clientes-recorrentes
 
-## 3. Inspeções **obrigatoriamente** por oficina nossa (anti-fraude)
+Rotas: `/blog`, `/blog/:slug`. Componente `SeoBlogPost.tsx` + `SeoBlogIndex.tsx` com Article JSON-LD, Breadcrumb, links internos para landings de conversão.
 
-Regra dura: um stand **nunca** pode submeter relatório de inspeção, mesmo que ele próprio seja oficina GarageFlow.
+## 4. Schema markup global
 
-**BD — `carity_listings`:** adicionar `requires_independent_inspection BOOLEAN DEFAULT true` quando `seller_id.account_type = 'dealer'`.
+Adicionar ao `index.html` JSON-LD `Organization` + `SoftwareApplication` sitewide. Páginas locais ganham `LocalBusiness`. Páginas SEO ganham `BreadcrumbList`.
 
-**BD — `carity_inspections`:** trigger que bloqueia atribuir `shop_id` em que o owner da shop é o mesmo `seller_id` do listing (ou tem o mesmo NIF).
+## 5. Sitemap atualizado
 
-**Edge function `assign-dealer-inspection`:** ao publicar listing de stand:
-1. Marca listing como `pending_independent_inspection`
-2. Pega 3 oficinas parceiras mais próximas com KYC OK e disponibilidade, **excluindo** qualquer shop ligada ao stand
-3. Cria oferta `carity_inspection_offers` para a 1ª; expira em 24h e passa à seguinte
-4. Listing só fica `published` depois do relatório `is_locked = true` por uma oficina independente
+Atualizar `public/sitemap-erp.xml` com todas as novas URLs (intenção alta, problema, comparativas, programáticas por cidade × 3 intents, blog).
 
-**Badge público:** todo carro de stand mostra "Inspeção independente verificada por [Oficina X]" com link para o relatório PDF assinado (hash já existe).
+## 6. Tracking SEO real + deteção de tráfego interno
 
-**RLS reforço:** policy em `carity_inspection_reports` que rejeita `submitted_by_user_id` que partilhe `nif` com `seller_id` do listing.
+**Migração DB** (aditiva):
+- Adicionar colunas a `landing_visits`: `is_internal boolean`, `internal_reason text`, `confidence text`, `scroll_depth int`, `time_on_page int`, `first_touch_source text`.
+- Nova tabela `seo_conversions` (landing_visit_id, user_id, shop_id, converted_at, page_path, source).
 
----
+**Frontend** (`src/lib/landingTracker.ts` — expandir, não substituir):
+- Detetar interno: localhost, `lovable.app` no hostname, `?internal=true`, cookie `gf_internal`, super_admin role, emails @lovable.dev.
+- Classificar: `real` / `likely_internal` / `suspicious` / `bot` (via UA).
+- Gravar scroll depth e tempo na página via `beforeunload`.
+- Guardar first_touch em `localStorage` (`gf_first_touch`).
 
-## 4. Página pública de cada stand + SEO
+## 7. Admin SEO Portugal (nova página)
 
-**Nova rota `/market/stand/:slug`:**
-- Hero com logo, nome, cidade, contagem de carros, rating médio
-- Grid de todos os anúncios activos do stand
-- Selo "Inspeções independentes garantidas pela GarageFlow"
-- Mapa, horários, contacto
+Nova rota admin `/admin/seo` → `src/pages/admin/AdminSeo.tsx`:
+- KPIs: visitas orgânicas reais (exclui interno), conversões SEO, taxa de conversão, top páginas, top cidades, desktop/mobile, Google vs Bing vs outros.
+- Tabela first-touch / last-touch.
+- Tabela de visitas excluídas com motivo + confiança.
+- Sincronização automática (já existe padrão `useAdminStripeAutoSync` — replicar com `useAdminSeoAutoRefresh`).
+- Botão "Exportar CSV".
 
-**SEO:**
-- `<title>` dinâmico: `{Nome do Stand} — Carros Usados em {Cidade} | GarageFlow Market`
-- JSON-LD `AutoDealer` + `ItemList` com os carros
-- OG image gerada por edge function existente `market-og-image`
-- Adicionar todos os stands ao `sitemap-market.xml` via função que regenera
+Adicionar item "SEO Portugal" no `AdminLayout.tsx` na secção CRESCIMENTO.
 
-**Index `/market/stands`:** diretório nacional de stands ordenados por reputação (nº inspeções aprovadas, rating).
+## 8. Restrições respeitadas
 
----
+- Não toca em ERP, Market, pagamentos, afiliados, Stripe sync, tracking de ads existente.
+- `gadsTracking.ts` e `landingTracker.ts` continuam a funcionar; apenas se adicionam campos.
+- Nenhum SEO existente é substituído; tudo é adicionado.
+- Tudo PT-PT, sem mock data, sem métricas inventadas.
 
-## 5. UI / Dashboard do Stand
+## Ficheiros
 
-Nova rota `/market/dealer-dashboard` (só para `account_type = dealer`):
-- KPIs: anúncios activos, vistos, mensagens, vendas, quota usada
-- Bulk upload (CSV ou múltiplos carros de uma vez)
-- Acesso ao plano e faturas
-- Ver inspeções agendadas (sem poder editar relatórios)
+**Criar:**
+- `src/lib/seoBlogPT.ts`
+- `src/pages/seo/SeoBlogIndex.tsx`
+- `src/pages/seo/SeoBlogPost.tsx`
+- `src/pages/admin/AdminSeo.tsx`
+- `src/hooks/useAdminSeoAutoRefresh.ts`
+- `src/lib/internalTrafficDetect.ts`
+- Migração SQL (colunas + tabela conversions + RLS)
 
-CTA na landing `/market`: card extra ao lado de "Para Oficinas" → **"Para Stands"** com pricing e botão "Registar stand".
-
----
-
-## 6. Detalhes técnicos
-
-```
-src/pages/MarketDealerDashboard.tsx           (novo)
-src/pages/MarketDealerSignup.tsx              (novo, fluxo dedicado)
-src/pages/MarketStandPublic.tsx               (público /market/stand/:slug)
-src/pages/MarketStandsDirectory.tsx           (público /market/stands)
-src/components/DealerPlanCard.tsx
-src/components/DealerInspectionBadge.tsx
-supabase/functions/assign-dealer-inspection
-supabase/functions/dealer-checkout            (Stripe subscription)
-supabase/functions/regenerate-stands-sitemap
-```
-
-**Migrações:**
-1. Colunas em `carity_seller_profiles` + `carity_listings`
-2. Tabela `dealer_plans` com seed por país
-3. Trigger anti-fraude em `carity_inspections`
-4. RPC `dealer_can_publish` (quota)
-5. RLS reforçada em `carity_inspection_reports`
-
----
-
-## 7. Confirmações antes de implementar
-
-1. **Preços** sugeridos (39 / 99 / 249 €) — OK ou prefere outros?
-2. Quero implementar **tudo de uma vez** ou começar pela Fase 1 (conta stand + anti-fraude inspeções) e depois Fase 2 (planos + SEO)?
-3. Comissão de venda para stand: **1%** (vs 3% particular) — confirma?
+**Editar (aditivamente):**
+- `src/lib/seoPagesPT.ts` (novas entradas)
+- `src/pages/seo/SeoCityPage.tsx` (suportar intent variante)
+- `src/App.tsx` (novas rotas)
+- `src/components/AdminLayout.tsx` (link SEO Portugal)
+- `src/lib/landingTracker.ts` (expandir payload + interno + scroll)
+- `index.html` (JSON-LD sitewide)
+- `public/sitemap-erp.xml` (novas URLs)

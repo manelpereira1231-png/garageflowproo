@@ -56,6 +56,7 @@ const navSections = [
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
       { path: "/admin/seo", label: "SEO Portugal", icon: Search },
+      { path: "/admin/seo-blog", label: "Blog SEO", icon: FileText },
       { path: "/admin/adoption", label: "Adoção", icon: Activity },
     ],
   },

@@ -3268,6 +3268,72 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_blog_posts: {
+        Row: {
+          author: string | null
+          category: string
+          content: string
+          created_at: string
+          excerpt: string | null
+          id: string
+          keyword: string | null
+          meta_description: string | null
+          meta_title: string | null
+          og_image: string | null
+          published_at: string | null
+          reading_minutes: number
+          scheduled_at: string | null
+          slug: string
+          source: string
+          status: string
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          keyword?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          published_at?: string | null
+          reading_minutes?: number
+          scheduled_at?: string | null
+          slug: string
+          source?: string
+          status?: string
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          keyword?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image?: string | null
+          published_at?: string | null
+          reading_minutes?: number
+          scheduled_at?: string | null
+          slug?: string
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       seo_conversions: {
         Row: {
           conversion_type: string | null

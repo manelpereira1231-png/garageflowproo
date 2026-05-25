@@ -1,19 +1,64 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowRight, BookOpen } from "lucide-react";
 import LandingLayout from "@/components/LandingLayout";
 import { BLOG_POSTS } from "@/lib/seoBlogPT";
+import { supabase } from "@/integrations/supabase/client";
 
 const SITE = "https://garageflow-pt.lovable.app";
 
+type ListItem = {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  excerpt: string;
+  publishedAt: string;
+};
+
 export default function SeoBlogIndex() {
+  const [dbPosts, setDbPosts] = useState<ListItem[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("seo_blog_posts" as any)
+        .select("slug,title,meta_description,excerpt,category,published_at")
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+      setDbPosts(
+        ((data as any[]) || []).map((p) => ({
+          slug: p.slug,
+          title: p.title,
+          description: p.meta_description || p.excerpt || "",
+          excerpt: p.excerpt || p.meta_description || "",
+          category: p.category,
+          publishedAt: p.published_at,
+        }))
+      );
+    })();
+  }, []);
+
+  // Merge: DB posts first (newer), then static, dedupe by slug
+  const staticItems: ListItem[] = BLOG_POSTS.map((p) => ({
+    slug: p.slug, title: p.title, description: p.description, excerpt: p.excerpt,
+    category: p.category, publishedAt: p.publishedAt,
+  }));
+  const seen = new Set<string>();
+  const all = [...dbPosts, ...staticItems].filter((p) => {
+    if (seen.has(p.slug)) return false;
+    seen.add(p.slug);
+    return true;
+  });
+
   const url = `${SITE}/blog`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Blog",
     name: "Blog GarageFlow — gestão de oficinas auto",
     url,
-    blogPost: BLOG_POSTS.map((p) => ({
+    blogPost: all.map((p) => ({
       "@type": "BlogPosting",
       headline: p.title,
       description: p.description,
@@ -27,10 +72,7 @@ export default function SeoBlogIndex() {
     <LandingLayout>
       <Helmet>
         <title>Blog GarageFlow — Gestão de Oficinas Auto em Portugal</title>
-        <meta
-          name="description"
-          content="Artigos práticos sobre gestão de oficinas auto: orçamentos, faturação, clientes e produtividade. Em português, escrito para oficinas reais."
-        />
+        <meta name="description" content="Artigos práticos sobre gestão de oficinas auto: orçamentos, faturação, clientes e produtividade. Em português, escrito para oficinas reais." />
         <link rel="canonical" href={url} />
         <meta property="og:title" content="Blog GarageFlow — gestão de oficinas auto" />
         <meta property="og:description" content="Dicas práticas para oficinas em Portugal." />
@@ -53,7 +95,7 @@ export default function SeoBlogIndex() {
         </header>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {BLOG_POSTS.map((p) => (
+          {all.map((p) => (
             <Link
               key={p.slug}
               to={`/blog/${p.slug}`}

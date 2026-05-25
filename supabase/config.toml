@@ -89,3 +89,6 @@ verify_jwt = false
 verify_jwt = false
 
 
+
+[functions.seo-publish-scheduled]
+verify_jwt = false

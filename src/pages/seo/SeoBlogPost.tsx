@@ -126,7 +126,8 @@ export default function SeoBlogPost() {
               </div>
             </section>
           ))}
-          <Cta />
+          <Cta category={staticPost.category} />
+
           {staticPost.related.length > 0 && (
             <section className="mt-10">
               <h3 className="text-base font-bold mb-3">Continuar a ler</h3>

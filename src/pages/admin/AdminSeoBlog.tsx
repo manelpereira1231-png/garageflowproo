@@ -31,7 +31,7 @@ type Post = {
   created_at: string;
 };
 
-const CATEGORIES = ["Gestão", "Faturação", "ERP", "Clientes", "Viaturas", "Produtividade"];
+const CATEGORIES = ["Gestão", "Faturação", "ERP", "Clientes", "Viaturas", "Produtividade", "Market"];
 
 function slugify(t: string) {
   return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")

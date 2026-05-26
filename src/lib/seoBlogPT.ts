@@ -3,7 +3,7 @@ export interface BlogPost {
   slug: string;
   title: string;
   description: string;
-  category: "Gestão" | "Faturação" | "Clientes" | "Viaturas" | "Produtividade" | "ERP";
+  category: "Gestão" | "Faturação" | "Clientes" | "Viaturas" | "Produtividade" | "ERP" | "Market";
   excerpt: string;
   readingMinutes: number;
   publishedAt: string; // ISO

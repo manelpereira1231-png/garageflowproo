@@ -126,7 +126,8 @@ export default function SeoBlogPost() {
               </div>
             </section>
           ))}
-          <Cta />
+          <Cta category={staticPost.category} />
+
           {staticPost.related.length > 0 && (
             <section className="mt-10">
               <h3 className="text-base font-bold mb-3">Continuar a ler</h3>
@@ -184,20 +185,28 @@ export default function SeoBlogPost() {
         </div>
         {p.excerpt && <p className="text-lg text-muted-foreground mb-8">{p.excerpt}</p>}
         <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: renderMarkdown(p.content) }} />
-        <Cta />
+        <Cta category={p.category} />
       </article>
     </LandingLayout>
   );
 }
 
-function Cta() {
+function Cta({ category }: { category?: string }) {
+  const isMarket = (category || "").toLowerCase() === "market";
+  const href = isMarket ? "/market/auth?mode=signup" : "/auth?mode=signup";
+  const title = isMarket ? "Vende o teu carro no GarageFlow Market" : "Comece hoje. Sem cartão.";
+  const subtitle = isMarket
+    ? "Anúncios verificados, pagamento seguro em escrow e inspeção opcional."
+    : "30 dias grátis. Tudo o que precisa para gerir a sua oficina.";
+  const label = isMarket ? "Entrar no Market" : "Testar grátis 30 dias";
   return (
     <div className="rounded-2xl p-6 sm:p-8 bg-primary/5 border border-primary/20 text-center my-10">
-      <h3 className="text-xl font-bold mb-2">Comece hoje. Sem cartão.</h3>
-      <p className="text-sm text-muted-foreground mb-4">30 dias grátis. Tudo o que precisa para gerir a sua oficina.</p>
-      <Link to="/auth?mode=signup">
-        <Button size="lg">Testar grátis 30 dias <ArrowRight className="w-4 h-4 ml-2" /></Button>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{subtitle}</p>
+      <Link to={href}>
+        <Button size="lg">{label} <ArrowRight className="w-4 h-4 ml-2" /></Button>
       </Link>
     </div>
   );
 }
+

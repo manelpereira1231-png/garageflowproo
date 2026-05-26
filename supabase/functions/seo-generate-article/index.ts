@@ -43,12 +43,20 @@ serve(async (req) => {
     const { topic, intent = "solucao", category = "Gestão", save = true } = await req.json();
     if (!topic || typeof topic !== "string") throw new Error("topic obrigatório");
 
-    const systemPrompt = `És redator SEO sénior para o GarageFlow, um ERP/CRM para oficinas auto em Portugal.
-Escreve sempre em português de Portugal (PT-PT), linguagem natural, prática e focada em oficinas reais.
+    const isMarket = String(category).toLowerCase() === "market";
+    const productContext = isMarket
+      ? `GarageFlow Market — marketplace de viaturas usadas em Portugal, com inspeções por oficinas certificadas e pagamento seguro em escrow (Stripe Connect). NUNCA misturar com o ERP de oficinas.`
+      : `GarageFlow — ERP/CRM para oficinas auto em Portugal (orçamentos, faturação, clientes, viaturas, agenda). NUNCA misturar com o Market de viaturas.`;
+    const ctaUrl = isMarket ? "/market/auth?mode=signup" : "/auth?mode=signup";
+    const ctaLabel = isMarket ? "Entrar no GarageFlow Market" : "Testar grátis 30 dias";
+
+    const systemPrompt = `És redator SEO sénior. Contexto do produto: ${productContext}
+Escreve sempre em português de Portugal (PT-PT), linguagem natural, prática e focada em ${isMarket ? "compradores e vendedores de viaturas" : "oficinas reais"}.
 NUNCA inventes estatísticas, percentagens, testemunhos, casos ou números. Se não souberes, fala em termos qualitativos.
 NUNCA faças keyword stuffing. NUNCA prometas resultados específicos.
-Liga ao GarageFlow quando for natural (ERP de oficinas, gestão de orçamentos, faturação, clientes, viaturas).
-Termina sempre com CTA "Testar grátis 30 dias" para /auth?mode=signup.`;
+NUNCA cruzes ERP com Market: se o artigo é ${isMarket ? "Market, NÃO promovas o ERP" : "ERP, NÃO promovas o Market"}.
+Termina sempre com CTA "${ctaLabel}" apontando para ${ctaUrl}.`;
+
 
     const userPrompt = `Tema/keyword: "${topic}"
 Intenção: ${intent} (problema | solucao | comparativo | educativo)

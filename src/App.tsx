@@ -779,6 +779,9 @@ function AppRoutes() {
             <Route path="/legal/my-data" element={<Suspense fallback={<PageLoader />}><MyData /></Suspense>} />
             <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
+            {publicSeoRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
             <Route path="/carity" element={<Navigate to="/market" replace />} />
             <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />

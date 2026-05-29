@@ -479,6 +479,35 @@ const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path 
 // For authenticated users, "/" should redirect to their app dashboard — never show the landing page again.
 const publicRoutesAuthed = publicRoutesWithoutMarketAuth.filter((route) => route.path !== "/");
 
+const publicSeoRoutes = publicRoutes.filter((route) =>
+  route.path === "/blog" ||
+  route.path === "/blog/:slug" ||
+  route.path === "/software-gestao-oficinas" ||
+  route.path === "/erp-oficina-automovel" ||
+  route.path === "/alternativa-excel-oficinas" ||
+  route.path === "/programa-faturacao-oficinas" ||
+  route.path === "/orcamentos-oficina-digital" ||
+  route.path === "/como-gerir-oficina" ||
+  route.path === "/como-fazer-orcamentos-oficina" ||
+  route.path === "/como-controlar-clientes-oficina" ||
+  route.path === "/como-organizar-oficina-automovel" ||
+  route.path === "/software-oficinas-vs-excel" ||
+  route.path === "/melhor-software-oficinas-portugal" ||
+  route.path === "/software-oficinas-preco" ||
+  route.path === "/software-oficinas-cloud" ||
+  route.path === "/como-gerir-viaturas-oficina" ||
+  route.path === "/erp-vs-excel-oficina" ||
+  route.path === "/oficinas/:cidade" ||
+  route.path === "/gestao-oficinas/:cidade" ||
+  route.path === "/erp-automovel/:cidade" ||
+  route.path === "/software-oficinas/:cidade" ||
+  route.path === "/oficinas-lisboa" ||
+  route.path === "/oficinas-porto" ||
+  route.path === "/oficinas-braga" ||
+  route.path === "/oficinas-faro" ||
+  route.path === "/oficinas-coimbra"
+);
+
 const USER_TYPE_CACHE_KEY = "garageflow_user_type_cache";
 
 type CachedUserType = {
@@ -750,6 +779,9 @@ function AppRoutes() {
             <Route path="/legal/my-data" element={<Suspense fallback={<PageLoader />}><MyData /></Suspense>} />
             <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
+            {publicSeoRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
             <Route path="/carity" element={<Navigate to="/market" replace />} />
             <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />

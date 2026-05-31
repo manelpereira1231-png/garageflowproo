@@ -422,7 +422,7 @@ const publicRoutes = [
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
-  { path: "/market/listing/:id", element: <Navigate to="/market/car/:id" replace /> },
+  { path: "/market/listing/:id", element: <LegacyMarketListingRedirect /> },
   { path: "/market/carros/:slug", element: <Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
@@ -767,7 +767,7 @@ function AppRoutes() {
             <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
             <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
-            <Route path="/market/listing/:id" element={<Navigate to="/market/car/:id" replace />} />
+            <Route path="/market/listing/:id" element={<LegacyMarketListingRedirect />} />
             <Route path="/market/carros/:slug" element={<Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense>} />
             <Route path="/market/sell" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
             <Route path="/market/dashboard" element={<MarketLoginRouteRedirect />} />

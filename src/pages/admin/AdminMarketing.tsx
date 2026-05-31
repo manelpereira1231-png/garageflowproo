@@ -105,18 +105,12 @@ export default function AdminMarketing() {
   const handleSend = async (campaign: Campaign) => {
     if (!confirm(`Vais enviar "${campaign.name}" para ${audienceLabels[campaign.audience as Audience]}.\n\nIsto NÃO pode ser revertido. Confirmas?`)) return;
     setSending(campaign.id);
-    const { data: { session } } = await supabase.auth.getSession();
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co/admin-send-campaign`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ campaign_id: campaign.id }),
+      const { data: result, error } = await supabase.functions.invoke("admin-send-campaign", {
+        body: { campaign_id: campaign.id },
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Falha ao enviar");
+      if (error) throw new Error(error.message || "Falha ao enviar");
+      if (result?.error) throw new Error(result.error);
       toast({
         title: "Campanha enviada",
         description: `${result.sent} enviados / ${result.failed} falhas (de ${result.total})`,

@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -161,6 +161,11 @@ const queryClient = new QueryClient({
 });
 
 const AUTO_RECOVERY_KEY = "garageflow_auto_recover_attempted";
+
+function LegacyMarketListingRedirect() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/market/car/${id}` : "/market"} replace />;
+}
 
 const isRecoverableLoadError = (message: string) => {
   const normalized = message.toLowerCase();
@@ -417,6 +422,7 @@ const publicRoutes = [
   { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
+  { path: "/market/listing/:id", element: <LegacyMarketListingRedirect /> },
   { path: "/market/carros/:slug", element: <Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense> },
   { path: "/market/sell", element: <Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense> },
   { path: "/market/pay/:id", element: <Suspense fallback={<PageLoader />}><CarityPayInspection /></Suspense> },
@@ -761,6 +767,7 @@ function AppRoutes() {
             <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
             <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
+            <Route path="/market/listing/:id" element={<LegacyMarketListingRedirect />} />
             <Route path="/market/carros/:slug" element={<Suspense fallback={<PageLoader />}><CarityListingSEO /></Suspense>} />
             <Route path="/market/sell" element={<Suspense fallback={<PageLoader />}><CaritySellCar /></Suspense>} />
             <Route path="/market/dashboard" element={<MarketLoginRouteRedirect />} />

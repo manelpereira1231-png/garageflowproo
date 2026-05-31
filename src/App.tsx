@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -161,6 +161,11 @@ const queryClient = new QueryClient({
 });
 
 const AUTO_RECOVERY_KEY = "garageflow_auto_recover_attempted";
+
+function LegacyMarketListingRedirect() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/market/car/${id}` : "/market"} replace />;
+}
 
 const isRecoverableLoadError = (message: string) => {
   const normalized = message.toLowerCase();

@@ -73,7 +73,7 @@ export default function AdminMarketListings() {
                 <div className="py-8 text-center text-sm text-muted-foreground">Nenhum anúncio encontrado.</div>
               )}
               {filtered.map(r => (
-                <Link key={r.id} to={`/market/listing/${r.id}`}
+                <Link key={r.id} to={`/market/car/${r.id}`}
                   className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{r.make} {r.model} <span className="text-muted-foreground">({r.year})</span></p>

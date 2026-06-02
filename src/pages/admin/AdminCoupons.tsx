@@ -33,19 +33,29 @@ const TYPE_LABELS = {
   trial_extension: { label: "Extensão Trial", color: "bg-purple-500/15 text-purple-500 border-purple-500/30" },
 };
 
+const EMPTY_DRAFT = {
+  code: "",
+  description: "",
+  discount_type: "percent" as Coupon["discount_type"],
+  discount_value: 10,
+  applies_to_plan: "any",
+  max_redemptions: "" as string | number,
+  expires_at: "",
+};
+
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [draft, setDraft] = useState({
-    code: "",
-    description: "",
-    discount_type: "percent" as Coupon["discount_type"],
-    discount_value: 10,
-    applies_to_plan: "any",
-    max_redemptions: "" as string | number,
-    expires_at: "",
-  });
+  const [editing, setEditing] = useState<Coupon | null>(null);
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
 
   const load = async () => {
     setLoading(true);
@@ -61,9 +71,21 @@ export default function AdminCoupons() {
     setDraft(d => ({ ...d, code }));
   };
 
-  const create = async () => {
+  const openEdit = (c: Coupon) => {
+    setEditing(c);
+    setDraft({
+      code: c.code,
+      description: c.description || "",
+      discount_type: c.discount_type,
+      discount_value: c.discount_value,
+      applies_to_plan: c.applies_to_plan,
+      max_redemptions: c.max_redemptions ?? "",
+      expires_at: toLocalInput(c.expires_at),
+    });
+  };
+
+  const save = async () => {
     if (!draft.code) { toast.error("Código obrigatório"); return; }
-    const { data: { user } } = await supabase.auth.getUser();
     const payload: any = {
       code: draft.code.toUpperCase(),
       description: draft.description || null,
@@ -72,13 +94,21 @@ export default function AdminCoupons() {
       applies_to_plan: draft.applies_to_plan,
       max_redemptions: draft.max_redemptions === "" ? null : Number(draft.max_redemptions),
       expires_at: draft.expires_at || null,
-      created_by: user?.id,
     };
-    const { error } = await supabase.from("admin_coupons").insert(payload);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Cupão ${payload.code} criado`);
-    setCreateOpen(false);
-    setDraft({ code: "", description: "", discount_type: "percent", discount_value: 10, applies_to_plan: "any", max_redemptions: "", expires_at: "" });
+    if (editing) {
+      const { error } = await supabase.from("admin_coupons").update(payload).eq("id", editing.id);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Cupão ${payload.code} atualizado`);
+      setEditing(null);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      payload.created_by = user?.id;
+      const { error } = await supabase.from("admin_coupons").insert(payload);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Cupão ${payload.code} criado`);
+      setCreateOpen(false);
+    }
+    setDraft({ ...EMPTY_DRAFT });
     load();
   };
 

@@ -172,8 +172,10 @@ export default function AdminEmailLogs() {
         </div>
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>{t('admin.emailLogs.previous')}</Button>
-          <span className="text-xs text-muted-foreground">{t('admin.emailLogs.page')} {page + 1}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={filtered.length < PAGE_SIZE}>{t('admin.emailLogs.next')}</Button>
+          <span className="text-xs text-muted-foreground">
+            {t('admin.emailLogs.page')} {page + 1} {totalCount > 0 && `· ${totalCount} ${t('admin.emailLogs.records')}`}
+          </span>
+          <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * PAGE_SIZE >= totalCount}>{t('admin.emailLogs.next')}</Button>
         </div>
       </div>
     </div>

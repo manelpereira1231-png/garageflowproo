@@ -29,25 +29,31 @@ export default function AdminEmailLogs() {
   const [shops, setShops] = useState<{ id: string; name: string }[]>([]);
   const [shopFilter, setShopFilter] = useState("all");
   const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 25;
 
   useEffect(() => {
     const load = async () => {
-      const [logsRes, shopsRes] = await Promise.all([
-        supabase.from("email_logs").select("*").order("created_at", { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
-        supabase.from("shops").select("id, name"),
-      ]);
+      setLoading(true);
+      let q = supabase.from("email_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (shopFilter !== "all") q = q.eq("shop_id", shopFilter);
+      const { data: rows, count } = await q.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      const shopsRes = await supabase.from("shops").select("id, name");
       const shopMap = new Map((shopsRes.data || []).map(s => [s.id, s.name]));
       setShops(shopsRes.data || []);
-      setLogs((logsRes.data || []).map(l => ({ ...l, shop_name: shopMap.get(l.shop_id) || "—" })));
+      setLogs((rows || []).map(l => ({ ...l, shop_name: shopMap.get(l.shop_id) || "—" })));
+      setTotalCount(count ?? 0);
       setLoading(false);
     };
     load();
-  }, [page]);
+  }, [page, statusFilter, shopFilter]);
 
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [statusFilter, shopFilter]);
+
+  // Search is client-side within the current page only
   const filtered = logs.filter(l => {
-    if (statusFilter !== "all" && l.status !== statusFilter) return false;
-    if (shopFilter !== "all" && l.shop_id !== shopFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return l.to_email.toLowerCase().includes(q) || l.subject.toLowerCase().includes(q);

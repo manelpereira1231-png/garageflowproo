@@ -328,9 +328,12 @@ export default function AdminCoupons() {
                           : <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end items-center gap-2">
+                        <div className="flex justify-end items-center gap-1">
                           <Switch checked={c.active} onCheckedChange={() => toggle(c)} />
-                          <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(c)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => remove(c.id)} title="Eliminar">
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>

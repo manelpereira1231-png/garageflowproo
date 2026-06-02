@@ -113,9 +113,35 @@ export default function AdminSupport() {
         status: "resolved",
       })
       .eq("id", selected.id);
+    if (error) {
+      setSaving(false);
+      toast.error("Erro a guardar resposta");
+      return;
+    }
+
+    // Email the response to the user
+    const safe = response.replace(/[<>]/g, (c) => ({ "<": "&lt;", ">": "&gt;" }[c] || c)).replace(/\n/g, "<br/>");
+    const html = `
+      <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
+        <h2 style="margin:0 0 16px;font-size:20px">Resposta ao seu pedido de suporte</h2>
+        <p style="color:#475569;font-size:14px;margin:0 0 8px"><strong>Assunto:</strong> ${selected.subject.replace(/[<>]/g, "")}</p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;font-size:14px;line-height:1.6">${safe}</div>
+        <p style="color:#64748b;font-size:13px">Se precisar de mais ajuda, responda diretamente a este email.</p>
+        <p style="color:#94a3b8;font-size:12px;margin-top:24px">Equipa GarageFlow</p>
+      </div>`;
+    const { error: emailError } = await supabase.functions.invoke("send-email", {
+      body: {
+        to: selected.contact_email,
+        subject: `Re: ${selected.subject}`,
+        html,
+      },
+    });
     setSaving(false);
-    if (error) { toast.error("Erro a guardar resposta"); return; }
-    toast.success("Resposta guardada. Envie também por email se quiser contactar o utilizador diretamente.");
+    if (emailError) {
+      toast.warning("Resposta guardada, mas o email falhou. Contacte o utilizador manualmente.");
+    } else {
+      toast.success("Resposta enviada por email e ticket marcado como resolvido.");
+    }
     setResponse("");
     setSelected(null);
     load();

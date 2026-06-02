@@ -164,11 +164,12 @@ export default function AdminSystemHealth() {
       { name: "audit_logs", label: "Logs de Auditoria" },
       { name: "email_logs", label: "Logs de Email" },
     ];
-    const tableCounts: { table: string; count: number }[] = [];
-    for (const tbl of tableDefs) {
-      const { count } = await supabase.from(tbl.name as any).select("id", { count: "exact", head: true });
-      tableCounts.push({ table: tbl.label, count: count || 0 });
-    }
+    const countResults = await Promise.all(
+      tableDefs.map(tbl =>
+        supabase.from(tbl.name as any).select("id", { count: "exact", head: true })
+      )
+    );
+    const tableCounts = tableDefs.map((tbl, i) => ({ table: tbl.label, count: countResults[i].count || 0 }));
     setTableStats(tableCounts);
 
     // Eventos críticos recentes

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ export default function AdminCarity() {
   const [resolvingEscrow, setResolvingEscrow] = useState<string | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const [tab, setTab] = useState(() => new URLSearchParams(location.search).get("tab") || "urgent");
   useEffect(() => {
     const t = new URLSearchParams(location.search).get("tab");
@@ -878,7 +879,7 @@ export default function AdminCarity() {
                         <Switch checked={seller.verified} onCheckedChange={v => toggleSellerVerified(seller.id, v)} />
                       </div>
                       {seller.kyc_status === "submitted" && (
-                        <Button size="sm" variant="outline" className="h-8" onClick={() => { window.location.href = "/admin/market-kyc"; }}>
+                        <Button size="sm" variant="outline" className="h-8" onClick={() => navigate("/admin/market-kyc")}>
                           KYC
                         </Button>
                       )}

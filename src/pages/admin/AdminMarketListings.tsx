@@ -3,29 +3,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Store, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Store, Search, ExternalLink, EyeOff, Eye, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function AdminMarketListings() {
   const [rows, setRows] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      let query = supabase
-        .from("carity_listings")
-        .select("id, make, model, year, plate, price, status, created_at, sold_at, seller_id")
-        .order("created_at", { ascending: false })
-        .limit(300);
-      if (status !== "all") query = query.eq("status", status);
-      const { data } = await query;
-      setRows(data || []);
-      setLoading(false);
-    })();
-  }, [status]);
+  const load = async () => {
+    setLoading(true);
+    let query = supabase
+      .from("carity_listings")
+      .select("id, make, model, year, plate, price, status, created_at, sold_at, seller_id")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (status !== "all") query = query.eq("status", status);
+    const { data } = await query;
+    setRows(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [status]);
 
   const filtered = rows.filter(r => {
     if (!q) return true;
@@ -39,11 +42,30 @@ export default function AdminMarketListings() {
 
   const STATUSES = ["all", "pending_payment", "pending_inspection", "inspection_in_progress", "published", "reserved", "sold", "cancelled"];
 
+  const setListingStatus = async (id: string, newStatus: string) => {
+    setBusy(id);
+    const { error } = await supabase.from("carity_listings").update({ status: newStatus }).eq("id", id);
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(newStatus === "cancelled" ? "Anúncio despublicado" : "Anúncio republicado");
+    load();
+  };
+
+  const removeListing = async (id: string) => {
+    if (!confirm("Eliminar este anúncio definitivamente? Esta ação não pode ser desfeita.")) return;
+    setBusy(id);
+    const { error } = await supabase.from("carity_listings").delete().eq("id", id);
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Anúncio eliminado");
+    load();
+  };
+
   return (
     <div className="space-y-4 p-1">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2"><Store className="w-6 h-6 text-amber-500" /> Market — Anúncios</h1>
-        <p className="text-sm text-muted-foreground">Todos os anúncios do marketplace.</p>
+        <p className="text-sm text-muted-foreground">Todos os anúncios do marketplace. Use os botões para despublicar, republicar ou eliminar.</p>
       </div>
 
       <Card>
@@ -73,9 +95,8 @@ export default function AdminMarketListings() {
                 <div className="py-8 text-center text-sm text-muted-foreground">Nenhum anúncio encontrado.</div>
               )}
               {filtered.map(r => (
-                <Link key={r.id} to={`/market/car/${r.id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent transition-colors">
-                  <div className="min-w-0">
+                <div key={r.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/40 transition-colors">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.make} {r.model} <span className="text-muted-foreground">({r.year})</span></p>
                     <p className="text-[11px] text-muted-foreground font-mono">{r.plate || "sem matrícula"}</p>
                   </div>
@@ -83,7 +104,27 @@ export default function AdminMarketListings() {
                     <p className="text-sm font-bold text-amber-600">€{Number(r.price || 0).toLocaleString("pt-PT")}</p>
                     <Badge variant="outline" className="text-[10px] mt-1">{r.status}</Badge>
                   </div>
-                </Link>
+                  <div className="flex items-center gap-1">
+                    <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Abrir página pública">
+                      <Link to={`/market/car/${r.id}`} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></Link>
+                    </Button>
+                    {r.status !== "cancelled" && r.status !== "sold" ? (
+                      <Button size="icon" variant="ghost" className="h-8 w-8" title="Despublicar"
+                        disabled={busy === r.id} onClick={() => setListingStatus(r.id, "cancelled")}>
+                        <EyeOff className="w-4 h-4 text-amber-600" />
+                      </Button>
+                    ) : r.status === "cancelled" ? (
+                      <Button size="icon" variant="ghost" className="h-8 w-8" title="Republicar"
+                        disabled={busy === r.id} onClick={() => setListingStatus(r.id, "published")}>
+                        <Eye className="w-4 h-4 text-emerald-600" />
+                      </Button>
+                    ) : null}
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Eliminar"
+                      disabled={busy === r.id} onClick={() => removeListing(r.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </CardContent>

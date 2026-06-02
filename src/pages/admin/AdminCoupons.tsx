@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Copy, Trash2, Tag, Gift, Percent, Calendar } from "lucide-react";
+import { Plus, Copy, Trash2, Tag, Gift, Percent, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface Coupon {
@@ -33,19 +33,29 @@ const TYPE_LABELS = {
   trial_extension: { label: "Extensão Trial", color: "bg-purple-500/15 text-purple-500 border-purple-500/30" },
 };
 
+const EMPTY_DRAFT = {
+  code: "",
+  description: "",
+  discount_type: "percent" as Coupon["discount_type"],
+  discount_value: 10,
+  applies_to_plan: "any",
+  max_redemptions: "" as string | number,
+  expires_at: "",
+};
+
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [draft, setDraft] = useState({
-    code: "",
-    description: "",
-    discount_type: "percent" as Coupon["discount_type"],
-    discount_value: 10,
-    applies_to_plan: "any",
-    max_redemptions: "" as string | number,
-    expires_at: "",
-  });
+  const [editing, setEditing] = useState<Coupon | null>(null);
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
 
   const load = async () => {
     setLoading(true);
@@ -61,9 +71,21 @@ export default function AdminCoupons() {
     setDraft(d => ({ ...d, code }));
   };
 
-  const create = async () => {
+  const openEdit = (c: Coupon) => {
+    setEditing(c);
+    setDraft({
+      code: c.code,
+      description: c.description || "",
+      discount_type: c.discount_type,
+      discount_value: c.discount_value,
+      applies_to_plan: c.applies_to_plan,
+      max_redemptions: c.max_redemptions ?? "",
+      expires_at: toLocalInput(c.expires_at),
+    });
+  };
+
+  const save = async () => {
     if (!draft.code) { toast.error("Código obrigatório"); return; }
-    const { data: { user } } = await supabase.auth.getUser();
     const payload: any = {
       code: draft.code.toUpperCase(),
       description: draft.description || null,
@@ -72,13 +94,21 @@ export default function AdminCoupons() {
       applies_to_plan: draft.applies_to_plan,
       max_redemptions: draft.max_redemptions === "" ? null : Number(draft.max_redemptions),
       expires_at: draft.expires_at || null,
-      created_by: user?.id,
     };
-    const { error } = await supabase.from("admin_coupons").insert(payload);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Cupão ${payload.code} criado`);
-    setCreateOpen(false);
-    setDraft({ code: "", description: "", discount_type: "percent", discount_value: 10, applies_to_plan: "any", max_redemptions: "", expires_at: "" });
+    if (editing) {
+      const { error } = await supabase.from("admin_coupons").update(payload).eq("id", editing.id);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Cupão ${payload.code} atualizado`);
+      setEditing(null);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      payload.created_by = user?.id;
+      const { error } = await supabase.from("admin_coupons").insert(payload);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Cupão ${payload.code} criado`);
+      setCreateOpen(false);
+    }
+    setDraft({ ...EMPTY_DRAFT });
     load();
   };
 
@@ -112,7 +142,7 @@ export default function AdminCoupons() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cupões e Ofertas</h1>
           <p className="text-sm text-muted-foreground mt-1">Crie códigos de desconto, meses grátis e extensões de trial.</p>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) setDraft({ ...EMPTY_DRAFT }); }}>
           <DialogTrigger asChild>
             <Button><Plus className="w-4 h-4 mr-2" />Novo cupão</Button>
           </DialogTrigger>
@@ -174,7 +204,68 @@ export default function AdminCoupons() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-              <Button onClick={create}>Criar cupão</Button>
+              <Button onClick={save}>Criar cupão</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setDraft({ ...EMPTY_DRAFT }); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Editar cupão</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Código</Label>
+                <Input value={draft.code} onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))} className="font-mono uppercase" />
+              </div>
+              <div>
+                <Label>Descrição interna</Label>
+                <Input value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={draft.discount_type} onValueChange={(v: any) => setDraft(d => ({ ...d, discount_type: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">% Desconto</SelectItem>
+                      <SelectItem value="amount">€ Desconto fixo</SelectItem>
+                      <SelectItem value="free_months">Meses grátis</SelectItem>
+                      <SelectItem value="trial_extension">Extensão de trial (dias)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Valor</Label>
+                  <Input type="number" min={0} value={draft.discount_value} onChange={e => setDraft(d => ({ ...d, discount_value: Number(e.target.value) }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Plano alvo</Label>
+                  <Select value={draft.applies_to_plan} onValueChange={(v) => setDraft(d => ({ ...d, applies_to_plan: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Qualquer plano</SelectItem>
+                      <SelectItem value="pro">Apenas Pro</SelectItem>
+                      <SelectItem value="garage">Apenas Garage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Máx. utilizações</Label>
+                  <Input type="number" min={1} value={draft.max_redemptions} onChange={e => setDraft(d => ({ ...d, max_redemptions: e.target.value }))} placeholder="Sem limite" />
+                </div>
+              </div>
+              <div>
+                <Label>Expira em</Label>
+                <Input type="datetime-local" value={draft.expires_at} onChange={e => setDraft(d => ({ ...d, expires_at: e.target.value }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button onClick={save}>Guardar alterações</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -237,9 +328,12 @@ export default function AdminCoupons() {
                           : <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end items-center gap-2">
+                        <div className="flex justify-end items-center gap-1">
                           <Switch checked={c.active} onCheckedChange={() => toggle(c)} />
-                          <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(c)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => remove(c.id)} title="Eliminar">
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>

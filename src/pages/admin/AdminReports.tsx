@@ -67,7 +67,7 @@ export default function AdminReports() {
     const [shopsRes, subsRes, woRes, invRes, clientsRes, vehiclesRes, quotesRes, trialRes] = await Promise.all([
       supabase.from("shops").select("id, name, status, created_at"),
       supabase.from("subscriptions").select("plan, status, trial_end, created_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id"),
-      supabase.from("work_orders" as any).select("total, status, created_at, shop_id"),
+      supabase.from("work_orders").select("total, status, created_at, shop_id"),
       supabase.from("invoices").select("total, status, created_at, shop_id"),
       supabase.from("clients").select("id", { count: "exact", head: true }),
       supabase.from("vehicles").select("id", { count: "exact", head: true }),

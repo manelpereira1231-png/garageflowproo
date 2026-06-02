@@ -53,15 +53,21 @@ export default function AdminRiskEngine() {
   const [filter, setFilter] = useState("all");
   const [trust, setTrust] = useState<any[]>([]);
 
+  const [shopNames, setShopNames] = useState<Record<string, string>>({});
+
   const load = async () => {
     setLoading(true);
-    const [{ data: rd, error: re }, { data: td }] = await Promise.all([
+    const [{ data: rd, error: re }, { data: td }, { data: sd }] = await Promise.all([
       supabase.rpc("admin_list_risk_inspections" as any, { _filter: filter, _limit: 300 }),
       supabase.from("workshop_trust_scores" as any).select("*").order("score", { ascending: false }).limit(50),
+      supabase.from("shops").select("id, name"),
     ]);
     if (re) toast.error(re.message);
     setRows((rd as any) || []);
     setTrust((td as any) || []);
+    const map: Record<string, string> = {};
+    (sd || []).forEach((s: any) => { map[s.id] = s.name || ""; });
+    setShopNames(map);
     setLoading(false);
   };
 
@@ -205,7 +211,7 @@ export default function AdminRiskEngine() {
                 <tbody>
                   {trust.map((t: any) => (
                     <tr key={t.shop_id} className="border-b border-border/40">
-                      <td className="py-2 px-2 font-mono text-[11px]">{t.shop_id.slice(0, 8)}…</td>
+                      <td className="py-2 px-2 text-sm">{shopNames[t.shop_id] || <span className="font-mono text-[11px] text-muted-foreground">{t.shop_id.slice(0, 8)}…</span>}</td>
                       <td className="py-2 px-2 font-semibold">{t.score}/100</td>
                       <td className="py-2 px-2 capitalize">{t.level}</td>
                       <td className="py-2 px-2">{t.total_inspections}</td>

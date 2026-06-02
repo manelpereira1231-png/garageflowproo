@@ -82,9 +82,10 @@ export default function AdminFeatureAdoption() {
       setCohorts(cohortRows.slice(-6));
 
       const PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
-      const activePaid = (subs || []).filter(s => s.status === "active" && s.plan !== "free");
+      // NRR/MRR só contam subscrições reais do Stripe — alinhado com AdminFinance/AdminBilling/AdminReports
+      const activePaid = (subs || []).filter(s => s.status === "active" && s.plan !== "free" && !!s.stripe_subscription_id);
       const currentMRR = activePaid.reduce((sum, s) => sum + (PRICES[s.plan] || 0), 0);
-      const prevMonthSubs = (subs || []).filter(s => new Date(s.created_at) < new Date(now.getFullYear(), now.getMonth(), 1));
+      const prevMonthSubs = (subs || []).filter(s => new Date(s.created_at) < new Date(now.getFullYear(), now.getMonth(), 1) && !!s.stripe_subscription_id);
       const prevMRR = prevMonthSubs.filter(s => s.plan !== "free").reduce((sum, s) => sum + (PRICES[s.plan] || 0), 0);
       setNrr(prevMRR > 0 ? Math.round((currentMRR / prevMRR) * 100) : 100);
 

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Copy, Trash2, Tag, Gift, Percent, Calendar } from "lucide-react";
+import { Plus, Copy, Trash2, Tag, Gift, Percent, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface Coupon {
@@ -142,7 +142,7 @@ export default function AdminCoupons() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cupões e Ofertas</h1>
           <p className="text-sm text-muted-foreground mt-1">Crie códigos de desconto, meses grátis e extensões de trial.</p>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) setDraft({ ...EMPTY_DRAFT }); }}>
           <DialogTrigger asChild>
             <Button><Plus className="w-4 h-4 mr-2" />Novo cupão</Button>
           </DialogTrigger>
@@ -204,7 +204,68 @@ export default function AdminCoupons() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-              <Button onClick={create}>Criar cupão</Button>
+              <Button onClick={save}>Criar cupão</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setDraft({ ...EMPTY_DRAFT }); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Editar cupão</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Código</Label>
+                <Input value={draft.code} onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))} className="font-mono uppercase" />
+              </div>
+              <div>
+                <Label>Descrição interna</Label>
+                <Input value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={draft.discount_type} onValueChange={(v: any) => setDraft(d => ({ ...d, discount_type: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">% Desconto</SelectItem>
+                      <SelectItem value="amount">€ Desconto fixo</SelectItem>
+                      <SelectItem value="free_months">Meses grátis</SelectItem>
+                      <SelectItem value="trial_extension">Extensão de trial (dias)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Valor</Label>
+                  <Input type="number" min={0} value={draft.discount_value} onChange={e => setDraft(d => ({ ...d, discount_value: Number(e.target.value) }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Plano alvo</Label>
+                  <Select value={draft.applies_to_plan} onValueChange={(v) => setDraft(d => ({ ...d, applies_to_plan: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Qualquer plano</SelectItem>
+                      <SelectItem value="pro">Apenas Pro</SelectItem>
+                      <SelectItem value="garage">Apenas Garage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Máx. utilizações</Label>
+                  <Input type="number" min={1} value={draft.max_redemptions} onChange={e => setDraft(d => ({ ...d, max_redemptions: e.target.value }))} placeholder="Sem limite" />
+                </div>
+              </div>
+              <div>
+                <Label>Expira em</Label>
+                <Input type="datetime-local" value={draft.expires_at} onChange={e => setDraft(d => ({ ...d, expires_at: e.target.value }))} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button onClick={save}>Guardar alterações</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -54,7 +54,7 @@ export default function AdminFeatureAdoption() {
       const { data: weekLogs } = await supabase.from("audit_logs").select("user_id").gte("created_at", weekAgo);
       setWeeklyActive(new Set((weekLogs || []).map(l => l.user_id).filter(Boolean)).size);
 
-      const { data: subs } = await supabase.from("subscriptions").select("plan, status, created_at").order("created_at", { ascending: true });
+      const { data: subs } = await supabase.from("subscriptions").select("plan, status, created_at, stripe_subscription_id").order("created_at", { ascending: true });
 
       const cohortMap = new Map<string, { total: number; active: number[] }>();
       (subs || []).forEach(s => {

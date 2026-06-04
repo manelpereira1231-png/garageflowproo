@@ -210,13 +210,6 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
           </div>
         </div>
 
-        <div className="px-3 pb-2">
-          <button onClick={() => navigate("/admin/shops")}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all">
-            <Building2 className="w-4.5 h-4.5" />
-            Entrar numa Oficina
-          </button>
-        </div>
 
         <div className="p-3 border-t border-sidebar-border">
           <button onClick={handleLogout}

@@ -27,6 +27,7 @@ const SeoLandingPage = lazy(() => import("@/pages/seo/SeoLandingPage"));
 const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
 const SeoBlogIndex = lazy(() => import("@/pages/seo/SeoBlogIndex"));
 const SeoBlogPost = lazy(() => import("@/pages/seo/SeoBlogPost"));
+const GratisLanding = lazy(() => import("@/pages/GratisLanding"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {

@@ -470,7 +470,6 @@ export const SEO_CITIES = [
   { slug: "braganca", name: "Bragança", region: "Trás-os-Montes" },
   { slug: "chaves", name: "Chaves", region: "Trás-os-Montes" },
   // Centro
-  { slug: "viseu", name: "Viseu", region: "Centro" },
   { slug: "guarda", name: "Guarda", region: "Centro" },
   { slug: "covilha", name: "Covilhã", region: "Centro" },
   { slug: "castelo-branco", name: "Castelo Branco", region: "Centro" },

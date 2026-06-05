@@ -27,6 +27,7 @@ const SeoLandingPage = lazy(() => import("@/pages/seo/SeoLandingPage"));
 const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
 const SeoBlogIndex = lazy(() => import("@/pages/seo/SeoBlogIndex"));
 const SeoBlogPost = lazy(() => import("@/pages/seo/SeoBlogPost"));
+const GratisLanding = lazy(() => import("@/pages/GratisLanding"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {
@@ -754,6 +755,10 @@ function AppRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/gratis-3-meses" element={<Suspense fallback={<PageLoader />}><GratisLanding /></Suspense>} />
+            <Route path="/gratis" element={<Navigate to="/gratis-3-meses" replace />} />
+            <Route path="/trial" element={<Navigate to="/gratis-3-meses" replace />} />
+            <Route path="/free" element={<Navigate to="/gratis-3-meses" replace />} />
             <Route path="/quote/:token" element={<QuoteApproval />} />
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/reset-password" element={<ResetPassword />} />

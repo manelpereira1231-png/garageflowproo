@@ -73,8 +73,8 @@ serve(async (req: Request) => {
         `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none" /></body>`,
       );
     }
-      ? "GarageFlow <onboarding@resend.dev>"
-      : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
+
+
 
     console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject}`);
 

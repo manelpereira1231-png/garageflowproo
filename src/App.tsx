@@ -561,6 +561,12 @@ function AuthenticatedRoutes() {
   const [isCarityUser, setIsCarityUser] = useState(cached?.isCarityUser ?? false);
   const [ready, setReady] = useState(Boolean(cached));
 
+  // Touch activity once when user is hydrated (login + page reloads).
+  useEffect(() => {
+    if (!user?.id) return;
+    import("@/lib/trackEvent").then(({ touchActivity }) => touchActivity());
+  }, [user?.id]);
+
   useEffect(() => {
     if (adminLoading || !authReady) return;
     if (isSuperAdmin) {
@@ -571,6 +577,7 @@ function AuthenticatedRoutes() {
       setReady(true);
       return;
     }
+
 
     let cancelled = false;
     const checkUserState = async () => {

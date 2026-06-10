@@ -96,6 +96,8 @@ const CarityByMake = lazyRetry(() => import("@/pages/CarityByMake"));
 const CarityByCity = lazyRetry(() => import("@/pages/CarityByCity"));
 const CarityByModel = lazyRetry(() => import("@/pages/CarityByModel"));
 const CarityByPrice = lazyRetry(() => import("@/pages/CarityByPrice"));
+const CarityByFuel = lazyRetry(() => import("@/pages/CarityByFuel"));
+const CarityBySegment = lazyRetry(() => import("@/pages/CarityBySegment"));
 const CarityFavorites = lazyRetry(() => import("@/pages/CarityFavorites"));
 const CarityListingSEO = lazyRetry(() => import("@/pages/CarityListingSEO"));
 const MarketPurchases = lazyRetry(() => import("@/pages/MarketPurchases"));
@@ -433,6 +435,8 @@ const publicRoutes = [
   { path: "/market/city/:city", element: <Suspense fallback={<PageLoader />}><CarityByCity /></Suspense> },
   { path: "/market/modelo/:make/:model", element: <Suspense fallback={<PageLoader />}><CarityByModel /></Suspense> },
   { path: "/market/preco/:range", element: <Suspense fallback={<PageLoader />}><CarityByPrice /></Suspense> },
+  { path: "/market/combustivel/:fuel", element: <Suspense fallback={<PageLoader />}><CarityByFuel /></Suspense> },
+  { path: "/market/segmento/:segment", element: <Suspense fallback={<PageLoader />}><CarityBySegment /></Suspense> },
   { path: "/market/stands", element: <Suspense fallback={<PageLoader />}><MarketStandsDirectory /></Suspense> },
   { path: "/market/stand/:slug", element: <Suspense fallback={<PageLoader />}><MarketStandPublic /></Suspense> },
   { path: "/market/verify/:token", element: <Suspense fallback={<PageLoader />}><MarketVerifyCertificate /></Suspense> },

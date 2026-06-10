@@ -108,7 +108,7 @@ export default function LandingPage() {
       name: "GarageFlow",
       url: SITE_URL,
       logo: `${SITE_URL}/og-image.jpg`,
-      sameAs: ["https://garageflow-pt.lovable.app"],
+      sameAs: ["https://garageflow.pt"],
     },
     {
       "@context": "https://schema.org",

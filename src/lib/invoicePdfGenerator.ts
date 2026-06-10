@@ -251,10 +251,10 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   // FREE plan upgrade nudge
   if (isFreePlan) {
     const upgradeLabels: Record<string, string> = {
-      pt: 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow-pt.lovable.app/billing',
-      en: 'Created with GarageFlow — Free Version | Remove this watermark by upgrading to Pro at garageflow-pt.lovable.app/billing',
-      es: 'Creado con GarageFlow — Versión Gratuita | Elimine esta marca actualizando al plan Pro en garageflow-pt.lovable.app/billing',
-      'pt-BR': 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow-pt.lovable.app/billing',
+      pt: 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow.pt/billing',
+      en: 'Created with GarageFlow — Free Version | Remove this watermark by upgrading to Pro at garageflow.pt/billing',
+      es: 'Creado con GarageFlow — Versión Gratuita | Elimine esta marca actualizando al plan Pro en garageflow.pt/billing',
+      'pt-BR': 'Criado com GarageFlow — Versão Gratuita | Remova esta marca atualizando para o plano Pro em garageflow.pt/billing',
     };
     doc.setTextColor(180, 140, 60);
     doc.setFontSize(6.5);

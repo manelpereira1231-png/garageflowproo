@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BLOG_BY_SLUG } from "@/lib/seoBlogPT";
 import { supabase } from "@/integrations/supabase/client";
 
-const SITE = "https://garageflow-pt.lovable.app";
+const SITE = "https://garageflow.pt";
 
 type DbPost = {
   slug: string;

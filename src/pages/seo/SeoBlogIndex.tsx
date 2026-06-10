@@ -6,7 +6,7 @@ import LandingLayout from "@/components/LandingLayout";
 import { BLOG_POSTS } from "@/lib/seoBlogPT";
 import { supabase } from "@/integrations/supabase/client";
 
-const SITE = "https://garageflow-pt.lovable.app";
+const SITE = "https://garageflow.pt";
 
 type ListItem = {
   slug: string;

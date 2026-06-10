@@ -68,6 +68,8 @@ export default function Auth() {
         }
 
         toast.success(t('auth.welcomeBack'));
+        import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "erp" }));
+
       } else {
         const refCode = searchParams.get('ref') || '';
 
@@ -92,7 +94,9 @@ export default function Auth() {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });
           // Force guided mode for every brand-new account so the SaaS starts simplified
           setOnboardingStatus("guided");
+          import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("signup", { realm: "erp", account_type: "garage" }));
         }
+
 
         if (refCode && signUpData?.user) {
           try {

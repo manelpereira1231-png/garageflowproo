@@ -576,6 +576,42 @@ export type Database = {
           },
         ]
       }
+      buyer_reviews: {
+        Row: {
+          buyer_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          rating: number
+          reviewer_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating: number
+          reviewer_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           content: string | null
@@ -3226,6 +3262,42 @@ export type Database = {
           },
         ]
       }
+      seller_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          seller_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       seller_trust_scores: {
         Row: {
           avg_rating: number
@@ -3727,10 +3799,12 @@ export type Database = {
           created_at: string
           currency: string
           email: string
+          health_score: number | null
           id: string
           is_carity_partner: boolean
           labor_rate: number
           language: string
+          last_seen_at: string | null
           latitude: number | null
           logo_url: string | null
           longitude: number | null
@@ -3760,10 +3834,12 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string
+          health_score?: number | null
           id?: string
           is_carity_partner?: boolean
           labor_rate?: number
           language?: string
+          last_seen_at?: string | null
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
@@ -3793,10 +3869,12 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string
+          health_score?: number | null
           id?: string
           is_carity_partner?: boolean
           labor_rate?: number
           language?: string
+          last_seen_at?: string | null
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null

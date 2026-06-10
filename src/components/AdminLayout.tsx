@@ -52,6 +52,7 @@ const navSections = [
   {
     label: "Crescimento",
     items: [
+      { path: "/admin/growth-opportunities", label: "Oportunidades", icon: TrendingUp },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },

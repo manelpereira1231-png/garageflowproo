@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, Wrench } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import SEOHead from "@/components/SEOHead";
 
 /**
  * SEO route: /market/preco/ate-:max-euros  e  /market/preco/:min-a-:max-euros
@@ -64,12 +65,10 @@ export default function CarityByPrice() {
     setLoading(false);
   }, [min, max]);
 
+  const seoTitle = `Carros usados ${label.toLowerCase()} — GarageFlow Market`;
+  const seoDesc = `Compre carros usados ${label.toLowerCase()} com inspeção mecânica certificada, relatório técnico e pagamento protegido. Marketplace transparente em Portugal.`;
+
   useEffect(() => {
-    document.title = `Carros usados ${label.toLowerCase()} — GarageFlow Market`;
-    const meta = document.querySelector('meta[name="description"]');
-    const desc = `Compre carros usados ${label.toLowerCase()} com inspeção mecânica certificada, relatório técnico e pagamento protegido. Marketplace transparente em Portugal.`;
-    if (meta) meta.setAttribute("content", desc);
-    else { const m = document.createElement("meta"); m.name = "description"; m.content = desc; document.head.appendChild(m); }
     loadData();
   }, [label, loadData]);
 
@@ -80,6 +79,7 @@ export default function CarityByPrice() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead realm="market" title={seoTitle} description={seoDesc} path={`/market/preco/${range || ""}`} />
       <nav className="bg-gradient-to-r from-slate-950 to-slate-900 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">

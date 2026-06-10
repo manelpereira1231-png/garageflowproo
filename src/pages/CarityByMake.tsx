@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowLeft, ArrowRight, CheckCircle, Wrench } from "lucide-react";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import SEOHead from "@/components/SEOHead";
 
 export default function CarityByMake() {
   const { make } = useParams();
@@ -48,12 +49,10 @@ export default function CarityByMake() {
     setLoading(false);
   }, [decodedMake]);
 
+  const seoTitle = `${capitalMake} Usados com Inspeção Certificada — GarageFlow Market`;
+  const seoDesc = `Compre ${capitalMake} usados com inspeção mecânica real por oficinas certificadas. Relatório técnico completo, classificação de 0 a 10 e pagamento protegido. GarageFlow Market.`;
+
   useEffect(() => {
-    document.title = `${capitalMake} Usados com Inspeção Certificada — GarageFlow Market`;
-    const meta = document.querySelector('meta[name="description"]');
-    const desc = `Compre ${capitalMake} usados com inspeção mecânica real por oficinas certificadas. Relatório técnico completo, classificação de 0 a 10 e pagamento protegido. GarageFlow Market.`;
-    if (meta) meta.setAttribute("content", desc);
-    else { const m = document.createElement("meta"); m.name = "description"; m.content = desc; document.head.appendChild(m); }
     loadData();
   }, [decodedMake, loadData]);
 
@@ -64,6 +63,7 @@ export default function CarityByMake() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead realm="market" title={seoTitle} description={seoDesc} path={`/market/make/${encodeURIComponent(decodedMake)}`} />
       <nav className="bg-gradient-to-r from-slate-950 to-slate-900 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">

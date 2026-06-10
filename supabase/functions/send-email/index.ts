@@ -82,10 +82,10 @@ serve(async (req: Request) => {
       from: finalFrom,
       to: finalTo,
       subject: finalSubject,
-      html: finalHtml,
+      html: trackedHtml,
     });
 
-    const emailId = (data as any)?.id || crypto.randomUUID();
+    const emailId = (data as any)?.id || emailIdEarly;
 
     if (error) {
       console.error("Resend error:", JSON.stringify(error));

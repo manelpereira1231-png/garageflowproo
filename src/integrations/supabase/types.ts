@@ -274,6 +274,42 @@ export type Database = {
           },
         ]
       }
+      anomaly_events: {
+        Row: {
+          anomaly_type: string
+          created_at: string
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json
+          resolved: boolean
+          severity: string
+        }
+        Insert: {
+          anomaly_type: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          resolved?: boolean
+          severity?: string
+        }
+        Update: {
+          anomaly_type?: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          resolved?: boolean
+          severity?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           active: boolean
@@ -333,7 +369,11 @@ export type Database = {
           ip: string | null
           latency_ms: number | null
           method: string | null
+          payload_size: number | null
+          region: string | null
+          service_name: string | null
           status_code: number | null
+          trace_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -344,7 +384,11 @@ export type Database = {
           ip?: string | null
           latency_ms?: number | null
           method?: string | null
+          payload_size?: number | null
+          region?: string | null
+          service_name?: string | null
           status_code?: number | null
+          trace_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -355,7 +399,11 @@ export type Database = {
           ip?: string | null
           latency_ms?: number | null
           method?: string | null
+          payload_size?: number | null
+          region?: string | null
+          service_name?: string | null
           status_code?: number | null
+          trace_id?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -1598,6 +1646,48 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaign_metrics: {
+        Row: {
+          campaign_id: string
+          click_count: number
+          click_rate: number
+          computed_at: string
+          conversion_count: number
+          conversion_rate: number
+          delivered_count: number
+          id: string
+          open_count: number
+          open_rate: number
+          sent_count: number
+        }
+        Insert: {
+          campaign_id: string
+          click_count?: number
+          click_rate?: number
+          computed_at?: string
+          conversion_count?: number
+          conversion_rate?: number
+          delivered_count?: number
+          id?: string
+          open_count?: number
+          open_rate?: number
+          sent_count?: number
+        }
+        Update: {
+          campaign_id?: string
+          click_count?: number
+          click_rate?: number
+          computed_at?: string
+          conversion_count?: number
+          conversion_rate?: number
+          delivered_count?: number
+          id?: string
+          open_count?: number
+          open_rate?: number
+          sent_count?: number
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string
@@ -1774,6 +1864,45 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_state: {
+        Row: {
+          conversion_score: number
+          created_at: string
+          entity_id: string
+          entity_type: string
+          health_score: number
+          id: string
+          last_activity_at: string | null
+          lifecycle_state: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          conversion_score?: number
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          health_score?: number
+          id?: string
+          last_activity_at?: string | null
+          lifecycle_state?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          conversion_score?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          health_score?: number
+          id?: string
+          last_activity_at?: string | null
+          lifecycle_state?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_logs: {
         Row: {
           created_at: string
@@ -1804,8 +1933,43 @@ export type Database = {
         }
         Relationships: []
       }
+      funnel_events: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+          source_event: string | null
+          stage: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+          source_event?: string | null
+          stage: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          source_event?: string | null
+          stage?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       growth_opportunities_v2: {
         Row: {
+          action_priority: string
+          auto_action_eligible: boolean
           created_at: string
           entity_id: string
           entity_type: string
@@ -1813,10 +1977,13 @@ export type Database = {
           last_calculated_at: string
           opportunity_type: string
           reason: string | null
+          recommended_actions: Json
           score: number
           status: string
         }
         Insert: {
+          action_priority?: string
+          auto_action_eligible?: boolean
           created_at?: string
           entity_id: string
           entity_type: string
@@ -1824,10 +1991,13 @@ export type Database = {
           last_calculated_at?: string
           opportunity_type: string
           reason?: string | null
+          recommended_actions?: Json
           score?: number
           status?: string
         }
         Update: {
+          action_priority?: string
+          auto_action_eligible?: boolean
           created_at?: string
           entity_id?: string
           entity_type?: string
@@ -1835,6 +2005,7 @@ export type Database = {
           last_calculated_at?: string
           opportunity_type?: string
           reason?: string | null
+          recommended_actions?: Json
           score?: number
           status?: string
         }
@@ -3640,6 +3811,42 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_graph_links: {
+        Row: {
+          created_at: string
+          id: string
+          link_type: string
+          source_entity: string
+          source_id: string
+          target_entity: string
+          target_id: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          source_entity: string
+          source_id: string
+          target_entity: string
+          target_id: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          source_entity?: string
+          source_id?: string
+          target_entity?: string
+          target_id?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       service_catalog: {
         Row: {
           active: boolean
@@ -5318,8 +5525,23 @@ export type Database = {
       }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
+      detect_anomaly: {
+        Args: {
+          _anomaly_type: string
+          _description?: string
+          _entity_id: string
+          _entity_type: string
+          _metadata?: Json
+          _severity?: string
+        }
+        Returns: string
+      }
       detect_workshop_anomalies: { Args: never; Returns: Json }
       flag_suspicious_transactions: { Args: never; Returns: Json }
+      generate_recommended_actions: {
+        Args: { _entity_type: string; _metadata?: Json; _score: number }
+        Returns: Json
+      }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }
       get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
       get_country_config: {
@@ -5420,9 +5642,24 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: undefined
       }
+      record_funnel_event: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _metadata?: Json
+          _source_event?: string
+          _stage: string
+          _user_id?: string
+        }
+        Returns: string
+      }
       redeem_coupon: {
         Args: { _code: string; _shop_id: string }
         Returns: Json
+      }
+      refresh_email_campaign_metrics: {
+        Args: { _campaign_id: string }
+        Returns: undefined
       }
       reject_shop_payout: {
         Args: { _payout_id: string; _reason?: string }
@@ -5454,6 +5691,17 @@ export type Database = {
       update_landing_visit_engagement: {
         Args: { _scroll: number; _session_id: string; _time: number }
         Returns: undefined
+      }
+      upsert_entity_state: {
+        Args: {
+          _conversion_score?: number
+          _entity_id: string
+          _entity_type: string
+          _health_score?: number
+          _last_activity_at?: string
+          _lifecycle_state?: string
+        }
+        Returns: string
       }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }

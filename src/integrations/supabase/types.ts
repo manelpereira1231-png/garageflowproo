@@ -1741,6 +1741,39 @@ export type Database = {
           },
         ]
       }
+      email_tracking_events: {
+        Row: {
+          created_at: string
+          email_id: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_id: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_id?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       event_logs: {
         Row: {
           created_at: string
@@ -1768,6 +1801,42 @@ export type Database = {
           session_id?: string | null
           shop_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      growth_opportunities_v2: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          last_calculated_at: string
+          opportunity_type: string
+          reason: string | null
+          score: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          last_calculated_at?: string
+          opportunity_type: string
+          reason?: string | null
+          score?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          last_calculated_at?: string
+          opportunity_type?: string
+          reason?: string | null
+          score?: number
+          status?: string
         }
         Relationships: []
       }
@@ -3180,6 +3249,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limits: {
+        Row: {
+          action_type: string
+          count: number
+          created_at: string
+          id: string
+          identifier: string
+          window_start: string
+        }
+        Insert: {
+          action_type: string
+          count?: number
+          created_at?: string
+          id?: string
+          identifier: string
+          window_start?: string
+        }
+        Update: {
+          action_type?: string
+          count?: number
+          created_at?: string
+          id?: string
+          identifier?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       referral_codes: {
         Row: {
@@ -5189,7 +5285,20 @@ export type Database = {
         Args: { _report_id: string }
         Returns: undefined
       }
+      calculate_opportunity_score: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: Json
+      }
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
+      check_rate_limit: {
+        Args: {
+          _action_type: string
+          _identifier: string
+          _max_count?: number
+          _window_seconds?: number
+        }
+        Returns: Json
+      }
       check_shop_creation_limit: {
         Args: { _user_id: string }
         Returns: boolean
@@ -5299,8 +5408,10 @@ export type Database = {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
       }
+      purge_old_rate_limits: { Args: never; Returns: undefined }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       purge_old_stripe_webhook_events: { Args: never; Returns: undefined }
+      recalculate_all_growth_opportunities: { Args: never; Returns: Json }
       recalculate_trust_score: {
         Args: { _seller_id: string }
         Returns: undefined

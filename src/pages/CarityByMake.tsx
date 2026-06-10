@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, Fuel, Calendar, Gauge, ArrowLeft, ArrowRight, CheckCircle, Wrench } from "lucide-react";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import SEOHead from "@/components/SEOHead";
 
 export default function CarityByMake() {
   const { make } = useParams();

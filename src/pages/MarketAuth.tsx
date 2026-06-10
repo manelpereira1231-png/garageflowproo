@@ -102,8 +102,10 @@ export default function MarketAuth() {
         } catch {}
 
         toast.success("Bem-vindo de volta!");
+        import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "market" }));
         navigate(redirect, { replace: true });
         return;
+
       }
 
       // ---- SIGNUP ----

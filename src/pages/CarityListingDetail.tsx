@@ -24,6 +24,7 @@ import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
 import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
 import { useMarketT } from "@/i18n/marketTranslations";
+import SEOHead from "@/components/SEOHead";
 
 const CHECKLIST_KEYS = [
   ["engine_status", "ld.checklist.engine"],
@@ -357,8 +358,20 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const allPhotos = [...listing.photos, ...(report?.exterior_photos || []), ...(report?.interior_photos || []), ...(report?.engine_photos || [])];
   const daysSincePublished = listing.published_at ? Math.floor((Date.now() - new Date(listing.published_at).getTime()) / 86400000) : 0;
 
+  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)} | GarageFlow Market`;
+  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
+  const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+  const seoPath = `/market/carros/${seoSlug}-${listing.id}`;
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        realm="market"
+        title={seoTitle}
+        description={seoDesc}
+        path={seoPath}
+        image={listing.photos?.[0]}
+      />
       <nav className="bg-slate-900 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">

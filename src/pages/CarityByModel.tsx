@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, CheckCircle, Wrench } from "lucide-react";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import SEOHead from "@/components/SEOHead";
 
 /**
  * SEO route: /market/modelo/:make/:model
@@ -69,12 +70,10 @@ export default function CarityByModel() {
     setLoading(false);
   }, [decodedMake, decodedModel]);
 
+  const seoTitle = `${titleMake} ${titleModel} usado com inspeção certificada — GarageFlow Market`;
+  const seoDesc = `Compre ${titleMake} ${titleModel} usado com inspeção mecânica real, relatório técnico completo e pagamento protegido. Veículos certificados por oficinas parceiras GarageFlow.`;
+
   useEffect(() => {
-    document.title = `${titleMake} ${titleModel} usado com inspeção certificada — GarageFlow Market`;
-    const meta = document.querySelector('meta[name="description"]');
-    const desc = `Compre ${titleMake} ${titleModel} usado com inspeção mecânica real, relatório técnico completo e pagamento protegido. Veículos certificados por oficinas parceiras GarageFlow.`;
-    if (meta) meta.setAttribute("content", desc);
-    else { const m = document.createElement("meta"); m.name = "description"; m.content = desc; document.head.appendChild(m); }
     loadData();
   }, [decodedMake, decodedModel, loadData, titleMake, titleModel]);
 

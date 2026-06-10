@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Car, ArrowLeft, ArrowRight, CheckCircle, Wrench, MapPin } from "lucide-react";
 import { formatMarketPrice } from "@/lib/marketPrice";
+import SEOHead from "@/components/SEOHead";
 
 export default function CarityByCity() {
   const { city } = useParams();
@@ -51,12 +52,10 @@ export default function CarityByCity() {
     setLoading(false);
   }, [decodedCity]);
 
+  const seoTitle = `Carros Usados em ${capitalCity} com Inspeção — GarageFlow Market`;
+  const seoDesc = `Carros usados certificados em ${capitalCity}. Inspeção mecânica presencial, relatório técnico completo e pagamento protegido. GarageFlow Market.`;
+
   useEffect(() => {
-    document.title = `Carros Usados em ${capitalCity} com Inspeção — GarageFlow Market`;
-    const meta = document.querySelector('meta[name="description"]');
-    const desc = `Carros usados certificados em ${capitalCity}. Inspeção mecânica presencial, relatório técnico completo e pagamento protegido. GarageFlow Market.`;
-    if (meta) meta.setAttribute("content", desc);
-    else { const m = document.createElement("meta"); m.name = "description"; m.content = desc; document.head.appendChild(m); }
     loadData();
   }, [decodedCity, loadData]);
 

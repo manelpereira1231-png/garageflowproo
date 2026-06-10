@@ -66,6 +66,7 @@ export default function CarityByCity() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead realm="market" title={seoTitle} description={seoDesc} path={`/market/city/${encodeURIComponent(decodedCity)}`} />
       <nav className="bg-gradient-to-r from-slate-950 to-slate-900 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/market" className="flex items-center gap-2">

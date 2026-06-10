@@ -109,7 +109,7 @@
   <url><loc>https://garageflow.pt/oficinas/vila-do-conde</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/oficinas/santo-tirso</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/oficinas/paredes</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://garageflow.pt/oficinas/paços-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://garageflow.pt/oficinas/pa%C3%A7os-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/oficinas/felgueiras</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/oficinas/penafiel</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/oficinas/vila-nova-de-famalicao</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
@@ -178,7 +178,7 @@
   <url><loc>https://garageflow.pt/gestao-oficinas/vila-do-conde</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/gestao-oficinas/santo-tirso</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/gestao-oficinas/paredes</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://garageflow.pt/gestao-oficinas/paços-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://garageflow.pt/gestao-oficinas/pa%C3%A7os-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/gestao-oficinas/felgueiras</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/gestao-oficinas/penafiel</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/gestao-oficinas/vila-nova-de-famalicao</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
@@ -247,7 +247,7 @@
   <url><loc>https://garageflow.pt/erp-automovel/vila-do-conde</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/erp-automovel/santo-tirso</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/erp-automovel/paredes</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://garageflow.pt/erp-automovel/paços-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://garageflow.pt/erp-automovel/pa%C3%A7os-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/erp-automovel/felgueiras</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/erp-automovel/penafiel</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/erp-automovel/vila-nova-de-famalicao</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
@@ -316,7 +316,7 @@
   <url><loc>https://garageflow.pt/software-oficinas/vila-do-conde</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/software-oficinas/santo-tirso</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/software-oficinas/paredes</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://garageflow.pt/software-oficinas/paços-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://garageflow.pt/software-oficinas/pa%C3%A7os-de-ferreira</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/software-oficinas/felgueiras</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/software-oficinas/penafiel</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://garageflow.pt/software-oficinas/vila-nova-de-famalicao</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>

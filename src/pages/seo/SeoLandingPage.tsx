@@ -5,7 +5,7 @@ import LandingLayout from "@/components/LandingLayout";
 import { Button } from "@/components/ui/button";
 import { SEO_PAGE_BY_SLUG, type SeoPageContent } from "@/lib/seoPagesPT";
 
-const SITE = "https://garageflow-pt.lovable.app";
+const SITE = "https://garageflow.pt";
 
 interface Props {
   /** Forçar uma página específica (em vez de usar :slug do URL) */

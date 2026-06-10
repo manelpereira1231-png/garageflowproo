@@ -5,7 +5,7 @@ import LandingLayout from "@/components/LandingLayout";
 import { Button } from "@/components/ui/button";
 import { SEO_CITY_BY_SLUG } from "@/lib/seoPagesPT";
 
-const SITE = "https://garageflow-pt.lovable.app";
+const SITE = "https://garageflow.pt";
 
 type Intent = "oficinas" | "gestao-oficinas" | "erp-automovel" | "software-oficinas";
 

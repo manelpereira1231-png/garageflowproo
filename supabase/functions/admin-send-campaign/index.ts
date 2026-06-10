@@ -184,11 +184,17 @@ serve(async (req: Request) => {
 
     for (const r of recipientList) {
       try {
+        const brandedHtml = renderBrandedEmail({
+          body: campaign.content_html,
+          preheader: campaign.subject,
+          brand: "garageflow",
+          footerNote: "Recebeste este email porque tens uma conta GarageFlow. Se não quiseres receber novidades, responde a este email com \"REMOVER\".",
+        });
         const { error } = await resend.emails.send({
           from: "GarageFlow <noreply@garageflow.pt>",
           to: [r.email],
           subject: campaign.subject,
-          html: campaign.content_html,
+          html: brandedHtml,
         });
         if (error) {
           failed++;

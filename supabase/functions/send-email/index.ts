@@ -55,6 +55,27 @@ serve(async (req: Request) => {
       ? "GarageFlow <onboarding@resend.dev>"
       : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
 
+    // Inject open-pixel + rewrite links for click tracking.
+    const emailIdEarly = crypto.randomUUID();
+    const supaUrl = Deno.env.get("SUPABASE_URL")!;
+    const pixelUrl = `${supaUrl}/functions/v1/email-open-pixel?id=${emailIdEarly}`;
+    const clickBase = `${supaUrl}/functions/v1/email-click-redirect`;
+    let trackedHtml = finalHtml.replace(
+      /<a\s+([^>]*?)href=["']((?:https?:)\/\/[^"']+)["']([^>]*)>/gi,
+      (_m, pre, href, post) =>
+        `<a ${pre}href="${clickBase}?id=${emailIdEarly}&url=${encodeURIComponent(href)}"${post}>`,
+    );
+    if (!/<\/body>/i.test(trackedHtml)) {
+      trackedHtml = trackedHtml + `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none" />`;
+    } else {
+      trackedHtml = trackedHtml.replace(
+        /<\/body>/i,
+        `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none" /></body>`,
+      );
+    }
+      ? "GarageFlow <onboarding@resend.dev>"
+      : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
+
     console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject}`);
 
     const { data, error } = await resend.emails.send({

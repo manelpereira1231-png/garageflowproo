@@ -102,8 +102,10 @@ export default function MarketAuth() {
         } catch {}
 
         toast.success("Bem-vindo de volta!");
+        import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "market" }));
         navigate(redirect, { replace: true });
         return;
+
       }
 
       // ---- SIGNUP ----
@@ -145,10 +147,12 @@ export default function MarketAuth() {
       if (error) throw error;
 
       if (signUpData?.user) {
+        import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("signup", { realm: "market", account_type: isDealer ? "dealer" : "particular" }));
         await supabase.from("user_roles" as any).insert([
           { user_id: signUpData.user.id, role: "buyer" },
           { user_id: signUpData.user.id, role: "seller" },
         ]);
+
         const detectedCountry = (typeof window !== "undefined" ? localStorage.getItem("garageflow_country") : null) || "PT";
 
         const profilePayload: any = {

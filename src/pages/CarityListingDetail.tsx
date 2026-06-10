@@ -206,6 +206,8 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
 
     // Track view + load view stats (in parallel)
     trackListingView(id!);
+    import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("listing_view", { listing_id: id }));
+
     const stats = await getListingViewCount(id!);
     setViewStats(stats);
 

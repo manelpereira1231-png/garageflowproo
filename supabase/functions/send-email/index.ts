@@ -1,8 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { renderBrandedEmail } from "../_shared/branded-email.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
 
 const SANDBOX_REDIRECT = "";
 
@@ -58,14 +64,34 @@ serve(async (req: Request) => {
       html: finalHtml,
     });
 
+    const emailId = (data as any)?.id || crypto.randomUUID();
+
     if (error) {
       console.error("Resend error:", JSON.stringify(error));
+      // Observability: log failure (silent fail).
+      try {
+        await admin.from("email_events").insert({
+          email_id: emailId, email_type: (body as any).emailType ?? null,
+          recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
+          event_type: "failed", details: { error: error.message },
+        });
+      } catch (_e) { /* ignore */ }
       return new Response(JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    return new Response(JSON.stringify({ success: true, data }),
+    // Observability: log successful send.
+    try {
+      await admin.from("email_events").insert({
+        email_id: emailId, email_type: (body as any).emailType ?? null,
+        recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
+        event_type: "sent", details: { subject: finalSubject, branded: !!branded },
+      });
+    } catch (_e) { /* ignore */ }
+
+    return new Response(JSON.stringify({ success: true, data, email_id: emailId }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(JSON.stringify({ error: error.message }),

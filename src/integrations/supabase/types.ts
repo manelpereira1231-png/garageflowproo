@@ -324,6 +324,42 @@ export type Database = {
           },
         ]
       }
+      api_logs: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error: string | null
+          id: string
+          ip: string | null
+          latency_ms: number | null
+          method: string | null
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          id?: string
+          ip?: string | null
+          latency_ms?: number | null
+          method?: string | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          id?: string
+          ip?: string | null
+          latency_ms?: number | null
+          method?: string | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           client_email: string | null
@@ -1562,6 +1598,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_events: {
+        Row: {
+          created_at: string
+          details: Json | null
+          email_id: string
+          email_type: string | null
+          event_type: string
+          id: string
+          recipient: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          email_id: string
+          email_type?: string | null
+          event_type: string
+          id?: string
+          recipient?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          email_id?: string
+          email_type?: string | null
+          event_type?: string
+          id?: string
+          recipient?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       email_lifecycle_log: {
         Row: {
           entity_id: string
@@ -1671,6 +1740,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      event_logs: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          payload: Json
+          session_id: string | null
+          shop_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          payload?: Json
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          payload?: Json
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       inspection_checklists: {
         Row: {
@@ -4460,6 +4559,27 @@ export type Database = {
           },
         ]
       }
+      user_activity: {
+        Row: {
+          last_seen_at: string
+          last_shop_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          last_shop_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          last_shop_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -5209,6 +5329,16 @@ export type Database = {
       seed_email_templates_for_shop: {
         Args: { _shop_id: string }
         Returns: undefined
+      }
+      touch_user_activity: { Args: { _shop_id?: string }; Returns: undefined }
+      track_event: {
+        Args: {
+          _event_name: string
+          _payload?: Json
+          _session_id?: string
+          _shop_id?: string
+        }
+        Returns: string
       }
       update_landing_visit_engagement: {
         Args: { _scroll: number; _session_id: string; _time: number }

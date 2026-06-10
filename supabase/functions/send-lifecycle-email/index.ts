@@ -84,7 +84,15 @@ serve(async (req) => {
     const html = interpolate(tpl.html_body, merged);
 
     const sendRes = await admin.functions.invoke("send-email", {
-      body: { to: body.recipient, subject, html },
+      body: {
+        to: body.recipient,
+        subject,
+        html,
+        branded: true,
+        brand: "garageflow",
+        preheader: subject,
+        footerNote: `Recebeste este email porque a oficina ${merged.shop_name} usa o GarageFlow para comunicar contigo.`,
+      },
     });
 
     const status = sendRes.error ? "failed" : "sent";

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { Resend } from "npm:resend@4.0.0";
+import { renderBrandedEmail } from "../_shared/branded-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -183,11 +184,17 @@ serve(async (req: Request) => {
 
     for (const r of recipientList) {
       try {
+        const brandedHtml = renderBrandedEmail({
+          body: campaign.content_html,
+          preheader: campaign.subject,
+          brand: "garageflow",
+          footerNote: "Recebeste este email porque tens uma conta GarageFlow. Se não quiseres receber novidades, responde a este email com \"REMOVER\".",
+        });
         const { error } = await resend.emails.send({
           from: "GarageFlow <noreply@garageflow.pt>",
           to: [r.email],
           subject: campaign.subject,
-          html: campaign.content_html,
+          html: brandedHtml,
         });
         if (error) {
           failed++;

@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_queue: {
+        Row: {
+          action_type: string
+          attempts: number
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          payload: Json
+          scheduled_at: string
+          status: string
+          trace_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          attempts?: number
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          payload?: Json
+          scheduled_at?: string
+          status?: string
+          trace_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          attempts?: number
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          payload?: Json
+          scheduled_at?: string
+          status?: string
+          trace_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      action_trace: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          source_id: string | null
+          source_table: string | null
+          step: string
+          trace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source_id?: string | null
+          source_table?: string | null
+          step: string
+          trace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source_id?: string | null
+          source_table?: string | null
+          step?: string
+          trace_id?: string
+        }
+        Relationships: []
+      }
+      action_whitelist: {
+        Row: {
+          action_type: string
+          cooldown_hours: number
+          created_at: string
+          description: string | null
+          enabled: boolean
+        }
+        Insert: {
+          action_type: string
+          cooldown_hours?: number
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+        }
+        Update: {
+          action_type?: string
+          cooldown_hours?: number
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+        }
+        Relationships: []
+      }
       admin_campaign_recipients: {
         Row: {
           campaign_id: string
@@ -1933,7 +2035,106 @@ export type Database = {
         }
         Relationships: []
       }
+      event_logs_archive: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          payload: Json
+          session_id: string | null
+          shop_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          payload?: Json
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          payload?: Json
+          session_id?: string | null
+          shop_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      failed_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          job_type: string
+          payload: Json
+          resolved: boolean
+          resolved_at: string | null
+          retry_count: number
+          source_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_type: string
+          payload?: Json
+          resolved?: boolean
+          resolved_at?: string | null
+          retry_count?: number
+          source_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_type?: string
+          payload?: Json
+          resolved?: boolean
+          resolved_at?: string | null
+          retry_count?: number
+          source_id?: string | null
+        }
+        Relationships: []
+      }
       funnel_events: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+          source_event: string | null
+          stage: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+          source_event?: string | null
+          stage: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          source_event?: string | null
+          stage?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      funnel_events_archive: {
         Row: {
           created_at: string
           entity_id: string | null
@@ -5488,6 +5689,7 @@ export type Database = {
         Args: { _new_status: string; _report_id: string }
         Returns: undefined
       }
+      archive_old_events: { Args: { _days?: number }; Returns: Json }
       calculate_inspection_risk: {
         Args: { _report_id: string }
         Returns: undefined
@@ -5523,6 +5725,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_next_actions: {
+        Args: { _limit?: number }
+        Returns: {
+          action_type: string
+          attempts: number
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          payload: Json
+          scheduled_at: string
+          status: string
+          trace_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "action_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      complete_action: {
+        Args: { _error?: string; _id: string; _success: boolean }
+        Returns: undefined
+      }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
       detect_anomaly: {
@@ -5537,6 +5767,26 @@ export type Database = {
         Returns: string
       }
       detect_workshop_anomalies: { Args: never; Returns: Json }
+      enforce_rate_limit: {
+        Args: {
+          _action_type: string
+          _identifier: string
+          _max?: number
+          _window_seconds?: number
+        }
+        Returns: undefined
+      }
+      enqueue_action: {
+        Args: {
+          _action_type: string
+          _entity_id: string
+          _entity_type: string
+          _payload?: Json
+          _scheduled_at?: string
+          _trace_id?: string
+        }
+        Returns: string
+      }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_recommended_actions: {
         Args: { _entity_type: string; _metadata?: Json; _score: number }
@@ -5642,6 +5892,7 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: undefined
       }
+      reconcile_entity_state: { Args: { _limit?: number }; Returns: Json }
       record_funnel_event: {
         Args: {
           _entity_id: string
@@ -5674,6 +5925,7 @@ export type Database = {
         }
         Returns: string
       }
+      retry_failed_jobs: { Args: { _limit?: number }; Returns: number }
       seed_email_templates_for_shop: {
         Args: { _shop_id: string }
         Returns: undefined

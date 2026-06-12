@@ -98,3 +98,9 @@ verify_jwt = false
 
 [functions.email-click-redirect]
 verify_jwt = false
+
+[functions.process-action-queue]
+verify_jwt = false
+
+[functions.system-maintenance]
+verify_jwt = false

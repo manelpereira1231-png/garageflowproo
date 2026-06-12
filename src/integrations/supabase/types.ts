@@ -762,6 +762,60 @@ export type Database = {
           },
         ]
       }
+      business_metrics_daily: {
+        Row: {
+          arpu_eur: number | null
+          arr_eur: number | null
+          cac_eur: number | null
+          churn_rate: number | null
+          churned_customers: number | null
+          computed_at: string | null
+          ltv_eur: number | null
+          market_commission_eur: number | null
+          market_gmv_eur: number | null
+          mrr_eur: number | null
+          new_signups: number | null
+          payback_months: number | null
+          paying_customers: number | null
+          snapshot_date: string
+          trial_customers: number | null
+        }
+        Insert: {
+          arpu_eur?: number | null
+          arr_eur?: number | null
+          cac_eur?: number | null
+          churn_rate?: number | null
+          churned_customers?: number | null
+          computed_at?: string | null
+          ltv_eur?: number | null
+          market_commission_eur?: number | null
+          market_gmv_eur?: number | null
+          mrr_eur?: number | null
+          new_signups?: number | null
+          payback_months?: number | null
+          paying_customers?: number | null
+          snapshot_date: string
+          trial_customers?: number | null
+        }
+        Update: {
+          arpu_eur?: number | null
+          arr_eur?: number | null
+          cac_eur?: number | null
+          churn_rate?: number | null
+          churned_customers?: number | null
+          computed_at?: string | null
+          ltv_eur?: number | null
+          market_commission_eur?: number | null
+          market_gmv_eur?: number | null
+          mrr_eur?: number | null
+          new_signups?: number | null
+          payback_months?: number | null
+          paying_customers?: number | null
+          snapshot_date?: string
+          trial_customers?: number | null
+        }
+        Relationships: []
+      }
       buyer_reviews: {
         Row: {
           buyer_id: string
@@ -1655,6 +1709,69 @@ export type Database = {
           },
         ]
       }
+      complaints: {
+        Row: {
+          category: string
+          context: string
+          created_at: string | null
+          description: string
+          id: string
+          related_entity_id: string | null
+          related_entity_type: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          shop_id: string | null
+          sla_breached: boolean | null
+          sla_due_at: string | null
+          status: string
+          subject: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          context?: string
+          created_at?: string | null
+          description: string
+          id?: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          shop_id?: string | null
+          sla_breached?: boolean | null
+          sla_due_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          context?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          shop_id?: string | null
+          sla_breached?: boolean | null
+          sla_due_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       country_settings: {
         Row: {
           active: boolean
@@ -1745,6 +1862,48 @@ export type Database = {
           tax_label?: string
           timezones?: string[]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      customer_health_scores: {
+        Row: {
+          activity_30d: number | null
+          activity_7d: number | null
+          activity_drop_pct: number | null
+          churn_risk: string
+          health_score: number
+          last_invoice_at: string | null
+          last_login_at: string | null
+          predicted_churn_date: string | null
+          recommended_action: string | null
+          shop_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          activity_30d?: number | null
+          activity_7d?: number | null
+          activity_drop_pct?: number | null
+          churn_risk?: string
+          health_score?: number
+          last_invoice_at?: string | null
+          last_login_at?: string | null
+          predicted_churn_date?: string | null
+          recommended_action?: string | null
+          shop_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          activity_30d?: number | null
+          activity_7d?: number | null
+          activity_drop_pct?: number | null
+          churn_risk?: string
+          health_score?: number
+          last_invoice_at?: string | null
+          last_login_at?: string | null
+          predicted_churn_date?: string | null
+          recommended_action?: string | null
+          shop_id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2387,6 +2546,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      kb_articles: {
+        Row: {
+          body_md: string
+          category: string
+          context: string
+          created_at: string | null
+          created_by: string | null
+          helpful_count: number | null
+          id: string
+          is_faq: boolean | null
+          is_published: boolean | null
+          language: string
+          not_helpful_count: number | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          body_md: string
+          category?: string
+          context?: string
+          created_at?: string | null
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_faq?: boolean | null
+          is_published?: boolean | null
+          language?: string
+          not_helpful_count?: number | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          body_md?: string
+          category?: string
+          context?: string
+          created_at?: string | null
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_faq?: boolean | null
+          is_published?: boolean | null
+          language?: string
+          not_helpful_count?: number | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: []
       }
       landing_visits: {
         Row: {
@@ -4532,6 +4748,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_config: {
+        Row: {
+          active: boolean | null
+          first_response_minutes: number
+          id: string
+          resolution_hours: number
+          scope: string
+          severity: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          first_response_minutes: number
+          id?: string
+          resolution_hours: number
+          scope: string
+          severity: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          first_response_minutes?: number
+          id?: string
+          resolution_hours?: number
+          scope?: string
+          severity?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -5580,6 +5826,42 @@ export type Database = {
           },
         ]
       }
+      workshop_productivity_daily: {
+        Row: {
+          active_technicians: number | null
+          avg_repair_minutes: number | null
+          completed_orders: number | null
+          computed_at: string | null
+          forecast_revenue_eur: number | null
+          shop_id: string
+          snapshot_date: string
+          upcoming_workload: number | null
+          utilization_rate: number | null
+        }
+        Insert: {
+          active_technicians?: number | null
+          avg_repair_minutes?: number | null
+          completed_orders?: number | null
+          computed_at?: string | null
+          forecast_revenue_eur?: number | null
+          shop_id: string
+          snapshot_date: string
+          upcoming_workload?: number | null
+          utilization_rate?: number | null
+        }
+        Update: {
+          active_technicians?: number | null
+          avg_repair_minutes?: number | null
+          completed_orders?: number | null
+          computed_at?: string | null
+          forecast_revenue_eur?: number | null
+          shop_id?: string
+          snapshot_date?: string
+          upcoming_workload?: number | null
+          utilization_rate?: number | null
+        }
+        Relationships: []
+      }
       workshop_trust_scores: {
         Row: {
           approval_rate: number
@@ -5753,6 +6035,8 @@ export type Database = {
         Args: { _error?: string; _id: string; _success: boolean }
         Returns: undefined
       }
+      compute_business_metrics_snapshot: { Args: never; Returns: Json }
+      compute_customer_health: { Args: never; Returns: Json }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
       detect_anomaly: {

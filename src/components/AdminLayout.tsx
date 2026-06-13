@@ -53,6 +53,7 @@ const navSections = [
     label: "Crescimento",
     items: [
       { path: "/admin/growth-opportunities", label: "Oportunidades", icon: TrendingUp },
+      { path: "/admin/business-metrics", label: "Métricas de Negócio", icon: BarChart3 },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
@@ -65,6 +66,8 @@ const navSections = [
     label: "Sistema",
     items: [
       { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
+      { path: "/admin/action-queue", label: "Action Queue", icon: Activity },
+      { path: "/admin/complaints", label: "Reclamações", icon: ShieldAlert },
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },

@@ -154,6 +154,8 @@ const AdminGrowthOpportunities = lazyRetry(() => import("@/pages/admin/AdminGrow
 const AdminBusinessMetrics = lazyRetry(() => import("@/pages/admin/AdminBusinessMetrics"));
 const AdminComplaints = lazyRetry(() => import("@/pages/admin/AdminComplaints"));
 const AdminActionQueue = lazyRetry(() => import("@/pages/admin/AdminActionQueue"));
+const AdminRateLimits = lazyRetry(() => import("@/pages/admin/AdminRateLimits"));
+const StatusPage = lazyRetry(() => import("@/pages/StatusPage"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -339,6 +341,7 @@ const adminRoutes = [
   { path: "/admin/business-metrics", element: <AdminBusinessMetrics /> },
   { path: "/admin/complaints", element: <AdminComplaints /> },
   { path: "/admin/action-queue", element: <AdminActionQueue /> },
+  { path: "/admin/rate-limits", element: <AdminRateLimits /> },
 ];
 
 const shopRoutes = [

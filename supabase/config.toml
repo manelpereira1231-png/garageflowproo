@@ -104,3 +104,8 @@ verify_jwt = false
 
 [functions.system-maintenance]
 verify_jwt = false
+
+[functions.system-alerts]
+verify_jwt = false
+
+

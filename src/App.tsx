@@ -430,6 +430,7 @@ const publicRoutes = [
   { path: "/portal/:token", element: <ClientPortal /> },
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
+  { path: "/status", element: <Suspense fallback={<PageLoader />}><StatusPage /></Suspense> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
   { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
   { path: "/affiliate-login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },

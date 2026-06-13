@@ -71,6 +71,7 @@ const navSections = [
       { path: "/admin/alerts", label: "Alertas", icon: Bell },
       { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
+      { path: "/admin/rate-limits", label: "Rate Limits", icon: Activity },
     ],
   },
   {

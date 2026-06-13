@@ -151,6 +151,9 @@ const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscr
 const AdminSeo = lazyRetry(() => import("@/pages/admin/AdminSeo"));
 const AdminSeoBlog = lazyRetry(() => import("@/pages/admin/AdminSeoBlog"));
 const AdminGrowthOpportunities = lazyRetry(() => import("@/pages/admin/AdminGrowthOpportunities"));
+const AdminBusinessMetrics = lazyRetry(() => import("@/pages/admin/AdminBusinessMetrics"));
+const AdminComplaints = lazyRetry(() => import("@/pages/admin/AdminComplaints"));
+const AdminActionQueue = lazyRetry(() => import("@/pages/admin/AdminActionQueue"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({

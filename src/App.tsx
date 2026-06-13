@@ -336,6 +336,9 @@ const adminRoutes = [
   { path: "/admin/seo", element: <AdminSeo /> },
   { path: "/admin/seo-blog", element: <AdminSeoBlog /> },
   { path: "/admin/growth-opportunities", element: <AdminGrowthOpportunities /> },
+  { path: "/admin/business-metrics", element: <AdminBusinessMetrics /> },
+  { path: "/admin/complaints", element: <AdminComplaints /> },
+  { path: "/admin/action-queue", element: <AdminActionQueue /> },
 ];
 
 const shopRoutes = [

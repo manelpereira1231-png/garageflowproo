@@ -192,6 +192,31 @@ export default function AdminBusinessMetrics() {
           <strong>Modo Auto:</strong> só metes mercado + orçamento de ads — a IA infere CPL, conversão, churn e mix de planos com base em benchmarks reais do mercado SaaS automóvel. Funciona mesmo com 0 oficinas.
         </p>
 
+        {/* Product scope selector */}
+        <div className="mb-4">
+          <Label className="text-xs mb-2 block">Produto a prever</Label>
+          <div className="inline-flex rounded-lg border bg-muted p-1">
+            {([
+              { k: "erp", label: "ERP (SaaS)" },
+              { k: "market", label: "Market (comissões)" },
+              { k: "combined", label: "Ambos (combinado)" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.k}
+                type="button"
+                onClick={() => setInputs({ ...inputs, productScope: opt.k })}
+                className={`px-3 py-1.5 text-xs rounded-md transition ${
+                  inputs.productScope === opt.k
+                    ? "bg-background shadow font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Essential inputs — always visible */}
         <div className="grid gap-3 md:grid-cols-2 mb-3">
           <Field label="Mercado / país">
@@ -203,10 +228,18 @@ export default function AdminBusinessMetrics() {
           <Field label="Horizonte (meses)">
             <Input type="number" value={inputs.horizonMonths} onChange={(e) => setInputs({ ...inputs, horizonMonths: +e.target.value })} />
           </Field>
-          <Field label="Pagantes iniciais (0 se ainda nenhum)">
-            <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
-          </Field>
+          {inputs.productScope !== "market" && (
+            <Field label="Oficinas pagantes iniciais (0 se ainda nenhuma)">
+              <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
+            </Field>
+          )}
+          {inputs.productScope === "combined" && (
+            <Field label="% do budget para ERP (resto vai para Market)">
+              <Input type="number" min={0} max={100} value={inputs.adSpendSplitErpPct} onChange={(e) => setInputs({ ...inputs, adSpendSplitErpPct: +e.target.value })} />
+            </Field>
+          )}
         </div>
+
 
         <button
           type="button"

@@ -3279,6 +3279,137 @@ export type Database = {
           },
         ]
       }
+      marketing_posts: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          channel: string
+          created_at: string
+          cta: string | null
+          external_post_id: string | null
+          external_url: string | null
+          hashtags: string[] | null
+          id: string
+          image_prompt: string | null
+          image_url: string | null
+          metadata: Json | null
+          post_type: string
+          published_at: string | null
+          scheduled_for: string | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          campaign_id?: string | null
+          channel: string
+          created_at?: string
+          cta?: string | null
+          external_post_id?: string | null
+          external_url?: string | null
+          hashtags?: string[] | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          metadata?: Json | null
+          post_type?: string
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          channel?: string
+          created_at?: string
+          cta?: string | null
+          external_post_id?: string | null
+          external_url?: string | null
+          hashtags?: string[] | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          metadata?: Json | null
+          post_type?: string
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_publish_log: {
+        Row: {
+          action: string
+          campaign_id: string | null
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          mode: string
+          payload: Json | null
+          post_id: string | null
+          response: Json | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          campaign_id?: string | null
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          mode: string
+          payload?: Json | null
+          post_id?: string | null
+          response?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          campaign_id?: string | null
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          mode?: string
+          payload?: Json | null
+          post_id?: string | null
+          response?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_publish_log_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_publish_log_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

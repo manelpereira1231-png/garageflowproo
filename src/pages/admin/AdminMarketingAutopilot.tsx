@@ -229,29 +229,35 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
+  const [needsSecrets, setNeedsSecrets] = useState<null | { secrets: string[]; how_to: string; docs: string }>(null);
+
   const publishMeta = async () => {
     setBusy("meta");
+    setNeedsSecrets(null);
     try {
+      // 1) Tenta API directa — cria a campanha já dentro da conta Meta
       const { data, error } = await supabase.functions.invoke("marketing-publish", {
-        body: { action: "meta_ads_url", campaignId: campaign.id, objective: "OUTCOME_LEADS" },
+        body: { action: "meta_api", campaignId: campaign.id, objective: "OUTCOME_LEADS" },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       const d: any = data;
-      const copyText = [
-        `Campanha: ${d.campaign_name}`,
-        `Orçamento: €${d.daily_budget_eur}/dia`,
-        "",
-        "TÍTULOS:", ...d.headlines.map((h: string, i: number) => `${i + 1}. ${h}`),
-        "",
-        "TEXTOS:", ...d.primary_texts.map((t: string, i: number) => `${i + 1}. ${t}`),
-        "",
-        "CTAs:", ...d.ctas,
-      ].join("\n");
-      await navigator.clipboard.writeText(copyText).catch(() => {});
-      window.open(d.open_url, "_blank");
-      toast.success("Texto copiado. Cola no Meta Ads Manager.");
-      setOpen(false);
+
+      if (d?.not_configured) {
+        setNeedsSecrets({
+          secrets: d.required_secrets ?? [],
+          how_to: d.how_to ?? "",
+          docs: d.docs ?? "",
+        });
+        return;
+      }
+      if (d?.error) throw new Error(d.error);
+      if (d?.ok && d?.manage_url) {
+        window.open(d.manage_url, "_blank");
+        toast.success("Campanha criada no Meta Ads (PAUSED). Abre a rever e ativa.");
+        setOpen(false);
+        return;
+      }
+      throw new Error("Resposta inesperada da Meta API");
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");
     } finally { setBusy(null); }
@@ -290,21 +296,39 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
           <DialogTitle>Publicar "{campaign.title}"</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Escolhe onde queres publicar. Tudo já vem preenchido — só tens de colar.
+          A campanha é criada automaticamente na tua conta Meta (em PAUSED — revês e ativas).
         </p>
         <div className="grid gap-3">
           <Button size="lg" onClick={publishMeta} disabled={busy !== null}>
             {busy === "meta" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Facebook className="h-4 w-4 mr-2" />}
-            Facebook & Instagram (Meta Ads)
+            Publicar no Facebook & Instagram
           </Button>
           <Button size="lg" variant="outline" onClick={publishGoogle} disabled={busy !== null}>
             {busy === "google" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Google Ads (descarregar CSV)
           </Button>
         </div>
-        <div className="text-[11px] text-muted-foreground border-t pt-3 space-y-1">
-          <div><strong>Facebook/Instagram:</strong> abre o Meta Ads Manager e copia o texto da campanha. Colas e publicas.</div>
-          <div><strong>Google Ads:</strong> descarrega um CSV. Abres o Google Ads Editor → Importar ficheiro.</div>
+
+        {needsSecrets && (
+          <div className="border-t pt-3 mt-2 space-y-2 text-xs">
+            <div className="font-semibold text-foreground">Falta ligar a tua conta Meta (1ª vez)</div>
+            <div className="text-muted-foreground">Adiciona estes 3 secrets ao projeto:</div>
+            <div className="flex flex-wrap gap-1">
+              {needsSecrets.secrets.map((s) => (
+                <Badge key={s} variant="outline" className="font-mono text-[10px]">{s}</Badge>
+              ))}
+            </div>
+            <div className="text-muted-foreground whitespace-pre-line">{needsSecrets.how_to}</div>
+            {needsSecrets.docs && (
+              <a href={needsSecrets.docs} target="_blank" rel="noreferrer" className="text-primary underline">
+                Documentação Meta Marketing API ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        <div className="text-[11px] text-muted-foreground border-t pt-3">
+          <strong>Google Ads:</strong> a API exige developer token aprovado (semanas). Por agora descarregas o CSV e importas no Google Ads Editor.
         </div>
       </DialogContent>
     </Dialog>

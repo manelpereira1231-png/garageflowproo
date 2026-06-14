@@ -226,35 +226,140 @@ async function organicShareUrl(supa: any, userId: string, body: any) {
 
 async function metaApiPublish(supa: any, userId: string, body: any) {
   const accessToken = Deno.env.get("META_ACCESS_TOKEN");
-  const adAccountId = Deno.env.get("META_AD_ACCOUNT_ID");
+  let adAccountId = Deno.env.get("META_AD_ACCOUNT_ID") ?? "";
+  const pageId = Deno.env.get("META_PAGE_ID");
+  const instagramId = Deno.env.get("META_INSTAGRAM_ID"); // opcional
 
-  if (!accessToken || !adAccountId) {
+  if (!accessToken || !adAccountId || !pageId) {
     return json({
       ok: false,
       mode: "api",
       not_configured: true,
-      message: "Meta API ainda não configurada. Adiciona META_ACCESS_TOKEN e META_AD_ACCOUNT_ID nos secrets quando tiveres a tua Meta Business app aprovada. Por agora, usa o modo semi-automático ('meta_ads_url').",
-      docs: "https://developers.facebook.com/docs/marketing-apis/",
+      required_secrets: ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "META_PAGE_ID"],
+      message:
+        "Para publicar automaticamente no Facebook/Instagram preciso de 3 chaves da Meta. Adiciona-as nos Secrets do projeto.",
+      how_to:
+        "1) Vai a business.facebook.com → System Users → cria um System User e gera um access token com permissões ads_management + pages_show_list + pages_read_engagement. " +
+        "2) Copia o ID da conta de anúncios (Ad Account → Settings → numérico). " +
+        "3) Copia o ID da Página de Facebook (Página → About → Page ID).",
+      docs: "https://developers.facebook.com/docs/marketing-api/get-started",
     }, 200);
   }
 
-  // Stub para implementação futura: criar campanha via Marketing API
-  // POST https://graph.facebook.com/v21.0/{ad_account_id}/campaigns
-  await supa.from("marketing_publish_log").insert({
-    campaign_id: body?.campaignId ?? null,
-    channel: "meta_ads",
-    mode: "api",
-    action: "meta_api",
-    status: "pending",
-    payload: body,
-    user_id: userId,
-  });
+  const campaignId = body?.campaignId;
+  if (!campaignId) return json({ error: "campaignId required" }, 400);
 
-  return json({
-    ok: false,
-    mode: "api",
-    message: "Meta API integração em desenvolvimento. Use modo semi-automático.",
-  }, 501);
+  const { data: c, error } = await supa
+    .from("marketing_campaigns").select("*").eq("id", campaignId).maybeSingle();
+  if (error || !c) return json({ error: "Campanha não encontrada" }, 404);
+
+  // Normaliza ad account id (Meta exige prefixo act_)
+  if (!adAccountId.startsWith("act_")) adAccountId = `act_${adAccountId}`;
+
+  const GRAPH = "https://graph.facebook.com/v21.0";
+  const objective = body?.objective ?? "OUTCOME_LEADS";
+  const dailyBudgetCents = Math.max(100, Math.round((Number(c.monthly_budget_eur ?? 200) / 30) * 100));
+  const landing = body?.landingUrl ?? "https://garageflow-pt.lovable.app";
+  const headline = (c.headlines?.[0] ?? c.title ?? "GarageFlow").slice(0, 40);
+  const primaryText = (c.descriptions?.[0] ?? c.angle ?? "Software para oficinas").slice(0, 240);
+  const message = primaryText;
+
+  const log = async (status: string, payload: any) => {
+    await supa.from("marketing_publish_log").insert({
+      campaign_id: campaignId, channel: "meta_ads", mode: "api",
+      action: "meta_api", status, payload, user_id: userId,
+    });
+  };
+
+  const post = async (path: string, params: Record<string, any>) => {
+    const url = `${GRAPH}/${path}`;
+    const fd = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      fd.append(k, typeof v === "string" ? v : JSON.stringify(v));
+    }
+    fd.append("access_token", accessToken);
+    const r = await fetch(url, { method: "POST", body: fd });
+    const j = await r.json();
+    if (!r.ok || j?.error) throw new Error(j?.error?.error_user_msg || j?.error?.message || `Meta API ${r.status}`);
+    return j;
+  };
+
+  try {
+    // 1) Campaign (PAUSED — utilizador revê antes de ativar)
+    const camp = await post(`${adAccountId}/campaigns`, {
+      name: c.title,
+      objective,
+      status: "PAUSED",
+      special_ad_categories: "[]",
+      buying_type: "AUCTION",
+    });
+
+    // 2) Ad Set — daily budget, targeting básico (geo + idades 25-60)
+    const countryCodes = (c.geo ?? ["PT"]).map((g: string) => g.slice(0, 2).toUpperCase()).slice(0, 25);
+    const targeting = {
+      geo_locations: { countries: countryCodes.length ? countryCodes : ["PT"] },
+      age_min: 25, age_max: 60,
+      publisher_platforms: instagramId ? ["facebook", "instagram"] : ["facebook"],
+    };
+    const adset = await post(`${adAccountId}/adsets`, {
+      name: `${c.title} — AdSet`,
+      campaign_id: camp.id,
+      daily_budget: dailyBudgetCents,
+      billing_event: "IMPRESSIONS",
+      optimization_goal: "LEAD_GENERATION",
+      bid_strategy: "LOWEST_COST_WITHOUT_CAP",
+      targeting,
+      status: "PAUSED",
+      start_time: Math.floor(Date.now() / 1000) + 60,
+    });
+
+    // 3) Ad Creative (link ad com imagem da marca)
+    const objectStorySpec: any = {
+      page_id: pageId,
+      link_data: {
+        link: landing,
+        message,
+        name: headline,
+        description: (c.descriptions?.[1] ?? "").slice(0, 200),
+        picture: "https://garageflow-pt.lovable.app/og-image.jpg",
+        call_to_action: { type: "LEARN_MORE", value: { link: landing } },
+      },
+    };
+    if (instagramId) objectStorySpec.instagram_actor_id = instagramId;
+
+    const creative = await post(`${adAccountId}/adcreatives`, {
+      name: `${c.title} — Creative`,
+      object_story_spec: objectStorySpec,
+    });
+
+    // 4) Ad
+    const ad = await post(`${adAccountId}/ads`, {
+      name: `${c.title} — Ad`,
+      adset_id: adset.id,
+      creative: { creative_id: creative.id },
+      status: "PAUSED",
+    });
+
+    const manageUrl = `https://business.facebook.com/adsmanager/manage/campaigns?act=${adAccountId.replace("act_", "")}&selected_campaign_ids=${camp.id}`;
+
+    await log("published", {
+      campaign_id: camp.id, adset_id: adset.id, creative_id: creative.id, ad_id: ad.id,
+      manage_url: manageUrl,
+    });
+
+    return json({
+      ok: true,
+      mode: "api",
+      meta_campaign_id: camp.id,
+      meta_adset_id: adset.id,
+      meta_ad_id: ad.id,
+      manage_url: manageUrl,
+      status_note: "Campanha criada em modo PAUSED — abre no Ads Manager para rever e ativar.",
+    });
+  } catch (e: any) {
+    await log("failed", { error: e?.message });
+    return json({ ok: false, mode: "api", error: e?.message ?? "Falha na Meta API" }, 502);
+  }
 }
 
 async function googleApiPublish(supa: any, userId: string, body: any) {

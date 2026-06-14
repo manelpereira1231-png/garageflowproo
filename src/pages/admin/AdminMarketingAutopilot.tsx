@@ -491,6 +491,8 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
   const [creativeType, setCreativeType] = useState("modern_shop");
   const [customPrompt, setCustomPrompt] = useState("");
   const [linkCampaign, setLinkCampaign] = useState<string>("none");
+  const [size, setSize] = useState("1536x1024");
+  const [tier, setTier] = useState("premium");
   const [generating, setGenerating] = useState(false);
   const [emailDlg, setEmailDlg] = useState<Creative | null>(null);
 
@@ -514,6 +516,9 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           creativeType,
           customPrompt: customPrompt.trim() || undefined,
           campaignId: linkCampaign !== "none" ? linkCampaign : null,
+          size,
+          tier,
+          quality: tier === "premium" ? "high" : "medium",
         },
       });
       if (error) throw error;
@@ -537,6 +542,26 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
     await navigator.clipboard?.writeText(url).catch(() => undefined);
     toast.success("URL copiado");
   };
+
+  const downloadImg = async (it: Creative) => {
+    if (!it.image_url) return;
+    try {
+      const res = await fetch(it.image_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `garageflow-${it.creative_type}-${it.id.slice(0, 8)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Descarregada");
+    } catch {
+      window.open(it.image_url, "_blank");
+    }
+  };
+
 
   return (
     <Card className="p-6 border-amber-500/30 bg-amber-500/5">

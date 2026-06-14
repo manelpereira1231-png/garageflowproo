@@ -3133,6 +3133,7 @@ export type Database = {
           geo: string[]
           headlines: string[]
           id: string
+          image_url: string | null
           keywords: string[]
           market: string
           monthly_budget_eur: number | null
@@ -3155,6 +3156,7 @@ export type Database = {
           geo?: string[]
           headlines?: string[]
           id?: string
+          image_url?: string | null
           keywords?: string[]
           market?: string
           monthly_budget_eur?: number | null
@@ -3177,6 +3179,7 @@ export type Database = {
           geo?: string[]
           headlines?: string[]
           id?: string
+          image_url?: string | null
           keywords?: string[]
           market?: string
           monthly_budget_eur?: number | null

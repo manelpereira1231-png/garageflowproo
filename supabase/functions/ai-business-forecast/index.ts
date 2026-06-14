@@ -351,24 +351,172 @@ function projectBaseline(i: Inputs) {
   };
 }
 
-function buildPrompt(i: Inputs, baseline: any) {
-  return `Analisa projeções SaaS para gestão de oficinas no mercado ${i.market}.
-Inputs: ${JSON.stringify(i)}
-Baseline (já com ajustes de realismo aplicados — ramp não-linear, qualificação de leads 60%, churn agravado nos 3 primeiros meses, payback líquido de churn): ${JSON.stringify(baseline)}
+// ============================ MARKET (transactional) ============================
 
-REGRAS DE REALISMO (obriga-te a cumprir):
-- Oficinas auto são mercado offline, ciclo de decisão LENTO. Crescimento NUNCA é linear: existem "spikes" via parcerias e meses flat.
-- O cenário "expected" deve ficar PRÓXIMO do baseline calculado (±15%). NÃO inflacionar.
-- O "pessimistic" deve ser 40-60% abaixo do baseline (canal mau, churn alto, leads frios).
-- O "optimistic" deve ser 30-50% acima do baseline — não 3x. Só com parceria forte (associações, fornecedores de peças) é possível mais.
-- Se baseline mostrar <30 clientes em 24m com 200€/mês, isso É realista para PT/BR. Não o classifiques como pessimista.
-- realismScore: 80-95 se baseline respeita estas regras; baixa só se inputs forem absurdos.
+function marketAssumptions(raw: Inputs) {
+  const k = raw.market.toUpperCase();
+  // Defaults realistas para mercado de carros usados B2C/C2C
+  const defaults = {
+    PT: { avgVehiclePriceEur: 8500, takeRatePct: 4.5, listingToSalePct: 12, cplEur: 6 },
+    ES: { avgVehiclePriceEur: 9500, takeRatePct: 4.5, listingToSalePct: 11, cplEur: 7 },
+    BR: { avgVehiclePriceEur: 6000, takeRatePct: 5.0, listingToSalePct: 10, cplEur: 3 },
+    DE: { avgVehiclePriceEur: 14000, takeRatePct: 3.5, listingToSalePct: 14, cplEur: 12 },
+    UK: { avgVehiclePriceEur: 12000, takeRatePct: 3.5, listingToSalePct: 13, cplEur: 10 },
+    US: { avgVehiclePriceEur: 16000, takeRatePct: 3.0, listingToSalePct: 15, cplEur: 18 },
+  };
+  let base = defaults.PT;
+  for (const key of Object.keys(defaults) as (keyof typeof defaults)[]) {
+    if (k.includes(key)) { base = defaults[key]; break; }
+  }
+  return {
+    avgVehiclePriceEur: raw.marketAvgVehiclePriceEur ?? base.avgVehiclePriceEur,
+    takeRatePct: raw.marketTakeRatePct ?? base.takeRatePct,
+    listingToSalePct: raw.marketListingToSalePct ?? base.listingToSalePct,
+    cplEur: raw.marketCplEur ?? base.cplEur,
+  };
+}
+
+function projectMarket(i: {
+  market: string;
+  monthlyAdSpendEur: number;
+  horizonMonths: number;
+  avgVehiclePriceEur: number;
+  takeRatePct: number;
+  listingToSalePct: number;
+  cplEur: number;
+}) {
+  // Funil: budget → leads (sellers + buyers) → listings ativos → vendas (escrow) → GMV → comissão
+  // 60% do budget capta sellers (anúncios), 40% capta buyers (procura)
+  const sellerBudget = i.monthlyAdSpendEur * 0.6;
+  const newListingsPerMonth = i.cplEur > 0 ? Math.floor((sellerBudget / i.cplEur) * 0.5) : 0; // 50% dos leads tornam-se listings ativos
+  const buyerLiquidityFactor = 0.7; // Sem buyers suficientes, vendas caem. Assumimos 70% de liquidez no início.
+
+  const months: any[] = [];
+  let activeListings = 0;
+  const listingHalfLifeMonths = 3; // anúncio velho perde tração; ~33% desaparece por mês
+  const decay = 1 / listingHalfLifeMonths;
+
+  let totalSales = 0;
+  let totalGmv = 0;
+  let totalCommission = 0;
+
+  for (let m = 1; m <= i.horizonMonths; m++) {
+    const ramp = rampMultiplier(m);
+    const newListings = Math.round(newListingsPerMonth * ramp);
+    // Antes de adicionar novos, decai os antigos
+    activeListings = Math.max(0, Math.round(activeListings * (1 - decay))) + newListings;
+
+    // Vendas mensais: % dos listings ativos * fator liquidez (cresce com tempo)
+    const liquidity = Math.min(1.0, buyerLiquidityFactor + (m / 24) * 0.3);
+    const sales = Math.round(activeListings * (i.listingToSalePct / 100) * liquidity);
+    activeListings = Math.max(0, activeListings - sales);
+
+    const gmv = sales * i.avgVehiclePriceEur;
+    const commission = Math.round(gmv * (i.takeRatePct / 100));
+
+    totalSales += sales;
+    totalGmv += gmv;
+    totalCommission += commission;
+
+    months.push({
+      month: m,
+      newListings,
+      activeListings,
+      sales,
+      gmvEur: gmv,
+      commissionEur: commission,
+    });
+  }
+
+  const final = months[months.length - 1];
+  const avgMonthlyCommission = totalCommission / i.horizonMonths;
+  const cacPerSale = totalSales > 0 ? Math.round((i.monthlyAdSpendEur * i.horizonMonths) / totalSales) : null;
+  const commissionPerSale = Math.round(i.avgVehiclePriceEur * (i.takeRatePct / 100));
+
+  return {
+    inputs: i,
+    months,
+    finalActiveListings: final?.activeListings ?? 0,
+    finalMonthlyCommissionEur: final?.commissionEur ?? 0,
+    finalMonthlyGmvEur: final?.gmvEur ?? 0,
+    totalSales,
+    totalGmvEur: totalGmv,
+    totalCommissionEur: totalCommission,
+    avgMonthlyCommissionEur: Math.round(avgMonthlyCommission),
+    commissionPerSaleEur: commissionPerSale,
+    cacPerSaleEur: cacPerSale,
+    realismAdjustments: {
+      budgetSplit: "60% para captar vendedores (sellers), 40% para captar compradores",
+      listingDecay: "Anúncios perdem ~33% de tração por mês (half-life ~3 meses)",
+      buyerLiquidity: "Liquidez inicial 70%, sobe até 100% ao longo de 24 meses",
+      adoptionCurve: "Mesma ramp não-linear do ERP",
+    },
+  };
+}
+
+function combineBaselines(erp: any, market: any, horizon: number) {
+  if (!erp && !market) return null;
+  const months: any[] = [];
+  for (let m = 1; m <= horizon; m++) {
+    const e = erp?.months?.[m - 1];
+    const mk = market?.months?.[m - 1];
+    months.push({
+      month: m,
+      erpMrrEur: e?.mrrEur ?? 0,
+      marketCommissionEur: mk?.commissionEur ?? 0,
+      totalMonthlyRevenueEur: (e?.mrrEur ?? 0) + (mk?.commissionEur ?? 0),
+      payingShops: e?.paying ?? 0,
+      marketSales: mk?.sales ?? 0,
+    });
+  }
+  const final = months[months.length - 1];
+  const finalMonthlyRevenue = final?.totalMonthlyRevenueEur ?? 0;
+  return {
+    months,
+    finalMonthlyRevenueEur: finalMonthlyRevenue,
+    finalAnnualizedEur: finalMonthlyRevenue * 12,
+    erpShareOfFinal: finalMonthlyRevenue > 0 ? +((final.erpMrrEur / finalMonthlyRevenue) * 100).toFixed(1) : 0,
+    marketShareOfFinal: finalMonthlyRevenue > 0 ? +((final.marketCommissionEur / finalMonthlyRevenue) * 100).toFixed(1) : 0,
+  };
+}
+
+function buildPrompt(ctx: {
+  scope: ProductScope;
+  raw: Inputs;
+  erpBaseline: any;
+  marketBaseline: any;
+  combinedBaseline: any;
+  assumptions: any;
+}) {
+  const scopeLabel = ctx.scope === "erp" ? "ERP SaaS (subscrições oficinas)" :
+                     ctx.scope === "market" ? "Market (comissões em vendas de viaturas)" :
+                     "Combinado (ERP + Market)";
+
+  return `Analisa projeções para GarageFlow no mercado ${ctx.raw.market}.
+PRODUTO EM ANÁLISE: ${scopeLabel}.
+
+Inputs: ${JSON.stringify(ctx.raw)}
+Assumptions ERP: ${JSON.stringify(ctx.assumptions)}
+ERP baseline: ${JSON.stringify(ctx.erpBaseline)}
+Market baseline: ${JSON.stringify(ctx.marketBaseline)}
+Combined baseline: ${JSON.stringify(ctx.combinedBaseline)}
+
+REGRAS DE REALISMO OBRIGATÓRIAS:
+- ERP: oficinas auto = mercado offline lento. Crescimento NÃO é linear (spikes via parcerias + meses flat). "expected" = baseline ±15%. "pessimistic" = -40 a -60%. "optimistic" = +30 a +50% (não 3x).
+- Market: comissões dependem de LIQUIDEZ (sellers + buyers em equilíbrio). Primeiros 6 meses são "chicken-and-egg": poucas vendas. Take rate típico 3-5%. Ticket médio carro usado varia muito por país.
+- Combinado: somar MRR ERP + comissão mensal Market. NÃO inflacionar sinergias — são marginais nos primeiros 18m.
+- Se baseline for modesto, isso É realista. Não classifiques como pessimista.
 
 Devolve EXATAMENTE este JSON (sem markdown):
 {
-  "summary": "2-3 frases honestas sobre viabilidade",
+  "summary": "3-4 frases honestas comparando ERP vs Market e qual escala mais rápido no curto prazo",
   "realismScore": 0-100,
   "verdict": "conservador" | "realista" | "otimista" | "irrealista",
+  "scopeAnalysis": {
+    "erp": "viabilidade do ERP isolado em 1 frase",
+    "market": "viabilidade do Market isolado em 1 frase",
+    "combined": "viabilidade combinada e dependências cruzadas em 1 frase"
+  },
   "keyAssumptions": ["..."],
   "risks": [{ "risk": "...", "severity": "low|medium|high", "mitigation": "..." }],
   "opportunities": [{ "opportunity": "...", "potentialMrrEurMonth12": number }],
@@ -380,3 +528,4 @@ Devolve EXATAMENTE este JSON (sem markdown):
   "actionableSteps": ["passo 1", "passo 2", "passo 3"]
 }`;
 }
+

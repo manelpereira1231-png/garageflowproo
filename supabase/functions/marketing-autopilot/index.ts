@@ -280,9 +280,112 @@ Devolve EXATAMENTE este JSON (sem markdown):
   return json({ ok: true, iteration, reasoning: parsed.reasoning, simulated_metrics: parsed.simulated_metrics });
 }
 
+async function generateOrganicPosts(supa: any, userId: string, body: any) {
+  const market = body?.market ?? "Portugal";
+  const weeks = Math.min(Math.max(Number(body?.weeks ?? 4), 1), 12);
+  const postsPerWeek = Math.min(Math.max(Number(body?.postsPerWeek ?? 3), 1), 7);
+  const channels: string[] = Array.isArray(body?.channels) && body.channels.length > 0
+    ? body.channels
+    : ["facebook", "instagram"];
+  const campaignId = body?.campaignId ?? null;
+  const startDate = body?.startDate ? new Date(body.startDate) : new Date();
+
+  const total = weeks * postsPerWeek;
+  const prompt = `${PRODUCT_CONTEXT}
+
+Gera ${total} posts orgânicos (${postsPerWeek}/semana durante ${weeks} semanas) para ${channels.join(", ")} no mercado ${market}.
+
+MIX OBRIGATÓRIO:
+- 40% educativos (dicas práticas para donos de oficina: gestão, fiscalidade, produtividade)
+- 30% prova social / casos (storytelling de oficina que organizou processos)
+- 20% funcionalidades concretas (mostrar UM benefício real do GarageFlow)
+- 10% promo/CTA forte (trial 14 dias grátis)
+
+REGRAS:
+- Body 80-220 caracteres para Instagram, até 400 para Facebook
+- 5-10 hashtags PT relevantes (#oficinaauto #gestaoauto #mecanicaauto …)
+- CTA claro (ex: "Experimenta grátis 14 dias", "Liga-nos", "Comenta SIM")
+- Variar formatos: feed, story, reel, carousel
+- image_prompt: descrição EN curta para gerador de imagem (estilo fotorrealista B2B, oficina real, sem texto)
+- Nunca inventar features
+
+Devolve JSON puro:
+{
+  "posts": [
+    {
+      "channel": "facebook" | "instagram" | "instagram_story",
+      "post_type": "feed" | "story" | "reel" | "carousel",
+      "title": "...",
+      "body": "...",
+      "hashtags": ["..."],
+      "cta": "...",
+      "image_prompt": "...",
+      "day_offset": 0,
+      "category": "educational" | "social_proof" | "feature" | "promo"
+    }
+  ]
+}`;
+
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: "És social media manager B2B SaaS sénior. JSON puro, sem markdown." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.8,
+    }),
+  });
+
+  if (r.status === 429) return json({ error: "Rate limit." }, 429);
+  if (r.status === 402) return json({ error: "Créditos esgotados." }, 402);
+  if (!r.ok) return json({ error: `AI Gateway erro ${r.status}` }, 502);
+
+  const raw = await r.json();
+  let parsed: any;
+  try {
+    const txt = raw.choices?.[0]?.message?.content ?? "{}";
+    parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
+  } catch {
+    return json({ error: "IA devolveu JSON inválido" }, 502);
+  }
+
+  const posts = Array.isArray(parsed.posts) ? parsed.posts : [];
+  if (posts.length === 0) return json({ error: "IA não gerou posts" }, 502);
+
+  // Distribuir no calendário (espaçados ~ a cada Math.floor(7/postsPerWeek) dias)
+  const stepDays = Math.max(1, Math.floor(7 / postsPerWeek));
+  const rows = posts.map((p: any, idx: number) => {
+    const offset = typeof p.day_offset === "number" ? p.day_offset : idx * stepDays;
+    const scheduled = new Date(startDate.getTime() + offset * 86400000);
+    // Posta às 10h locais
+    scheduled.setHours(10, 0, 0, 0);
+    return {
+      campaign_id: campaignId,
+      channel: channels.includes(p.channel) ? p.channel : channels[0],
+      post_type: ["feed", "story", "reel", "carousel"].includes(p.post_type) ? p.post_type : "feed",
+      title: p.title ?? null,
+      body: String(p.body ?? "").slice(0, 2000),
+      hashtags: Array.isArray(p.hashtags) ? p.hashtags : [],
+      cta: p.cta ?? null,
+      image_prompt: p.image_prompt ?? null,
+      scheduled_for: scheduled.toISOString(),
+      status: "draft",
+      metadata: { category: p.category ?? "educational", generated_by: userId },
+    };
+  });
+
+  const { data: inserted, error } = await supa.from("marketing_posts").insert(rows).select();
+  if (error) return json({ error: error.message }, 500);
+  return json({ ok: true, count: inserted?.length ?? 0, posts: inserted });
+}
+
 function json(b: unknown, status = 200) {
   return new Response(JSON.stringify(b), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+

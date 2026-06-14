@@ -13,16 +13,16 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type Inputs = {
-  market: string;              // e.g. "Portugal", "Brasil"
-  targetSegment: string;       // e.g. "oficinas independentes 1-5 mecânicos"
-  monthlyAdSpendEur: number;   // budget de ads/mês
-  cplEur: number;              // cost per lead estimated
-  trialToPayConversionPct: number; // 0..100
-  monthlyChurnPct: number;     // 0..100
-  planMixPct: { starter: number; pro: number; garage: number; enterprise: number };
-  horizonMonths: number;       // 6 or 12
-  startingPayingCustomers: number; // current paying customers (0 if none)
-  marketSizeWorkshops?: number; // optional TAM
+  market: string;
+  targetSegment?: string;
+  monthlyAdSpendEur: number;
+  horizonMonths: number;
+  startingPayingCustomers?: number;
+  // Optional manual overrides (auto mode infers everything else)
+  cplEur?: number;
+  trialToPayConversionPct?: number;
+  monthlyChurnPct?: number;
+  planMixPct?: { starter: number; pro: number; garage: number; enterprise: number };
 };
 
 const PLAN_EUR: Record<string, number> = {
@@ -44,28 +44,90 @@ Deno.serve(async (req) => {
     const { data: isSuper } = await supa.rpc("is_super_admin", { _user_id: user.id });
     if (!isSuper) return json({ error: "Forbidden" }, 403);
 
-    const inputs = (await req.json()) as Inputs;
-    if (!inputs?.market || !inputs?.horizonMonths) return json({ error: "Missing inputs" }, 400);
+    const raw = (await req.json()) as Inputs;
+    if (!raw?.market || !raw?.horizonMonths || !raw?.monthlyAdSpendEur) {
+      return json({ error: "Missing market / horizonMonths / monthlyAdSpendEur" }, 400);
+    }
 
-    // Deterministic baseline projection (math, not AI) — gives realistic anchor.
-    const baseline = projectBaseline(inputs);
+    // STEP 1 — Ask AI for realistic benchmarks for this market+segment if any param missing.
+    let assumptions = {
+      cplEur: raw.cplEur,
+      trialToPayConversionPct: raw.trialToPayConversionPct,
+      monthlyChurnPct: raw.monthlyChurnPct,
+      planMixPct: raw.planMixPct,
+      benchmarkNotes: [] as string[],
+    };
+    const needsBenchmarks =
+      raw.cplEur == null || raw.trialToPayConversionPct == null ||
+      raw.monthlyChurnPct == null || raw.planMixPct == null;
 
-    // Ask Lovable AI to enrich with qualitative analysis + sensitivity.
-    const aiPrompt = buildPrompt(inputs, baseline);
+    if (needsBenchmarks) {
+      const benchPrompt = `Mercado: ${raw.market}. Segmento: ${raw.targetSegment ?? "oficinas auto independentes 1-5 mecânicos"}.
+Produto: SaaS de gestão para oficinas (planos €19/€39/€99/€299 por mês).
+Estima benchmarks REALISTAS para Google Ads + Meta Ads neste mercado/segmento, baseados em CPCs/CPLs típicos da indústria automóvel B2B local em 2025-2026.
+
+Devolve EXATAMENTE este JSON (sem markdown, sem prefixos):
+{
+  "cplEur": <custo por lead qualificado em € — para PT tipicamente 8-18€, BR 4-10€, US 25-60€, DE/UK 15-30€>,
+  "trialToPayConversionPct": <% trial→pago, SaaS B2B tipicamente 15-30>,
+  "monthlyChurnPct": <% churn mensal, SaaS PME tipicamente 3-7>,
+  "planMixPct": { "starter": <%>, "pro": <%>, "garage": <%>, "enterprise": <%> },
+  "benchmarkNotes": ["nota 1", "nota 2"]
+}`;
+      const benchResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "És analista de mercado SaaS. Respondes APENAS com JSON válido. Sem markdown." },
+            { role: "user", content: benchPrompt },
+          ],
+          temperature: 0.3,
+        }),
+      });
+      if (benchResp.status === 429) return json({ error: "Rate limit. Tenta daqui a pouco." }, 429);
+      if (benchResp.status === 402) return json({ error: "Créditos esgotados. Adiciona em Settings → Workspace → Usage." }, 402);
+      if (!benchResp.ok) return json({ error: `AI Gateway erro ${benchResp.status}` }, 502);
+      const benchJson = await benchResp.json();
+      try {
+        const txt = benchJson.choices?.[0]?.message?.content ?? "{}";
+        const parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
+        assumptions = {
+          cplEur: raw.cplEur ?? parsed.cplEur,
+          trialToPayConversionPct: raw.trialToPayConversionPct ?? parsed.trialToPayConversionPct,
+          monthlyChurnPct: raw.monthlyChurnPct ?? parsed.monthlyChurnPct,
+          planMixPct: raw.planMixPct ?? parsed.planMixPct,
+          benchmarkNotes: parsed.benchmarkNotes ?? [],
+        };
+      } catch {
+        return json({ error: "AI devolveu benchmarks inválidos. Tenta de novo." }, 502);
+      }
+    }
+
+    const fullInputs = {
+      market: raw.market,
+      targetSegment: raw.targetSegment ?? "Oficinas auto independentes",
+      monthlyAdSpendEur: raw.monthlyAdSpendEur,
+      horizonMonths: raw.horizonMonths,
+      startingPayingCustomers: raw.startingPayingCustomers ?? 0,
+      cplEur: assumptions.cplEur!,
+      trialToPayConversionPct: assumptions.trialToPayConversionPct!,
+      monthlyChurnPct: assumptions.monthlyChurnPct!,
+      planMixPct: assumptions.planMixPct!,
+    };
+
+    const baseline = projectBaseline(fullInputs);
+
+    // STEP 2 — Qualitative analysis with full context
+    const aiPrompt = buildPrompt(fullInputs, baseline);
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          {
-            role: "system",
-            content:
-              "És um analista financeiro SaaS. Responde APENAS com JSON válido conforme o schema pedido. Sê realista, conservador, e fundamenta cada número em hipóteses. Sem markdown, sem prefixos.",
-          },
+          { role: "system", content: "És analista financeiro SaaS. Respondes APENAS com JSON válido conforme schema. Sem markdown." },
           { role: "user", content: aiPrompt },
         ],
         temperature: 0.4,
@@ -73,31 +135,38 @@ Deno.serve(async (req) => {
     });
 
     if (aiResp.status === 429) return json({ error: "Rate limit excedido. Tenta daqui a pouco." }, 429);
-    if (aiResp.status === 402) return json({ error: "Créditos esgotados. Adiciona créditos em Settings → Workspace → Usage." }, 402);
+    if (aiResp.status === 402) return json({ error: "Créditos esgotados." }, 402);
     if (!aiResp.ok) return json({ error: `AI Gateway erro ${aiResp.status}` }, 502);
 
     const aiJson = await aiResp.json();
     let aiAnalysis: any = null;
     try {
       const txt = aiJson.choices?.[0]?.message?.content ?? "{}";
-      const cleaned = txt.replace(/```json\n?|```/g, "").trim();
-      aiAnalysis = JSON.parse(cleaned);
+      aiAnalysis = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
     } catch {
       aiAnalysis = { summary: "Não foi possível analisar resposta da IA.", risks: [], opportunities: [] };
     }
 
-    const forecast = { baseline, ai: aiAnalysis };
+    const forecast = {
+      baseline,
+      ai: aiAnalysis,
+      assumptions: {
+        ...assumptions,
+        source: needsBenchmarks ? "ai-inferred" : "user-provided",
+      },
+      resolvedInputs: fullInputs,
+    };
 
-    // Persist
     await supa.from("business_forecasts").insert({
       generated_by: user.id,
-      inputs,
+      inputs: raw,
       forecast,
       model: "google/gemini-3-flash-preview",
     });
 
     return json({ ok: true, forecast });
   } catch (e: any) {
+
     return json({ error: e?.message ?? "Internal error" }, 500);
   }
 });

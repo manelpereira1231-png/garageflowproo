@@ -47,16 +47,18 @@ export default function AdminBusinessMetrics() {
   // Forecast state
   const [fcLoading, setFcLoading] = useState(false);
   const [forecast, setForecast] = useState<any>(null);
+  const [advanced, setAdvanced] = useState(false);
   const [inputs, setInputs] = useState({
     market: "Portugal",
     targetSegment: "Oficinas independentes 1-5 mecânicos",
     monthlyAdSpendEur: 1500,
+    horizonMonths: 12,
+    startingPayingCustomers: 0,
+    // advanced overrides (only sent if advanced=true)
     cplEur: 12,
     trialToPayConversionPct: 25,
     monthlyChurnPct: 4,
     starter: 30, pro: 45, garage: 20, enterprise: 5,
-    horizonMonths: 12,
-    startingPayingCustomers: 0,
   });
 
   const load = async () => {
@@ -91,23 +93,24 @@ export default function AdminBusinessMetrics() {
     setFcLoading(true);
     setForecast(null);
     try {
-      const planMixPct = {
-        starter: inputs.starter, pro: inputs.pro,
-        garage: inputs.garage, enterprise: inputs.enterprise,
+      const body: any = {
+        market: inputs.market,
+        targetSegment: inputs.targetSegment,
+        monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
+        horizonMonths: Number(inputs.horizonMonths),
+        startingPayingCustomers: Number(inputs.startingPayingCustomers),
       };
-      const { data, error } = await supabase.functions.invoke("ai-business-forecast", {
-        body: {
-          market: inputs.market,
-          targetSegment: inputs.targetSegment,
-          monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
-          cplEur: Number(inputs.cplEur),
-          trialToPayConversionPct: Number(inputs.trialToPayConversionPct),
-          monthlyChurnPct: Number(inputs.monthlyChurnPct),
-          planMixPct,
-          horizonMonths: Number(inputs.horizonMonths),
-          startingPayingCustomers: Number(inputs.startingPayingCustomers),
-        },
-      });
+      if (advanced) {
+        body.cplEur = Number(inputs.cplEur);
+        body.trialToPayConversionPct = Number(inputs.trialToPayConversionPct);
+        body.monthlyChurnPct = Number(inputs.monthlyChurnPct);
+        body.planMixPct = {
+          starter: inputs.starter, pro: inputs.pro,
+          garage: inputs.garage, enterprise: inputs.enterprise,
+        };
+      }
+      const { data, error } = await supabase.functions.invoke("ai-business-forecast", { body });
+
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setForecast((data as any).forecast);

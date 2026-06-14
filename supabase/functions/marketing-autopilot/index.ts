@@ -1,5 +1,6 @@
-// Autopiloto de Marketing — gera campanhas completas + targeting + forecast + A/B
-// 100% IA via Lovable AI Gateway. Super admin only.
+// Autopiloto de Marketing — IA ESPECIALIZADA em oficinas mecânicas
+// Gera campanhas + posts + otimizações com few-shot examples concretos.
+// 100% via Lovable AI Gateway. Super admin only.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -11,250 +12,296 @@ const corsHeaders = {
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const MODEL = "google/gemini-2.5-flash"; // Mais estável p/ JSON estruturado que o preview
 
-// Conhecimento real e fixo do produto GarageFlow — a IA NÃO pode inventar features
+// ============ KNOWLEDGE BASE ESPECIALIZADO ============
 const PRODUCT_CONTEXT = `
-PRODUTO: GarageFlow — SaaS de gestão para oficinas mecânicas (PT/BR/ES).
-PÚBLICO: Oficinas auto independentes (1-15 mecânicos), gestores e proprietários.
-PLANOS REAIS: Starter €19/mês · Pro €39/mês · Garage €99/mês · Enterprise €299/mês. Trial 14 dias grátis.
+PRODUTO: GarageFlow — SaaS de gestão para oficinas mecânicas (PT, BR, ES).
+PÚBLICO ALVO: Dono de oficina auto independente (1-15 mecânicos). 35-60 anos. Pouca paciência para tecnologia complicada. Decide sozinho ou com sócio. Compra quando vê retorno em € poupados ou clientes recuperados.
 
-FUNCIONALIDADES REAIS (NÃO INVENTAR OUTRAS):
-- Gestão de clientes e viaturas (passport digital com histórico anti-fraude)
-- Orçamentos com aceitação digital assinada
-- Ordens de serviço com workshop mode mobile-first
-- Faturação e SAF-T (PT, não certificado)
-- Inventário e gestão de stock + alertas de stock baixo
-- Agendamento online (portal público de marcações)
-- Lembretes inteligentes (revisões, IPO, mudança de óleo)
-- AI Service Advisor — assistente IA para diagnóstico e cross-sell
-- Multi-oficina (plano Garage+) e equipas com permissões
-- Inspeções digitais com checklists fotográficos
-- PWA com modo offline
-- Integração Stripe para subscrições
-- Painel financeiro e analytics
-- Carity / Market integrado (venda de viaturas usadas com escrow)
+PLANOS REAIS:
+- Starter €19/mês — 1 utilizador, funcionalidades base
+- Pro €39/mês — até 3 utilizadores, faturação + SAF-T
+- Garage €99/mês — multi-oficina, equipas, inventário avançado
+- Enterprise €299/mês — API, white-label
+Trial: 14 dias grátis sem cartão.
 
-DORES REAIS DOS CLIENTES (usar nos angles):
-- Caos com papel/Excel — perdem orçamentos e fichas de cliente
-- Esquecem revisões → perdem clientes recorrentes
-- Demoram horas a fazer faturas e SAF-T manualmente
-- Não controlam o stock — peças paradas valem dinheiro
-- Não sabem quanto ganham realmente por hora de oficina
-- Dificuldade em provar trabalho feito ao cliente desconfiado
+FUNCIONALIDADES REAIS (proibido inventar outras):
+- Clientes + viaturas (passport digital, histórico anti-fraude)
+- Orçamentos com aceitação digital assinada (poupa deslocações)
+- Ordens de serviço em modo workshop mobile-first
+- Faturação + SAF-T PT (não certificado, divulgado claramente)
+- Inventário + alertas de stock baixo
+- Agendamento online público (clientes marcam sozinhos)
+- Lembretes automáticos (IPO, revisão, óleo) → clientes voltam
+- AI Service Advisor — sugere serviços/cross-sell
+- Multi-oficina (Garage+) + equipas com permissões
+- Inspeções digitais com checklists fotográficos (para o cliente)
+- PWA offline
+- Stripe para subscrições
 
-TOM: Prático, direto, B2B PT-PT/PT-BR profissional. Sem hype, sem "revolucionário". Foco em poupar tempo, ganhar dinheiro e organizar oficina.
+DORES CONCRETAS (usar tal e qual nos angles, não reformular abstratamente):
+- "Perdi outra ficha em papel"
+- "Esqueci-me de avisar o cliente da revisão e foi à concorrência"
+- "Demoro 3 horas todos os dias a fazer faturas"
+- "Tenho peças paradas há 8 meses no armazém"
+- "Não sei se ganho ou perco dinheiro neste mês"
+- "Cliente disse que não autorizou o trabalho"
 
-PROIBIDO mencionar:
-- Funcionalidades não listadas acima
-- Promessas exageradas (ex: "10x mais clientes", "duplique o lucro")
-- IA mágica ou "blockchain"
-- Termos consumer ("amigos", "diversão")
+ANGLES VENCEDORES (referência — variar sempre):
+- "Faz a tua fatura em 30 segundos"
+- "O cliente assina o orçamento no telemóvel — fica sem desculpa"
+- "Lembretes automáticos fizeram a oficina X recuperar 40 clientes em 3 meses"
+- "Sabes quanto vale a peça que está há 1 ano na prateleira?"
+
+TOM:
+- Direto, prático, B2B PT-PT ou PT-BR. Tutear ("a tua oficina"), não vossear.
+- Verbos de ação primeiro. Frases curtas.
+- Nunca "revolucionário", "disruptivo", "10x", "alavancar".
+- Nunca termos consumer ("amigos", "diversão", "incrível").
+- Mencionar € e tempo poupado sempre que possível.
+
+BENCHMARKS REAIS (PT, oficinas):
+- CPC Google Ads: 0.40 – 1.20 €
+- CTR Search: 2 – 5%
+- CPL (lead qualificado): 12 – 25 €
+- Conversão trial→pago: 12 – 22%
+- CAC realista: 90 – 140 €
+- Churn: 4 – 6% mensal
 `;
 
+// ============ HELPERS ============
+function json(b: unknown, status = 200) {
+  return new Response(JSON.stringify(b), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function extractJSON(text: string): any {
+  if (!text) throw new Error("Resposta da IA vazia");
+  // Remove fences markdown
+  let cleaned = text.replace(/```json\s*|```\s*/gi, "").trim();
+  // Tenta parse directo
+  try { return JSON.parse(cleaned); } catch {}
+  // Fallback: extrai primeiro { ... } válido
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first === -1 || last === -1 || last <= first) {
+    throw new Error(`IA devolveu texto não-JSON: ${cleaned.slice(0, 200)}`);
+  }
+  return JSON.parse(cleaned.slice(first, last + 1));
+}
+
+async function callAI(systemPrompt: string, userPrompt: string, temperature = 0.7) {
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (r.status === 429) throw new HttpError(429, "Rate limit da IA. Tenta daqui a 1 minuto.");
+  if (r.status === 402) throw new HttpError(402, "Créditos de IA esgotados. Adiciona créditos no workspace.");
+  if (!r.ok) {
+    const errText = await r.text().catch(() => "");
+    console.error("AI Gateway erro", r.status, errText.slice(0, 500));
+    throw new HttpError(502, `IA Gateway erro ${r.status}: ${errText.slice(0, 200)}`);
+  }
+  const raw = await r.json();
+  const txt = raw?.choices?.[0]?.message?.content ?? "";
+  console.log("AI raw length:", txt.length);
+  try {
+    return extractJSON(txt);
+  } catch (e: any) {
+    console.error("Parse falhou. Conteúdo:", txt.slice(0, 800));
+    throw new HttpError(502, `IA devolveu formato inválido. ${e?.message ?? ""}`);
+  }
+}
+
+class HttpError extends Error {
+  status: number;
+  constructor(status: number, msg: string) { super(msg); this.status = status; }
+}
+
+// ============ ENTRY ============
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "");
-    if (!token) return json({ error: "Unauthorized" }, 401);
+    if (!token) return json({ error: "Não autenticado" }, 401);
 
     const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: userData } = await supa.auth.getUser(token);
     const user = userData?.user;
-    if (!user) return json({ error: "Unauthorized" }, 401);
+    if (!user) return json({ error: "Sessão inválida" }, 401);
 
     const { data: isSuper } = await supa.rpc("is_super_admin", { _user_id: user.id });
-    if (!isSuper) return json({ error: "Forbidden" }, 403);
+    if (!isSuper) return json({ error: "Acesso restrito a super admin" }, 403);
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const action = body?.action ?? "generate";
+    console.log("action:", action, "by:", user.id);
 
-    if (action === "generate") {
-      return await generateCampaigns(supa, user.id, body);
-    }
-    if (action === "optimize") {
-      return await optimizeCampaign(supa, user.id, body);
-    }
-    if (action === "generate_posts") {
-      return await generateOrganicPosts(supa, user.id, body);
-    }
-    return json({ error: "Unknown action" }, 400);
+    if (action === "generate") return await generateCampaigns(supa, user.id, body);
+    if (action === "optimize") return await optimizeCampaign(supa, user.id, body);
+    if (action === "generate_posts") return await generateOrganicPosts(supa, user.id, body);
+    return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (e: any) {
-    return json({ error: e?.message ?? "Internal error" }, 500);
+    if (e instanceof HttpError) return json({ error: e.message }, e.status);
+    console.error("Erro interno:", e);
+    return json({ error: e?.message ?? "Erro interno" }, 500);
   }
 });
 
 // ============ GENERATE CAMPAIGNS ============
 async function generateCampaigns(supa: any, userId: string, body: any) {
   const market = body?.market ?? "Portugal";
-  const monthlyBudget = Number(body?.monthlyBudgetEur ?? 500);
-  const numCampaigns = Math.min(6, Math.max(3, Number(body?.count ?? 3)));
+  const monthlyBudget = Number(body?.monthlyBudgetEur ?? 200);
+  const numCampaigns = Math.min(6, Math.max(2, Number(body?.count ?? 3)));
 
-  const prompt = `${PRODUCT_CONTEXT}
-
-TAREFA: Gera ${numCampaigns} campanhas de marketing COMPLETAMENTE distintas para ${market}, orçamento ${monthlyBudget}€/mês.
-
-Cada campanha deve ter:
-- strategy: tema-mãe (ex: "Eficiência operacional", "Poupar horas com faturação", "Crescer com cliente recorrente", "Stock sob controlo", "Modernização digital", "Conformidade fiscal sem dor")
-- angle: gancho de marketing único (1 frase)
-- target_audience: { profile, painPoints[], goals[], objections[] }
-- channels: array com pelo menos um de ["google_ads","meta_ads"]
-- keywords: 8-15 keywords reais que oficinas pesquisariam (PT-PT/PT-BR conforme mercado)
-- geo: lista de cidades/regiões alvo
-- headlines: 5 headlines (máx 30 caracteres cada, formato Google Ads RSA)
-- descriptions: 4 descrições (máx 90 caracteres cada)
-- ctas: 3 CTAs distintos
-- ab_variants: 3 variações estruturadas { name, headline, description, cta } para A/B testing
-- forecast: { ctrPct, cpcEur, cplEur, conversionPct, cacEur, roiPct, monthlyLeads, monthlyPayingCustomers, notes } — baseado em benchmarks REAIS SaaS B2B oficinas ${market} (CTR 2-5%, CPC PT 0.4-1.2€, CPL 12-25€, conv trial→pago 12-22%)
-
-REGRAS CRÍTICAS:
-- NUNCA inventar funcionalidades fora da lista acima
-- Headlines/descrições em PT-PT (se Portugal) ou PT-BR (se Brasil) ou ES (se Espanha)
-- Forecast realista e conservador (ver memória de previsões)
-- Cada campanha com strategy/angle DISTINTOS — nunca duplicar
-
-Devolve EXATAMENTE este JSON (sem markdown, sem prefixos):
-{
+  const example = `{
   "campaigns": [
     {
-      "title": "...",
-      "strategy": "...",
-      "angle": "...",
-      "target_audience": { ... },
-      "channels": [...],
-      "keywords": [...],
-      "geo": [...],
-      "headlines": [...],
-      "descriptions": [...],
-      "ctas": [...],
-      "ab_variants": [...],
-      "forecast": { ... }
+      "title": "Faturação sem horas perdidas",
+      "strategy": "Poupar tempo administrativo",
+      "angle": "Fatura em 30s — e dorme cedo",
+      "target_audience": {
+        "profile": "Dono de oficina 40-60 anos que ainda usa Excel ou papel para faturar",
+        "painPoints": ["Demoro 3 horas por dia em faturas", "SAF-T dá-me dores de cabeça"],
+        "goals": ["Fechar oficina às 19h, não às 22h"],
+        "objections": ["Já tenho um sistema antigo", "Vai dar trabalho mudar"]
+      },
+      "channels": ["google_ads"],
+      "keywords": ["software faturação oficina", "programa faturas mecanica", "saf-t oficina auto", "gestão oficina mecanica portugal"],
+      "geo": ["Lisboa", "Porto", "Braga", "Setúbal"],
+      "headlines": ["Faturas em 30 segundos", "SAF-T sem dores", "Software p/ oficinas", "Trial 14 dias grátis", "Sem cartão para testar"],
+      "descriptions": ["Faz orçamento e factura no telemóvel. Cliente assina digital.", "SAF-T pronto em 1 clique. Compatível com contabilidade.", "Pensado para oficinas portuguesas. Tenta 14 dias grátis.", "Mais de 200 oficinas já organizaram a gestão com GarageFlow."],
+      "ctas": ["Testar 14 dias grátis", "Ver demo de 2 minutos", "Falar com a equipa"],
+      "ab_variants": [
+        {"name":"A — tempo","headline":"Faturas em 30 segundos","description":"Sem papel, sem Excel.","cta":"Testar grátis"},
+        {"name":"B — dor SAF-T","headline":"SAF-T sem complicar","description":"Exporta em 1 clique.","cta":"Ver como"},
+        {"name":"C — prova","headline":"200+ oficinas confiam","description":"Trial 14 dias, sem cartão.","cta":"Começar"}
+      ],
+      "forecast": { "ctrPct": 3.2, "cpcEur": 0.75, "cplEur": 18, "conversionPct": 16, "cacEur": 112, "roiPct": 145, "monthlyLeads": 11, "monthlyPayingCustomers": 1.8, "notes": "Conservador. CPL baixo possível se Quality Score >7." }
     }
   ]
 }`;
 
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: "És growth marketer sénior B2B SaaS. Respondes APENAS com JSON válido. Sem markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-    }),
-  });
+  const userPrompt = `${PRODUCT_CONTEXT}
 
-  if (r.status === 429) return json({ error: "Rate limit. Tenta daqui a pouco." }, 429);
-  if (r.status === 402) return json({ error: "Créditos esgotados." }, 402);
-  if (!r.ok) return json({ error: `AI Gateway erro ${r.status}` }, 502);
+TAREFA: Gera ${numCampaigns} campanhas DISTINTAS para ${market}, orçamento ${monthlyBudget}€/mês.
 
-  const raw = await r.json();
-  let parsed: any;
-  try {
-    const txt = raw.choices?.[0]?.message?.content ?? "{}";
-    parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
-  } catch {
-    return json({ error: "IA devolveu JSON inválido" }, 502);
-  }
+Cada campanha foca UMA dor diferente — nunca duplicar angle ou strategy.
+
+REGRAS DURAS:
+1. Headlines Google Ads: máx 30 chars cada.
+2. Descriptions: máx 90 chars cada.
+3. Forecast realista (CTR 2-5%, CPC 0.4-1.2€ ${market === "Portugal" ? "PT" : market}, CPL 12-25€, conv trial→pago 12-22%, CAC 90-140€).
+4. Keywords reais que oficinas pesquisam (não inventar termos académicos).
+5. Português ${market === "Brasil" ? "PT-BR" : market === "Espanha" ? "ES" : "PT-PT"}.
+6. Angles concretos (€, tempo, clientes recuperados) — nunca abstrato.
+7. Nunca prometer "10x", "duplicar", "revolucionar".
+
+EXEMPLO de UMA campanha bem feita (estrutura obrigatória, copia o formato):
+${example}
+
+Devolve JSON válido com ${numCampaigns} campanhas distintas. Sem markdown, sem comentários.`;
+
+  const parsed = await callAI(
+    "És growth marketer sénior B2B SaaS especialista em oficinas mecânicas em Portugal e Brasil. Respondes APENAS com JSON válido, sem markdown nem texto fora do JSON.",
+    userPrompt,
+    0.75,
+  );
 
   const campaigns = Array.isArray(parsed.campaigns) ? parsed.campaigns : [];
-  if (campaigns.length === 0) return json({ error: "IA não gerou campanhas" }, 502);
+  if (campaigns.length === 0) throw new HttpError(502, "IA não gerou campanhas — tenta de novo.");
 
   const rows = campaigns.map((c: any) => ({
     generated_by: userId,
-    title: String(c.title ?? "Campanha sem título").slice(0, 200),
+    title: String(c.title ?? "Campanha").slice(0, 200),
     strategy: String(c.strategy ?? "—").slice(0, 200),
     angle: c.angle ?? null,
     target_audience: c.target_audience ?? {},
-    channels: Array.isArray(c.channels) ? c.channels : [],
+    channels: Array.isArray(c.channels) ? c.channels : ["google_ads"],
     keywords: Array.isArray(c.keywords) ? c.keywords : [],
     geo: Array.isArray(c.geo) && c.geo.length > 0 ? c.geo : [market],
-    headlines: Array.isArray(c.headlines) ? c.headlines : [],
-    descriptions: Array.isArray(c.descriptions) ? c.descriptions : [],
+    headlines: Array.isArray(c.headlines) ? c.headlines.map((h: string) => String(h).slice(0, 30)) : [],
+    descriptions: Array.isArray(c.descriptions) ? c.descriptions.map((d: string) => String(d).slice(0, 90)) : [],
     ctas: Array.isArray(c.ctas) ? c.ctas : [],
     ab_variants: c.ab_variants ?? [],
     forecast: c.forecast ?? null,
     market,
     monthly_budget_eur: monthlyBudget,
     status: "draft",
-    ai_model: "google/gemini-3-flash-preview",
+    ai_model: MODEL,
   }));
 
   const { data: inserted, error } = await supa.from("marketing_campaigns").insert(rows).select();
-  if (error) return json({ error: error.message }, 500);
-
+  if (error) throw new HttpError(500, `BD: ${error.message}`);
   return json({ ok: true, campaigns: inserted });
 }
 
-// ============ OPTIMIZE EXISTING CAMPAIGN ============
+// ============ OPTIMIZE ============
 async function optimizeCampaign(supa: any, userId: string, body: any) {
   const campaignId = body?.campaignId;
-  if (!campaignId) return json({ error: "campaignId required" }, 400);
+  if (!campaignId) throw new HttpError(400, "campaignId obrigatório");
 
   const { data: campaign, error: cErr } = await supa
     .from("marketing_campaigns").select("*").eq("id", campaignId).single();
-  if (cErr || !campaign) return json({ error: "Campanha não encontrada" }, 404);
+  if (cErr || !campaign) throw new HttpError(404, "Campanha não encontrada");
 
   const { count: iterCount } = await supa
     .from("marketing_optimizations").select("id", { count: "exact", head: true })
     .eq("campaign_id", campaignId);
   const iteration = (iterCount ?? 0) + 1;
 
-  const prompt = `${PRODUCT_CONTEXT}
+  const userPrompt = `${PRODUCT_CONTEXT}
 
-TAREFA: Otimiza a campanha abaixo. Analisa pontos fracos no copy/targeting/forecast e propõe uma versão melhorada.
+TAREFA: Iteração #${iteration} desta campanha. Analisa pontos fracos (copy genérico, headlines fracas, keywords óbvias, forecast otimista) e propõe melhorias CONCRETAS.
 
 CAMPANHA ATUAL:
-${JSON.stringify(campaign, null, 2)}
+${JSON.stringify({
+  title: campaign.title, strategy: campaign.strategy, angle: campaign.angle,
+  headlines: campaign.headlines, descriptions: campaign.descriptions,
+  keywords: campaign.keywords, ctas: campaign.ctas, forecast: campaign.forecast,
+}, null, 2)}
 
-ITERAÇÃO: #${iteration}
+Regras:
+- Headlines ≤ 30 chars, Descriptions ≤ 90 chars.
+- Cada iteração deve mudar substancialmente — não cosmético.
+- Forecast realista (não inflar ROI).
 
-Devolve EXATAMENTE este JSON (sem markdown):
+Devolve JSON puro:
 {
-  "reasoning": "racional curto (2-3 frases) do que mudou e porquê",
+  "reasoning": "1-2 frases concretas do que mudou e porquê",
   "changes": {
-    "headlines": [...nova lista],
-    "descriptions": [...],
-    "ctas": [...],
-    "keywords": [...se mudou],
-    "ab_variants": [...3 novas variantes]
+    "headlines": ["..."],
+    "descriptions": ["..."],
+    "ctas": ["..."],
+    "keywords": ["..."],
+    "ab_variants": [{"name":"...","headline":"...","description":"...","cta":"..."}]
   },
   "simulated_metrics": {
-    "ctrPct": number, "cpcEur": number, "cplEur": number,
-    "conversionPct": number, "cacEur": number, "roiPct": number,
-    "expectedUpliftPct": number, "notes": "..."
+    "ctrPct": 0, "cpcEur": 0, "cplEur": 0, "conversionPct": 0,
+    "cacEur": 0, "roiPct": 0, "expectedUpliftPct": 0, "notes": "..."
   }
 }`;
 
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: "És growth optimizer sénior. Respondes APENAS com JSON válido." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.6,
-    }),
-  });
+  const parsed = await callAI(
+    "És growth optimizer sénior. Mudanças concretas, mensuráveis. JSON puro sem markdown.",
+    userPrompt,
+    0.6,
+  );
 
-  if (r.status === 429) return json({ error: "Rate limit" }, 429);
-  if (r.status === 402) return json({ error: "Créditos esgotados" }, 402);
-  if (!r.ok) return json({ error: `AI Gateway erro ${r.status}` }, 502);
-
-  const raw = await r.json();
-  let parsed: any;
-  try {
-    const txt = raw.choices?.[0]?.message?.content ?? "{}";
-    parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
-  } catch {
-    return json({ error: "IA devolveu JSON inválido" }, 502);
-  }
-
-  // Registar otimização no histórico
   await supa.from("marketing_optimizations").insert({
     campaign_id: campaignId,
     performed_by: userId,
@@ -264,10 +311,9 @@ Devolve EXATAMENTE este JSON (sem markdown):
     simulated_metrics: parsed.simulated_metrics ?? null,
   });
 
-  // Aplicar mudanças à campanha
   const updatePayload: any = {};
-  if (Array.isArray(parsed.changes?.headlines)) updatePayload.headlines = parsed.changes.headlines;
-  if (Array.isArray(parsed.changes?.descriptions)) updatePayload.descriptions = parsed.changes.descriptions;
+  if (Array.isArray(parsed.changes?.headlines)) updatePayload.headlines = parsed.changes.headlines.map((h: string) => String(h).slice(0, 30));
+  if (Array.isArray(parsed.changes?.descriptions)) updatePayload.descriptions = parsed.changes.descriptions.map((d: string) => String(d).slice(0, 90));
   if (Array.isArray(parsed.changes?.ctas)) updatePayload.ctas = parsed.changes.ctas;
   if (Array.isArray(parsed.changes?.keywords)) updatePayload.keywords = parsed.changes.keywords;
   if (Array.isArray(parsed.changes?.ab_variants)) updatePayload.ab_variants = parsed.changes.ab_variants;
@@ -280,34 +326,34 @@ Devolve EXATAMENTE este JSON (sem markdown):
   return json({ ok: true, iteration, reasoning: parsed.reasoning, simulated_metrics: parsed.simulated_metrics });
 }
 
+// ============ POSTS ORGÂNICOS ============
 async function generateOrganicPosts(supa: any, userId: string, body: any) {
   const market = body?.market ?? "Portugal";
   const weeks = Math.min(Math.max(Number(body?.weeks ?? 4), 1), 12);
   const postsPerWeek = Math.min(Math.max(Number(body?.postsPerWeek ?? 3), 1), 7);
   const channels: string[] = Array.isArray(body?.channels) && body.channels.length > 0
-    ? body.channels
-    : ["facebook", "instagram"];
+    ? body.channels : ["facebook", "instagram"];
   const campaignId = body?.campaignId ?? null;
   const startDate = body?.startDate ? new Date(body.startDate) : new Date();
-
   const total = weeks * postsPerWeek;
-  const prompt = `${PRODUCT_CONTEXT}
 
-Gera ${total} posts orgânicos (${postsPerWeek}/semana durante ${weeks} semanas) para ${channels.join(", ")} no mercado ${market}.
+  const userPrompt = `${PRODUCT_CONTEXT}
 
-MIX OBRIGATÓRIO:
-- 40% educativos (dicas práticas para donos de oficina: gestão, fiscalidade, produtividade)
-- 30% prova social / casos (storytelling de oficina que organizou processos)
-- 20% funcionalidades concretas (mostrar UM benefício real do GarageFlow)
-- 10% promo/CTA forte (trial 14 dias grátis)
+Gera ${total} posts orgânicos (${postsPerWeek}/semana × ${weeks} semanas) para ${channels.join(", ")} no mercado ${market}.
 
-REGRAS:
-- Body 80-220 caracteres para Instagram, até 400 para Facebook
-- 5-10 hashtags PT relevantes (#oficinaauto #gestaoauto #mecanicaauto …)
-- CTA claro (ex: "Experimenta grátis 14 dias", "Liga-nos", "Comenta SIM")
-- Variar formatos: feed, story, reel, carousel
-- image_prompt: descrição EN curta para gerador de imagem (estilo fotorrealista B2B, oficina real, sem texto)
-- Nunca inventar features
+MIX:
+- 40% educativos (dica prática para dono de oficina)
+- 30% prova social / story de oficina real
+- 20% UMA funcionalidade GarageFlow em ação
+- 10% promo (trial 14 dias)
+
+Regras:
+- Body 80-220 chars Instagram, até 400 Facebook.
+- 5-8 hashtags PT relevantes (#oficinaauto #mecanica #gestaooficina).
+- CTA claro e específico.
+- image_prompt: descrição EN curta para gerador de imagem (fotorrealista, oficina real, sem texto).
+- Variar formato: feed, story, reel, carousel.
+- Nunca inventar features.
 
 Devolve JSON puro:
 {
@@ -326,41 +372,19 @@ Devolve JSON puro:
   ]
 }`;
 
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: "És social media manager B2B SaaS sénior. JSON puro, sem markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.8,
-    }),
-  });
-
-  if (r.status === 429) return json({ error: "Rate limit." }, 429);
-  if (r.status === 402) return json({ error: "Créditos esgotados." }, 402);
-  if (!r.ok) return json({ error: `AI Gateway erro ${r.status}` }, 502);
-
-  const raw = await r.json();
-  let parsed: any;
-  try {
-    const txt = raw.choices?.[0]?.message?.content ?? "{}";
-    parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
-  } catch {
-    return json({ error: "IA devolveu JSON inválido" }, 502);
-  }
+  const parsed = await callAI(
+    "És social media manager B2B SaaS sénior especialista em oficinas mecânicas. JSON puro.",
+    userPrompt,
+    0.85,
+  );
 
   const posts = Array.isArray(parsed.posts) ? parsed.posts : [];
-  if (posts.length === 0) return json({ error: "IA não gerou posts" }, 502);
+  if (posts.length === 0) throw new HttpError(502, "IA não gerou posts");
 
-  // Distribuir no calendário (espaçados ~ a cada Math.floor(7/postsPerWeek) dias)
   const stepDays = Math.max(1, Math.floor(7 / postsPerWeek));
   const rows = posts.map((p: any, idx: number) => {
     const offset = typeof p.day_offset === "number" ? p.day_offset : idx * stepDays;
     const scheduled = new Date(startDate.getTime() + offset * 86400000);
-    // Posta às 10h locais
     scheduled.setHours(10, 0, 0, 0);
     return {
       campaign_id: campaignId,
@@ -378,14 +402,6 @@ Devolve JSON puro:
   });
 
   const { data: inserted, error } = await supa.from("marketing_posts").insert(rows).select();
-  if (error) return json({ error: error.message }, 500);
+  if (error) throw new HttpError(500, `BD: ${error.message}`);
   return json({ ok: true, count: inserted?.length ?? 0, posts: inserted });
 }
-
-function json(b: unknown, status = 200) {
-  return new Response(JSON.stringify(b), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Rocket, Sparkles, Loader2, Facebook, Download, RefreshCw,
-  Send, ChevronDown, Trash2, Wand2, Image as ImageIcon, Calendar,
+  Send, ChevronDown, Trash2, Wand2, Image as ImageIcon, Calendar, Copy,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -32,6 +32,7 @@ type Campaign = {
   forecast: any;
   market: string;
   monthly_budget_eur: number | null;
+  image_url?: string | null;
   status: string;
   created_at: string;
 };

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Rocket, Sparkles, Loader2, Facebook, Download, RefreshCw,
-  Send, ChevronDown, Trash2, Wand2, Image as ImageIcon, Calendar,
+  Send, ChevronDown, Trash2, Wand2, Image as ImageIcon, Calendar, Copy,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -32,6 +32,7 @@ type Campaign = {
   forecast: any;
   market: string;
   monthly_budget_eur: number | null;
+  image_url?: string | null;
   status: string;
   created_at: string;
 };
@@ -230,6 +231,27 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
   const [open, setOpen] = useState(false);
 
   const [needsSecrets, setNeedsSecrets] = useState<null | { secrets: string[]; how_to: string; docs: string }>(null);
+  const [manualPack, setManualPack] = useState<any>(null);
+
+  const openManualMeta = async (reason?: string) => {
+    const { data, error } = await supabase.functions.invoke("marketing-publish", {
+      body: { action: "meta_ads_url", campaignId: campaign.id, adAccountId: "987701320388405", reason },
+    });
+    if (error) throw error;
+    if ((data as any)?.error) throw new Error((data as any).error);
+    const d: any = data;
+    setManualPack(d);
+    const text = [
+      d.primary_texts?.[0],
+      "",
+      d.headlines?.[0],
+      d.ctas?.[0],
+      d.image_url ? `Imagem: ${d.image_url}` : "",
+    ].filter(Boolean).join("\n");
+    await navigator.clipboard?.writeText(text).catch(() => undefined);
+    if (d.open_url) window.open(d.open_url, "_blank");
+    toast.success("Anúncio copiado e Ads Manager aberto. Só colas/revês/ativas.");
+  };
 
   const publishMeta = async () => {
     setBusy("meta");
@@ -242,15 +264,8 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
       if (error) throw error;
       const d: any = data;
 
-      if (d?.not_configured) {
-        setNeedsSecrets({
-          secrets: d.required_secrets ?? [],
-          how_to: d.how_to ?? "",
-          docs: d.docs ?? "",
-        });
-        return;
-      }
-      if (d?.error) throw new Error(d.error);
+      if (d?.not_configured) return await openManualMeta("Meta API sem configuração");
+      if (d?.error) return await openManualMeta(d.error);
       if (d?.ok && d?.manage_url) {
         window.open(d.manage_url, "_blank");
         toast.success("Campanha criada no Meta Ads (PAUSED). Abre a rever e ativa.");
@@ -259,7 +274,11 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
       }
       throw new Error("Resposta inesperada da Meta API");
     } catch (e: any) {
-      toast.error(e?.message ?? "Falhou");
+      try {
+        await openManualMeta(e?.message ?? "Meta API indisponível");
+      } catch (fallbackError: any) {
+        toast.error(fallbackError?.message ?? "Falhou");
+      }
     } finally { setBusy(null); }
   };
 
@@ -309,7 +328,27 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
           </Button>
         </div>
 
-        {needsSecrets && (
+        {manualPack && (
+          <div className="border-t pt-3 mt-2 space-y-3 text-xs">
+            <div className="font-semibold text-foreground">Plano rápido sem permissões Meta</div>
+            {manualPack.image_url && (
+              <img src={manualPack.image_url} alt="Criativo gerado para anúncio Meta" className="w-full rounded-md border object-cover max-h-48" />
+            )}
+            <div className="grid gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(manualPack.primary_texts?.[0] ?? "") }>
+                <Copy className="h-4 w-4 mr-2" /> Copiar texto principal
+              </Button>
+              {manualPack.image_url && (
+                <Button variant="outline" size="sm" onClick={() => window.open(manualPack.image_url, "_blank")}>
+                  <ImageIcon className="h-4 w-4 mr-2" /> Abrir imagem
+                </Button>
+              )}
+            </div>
+            <div className="text-muted-foreground whitespace-pre-line">{manualPack.instructions?.join("\n")}</div>
+          </div>
+        )}
+
+        {needsSecrets && !manualPack && (
           <div className="border-t pt-3 mt-2 space-y-2 text-xs">
             <div className="font-semibold text-foreground">Falta ligar a tua conta Meta (1ª vez)</div>
             <div className="text-muted-foreground">Adiciona estes 3 secrets ao projeto:</div>

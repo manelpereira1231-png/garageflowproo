@@ -579,7 +579,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
       </p>
 
       {/* Gerador */}
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end mb-4">
+      <div className="grid gap-3 md:grid-cols-4 mb-3">
         <div>
           <Label className="text-xs">Template</Label>
           <Select value={creativeType} onValueChange={setCreativeType}>
@@ -592,7 +592,28 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Associar a campanha (opcional)</Label>
+          <Label className="text-xs">Formato</Label>
+          <Select value={size} onValueChange={setSize}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1536x1024">Paisagem (Meta/Google Ads)</SelectItem>
+              <SelectItem value="1024x1024">Quadrado (Instagram)</SelectItem>
+              <SelectItem value="1024x1536">Vertical (Story/Reels)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Qualidade</Label>
+          <Select value={tier} onValueChange={setTier}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="premium">Premium (alta — mais lento)</SelectItem>
+              <SelectItem value="fast">Rápida (custa menos)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Associar a campanha</Label>
           <Select value={linkCampaign} onValueChange={setLinkCampaign}>
             <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
             <SelectContent>
@@ -603,12 +624,8 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={generate} disabled={generating} className="min-w-[180px]">
-          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-          Gerar imagem
-        </Button>
       </div>
-      <div className="mb-4">
+      <div className="mb-3">
         <Label className="text-xs">Prompt personalizado (opcional — substitui o template)</Label>
         <Textarea
           rows={2}
@@ -617,6 +634,13 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           onChange={(e) => setCustomPrompt(e.target.value)}
         />
       </div>
+      <div className="flex justify-end mb-4">
+        <Button onClick={generate} disabled={generating} className="min-w-[200px]">
+          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          {generating ? "A gerar (15–40s)…" : "Gerar imagem"}
+        </Button>
+      </div>
+
 
       {/* Galeria */}
       {items.length === 0 ? (

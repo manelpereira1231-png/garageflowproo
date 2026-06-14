@@ -151,6 +151,9 @@ export default function AdminMarketingAutopilot() {
         )}
       </div>
 
+      {/* BIBLIOTECA DE IMAGENS IA */}
+      <CreativesLibrary campaigns={campaigns} />
+
       {/* AVANÇADO (colapsado) */}
       <Collapsible>
         <CollapsibleTrigger asChild>

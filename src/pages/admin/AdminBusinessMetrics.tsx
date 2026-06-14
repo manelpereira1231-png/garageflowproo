@@ -54,12 +54,20 @@ export default function AdminBusinessMetrics() {
     monthlyAdSpendEur: 1500,
     horizonMonths: 12,
     startingPayingCustomers: 0,
-    // advanced overrides (only sent if advanced=true)
+    productScope: "erp" as "erp" | "market" | "combined",
+    adSpendSplitErpPct: 50,
+    // advanced overrides ERP
     cplEur: 12,
     trialToPayConversionPct: 25,
     monthlyChurnPct: 4,
     starter: 30, pro: 45, garage: 20, enterprise: 5,
+    // advanced overrides Market
+    marketAvgVehiclePriceEur: 8500,
+    marketTakeRatePct: 4.5,
+    marketListingToSalePct: 12,
+    marketCplEur: 6,
   });
+
 
   const load = async () => {
     setLoading(true);
@@ -99,6 +107,8 @@ export default function AdminBusinessMetrics() {
         monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
         horizonMonths: Number(inputs.horizonMonths),
         startingPayingCustomers: Number(inputs.startingPayingCustomers),
+        productScope: inputs.productScope,
+        adSpendSplitErpPct: Number(inputs.adSpendSplitErpPct),
       };
       if (advanced) {
         body.cplEur = Number(inputs.cplEur);
@@ -108,7 +118,12 @@ export default function AdminBusinessMetrics() {
           starter: inputs.starter, pro: inputs.pro,
           garage: inputs.garage, enterprise: inputs.enterprise,
         };
+        body.marketAvgVehiclePriceEur = Number(inputs.marketAvgVehiclePriceEur);
+        body.marketTakeRatePct = Number(inputs.marketTakeRatePct);
+        body.marketListingToSalePct = Number(inputs.marketListingToSalePct);
+        body.marketCplEur = Number(inputs.marketCplEur);
       }
+
       const { data, error } = await supabase.functions.invoke("ai-business-forecast", { body });
 
       if (error) throw error;
@@ -177,6 +192,31 @@ export default function AdminBusinessMetrics() {
           <strong>Modo Auto:</strong> só metes mercado + orçamento de ads — a IA infere CPL, conversão, churn e mix de planos com base em benchmarks reais do mercado SaaS automóvel. Funciona mesmo com 0 oficinas.
         </p>
 
+        {/* Product scope selector */}
+        <div className="mb-4">
+          <Label className="text-xs mb-2 block">Produto a prever</Label>
+          <div className="inline-flex rounded-lg border bg-muted p-1">
+            {([
+              { k: "erp", label: "ERP (SaaS)" },
+              { k: "market", label: "Market (comissões)" },
+              { k: "combined", label: "Ambos (combinado)" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.k}
+                type="button"
+                onClick={() => setInputs({ ...inputs, productScope: opt.k })}
+                className={`px-3 py-1.5 text-xs rounded-md transition ${
+                  inputs.productScope === opt.k
+                    ? "bg-background shadow font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Essential inputs — always visible */}
         <div className="grid gap-3 md:grid-cols-2 mb-3">
           <Field label="Mercado / país">
@@ -188,10 +228,18 @@ export default function AdminBusinessMetrics() {
           <Field label="Horizonte (meses)">
             <Input type="number" value={inputs.horizonMonths} onChange={(e) => setInputs({ ...inputs, horizonMonths: +e.target.value })} />
           </Field>
-          <Field label="Pagantes iniciais (0 se ainda nenhum)">
-            <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
-          </Field>
+          {inputs.productScope !== "market" && (
+            <Field label="Oficinas pagantes iniciais (0 se ainda nenhuma)">
+              <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
+            </Field>
+          )}
+          {inputs.productScope === "combined" && (
+            <Field label="% do budget para ERP (resto vai para Market)">
+              <Input type="number" min={0} max={100} value={inputs.adSpendSplitErpPct} onChange={(e) => setInputs({ ...inputs, adSpendSplitErpPct: +e.target.value })} />
+            </Field>
+          )}
         </div>
+
 
         <button
           type="button"
@@ -202,33 +250,56 @@ export default function AdminBusinessMetrics() {
         </button>
 
         {advanced && (
-          <div className="grid gap-3 md:grid-cols-3 mb-4 p-3 rounded border border-dashed">
-            <Field label="Segmento-alvo">
-              <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
-            </Field>
-            <Field label="CPL — custo por lead (€)">
-              <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
-            </Field>
-            <Field label="Conversão trial → pago (%)">
-              <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
-            </Field>
-            <Field label="Churn mensal (%)">
-              <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
-            </Field>
-            <Field label="Mix Starter (19€) %">
-              <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
-            </Field>
-            <Field label="Mix Pro (39€) %">
-              <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
-            </Field>
-            <Field label="Mix Garage (99€) %">
-              <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
-            </Field>
-            <Field label="Mix Enterprise (299€) %">
-              <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
-            </Field>
+          <div className="space-y-4 mb-4">
+            {inputs.productScope !== "market" && (
+              <div className="grid gap-3 md:grid-cols-3 p-3 rounded border border-dashed">
+                <div className="md:col-span-3 text-xs font-semibold text-muted-foreground">ERP (SaaS)</div>
+                <Field label="Segmento-alvo">
+                  <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+                </Field>
+                <Field label="CPL — custo por lead (€)">
+                  <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
+                </Field>
+                <Field label="Conversão trial → pago (%)">
+                  <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
+                </Field>
+                <Field label="Churn mensal (%)">
+                  <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
+                </Field>
+                <Field label="Mix Starter (19€) %">
+                  <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
+                </Field>
+                <Field label="Mix Pro (39€) %">
+                  <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
+                </Field>
+                <Field label="Mix Garage (99€) %">
+                  <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
+                </Field>
+                <Field label="Mix Enterprise (299€) %">
+                  <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
+                </Field>
+              </div>
+            )}
+            {inputs.productScope !== "erp" && (
+              <div className="grid gap-3 md:grid-cols-4 p-3 rounded border border-dashed">
+                <div className="md:col-span-4 text-xs font-semibold text-muted-foreground">Market (comissões em vendas)</div>
+                <Field label="Ticket médio viatura (€)">
+                  <Input type="number" value={inputs.marketAvgVehiclePriceEur} onChange={(e) => setInputs({ ...inputs, marketAvgVehiclePriceEur: +e.target.value })} />
+                </Field>
+                <Field label="Take rate / comissão (%)">
+                  <Input type="number" step="0.1" value={inputs.marketTakeRatePct} onChange={(e) => setInputs({ ...inputs, marketTakeRatePct: +e.target.value })} />
+                </Field>
+                <Field label="% anúncios que vendem / mês">
+                  <Input type="number" step="0.5" value={inputs.marketListingToSalePct} onChange={(e) => setInputs({ ...inputs, marketListingToSalePct: +e.target.value })} />
+                </Field>
+                <Field label="CPL Market — captação seller (€)">
+                  <Input type="number" step="0.5" value={inputs.marketCplEur} onChange={(e) => setInputs({ ...inputs, marketCplEur: +e.target.value })} />
+                </Field>
+              </div>
+            )}
           </div>
         )}
+
 
         <Button onClick={runForecast} disabled={fcLoading} size="lg">
           {fcLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
@@ -239,14 +310,60 @@ export default function AdminBusinessMetrics() {
 
         {forecast && (
           <div className="mt-6 space-y-5">
-            {/* Headline KPIs */}
-            <div className="grid gap-3 md:grid-cols-4">
-              <Kpi label={`MRR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.baseline.finalMrrEur)} />
-              <Kpi label={`ARR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.baseline.finalArrEur)} />
-              <Kpi label="Pagantes" value={String(forecast.baseline.finalPayingCustomers)} />
-              <Kpi label="LTV:CAC" value={forecast.baseline.ltvCacRatio ? `${forecast.baseline.ltvCacRatio}x` : "—"}
-                hint={`CAC ${fmtEUR(forecast.baseline.cacEur)} · Payback ${forecast.baseline.paybackMonths ?? "—"}m`} />
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                Âmbito: {forecast.scope === "erp" ? "ERP (SaaS)" : forecast.scope === "market" ? "Market (comissões)" : "Combinado (ERP + Market)"}
+              </Badge>
+              {forecast.scope === "combined" && (
+                <span className="text-xs text-muted-foreground">
+                  Budget ERP: {fmtEUR(forecast.resolvedInputs?.erpBudget)} · Market: {fmtEUR(forecast.resolvedInputs?.marketBudget)}
+                </span>
+              )}
             </div>
+
+            {/* ERP KPIs */}
+            {forecast.erpBaseline && (
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2">ERP — SaaS subscrições</div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Kpi label={`MRR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.erpBaseline.finalMrrEur)} />
+                  <Kpi label={`ARR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.erpBaseline.finalArrEur)} />
+                  <Kpi label="Pagantes" value={String(forecast.erpBaseline.finalPayingCustomers)} />
+                  <Kpi label="LTV:CAC" value={forecast.erpBaseline.ltvCacRatio ? `${forecast.erpBaseline.ltvCacRatio}x` : "—"}
+                    hint={`CAC ${fmtEUR(forecast.erpBaseline.cacEur)} · Payback ${forecast.erpBaseline.paybackMonths ?? "—"}m`} />
+                </div>
+              </div>
+            )}
+
+            {/* Market KPIs */}
+            {forecast.marketBaseline && (
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2">Market — comissões em vendas</div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Kpi label={`Comissão mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.marketBaseline.finalMonthlyCommissionEur)}
+                    hint={`GMV ${fmtEUR(forecast.marketBaseline.finalMonthlyGmvEur)}`} />
+                  <Kpi label="Vendas totais" value={String(forecast.marketBaseline.totalSales)}
+                    hint={`${forecast.marketBaseline.finalActiveListings} anúncios ativos`} />
+                  <Kpi label="GMV acumulado" value={fmtEUR(forecast.marketBaseline.totalGmvEur)} />
+                  <Kpi label="Comissão / venda" value={fmtEUR(forecast.marketBaseline.commissionPerSaleEur)}
+                    hint={forecast.marketBaseline.cacPerSaleEur ? `CAC/venda ${fmtEUR(forecast.marketBaseline.cacPerSaleEur)}` : undefined} />
+                </div>
+              </div>
+            )}
+
+            {/* Combined KPI */}
+            {forecast.combinedBaseline && forecast.erpBaseline && forecast.marketBaseline && (
+              <Card className="p-4 border-primary/40 bg-primary/5">
+                <div className="text-xs font-semibold text-primary mb-2">Receita mensal combinada (mês {inputs.horizonMonths})</div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Kpi label="Total / mês" value={fmtEUR(forecast.combinedBaseline.finalMonthlyRevenueEur)}
+                    hint={`Anualizado ${fmtEUR(forecast.combinedBaseline.finalAnnualizedEur)}`} />
+                  <Kpi label="Peso ERP" value={`${forecast.combinedBaseline.erpShareOfFinal}%`} />
+                  <Kpi label="Peso Market" value={`${forecast.combinedBaseline.marketShareOfFinal}%`} />
+                </div>
+              </Card>
+            )}
+
 
             {/* Inferred assumptions */}
             {forecast.assumptions && (
@@ -314,36 +431,101 @@ export default function AdminBusinessMetrics() {
               </div>
             )}
 
-            {/* Monthly trajectory */}
-            <Card className="p-4">
-              <h3 className="font-semibold text-sm mb-2">Trajetória mensal (baseline)</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-muted-foreground border-b">
-                    <tr>
-                      <th className="text-left py-1">Mês</th>
-                      <th className="text-right">Novos</th>
-                      <th className="text-right">Churn</th>
-                      <th className="text-right">Pagantes</th>
-                      <th className="text-right">MRR</th>
-                      <th className="text-right">ARR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {forecast.baseline.months.map((m: any) => (
-                      <tr key={m.month} className="border-b border-border/30">
-                        <td className="py-1">M{m.month}</td>
-                        <td className="text-right">+{m.newPaying}</td>
-                        <td className="text-right text-destructive">-{m.churned}</td>
-                        <td className="text-right font-semibold">{m.paying}</td>
-                        <td className="text-right">{fmtEUR(m.mrrEur)}</td>
-                        <td className="text-right text-muted-foreground">{fmtEUR(m.arrEur)}</td>
+            {/* Monthly trajectory — ERP */}
+            {forecast.erpBaseline && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-2">Trajetória mensal ERP (baseline)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">Novos</th>
+                        <th className="text-right">Churn</th>
+                        <th className="text-right">Pagantes</th>
+                        <th className="text-right">MRR</th>
+                        <th className="text-right">ARR</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+                    </thead>
+                    <tbody>
+                      {forecast.erpBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">+{m.newPaying}</td>
+                          <td className="text-right text-destructive">-{m.churned}</td>
+                          <td className="text-right font-semibold">{m.paying}</td>
+                          <td className="text-right">{fmtEUR(m.mrrEur)}</td>
+                          <td className="text-right text-muted-foreground">{fmtEUR(m.arrEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {/* Monthly trajectory — Market */}
+            {forecast.marketBaseline && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-2">Trajetória mensal Market (baseline)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">Novos anúncios</th>
+                        <th className="text-right">Ativos</th>
+                        <th className="text-right">Vendas</th>
+                        <th className="text-right">GMV</th>
+                        <th className="text-right">Comissão</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.marketBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">+{m.newListings}</td>
+                          <td className="text-right">{m.activeListings}</td>
+                          <td className="text-right font-semibold">{m.sales}</td>
+                          <td className="text-right text-muted-foreground">{fmtEUR(m.gmvEur)}</td>
+                          <td className="text-right text-primary">{fmtEUR(m.commissionEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {/* Combined trajectory */}
+            {forecast.combinedBaseline && forecast.erpBaseline && forecast.marketBaseline && (
+              <Card className="p-4 border-primary/40">
+                <h3 className="font-semibold text-sm mb-2 text-primary">Trajetória combinada (ERP + Market)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">MRR ERP</th>
+                        <th className="text-right">Comissão Market</th>
+                        <th className="text-right">Total / mês</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.combinedBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">{fmtEUR(m.erpMrrEur)}</td>
+                          <td className="text-right">{fmtEUR(m.marketCommissionEur)}</td>
+                          <td className="text-right font-bold text-primary">{fmtEUR(m.totalMonthlyRevenueEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
 
             {/* Risks + Opportunities */}
             <div className="grid gap-3 md:grid-cols-2">

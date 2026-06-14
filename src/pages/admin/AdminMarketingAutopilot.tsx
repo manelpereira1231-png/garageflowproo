@@ -462,3 +462,285 @@ function AdvancedTools({ campaigns, onChanged }: { campaigns: Campaign[]; onChan
     </>
   );
 }
+
+// ============ BIBLIOTECA DE IMAGENS IA ============
+type Creative = {
+  id: string;
+  creative_type: string;
+  prompt: string;
+  image_url: string | null;
+  status: string;
+  error: string | null;
+  campaign_id: string | null;
+  created_at: string;
+};
+
+const CREATIVE_TEMPLATES: { value: string; label: string }[] = [
+  { value: "modern_shop", label: "Oficina moderna (panorâmica)" },
+  { value: "dashboard_overlay", label: "Dashboard em tablet (bancada)" },
+  { value: "mechanic_tablet", label: "Mecânico com tablet" },
+  { value: "growth_chart", label: "Gráficos de crescimento" },
+  { value: "before_after", label: "Antes / Depois (caos vs. organizado)" },
+  { value: "team_meeting", label: "Equipa em reunião rápida" },
+];
+
+function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<Creative[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creativeType, setCreativeType] = useState("modern_shop");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [linkCampaign, setLinkCampaign] = useState<string>("none");
+  const [generating, setGenerating] = useState(false);
+  const [emailDlg, setEmailDlg] = useState<Creative | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("marketing_creatives" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(24);
+    setItems((data as any) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-creative", {
+        body: {
+          creativeType,
+          customPrompt: customPrompt.trim() || undefined,
+          campaignId: linkCampaign !== "none" ? linkCampaign : null,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Imagem gerada e guardada na biblioteca");
+      setCustomPrompt("");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falhou a gerar");
+    } finally { setGenerating(false); }
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Apagar esta imagem?")) return;
+    await supabase.from("marketing_creatives" as any).delete().eq("id", id);
+    toast.success("Removida");
+    load();
+  };
+
+  const copyUrl = async (url: string) => {
+    await navigator.clipboard?.writeText(url).catch(() => undefined);
+    toast.success("URL copiado");
+  };
+
+  return (
+    <Card className="p-6 border-amber-500/30 bg-amber-500/5">
+      <div className="flex items-center gap-2 mb-3">
+        <ImageIcon className="h-5 w-5 text-amber-500" />
+        <h2 className="font-semibold">Biblioteca de Imagens IA</h2>
+        <Badge variant="outline" className="text-[10px]">{items.length} guardadas</Badge>
+        <Button onClick={load} variant="ghost" size="icon" className="ml-auto" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Cria imagens realistas do estilo GarageFlow (oficina moderna, charcoal + âmbar). Ficam guardadas para reutilizares
+        em publicações manuais (Meta/IG) ou em campanhas de email.
+      </p>
+
+      {/* Gerador */}
+      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end mb-4">
+        <div>
+          <Label className="text-xs">Template</Label>
+          <Select value={creativeType} onValueChange={setCreativeType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CREATIVE_TEMPLATES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Associar a campanha (opcional)</Label>
+          <Select value={linkCampaign} onValueChange={setLinkCampaign}>
+            <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhuma</SelectItem>
+              {campaigns.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={generate} disabled={generating} className="min-w-[180px]">
+          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          Gerar imagem
+        </Button>
+      </div>
+      <div className="mb-4">
+        <Label className="text-xs">Prompt personalizado (opcional — substitui o template)</Label>
+        <Textarea
+          rows={2}
+          placeholder="Ex.: mecânico jovem a explicar orçamento ao cliente no balcão de receção…"
+          value={customPrompt}
+          onChange={(e) => setCustomPrompt(e.target.value)}
+        />
+      </div>
+
+      {/* Galeria */}
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-md">
+          Ainda sem imagens. Gera a primeira acima ↑
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {items.map((it) => (
+            <div key={it.id} className="border rounded-md overflow-hidden bg-background">
+              {it.status === "ready" && it.image_url ? (
+                <img src={it.image_url} alt={it.creative_type} className="w-full aspect-square object-cover" />
+              ) : it.status === "generating" ? (
+                <div className="aspect-square flex items-center justify-center text-xs text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" /> A gerar…
+                </div>
+              ) : (
+                <div className="aspect-square flex items-center justify-center text-xs text-destructive p-2 text-center">
+                  Falhou: {it.error?.slice(0, 60) ?? "erro"}
+                </div>
+              )}
+              <div className="p-2 space-y-1">
+                <div className="text-[10px] text-muted-foreground truncate">{it.creative_type}</div>
+                <div className="flex gap-1">
+                  {it.image_url && (
+                    <>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Copiar URL"
+                        onClick={() => copyUrl(it.image_url!)}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir"
+                        onClick={() => window.open(it.image_url!, "_blank")}>
+                        <ImageIcon className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Usar em email"
+                        onClick={() => setEmailDlg(it)}>
+                        <Send className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-7 w-7 ml-auto" title="Apagar"
+                    onClick={() => remove(it.id)}>
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <UseInEmailDialog
+        creative={emailDlg}
+        onClose={() => setEmailDlg(null)}
+        onDone={() => { setEmailDlg(null); navigate("/admin/marketing"); }}
+      />
+    </Card>
+  );
+}
+
+function UseInEmailDialog({
+  creative, onClose, onDone,
+}: { creative: Creative | null; onClose: () => void; onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [audience, setAudience] = useState("erp");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (creative) {
+      setName(`Campanha ${creative.creative_type} ${new Date().toLocaleDateString("pt-PT")}`);
+      setSubject("");
+      setBody("Olá,\n\nTemos novidades para a tua oficina.\n\nA equipa GarageFlow");
+    }
+  }, [creative]);
+
+  if (!creative) return null;
+
+  const buildHtml = () => {
+    const safeBody = body.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <img src="${creative.image_url}" alt="" style="width:100%;border-radius:8px;display:block;margin-bottom:16px" />
+  <div style="padding:0 8px;color:#222;line-height:1.6">${safeBody}</div>
+</div>`;
+  };
+
+  const save = async () => {
+    if (!name || !subject || !body) {
+      toast.error("Preenche nome, assunto e corpo");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from("admin_campaigns" as any).insert({
+        name, subject, content_html: buildHtml(),
+        audience, status: "draft", created_by: user?.id,
+      });
+      if (error) throw error;
+      toast.success("Rascunho criado em Marketing Global");
+      onDone();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falhou");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog open={!!creative} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Usar imagem em campanha de email</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          {creative.image_url && (
+            <img src={creative.image_url} alt="" className="w-full rounded border max-h-48 object-cover" />
+          )}
+          <div>
+            <Label className="text-xs">Nome interno</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Assunto</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex.: 🚀 Novidades para a tua oficina" />
+          </div>
+          <div>
+            <Label className="text-xs">Audiência</Label>
+            <Select value={audience} onValueChange={setAudience}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos (ERP + Market)</SelectItem>
+                <SelectItem value="erp">Todas oficinas (ERP)</SelectItem>
+                <SelectItem value="erp_free">Oficinas FREE/Trial</SelectItem>
+                <SelectItem value="erp_paid">Oficinas pagantes</SelectItem>
+                <SelectItem value="market">Utilizadores Market</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Corpo (texto simples — a imagem é inserida automaticamente no topo)</Label>
+            <Textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+            Criar rascunho e abrir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

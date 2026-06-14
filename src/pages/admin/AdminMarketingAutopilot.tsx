@@ -203,6 +203,8 @@ export default function AdminMarketingAutopilot() {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="active"><Megaphone className="h-3 w-3 mr-1" />Campanhas ativas</TabsTrigger>
           <TabsTrigger value="generated"><Sparkles className="h-3 w-3 mr-1" />Campanhas IA</TabsTrigger>
+          <TabsTrigger value="publish"><Send className="h-3 w-3 mr-1" />Publicar Ads</TabsTrigger>
+          <TabsTrigger value="organic"><Calendar className="h-3 w-3 mr-1" />Posts orgânicos</TabsTrigger>
           <TabsTrigger value="studio"><ImageIcon className="h-3 w-3 mr-1" />Estúdio criativos</TabsTrigger>
           <TabsTrigger value="targeting"><Target className="h-3 w-3 mr-1" />Segmentação</TabsTrigger>
           <TabsTrigger value="forecast"><BarChart3 className="h-3 w-3 mr-1" />Previsão</TabsTrigger>

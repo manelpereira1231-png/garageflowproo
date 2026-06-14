@@ -55,6 +55,7 @@ const navSections = [
       { path: "/admin/growth-opportunities", label: "Oportunidades", icon: TrendingUp },
       { path: "/admin/business-metrics", label: "Métricas de Negócio", icon: BarChart3 },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/marketing-autopilot", label: "Autopiloto de Marketing", icon: Rocket },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
       { path: "/admin/seo", label: "SEO Portugal", icon: Search },

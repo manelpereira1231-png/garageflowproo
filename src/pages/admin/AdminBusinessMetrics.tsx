@@ -47,16 +47,18 @@ export default function AdminBusinessMetrics() {
   // Forecast state
   const [fcLoading, setFcLoading] = useState(false);
   const [forecast, setForecast] = useState<any>(null);
+  const [advanced, setAdvanced] = useState(false);
   const [inputs, setInputs] = useState({
     market: "Portugal",
     targetSegment: "Oficinas independentes 1-5 mecânicos",
     monthlyAdSpendEur: 1500,
+    horizonMonths: 12,
+    startingPayingCustomers: 0,
+    // advanced overrides (only sent if advanced=true)
     cplEur: 12,
     trialToPayConversionPct: 25,
     monthlyChurnPct: 4,
     starter: 30, pro: 45, garage: 20, enterprise: 5,
-    horizonMonths: 12,
-    startingPayingCustomers: 0,
   });
 
   const load = async () => {
@@ -91,23 +93,24 @@ export default function AdminBusinessMetrics() {
     setFcLoading(true);
     setForecast(null);
     try {
-      const planMixPct = {
-        starter: inputs.starter, pro: inputs.pro,
-        garage: inputs.garage, enterprise: inputs.enterprise,
+      const body: any = {
+        market: inputs.market,
+        targetSegment: inputs.targetSegment,
+        monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
+        horizonMonths: Number(inputs.horizonMonths),
+        startingPayingCustomers: Number(inputs.startingPayingCustomers),
       };
-      const { data, error } = await supabase.functions.invoke("ai-business-forecast", {
-        body: {
-          market: inputs.market,
-          targetSegment: inputs.targetSegment,
-          monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
-          cplEur: Number(inputs.cplEur),
-          trialToPayConversionPct: Number(inputs.trialToPayConversionPct),
-          monthlyChurnPct: Number(inputs.monthlyChurnPct),
-          planMixPct,
-          horizonMonths: Number(inputs.horizonMonths),
-          startingPayingCustomers: Number(inputs.startingPayingCustomers),
-        },
-      });
+      if (advanced) {
+        body.cplEur = Number(inputs.cplEur);
+        body.trialToPayConversionPct = Number(inputs.trialToPayConversionPct);
+        body.monthlyChurnPct = Number(inputs.monthlyChurnPct);
+        body.planMixPct = {
+          starter: inputs.starter, pro: inputs.pro,
+          garage: inputs.garage, enterprise: inputs.enterprise,
+        };
+      }
+      const { data, error } = await supabase.functions.invoke("ai-business-forecast", { body });
+
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setForecast((data as any).forecast);
@@ -171,56 +174,68 @@ export default function AdminBusinessMetrics() {
           <Badge variant="outline" className="ml-2">google/gemini-3-flash-preview</Badge>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Funciona mesmo sem oficinas reais. Combina projeção matemática determinística com análise qualitativa da IA (cenários pessimista/esperado/otimista, riscos, ações).
+          <strong>Modo Auto:</strong> só metes mercado + orçamento de ads — a IA infere CPL, conversão, churn e mix de planos com base em benchmarks reais do mercado SaaS automóvel. Funciona mesmo com 0 oficinas.
         </p>
 
-        <div className="grid gap-3 md:grid-cols-3 mb-4">
-          <Field label="Mercado">
-            <Input value={inputs.market} onChange={(e) => setInputs({ ...inputs, market: e.target.value })} />
+        {/* Essential inputs — always visible */}
+        <div className="grid gap-3 md:grid-cols-2 mb-3">
+          <Field label="Mercado / país">
+            <Input value={inputs.market} onChange={(e) => setInputs({ ...inputs, market: e.target.value })} placeholder="Portugal, Brasil, Espanha…" />
           </Field>
-          <Field label="Segmento-alvo">
-            <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+          <Field label="Orçamento ads / mês (€)">
+            <Input type="number" value={inputs.monthlyAdSpendEur} onChange={(e) => setInputs({ ...inputs, monthlyAdSpendEur: +e.target.value })} />
           </Field>
           <Field label="Horizonte (meses)">
             <Input type="number" value={inputs.horizonMonths} onChange={(e) => setInputs({ ...inputs, horizonMonths: +e.target.value })} />
           </Field>
-
-          <Field label="Orçamento ads / mês (€)">
-            <Input type="number" value={inputs.monthlyAdSpendEur} onChange={(e) => setInputs({ ...inputs, monthlyAdSpendEur: +e.target.value })} />
-          </Field>
-          <Field label="CPL — custo por lead (€)">
-            <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
-          </Field>
-          <Field label="Conversão trial → pago (%)">
-            <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
-          </Field>
-
-          <Field label="Churn mensal (%)">
-            <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
-          </Field>
-          <Field label="Pagantes iniciais">
+          <Field label="Pagantes iniciais (0 se ainda nenhum)">
             <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
-          </Field>
-          <div />
-
-          <Field label="Mix Starter (19€) %">
-            <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
-          </Field>
-          <Field label="Mix Pro (39€) %">
-            <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
-          </Field>
-          <Field label="Mix Garage (99€) %">
-            <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
-          </Field>
-          <Field label="Mix Enterprise (299€) %">
-            <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
           </Field>
         </div>
 
-        <Button onClick={runForecast} disabled={fcLoading}>
+        <button
+          type="button"
+          onClick={() => setAdvanced(!advanced)}
+          className="text-xs text-muted-foreground underline mb-3"
+        >
+          {advanced ? "− Esconder avançado" : "+ Sobrepor benchmarks da IA (avançado)"}
+        </button>
+
+        {advanced && (
+          <div className="grid gap-3 md:grid-cols-3 mb-4 p-3 rounded border border-dashed">
+            <Field label="Segmento-alvo">
+              <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+            </Field>
+            <Field label="CPL — custo por lead (€)">
+              <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
+            </Field>
+            <Field label="Conversão trial → pago (%)">
+              <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
+            </Field>
+            <Field label="Churn mensal (%)">
+              <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
+            </Field>
+            <Field label="Mix Starter (19€) %">
+              <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
+            </Field>
+            <Field label="Mix Pro (39€) %">
+              <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
+            </Field>
+            <Field label="Mix Garage (99€) %">
+              <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
+            </Field>
+            <Field label="Mix Enterprise (299€) %">
+              <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
+            </Field>
+          </div>
+        )}
+
+        <Button onClick={runForecast} disabled={fcLoading} size="lg">
           {fcLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-          Gerar previsão IA
+          {advanced ? "Gerar previsão IA" : "Gerar previsão IA (auto)"}
         </Button>
+
+
 
         {forecast && (
           <div className="mt-6 space-y-5">
@@ -233,7 +248,33 @@ export default function AdminBusinessMetrics() {
                 hint={`CAC ${fmtEUR(forecast.baseline.cacEur)} · Payback ${forecast.baseline.paybackMonths ?? "—"}m`} />
             </div>
 
-            {/* AI verdict */}
+            {/* Inferred assumptions */}
+            {forecast.assumptions && (
+              <Card className="p-4 border-dashed">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">Benchmarks usados</h3>
+                  <Badge variant="outline" className="text-xs">
+                    {forecast.assumptions.source === "ai-inferred" ? "Inferidos pela IA" : "Definidos por ti"}
+                  </Badge>
+                </div>
+                <div className="grid gap-2 md:grid-cols-4 text-xs">
+                  <div><span className="text-muted-foreground">CPL:</span> <strong>{fmtEUR(forecast.assumptions.cplEur)}</strong></div>
+                  <div><span className="text-muted-foreground">Conv. trial→pago:</span> <strong>{forecast.assumptions.trialToPayConversionPct}%</strong></div>
+                  <div><span className="text-muted-foreground">Churn mensal:</span> <strong>{forecast.assumptions.monthlyChurnPct}%</strong></div>
+                  <div>
+                    <span className="text-muted-foreground">Mix planos:</span>{" "}
+                    <strong>S{forecast.assumptions.planMixPct?.starter} · P{forecast.assumptions.planMixPct?.pro} · G{forecast.assumptions.planMixPct?.garage} · E{forecast.assumptions.planMixPct?.enterprise}</strong>
+                  </div>
+                </div>
+                {forecast.assumptions.benchmarkNotes?.length > 0 && (
+                  <ul className="mt-2 text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                    {forecast.assumptions.benchmarkNotes.map((n: string, i: number) => <li key={i}>{n}</li>)}
+                  </ul>
+                )}
+              </Card>
+            )}
+
             {forecast.ai?.verdict && (
               <Card className="p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">

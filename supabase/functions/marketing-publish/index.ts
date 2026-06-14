@@ -284,6 +284,51 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
     return j;
   };
 
+
+
+  // ===== 0) Gera imagem (AI) e faz upload para storage privada → signed URL longa =====
+  let pictureUrl = "https://garageflow-pt.lovable.app/og-image.jpg";
+  try {
+    if (c.image_url) {
+      pictureUrl = c.image_url;
+    } else {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (LOVABLE_API_KEY) {
+        const imgPrompt = `Anúncio profissional para software de gestão de oficinas auto "GarageFlow". ${c.title}. ${primaryText}. Visual moderno, escuro industrial (charcoal #0F172A + âmbar #F59E0B), mockup dashboard tablet+telemóvel numa oficina real, mecânico a usar app, iluminação cinemática, sem texto sobreposto, formato 1200x628 estilo Facebook/Instagram Ads, fotorrealista premium.`;
+        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-3.1-flash-image-preview",
+            prompt: imgPrompt,
+            modalities: ["image", "text"],
+            messages: [{ role: "user", content: imgPrompt }],
+          }),
+        });
+        if (aiRes.ok) {
+          const aiJson = await aiRes.json();
+          const b64 = aiJson?.data?.[0]?.b64_json;
+          if (b64) {
+            const bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+            const path = `meta-ads/${campaignId}-${Date.now()}.png`;
+            const up = await supa.storage.from("marketing-creatives").upload(path, bytes, {
+              contentType: "image/png", upsert: true,
+            });
+            if (!up.error) {
+              const signed = await supa.storage.from("marketing-creatives")
+                .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 ano
+              if (signed.data?.signedUrl) {
+                pictureUrl = signed.data.signedUrl;
+                await supa.from("marketing_campaigns")
+                  .update({ image_url: pictureUrl }).eq("id", campaignId);
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (_e) { /* fallback para og-image */ }
+
   try {
     // 1) Campaign (PAUSED — utilizador revê antes de ativar)
     const camp = await post(`${adAccountId}/campaigns`, {
@@ -313,7 +358,7 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
       start_time: Math.floor(Date.now() / 1000) + 60,
     });
 
-    // 3) Ad Creative (link ad com imagem da marca)
+    // 3) Ad Creative (link ad com imagem gerada por IA)
     const objectStorySpec: any = {
       page_id: pageId,
       link_data: {
@@ -321,7 +366,7 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
         message,
         name: headline,
         description: (c.descriptions?.[1] ?? "").slice(0, 200),
-        picture: "https://garageflow-pt.lovable.app/og-image.jpg",
+        picture: pictureUrl,
         call_to_action: { type: "LEARN_MORE", value: { link: landing } },
       },
     };
@@ -331,6 +376,7 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
       name: `${c.title} — Creative`,
       object_story_spec: objectStorySpec,
     });
+
 
     // 4) Ad
     const ad = await post(`${adAccountId}/ads`, {

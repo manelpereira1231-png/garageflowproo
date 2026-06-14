@@ -491,6 +491,8 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
   const [creativeType, setCreativeType] = useState("modern_shop");
   const [customPrompt, setCustomPrompt] = useState("");
   const [linkCampaign, setLinkCampaign] = useState<string>("none");
+  const [size, setSize] = useState("1536x1024");
+  const [tier, setTier] = useState("premium");
   const [generating, setGenerating] = useState(false);
   const [emailDlg, setEmailDlg] = useState<Creative | null>(null);
 
@@ -514,6 +516,9 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           creativeType,
           customPrompt: customPrompt.trim() || undefined,
           campaignId: linkCampaign !== "none" ? linkCampaign : null,
+          size,
+          tier,
+          quality: tier === "premium" ? "high" : "medium",
         },
       });
       if (error) throw error;
@@ -538,6 +543,26 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
     toast.success("URL copiado");
   };
 
+  const downloadImg = async (it: Creative) => {
+    if (!it.image_url) return;
+    try {
+      const res = await fetch(it.image_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `garageflow-${it.creative_type}-${it.id.slice(0, 8)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Descarregada");
+    } catch {
+      window.open(it.image_url, "_blank");
+    }
+  };
+
+
   return (
     <Card className="p-6 border-amber-500/30 bg-amber-500/5">
       <div className="flex items-center gap-2 mb-3">
@@ -554,7 +579,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
       </p>
 
       {/* Gerador */}
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end mb-4">
+      <div className="grid gap-3 md:grid-cols-4 mb-3">
         <div>
           <Label className="text-xs">Template</Label>
           <Select value={creativeType} onValueChange={setCreativeType}>
@@ -567,7 +592,28 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Associar a campanha (opcional)</Label>
+          <Label className="text-xs">Formato</Label>
+          <Select value={size} onValueChange={setSize}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1536x1024">Paisagem (Meta/Google Ads)</SelectItem>
+              <SelectItem value="1024x1024">Quadrado (Instagram)</SelectItem>
+              <SelectItem value="1024x1536">Vertical (Story/Reels)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Qualidade</Label>
+          <Select value={tier} onValueChange={setTier}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="premium">Premium (alta — mais lento)</SelectItem>
+              <SelectItem value="fast">Rápida (custa menos)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Associar a campanha</Label>
           <Select value={linkCampaign} onValueChange={setLinkCampaign}>
             <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
             <SelectContent>
@@ -578,12 +624,8 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={generate} disabled={generating} className="min-w-[180px]">
-          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-          Gerar imagem
-        </Button>
       </div>
-      <div className="mb-4">
+      <div className="mb-3">
         <Label className="text-xs">Prompt personalizado (opcional — substitui o template)</Label>
         <Textarea
           rows={2}
@@ -592,6 +634,13 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           onChange={(e) => setCustomPrompt(e.target.value)}
         />
       </div>
+      <div className="flex justify-end mb-4">
+        <Button onClick={generate} disabled={generating} className="min-w-[200px]">
+          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          {generating ? "A gerar (15–40s)…" : "Gerar imagem"}
+        </Button>
+      </div>
+
 
       {/* Galeria */}
       {items.length === 0 ? (
@@ -603,7 +652,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           {items.map((it) => (
             <div key={it.id} className="border rounded-md overflow-hidden bg-background">
               {it.status === "ready" && it.image_url ? (
-                <img src={it.image_url} alt={it.creative_type} className="w-full aspect-square object-cover" />
+                <img src={it.image_url} alt={it.creative_type} className="w-full aspect-square object-cover bg-muted" />
               ) : it.status === "generating" ? (
                 <div className="aspect-square flex items-center justify-center text-xs text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin mr-1" /> A gerar…
@@ -615,14 +664,18 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
               )}
               <div className="p-2 space-y-1">
                 <div className="text-[10px] text-muted-foreground truncate">{it.creative_type}</div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {it.image_url && (
                     <>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Descarregar (PNG)"
+                        onClick={() => downloadImg(it)}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" title="Copiar URL"
                         onClick={() => copyUrl(it.image_url!)}>
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir"
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir em nova janela"
                         onClick={() => window.open(it.image_url!, "_blank")}>
                         <ImageIcon className="h-3.5 w-3.5" />
                       </Button>

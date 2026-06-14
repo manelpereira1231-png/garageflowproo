@@ -51,6 +51,14 @@ Deno.serve(async (req) => {
     const creativeType: string = body?.creativeType ?? "modern_shop";
     const campaignId: string | null = body?.campaignId ?? null;
     const customPrompt: string | undefined = body?.customPrompt;
+    const sizeIn: string = body?.size ?? "1536x1024";
+    const qualityIn: string = body?.quality ?? "high";
+    const tier: string = body?.tier ?? "premium"; // "fast" | "premium"
+
+    const ALLOWED_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
+    const size = ALLOWED_SIZES.has(sizeIn) ? sizeIn : "1536x1024";
+    const quality = ["low", "medium", "high"].includes(qualityIn) ? qualityIn : "high";
+    const model = tier === "fast" ? "openai/gpt-image-1-mini" : "openai/gpt-image-2";
 
     const basePrompt = CREATIVE_TEMPLATES[creativeType] ?? CREATIVE_TEMPLATES.modern_shop;
     const finalPrompt = customPrompt
@@ -64,7 +72,7 @@ Deno.serve(async (req) => {
       creative_type: creativeType,
       prompt: finalPrompt,
       status: "generating",
-      ai_model: "openai/gpt-image-2",
+      ai_model: model,
     }).select().single();
 
     if (insErr || !created) return json({ error: insErr?.message ?? "DB error" }, 500);
@@ -73,13 +81,7 @@ Deno.serve(async (req) => {
     const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-      body: JSON.stringify({
-        model: "openai/gpt-image-2",
-        prompt: finalPrompt,
-        quality: "low",
-        size: "1024x1024",
-        n: 1,
-      }),
+      body: JSON.stringify({ model, prompt: finalPrompt, quality, size, n: 1 }),
     });
 
     if (!imgResp.ok) {
@@ -90,8 +92,8 @@ Deno.serve(async (req) => {
       }).eq("id", created.id);
 
       if (imgResp.status === 429) return json({ error: "Rate limit. Tenta daqui a pouco." }, 429);
-      if (imgResp.status === 402) return json({ error: "Créditos esgotados." }, 402);
-      return json({ error: `AI Gateway erro ${imgResp.status}` }, 502);
+      if (imgResp.status === 402) return json({ error: "Créditos esgotados. Adiciona créditos no workspace." }, 402);
+      return json({ error: `AI Gateway erro ${imgResp.status}: ${errText.slice(0,200)}` }, 502);
     }
 
     const imgJson = await imgResp.json();

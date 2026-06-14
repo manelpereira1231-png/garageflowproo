@@ -296,19 +296,24 @@ function projectBaseline(i: Inputs) {
 }
 
 function buildPrompt(i: Inputs, baseline: any) {
-  return `Analisa estas projeções SaaS para uma plataforma de gestão de oficinas no mercado ${i.market}.
-Inputs:
-${JSON.stringify(i, null, 2)}
+  return `Analisa projeções SaaS para gestão de oficinas no mercado ${i.market}.
+Inputs: ${JSON.stringify(i)}
+Baseline (já com ajustes de realismo aplicados — ramp não-linear, qualificação de leads 60%, churn agravado nos 3 primeiros meses, payback líquido de churn): ${JSON.stringify(baseline)}
 
-Baseline matemático (já calculado):
-${JSON.stringify(baseline, null, 2)}
+REGRAS DE REALISMO (obriga-te a cumprir):
+- Oficinas auto são mercado offline, ciclo de decisão LENTO. Crescimento NUNCA é linear: existem "spikes" via parcerias e meses flat.
+- O cenário "expected" deve ficar PRÓXIMO do baseline calculado (±15%). NÃO inflacionar.
+- O "pessimistic" deve ser 40-60% abaixo do baseline (canal mau, churn alto, leads frios).
+- O "optimistic" deve ser 30-50% acima do baseline — não 3x. Só com parceria forte (associações, fornecedores de peças) é possível mais.
+- Se baseline mostrar <30 clientes em 24m com 200€/mês, isso É realista para PT/BR. Não o classifiques como pessimista.
+- realismScore: 80-95 se baseline respeita estas regras; baixa só se inputs forem absurdos.
 
 Devolve EXATAMENTE este JSON (sem markdown):
 {
-  "summary": "2-3 frases sobre viabilidade do plano",
+  "summary": "2-3 frases honestas sobre viabilidade",
   "realismScore": 0-100,
   "verdict": "conservador" | "realista" | "otimista" | "irrealista",
-  "keyAssumptions": ["assunção 1", "assunção 2", ...],
+  "keyAssumptions": ["..."],
   "risks": [{ "risk": "...", "severity": "low|medium|high", "mitigation": "..." }],
   "opportunities": [{ "opportunity": "...", "potentialMrrEurMonth12": number }],
   "scenarios": {

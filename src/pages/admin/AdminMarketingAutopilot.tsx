@@ -229,29 +229,35 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
+  const [needsSecrets, setNeedsSecrets] = useState<null | { secrets: string[]; how_to: string; docs: string }>(null);
+
   const publishMeta = async () => {
     setBusy("meta");
+    setNeedsSecrets(null);
     try {
+      // 1) Tenta API directa — cria a campanha já dentro da conta Meta
       const { data, error } = await supabase.functions.invoke("marketing-publish", {
-        body: { action: "meta_ads_url", campaignId: campaign.id, objective: "OUTCOME_LEADS" },
+        body: { action: "meta_api", campaignId: campaign.id, objective: "OUTCOME_LEADS" },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       const d: any = data;
-      const copyText = [
-        `Campanha: ${d.campaign_name}`,
-        `Orçamento: €${d.daily_budget_eur}/dia`,
-        "",
-        "TÍTULOS:", ...d.headlines.map((h: string, i: number) => `${i + 1}. ${h}`),
-        "",
-        "TEXTOS:", ...d.primary_texts.map((t: string, i: number) => `${i + 1}. ${t}`),
-        "",
-        "CTAs:", ...d.ctas,
-      ].join("\n");
-      await navigator.clipboard.writeText(copyText).catch(() => {});
-      window.open(d.open_url, "_blank");
-      toast.success("Texto copiado. Cola no Meta Ads Manager.");
-      setOpen(false);
+
+      if (d?.not_configured) {
+        setNeedsSecrets({
+          secrets: d.required_secrets ?? [],
+          how_to: d.how_to ?? "",
+          docs: d.docs ?? "",
+        });
+        return;
+      }
+      if (d?.error) throw new Error(d.error);
+      if (d?.ok && d?.manage_url) {
+        window.open(d.manage_url, "_blank");
+        toast.success("Campanha criada no Meta Ads (PAUSED). Abre a rever e ativa.");
+        setOpen(false);
+        return;
+      }
+      throw new Error("Resposta inesperada da Meta API");
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");
     } finally { setBusy(null); }

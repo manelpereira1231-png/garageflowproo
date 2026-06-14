@@ -41,6 +41,44 @@ Deno.serve(async (req) => {
 
 // =========== SEMI-AUTO ===========
 
+async function ensureCampaignImage(supa: any, campaignId: string, c: any, primaryText: string) {
+  if (c.image_url) return c.image_url;
+
+  const fallback = "https://garageflow-pt.lovable.app/og-image.jpg";
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return fallback;
+
+  try {
+    const imgPrompt = `Criativo premium para anúncio Meta Ads do SaaS "GarageFlow" para oficinas auto. Campanha: ${c.title}. Mensagem: ${primaryText}. Oficina real moderna, mecânico a usar tablet com dashboard de gestão, carro no elevador, iluminação profissional, estética industrial charcoal e âmbar, fotorrealista, sem texto sobreposto, composição limpa para Facebook e Instagram, 1200x628.`;
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        prompt: imgPrompt,
+        modalities: ["image", "text"],
+        messages: [{ role: "user", content: imgPrompt }],
+      }),
+    });
+    if (!aiRes.ok) return fallback;
+    const aiJson = await aiRes.json();
+    const b64 = aiJson?.data?.[0]?.b64_json;
+    if (!b64) return fallback;
+    const bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+    const path = `meta-ads/${campaignId}-${Date.now()}.png`;
+    const up = await supa.storage.from("marketing-creatives").upload(path, bytes, {
+      contentType: "image/png", upsert: true,
+    });
+    if (up.error) return fallback;
+    const signed = await supa.storage.from("marketing-creatives").createSignedUrl(path, 60 * 60 * 24 * 365);
+    const imageUrl = signed.data?.signedUrl ?? fallback;
+    if (imageUrl !== fallback) await supa.from("marketing_campaigns").update({ image_url: imageUrl }).eq("id", campaignId);
+    return imageUrl;
+  } catch (_e) {
+    return fallback;
+  }
+}
+
 // 1) Meta Ads Manager URL pré-preenchido (Facebook + Instagram).
 //    Abre o Ads Manager com objetivo + nome de campanha; o resto é colado pelo user.
 async function metaAdsUrl(supa: any, userId: string, body: any) {
@@ -52,9 +90,13 @@ async function metaAdsUrl(supa: any, userId: string, body: any) {
     .from("marketing_campaigns").select("*").eq("id", campaignId).maybeSingle();
   if (error || !c) return json({ error: "Campanha não encontrada" }, 404);
 
-  // Meta Ads Manager não aceita criação 100% via URL — abrimos o flow + entregamos copy/imagens.
-  const adAccountHint = body?.adAccountId ? `&act=${encodeURIComponent(body.adAccountId)}` : "";
-  const url = `https://www.facebook.com/adsmanager/manage/campaigns/new?nav_source=no_referrer${adAccountHint}`;
+  const primaryTexts = c.descriptions ?? [];
+  const imageUrl = await ensureCampaignImage(supa, campaignId, c, primaryTexts?.[0] ?? c.angle ?? c.title);
+
+  // Sem permissões Meta não dá para gravar campanha por API; abrimos o criador certo e entregamos tudo pronto para colar.
+  const rawAdAccount = String(body?.adAccountId ?? Deno.env.get("META_AD_ACCOUNT_ID") ?? "").replace(/^act_/, "");
+  const adAccountHint = rawAdAccount ? `&act=${encodeURIComponent(rawAdAccount)}` : "";
+  const url = `https://business.facebook.com/adsmanager/manage/campaigns/new?nav_source=no_referrer${adAccountHint}`;
 
   const payload = {
     open_url: url,
@@ -62,7 +104,8 @@ async function metaAdsUrl(supa: any, userId: string, body: any) {
     campaign_name: c.title,
     daily_budget_eur: Math.round((c.monthly_budget_eur ?? 0) / 30),
     headlines: c.headlines ?? [],
-    primary_texts: c.descriptions ?? [],
+    primary_texts: primaryTexts,
+    image_url: imageUrl,
     ctas: c.ctas ?? [],
     targeting_hint: {
       geo: c.geo ?? [],
@@ -70,13 +113,11 @@ async function metaAdsUrl(supa: any, userId: string, body: any) {
       interests: ["car repair", "auto mechanic", "small business owner"],
     },
     instructions: [
-      "1. Clica em 'Criar nova campanha' no Ads Manager (link aberto)",
-      "2. Escolhe objetivo 'Leads' ou 'Conversões'",
-      "3. Cola o nome da campanha sugerido",
-      `4. Define orçamento diário ≈ €${Math.round((c.monthly_budget_eur ?? 0) / 30)}`,
-      "5. Em segmentação: aplica geo e interesses sugeridos",
-      "6. Em criativo: cola os textos (headline + corpo + CTA) e usa as imagens geradas",
-      "7. Publica anúncio em Facebook + Instagram simultaneamente",
+      "1. O Ads Manager abriu na conta certa.",
+      "2. Escolhe objetivo Leads/Conversões e cola o nome da campanha.",
+      `3. Define orçamento diário ≈ €${Math.round((c.monthly_budget_eur ?? 0) / 30)}.`,
+      "4. Cola o texto já copiado e usa a imagem gerada.",
+      "5. Revê posicionamentos Facebook + Instagram e ativa.",
     ],
   };
 

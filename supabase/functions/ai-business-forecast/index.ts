@@ -83,7 +83,19 @@ Devolve EXATAMENTE este JSON (sem markdown):
   "benchmarkNotes": ["fonte/raciocínio 1", "fonte/raciocínio 2", "fonte/raciocínio 3"]
 }`;
       const benchResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-...
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "És analista de mercado SaaS sénior. Respondes APENAS com JSON válido. Sem markdown. Conservador, baseado em dados reais de oficinas auto." },
+            { role: "user", content: benchPrompt },
+          ],
+          temperature: 0.2,
+        }),
+      });
+      if (benchResp.status === 429) return json({ error: "Rate limit. Tenta daqui a pouco." }, 429);
+      if (benchResp.status === 402) return json({ error: "Créditos esgotados. Adiciona em Settings → Workspace → Usage." }, 402);
       if (!benchResp.ok) return json({ error: `AI Gateway erro ${benchResp.status}` }, 502);
       const benchJson = await benchResp.json();
       try {

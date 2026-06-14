@@ -431,36 +431,101 @@ export default function AdminBusinessMetrics() {
               </div>
             )}
 
-            {/* Monthly trajectory */}
-            <Card className="p-4">
-              <h3 className="font-semibold text-sm mb-2">Trajetória mensal (baseline)</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-muted-foreground border-b">
-                    <tr>
-                      <th className="text-left py-1">Mês</th>
-                      <th className="text-right">Novos</th>
-                      <th className="text-right">Churn</th>
-                      <th className="text-right">Pagantes</th>
-                      <th className="text-right">MRR</th>
-                      <th className="text-right">ARR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {forecast.baseline.months.map((m: any) => (
-                      <tr key={m.month} className="border-b border-border/30">
-                        <td className="py-1">M{m.month}</td>
-                        <td className="text-right">+{m.newPaying}</td>
-                        <td className="text-right text-destructive">-{m.churned}</td>
-                        <td className="text-right font-semibold">{m.paying}</td>
-                        <td className="text-right">{fmtEUR(m.mrrEur)}</td>
-                        <td className="text-right text-muted-foreground">{fmtEUR(m.arrEur)}</td>
+            {/* Monthly trajectory — ERP */}
+            {forecast.erpBaseline && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-2">Trajetória mensal ERP (baseline)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">Novos</th>
+                        <th className="text-right">Churn</th>
+                        <th className="text-right">Pagantes</th>
+                        <th className="text-right">MRR</th>
+                        <th className="text-right">ARR</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+                    </thead>
+                    <tbody>
+                      {forecast.erpBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">+{m.newPaying}</td>
+                          <td className="text-right text-destructive">-{m.churned}</td>
+                          <td className="text-right font-semibold">{m.paying}</td>
+                          <td className="text-right">{fmtEUR(m.mrrEur)}</td>
+                          <td className="text-right text-muted-foreground">{fmtEUR(m.arrEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {/* Monthly trajectory — Market */}
+            {forecast.marketBaseline && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-2">Trajetória mensal Market (baseline)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">Novos anúncios</th>
+                        <th className="text-right">Ativos</th>
+                        <th className="text-right">Vendas</th>
+                        <th className="text-right">GMV</th>
+                        <th className="text-right">Comissão</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.marketBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">+{m.newListings}</td>
+                          <td className="text-right">{m.activeListings}</td>
+                          <td className="text-right font-semibold">{m.sales}</td>
+                          <td className="text-right text-muted-foreground">{fmtEUR(m.gmvEur)}</td>
+                          <td className="text-right text-primary">{fmtEUR(m.commissionEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {/* Combined trajectory */}
+            {forecast.combinedBaseline && forecast.erpBaseline && forecast.marketBaseline && (
+              <Card className="p-4 border-primary/40">
+                <h3 className="font-semibold text-sm mb-2 text-primary">Trajetória combinada (ERP + Market)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground border-b">
+                      <tr>
+                        <th className="text-left py-1">Mês</th>
+                        <th className="text-right">MRR ERP</th>
+                        <th className="text-right">Comissão Market</th>
+                        <th className="text-right">Total / mês</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.combinedBaseline.months.map((m: any) => (
+                        <tr key={m.month} className="border-b border-border/30">
+                          <td className="py-1">M{m.month}</td>
+                          <td className="text-right">{fmtEUR(m.erpMrrEur)}</td>
+                          <td className="text-right">{fmtEUR(m.marketCommissionEur)}</td>
+                          <td className="text-right font-bold text-primary">{fmtEUR(m.totalMonthlyRevenueEur)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
 
             {/* Risks + Opportunities */}
             <div className="grid gap-3 md:grid-cols-2">

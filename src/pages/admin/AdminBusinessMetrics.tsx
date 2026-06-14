@@ -174,56 +174,68 @@ export default function AdminBusinessMetrics() {
           <Badge variant="outline" className="ml-2">google/gemini-3-flash-preview</Badge>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Funciona mesmo sem oficinas reais. Combina projeção matemática determinística com análise qualitativa da IA (cenários pessimista/esperado/otimista, riscos, ações).
+          <strong>Modo Auto:</strong> só metes mercado + orçamento de ads — a IA infere CPL, conversão, churn e mix de planos com base em benchmarks reais do mercado SaaS automóvel. Funciona mesmo com 0 oficinas.
         </p>
 
-        <div className="grid gap-3 md:grid-cols-3 mb-4">
-          <Field label="Mercado">
-            <Input value={inputs.market} onChange={(e) => setInputs({ ...inputs, market: e.target.value })} />
+        {/* Essential inputs — always visible */}
+        <div className="grid gap-3 md:grid-cols-2 mb-3">
+          <Field label="Mercado / país">
+            <Input value={inputs.market} onChange={(e) => setInputs({ ...inputs, market: e.target.value })} placeholder="Portugal, Brasil, Espanha…" />
           </Field>
-          <Field label="Segmento-alvo">
-            <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+          <Field label="Orçamento ads / mês (€)">
+            <Input type="number" value={inputs.monthlyAdSpendEur} onChange={(e) => setInputs({ ...inputs, monthlyAdSpendEur: +e.target.value })} />
           </Field>
           <Field label="Horizonte (meses)">
             <Input type="number" value={inputs.horizonMonths} onChange={(e) => setInputs({ ...inputs, horizonMonths: +e.target.value })} />
           </Field>
-
-          <Field label="Orçamento ads / mês (€)">
-            <Input type="number" value={inputs.monthlyAdSpendEur} onChange={(e) => setInputs({ ...inputs, monthlyAdSpendEur: +e.target.value })} />
-          </Field>
-          <Field label="CPL — custo por lead (€)">
-            <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
-          </Field>
-          <Field label="Conversão trial → pago (%)">
-            <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
-          </Field>
-
-          <Field label="Churn mensal (%)">
-            <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
-          </Field>
-          <Field label="Pagantes iniciais">
+          <Field label="Pagantes iniciais (0 se ainda nenhum)">
             <Input type="number" value={inputs.startingPayingCustomers} onChange={(e) => setInputs({ ...inputs, startingPayingCustomers: +e.target.value })} />
-          </Field>
-          <div />
-
-          <Field label="Mix Starter (19€) %">
-            <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
-          </Field>
-          <Field label="Mix Pro (39€) %">
-            <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
-          </Field>
-          <Field label="Mix Garage (99€) %">
-            <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
-          </Field>
-          <Field label="Mix Enterprise (299€) %">
-            <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
           </Field>
         </div>
 
-        <Button onClick={runForecast} disabled={fcLoading}>
+        <button
+          type="button"
+          onClick={() => setAdvanced(!advanced)}
+          className="text-xs text-muted-foreground underline mb-3"
+        >
+          {advanced ? "− Esconder avançado" : "+ Sobrepor benchmarks da IA (avançado)"}
+        </button>
+
+        {advanced && (
+          <div className="grid gap-3 md:grid-cols-3 mb-4 p-3 rounded border border-dashed">
+            <Field label="Segmento-alvo">
+              <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+            </Field>
+            <Field label="CPL — custo por lead (€)">
+              <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
+            </Field>
+            <Field label="Conversão trial → pago (%)">
+              <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
+            </Field>
+            <Field label="Churn mensal (%)">
+              <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
+            </Field>
+            <Field label="Mix Starter (19€) %">
+              <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
+            </Field>
+            <Field label="Mix Pro (39€) %">
+              <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
+            </Field>
+            <Field label="Mix Garage (99€) %">
+              <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
+            </Field>
+            <Field label="Mix Enterprise (299€) %">
+              <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
+            </Field>
+          </div>
+        )}
+
+        <Button onClick={runForecast} disabled={fcLoading} size="lg">
           {fcLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-          Gerar previsão IA
+          {advanced ? "Gerar previsão IA" : "Gerar previsão IA (auto)"}
         </Button>
+
+
 
         {forecast && (
           <div className="mt-6 space-y-5">

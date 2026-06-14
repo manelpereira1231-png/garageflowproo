@@ -10,7 +10,10 @@ import { toast } from "sonner";
 import {
   Rocket, Sparkles, Loader2, Image as ImageIcon, Target, BarChart3,
   Wand2, RefreshCw, Megaphone, History, ChevronRight, PlayCircle, PauseCircle, Archive,
+  Facebook, Instagram, Send, Download, Copy, Calendar, ExternalLink,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Campaign = {
   id: string;

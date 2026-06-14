@@ -54,12 +54,20 @@ export default function AdminBusinessMetrics() {
     monthlyAdSpendEur: 1500,
     horizonMonths: 12,
     startingPayingCustomers: 0,
-    // advanced overrides (only sent if advanced=true)
+    productScope: "erp" as "erp" | "market" | "combined",
+    adSpendSplitErpPct: 50,
+    // advanced overrides ERP
     cplEur: 12,
     trialToPayConversionPct: 25,
     monthlyChurnPct: 4,
     starter: 30, pro: 45, garage: 20, enterprise: 5,
+    // advanced overrides Market
+    marketAvgVehiclePriceEur: 8500,
+    marketTakeRatePct: 4.5,
+    marketListingToSalePct: 12,
+    marketCplEur: 6,
   });
+
 
   const load = async () => {
     setLoading(true);

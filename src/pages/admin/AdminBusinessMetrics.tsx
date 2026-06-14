@@ -248,7 +248,33 @@ export default function AdminBusinessMetrics() {
                 hint={`CAC ${fmtEUR(forecast.baseline.cacEur)} · Payback ${forecast.baseline.paybackMonths ?? "—"}m`} />
             </div>
 
-            {/* AI verdict */}
+            {/* Inferred assumptions */}
+            {forecast.assumptions && (
+              <Card className="p-4 border-dashed">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">Benchmarks usados</h3>
+                  <Badge variant="outline" className="text-xs">
+                    {forecast.assumptions.source === "ai-inferred" ? "Inferidos pela IA" : "Definidos por ti"}
+                  </Badge>
+                </div>
+                <div className="grid gap-2 md:grid-cols-4 text-xs">
+                  <div><span className="text-muted-foreground">CPL:</span> <strong>{fmtEUR(forecast.assumptions.cplEur)}</strong></div>
+                  <div><span className="text-muted-foreground">Conv. trial→pago:</span> <strong>{forecast.assumptions.trialToPayConversionPct}%</strong></div>
+                  <div><span className="text-muted-foreground">Churn mensal:</span> <strong>{forecast.assumptions.monthlyChurnPct}%</strong></div>
+                  <div>
+                    <span className="text-muted-foreground">Mix planos:</span>{" "}
+                    <strong>S{forecast.assumptions.planMixPct?.starter} · P{forecast.assumptions.planMixPct?.pro} · G{forecast.assumptions.planMixPct?.garage} · E{forecast.assumptions.planMixPct?.enterprise}</strong>
+                  </div>
+                </div>
+                {forecast.assumptions.benchmarkNotes?.length > 0 && (
+                  <ul className="mt-2 text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                    {forecast.assumptions.benchmarkNotes.map((n: string, i: number) => <li key={i}>{n}</li>)}
+                  </ul>
+                )}
+              </Card>
+            )}
+
             {forecast.ai?.verdict && (
               <Card className="p-4 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">

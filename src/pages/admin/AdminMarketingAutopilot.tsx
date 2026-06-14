@@ -508,6 +508,14 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
   };
   useEffect(() => { load(); }, []);
 
+  // Auto-poll a cada 4s enquanto houver imagens "generating"
+  useEffect(() => {
+    const hasPending = items.some((it) => it.status === "generating");
+    if (!hasPending) return;
+    const t = setInterval(load, 4000);
+    return () => clearInterval(t);
+  }, [items]);
+
   const generate = async () => {
     setGenerating(true);
     try {
@@ -523,13 +531,14 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast.success("Imagem gerada e guardada na biblioteca");
+      toast.success("A gerar… aparece em baixo em 15–60s.");
       setCustomPrompt("");
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou a gerar");
     } finally { setGenerating(false); }
   };
+
 
   const remove = async (id: string) => {
     if (!confirm("Apagar esta imagem?")) return;

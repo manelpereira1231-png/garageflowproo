@@ -108,12 +108,11 @@ async function callAI(systemPrompt: string, userPrompt: string, temperature = 0.
     }),
   });
 
-  if (r.status === 429) throw new HttpError(429, "Rate limit da IA. Tenta daqui a 1 minuto.");
-  if (r.status === 402) throw new HttpError(402, "Créditos de IA esgotados. Adiciona créditos no workspace.");
+  if (r.status === 429) throw new HttpError(429, "IA ocupada — aguarda 30s e tenta de novo.");
   if (!r.ok) {
     const errText = await r.text().catch(() => "");
     console.error("AI Gateway erro", r.status, errText.slice(0, 500));
-    throw new HttpError(502, `IA Gateway erro ${r.status}: ${errText.slice(0, 200)}`);
+    throw new HttpError(502, `Serviço de IA indisponível (${r.status}). Tenta de novo.`);
   }
   const raw = await r.json();
   const txt = raw?.choices?.[0]?.message?.content ?? "";

@@ -652,7 +652,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           {items.map((it) => (
             <div key={it.id} className="border rounded-md overflow-hidden bg-background">
               {it.status === "ready" && it.image_url ? (
-                <img src={it.image_url} alt={it.creative_type} className="w-full aspect-square object-cover" />
+                <img src={it.image_url} alt={it.creative_type} className="w-full aspect-square object-cover bg-muted" />
               ) : it.status === "generating" ? (
                 <div className="aspect-square flex items-center justify-center text-xs text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin mr-1" /> A gerar…
@@ -664,14 +664,18 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
               )}
               <div className="p-2 space-y-1">
                 <div className="text-[10px] text-muted-foreground truncate">{it.creative_type}</div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {it.image_url && (
                     <>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Descarregar (PNG)"
+                        onClick={() => downloadImg(it)}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" title="Copiar URL"
                         onClick={() => copyUrl(it.image_url!)}>
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir"
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir em nova janela"
                         onClick={() => window.open(it.image_url!, "_blank")}>
                         <ImageIcon className="h-3.5 w-3.5" />
                       </Button>

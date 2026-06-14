@@ -107,6 +107,8 @@ export default function AdminBusinessMetrics() {
         monthlyAdSpendEur: Number(inputs.monthlyAdSpendEur),
         horizonMonths: Number(inputs.horizonMonths),
         startingPayingCustomers: Number(inputs.startingPayingCustomers),
+        productScope: inputs.productScope,
+        adSpendSplitErpPct: Number(inputs.adSpendSplitErpPct),
       };
       if (advanced) {
         body.cplEur = Number(inputs.cplEur);
@@ -116,7 +118,12 @@ export default function AdminBusinessMetrics() {
           starter: inputs.starter, pro: inputs.pro,
           garage: inputs.garage, enterprise: inputs.enterprise,
         };
+        body.marketAvgVehiclePriceEur = Number(inputs.marketAvgVehiclePriceEur);
+        body.marketTakeRatePct = Number(inputs.marketTakeRatePct);
+        body.marketListingToSalePct = Number(inputs.marketListingToSalePct);
+        body.marketCplEur = Number(inputs.marketCplEur);
       }
+
       const { data, error } = await supabase.functions.invoke("ai-business-forecast", { body });
 
       if (error) throw error;

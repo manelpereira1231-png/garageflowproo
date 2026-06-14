@@ -3119,6 +3119,166 @@ export type Database = {
           },
         ]
       }
+      marketing_campaigns: {
+        Row: {
+          ab_variants: Json
+          ai_model: string | null
+          angle: string | null
+          channels: string[]
+          created_at: string
+          ctas: string[]
+          descriptions: string[]
+          forecast: Json | null
+          generated_by: string
+          geo: string[]
+          headlines: string[]
+          id: string
+          keywords: string[]
+          market: string
+          monthly_budget_eur: number | null
+          status: string
+          strategy: string
+          target_audience: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ab_variants?: Json
+          ai_model?: string | null
+          angle?: string | null
+          channels?: string[]
+          created_at?: string
+          ctas?: string[]
+          descriptions?: string[]
+          forecast?: Json | null
+          generated_by: string
+          geo?: string[]
+          headlines?: string[]
+          id?: string
+          keywords?: string[]
+          market?: string
+          monthly_budget_eur?: number | null
+          status?: string
+          strategy: string
+          target_audience?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ab_variants?: Json
+          ai_model?: string | null
+          angle?: string | null
+          channels?: string[]
+          created_at?: string
+          ctas?: string[]
+          descriptions?: string[]
+          forecast?: Json | null
+          generated_by?: string
+          geo?: string[]
+          headlines?: string[]
+          id?: string
+          keywords?: string[]
+          market?: string
+          monthly_budget_eur?: number | null
+          status?: string
+          strategy?: string
+          target_audience?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_creatives: {
+        Row: {
+          ai_model: string | null
+          campaign_id: string | null
+          created_at: string
+          creative_type: string
+          error: string | null
+          generated_by: string
+          id: string
+          image_url: string | null
+          prompt: string
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          ai_model?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          creative_type: string
+          error?: string | null
+          generated_by: string
+          id?: string
+          image_url?: string | null
+          prompt: string
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          ai_model?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          creative_type?: string
+          error?: string | null
+          generated_by?: string
+          id?: string
+          image_url?: string | null
+          prompt?: string
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_optimizations: {
+        Row: {
+          campaign_id: string
+          changes: Json
+          created_at: string
+          id: string
+          iteration: number
+          performed_by: string
+          reasoning: string | null
+          simulated_metrics: Json | null
+        }
+        Insert: {
+          campaign_id: string
+          changes?: Json
+          created_at?: string
+          id?: string
+          iteration?: number
+          performed_by: string
+          reasoning?: string | null
+          simulated_metrics?: Json | null
+        }
+        Update: {
+          campaign_id?: string
+          changes?: Json
+          created_at?: string
+          id?: string
+          iteration?: number
+          performed_by?: string
+          reasoning?: string | null
+          simulated_metrics?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_optimizations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

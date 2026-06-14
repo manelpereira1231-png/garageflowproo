@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
-  Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake,
+  Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,7 @@ const navSections = [
       { path: "/admin/growth-opportunities", label: "Oportunidades", icon: TrendingUp },
       { path: "/admin/business-metrics", label: "Métricas de Negócio", icon: BarChart3 },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/marketing-autopilot", label: "Autopiloto de Marketing", icon: Rocket },
       { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
       { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
       { path: "/admin/seo", label: "SEO Portugal", icon: Search },

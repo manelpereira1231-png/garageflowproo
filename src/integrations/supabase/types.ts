@@ -762,6 +762,36 @@ export type Database = {
           },
         ]
       }
+      business_forecasts: {
+        Row: {
+          forecast: Json
+          generated_at: string
+          generated_by: string | null
+          id: string
+          inputs: Json
+          model: string | null
+          notes: string | null
+        }
+        Insert: {
+          forecast: Json
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          inputs: Json
+          model?: string | null
+          notes?: string | null
+        }
+        Update: {
+          forecast?: Json
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          inputs?: Json
+          model?: string | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
       business_metrics_daily: {
         Row: {
           arpu_eur: number | null

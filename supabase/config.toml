@@ -108,4 +108,9 @@ verify_jwt = false
 [functions.system-alerts]
 verify_jwt = false
 
+[functions.ai-business-forecast]
+verify_jwt = false
+
+
+
 

@@ -129,32 +129,57 @@ Devolve EXATAMENTE este JSON (sem markdown):
       }
     }
 
-    const fullInputs = {
-      market: raw.market,
-      targetSegment: raw.targetSegment ?? "Oficinas auto independentes",
-      monthlyAdSpendEur: raw.monthlyAdSpendEur,
-      horizonMonths: raw.horizonMonths,
-      startingPayingCustomers: raw.startingPayingCustomers ?? 0,
-      cplEur: assumptions.cplEur!,
-      trialToPayConversionPct: assumptions.trialToPayConversionPct!,
-      monthlyChurnPct: assumptions.monthlyChurnPct!,
-      planMixPct: assumptions.planMixPct!,
-    };
+    const scope: ProductScope = raw.productScope ?? "erp";
+    const splitErp = Math.max(0, Math.min(100, raw.adSpendSplitErpPct ?? 50)) / 100;
 
-    const baseline = projectBaseline(fullInputs);
+    const erpBudget = scope === "market" ? 0 : scope === "erp" ? raw.monthlyAdSpendEur : raw.monthlyAdSpendEur * splitErp;
+    const marketBudget = scope === "erp" ? 0 : scope === "market" ? raw.monthlyAdSpendEur : raw.monthlyAdSpendEur * (1 - splitErp);
+
+    let erpBaseline: any = null;
+    let marketBaseline: any = null;
+
+    if (erpBudget > 0) {
+      const erpInputs = {
+        market: raw.market,
+        targetSegment: raw.targetSegment ?? "Oficinas auto independentes",
+        monthlyAdSpendEur: erpBudget,
+        horizonMonths: raw.horizonMonths,
+        startingPayingCustomers: raw.startingPayingCustomers ?? 0,
+        cplEur: assumptions.cplEur!,
+        trialToPayConversionPct: assumptions.trialToPayConversionPct!,
+        monthlyChurnPct: assumptions.monthlyChurnPct!,
+        planMixPct: assumptions.planMixPct!,
+      };
+      erpBaseline = projectBaseline(erpInputs);
+    }
+
+    if (marketBudget > 0) {
+      const m = marketAssumptions(raw);
+      marketBaseline = projectMarket({
+        market: raw.market,
+        monthlyAdSpendEur: marketBudget,
+        horizonMonths: raw.horizonMonths,
+        avgVehiclePriceEur: m.avgVehiclePriceEur,
+        takeRatePct: m.takeRatePct,
+        listingToSalePct: m.listingToSalePct,
+        cplEur: m.cplEur,
+      });
+    }
+
+    const combinedBaseline = combineBaselines(erpBaseline, marketBaseline, raw.horizonMonths);
 
     // STEP 2 — Qualitative analysis with full context
-    const aiPrompt = buildPrompt(fullInputs, baseline);
+    const aiPrompt = buildPrompt({ scope, raw, erpBaseline, marketBaseline, combinedBaseline, assumptions });
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "És analista financeiro SaaS. Respondes APENAS com JSON válido conforme schema. Sem markdown." },
+          { role: "system", content: "És analista financeiro SaaS + marketplace. Respondes APENAS com JSON válido conforme schema. Sem markdown. Conservador e realista." },
           { role: "user", content: aiPrompt },
         ],
-        temperature: 0.4,
+        temperature: 0.3,
       }),
     });
 
@@ -171,15 +196,24 @@ Devolve EXATAMENTE este JSON (sem markdown):
       aiAnalysis = { summary: "Não foi possível analisar resposta da IA.", risks: [], opportunities: [] };
     }
 
+    // Backwards-compat: keep top-level `baseline` pointing to ERP (or combined if no ERP)
+    const primaryBaseline = scope === "market" ? marketBaseline : scope === "combined" ? combinedBaseline : erpBaseline;
+
     const forecast = {
-      baseline,
+      scope,
+      baseline: primaryBaseline,
+      erpBaseline,
+      marketBaseline,
+      combinedBaseline,
       ai: aiAnalysis,
       assumptions: {
         ...assumptions,
         source: needsBenchmarks ? "ai-inferred" : "user-provided",
       },
-      resolvedInputs: fullInputs,
+      resolvedInputs: { ...raw, scope, erpBudget, marketBudget },
     };
+
+
 
     await supa.from("business_forecasts").insert({
       generated_by: user.id,

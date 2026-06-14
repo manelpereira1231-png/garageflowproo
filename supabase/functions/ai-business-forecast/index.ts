@@ -63,41 +63,43 @@ Deno.serve(async (req) => {
 
     if (needsBenchmarks) {
       const benchPrompt = `Mercado: ${raw.market}. Segmento: ${raw.targetSegment ?? "oficinas auto independentes 1-5 mecânicos"}.
-Produto: SaaS de gestão para oficinas (planos €19/€39/€99/€299 por mês).
-Estima benchmarks REALISTAS para Google Ads + Meta Ads neste mercado/segmento, baseados em CPCs/CPLs típicos da indústria automóvel B2B local em 2025-2026.
+Produto: SaaS B2B de gestão de oficinas (planos €19/€39/€99/€299/mês). Mercado offline, ciclo de decisão LENTO, baixa confiança em software novo, adoção irregular (entram em "spikes" via parcerias, não linearmente).
 
-Devolve EXATAMENTE este JSON (sem markdown, sem prefixos):
+Estima benchmarks CONSERVADORES E REALISTAS (não otimistas) para Google/Meta Ads em 2025-2026, refletindo a fricção real deste mercado.
+
+Regras de realismo OBRIGATÓRIAS:
+- CPL é por lead QUALIFICADO (não clique). PT: 12-20€, BR: 6-12€, US: 35-80€, DE/UK: 20-40€, ES: 10-18€.
+- Conversão trial→pago em oficinas tradicionais: 12-20% (não 25-30%). Adoção lenta, muitos pedem demo e desaparecem.
+- Churn mensal SaaS PME oficinas: 4-7% (alto nos primeiros 3 meses por má adoção). Usa 5-6% como base.
+- Plan mix REAL (oficinas pequenas escolhem barato): starter 65-80%, pro 15-25%, garage 4-10%, enterprise 0-2%. NUNCA inflar para mix premium.
+- ARPU resultante deve ficar 25-35€ (não 40€+).
+
+Devolve EXATAMENTE este JSON (sem markdown):
 {
-  "cplEur": <custo por lead qualificado em € — para PT tipicamente 8-18€, BR 4-10€, US 25-60€, DE/UK 15-30€>,
-  "trialToPayConversionPct": <% trial→pago, SaaS B2B tipicamente 15-30>,
-  "monthlyChurnPct": <% churn mensal, SaaS PME tipicamente 3-7>,
+  "cplEur": <number>,
+  "trialToPayConversionPct": <number>,
+  "monthlyChurnPct": <number>,
   "planMixPct": { "starter": <%>, "pro": <%>, "garage": <%>, "enterprise": <%> },
-  "benchmarkNotes": ["nota 1", "nota 2"]
+  "benchmarkNotes": ["fonte/raciocínio 1", "fonte/raciocínio 2", "fonte/raciocínio 3"]
 }`;
       const benchResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: "És analista de mercado SaaS. Respondes APENAS com JSON válido. Sem markdown." },
-            { role: "user", content: benchPrompt },
-          ],
-          temperature: 0.3,
-        }),
-      });
-      if (benchResp.status === 429) return json({ error: "Rate limit. Tenta daqui a pouco." }, 429);
-      if (benchResp.status === 402) return json({ error: "Créditos esgotados. Adiciona em Settings → Workspace → Usage." }, 402);
+...
       if (!benchResp.ok) return json({ error: `AI Gateway erro ${benchResp.status}` }, 502);
       const benchJson = await benchResp.json();
       try {
         const txt = benchJson.choices?.[0]?.message?.content ?? "{}";
         const parsed = JSON.parse(txt.replace(/```json\n?|```/g, "").trim());
+        // Hard clamps to enforce realism even if AI drifts optimistic
+        const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+        const cpl = clamp(Number(parsed.cplEur), marketCplFloor(raw.market), marketCplCeil(raw.market));
+        const conv = clamp(Number(parsed.trialToPayConversionPct), 10, 22);
+        const churn = clamp(Number(parsed.monthlyChurnPct), 4, 7);
+        const mix = normalizeMix(parsed.planMixPct);
         assumptions = {
-          cplEur: raw.cplEur ?? parsed.cplEur,
-          trialToPayConversionPct: raw.trialToPayConversionPct ?? parsed.trialToPayConversionPct,
-          monthlyChurnPct: raw.monthlyChurnPct ?? parsed.monthlyChurnPct,
-          planMixPct: raw.planMixPct ?? parsed.planMixPct,
+          cplEur: raw.cplEur ?? cpl,
+          trialToPayConversionPct: raw.trialToPayConversionPct ?? conv,
+          monthlyChurnPct: raw.monthlyChurnPct ?? churn,
+          planMixPct: raw.planMixPct ?? mix,
           benchmarkNotes: parsed.benchmarkNotes ?? [],
         };
       } catch {

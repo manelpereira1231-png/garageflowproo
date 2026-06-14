@@ -12,18 +12,28 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+type ProductScope = "erp" | "market" | "combined";
+
 type Inputs = {
   market: string;
   targetSegment?: string;
   monthlyAdSpendEur: number;
   horizonMonths: number;
   startingPayingCustomers?: number;
-  // Optional manual overrides (auto mode infers everything else)
+  productScope?: ProductScope;          // default "erp"
+  adSpendSplitErpPct?: number;          // combined mode: % do budget para ERP (resto Market). default 50
+  // ERP overrides
   cplEur?: number;
   trialToPayConversionPct?: number;
   monthlyChurnPct?: number;
   planMixPct?: { starter: number; pro: number; garage: number; enterprise: number };
+  // Market overrides
+  marketAvgVehiclePriceEur?: number;    // ticket médio carro usado
+  marketTakeRatePct?: number;           // comissão %
+  marketListingToSalePct?: number;      // % anúncios que vendem por mês
+  marketCplEur?: number;                // custo por listing/buyer captado
 };
+
 
 const PLAN_EUR: Record<string, number> = {
   starter: 19, pro: 39, garage: 99, enterprise: 299,

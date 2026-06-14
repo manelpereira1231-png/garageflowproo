@@ -277,6 +277,18 @@ export default function AdminMarketingAutopilot() {
           </div>
         </TabsContent>
 
+        {/* ===================== PUBLICAR ADS ===================== */}
+        <TabsContent value="publish" className="mt-4">
+          <PublishPanel campaigns={campaigns} />
+        </TabsContent>
+
+        {/* ===================== POSTS ORGÂNICOS ===================== */}
+        <TabsContent value="organic" className="mt-4">
+          <OrganicPanel campaigns={campaigns} onChanged={load} />
+        </TabsContent>
+
+
+
         {/* ===================== ESTÚDIO DE CRIATIVOS ===================== */}
         <TabsContent value="studio" className="mt-4 space-y-4">
           <Card className="p-5 border-primary/30">

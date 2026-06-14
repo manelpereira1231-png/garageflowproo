@@ -271,6 +271,21 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
     });
   };
 
+  const post = async (path: string, params: Record<string, any>) => {
+    const url = `${GRAPH}/${path}`;
+    const fd = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      fd.append(k, typeof v === "string" ? v : JSON.stringify(v));
+    }
+    fd.append("access_token", accessToken);
+    const r = await fetch(url, { method: "POST", body: fd });
+    const j = await r.json();
+    if (!r.ok || j?.error) throw new Error(j?.error?.error_user_msg || j?.error?.message || `Meta API ${r.status}`);
+    return j;
+  };
+
+
+
   // ===== 0) Gera imagem (AI) e faz upload para storage privada → signed URL longa =====
   let pictureUrl = "https://garageflow-pt.lovable.app/og-image.jpg";
   try {

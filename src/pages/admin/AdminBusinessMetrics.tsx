@@ -310,14 +310,60 @@ export default function AdminBusinessMetrics() {
 
         {forecast && (
           <div className="mt-6 space-y-5">
-            {/* Headline KPIs */}
-            <div className="grid gap-3 md:grid-cols-4">
-              <Kpi label={`MRR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.baseline.finalMrrEur)} />
-              <Kpi label={`ARR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.baseline.finalArrEur)} />
-              <Kpi label="Pagantes" value={String(forecast.baseline.finalPayingCustomers)} />
-              <Kpi label="LTV:CAC" value={forecast.baseline.ltvCacRatio ? `${forecast.baseline.ltvCacRatio}x` : "—"}
-                hint={`CAC ${fmtEUR(forecast.baseline.cacEur)} · Payback ${forecast.baseline.paybackMonths ?? "—"}m`} />
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                Âmbito: {forecast.scope === "erp" ? "ERP (SaaS)" : forecast.scope === "market" ? "Market (comissões)" : "Combinado (ERP + Market)"}
+              </Badge>
+              {forecast.scope === "combined" && (
+                <span className="text-xs text-muted-foreground">
+                  Budget ERP: {fmtEUR(forecast.resolvedInputs?.erpBudget)} · Market: {fmtEUR(forecast.resolvedInputs?.marketBudget)}
+                </span>
+              )}
             </div>
+
+            {/* ERP KPIs */}
+            {forecast.erpBaseline && (
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2">ERP — SaaS subscrições</div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Kpi label={`MRR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.erpBaseline.finalMrrEur)} />
+                  <Kpi label={`ARR mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.erpBaseline.finalArrEur)} />
+                  <Kpi label="Pagantes" value={String(forecast.erpBaseline.finalPayingCustomers)} />
+                  <Kpi label="LTV:CAC" value={forecast.erpBaseline.ltvCacRatio ? `${forecast.erpBaseline.ltvCacRatio}x` : "—"}
+                    hint={`CAC ${fmtEUR(forecast.erpBaseline.cacEur)} · Payback ${forecast.erpBaseline.paybackMonths ?? "—"}m`} />
+                </div>
+              </div>
+            )}
+
+            {/* Market KPIs */}
+            {forecast.marketBaseline && (
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground mb-2">Market — comissões em vendas</div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Kpi label={`Comissão mês ${inputs.horizonMonths}`} value={fmtEUR(forecast.marketBaseline.finalMonthlyCommissionEur)}
+                    hint={`GMV ${fmtEUR(forecast.marketBaseline.finalMonthlyGmvEur)}`} />
+                  <Kpi label="Vendas totais" value={String(forecast.marketBaseline.totalSales)}
+                    hint={`${forecast.marketBaseline.finalActiveListings} anúncios ativos`} />
+                  <Kpi label="GMV acumulado" value={fmtEUR(forecast.marketBaseline.totalGmvEur)} />
+                  <Kpi label="Comissão / venda" value={fmtEUR(forecast.marketBaseline.commissionPerSaleEur)}
+                    hint={forecast.marketBaseline.cacPerSaleEur ? `CAC/venda ${fmtEUR(forecast.marketBaseline.cacPerSaleEur)}` : undefined} />
+                </div>
+              </div>
+            )}
+
+            {/* Combined KPI */}
+            {forecast.combinedBaseline && forecast.erpBaseline && forecast.marketBaseline && (
+              <Card className="p-4 border-primary/40 bg-primary/5">
+                <div className="text-xs font-semibold text-primary mb-2">Receita mensal combinada (mês {inputs.horizonMonths})</div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Kpi label="Total / mês" value={fmtEUR(forecast.combinedBaseline.finalMonthlyRevenueEur)}
+                    hint={`Anualizado ${fmtEUR(forecast.combinedBaseline.finalAnnualizedEur)}`} />
+                  <Kpi label="Peso ERP" value={`${forecast.combinedBaseline.erpShareOfFinal}%`} />
+                  <Kpi label="Peso Market" value={`${forecast.combinedBaseline.marketShareOfFinal}%`} />
+                </div>
+              </Card>
+            )}
+
 
             {/* Inferred assumptions */}
             {forecast.assumptions && (

@@ -75,6 +75,9 @@ Deno.serve(async (req) => {
     if (action === "optimize") {
       return await optimizeCampaign(supa, user.id, body);
     }
+    if (action === "generate_posts") {
+      return await generateOrganicPosts(supa, user.id, body);
+    }
     return json({ error: "Unknown action" }, 400);
   } catch (e: any) {
     return json({ error: e?.message ?? "Internal error" }, 500);

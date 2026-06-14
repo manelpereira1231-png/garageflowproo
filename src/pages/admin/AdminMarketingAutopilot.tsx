@@ -675,3 +675,325 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+// =================== PUBLISH PANEL ===================
+function PublishPanel({ campaigns }: { campaigns: Campaign[] }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const publishable = campaigns.filter((c) => c.status === "active" || c.status === "approved");
+  const list = publishable.length > 0 ? publishable : campaigns;
+
+  const openMeta = async (c: Campaign) => {
+    setBusy(c.id + ":meta");
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-publish", {
+        body: { action: "meta_ads_url", campaignId: c.id, objective: "OUTCOME_LEADS" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      const copyText = [
+        `Campanha: ${d.campaign_name}`,
+        `Orçamento diário: €${d.daily_budget_eur}`,
+        "",
+        "HEADLINES:",
+        ...d.headlines.map((h: string, i: number) => `${i + 1}. ${h}`),
+        "",
+        "TEXTOS PRIMÁRIOS:",
+        ...d.primary_texts.map((t: string, i: number) => `${i + 1}. ${t}`),
+        "",
+        "CTAs:",
+        ...d.ctas,
+      ].join("\n");
+      await navigator.clipboard.writeText(copyText).catch(() => {});
+      toast.success("Copy copiada — Meta Ads Manager a abrir");
+      window.open(d.open_url, "_blank");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally { setBusy(null); }
+  };
+
+  const downloadCsv = async (c: Campaign) => {
+    setBusy(c.id + ":google");
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-publish", {
+        body: { action: "google_ads_csv", campaignId: c.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      const blob = new Blob([d.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = d.filename; a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV descarregado — importa no Google Ads Editor");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally { setBusy(null); }
+  };
+
+  return (
+    <Card className="p-5 space-y-4">
+      <div>
+        <h2 className="font-semibold">Publicar campanhas em 1 clique</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Semi-automático: copy + targeting + budget vão pré-preenchidos. Clica → Meta Ads Manager abre / CSV Google Ads descarrega.
+          API direta Meta/Google fica disponível assim que tiveres a Business Account aprovada.
+        </p>
+      </div>
+
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Gera primeiro campanhas no separador "Campanhas IA".</p>
+      ) : (
+        <div className="space-y-2">
+          {list.map((c) => (
+            <Card key={c.id} className="p-3">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-[10px]">{c.strategy}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{c.market}</Badge>
+                    <Badge variant="outline" className="text-[10px]">€{c.monthly_budget_eur}/mês</Badge>
+                  </div>
+                  <div className="font-semibold mt-1">{c.title}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-1">{c.angle}</div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" onClick={() => openMeta(c)} disabled={busy === c.id + ":meta"}>
+                    {busy === c.id + ":meta" ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Facebook className="h-3 w-3 mr-1" />}
+                    Publicar FB+IG
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadCsv(c)} disabled={busy === c.id + ":google"}>
+                    {busy === c.id + ":google" ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                    CSV Google Ads
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <div className="text-[11px] text-muted-foreground border-t pt-3 space-y-1">
+        <div><strong>Como funciona:</strong></div>
+        <div>• <strong>Publicar FB+IG</strong>: copia textos para clipboard e abre o Meta Ads Manager. Cola, escolhe imagens (Estúdio) e publica.</div>
+        <div>• <strong>CSV Google Ads</strong>: ficheiro pronto para importar via Google Ads Editor — campanha, grupo, keywords e RSA configurados.</div>
+        <div>• <strong>API direta</strong> (futuro): adiciona <code>META_ACCESS_TOKEN</code> + <code>GOOGLE_ADS_DEVELOPER_TOKEN</code> nos secrets quando tiveres aprovação.</div>
+      </div>
+    </Card>
+  );
+}
+
+// =================== ORGANIC POSTS PANEL ===================
+type Post = {
+  id: string;
+  campaign_id: string | null;
+  channel: string;
+  post_type: string;
+  title: string | null;
+  body: string;
+  hashtags: string[];
+  cta: string | null;
+  image_url: string | null;
+  image_prompt: string | null;
+  scheduled_for: string | null;
+  status: string;
+  metadata: any;
+};
+
+function OrganicPanel({ campaigns, onChanged }: { campaigns: Campaign[]; onChanged: () => void }) {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const [market, setMarket] = useState("Portugal");
+  const [weeks, setWeeks] = useState(4);
+  const [perWeek, setPerWeek] = useState(3);
+  const [channels, setChannels] = useState<string[]>(["facebook", "instagram"]);
+  const [campaignId, setCampaignId] = useState<string>("none");
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("marketing_posts" as any)
+      .select("*").order("scheduled_for", { ascending: true }).limit(100);
+    setPosts((data as any) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const toggleChannel = (ch: string) => {
+    setChannels((p) => p.includes(ch) ? p.filter((c) => c !== ch) : [...p, ch]);
+  };
+
+  const generate = async () => {
+    if (channels.length === 0) { toast.error("Escolhe pelo menos 1 canal"); return; }
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
+        body: {
+          action: "generate_posts",
+          market, weeks, postsPerWeek: perWeek, channels,
+          campaignId: campaignId !== "none" ? campaignId : null,
+          startDate: new Date().toISOString(),
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`${(data as any).count} posts gerados`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally { setGenerating(false); }
+  };
+
+  const share = async (p: Post) => {
+    setBusy(p.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-publish", {
+        body: { action: "organic_share_url", postId: p.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      await navigator.clipboard.writeText(d.copy_text).catch(() => {});
+      if (d.open_url) {
+        window.open(d.open_url, "_blank");
+        toast.success("Facebook aberto, texto copiado");
+      } else {
+        toast.success("Texto copiado — cola no Instagram");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally { setBusy(null); }
+  };
+
+  const markPublished = async (id: string) => {
+    await supabase.from("marketing_posts" as any).update({
+      status: "published", published_at: new Date().toISOString(),
+    }).eq("id", id);
+    toast.success("Marcado como publicado");
+    load();
+  };
+
+  const remove = async (id: string) => {
+    await supabase.from("marketing_posts" as any).delete().eq("id", id);
+    toast.success("Removido");
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5 border-primary/30">
+        <div className="flex items-center gap-2 mb-2">
+          <Calendar className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold">Gerador de calendário editorial</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          IA cria mix de educativos + prova social + features + promos. Hashtags PT, prompts de imagem, agendamento automático.
+        </p>
+        <div className="grid gap-3 md:grid-cols-5">
+          <div>
+            <Label className="text-xs">Mercado</Label>
+            <Input value={market} onChange={(e) => setMarket(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Semanas</Label>
+            <Input type="number" min={1} max={12} value={weeks} onChange={(e) => setWeeks(+e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Posts/semana</Label>
+            <Input type="number" min={1} max={7} value={perWeek} onChange={(e) => setPerWeek(+e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Associar a campanha</Label>
+            <Select value={campaignId} onValueChange={setCampaignId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Nenhuma —</SelectItem>
+                {campaigns.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Canais</Label>
+            <div className="flex gap-1 flex-wrap mt-1">
+              {[
+                { id: "facebook", label: "FB", icon: Facebook },
+                { id: "instagram", label: "IG", icon: Instagram },
+                { id: "instagram_story", label: "Story", icon: Instagram },
+              ].map((c) => (
+                <Button key={c.id} size="sm" type="button"
+                  variant={channels.includes(c.id) ? "default" : "outline"}
+                  onClick={() => toggleChannel(c.id)}>
+                  <c.icon className="h-3 w-3 mr-1" />{c.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Button className="mt-4" onClick={generate} disabled={generating}>
+          {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          Gerar {weeks * perWeek} posts
+        </Button>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Calendário ({posts.length})</h3>
+          <Button variant="ghost" size="sm" onClick={load}>
+            <RefreshCw className={`h-3 w-3 mr-1 ${loading ? "animate-spin" : ""}`} />Atualizar
+          </Button>
+        </div>
+        {posts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum post agendado. Gera o teu primeiro calendário acima.</p>
+        ) : (
+          <div className="space-y-2">
+            {posts.map((p) => {
+              const Icon = p.channel === "facebook" ? Facebook : Instagram;
+              const date = p.scheduled_for ? new Date(p.scheduled_for) : null;
+              return (
+                <Card key={p.id} className="p-3">
+                  <div className="flex items-start gap-3 flex-wrap">
+                    <div className="flex-1 min-w-[240px]">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Icon className="h-3 w-3" />
+                        <Badge variant="outline" className="text-[10px]">{p.post_type}</Badge>
+                        <Badge variant="secondary" className="text-[10px]">{p.metadata?.category ?? "—"}</Badge>
+                        <Badge variant={p.status === "published" ? "default" : "outline"} className="text-[10px]">
+                          {p.status}
+                        </Badge>
+                        {date && <span className="text-[11px] text-muted-foreground">
+                          {date.toLocaleDateString("pt-PT", { day: "2-digit", month: "short", weekday: "short" })} {date.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
+                        </span>}
+                      </div>
+                      {p.title && <div className="font-semibold text-sm">{p.title}</div>}
+                      <p className="text-xs whitespace-pre-wrap mt-1">{p.body}</p>
+                      {p.hashtags?.length > 0 && (
+                        <p className="text-[11px] text-primary mt-1">{p.hashtags.join(" ")}</p>
+                      )}
+                      {p.cta && <Badge className="mt-2 text-[10px]">{p.cta}</Badge>}
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[140px]">
+                      <Button size="sm" onClick={() => share(p)} disabled={busy === p.id}>
+                        {busy === p.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> :
+                          p.channel === "facebook" ? <ExternalLink className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                        {p.channel === "facebook" ? "Abrir no FB" : "Copiar p/ IG"}
+                      </Button>
+                      {p.status !== "published" && (
+                        <Button size="sm" variant="outline" onClick={() => markPublished(p.id)}>
+                          ✓ Publicado
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>Remover</Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

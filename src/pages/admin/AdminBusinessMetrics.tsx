@@ -250,33 +250,56 @@ export default function AdminBusinessMetrics() {
         </button>
 
         {advanced && (
-          <div className="grid gap-3 md:grid-cols-3 mb-4 p-3 rounded border border-dashed">
-            <Field label="Segmento-alvo">
-              <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
-            </Field>
-            <Field label="CPL — custo por lead (€)">
-              <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
-            </Field>
-            <Field label="Conversão trial → pago (%)">
-              <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
-            </Field>
-            <Field label="Churn mensal (%)">
-              <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
-            </Field>
-            <Field label="Mix Starter (19€) %">
-              <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
-            </Field>
-            <Field label="Mix Pro (39€) %">
-              <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
-            </Field>
-            <Field label="Mix Garage (99€) %">
-              <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
-            </Field>
-            <Field label="Mix Enterprise (299€) %">
-              <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
-            </Field>
+          <div className="space-y-4 mb-4">
+            {inputs.productScope !== "market" && (
+              <div className="grid gap-3 md:grid-cols-3 p-3 rounded border border-dashed">
+                <div className="md:col-span-3 text-xs font-semibold text-muted-foreground">ERP (SaaS)</div>
+                <Field label="Segmento-alvo">
+                  <Input value={inputs.targetSegment} onChange={(e) => setInputs({ ...inputs, targetSegment: e.target.value })} />
+                </Field>
+                <Field label="CPL — custo por lead (€)">
+                  <Input type="number" step="0.5" value={inputs.cplEur} onChange={(e) => setInputs({ ...inputs, cplEur: +e.target.value })} />
+                </Field>
+                <Field label="Conversão trial → pago (%)">
+                  <Input type="number" step="0.5" value={inputs.trialToPayConversionPct} onChange={(e) => setInputs({ ...inputs, trialToPayConversionPct: +e.target.value })} />
+                </Field>
+                <Field label="Churn mensal (%)">
+                  <Input type="number" step="0.5" value={inputs.monthlyChurnPct} onChange={(e) => setInputs({ ...inputs, monthlyChurnPct: +e.target.value })} />
+                </Field>
+                <Field label="Mix Starter (19€) %">
+                  <Input type="number" value={inputs.starter} onChange={(e) => setInputs({ ...inputs, starter: +e.target.value })} />
+                </Field>
+                <Field label="Mix Pro (39€) %">
+                  <Input type="number" value={inputs.pro} onChange={(e) => setInputs({ ...inputs, pro: +e.target.value })} />
+                </Field>
+                <Field label="Mix Garage (99€) %">
+                  <Input type="number" value={inputs.garage} onChange={(e) => setInputs({ ...inputs, garage: +e.target.value })} />
+                </Field>
+                <Field label="Mix Enterprise (299€) %">
+                  <Input type="number" value={inputs.enterprise} onChange={(e) => setInputs({ ...inputs, enterprise: +e.target.value })} />
+                </Field>
+              </div>
+            )}
+            {inputs.productScope !== "erp" && (
+              <div className="grid gap-3 md:grid-cols-4 p-3 rounded border border-dashed">
+                <div className="md:col-span-4 text-xs font-semibold text-muted-foreground">Market (comissões em vendas)</div>
+                <Field label="Ticket médio viatura (€)">
+                  <Input type="number" value={inputs.marketAvgVehiclePriceEur} onChange={(e) => setInputs({ ...inputs, marketAvgVehiclePriceEur: +e.target.value })} />
+                </Field>
+                <Field label="Take rate / comissão (%)">
+                  <Input type="number" step="0.1" value={inputs.marketTakeRatePct} onChange={(e) => setInputs({ ...inputs, marketTakeRatePct: +e.target.value })} />
+                </Field>
+                <Field label="% anúncios que vendem / mês">
+                  <Input type="number" step="0.5" value={inputs.marketListingToSalePct} onChange={(e) => setInputs({ ...inputs, marketListingToSalePct: +e.target.value })} />
+                </Field>
+                <Field label="CPL Market — captação seller (€)">
+                  <Input type="number" step="0.5" value={inputs.marketCplEur} onChange={(e) => setInputs({ ...inputs, marketCplEur: +e.target.value })} />
+                </Field>
+              </div>
+            )}
           </div>
         )}
+
 
         <Button onClick={runForecast} disabled={fcLoading} size="lg">
           {fcLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}

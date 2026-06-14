@@ -296,21 +296,39 @@ function PublishDialog({ campaign }: { campaign: Campaign }) {
           <DialogTitle>Publicar "{campaign.title}"</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Escolhe onde queres publicar. Tudo já vem preenchido — só tens de colar.
+          A campanha é criada automaticamente na tua conta Meta (em PAUSED — revês e ativas).
         </p>
         <div className="grid gap-3">
           <Button size="lg" onClick={publishMeta} disabled={busy !== null}>
             {busy === "meta" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Facebook className="h-4 w-4 mr-2" />}
-            Facebook & Instagram (Meta Ads)
+            Publicar no Facebook & Instagram
           </Button>
           <Button size="lg" variant="outline" onClick={publishGoogle} disabled={busy !== null}>
             {busy === "google" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Google Ads (descarregar CSV)
           </Button>
         </div>
-        <div className="text-[11px] text-muted-foreground border-t pt-3 space-y-1">
-          <div><strong>Facebook/Instagram:</strong> abre o Meta Ads Manager e copia o texto da campanha. Colas e publicas.</div>
-          <div><strong>Google Ads:</strong> descarrega um CSV. Abres o Google Ads Editor → Importar ficheiro.</div>
+
+        {needsSecrets && (
+          <div className="border-t pt-3 mt-2 space-y-2 text-xs">
+            <div className="font-semibold text-foreground">Falta ligar a tua conta Meta (1ª vez)</div>
+            <div className="text-muted-foreground">Adiciona estes 3 secrets ao projeto:</div>
+            <div className="flex flex-wrap gap-1">
+              {needsSecrets.secrets.map((s) => (
+                <Badge key={s} variant="outline" className="font-mono text-[10px]">{s}</Badge>
+              ))}
+            </div>
+            <div className="text-muted-foreground whitespace-pre-line">{needsSecrets.how_to}</div>
+            {needsSecrets.docs && (
+              <a href={needsSecrets.docs} target="_blank" rel="noreferrer" className="text-primary underline">
+                Documentação Meta Marketing API ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        <div className="text-[11px] text-muted-foreground border-t pt-3">
+          <strong>Google Ads:</strong> a API exige developer token aprovado (semanas). Por agora descarregas o CSV e importas no Google Ads Editor.
         </div>
       </DialogContent>
     </Dialog>

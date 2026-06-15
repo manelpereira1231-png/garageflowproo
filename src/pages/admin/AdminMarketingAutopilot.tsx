@@ -492,7 +492,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
   const [customPrompt, setCustomPrompt] = useState("");
   const [linkCampaign, setLinkCampaign] = useState<string>("none");
   const [size, setSize] = useState("1536x1024");
-  const [tier, setTier] = useState("premium");
+  const [tier, setTier] = useState("gemini");
   const [generating, setGenerating] = useState(false);
   const [emailDlg, setEmailDlg] = useState<Creative | null>(null);
 

@@ -616,8 +616,9 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           <Select value={tier} onValueChange={setTier}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="premium">Premium (alta — mais lento)</SelectItem>
-              <SelectItem value="fast">Rápida (custa menos)</SelectItem>
+              <SelectItem value="gemini">Grátis (Gemini Nano Banana)</SelectItem>
+              <SelectItem value="fast">Rápida (OpenAI mini)</SelectItem>
+              <SelectItem value="premium">Premium (OpenAI alta)</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -151,12 +151,18 @@ Deno.serve(async (req) => {
     const customPrompt: string | undefined = body?.customPrompt;
     const sizeIn: string = body?.size ?? "1024x1024";
     const qualityIn: string = body?.quality ?? "medium";
-    const tier: string = body?.tier ?? "premium";
+    const tier: string = body?.tier ?? "gemini";
 
     const ALLOWED_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
     const size = ALLOWED_SIZES.has(sizeIn) ? sizeIn : "1024x1024";
     const quality = ["low", "medium", "high"].includes(qualityIn) ? qualityIn : "medium";
-    const model = tier === "fast" ? "openai/gpt-image-1-mini" : "openai/gpt-image-2";
+    // Default: Gemini (Nano Banana) — grátis durante o período promocional, sem precisar de créditos OpenAI.
+    const model =
+      tier === "fast"
+        ? "openai/gpt-image-1-mini"
+        : tier === "premium"
+        ? "openai/gpt-image-2"
+        : "google/gemini-2.5-flash-image";
 
     const basePrompt = CREATIVE_TEMPLATES[creativeType] ?? CREATIVE_TEMPLATES.modern_shop;
     const finalPrompt = customPrompt

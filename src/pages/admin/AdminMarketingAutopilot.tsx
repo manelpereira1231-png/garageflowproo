@@ -492,7 +492,7 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
   const [customPrompt, setCustomPrompt] = useState("");
   const [linkCampaign, setLinkCampaign] = useState<string>("none");
   const [size, setSize] = useState("1536x1024");
-  const [tier, setTier] = useState("premium");
+  const [tier, setTier] = useState("gemini");
   const [generating, setGenerating] = useState(false);
   const [emailDlg, setEmailDlg] = useState<Creative | null>(null);
 
@@ -616,8 +616,9 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
           <Select value={tier} onValueChange={setTier}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="premium">Premium (alta — mais lento)</SelectItem>
-              <SelectItem value="fast">Rápida (custa menos)</SelectItem>
+              <SelectItem value="gemini">Grátis (Gemini Nano Banana)</SelectItem>
+              <SelectItem value="fast">Rápida (OpenAI mini)</SelectItem>
+              <SelectItem value="premium">Premium (OpenAI alta)</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -44,17 +44,31 @@ async function processGeneration(opts: {
 }) {
   const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   try {
-    const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-      body: JSON.stringify({
-        model: opts.model,
-        prompt: opts.prompt,
-        quality: opts.quality,
-        size: opts.size,
-        n: 1,
-      }),
-    });
+    const isGemini = opts.model.startsWith("google/");
+    const body = isGemini
+      ? {
+          model: opts.model,
+          messages: [{ role: "user", content: opts.prompt }],
+          modalities: ["image", "text"],
+        }
+      : {
+          model: opts.model,
+          prompt: opts.prompt,
+          quality: opts.quality,
+          size: opts.size,
+          n: 1,
+        };
+
+    const imgResp = await fetch(
+      isGemini
+        ? "https://ai.gateway.lovable.dev/v1/chat/completions"
+        : "https://ai.gateway.lovable.dev/v1/images/generations",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        body: JSON.stringify(body),
+      },
+    );
 
     if (!imgResp.ok) {
       const errText = await imgResp.text();
@@ -66,11 +80,21 @@ async function processGeneration(opts: {
     }
 
     const imgJson = await imgResp.json();
-    const b64 = imgJson?.data?.[0]?.b64_json;
+    let b64: string | undefined;
+    if (isGemini) {
+      // Gemini via chat-completions: imagem vem em message.images[0].image_url.url (data URL base64)
+      const images = imgJson?.choices?.[0]?.message?.images;
+      const url: string | undefined = images?.[0]?.image_url?.url;
+      if (url?.startsWith("data:image")) {
+        b64 = url.split(",")[1];
+      }
+    } else {
+      b64 = imgJson?.data?.[0]?.b64_json;
+    }
     if (!b64) {
       await supa.from("marketing_creatives").update({
         status: "failed",
-        error: "IA não devolveu imagem (sem b64_json)",
+        error: "IA não devolveu imagem",
       }).eq("id", opts.creativeId);
       return;
     }

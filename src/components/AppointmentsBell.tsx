@@ -22,18 +22,41 @@ export default function AppointmentsBell() {
   const { activeShopId, shops } = useShopContext();
   const ids = activeShopId ? [activeShopId] : (shops || []).map((s) => s.id);
   const [items, setItems] = useState<Appt[]>([]);
+  const [marketInspections, setMarketInspections] = useState<number>(0);
+  const [marketOffers, setMarketOffers] = useState<number>(0);
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!ids.length) return;
-    const { data } = await supabase
-      .from("appointments")
-      .select("id,client_name,client_phone,service_type,date,time,source,notes")
-      .in("shop_id", ids)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    setItems((data as any) ?? []);
+    const [appts, insp, listings] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("id,client_name,client_phone,service_type,date,time,source,notes")
+        .in("shop_id", ids)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("carity_inspection_offers")
+        .select("id", { count: "exact", head: true })
+        .in("shop_id", ids)
+        .eq("status", "offered"),
+      supabase.from("carity_listings").select("id").in("shop_id", ids),
+    ]);
+    setItems((appts.data as any) ?? []);
+    setMarketInspections(insp.count || 0);
+
+    const listingIds = (listings.data || []).map((l: any) => l.id);
+    if (listingIds.length) {
+      const { count } = await supabase
+        .from("carity_offers" as any)
+        .select("id", { count: "exact", head: true })
+        .in("listing_id", listingIds)
+        .eq("status", "pending");
+      setMarketOffers(count || 0);
+    } else {
+      setMarketOffers(0);
+    }
   }, [ids.join(",")]);
 
   useEffect(() => { load(); }, [load]);
@@ -41,12 +64,10 @@ export default function AppointmentsBell() {
   useEffect(() => {
     if (!ids.length) return;
     const ch = supabase
-      .channel("appointments-bell")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "appointments" },
-        () => load()
-      )
+      .channel("workshop-bell")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "carity_inspection_offers" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "carity_offers" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ids.join(","), load]);
@@ -61,7 +82,7 @@ export default function AppointmentsBell() {
     setItems((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const count = items.length;
+  const count = items.length + marketInspections + marketOffers;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

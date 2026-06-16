@@ -93,13 +93,21 @@ export default function CarityShopInspections() {
 
   // Step 1: Fast partner check (renders enrollment screen immediately)
   useEffect(() => {
-    if (!shopId) return;
+    if (!shopId) {
+      // No active shop — mark as checked so we can render a clear empty state
+      // instead of an infinite spinner.
+      setShopData(null);
+      setIsPartner(false);
+      setIsActive(false);
+      setPartnerChecked(true);
+      return;
+    }
     let cancelled = false;
     supabase
       .from("shops")
       .select("id, name, address, phone, latitude, longitude, is_carity_partner, carity_active, email, nif")
       .eq("id", shopId)
-      .single()
+      .maybeSingle()
       .then(({ data: shopInfo }) => {
         if (cancelled) return;
         if (shopInfo) {
@@ -107,6 +115,7 @@ export default function CarityShopInspections() {
           setIsPartner(shopInfo.is_carity_partner === true);
           setIsActive(shopInfo.carity_active === true);
         } else {
+          setShopData(null);
           setIsPartner(false);
           setIsActive(false);
         }
@@ -114,6 +123,7 @@ export default function CarityShopInspections() {
       });
     return () => { cancelled = true; };
   }, [shopId]);
+
 
   // Step 2: Load inspections only if active partner
   const loadInspectionData = useCallback(async () => {

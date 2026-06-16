@@ -8,6 +8,15 @@ const admin = createClient(
 );
 
 Deno.serve(async (_req) => {
+  // Auth guard: only the platform (cron / service role) may invoke
+  const __auth = (_req.headers.get("Authorization") ?? "").replace("Bearer ", "")
+    || (_req.headers.get("x-internal-token") ?? "");
+  if (__auth !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const out: Record<string, unknown> = {};
   const [recon, retry, arch] = await Promise.all([
     admin.rpc("reconcile_entity_state", { _limit: 1000 }),

@@ -71,7 +71,8 @@ export default function PublicBooking() {
       client_phone: form.client_phone || null,
       client_email: form.client_email || null,
       notes: form.notes || null,
-      status: "scheduled",
+      status: "pending",
+      source: "public",
     } as any);
 
     setSubmitting(false);

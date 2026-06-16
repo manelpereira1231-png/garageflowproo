@@ -96,7 +96,7 @@ Devolve EXATAMENTE este JSON (sem markdown):
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: "És analista de mercado SaaS sénior. Respondes APENAS com JSON válido. Sem markdown. Conservador, baseado em dados reais de oficinas auto." },
             { role: "user", content: benchPrompt },
@@ -174,7 +174,7 @@ Devolve EXATAMENTE este JSON (sem markdown):
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "És analista financeiro SaaS + marketplace. Respondes APENAS com JSON válido conforme schema. Sem markdown. Conservador e realista." },
           { role: "user", content: aiPrompt },
@@ -219,7 +219,7 @@ Devolve EXATAMENTE este JSON (sem markdown):
       generated_by: user.id,
       inputs: raw,
       forecast,
-      model: "google/gemini-3-flash-preview",
+      model: "google/gemini-2.5-flash",
     });
 
     return json({ ok: true, forecast });

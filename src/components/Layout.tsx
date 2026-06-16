@@ -53,6 +53,7 @@ import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
+import AppointmentsBell from "@/components/AppointmentsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
@@ -590,6 +591,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <ThemeToggle className="mr-1" />
+
+          <AppointmentsBell />
 
           {pendingAlertCount > 0 && (
             <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1 group">

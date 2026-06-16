@@ -47,15 +47,22 @@ export default function OficinasPiloto() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("pilot_leads").insert({
-      ...parsed.data,
+    const payload = {
+      workshop_name: parsed.data.workshop_name,
+      contact_name: parsed.data.contact_name || null,
+      phone: parsed.data.phone,
       email: parsed.data.email || null,
+      city: parsed.data.city || null,
+      team_size: parsed.data.team_size || null,
+      current_tool: parsed.data.current_tool || null,
+      notes: parsed.data.notes || null,
       source: "oficinas-piloto",
       utm_source: utm.utm_source || null,
       utm_medium: utm.utm_medium || null,
       utm_campaign: utm.utm_campaign || null,
       user_agent: navigator.userAgent.slice(0, 250),
-    });
+    };
+    const { error } = await supabase.from("pilot_leads").insert(payload);
     setSubmitting(false);
     if (error) {
       toast.error("Não foi possível enviar. Tenta novamente.");

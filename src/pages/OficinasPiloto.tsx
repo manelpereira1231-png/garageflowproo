@@ -75,8 +75,8 @@ export default function OficinasPiloto() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <Helmet>
-        <title>Oficinas Piloto — 3 Meses Grátis | GarageFlow</title>
-        <meta name="description" content="Procuramos 10 oficinas em Portugal para o programa piloto. 3 meses grátis, setup feito por nós, suporte WhatsApp direto." />
+        <title>Oficinas Piloto — 1 Mês Grátis | GarageFlow</title>
+        <meta name="description" content="Procuramos 10 oficinas em Portugal para o programa piloto. 1 mês grátis, setup feito por nós, suporte WhatsApp direto." />
         <link rel="canonical" href="/oficinas-piloto" />
       </Helmet>
 
@@ -87,12 +87,11 @@ export default function OficinasPiloto() {
             Apenas 10 vagas · Portugal
           </span>
           <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-            3 meses <span className="text-amber-400">grátis</span> para as primeiras
+            1 mês <span className="text-amber-400">grátis</span> para as primeiras
             <br className="hidden md:block" /> 10 oficinas piloto
           </h1>
           <p className="mt-6 text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto">
-            Setup feito por nós. Suporte WhatsApp direto. Sem cartão. Depois ficas com
-            <strong className="text-zinc-100"> 9€/mês para sempre</strong>.
+            Setup feito por nós. Suporte WhatsApp direto. Sem cartão para experimentar.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <a href="#form">
@@ -116,10 +115,10 @@ export default function OficinasPiloto() {
       <section className="max-w-5xl mx-auto px-4 py-16">
         <div className="grid md:grid-cols-4 gap-4">
           {[
-            { icon: Gift, t: "3 meses grátis", d: "Sem cartão, sem compromisso." },
+            { icon: Gift, t: "1 mês grátis", d: "Sem cartão, sem compromisso." },
             { icon: Wrench, t: "Setup por nós", d: "Tu trabalhas, nós configuramos." },
             { icon: MessageCircle, t: "WhatsApp direto", d: "Suporte rápido e humano." },
-            { icon: Shield, t: "9€/mês para sempre", d: "Preço fechado vitalício." },
+            { icon: Shield, t: "Acompanhamento próximo", d: "Equipa a 1 mensagem de distância." },
           ].map((b, i) => (
             <Card key={i} className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-5">

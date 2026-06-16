@@ -22,16 +22,28 @@ async function sendEmail(resendKey: string, to: string, subject: string, html: s
   return res.ok;
 }
 
+function esc(s: any): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function alertHtml(matches: any[]) {
   const cards = matches.slice(0, 8).map((l) => {
-    const photo = Array.isArray(l.photos) && l.photos[0] ? l.photos[0] : "";
+    const photoRaw = Array.isArray(l.photos) && l.photos[0] ? l.photos[0] : "";
+    const photo = esc(photoRaw);
+    const make = esc(l.make);
+    const model = esc(l.model);
+    const year = esc(l.year);
+    const fuel = esc(l.fuel);
+    const id = esc(l.id);
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:12px;font-family:Inter,Arial,sans-serif">
-      ${photo ? `<img src="${photo}" style="width:100%;height:180px;object-fit:cover;display:block" alt="${l.make} ${l.model}"/>` : ""}
+      ${photo ? `<img src="${photo}" style="width:100%;height:180px;object-fit:cover;display:block" alt="${make} ${model}"/>` : ""}
       <div style="padding:14px">
-        <div style="font-weight:700;font-size:16px;color:#0f172a">${l.make} ${l.model} (${l.year})</div>
-        <div style="color:#64748b;font-size:12px;margin-top:2px">${Number(l.mileage).toLocaleString("pt-PT")} km · ${l.fuel}</div>
+        <div style="font-weight:700;font-size:16px;color:#0f172a">${make} ${model} (${year})</div>
+        <div style="color:#64748b;font-size:12px;margin-top:2px">${Number(l.mileage).toLocaleString("pt-PT")} km · ${fuel}</div>
         <div style="color:#f59e0b;font-weight:800;font-size:20px;margin-top:6px">${Number(l.price).toLocaleString("pt-PT")} €</div>
-        <a href="https://garageflow.pt/market/car/${l.id}" style="display:inline-block;margin-top:8px;background:#0f172a;color:#fbbf24;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Ver anúncio</a>
+        <a href="https://garageflow.pt/market/car/${id}" style="display:inline-block;margin-top:8px;background:#0f172a;color:#fbbf24;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">Ver anúncio</a>
       </div>
     </div>`;
   }).join("");
@@ -53,11 +65,13 @@ function alertHtml(matches: any[]) {
 function summaryHtml(seller: any, items: any[]) {
   const rows = items.map((it) => `
     <tr>
-      <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:600">${it.make} ${it.model}</td>
-      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${it.views_today}</td>
-      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${it.msgs_today}</td>
-      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${it.favs_today}</td>
+      <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:600">${esc(it.make)} ${esc(it.model)}</td>
+      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${Number(it.views_today) || 0}</td>
+      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${Number(it.msgs_today) || 0}</td>
+      <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center">${Number(it.favs_today) || 0}</td>
     </tr>`).join("");
+
+  const firstName = esc(seller?.name?.split(" ")[0] || "vendedor");
 
   return `<!doctype html><html><body style="background:#f1f5f9;padding:24px;margin:0">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:24px;font-family:Inter,Arial,sans-serif">
@@ -65,7 +79,7 @@ function summaryHtml(seller: any, items: any[]) {
       <div style="background:#fbbf24;width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#0f172a">G</div>
       <strong style="color:#0f172a;font-size:16px">GarageFlow Market</strong>
     </div>
-    <h1 style="font-size:18px;color:#0f172a;margin:0 0 4px">Olá ${seller.name?.split(" ")[0] || "vendedor"}, eis o resumo de hoje</h1>
+    <h1 style="font-size:18px;color:#0f172a;margin:0 0 4px">Olá ${firstName}, eis o resumo de hoje</h1>
     <p style="color:#64748b;font-size:13px;margin:0 0 18px">Atividade nas suas listagens nas últimas 24h.</p>
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>

@@ -244,10 +244,14 @@ export default function QuoteApproval() {
       updateData.signer_name = signerName;
     }
 
-    const { error: err } = await supabase
-      .from("quotes")
-      .update(updateData)
-      .eq("id", quote.id);
+    const { error: err } = await supabase.rpc("respond_to_quote_by_token", {
+      _token: token!,
+      _action: action,
+      _client_notes: clientComment.trim() || null,
+      _signature_data: updateData.signature_data || null,
+      _signature_hash: updateData.signature_hash || null,
+      _signer_name: updateData.signer_name || null,
+    });
 
     if (err) { setError(err.message); setSubmitting(false); return; }
 

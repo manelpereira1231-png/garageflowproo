@@ -20,22 +20,27 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
   useEffect(() => {
     if (!shopId || !userId) { setLoading(false); return; }
     (async () => {
-      const [active, sold, offers, escrowList, insp, sellerProfile] = await Promise.all([
-        supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "published"),
-        supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "sold"),
-        supabase.from("carity_offers" as any).select("id, listing:carity_listings!inner(shop_id)", { count: "exact", head: true }).eq("status", "pending").eq("listing.shop_id" as any, shopId),
+      const myListings = await supabase.from("carity_listings").select("id, status").eq("shop_id", shopId);
+      const listingIds = (myListings.data || []).map((l: any) => l.id);
+      const active = (myListings.data || []).filter((l: any) => l.status === "published").length;
+      const sold = (myListings.data || []).filter((l: any) => l.status === "sold").length;
+
+      const [offers, escrowList, insp, sellerProfile] = await Promise.all([
+        listingIds.length
+          ? supabase.from("carity_offers" as any).select("id", { count: "exact", head: true }).eq("status", "pending").in("listing_id", listingIds)
+          : Promise.resolve({ count: 0 } as any),
         supabase.from("market_escrow").select("amount, status").eq("seller_id", userId).in("status", ["paid", "delivery_confirmed"]),
         supabase.from("carity_inspection_offers").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "offered"),
         supabase.from("carity_seller_profiles" as any).select("id", { count: "exact", head: true }).eq("user_id", userId),
       ]);
 
-      const isSeller = (sellerProfile.count || 0) > 0 || (active.count || 0) > 0 || (sold.count || 0) > 0 || (insp.count || 0) > 0;
+      const isSeller = (sellerProfile.count || 0) > 0 || active > 0 || sold > 0 || (insp.count || 0) > 0;
       setHasMarket(isSeller);
 
       const escrows = (escrowList.data || []) as any[];
       setStats({
-        activeListings: active.count || 0,
-        soldListings: sold.count || 0,
+        activeListings: active,
+        soldListings: sold,
         pendingOffers: offers.count || 0,
         activeEscrows: escrows.length,
         escrowVolume: escrows.reduce((s, r) => s + Number(r.amount || 0), 0),
@@ -43,6 +48,22 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
       });
       setLoading(false);
     })();
+
+      const isSeller = (sellerProfile.count || 0) > 0 || active > 0 || sold > 0 || (insp.count || 0) > 0;
+      setHasMarket(isSeller);
+
+      const escrows = (escrowList.data || []) as any[];
+      setStats({
+        activeListings: active,
+        soldListings: sold,
+        pendingOffers: offers.count || 0,
+        activeEscrows: escrows.length,
+        escrowVolume: escrows.reduce((s, r) => s + Number(r.amount || 0), 0),
+        pendingInspections: insp.count || 0,
+      });
+      setLoading(false);
+    })();
+  }, [shopId, userId]);
   }, [shopId, userId]);
 
   if (loading) {

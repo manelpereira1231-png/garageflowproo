@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import AdminMarketOverview from "@/components/AdminMarketOverview";
 
 interface AdminStats {
   totalShops: number;
@@ -430,7 +431,10 @@ export default function AdminDashboard() {
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Operacional</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {operationalMetrics.map(kpi => renderKpiCard(kpi))}
-        </div>
+      </div>
+
+      {/* GarageFlow Market overview */}
+      <AdminMarketOverview />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

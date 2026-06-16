@@ -5,9 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// VAPID keys are loaded from secrets. PUBLIC key can stay in code if shared with browser,
-// but PRIVATE key must come from secret storage.
-const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "BFAYjprf22v5YveYwXlUZBBUCJoZ6GtFvoq6vzdtcVLFNJKxSoYig8KgiYzh93Nrc2OdlZ6NItLNqg2qE4xRMdQ";
+// VAPID keys loaded from secrets. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in project secrets.
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "";
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") || "";
 
 // Web Push utilities using Web Crypto API

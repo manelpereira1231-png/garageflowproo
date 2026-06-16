@@ -19,8 +19,8 @@ type Appt = {
 };
 
 export default function AppointmentsBell() {
-  const { activeShopId, shopIds } = useShopContext();
-  const ids = (activeShopId ? [activeShopId] : shopIds) || [];
+  const { activeShopId, shops } = useShopContext();
+  const ids = activeShopId ? [activeShopId] : (shops || []).map((s) => s.id);
   const [items, setItems] = useState<Appt[]>([]);
   const [open, setOpen] = useState(false);
 

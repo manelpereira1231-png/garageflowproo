@@ -346,6 +346,7 @@ const adminRoutes = [
   { path: "/admin/action-queue", element: <AdminActionQueue /> },
   { path: "/admin/rate-limits", element: <AdminRateLimits /> },
   { path: "/admin/marketing-autopilot", element: <AdminMarketingAutopilot /> },
+  { path: "/admin/growth", element: <AdminGrowth /> },
 ];
 
 const shopRoutes = [

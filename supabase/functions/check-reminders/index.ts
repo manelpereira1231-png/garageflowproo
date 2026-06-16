@@ -12,6 +12,16 @@ serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Auth guard: only the platform (cron / service role) may invoke
+  const __auth = (req.headers.get("Authorization") ?? "").replace("Bearer ", "")
+    || (req.headers.get("x-internal-token") ?? "");
+  if (__auth !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

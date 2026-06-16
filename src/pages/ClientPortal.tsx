@@ -347,64 +347,30 @@ export default function ClientPortal() {
     const load = async () => {
       if (!token) { setError(true); setLoading(false); return; }
 
-      const { data: c, error: cErr } = await supabase
-        .from("clients")
-        .select("id, name, email, phone, company, shop_id")
-        .eq("portal_token", token)
-        .is("deleted_at", null)
-        .maybeSingle();
+      const { data: rpcData, error: rpcErr } = await supabase
+        .rpc("get_client_portal_data", { _token: token });
 
-      if (cErr || !c) { setError(true); setLoading(false); return; }
+      if (rpcErr || !rpcData) { setError(true); setLoading(false); return; }
+
+      const payload = rpcData as any;
+      const c = payload.client;
+      const s = payload.shop;
+      if (!c) { setError(true); setLoading(false); return; }
+
       setClient(c);
-
-      const { data: s } = await supabase
-        .from("shops")
-        .select("id, name, email, phone, logo_url, currency, language, slug")
-        .eq("id", c.shop_id)
-        .single();
-
       if (!langPicked && s?.language && translations[s.language]) setLangState(s.language);
       setShop(s);
 
-      const [woRes, qRes, iRes, vRes, icRes, pRes] = await Promise.all([
-        supabase.from("work_orders")
-          .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, lines, vehicles(make, model, plate)")
-          .eq("client_id", c.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase.from("quotes")
-          .select("id, number, status, total, subtotal, vat_total, date, validity_date, token, lines, vehicles(make, model, plate)")
-          .eq("client_id", c.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase.from("invoices")
-          .select("id, number, status, total, subtotal, vat_total, due_date, created_at, vehicles(make, model, plate)")
-          .eq("client_id", c.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase.from("vehicles")
-          .select("id, make, model, plate, year, fuel, mileage")
-          .eq("client_id", c.id)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false }),
-        supabase.from("inspection_checklists")
-          .select("id, items, completed_at, technician, created_at, work_orders!inner(number, client_id, vehicles(make, model, plate))")
-          .eq("work_orders.client_id", c.id)
-          .order("created_at", { ascending: false })
-          .limit(30),
-        supabase.from("payments")
-          .select("id, amount, method, paid_at, invoice_id")
-          .eq("shop_id", c.shop_id)
-          .order("paid_at", { ascending: false })
-          .limit(100),
-      ]);
+      const normalizeWithVehicle = (rows: any[]) =>
+        (rows || []).map((r: any) => ({ ...r, vehicles: r.vehicle || null }));
 
-      setServices(woRes.data || []);
-      setQuotes(qRes.data || []);
-      setInvoices(iRes.data || []);
-      setVehicles(vRes.data || []);
-      setInspections(icRes.data || []);
-      setPayments(pRes.data || []);
+      setServices(normalizeWithVehicle(payload.work_orders || []));
+      setQuotes(normalizeWithVehicle(payload.quotes || []));
+      setInvoices(normalizeWithVehicle(payload.invoices || []));
+      setVehicles(payload.vehicles || []);
+      // Inspections + payments are not exposed publicly; keep empty.
+      setInspections([]);
+      setPayments([]);
       setLoading(false);
     };
     load();

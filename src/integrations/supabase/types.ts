@@ -6671,7 +6671,13 @@ export type Database = {
       verify_inspection_certificate: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
-      app_role: "buyer" | "seller" | "garage_owner" | "admin" | "regional_admin"
+      app_role:
+        | "buyer"
+        | "seller"
+        | "garage_owner"
+        | "admin"
+        | "regional_admin"
+        | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6799,7 +6805,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["buyer", "seller", "garage_owner", "admin", "regional_admin"],
+      app_role: [
+        "buyer",
+        "seller",
+        "garage_owner",
+        "admin",
+        "regional_admin",
+        "super_admin",
+      ],
     },
   },
 } as const

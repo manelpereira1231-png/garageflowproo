@@ -1040,6 +1040,24 @@ export default function CarityShopInspections() {
     }
   };
 
+  // --- NO ACTIVE SHOP STATE ---
+  if (partnerChecked && !shopId) {
+    return (
+      <div className="max-w-lg mx-auto text-center space-y-4 pt-12">
+        <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+          <ShieldCheck className="h-8 w-8 text-amber-600" />
+        </div>
+        <h1 className="text-2xl font-bold">GarageFlow Market</h1>
+        <p className="text-muted-foreground">
+          Para receber pedidos de inspeção e ganhar dinheiro extra, primeiro tens de criar/selecionar uma oficina nas Definições.
+        </p>
+        <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
+          <a href="/settings">Ir para Definições</a>
+        </Button>
+      </div>
+    );
+  }
+
   // --- ENROLLMENT SCREEN ---
   if (isPartner === false) {
     const hasName = !!shopData?.name?.trim();

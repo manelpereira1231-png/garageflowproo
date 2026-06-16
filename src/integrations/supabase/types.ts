@@ -4003,6 +4003,81 @@ export type Database = {
           },
         ]
       }
+      pilot_leads: {
+        Row: {
+          activated_at: string | null
+          assigned_to: string | null
+          city: string | null
+          contact_name: string | null
+          contacted_at: string | null
+          created_at: string
+          current_tool: string | null
+          demo_at: string | null
+          email: string | null
+          id: string
+          lost_reason: string | null
+          notes: string | null
+          phone: string
+          source: string | null
+          status: string
+          team_size: string | null
+          updated_at: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          workshop_name: string
+        }
+        Insert: {
+          activated_at?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          contact_name?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          current_tool?: string | null
+          demo_at?: string | null
+          email?: string | null
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          phone: string
+          source?: string | null
+          status?: string
+          team_size?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          workshop_name: string
+        }
+        Update: {
+          activated_at?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          contact_name?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          current_tool?: string | null
+          demo_at?: string | null
+          email?: string | null
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          phone?: string
+          source?: string | null
+          status?: string
+          team_size?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          workshop_name?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           id: string

@@ -176,19 +176,15 @@ export default function QuoteApproval() {
     const load = async () => {
       if (!token) { setError(translations.pt.invalidToken); setLoading(false); return; }
 
-      const { data: q, error: qErr } = await supabase
-        .from("quotes")
-        .select("*, clients(name, email, phone, company), vehicles(make, model, plate, year, fuel, mileage)")
-        .eq("token", token)
-        .single();
+      const { data: rpcData, error: qErr } = await supabase
+        .rpc("get_quote_by_token", { _token: token });
 
-      if (qErr || !q) { setError(translations.pt.notFound); setLoading(false); return; }
+      if (qErr || !rpcData) { setError(translations.pt.notFound); setLoading(false); return; }
 
-      const { data: s } = await supabase
-        .from("shops")
-        .select("name, email, phone, nif, address, logo_url, currency, language")
-        .eq("id", q.shop_id)
-        .single();
+      const payload = rpcData as any;
+      const q = payload.quote ? { ...payload.quote, clients: payload.client, vehicles: payload.vehicle } : null;
+      const s = payload.shop || null;
+      if (!q) { setError(translations.pt.notFound); setLoading(false); return; }
 
       if (s?.language && translations[s.language]) {
         setLang(s.language);
@@ -207,8 +203,6 @@ export default function QuoteApproval() {
         const today = new Date().toISOString().split("T")[0];
         if (q.validity_date < today) {
           setResult('expired');
-          await supabase.from("quotes").update({ status: 'expired' }).eq("id", q.id);
-          return;
         }
       }
     };

@@ -48,22 +48,6 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
       });
       setLoading(false);
     })();
-
-      const isSeller = (sellerProfile.count || 0) > 0 || active > 0 || sold > 0 || (insp.count || 0) > 0;
-      setHasMarket(isSeller);
-
-      const escrows = (escrowList.data || []) as any[];
-      setStats({
-        activeListings: active,
-        soldListings: sold,
-        pendingOffers: offers.count || 0,
-        activeEscrows: escrows.length,
-        escrowVolume: escrows.reduce((s, r) => s + Number(r.amount || 0), 0),
-        pendingInspections: insp.count || 0,
-      });
-      setLoading(false);
-    })();
-  }, [shopId, userId]);
   }, [shopId, userId]);
 
   if (loading) {

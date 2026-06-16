@@ -6477,6 +6477,7 @@ export type Database = {
       }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }
       get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
+      get_client_portal_data: { Args: { _token: string }; Returns: Json }
       get_country_config: {
         Args: { _code: string }
         Returns: {
@@ -6516,6 +6517,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
+      get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {
         Args: { seller_ids: string[] }
         Returns: {
@@ -6607,6 +6610,17 @@ export type Database = {
           _shop_id: string
         }
         Returns: string
+      }
+      respond_to_quote_by_token: {
+        Args: {
+          _action: string
+          _client_notes?: string
+          _signature_data?: string
+          _signature_hash?: string
+          _signer_name?: string
+          _token: string
+        }
+        Returns: Json
       }
       retry_failed_jobs: { Args: { _limit?: number }; Returns: number }
       seed_email_templates_for_shop: {

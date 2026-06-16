@@ -35,6 +35,23 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Require authenticated user OR service-role internal call
+    const authHeader = req.headers.get("Authorization") || "";
+    const internalToken = req.headers.get("x-internal-token") || "";
+    const serviceSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    let authorized = false;
+    if (internalToken && internalToken === serviceSecret) {
+      authorized = true;
+    } else if (authHeader.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data, error } = await admin.auth.getUser(token);
+      if (!error && data?.user) authorized = true;
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
     const body = await req.json() as SendEmailRequest;
     const { to, subject, html, from, branded, brand, preheader, cta, footerNote } = body;
 

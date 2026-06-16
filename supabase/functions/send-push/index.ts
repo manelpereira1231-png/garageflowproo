@@ -5,9 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// VAPID keys generated for this project
-const VAPID_PUBLIC_KEY = "BFAYjprf22v5YveYwXlUZBBUCJoZ6GtFvoq6vzdtcVLFNJKxSoYig8KgiYzh93Nrc2OdlZ6NItLNqg2qE4xRMdQ";
-const VAPID_PRIVATE_KEY = "w2GziuLx55MkBYBBHGaQfCpz4IQ-b7AJTdbVlPfrkls";
+// VAPID keys loaded from secrets. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in project secrets.
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") || "";
 
 // Web Push utilities using Web Crypto API
 function base64UrlToUint8Array(base64Url: string): Uint8Array {
@@ -175,6 +175,35 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Missing shop_id, title, or body" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Authenticate caller for notification-sending path
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Verify the caller is a member of shop_id
+    const { data: memberRows } = await supabase
+      .from("shop_users").select("shop_id").eq("user_id", userData.user.id).eq("shop_id", shop_id).limit(1);
+    const { data: ownerRows } = await supabase
+      .from("shops").select("id").eq("id", shop_id).eq("user_id", userData.user.id).limit(1);
+    if ((memberRows?.length ?? 0) === 0 && (ownerRows?.length ?? 0) === 0) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!VAPID_PRIVATE_KEY) {
+      return new Response(JSON.stringify({ error: "VAPID_PRIVATE_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

@@ -45,12 +45,8 @@ export default function PublicBooking() {
   useEffect(() => {
     if (!slug) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("shops")
-        .select("id, name, logo_url, phone, email")
-        .eq("slug", slug)
-        .maybeSingle();
-      setShop(data as any);
+      const { data } = await supabase.rpc("get_public_shop_by_slug", { _slug: slug });
+      setShop((data as any) || null);
       setLoading(false);
     };
     load();

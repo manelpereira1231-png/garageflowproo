@@ -112,10 +112,27 @@ export default function AppointmentsBell() {
         </div>
         {count === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            Sem marcações pendentes
+            Sem notificações
           </div>
         ) : (
           <div className="divide-y divide-border/60">
+            {(marketInspections > 0 || marketOffers > 0) && (
+              <div className="p-3 bg-amber-500/5">
+                <div className="text-xs font-semibold text-amber-500 mb-2">GarageFlow Market</div>
+                {marketInspections > 0 && (
+                  <Link to="/market/inspections" onClick={() => setOpen(false)} className="flex items-center justify-between py-1.5 hover:bg-muted/40 rounded px-2 -mx-2 text-sm">
+                    <span>{marketInspections} pedido(s) de inspeção</span>
+                    <span className="text-xs text-muted-foreground">Ver →</span>
+                  </Link>
+                )}
+                {marketOffers > 0 && (
+                  <Link to="/market/offers" onClick={() => setOpen(false)} className="flex items-center justify-between py-1.5 hover:bg-muted/40 rounded px-2 -mx-2 text-sm">
+                    <span>{marketOffers} oferta(s) recebida(s)</span>
+                    <span className="text-xs text-muted-foreground">Ver →</span>
+                  </Link>
+                )}
+              </div>
+            )}
             {items.map((a) => (
               <div key={a.id} className="p-3 hover:bg-muted/40">
                 <div className="flex items-start justify-between gap-2 mb-1">

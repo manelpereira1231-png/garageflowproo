@@ -67,13 +67,18 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
               <Store className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <h3 className="font-semibold text-base">GarageFlow Market</h3>
-              <p className="text-sm text-muted-foreground">Vende viaturas usadas com escrow protegido ou faz inspeções pagas para outros vendedores.</p>
+              <h3 className="font-semibold text-base">GarageFlow Market — Ganha dinheiro extra</h3>
+              <p className="text-sm text-muted-foreground">Aceita pedidos de inspeção pagos de vendedores particulares ou vende viaturas em escrow protegido.</p>
             </div>
           </div>
-          <Link to="/market" className="text-sm font-medium text-amber-500 hover:underline flex items-center gap-1">
-            Explorar Market <ChevronRight className="w-4 h-4" />
-          </Link>
+          <div className="flex gap-2 flex-wrap">
+            <Link to="/market/inspections" className="text-sm font-medium text-amber-500 hover:underline flex items-center gap-1">
+              Aceitar inspeções <ChevronRight className="w-4 h-4" />
+            </Link>
+            <Link to="/market" className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
+              Ver Market
+            </Link>
+          </div>
         </div>
       </div>
     );

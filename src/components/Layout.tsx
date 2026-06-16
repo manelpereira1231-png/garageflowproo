@@ -463,6 +463,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   : NAV_GROUPS.map((group) => {
                       const groupItems = groupedRegular.filter(i => group.paths.includes(i.path));
                       if (groupItems.length === 0) return null;
+                      // Auto-flatten single-item groups: render the item directly so the
+                      // group header doesn't swallow the click (ex: "Market" → /market/inspections).
+                      if (groupItems.length === 1) {
+                        return (
+                          <div key={group.id} className="mb-1">
+                            {renderItem(groupItems[0], { fav: false })}
+                          </div>
+                        );
+                      }
                       const open = openGroups[group.id];
                       const hasActive = groupItems.some(i => isPathActive(location.pathname, i.path));
                       const totalBadge = groupItems.reduce((sum, i) => sum + (!sidebarPrefs.isMuted(i.path) && i.badge ? i.badge : 0), 0);

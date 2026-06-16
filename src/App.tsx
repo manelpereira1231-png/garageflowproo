@@ -156,6 +156,8 @@ const AdminComplaints = lazyRetry(() => import("@/pages/admin/AdminComplaints"))
 const AdminActionQueue = lazyRetry(() => import("@/pages/admin/AdminActionQueue"));
 const AdminRateLimits = lazyRetry(() => import("@/pages/admin/AdminRateLimits"));
 const AdminMarketingAutopilot = lazyRetry(() => import("@/pages/admin/AdminMarketingAutopilot"));
+const AdminGrowth = lazyRetry(() => import("@/pages/admin/AdminGrowth"));
+const OficinasPiloto = lazyRetry(() => import("@/pages/OficinasPiloto"));
 const StatusPage = lazyRetry(() => import("@/pages/StatusPage"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)

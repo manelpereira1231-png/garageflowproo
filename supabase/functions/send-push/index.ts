@@ -179,6 +179,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Authenticate caller for notification-sending path
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Verify the caller is a member of shop_id
+    const { data: memberRows } = await supabase
+      .from("shop_users").select("shop_id").eq("user_id", userData.user.id).eq("shop_id", shop_id).limit(1);
+    const { data: ownerRows } = await supabase
+      .from("shops").select("id").eq("id", shop_id).eq("user_id", userData.user.id).limit(1);
+    if ((memberRows?.length ?? 0) === 0 && (ownerRows?.length ?? 0) === 0) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!VAPID_PRIVATE_KEY) {
+      return new Response(JSON.stringify({ error: "VAPID_PRIVATE_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get subscriptions
     let query = supabase
       .from("push_subscriptions")

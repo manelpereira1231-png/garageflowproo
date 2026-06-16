@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import MarketActivityCard from "@/components/MarketActivityCard";
 
 interface KPIData {
   revenue: number;
@@ -692,6 +693,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* GarageFlow Market activity */}
+      <MarketActivityCard shopId={activeShopId} userId={user?.id ?? null} />
 
       {/* Recent Services */}
       <div className="card-premium p-5">

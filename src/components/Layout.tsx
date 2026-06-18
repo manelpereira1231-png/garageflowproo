@@ -104,22 +104,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const sidebarPrefs = useSidebarPrefs(activeShopId);
 
   useEffect(() => {
-    const loadAlertCount = async () => {
-      if (!activeShopId) return;
+    if (!activeShopId) return;
+    let cancelled = false;
+    const loadShopAndAlerts = async () => {
       const { data: shop } = await supabase.from("shops").select("id, name, is_carity_partner, carity_active").eq("id", activeShopId).maybeSingle();
-      if (!shop) return;
+      if (cancelled || !shop) return;
       setShopName(shop.name || "");
       setIsCarityPartner(shop.is_carity_partner === true && shop.carity_active !== false);
+    };
+    const loadAlertCount = async () => {
       const { count } = await supabase
         .from("alerts")
         .select("id", { count: "exact", head: true })
-        .eq("shop_id", shop.id)
+        .eq("shop_id", activeShopId)
         .eq("status", "pending");
-      setPendingAlertCount(count || 0);
+      if (!cancelled) setPendingAlertCount(count || 0);
     };
+    loadShopAndAlerts();
     loadAlertCount();
-    const interval = setInterval(loadAlertCount, 60000);
-    return () => clearInterval(interval);
+
+    // Realtime: any change to this shop's alerts → refresh badge instantly.
+    const channel = supabase
+      .channel(`global-alerts-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alerts", filter: `shop_id=eq.${activeShopId}` },
+        () => loadAlertCount(),
+      )
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [activeShopId]);
 
   // Global realtime listener for new inspection offers (Market) + pending count

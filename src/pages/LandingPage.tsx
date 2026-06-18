@@ -28,10 +28,12 @@ export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  // Re-read pricing on demand so admin updates (country_settings) reflect live.
+  const [pricingRev, setPricingRev] = useState(0);
   const pricing = getRegionalPricing();
   const scrollTracked = useRef<Set<number>>(new Set());
 
-  // Capture gclid/UTM params + scroll depth tracking
+  // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {
     captureAdsParams();
     trackLandingVisit();
@@ -49,8 +51,19 @@ export default function LandingPage() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Live update when admin changes pricing in /admin/countries
+    const onPricingUpdate = () => setPricingRev((r) => r + 1);
+    window.addEventListener('garageflow:pricing-updated', onPricingUpdate);
+    window.addEventListener('garageflow:country-detected', onPricingUpdate);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('garageflow:pricing-updated', onPricingUpdate);
+      window.removeEventListener('garageflow:country-detected', onPricingUpdate);
+    };
   }, []);
+  void pricingRev; // referenced to force re-render on pricing event
   const planConfigs = [
     {
       nameKey: 'landing.planFree',

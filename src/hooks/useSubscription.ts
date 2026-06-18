@@ -335,7 +335,6 @@ export function useSubscription() {
     subscription,
     plan: effectivePlan,
     limits,
-    prices,
     loading,
     shopId,
     isTrialing,

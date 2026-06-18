@@ -98,16 +98,17 @@ export function useCountryPricing() {
     else {
       detectAndLoadCountry().then(p => { if (!cancelled) { setPricing(p); setLoading(false); } });
     }
-    // Re-fetch when IP detection finishes after first paint (e.g. India first visit)
-    const onCountryDetected = () => {
+    const reload = () => {
       cache = null;
       cachePromise = null;
       detectAndLoadCountry().then(p => { if (!cancelled) setPricing(p); });
     };
-    window.addEventListener("garageflow:country-detected", onCountryDetected);
+    window.addEventListener("garageflow:country-detected", reload);
+    window.addEventListener("garageflow:pricing-updated", reload);
     return () => {
       cancelled = true;
-      window.removeEventListener("garageflow:country-detected", onCountryDetected);
+      window.removeEventListener("garageflow:country-detected", reload);
+      window.removeEventListener("garageflow:pricing-updated", reload);
     };
   }, []);
 

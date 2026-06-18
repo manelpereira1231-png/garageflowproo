@@ -397,3 +397,35 @@
 
 /* Dealer signature bar keeps amber, but text contrasts already */
 /* Amber accents stay untouched on purpose for brand consistency */
+
+/* ============================================================
+ * Global mobile + responsive hardening
+ * ----------------------------------------------------------------
+ * 1) Prevent any horizontal page scroll on phones/tablets caused by
+ *    accidental overflow from cards, tables or modals.
+ * 2) Eliminate the 300ms double-tap delay on iOS/Android for every
+ *    interactive control (buttons, links, sidebar items, dropdowns).
+ *    A single tap fires the action immediately.
+ * ============================================================ */
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+button,
+a,
+[role="button"],
+[role="menuitem"],
+[role="option"],
+[role="tab"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+label,
+summary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

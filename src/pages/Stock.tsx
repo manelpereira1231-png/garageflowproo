@@ -175,14 +175,14 @@ export default function Stock() {
                 <div><Label>{t('stock.reference')}</Label><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
                 <div><Label>{t('stock.supplier')}</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} /></div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div><Label>{t('stock.costPrice')} (€)</Label><Input type="number" value={form.internal_cost} onChange={e => setForm({ ...form, internal_cost: Number(e.target.value) })} /></div>
-                <div><Label>{t('stock.salePrice')} (€)</Label><Input type="number" value={form.sale_price} onChange={e => setForm({ ...form, sale_price: Number(e.target.value) })} /></div>
-                <div><Label>{t('catalog.vatRate')} (%)</Label><Input type="number" value={form.vat_rate} onChange={e => setForm({ ...form, vat_rate: Number(e.target.value) })} /></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div><Label>{t('stock.costPrice')} (€)</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.internal_cost === 0 ? "" : form.internal_cost} onChange={e => setForm({ ...form, internal_cost: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>{t('stock.salePrice')} (€)</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.sale_price === 0 ? "" : form.sale_price} onChange={e => setForm({ ...form, sale_price: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>{t('catalog.vatRate')} (%)</Label><Input type="number" inputMode="decimal" placeholder="23" value={form.vat_rate === 0 ? "" : form.vat_rate} onChange={e => setForm({ ...form, vat_rate: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>{t('stock.currentStock')}</Label><Input type="number" value={form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: Number(e.target.value) })} /></div>
-                <div><Label>{t('stock.minStock')}</Label><Input type="number" value={form.min_stock} onChange={e => setForm({ ...form, min_stock: Number(e.target.value) })} /></div>
+                <div><Label>{t('stock.currentStock')}</Label><Input type="number" inputMode="numeric" placeholder="0" value={form.stock_quantity === 0 ? "" : form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>{t('stock.minStock')}</Label><Input type="number" inputMode="numeric" placeholder="0" value={form.min_stock === 0 ? "" : form.min_stock} onChange={e => setForm({ ...form, min_stock: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.active} onCheckedChange={v => setForm({ ...form, active: v })} />

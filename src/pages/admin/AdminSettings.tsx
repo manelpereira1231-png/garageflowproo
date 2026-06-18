@@ -111,8 +111,21 @@ export default function AdminSettings() {
           if (row.key === "plan_limits") setPlanLimits(prev => ({ ...prev, ...row.value }));
           if (row.key === "notifications") setNotifications(prev => ({ ...prev, ...row.value }));
           if (row.key === "pdf") setPdf(row.value as PdfSettings);
-          if (row.key === "pricing") setPricing(prev => ({ ...prev, ...row.value }));
           if (row.key === "feature_gates") setFeatureGates(prev => ({ ...prev, ...row.value }));
+        });
+      }
+      // Pricing comes from country_settings (single source of truth) — display PT defaults.
+      const { data: pt } = await supabase
+        .from("country_settings")
+        .select("saas_pro_monthly,saas_pro_yearly,saas_garage_monthly,saas_garage_yearly")
+        .eq("code", "PT")
+        .maybeSingle();
+      if (pt) {
+        setPricing({
+          proMonthly: Number(pt.saas_pro_monthly) || 0,
+          proAnnual: Number(pt.saas_pro_yearly) || 0,
+          garageMonthly: Number(pt.saas_garage_monthly) || 0,
+          garageAnnual: Number(pt.saas_garage_yearly) || 0,
         });
       }
       setLoading(false);

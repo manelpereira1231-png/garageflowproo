@@ -557,7 +557,7 @@ export default function Stock() {
               </div>
               <div>
                 <Label>{t('stock.quantity')}</Label>
-                <Input type="number" min={1} value={movForm.quantity} onChange={e => setMovForm({ ...movForm, quantity: Number(e.target.value) })} />
+                <Input type="number" inputMode="numeric" min={1} placeholder="1" value={movForm.quantity === 0 ? "" : movForm.quantity} onChange={e => setMovForm({ ...movForm, quantity: e.target.value === "" ? 0 : Number(e.target.value) })} />
               </div>
             </div>
             <div>

@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Globe, Save, Plus, Edit, Power, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { reloadCountriesFromDB } from "@/lib/regionConfig";
+import { clearPricingCache } from "@/hooks/useCountryPricing";
 
 interface CountryRow {
   code: string;
@@ -83,6 +85,8 @@ export default function AdminCountries() {
       .update({ active: !c.active }).eq("code", c.code);
     if (error) return toast.error("Erro: " + error.message);
     toast.success(`${c.name} ${!c.active ? "ativado" : "desativado"}`);
+    clearPricingCache();
+    await reloadCountriesFromDB();
     load();
   };
 
@@ -98,8 +102,10 @@ export default function AdminCountries() {
       : await supabase.from("country_settings").update(payload as any).eq("code", editing.code);
     setSaving(false);
     if (error) return toast.error("Erro: " + error.message);
-    toast.success(`País ${isNew ? "criado" : "atualizado"}`);
+    toast.success(`País ${isNew ? "criado" : "atualizado"} — preços propagados em tempo real`);
     setEditing(null);
+    clearPricingCache();
+    await reloadCountriesFromDB();
     load();
   };
 

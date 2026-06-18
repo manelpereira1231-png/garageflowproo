@@ -111,8 +111,21 @@ export default function AdminSettings() {
           if (row.key === "plan_limits") setPlanLimits(prev => ({ ...prev, ...row.value }));
           if (row.key === "notifications") setNotifications(prev => ({ ...prev, ...row.value }));
           if (row.key === "pdf") setPdf(row.value as PdfSettings);
-          if (row.key === "pricing") setPricing(prev => ({ ...prev, ...row.value }));
           if (row.key === "feature_gates") setFeatureGates(prev => ({ ...prev, ...row.value }));
+        });
+      }
+      // Pricing comes from country_settings (single source of truth) — display PT defaults.
+      const { data: pt } = await supabase
+        .from("country_settings")
+        .select("saas_pro_monthly,saas_pro_yearly,saas_garage_monthly,saas_garage_yearly")
+        .eq("code", "PT")
+        .maybeSingle();
+      if (pt) {
+        setPricing({
+          proMonthly: Number(pt.saas_pro_monthly) || 0,
+          proAnnual: Number(pt.saas_pro_yearly) || 0,
+          garageMonthly: Number(pt.saas_garage_monthly) || 0,
+          garageAnnual: Number(pt.saas_garage_yearly) || 0,
         });
       }
       setLoading(false);
@@ -127,7 +140,6 @@ export default function AdminSettings() {
       { key: "plan_limits", value: planLimits },
       { key: "notifications", value: notifications },
       { key: "pdf", value: pdf },
-      { key: "pricing", value: pricing },
       { key: "feature_gates", value: featureGates },
     ];
     
@@ -262,35 +274,19 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* Pricing */}
-      <div className="stat-card space-y-4">
+      {/* Pricing — unified source: country_settings (managed in /admin/countries) */}
+      <div className="stat-card space-y-3">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-primary" /> Preços dos Planos
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Pro Mensal (€)</Label>
-            <Input type="number" step="0.01" value={pricing.proMonthly}
-              onChange={e => setPricing(s => ({ ...s, proMonthly: Number(e.target.value) }))} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Pro Anual (€)</Label>
-            <Input type="number" step="0.01" value={pricing.proAnnual}
-              onChange={e => setPricing(s => ({ ...s, proAnnual: Number(e.target.value) }))} />
-            <p className="text-[10px] text-muted-foreground">= €{(pricing.proAnnual / 12).toFixed(2)}/mês</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Garage Mensal (€)</Label>
-            <Input type="number" step="0.01" value={pricing.garageMonthly}
-              onChange={e => setPricing(s => ({ ...s, garageMonthly: Number(e.target.value) }))} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Garage Anual (€)</Label>
-            <Input type="number" step="0.01" value={pricing.garageAnnual}
-              onChange={e => setPricing(s => ({ ...s, garageAnnual: Number(e.target.value) }))} />
-            <p className="text-[10px] text-muted-foreground">= €{(pricing.garageAnnual / 12).toFixed(2)}/mês</p>
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Os preços são geridos por país (uma única fonte de verdade) em <strong>Países & Mercados Globais</strong>.
+          Alterações aplicam-se imediatamente à página de planos pública e ao checkout — sem necessidade de refresh.
+          Para alterar o valor efetivamente cobrado pelo Stripe, atualiza também o <em>Stripe Price ID</em> nessa página.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <a href="/admin/countries">Gerir preços por país →</a>
+        </Button>
       </div>
 
       {/* Feature Gates */}

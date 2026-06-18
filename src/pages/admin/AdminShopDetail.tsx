@@ -35,7 +35,9 @@ interface SubDetail {
   discount_applied_at: string | null; discount_expires_at: string | null;
 }
 
-const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+// Plan prices are loaded dynamically from country_settings (single source of truth).
+// We seed PT defaults to keep early renders sane, then overwrite from the DB.
+let PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 export default function AdminShopDetail() {
   const { t } = useLanguage();
@@ -165,6 +167,21 @@ export default function AdminShopDetail() {
 
   useEffect(() => {
     fetchAll();
+    // Refresh PLAN_PRICES from the single source of truth (country_settings PT).
+    (async () => {
+      const { data: pt } = await supabase
+        .from("country_settings")
+        .select("saas_pro_monthly,saas_garage_monthly")
+        .eq("code", "PT")
+        .maybeSingle();
+      if (pt) {
+        PLAN_PRICES = {
+          free: 0,
+          pro: Number(pt.saas_pro_monthly) || 0,
+          garage: Number(pt.saas_garage_monthly) || 0,
+        };
+      }
+    })();
     if (!id) return;
 
     const channel = supabase

@@ -179,6 +179,19 @@ export async function loadCountriesFromDB(): Promise<void> {
   }
 }
 
+/**
+ * Force-reload country pricing from DB and notify every listener (LandingPage,
+ * useCountryPricing, Billing) so prices update without a full page refresh.
+ * Call this from admin pages right after saving country_settings rows.
+ */
+export async function reloadCountriesFromDB(): Promise<void> {
+  runtimeCountries = null;
+  await loadCountriesFromDB();
+  try {
+    window.dispatchEvent(new CustomEvent("garageflow:pricing-updated"));
+  } catch {}
+}
+
 function getCountriesMap(): Record<string, CountryConfig> {
   return runtimeCountries || STATIC_COUNTRIES;
 }

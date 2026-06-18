@@ -104,11 +104,9 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
 };
 
-const PLAN_PRICES = {
-  free: { monthly: 0, yearly: 0 },
-  pro: { monthly: 49, yearly: 490 },
-  garage: { monthly: 99, yearly: 990 },
-};
+// Prices are NOT hardcoded here anymore — they live in country_settings (single
+// source of truth) and are read via @/lib/regionConfig::getRegionalPricing().
+// Use that helper directly wherever you need to display a plan price.
 
 const STORAGE_KEY = "garageflow_active_shop";
 const subscriptionCache = new Map<string, Subscription | null>();
@@ -301,7 +299,7 @@ export function useSubscription() {
       : rawPlan;
   
   const limits = PLAN_LIMITS[effectivePlan];
-  const prices = PLAN_PRICES;
+  // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
   const trialDaysLeft = subscription?.trial_end
     ? Math.max(0, Math.ceil((new Date(subscription.trial_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -337,7 +335,6 @@ export function useSubscription() {
     subscription,
     plan: effectivePlan,
     limits,
-    prices,
     loading,
     shopId,
     isTrialing,

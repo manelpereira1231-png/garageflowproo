@@ -167,6 +167,21 @@ export default function AdminShopDetail() {
 
   useEffect(() => {
     fetchAll();
+    // Refresh PLAN_PRICES from the single source of truth (country_settings PT).
+    (async () => {
+      const { data: pt } = await supabase
+        .from("country_settings")
+        .select("saas_pro_monthly,saas_garage_monthly")
+        .eq("code", "PT")
+        .maybeSingle();
+      if (pt) {
+        PLAN_PRICES = {
+          free: 0,
+          pro: Number(pt.saas_pro_monthly) || 0,
+          garage: Number(pt.saas_garage_monthly) || 0,
+        };
+      }
+    })();
     if (!id) return;
 
     const channel = supabase

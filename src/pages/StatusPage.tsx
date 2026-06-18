@@ -84,7 +84,7 @@ export default function StatusPage() {
       <Helmet>
         <title>Estado do Sistema · GarageFlow</title>
         <meta name="description" content="Estado em tempo real dos serviços do GarageFlow: base de dados, autenticação, edge functions e CDN." />
-        <link rel="canonical" href="https://garageflow-pt.lovable.app/status" />
+        <link rel="canonical" href="https://www.garageflow.pt/status" />
       </Helmet>
 
       <div className="min-h-screen bg-background p-6">

@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
                     <h2>Olá ${invite.workshop_name || ""}!</h2>
                     <p>O parceiro <strong>${partnerName}</strong> convidou-o para o GarageFlow com desconto exclusivo de <strong>${invite.discount_percent}%</strong>.</p>
                     <p>Plano: <strong>${invite.plan_offer.toUpperCase()}</strong> | Trial: <strong>${invite.trial_days} dias</strong></p>
-                    <a href="https://garageflow-pt.lovable.app/auth?invite=${invite.invite_token}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:white;border-radius:8px;text-decoration:none;margin-top:16px;">Começar Agora</a>
+                    <a href="https://www.garageflow.pt/auth?invite=${invite.invite_token}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:white;border-radius:8px;text-decoration:none;margin-top:16px;">Começar Agora</a>
                   </div>`,
               }),
             });

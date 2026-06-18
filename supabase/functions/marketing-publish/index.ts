@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 async function ensureCampaignImage(supa: any, campaignId: string, c: any, primaryText: string) {
   if (c.image_url) return c.image_url;
 
-  const fallback = "https://garageflow-pt.lovable.app/og-image.jpg";
+  const fallback = "https://www.garageflow.pt/og-image.jpg";
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) return fallback;
 
@@ -164,7 +164,7 @@ async function googleAdsCsv(supa: any, userId: string, body: any) {
   const rsaRow: any[] = [c.title, "AdGroup-Principal", "Responsive search ad"];
   for (let i = 0; i < 15; i++) rsaRow.push(headlines[i] ?? "");
   for (let i = 0; i < 4; i++) rsaRow.push(descriptions[i] ?? "");
-  rsaRow.push("https://garageflow-pt.lovable.app", "Enabled");
+  rsaRow.push("https://www.garageflow.pt", "Enabled");
   const rsaHeader = ["Campaign", "Ad group", "Ad type"];
   for (let i = 1; i <= 15; i++) rsaHeader.push(`Headline ${i}`);
   for (let i = 1; i <= 4; i++) rsaHeader.push(`Description ${i}`);
@@ -225,7 +225,7 @@ async function organicShareUrl(supa: any, userId: string, body: any) {
   let instructions: string[] = [];
 
   if (p.channel === "facebook") {
-    openUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://garageflow-pt.lovable.app")}&quote=${encodeURIComponent(fullText)}`;
+    openUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://www.garageflow.pt")}&quote=${encodeURIComponent(fullText)}`;
     instructions = [
       "1. O Facebook abre com o texto pré-preenchido",
       "2. Adiciona a imagem (clica em Foto/Vídeo)",
@@ -300,7 +300,7 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
   const GRAPH = "https://graph.facebook.com/v21.0";
   const objective = body?.objective ?? "OUTCOME_LEADS";
   const dailyBudgetCents = Math.max(100, Math.round((Number(c.monthly_budget_eur ?? 200) / 30) * 100));
-  const landing = body?.landingUrl ?? "https://garageflow-pt.lovable.app";
+  const landing = body?.landingUrl ?? "https://www.garageflow.pt";
   const headline = (c.headlines?.[0] ?? c.title ?? "GarageFlow").slice(0, 40);
   const primaryText = (c.descriptions?.[0] ?? c.angle ?? "Software para oficinas").slice(0, 240);
   const message = primaryText;
@@ -328,7 +328,7 @@ async function metaApiPublish(supa: any, userId: string, body: any) {
 
 
   // ===== 0) Gera imagem (AI) e faz upload para storage privada → signed URL longa =====
-  let pictureUrl = "https://garageflow-pt.lovable.app/og-image.jpg";
+  let pictureUrl = "https://www.garageflow.pt/og-image.jpg";
   try {
     if (c.image_url) {
       pictureUrl = c.image_url;

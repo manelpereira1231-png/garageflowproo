@@ -288,9 +288,44 @@ export default function Dashboard() {
       } finally {
         setDataLoaded(true);
       }
-    };
+  }, [language, activeShopId, isReady, user, plan]);
+
+  useEffect(() => {
     loadData();
-  }, [language, activeShopId, isReady, user]);
+  }, [loadData]);
+
+  // Realtime: refresh dashboard data automatically when relevant tables change for this shop.
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!activeShopId) return;
+    const debouncedReload = () => {
+      if (reloadTimer.current) clearTimeout(reloadTimer.current);
+      reloadTimer.current = setTimeout(() => { loadData(); }, 400);
+    };
+    const tables = [
+      "work_orders",
+      "quotes",
+      "invoices",
+      "alerts",
+      "appointments",
+      "stock_movements",
+      "parts",
+      "clients",
+    ];
+    const channel = supabase.channel(`dashboard-live-${activeShopId}`);
+    tables.forEach((table) => {
+      channel.on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table, filter: `shop_id=eq.${activeShopId}` },
+        debouncedReload,
+      );
+    });
+    channel.subscribe();
+    return () => {
+      if (reloadTimer.current) clearTimeout(reloadTimer.current);
+      supabase.removeChannel(channel);
+    };
+  }, [activeShopId, loadData]);
 
   const alertTypeColors: Record<string, string> = {
     payment_failed: "text-destructive",

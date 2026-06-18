@@ -313,9 +313,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
+  // Plan-based feature gating: hide items the current plan can't use.
+  // Upgrade prompts remain available inside the destination page (PlanGate),
+  // but the sidebar shows only what the user can actually open.
+  const planVisibleItems = navItems.filter((item) => !item.locked);
   const baseVisibleItems = isGuidedMode
-    ? navItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
-    : navItems.filter((item) => !sidebarPrefs.isHidden(item.path));
+    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
+    : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));
 
   // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.
   const favoriteItems = isGuidedMode

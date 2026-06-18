@@ -202,20 +202,23 @@ export default function ServiceForm() {
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
           {lines.map(line => (
             <div key={line.id} className="grid grid-cols-12 gap-2 items-end border-b border-border pb-3">
-              <div className="col-span-12 sm:col-span-1">
+              <div className="col-span-6 sm:col-span-1">
                 <Label className="text-xs">{t('line.type')}</Label>
                 <Select value={line.type} onValueChange={v => updateLine(line.id, 'type', v)}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="service">{t('line.service')}</SelectItem><SelectItem value="part">{t('line.part')}</SelectItem></SelectContent>
                 </Select>
               </div>
+              <div className="col-span-6 sm:col-span-1 flex sm:hidden justify-end">
+                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+              </div>
               <div className="col-span-12 sm:col-span-3"><Label className="text-xs">{t('line.description')}</Label><Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required /></div>
-              <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" min={1} value={line.quantity} onChange={e => updateLine(line.id, 'quantity', +e.target.value)} /></div>
-              <div className="col-span-3 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" step="0.01" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', +e.target.value)} /></div>
-              <div className="col-span-3 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" step="0.01" value={line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', +e.target.value)} /></div>
-              <div className="col-span-2 sm:col-span-1"><Label className="text-xs">{t('line.vat')}</Label><Input className="h-9 text-sm" type="number" value={line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', +e.target.value)} /></div>
-              <div className="col-span-1 sm:col-span-1 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-medium h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
-              <div className="col-span-12 sm:col-span-1 flex justify-end"><Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button></div>
+              <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
+              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
+              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
+              <div className="col-span-6 sm:col-span-1"><Label className="text-xs">{t('line.vat')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
+              <div className="col-span-6 sm:col-span-1 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-medium h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
+              <div className="hidden sm:flex sm:col-span-1 justify-end"><Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button></div>
             </div>
           ))}
         </div>

@@ -363,10 +363,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const isActive = isPathActive(location.pathname, item.path);
               const muted = sidebarPrefs.isMuted(item.path);
               const showBadge = !muted && item.badge && item.badge > 0;
+              const handleClick = (e: React.MouseEvent) => {
+                // Force programmatic navigation so nothing can intercept the Link click
+                // (e.g. service workers, prefetch, plan gates redirecting). This is
+                // especially important for the Market entry which must always navigate.
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // allow open-in-new-tab
+                e.preventDefault();
+                setSidebarOpen(false);
+                if (location.pathname !== item.path) {
+                  navigate(item.path);
+                }
+              };
               const navLink = (
                 <Link
                   to={item.path}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={handleClick}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
                   onTouchStart={() => handlePrefetch(item.path)}

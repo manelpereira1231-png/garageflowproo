@@ -104,11 +104,9 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
 };
 
-const PLAN_PRICES = {
-  free: { monthly: 0, yearly: 0 },
-  pro: { monthly: 49, yearly: 490 },
-  garage: { monthly: 99, yearly: 990 },
-};
+// Prices are NOT hardcoded here anymore — they live in country_settings (single
+// source of truth) and are read via @/lib/regionConfig::getRegionalPricing().
+// Use that helper directly wherever you need to display a plan price.
 
 const STORAGE_KEY = "garageflow_active_shop";
 const subscriptionCache = new Map<string, Subscription | null>();

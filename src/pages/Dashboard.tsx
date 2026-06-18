@@ -59,8 +59,7 @@ export default function Dashboard() {
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = useCallback(async () => {
       if (!isReady) return;
 
       if (!user) {

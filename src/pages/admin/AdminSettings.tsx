@@ -140,7 +140,6 @@ export default function AdminSettings() {
       { key: "plan_limits", value: planLimits },
       { key: "notifications", value: notifications },
       { key: "pdf", value: pdf },
-      { key: "pricing", value: pricing },
       { key: "feature_gates", value: featureGates },
     ];
     

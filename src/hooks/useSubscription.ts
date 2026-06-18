@@ -299,7 +299,7 @@ export function useSubscription() {
       : rawPlan;
   
   const limits = PLAN_LIMITS[effectivePlan];
-  const prices = PLAN_PRICES;
+  // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
   const trialDaysLeft = subscription?.trial_end
     ? Math.max(0, Math.ceil((new Date(subscription.trial_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))

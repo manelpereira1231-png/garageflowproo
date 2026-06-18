@@ -149,7 +149,7 @@ serve(async (req) => {
     // Always use the custom domain
     const rawOrigin = req.headers.get("origin") || "";
     const origin = rawOrigin.includes("lovable.app") || rawOrigin.includes("lovableproject.com") || !rawOrigin
-      ? "https://garageflow.pt"
+      ? "https://www.garageflow.pt"
       : rawOrigin;
 
     const sessionParams: any = {

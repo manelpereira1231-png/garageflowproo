@@ -35,7 +35,9 @@ interface SubDetail {
   discount_applied_at: string | null; discount_expires_at: string | null;
 }
 
-const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+// Plan prices are loaded dynamically from country_settings (single source of truth).
+// We seed PT defaults to keep early renders sane, then overwrite from the DB.
+let PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 export default function AdminShopDetail() {
   const { t } = useLanguage();

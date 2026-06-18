@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Globe, Save, Plus, Edit, Power, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { reloadCountriesFromDB } from "@/lib/regionConfig";
+import { clearPricingCache } from "@/hooks/useCountryPricing";
 
 interface CountryRow {
   code: string;

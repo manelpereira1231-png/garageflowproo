@@ -57,6 +57,7 @@ import AppointmentsBell from "@/components/AppointmentsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
+import { useEnabledFeatureSet } from "@/lib/features";
 
 type NavItem = {
   path: string;
@@ -65,6 +66,8 @@ type NavItem = {
   badge?: number;
   planBadge?: "Pro" | "Garage";
   locked?: boolean;
+  /** Feature slug from `plan_features`. If set and disabled for plan, item is hidden. */
+  featureSlug?: string;
 };
 
 type FinancialNavItem = {
@@ -216,22 +219,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // We no longer auto-exit Lite based on data activity — keeps the experience
   // predictable across sessions.
 
-  const navItems: NavItem[] = useMemo(() => [
-    { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+  const _allNavItems: NavItem[] = useMemo(() => [
+    { path: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard, featureSlug: "dashboard" },
 
-    // ── Operação Diária (o que uma oficina abre todos os dias) ──
-    { path: "/clients", label: t("nav.clients"), icon: Users },
-    { path: "/vehicles", label: t("nav.vehicles"), icon: Car },
-    { path: "/quotes", label: t("nav.quotes"), icon: FileText },
-    { path: "/services", label: t("nav.services"), icon: Wrench },
-    { path: "/workshop", label: t("nav.workshop"), icon: HardHat },
-    { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays },
-    { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck },
+    // ── Operação Diária ──
+    { path: "/clients", label: t("nav.clients"), icon: Users, featureSlug: "clients" },
+    { path: "/vehicles", label: t("nav.vehicles"), icon: Car, featureSlug: "vehicles" },
+    { path: "/quotes", label: t("nav.quotes"), icon: FileText, featureSlug: "quotes" },
+    { path: "/services", label: t("nav.services"), icon: Wrench, featureSlug: "services" },
+    { path: "/workshop", label: t("nav.workshop"), icon: HardHat, featureSlug: "workshop_mode" },
+    { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays, featureSlug: "agenda" },
+    { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck, featureSlug: "inspections" },
 
     // ── Faturação ──
-    { path: "/invoices", label: t("nav.invoices"), icon: Receipt },
-    { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, planBadge: !canUseFeature("basicReports") ? "Pro" : undefined, locked: !canUseFeature("basicReports") },
-    { path: "/billing", label: t("nav.billing"), icon: CreditCard },
+    { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },
+    { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, featureSlug: "financial_reports_basic" },
+    { path: "/billing", label: t("nav.billing"), icon: CreditCard, featureSlug: "billing" },
 
     // ── Comunicação ──
     {
@@ -239,36 +242,40 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       label: t("nav.alerts"),
       icon: Bell,
       badge: pendingAlertCount,
-      planBadge: !canUseFeature("basicAlerts") ? "Pro" : undefined,
-      locked: !canUseFeature("basicAlerts"),
+      featureSlug: "alerts_basic",
     },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, planBadge: "Garage", locked: !canUseFeature("chatbot") },
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, featureSlug: "chat" },
 
     // ── Crescimento ──
-    { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, planBadge: "Garage", locked: !canUseFeature("marketing") },
-    { path: "/automations", label: t("nav.automations"), icon: Zap, planBadge: "Garage", locked: !canUseFeature("automations") },
-    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
-    { path: "/referrals", label: t("nav.referrals"), icon: Gift },
+    { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, featureSlug: "marketing" },
+    { path: "/automations", label: t("nav.automations"), icon: Zap, featureSlug: "automations" },
+    { path: "/loyalty", label: t("nav.loyalty"), icon: Star, featureSlug: "loyalty" },
+    { path: "/referrals", label: t("nav.referrals"), icon: Gift, featureSlug: "referrals" },
 
-    // ── Market oficina ──
-    // ERP users must enter the workshop Market panel, never the public buyer/seller dashboard.
+    // ── Market oficina (controlado por is_carity_partner, não pelo plano) ──
     { path: "/market/inspections", label: "Market Oficina", icon: ShieldCheck, badge: pendingMarketCount },
     ...(isCarityPartner
-      ? [
-          { path: "/market/wallet", label: "Carteira Market", icon: Wallet },
-        ]
+      ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet } as NavItem]
       : []),
 
-    // ── Administração (acesso pontual) ──
-    { path: "/team", label: t("nav.team"), icon: UserPlus, planBadge: !canUseFeature("teamManagement") ? "Pro" : undefined, locked: !canUseFeature("teamManagement") },
-    { path: "/developers", label: "API", icon: Code, planBadge: "Garage", locked: !canUseFeature("api") },
-    { path: "/settings", label: t("nav.settings"), icon: Settings },
+    // ── Administração ──
+    { path: "/team", label: t("nav.team"), icon: UserPlus, featureSlug: "team_management" },
+    { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
+    { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
 
-    // ── Inventário (dados de referência — fim) ──
-    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen },
-    { path: "/stock", label: t("nav.stock"), icon: Package },
-    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck },
-  ], [canUseFeature, pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
+    // ── Inventário ──
+    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
+    { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
+    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
+  ], [pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
+
+  // Filter menu by the feature matrix (single source of truth). Items
+  // without a featureSlug or with permission stay; the rest disappear.
+  const enabledFeatures = useEnabledFeatureSet();
+  const navItems: NavItem[] = useMemo(
+    () => _allNavItems.filter((i) => !i.featureSlug || enabledFeatures.has(i.featureSlug)),
+    [_allNavItems, enabledFeatures]
+  );
 
   // Linear/Notion-style grouping. Order = workshop daily priority.
   // Inventário fica no fim — é dado de referência, não tarefa diária.

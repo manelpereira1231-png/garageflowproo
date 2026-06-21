@@ -14,6 +14,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { setSentryUser } from "@/lib/sentry";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
+const FeatureGate = lazy(() => import("@/components/FeatureGate"));
 const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
 // Critical path - eagerly loaded for instant navigation
@@ -130,6 +131,7 @@ const AdminReports = lazyRetry(() => import("@/pages/admin/AdminReports"));
 const AdminBilling = lazyRetry(() => import("@/pages/admin/AdminBilling"));
 const AdminAlerts = lazyRetry(() => import("@/pages/admin/AdminAlerts"));
 const AdminSettings = lazyRetry(() => import("@/pages/admin/AdminSettings"));
+const AdminFeatureMatrix = lazyRetry(() => import("@/pages/admin/AdminFeatureMatrix"));
 const AdminUsers = lazyRetry(() => import("@/pages/admin/AdminUsers"));
 const AdminEmailLogs = lazyRetry(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazyRetry(() => import("@/pages/admin/AdminFeatureAdoption"));
@@ -345,6 +347,7 @@ const adminRoutes = [
   { path: "/admin/emails", element: <AdminEmailLogs /> },
   { path: "/admin/adoption", element: <AdminFeatureAdoption /> },
   { path: "/admin/settings", element: <AdminSettings /> },
+  { path: "/admin/features", element: <AdminFeatureMatrix /> },
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },
@@ -394,18 +397,18 @@ const shopRoutes = [
   { path: "/invoices/new", element: <InvoiceForm /> },
   { path: "/invoices/:id", element: <InvoiceDetail /> },
   { path: "/financial/reports", element: <PlanGate feature="basicReports" requiredPlan="pro"><FinancialReports /></PlanGate> },
-  { path: "/agenda", element: <Agenda /> },
-  { path: "/catalog", element: <ServiceCatalog /> },
-  { path: "/stock", element: <Stock /> },
-  { path: "/inspections", element: <Inspections /> },
-  { path: "/loyalty", element: <PlanGate feature="loyalty" requiredPlan="garage"><Loyalty /></PlanGate> },
-  { path: "/marketing", element: <PlanGate feature="marketing" requiredPlan="garage"><Marketing /></PlanGate> },
-  { path: "/workshop", element: <Workshop /> },
-  { path: "/automations", element: <PlanGate feature="automations" requiredPlan="garage"><Automations /></PlanGate> },
-  { path: "/developers", element: <PlanGate feature="api" requiredPlan="garage"><Developers /></PlanGate> },
+  { path: "/agenda", element: <FeatureGate feature="agenda" requiredPlan="pro"><Agenda /></FeatureGate> },
+  { path: "/catalog", element: <FeatureGate feature="service_catalog" requiredPlan="pro"><ServiceCatalog /></FeatureGate> },
+  { path: "/stock", element: <FeatureGate feature="stock" requiredPlan="pro"><Stock /></FeatureGate> },
+  { path: "/inspections", element: <FeatureGate feature="inspections" requiredPlan="pro"><Inspections /></FeatureGate> },
+  { path: "/loyalty", element: <FeatureGate feature="loyalty" requiredPlan="garage"><Loyalty /></FeatureGate> },
+  { path: "/marketing", element: <FeatureGate feature="marketing" requiredPlan="garage"><Marketing /></FeatureGate> },
+  { path: "/workshop", element: <FeatureGate feature="workshop_mode" requiredPlan="pro"><Workshop /></FeatureGate> },
+  { path: "/automations", element: <FeatureGate feature="automations" requiredPlan="garage"><Automations /></FeatureGate> },
+  { path: "/developers", element: <FeatureGate feature="api" requiredPlan="garage"><Developers /></FeatureGate> },
   { path: "/partners", element: <PartnersPortal /> },
-  { path: "/referrals", element: <Referrals /> },
-  { path: "/warranties", element: <Warranties /> },
+  { path: "/referrals", element: <FeatureGate feature="referrals" requiredPlan="pro"><Referrals /></FeatureGate> },
+  { path: "/warranties", element: <FeatureGate feature="warranties" requiredPlan="pro"><Warranties /></FeatureGate> },
   // /market/inspections, /market/wallet and /market/payouts live under
   // MarketLayout (see marketAuthedRoutes) so the shop panel renders inside
   // the Market chrome — including the enrollment/config screen when the

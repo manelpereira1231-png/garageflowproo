@@ -2296,6 +2296,39 @@ export type Database = {
         }
         Relationships: []
       }
+      features: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          is_core: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          is_core?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          is_core?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       funnel_events: {
         Row: {
           created_at: string
@@ -4083,6 +4116,41 @@ export type Database = {
           workshop_name?: string
         }
         Relationships: []
+      }
+      plan_features: {
+        Row: {
+          enabled: boolean
+          feature_slug: string
+          id: string
+          limits: Json
+          plan_slug: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_slug: string
+          id?: string
+          limits?: Json
+          plan_slug: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_slug?: string
+          id?: string
+          limits?: Json
+          plan_slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_feature_slug_fkey"
+            columns: ["feature_slug"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       plan_price_history: {
         Row: {
@@ -6664,6 +6732,10 @@ export type Database = {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
       }
+      plan_has_feature: {
+        Args: { _feature: string; _plan: string }
+        Returns: boolean
+      }
       purge_old_rate_limits: { Args: never; Returns: undefined }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       purge_old_stripe_webhook_events: { Args: never; Returns: undefined }
@@ -6749,6 +6821,11 @@ export type Database = {
           _lifecycle_state?: string
         }
         Returns: string
+      }
+      user_best_plan: { Args: { _user_id: string }; Returns: string }
+      user_can_use_feature: {
+        Args: { _feature: string; _user_id: string }
+        Returns: boolean
       }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }

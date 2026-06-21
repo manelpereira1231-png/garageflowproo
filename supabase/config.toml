@@ -111,6 +111,9 @@ verify_jwt = false
 [functions.ai-business-forecast]
 verify_jwt = false
 
+[functions.admin-update-plan-price]
+verify_jwt = false
+
 
 
 

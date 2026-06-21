@@ -536,19 +536,19 @@ export default function AffiliateDashboard() {
                     </div>
                   </div>
 
-                  {/* Commission Tiers */}
+                  {/* Commission Tiers — fully dynamic from country_settings */}
                   <div className="p-4 rounded-xl bg-muted/30 border">
                     <h3 className="font-semibold text-sm mb-3">{t('affiliate.commissionTiers') || "Tabela de Comissões"}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 rounded-lg bg-background text-center">
-                        <p className="text-xl font-black text-primary">10%</p>
+                        <p className="text-xl font-black text-primary">{Math.round(PRO_COMMISSION_RATE * 100)}%</p>
                         <p className="text-xs font-medium">{t('affiliate.planPro') || "Plano Pro"}</p>
-                        <p className="text-xs text-muted-foreground">4,90€/{t('common.month') || "mês"}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(proCommission)}/{t('common.month') || "mês"}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background text-center">
-                        <p className="text-xl font-black text-primary">20%</p>
+                        <p className="text-xl font-black text-primary">{Math.round(GARAGE_COMMISSION_RATE * 100)}%</p>
                         <p className="text-xs font-medium">{t('affiliate.planGarage') || "Plano Garage"}</p>
-                        <p className="text-xs text-muted-foreground">19,80€/{t('common.month') || "mês"}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(garageCommission)}/{t('common.month') || "mês"}</p>
                       </div>
                     </div>
                   </div>

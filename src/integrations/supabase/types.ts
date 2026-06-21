@@ -1825,8 +1825,10 @@ export type Database = {
           saas_pro_yearly: number
           saas_trial_days: number
           stripe_garage_monthly: string | null
+          stripe_garage_product_id: string | null
           stripe_garage_yearly: string | null
           stripe_pro_monthly: string | null
+          stripe_pro_product_id: string | null
           stripe_pro_yearly: string | null
           supported_languages: string[]
           tax_label: string
@@ -1855,8 +1857,10 @@ export type Database = {
           saas_pro_yearly?: number
           saas_trial_days?: number
           stripe_garage_monthly?: string | null
+          stripe_garage_product_id?: string | null
           stripe_garage_yearly?: string | null
           stripe_pro_monthly?: string | null
+          stripe_pro_product_id?: string | null
           stripe_pro_yearly?: string | null
           supported_languages?: string[]
           tax_label?: string
@@ -1885,8 +1889,10 @@ export type Database = {
           saas_pro_yearly?: number
           saas_trial_days?: number
           stripe_garage_monthly?: string | null
+          stripe_garage_product_id?: string | null
           stripe_garage_yearly?: string | null
           stripe_pro_monthly?: string | null
+          stripe_pro_product_id?: string | null
           stripe_pro_yearly?: string | null
           supported_languages?: string[]
           tax_label?: string
@@ -4075,6 +4081,54 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           workshop_name?: string
+        }
+        Relationships: []
+      }
+      plan_price_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          country_code: string
+          currency: string
+          cycle: string
+          id: string
+          new_amount: number
+          new_stripe_price_id: string
+          notes: string | null
+          old_amount: number | null
+          old_stripe_price_id: string | null
+          plan: string
+          stripe_product_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          country_code: string
+          currency: string
+          cycle: string
+          id?: string
+          new_amount: number
+          new_stripe_price_id: string
+          notes?: string | null
+          old_amount?: number | null
+          old_stripe_price_id?: string | null
+          plan: string
+          stripe_product_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          country_code?: string
+          currency?: string
+          cycle?: string
+          id?: string
+          new_amount?: number
+          new_stripe_price_id?: string
+          notes?: string | null
+          old_amount?: number | null
+          old_stripe_price_id?: string | null
+          plan?: string
+          stripe_product_id?: string
         }
         Relationships: []
       }
@@ -6502,8 +6556,10 @@ export type Database = {
           saas_pro_yearly: number
           saas_trial_days: number
           stripe_garage_monthly: string | null
+          stripe_garage_product_id: string | null
           stripe_garage_yearly: string | null
           stripe_pro_monthly: string | null
+          stripe_pro_product_id: string | null
           stripe_pro_yearly: string | null
           supported_languages: string[]
           tax_label: string

@@ -119,6 +119,7 @@ const MarketTerms = lazyRetry(() => import("@/pages/legal/MarketTerms"));
 const Support = lazyRetry(() => import("@/pages/Support"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SupportFab from "@/components/SupportFab";
+import { erpSupabase } from "@/integrations/supabase/realmClients";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -286,6 +287,30 @@ function MarketLoginRouteRedirect() {
   }
 
   return <Navigate to={`/market/auth?${params.toString()}`} replace />;
+}
+
+function GarageMarketEntryRedirect() {
+  const [erpSessionChecked, setErpSessionChecked] = useState(false);
+  const [hasErpSession, setHasErpSession] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    erpSupabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setHasErpSession(Boolean(data.session));
+      setErpSessionChecked(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setHasErpSession(false);
+      setErpSessionChecked(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!erpSessionChecked) return <PageLoader />;
+  return hasErpSession
+    ? <Navigate to="/market/inspections" replace />
+    : <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
 }
 
 function AuthRouteRedirect({
@@ -813,7 +838,7 @@ function AppRoutes() {
             <Route path="/affiliate-login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
-            <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
+            <Route path="/market" element={<GarageMarketEntryRedirect />} />
             <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
             <Route path="/market/listing/:id" element={<LegacyMarketListingRedirect />} />

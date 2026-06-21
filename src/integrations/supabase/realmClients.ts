@@ -53,6 +53,7 @@ export function detectRealm(pathname?: string): Realm {
   const realmParam = new URLSearchParams(query).get("realm");
   if (realmParam === "market") return "market";
   if (realmParam === "erp") return "erp";
+  if (p === "/market/inspections" || p.startsWith("/market/inspections?") || p === "/market/wallet" || p.startsWith("/market/wallet?") || p === "/market/payouts" || p.startsWith("/market/payouts?")) return "erp";
   if (p.startsWith("/market")) return "market";
   // market.* subdomain support
   if (typeof window !== "undefined" && window.location.hostname.startsWith("market.")) return "market";

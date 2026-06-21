@@ -754,6 +754,7 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
           </Route>
+          <Route path="/market" element={<Navigate to="/market/inspections" replace />} />
           <Route path="/market/*" element={<Navigate to="/market/inspections" replace />} />
           <Route path="/carity/*" element={<Navigate to="/market/inspections" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>

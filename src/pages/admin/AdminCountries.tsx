@@ -8,10 +8,60 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Globe, Save, Plus, Edit, Power, Loader2 } from "lucide-react";
+import { Globe, Save, Plus, Edit, Power, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
+
+interface PlanPriceRowProps {
+  label: string;
+  plan: "pro" | "garage";
+  cycle: "monthly" | "yearly";
+  countryCode: string;
+  amount: number;
+  currentPriceId: string | null;
+  onAmountChange: (value: number) => void;
+  onApplied: (result: { amount: number; new_stripe_price_id: string; old_stripe_price_id: string | null }) => void;
+}
+
+function PlanPriceRow({ label, plan, cycle, countryCode, amount, currentPriceId, onAmountChange, onApplied }: PlanPriceRowProps) {
+  const [busy, setBusy] = useState(false);
+  const apply = async () => {
+    if (!countryCode) return toast.error("Guarda primeiro o país antes de aplicar no Stripe");
+    if (!amount || amount <= 0) return toast.error("Valor inválido");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-update-plan-price", {
+        body: { country_code: countryCode, plan, cycle, amount },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`${label}: Stripe Price criado e propagado`);
+      onApplied(data as any);
+      // Broadcast for any open landing/billing tab to refresh immediately
+      try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch { /* ignore */ }
+    } catch (e: any) {
+      toast.error("Falha ao aplicar no Stripe: " + (e?.message || String(e)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex items-end gap-2 p-3 rounded-lg border bg-muted/30">
+      <div className="flex-1 min-w-0">
+        <Label className="text-xs">{label}</Label>
+        <Input type="number" step="0.01" value={amount} onChange={(e) => onAmountChange(Number(e.target.value))} />
+        <p className="text-[10px] text-muted-foreground mt-1 truncate font-mono">
+          {currentPriceId || "sem Stripe Price ainda"}
+        </p>
+      </div>
+      <Button type="button" size="sm" variant="outline" onClick={apply} disabled={busy} className="shrink-0">
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 mr-1" />}
+        Aplicar no Stripe
+      </Button>
+    </div>
+  );
+}
 
 interface CountryRow {
   code: string;
@@ -240,23 +290,41 @@ export default function AdminCountries() {
 
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-sm mb-2">Preços SaaS</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Pro mensal</Label>
-                    <Input type="number" step="0.01" value={editing.saas_pro_monthly || 0} onChange={e => setEditing({ ...editing, saas_pro_monthly: Number(e.target.value) })} />
-                  </div>
-                  <div>
-                    <Label>Pro anual</Label>
-                    <Input type="number" step="0.01" value={editing.saas_pro_yearly || 0} onChange={e => setEditing({ ...editing, saas_pro_yearly: Number(e.target.value) })} />
-                  </div>
-                  <div>
-                    <Label>Garage mensal</Label>
-                    <Input type="number" step="0.01" value={editing.saas_garage_monthly || 0} onChange={e => setEditing({ ...editing, saas_garage_monthly: Number(e.target.value) })} />
-                  </div>
-                  <div>
-                    <Label>Garage anual</Label>
-                    <Input type="number" step="0.01" value={editing.saas_garage_yearly || 0} onChange={e => setEditing({ ...editing, saas_garage_yearly: Number(e.target.value) })} />
-                  </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Edita o valor e clica em <strong>Aplicar no Stripe</strong> para criar
+                  automaticamente o novo Stripe Price e propagar para landing, checkout
+                  e afiliados. Clientes atuais mantêm o preço antigo (o Stripe Price
+                  antigo é apenas desativado, nunca eliminado).
+                </p>
+                <div className="grid grid-cols-1 gap-3">
+                  {([
+                    { key: "saas_pro_monthly",     plan: "pro" as const,    cycle: "monthly" as const, label: "Pro mensal",     priceCol: "stripe_pro_monthly" },
+                    { key: "saas_pro_yearly",      plan: "pro" as const,    cycle: "yearly" as const,  label: "Pro anual",      priceCol: "stripe_pro_yearly" },
+                    { key: "saas_garage_monthly", plan: "garage" as const, cycle: "monthly" as const, label: "Garage mensal", priceCol: "stripe_garage_monthly" },
+                    { key: "saas_garage_yearly",   plan: "garage" as const, cycle: "yearly" as const,  label: "Garage anual",   priceCol: "stripe_garage_yearly" },
+                  ]).map((row) => (
+                    <PlanPriceRow
+                      key={row.key}
+                      label={row.label}
+                      plan={row.plan}
+                      cycle={row.cycle}
+                      countryCode={editing.code || ""}
+                      amount={Number((editing as any)[row.key] || 0)}
+                      currentPriceId={(editing as any)[row.priceCol] || null}
+                      onAmountChange={(v) => setEditing({ ...editing, [row.key]: v } as any)}
+                      onApplied={async (res) => {
+                        // Reflect new Stripe Price ID locally without losing form state.
+                        setEditing({
+                          ...editing,
+                          [row.key]: res.amount,
+                          [row.priceCol]: res.new_stripe_price_id,
+                        } as any);
+                        clearPricingCache();
+                        await reloadCountriesFromDB();
+                        load();
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -283,24 +351,16 @@ export default function AdminCountries() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-semibold text-sm mb-2">IDs Stripe (opcional)</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Pro mensal</Label>
-                    <Input value={editing.stripe_pro_monthly || ""} onChange={e => setEditing({ ...editing, stripe_pro_monthly: e.target.value || null })} placeholder="price_..." />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Pro anual</Label>
-                    <Input value={editing.stripe_pro_yearly || ""} onChange={e => setEditing({ ...editing, stripe_pro_yearly: e.target.value || null })} placeholder="price_..." />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Garage mensal</Label>
-                    <Input value={editing.stripe_garage_monthly || ""} onChange={e => setEditing({ ...editing, stripe_garage_monthly: e.target.value || null })} placeholder="price_..." />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Garage anual</Label>
-                    <Input value={editing.stripe_garage_yearly || ""} onChange={e => setEditing({ ...editing, stripe_garage_yearly: e.target.value || null })} placeholder="price_..." />
-                  </div>
+                <h4 className="font-semibold text-sm mb-2">Stripe Price IDs (read-only)</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Estes IDs são geridos automaticamente pelo botão "Aplicar no Stripe".
+                  Mostrados apenas para auditoria.
+                </p>
+                <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                  <div className="truncate">Pro mensal: {editing.stripe_pro_monthly || "—"}</div>
+                  <div className="truncate">Pro anual: {editing.stripe_pro_yearly || "—"}</div>
+                  <div className="truncate">Garage mensal: {editing.stripe_garage_monthly || "—"}</div>
+                  <div className="truncate">Garage anual: {editing.stripe_garage_yearly || "—"}</div>
                 </div>
               </div>
 

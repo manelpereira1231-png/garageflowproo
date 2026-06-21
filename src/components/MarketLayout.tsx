@@ -51,13 +51,24 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
+  const [isShopOwner, setIsShopOwner] = useState(false);
+  const [pendingOffersCount, setPendingOffersCount] = useState(0);
   const t = useMarketT();
   const { theme } = useTheme();
   const isLight = theme === "light";
   const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
-  const NAV_ITEMS = isDealer
-    ? DEALER_NAV_DEFS
+  const baseNav: any[] = isDealer
+    ? [...DEALER_NAV_DEFS]
     : NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+  // Inject workshop panel entries when the logged-in user owns/works at a shop.
+  // Surfaces pending Market inspection offers right in the Market navigation.
+  const NAV_ITEMS = isShopOwner && !isDealer
+    ? [
+        ...baseNav,
+        { path: "/market/inspections", label: "Painel Oficina", icon: Wrench, isShop: true },
+        { path: "/market/wallet", label: "Carteira", icon: Wallet, isShop: true },
+      ]
+    : baseNav;
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();

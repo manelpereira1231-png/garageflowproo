@@ -319,7 +319,11 @@ export function useSubscription() {
       ? 'free'
       : rawPlan;
   
-  const limits = PLAN_LIMITS[effectivePlan];
+  // Admin-managed overrides (Admin > Platform Settings) merged on top
+  // of static defaults — guarantees the toggles in /admin/settings drive
+  // every feature gate across the app in real time.
+  const overrides = limitOverridesFor(effectivePlan, platformSettings);
+  const limits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
   // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
   const trialDaysLeft = subscription?.trial_end

@@ -381,9 +381,11 @@ const shopRoutes = [
   { path: "/partners", element: <PartnersPortal /> },
   { path: "/referrals", element: <Referrals /> },
   { path: "/warranties", element: <Warranties /> },
-  { path: "/market/inspections", element: <CarityShopInspections /> },
-  { path: "/market/wallet", element: <MarketWallet /> },
-  { path: "/market/payouts", element: <MarketPayoutInfo /> },
+  // /market/inspections, /market/wallet and /market/payouts live under
+  // MarketLayout (see marketAuthedRoutes) so the shop panel renders inside
+  // the Market chrome — including the enrollment/config screen when the
+  // shop hasn't joined Market yet.
+
 ];
 
 const preloadGarageNavigationRoutes = [

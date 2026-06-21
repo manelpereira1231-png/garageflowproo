@@ -20,12 +20,21 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import LandingLayout from "@/components/LandingLayout";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
+
+// Affiliate commission percentages (the only fixed value — the monetary amount
+// is computed dynamically from the current plan price in country_settings).
+const PRO_COMMISSION_RATE = 0.10;
+const GARAGE_COMMISSION_RATE = 0.20;
 
 const PRODUCTION_DOMAIN = "https://garageflow.pt";
 
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { pricing, formatPrice } = useCountryPricing();
+  const proCommission = (pricing?.saas_pro_monthly || 0) * PRO_COMMISSION_RATE;
+  const garageCommission = (pricing?.saas_garage_monthly || 0) * GARAGE_COMMISSION_RATE;
   const [partner, setPartner] = useState<any>(null);
   const [invites, setInvites] = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
@@ -527,19 +536,19 @@ export default function AffiliateDashboard() {
                     </div>
                   </div>
 
-                  {/* Commission Tiers */}
+                  {/* Commission Tiers — fully dynamic from country_settings */}
                   <div className="p-4 rounded-xl bg-muted/30 border">
                     <h3 className="font-semibold text-sm mb-3">{t('affiliate.commissionTiers') || "Tabela de Comissões"}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 rounded-lg bg-background text-center">
-                        <p className="text-xl font-black text-primary">10%</p>
+                        <p className="text-xl font-black text-primary">{Math.round(PRO_COMMISSION_RATE * 100)}%</p>
                         <p className="text-xs font-medium">{t('affiliate.planPro') || "Plano Pro"}</p>
-                        <p className="text-xs text-muted-foreground">4,90€/{t('common.month') || "mês"}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(proCommission)}/{t('common.month') || "mês"}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-background text-center">
-                        <p className="text-xl font-black text-primary">20%</p>
+                        <p className="text-xl font-black text-primary">{Math.round(GARAGE_COMMISSION_RATE * 100)}%</p>
                         <p className="text-xs font-medium">{t('affiliate.planGarage') || "Plano Garage"}</p>
-                        <p className="text-xs text-muted-foreground">19,80€/{t('common.month') || "mês"}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(garageCommission)}/{t('common.month') || "mês"}</p>
                       </div>
                     </div>
                   </div>

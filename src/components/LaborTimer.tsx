@@ -184,8 +184,8 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
           {rate > 0 && totalSeconds > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <DollarSign className="w-3 h-3" />
-              <span className="font-medium">{totalCost.toFixed(2)}{currencySym}</span>
-              <span>({formatHours(totalSeconds)}h × {rate}{currencySym}/h)</span>
+              <span className="font-medium">{formatMoney(totalCost)}</span>
+              <span>({formatHours(totalSeconds / 3600)} × {formatHourlyRate(rate)})</span>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
               <span className="text-xs font-medium">{name}</span>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{formatDuration(secs)}</span>
-                {rate > 0 && <span className="text-xs text-primary font-medium">{((secs / 3600) * rate).toFixed(2)}{currencySym}</span>}
+                {rate > 0 && <span className="text-xs text-primary font-medium">{formatMoney((secs / 3600) * rate)}</span>}
               </div>
             </div>
           ))}
@@ -311,7 +311,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
                 </span>
                 {rate > 0 && (
                   <span className="text-xs text-primary font-medium">
-                    {((timer.duration_seconds / 3600) * rate).toFixed(2)}{currencySym}
+                    {formatMoney((timer.duration_seconds / 3600) * rate)}
                   </span>
                 )}
               </div>

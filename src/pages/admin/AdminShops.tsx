@@ -480,8 +480,8 @@ export default function AdminShops() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="pro">Pro (€49)</SelectItem>
-                  <SelectItem value="garage">Garage (€99)</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="garage">Garage</SelectItem>
                 </SelectContent>
               </Select>
             </div>

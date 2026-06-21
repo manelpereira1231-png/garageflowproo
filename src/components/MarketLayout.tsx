@@ -14,6 +14,8 @@ import { useTheme } from "@/components/ThemeProvider";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useMarketT } from "@/i18n/marketTranslations";
 
+const WORKSHOP_MARKET_PATHS = new Set(["/market/inspections", "/market/wallet", "/market/payouts"]);
+
 const NAV_ITEM_DEFS = [
   { path: "/market/dashboard", labelKey: "market.nav.dashboard", icon: LayoutDashboard },
   { path: "/market/my-listings", labelKey: "market.nav.listings", icon: Car },
@@ -57,18 +59,22 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const { theme } = useTheme();
   const isLight = theme === "light";
   const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
+  const isWorkshopPanel = WORKSHOP_MARKET_PATHS.has(location.pathname);
   const baseNav: any[] = isDealer
     ? [...DEALER_NAV_DEFS]
     : NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
   // Inject workshop panel entries when the logged-in user owns/works at a shop.
   // Surfaces pending Market inspection offers right in the Market navigation.
-  const NAV_ITEMS = isShopOwner && !isDealer
-    ? [
-        ...baseNav,
-        { path: "/market/inspections", label: "Painel Oficina", icon: Wrench, isShop: true },
-        { path: "/market/wallet", label: "Carteira", icon: Wallet, isShop: true },
-      ]
-    : baseNav;
+  const workshopNav = [
+    { path: "/market/inspections", label: "Painel Oficina", icon: Wrench, isShop: true },
+    { path: "/market/wallet", label: "Carteira", icon: Wallet, isShop: true },
+    { path: "/market/payouts", label: "Pagamentos", icon: FileCheck, isShop: true },
+  ];
+  const NAV_ITEMS = isWorkshopPanel
+    ? workshopNav
+    : isShopOwner && !isDealer
+      ? [...baseNav, ...workshopNav.slice(0, 2)]
+      : baseNav;
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,12 +154,12 @@ export default function MarketLayout({ children, variant }: { children?: React.R
         {/* Top nav — premium glass */}
         <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link to={isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group">
+            <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group">
               <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
-                {isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}
+                  {isWorkshopPanel ? <Wrench className="h-4 w-4 text-amber-400" /> : isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}
               </div>
               <span className="text-lg font-bold tracking-tight">
-                GarageFlow <span className="text-amber-400">{isDealer ? "Stand" : "Market"}</span>
+                GarageFlow <span className="text-amber-400">{isWorkshopPanel ? "Oficina Market" : isDealer ? "Stand" : "Market"}</span>
               </span>
               {isDealer && (
                 <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 ml-1 rounded text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 tracking-wider">

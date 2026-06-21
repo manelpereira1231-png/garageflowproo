@@ -199,10 +199,15 @@ export default function AdminSettings() {
           <h1 className="page-title">Configurações da Plataforma</h1>
           <p className="text-sm text-muted-foreground">Configurações globais do GarageFlow (persistidas na base de dados)</p>
         </div>
-        <Button onClick={handleSave} className="gap-2" disabled={saving}>
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
-          {saving ? "A guardar..." : "Guardar Tudo"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="gap-2">
+            <a href="/admin/features"><Lock className="w-4 h-4" /> Matriz de Funcionalidades</a>
+          </Button>
+          <Button onClick={handleSave} className="gap-2" disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
+            {saving ? "A guardar..." : "Guardar Tudo"}
+          </Button>
+        </div>
       </div>
 
       {/* Plan Limits */}

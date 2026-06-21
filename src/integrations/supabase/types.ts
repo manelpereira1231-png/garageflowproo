@@ -3452,6 +3452,65 @@ export type Database = {
           },
         ]
       }
+      message_templates: {
+        Row: {
+          active: boolean
+          allowed_hours_end: number
+          allowed_hours_start: number
+          auto_send: boolean
+          body_text: string
+          channel: string
+          created_at: string
+          event_slug: string
+          id: string
+          name: string
+          schedule_minutes: number
+          shop_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          allowed_hours_end?: number
+          allowed_hours_start?: number
+          auto_send?: boolean
+          body_text?: string
+          channel?: string
+          created_at?: string
+          event_slug: string
+          id?: string
+          name: string
+          schedule_minutes?: number
+          shop_id: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          allowed_hours_end?: number
+          allowed_hours_start?: number
+          auto_send?: boolean
+          body_text?: string
+          channel?: string
+          created_at?: string
+          event_slug?: string
+          id?: string
+          name?: string
+          schedule_minutes?: number
+          shop_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

@@ -262,6 +262,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/team", label: t("nav.team"), icon: UserPlus, featureSlug: "team_management" },
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
+    { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
 
     // ── Inventário ──
     { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },

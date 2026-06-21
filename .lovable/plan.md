@@ -1,101 +1,81 @@
-# Auditoria e Sistema Unificado de Planos, Features e Gating
+# Plano — Mensagens Sem Código + UI Consistente + Moeda EUR
 
-Este é um trabalho de grande dimensão. Vou executá-lo em **6 fases sequenciais**, cada uma validada antes de avançar, para evitar regressões num projeto desta complexidade (já tem centenas de páginas, edge functions, Stripe multi-país, Market, afiliados, etc.).
-
-Regras: não remover funcionalidades, não mexer em auth, não quebrar Stripe de clientes existentes, não alterar layouts sem necessidade. Tudo retrocompatível.
+Três frentes independentes, executadas numa única entrega.
 
 ---
 
-## Fase 1 — Auditoria (READ-ONLY, sem alterações)
+## 1. Sistema de Mensagens Automáticas (sem HTML)
 
-Antes de qualquer código, gerar relatório em `docs/AUDIT_PLANS.md` cobrindo:
+### Backend
+- Nova tabela `message_templates` (shop_id, slug, channel `email|whatsapp|sms`, name, subject, body_text, variables jsonb, auto_send bool, schedule_minutes int, active bool) + RLS + GRANT.
+- Tabela `message_template_events` (slug do evento: quote_created, quote_approved, service_done, invoice_issued, reminder, etc.) — seed inicial.
+- Edge function `send-customer-message`:
+  - Recebe `{ shop_id, template_slug, channel, recipient, context }`.
+  - Renderiza variáveis `{{var}}` no texto puro.
+  - Para email: injeta texto num **layout HTML profissional fixo** (header com logo/cor da oficina vinda de `shops`, corpo, CTA opcional, footer) — utilizador nunca vê esse HTML.
+  - Para WhatsApp/SMS: envia texto puro.
 
-1. **Inventário completo** — varrer `src/pages`, `src/App.tsx`, `src/components/Layout.tsx`, `MarketLayout.tsx`, `supabase/functions/*`, `useSubscription.ts`, `PlanGate.tsx`, `platformSettings.ts`.
-2. Listar: todas as rotas, todos os itens de menu, todas as edge functions, todos os hardcodes de preço (`49`, `69`, `99`, `129`, `19`, `39`), todas as tabelas em `supabase_realtime`, todos os pontos onde se lê `subscription.plan`.
-3. Mapear estado atual vs. estado-alvo (matriz feature × plano).
-4. Listar discrepâncias (ex.: features acessíveis por URL sem gate, menus hardcoded, preços fixos na landing/afiliados).
+### Frontend — `/settings/messages`
+- Lista de templates por evento.
+- Editor visual (sem HTML):
+  - Campo **Assunto** (input simples).
+  - Campo **Mensagem** (textarea estilo WhatsApp).
+  - Barra de **variáveis** clicáveis que inserem `{{cliente_nome}}` etc no cursor.
+  - **Pré-visualização ao vivo** com dados fictícios (João Silva / BMW Série 3).
+  - Toggle: Envio automático / Aprovação manual.
+  - Agendamento (atraso em minutos + janela horária permitida).
+- Tabs por canal (Email / WhatsApp / SMS — SMS marcado "em breve").
+- Nenhum input de HTML/CSS exposto.
 
-**Entregável Fase 1:** apenas o documento de auditoria. O utilizador revê antes de avançar.
-
----
-
-## Fase 2 — Esquema único de verdade (DB)
-
-Migração SQL única com:
-
-- `features` (slug, name, description, category, active) — catálogo de TODAS as funcionalidades descobertas na Fase 1.
-- `plan_features` (plan_slug, feature_slug, enabled, limits jsonb) — matriz editável.
-- Seed inicial respeitando o que **já existe hoje** (sem cortar acesso a ninguém).
-- View `v_plan_feature_matrix` para o admin consumir.
-- RPC `user_can_use_feature(_user_id, _shop_id, _feature_slug) returns boolean` — SECURITY DEFINER, usada por frontend e edge functions.
-- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE` para `features`, `plan_features` (e auditar/adicionar as que faltarem da lista do utilizador: appointments, quotes, work_orders, invoices, stock_movements, alerts, notifications, chat_messages, market_*).
-- GRANTs + RLS (leitura pública das duas tabelas de features, escrita só super_admin).
-
-**Não toca** em `subscriptions`, `shops`, `country_settings`, `plan_price_history` — esses mantêm-se.
-
----
-
-## Fase 3 — Camada frontend unificada
-
-- `src/lib/features.ts` — hook `useFeature(slug)` + `useFeatures()` com cache (react-query), invalidação por realtime.
-- `src/components/FeatureGate.tsx` — wrapper que mostra upgrade card quando `!enabled` (reutiliza estética do `PlanGate` existente para não mudar UX).
-- `src/components/Layout.tsx` / `MarketLayout.tsx` — **menu gerado dinamicamente** a partir de `useFeatures()`, mantendo a ordem e ícones atuais. Itens sem permissão somem.
-- `src/App.tsx` — wrapper `<RouteFeatureGuard feature="...">` em cada rota gateable. Acesso direto por URL → mostra upgrade, não 404.
-- Migrar `PlanGate` existente para delegar internamente a `useFeature` (compat total — nenhum call-site precisa mudar imediatamente).
+### Variáveis suportadas
+`cliente_nome, veiculo, matricula, numero_orcamento, numero_ordem_servico, valor_total, nome_oficina, email, telefone, link_portal`.
 
 ---
 
-## Fase 4 — Proteção backend
+## 2. Formatação Monetária Global (EUR pt-PT)
 
-- Helper `_shared/canUseFeature.ts` para edge functions (chama o RPC).
-- Aplicar em edge functions sensíveis identificadas na Fase 1 (ex.: `create-checkout` para market, `market-*`, geração de relatórios, API pública v1).
-- Endpoints existentes continuam a funcionar; apenas adicionam validação extra.
+- Criar `src/lib/money.ts` com `formatMoney(value, { withSymbol=true })` → usa `Intl.NumberFormat('pt-PT', { style:'currency', currency:'EUR' })` → produz `0,69 €`, `35,00 €/h`.
+- Helper `formatHours(h)` → `0,0h`.
+- **Refatorar** todas as ocorrências de hardcode `${value}€`, `${value.toFixed(2)}€`, `0.0h × 35€/h` para usar os helpers. Foco prioritário:
+  - `WorkOrderTimer` / `LaborTimer` (caso reportado).
+  - Quotes, Invoices, Services, Dashboard KPIs, PDFs (jsPDF), Stock, Market listings (EUR onde país=PT).
+- Regra: sempre `€` como sufixo com espaço, separador decimal `,`, 2 casas decimais.
 
----
-
-## Fase 5 — Stripe e preços 100% dinâmicos
-
-- Auditar e **remover todos os hardcodes** (`49/69/99/129/19/39`) de:
-  - `src/pages/Billing.tsx`
-  - landing (`src/pages/Index.tsx` e similares)
-  - página de afiliados / partner
-  - qualquer componente de pricing
-- Tudo lê de `country_settings` (já existe — memory `Stripe Multi-Country`) via hook único `usePlanPricing(country)`.
-- Checkout (`create-checkout` edge function) — confirmar que já lê do DB; se ainda tiver fallback hardcoded, remover.
-- Afiliados: `commission = plan.current_price * commission_rate` (lido do DB).
-- **Clientes existentes mantêm subscription Stripe antiga intacta** — não tocamos em `stripe_subscription_id` já criados.
+### Componente exemplo (timer mão-de-obra)
+```
+Mão-de-obra: 0,69 €
+Tempo: 0,0h × 35,00 €/h
+```
 
 ---
 
-## Fase 6 — Painel Admin (matriz visual)
+## 3. Navegação Consistente no Market
 
-- `src/pages/admin/AdminFeatureMatrix.tsx` — tabela Feature × Plano com toggles.
-- Cada toggle faz `UPDATE plan_features` → realtime propaga → todos os clientes atualizam menu/rotas sem deploy.
-- Integrar como tab dentro de `AdminSettings.tsx` (não criar página solta).
-- Pricing continua em `country_settings` (já existe).
+Problema: `/market/inspections` (e outras Carity) não usa o layout Market completo, perde menu.
 
----
-
-## Validação final
-
-Checklist executado e reportado:
-- [ ] Build sem erros
-- [ ] Toda feature listada está na matriz
-- [ ] Menu dinâmico funciona (testado com plano free/pro/garage)
-- [ ] Acesso por URL bloqueado quando feature off
-- [ ] `rg "69|129|49|99" src/` sem matches de preço
-- [ ] Realtime ativo em todas as tabelas críticas
-- [ ] Market continua a abrir corretamente (regra de memory respeitada)
-- [ ] Nenhuma regressão em auth/onboarding
+- Auditar `src/App.tsx`: rotas `/market/*` devem **todas** estar dentro de `<MarketLayout>`.
+- Garantir que `MarketLayout` mostra a navegação Market (Dashboard, Listings, Inspections, Mensagens, Conta) idêntica em todas as páginas Market — mobile e desktop.
+- Páginas alvo a verificar: `MarketInspections`, `CarityShopInspections`, `MarketChat`, `MarketListings`, `MarketAccount`.
+- Não cruzar com o ERP (regra de segregação ERP/Market mantida).
 
 ---
 
-## Confirmação necessária antes de começar
+## Detalhes técnicos
+- Migração SQL com GRANTs + RLS multi-tenant via `activeShopId`.
+- Realtime na tabela `message_templates` para refletir mudanças sem refresh.
+- Email final continua a usar o pipeline `send-transactional-email` existente; novo template **dynamic-customer-message** registado no registry.
+- i18n: textos do editor em PT-PT.
+- Sem regressões: `PlanGate` mantido onde aplicável (mensagens automáticas podem ser feature gated por plano).
 
-Esta é uma refatoração estrutural enorme (estimo 30-50 ficheiros tocados, 1 migração grande, várias horas de trabalho/créditos). Antes de avançar, **confirma**:
+## Ficheiros principais
+- `supabase/migrations/<ts>_message_templates.sql`
+- `supabase/functions/send-customer-message/index.ts`
+- `supabase/functions/_shared/transactional-email-templates/dynamic-customer-message.tsx`
+- `src/lib/money.ts`
+- `src/pages/settings/MessageTemplates.tsx` + componentes (`TemplateEditor`, `VariablePicker`, `LivePreview`)
+- `src/components/workshop/LaborTimer.tsx` (e demais sites monetários)
+- `src/App.tsx` (rotas Market)
+- `src/components/MarketLayout.tsx` (garantir nav presente em todas as sub-rotas)
 
-1. **Posso fazer a refatoração faseada** (Fase 1 entrega só auditoria, paras, revês, e dás luz verde para Fase 2)? Ou queres tudo de uma vez?
-2. **Política para clientes existentes em planos pagos**: mantenho o acesso atual deles a TUDO o que já tinham, mesmo que a nova matriz por defeito desligue alguma feature? (recomendado: sim, via grandfathering)
-3. **Há alguma feature que NUNCA pode ser desativável** (ex.: dashboard, clientes, veículos — core)? Vou marcar essas como `is_core=true` não-editáveis.
-
-Responde a estas 3 perguntas e arranco pela Fase 1 (auditoria) imediatamente.
+## Fora de âmbito
+- Integração real com WhatsApp Business API / provedor SMS — apenas estrutura preparada; envio efetivo de WhatsApp/SMS fica para passo seguinte (o pipeline de email entra já funcional).

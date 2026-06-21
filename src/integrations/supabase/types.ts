@@ -6403,6 +6403,47 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_country_settings: {
+        Args: never
+        Returns: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          currency_symbol: string
+          default_language: string
+          flag_emoji: string
+          inspection_platform_share: number
+          inspection_price: number
+          inspection_shop_share: number
+          launch_date: string | null
+          locale: string
+          market_commission_rate: number
+          name: string
+          notes: string | null
+          saas_garage_monthly: number
+          saas_garage_yearly: number
+          saas_pro_monthly: number
+          saas_pro_yearly: number
+          saas_trial_days: number
+          stripe_garage_monthly: string | null
+          stripe_garage_product_id: string | null
+          stripe_garage_yearly: string | null
+          stripe_pro_monthly: string | null
+          stripe_pro_product_id: string | null
+          stripe_pro_yearly: string | null
+          supported_languages: string[]
+          tax_label: string
+          timezones: string[]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "country_settings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_list_risk_inspections: {
         Args: { _filter?: string; _limit?: number }
         Returns: {

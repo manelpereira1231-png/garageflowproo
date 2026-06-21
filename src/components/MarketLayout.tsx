@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
-import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart, Search, Building2, Sparkles, Crown, FileCheck, Settings } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart, Search, Building2, Sparkles, Crown, FileCheck, Settings, Wrench, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -51,13 +51,24 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
+  const [isShopOwner, setIsShopOwner] = useState(false);
+  const [pendingOffersCount, setPendingOffersCount] = useState(0);
   const t = useMarketT();
   const { theme } = useTheme();
   const isLight = theme === "light";
   const isDealer = variant === "dealer" || location.pathname.startsWith("/market/dealer");
-  const NAV_ITEMS = isDealer
-    ? DEALER_NAV_DEFS
+  const baseNav: any[] = isDealer
+    ? [...DEALER_NAV_DEFS]
     : NAV_ITEM_DEFS.map((i) => ({ ...i, label: t(i.labelKey) }));
+  // Inject workshop panel entries when the logged-in user owns/works at a shop.
+  // Surfaces pending Market inspection offers right in the Market navigation.
+  const NAV_ITEMS = isShopOwner && !isDealer
+    ? [
+        ...baseNav,
+        { path: "/market/inspections", label: "Painel Oficina", icon: Wrench, isShop: true },
+        { path: "/market/wallet", label: "Carteira", icon: Wallet, isShop: true },
+      ]
+    : baseNav;
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,13 +84,25 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const [{ count: unread }, { count: favs }] = await Promise.all([
+      const [{ count: unread }, { count: favs }, { data: ownedShops }] = await Promise.all([
         supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
         supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("shops").select("id").eq("user_id", user.id).limit(1),
       ]);
       if (cancelled) return;
       setUnreadCount(unread || 0);
       setFavCount(favs || 0);
+      const shopId = ownedShops?.[0]?.id;
+      if (shopId) {
+        setIsShopOwner(true);
+        // Pending inspection offers waiting for this shop to accept/schedule
+        const { count: pending } = await supabase
+          .from("carity_inspection_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", shopId)
+          .in("status", ["pending", "accepted"]);
+        if (!cancelled) setPendingOffersCount(pending || 0);
+      }
       // Realtime: refresh badge on new incoming message
       channel = supabase.channel(`market-nav-${user.id}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "carity_chat_messages", filter: `receiver_id=eq.${user.id}` }, () => {
@@ -93,6 +116,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const badgeFor = (path: string): number => {
     if (path === "/market/messages") return unreadCount;
     if (path === "/market/favoritos") return favCount;
+    if (path === "/market/inspections") return pendingOffersCount;
     return 0;
   };
 

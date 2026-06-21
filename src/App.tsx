@@ -469,7 +469,7 @@ const publicRoutes = [
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
   { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
   { path: "/affiliate-login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
-  { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
+  { path: "/market", element: <GarageMarketEntryRedirect /> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
   { path: "/market/listing/:id", element: <LegacyMarketListingRedirect /> },

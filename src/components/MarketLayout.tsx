@@ -84,13 +84,25 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const [{ count: unread }, { count: favs }] = await Promise.all([
+      const [{ count: unread }, { count: favs }, { data: ownedShops }] = await Promise.all([
         supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
         supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("shops").select("id").eq("user_id", user.id).limit(1),
       ]);
       if (cancelled) return;
       setUnreadCount(unread || 0);
       setFavCount(favs || 0);
+      const shopId = ownedShops?.[0]?.id;
+      if (shopId) {
+        setIsShopOwner(true);
+        // Pending inspection offers waiting for this shop to accept/schedule
+        const { count: pending } = await supabase
+          .from("carity_inspection_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", shopId)
+          .in("status", ["pending", "accepted"]);
+        if (!cancelled) setPendingOffersCount(pending || 0);
+      }
       // Realtime: refresh badge on new incoming message
       channel = supabase.channel(`market-nav-${user.id}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "carity_chat_messages", filter: `receiver_id=eq.${user.id}` }, () => {

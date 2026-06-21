@@ -14,8 +14,11 @@ initSentry();
 
 const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());
-  // Realtime: any admin change to country_settings propagates to every open
-  // session within ~1s — landing, dashboard, billing, checkout all re-read.
+  // Preload admin-managed platform settings (plan limits + feature gates).
+  void loadPlatformSettings();
+  // Realtime: any admin change to country_settings / platform_settings
+  // propagates to every open session within ~1s — landing, dashboard,
+  // billing, checkout and every feature gate re-read instantly.
   try {
     supabase
       .channel("country_settings_pricing")
@@ -26,6 +29,11 @@ const bootRegionalConfig = () => {
           clearPricingCache();
           void reloadCountriesFromDB();
         }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "platform_settings" },
+        () => { notifyPlatformSettingsUpdated(); }
       )
       .subscribe();
   } catch {}

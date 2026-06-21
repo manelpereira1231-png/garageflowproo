@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import {
+  loadPlatformSettings,
+  getCachedPlatformSettings,
+  limitOverridesFor,
+  type PlatformSettings,
+} from "@/lib/platformSettings";
 
 export type Plan = 'free' | 'pro' | 'garage';
 
@@ -147,7 +153,22 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
   const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(getCachedPlatformSettings());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Load admin-managed plan limits / feature gates (single source of truth)
+  useEffect(() => {
+    let cancelled = false;
+    loadPlatformSettings().then((s) => { if (!cancelled) setPlatformSettings(s); });
+    const onUpdate = () => {
+      loadPlatformSettings(true).then((s) => { if (!cancelled) setPlatformSettings(s); });
+    };
+    window.addEventListener("garageflow:platform-settings-updated", onUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("garageflow:platform-settings-updated", onUpdate);
+    };
+  }, []);
 
   // Resolve active shop ID
   const resolveShopId = useCallback(async (): Promise<string | null> => {
@@ -298,7 +319,11 @@ export function useSubscription() {
       ? 'free'
       : rawPlan;
   
-  const limits = PLAN_LIMITS[effectivePlan];
+  // Admin-managed overrides (Admin > Platform Settings) merged on top
+  // of static defaults — guarantees the toggles in /admin/settings drive
+  // every feature gate across the app in real time.
+  const overrides = limitOverridesFor(effectivePlan, platformSettings);
+  const limits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
   // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
   const trialDaysLeft = subscription?.trial_end

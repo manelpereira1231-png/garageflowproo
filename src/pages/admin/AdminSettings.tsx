@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Settings, Shield, Bell, FileText, Loader2, DollarSign, Zap, Building2, Users, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
 
 interface PlanLimits {
   freePlanEnabled: boolean;
@@ -165,7 +166,11 @@ export default function AdminSettings() {
     if (hasError) {
       toast({ title: "Erro", description: "Não foi possível guardar todas as configurações.", variant: "destructive" });
     } else {
-      toast({ title: "Configurações guardadas", description: "Todas as alterações foram persistidas." });
+      // Invalidate the platform-settings cache and push the new values to
+      // every mounted hook (useSubscription, PlanGate, etc.) — no refresh
+      // needed for limits/feature toggles to take effect across the app.
+      notifyPlatformSettingsUpdated();
+      toast({ title: "Configurações guardadas", description: "Aplicadas imediatamente em todo o GarageFlow." });
     }
   };
 

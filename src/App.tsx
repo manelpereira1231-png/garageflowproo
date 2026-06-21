@@ -430,6 +430,9 @@ const marketAuthedRoutes = [
   { path: "/market/profile", element: <MarketProfile /> },
   { path: "/market/favoritos", element: <CarityFavorites /> },
   { path: "/market/purchases", element: <MarketPurchases /> },
+  { path: "/market/inspections", element: <CarityShopInspections /> },
+  { path: "/market/wallet", element: <MarketWallet /> },
+  { path: "/market/payouts", element: <MarketPayoutInfo /> },
 ];
 
 const publicRoutes = [

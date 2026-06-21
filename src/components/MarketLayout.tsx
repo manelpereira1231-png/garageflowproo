@@ -116,6 +116,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const badgeFor = (path: string): number => {
     if (path === "/market/messages") return unreadCount;
     if (path === "/market/favoritos") return favCount;
+    if (path === "/market/inspections") return pendingOffersCount;
     return 0;
   };
 

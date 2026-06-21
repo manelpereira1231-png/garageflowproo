@@ -1015,23 +1015,27 @@ export default function CarityShopInspections() {
   const handleEnroll = async () => {
     if (!shopId || !shopData) return;
 
-    // Validate requirements
     if (!shopData.name?.trim()) { toast.error("A oficina precisa de ter um nome configurado nas Definições."); return; }
     if (!shopData.phone?.trim()) { toast.error("Adicione um número de telefone nas Definições da oficina."); return; }
     if (!shopData.address?.trim()) { toast.error("Adicione a morada completa nas Definições da oficina."); return; }
 
     setEnrolling(true);
     try {
-      const { error } = await supabase.from("shops").update({
-        is_carity_partner: true,
-        carity_active: true,
-      }).eq("id", shopId);
-
-      if (error) throw error;
+      // Uses SECURITY DEFINER RPC: validates fields, flips partner flags
+      // and auto-creates the shop wallet so payouts work immediately.
+      const { error } = await supabase.rpc("enroll_shop_in_market" as any, { _shop_id: shopId });
+      if (error) {
+        const msg = error.message || "";
+        if (msg.includes("missing_name")) throw new Error("Configure o nome da oficina nas Definições.");
+        if (msg.includes("missing_phone")) throw new Error("Configure o telefone nas Definições.");
+        if (msg.includes("missing_address")) throw new Error("Configure a morada nas Definições.");
+        if (msg.includes("not_authorized")) throw new Error("Sem permissão para inscrever esta oficina.");
+        throw error;
+      }
 
       setIsPartner(true);
       setIsActive(true);
-      toast.success("Oficina inscrita com sucesso no GarageFlow Market! 🎉");
+      toast.success("Oficina inscrita no GarageFlow Market! 🎉 Carteira ativada — já pode receber pedidos.");
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Erro ao inscrever oficina");

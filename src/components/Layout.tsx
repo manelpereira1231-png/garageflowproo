@@ -250,13 +250,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, planBadge: "Garage", locked: !canUseFeature("loyalty") },
     { path: "/referrals", label: t("nav.referrals"), icon: Gift },
 
-    // ── Market (canal externo) ──
-    // Main "Market" entry opens the marketplace (Carity). Inspections / Wallet
-    // appear only for enrolled Carity partners as sub-items.
-    { path: "/market", label: "Market", icon: ShieldCheck },
+    // ── Market oficina ──
+    // ERP users must enter the workshop Market panel, never the public buyer/seller dashboard.
+    { path: "/market/inspections", label: "Market Oficina", icon: ShieldCheck, badge: pendingMarketCount },
     ...(isCarityPartner
       ? [
-          { path: "/market/inspections", label: "Inspeções Market", icon: ShieldCheck, badge: pendingMarketCount },
           { path: "/market/wallet", label: "Carteira Market", icon: Wallet },
         ]
       : []),
@@ -279,7 +277,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
-    { id: "market", label: "Market", paths: ["/market","/market/inspections","/market/wallet"] },
+    { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
@@ -325,7 +323,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // but the sidebar shows only what the user can actually open.
   const planVisibleItems = navItems.filter((item) => !item.locked);
   const baseVisibleItems = isGuidedMode
-    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market")
+    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));
 
   // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.

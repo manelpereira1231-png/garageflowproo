@@ -119,6 +119,7 @@ const MarketTerms = lazyRetry(() => import("@/pages/legal/MarketTerms"));
 const Support = lazyRetry(() => import("@/pages/Support"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SupportFab from "@/components/SupportFab";
+import { erpSupabase } from "@/integrations/supabase/realmClients";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -288,6 +289,30 @@ function MarketLoginRouteRedirect() {
   return <Navigate to={`/market/auth?${params.toString()}`} replace />;
 }
 
+function GarageMarketEntryRedirect() {
+  const [erpSessionChecked, setErpSessionChecked] = useState(false);
+  const [hasErpSession, setHasErpSession] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    erpSupabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setHasErpSession(Boolean(data.session));
+      setErpSessionChecked(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setHasErpSession(false);
+      setErpSessionChecked(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!erpSessionChecked) return <PageLoader />;
+  return hasErpSession
+    ? <Navigate to="/market/inspections" replace />
+    : <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
+}
+
 function AuthRouteRedirect({
   fallback,
   realm = "garage",
@@ -444,7 +469,7 @@ const publicRoutes = [
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
   { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
   { path: "/affiliate-login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
-  { path: "/market", element: <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense> },
+  { path: "/market", element: <GarageMarketEntryRedirect /> },
   { path: "/market/auth", element: <Suspense fallback={<PageLoader />}><MarketAuth /></Suspense> },
   { path: "/market/car/:id", element: <Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense> },
   { path: "/market/listing/:id", element: <LegacyMarketListingRedirect /> },
@@ -511,6 +536,12 @@ const publicRoutes = [
 const publicRoutesWithoutMarketAuth = publicRoutes.filter((route) => route.path !== "/market/auth");
 // For authenticated users, "/" should redirect to their app dashboard — never show the landing page again.
 const publicRoutesAuthed = publicRoutesWithoutMarketAuth.filter((route) => route.path !== "/");
+const publicRoutesGarageAuthed = publicRoutesAuthed.filter((route) =>
+  !route.path.startsWith("/market") && !route.path.startsWith("/carity"),
+);
+const garageMarketShopRoutes = marketAuthedRoutes.filter((route) =>
+  ["/market/inspections", "/market/wallet", "/market/payouts"].includes(route.path),
+);
 
 const publicSeoRoutes = publicRoutes.filter((route) =>
   route.path === "/blog" ||
@@ -739,15 +770,18 @@ function AuthenticatedRoutes() {
           <Route path="/auth" element={<AuthRouteRedirect fallback={isAffiliate ? "/affiliate-dashboard" : "/dashboard"} realm="garage" />} />
           <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
           <Route path="/" element={<Navigate to={defaultRoute} replace />} />
-          {publicRoutesAuthed.map((route) => (
+          {publicRoutesGarageAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
           <Route element={<MarketLayout />}>
-            {marketAuthedRoutes.map((route) => (
+            {garageMarketShopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
           </Route>
+          <Route path="/market" element={<Navigate to="/market/inspections" replace />} />
+          <Route path="/market/*" element={<Navigate to="/market/inspections" replace />} />
+          <Route path="/carity/*" element={<Navigate to="/market/inspections" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
@@ -804,7 +838,7 @@ function AppRoutes() {
             <Route path="/affiliate-login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
             <Route path="/book/:slug" element={<PublicBooking />} />
-            <Route path="/market" element={<Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>} />
+            <Route path="/market" element={<GarageMarketEntryRedirect />} />
             <Route path="/market/auth" element={<Suspense fallback={<PageLoader />}><MarketAuth /></Suspense>} />
             <Route path="/market/car/:id" element={<Suspense fallback={<PageLoader />}><CarityListingDetail /></Suspense>} />
             <Route path="/market/listing/:id" element={<LegacyMarketListingRedirect />} />

@@ -75,8 +75,8 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
             <Link to="/market/inspections" className="text-sm font-medium text-amber-500 hover:underline flex items-center gap-1">
               Aceitar inspeções <ChevronRight className="w-4 h-4" />
             </Link>
-            <Link to="/market" className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
-              Ver Market
+            <Link to="/market/inspections" className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
+              Configurar painel
             </Link>
           </div>
         </div>
@@ -105,8 +105,8 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
             <p className="text-xs text-muted-foreground">Anúncios, vendas, escrow e inspeções</p>
           </div>
         </div>
-        <Link to="/market/dashboard" className="text-xs text-amber-500 hover:underline flex items-center gap-1">
-          Abrir Market <ChevronRight className="w-3.5 h-3.5" />
+        <Link to="/market/inspections" className="text-xs text-amber-500 hover:underline flex items-center gap-1">
+          Abrir painel <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

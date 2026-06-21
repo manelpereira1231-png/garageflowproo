@@ -40,7 +40,7 @@ type MatrixRow = {
 const PLANS: Plan[] = ["free", "pro", "garage"];
 
 export default function AdminFeatureMatrix() {
-  const { user } = useAuth();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const [features, setFeatures] = useState<FeatureRow[]>([]);
   const [matrix, setMatrix] = useState<MatrixRow[]>([]);

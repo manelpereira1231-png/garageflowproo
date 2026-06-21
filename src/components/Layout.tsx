@@ -251,8 +251,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/referrals", label: t("nav.referrals"), icon: Gift },
 
     // ── Market (canal externo) ──
-    { path: "/market/inspections", label: "Market", icon: ShieldCheck, badge: pendingMarketCount },
-    ...(isCarityPartner ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet }] : []),
+    // Main "Market" entry opens the marketplace (Carity). Inspections / Wallet
+    // appear only for enrolled Carity partners as sub-items.
+    { path: "/market", label: "Market", icon: ShieldCheck },
+    ...(isCarityPartner
+      ? [
+          { path: "/market/inspections", label: "Inspeções Market", icon: ShieldCheck, badge: pendingMarketCount },
+          { path: "/market/wallet", label: "Carteira Market", icon: Wallet },
+        ]
+      : []),
 
     // ── Administração (acesso pontual) ──
     { path: "/team", label: t("nav.team"), icon: UserPlus, planBadge: !canUseFeature("teamManagement") ? "Pro" : undefined, locked: !canUseFeature("teamManagement") },

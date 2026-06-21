@@ -75,7 +75,18 @@ function ReferralFreeMonths() {
 export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
-  const regionalPricing = getRegionalPricing();
+  const [pricingTick, setPricingTick] = useState(0);
+  useEffect(() => {
+    const onUpdate = () => setPricingTick((t) => t + 1);
+    window.addEventListener("garageflow:pricing-updated", onUpdate);
+    window.addEventListener("garageflow:country-detected", onUpdate);
+    return () => {
+      window.removeEventListener("garageflow:pricing-updated", onUpdate);
+      window.removeEventListener("garageflow:country-detected", onUpdate);
+    };
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const regionalPricing = (() => { void pricingTick; return getRegionalPricing(); })();
   const prices = regionalPricing;
   const isBR = isBrazil();
   const [monthlyQuotes, setMonthlyQuotes] = useState(0);

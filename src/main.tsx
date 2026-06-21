@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { loadCountriesFromDB, detectCountryByIP, reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
+import { loadPlatformSettings, notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
 import { supabase } from "@/integrations/supabase/client";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
 import { initSentry } from "@/lib/sentry";

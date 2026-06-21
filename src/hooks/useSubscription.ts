@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import {
+  loadPlatformSettings,
+  getCachedPlatformSettings,
+  limitOverridesFor,
+  type PlatformSettings,
+} from "@/lib/platformSettings";
 
 export type Plan = 'free' | 'pro' | 'garage';
 

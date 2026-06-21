@@ -32,6 +32,9 @@ const PRODUCTION_DOMAIN = "https://garageflow.pt";
 export default function AffiliateDashboard() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { pricing, formatPrice } = useCountryPricing();
+  const proCommission = (pricing?.saas_pro_monthly || 0) * PRO_COMMISSION_RATE;
+  const garageCommission = (pricing?.saas_garage_monthly || 0) * GARAGE_COMMISSION_RATE;
   const [partner, setPartner] = useState<any>(null);
   const [invites, setInvites] = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);

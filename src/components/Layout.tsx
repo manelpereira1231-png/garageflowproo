@@ -325,7 +325,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // but the sidebar shows only what the user can actually open.
   const planVisibleItems = navItems.filter((item) => !item.locked);
   const baseVisibleItems = isGuidedMode
-    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
+    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market")
     : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));
 
   // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.

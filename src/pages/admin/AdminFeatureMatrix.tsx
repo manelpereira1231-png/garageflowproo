@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateFeatureCache } from "@/lib/features";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

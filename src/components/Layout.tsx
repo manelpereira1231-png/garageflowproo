@@ -65,6 +65,8 @@ type NavItem = {
   badge?: number;
   planBadge?: "Pro" | "Garage";
   locked?: boolean;
+  /** Feature slug from `plan_features`. If set and disabled for plan, item is hidden. */
+  featureSlug?: string;
 };
 
 type FinancialNavItem = {

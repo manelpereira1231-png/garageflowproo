@@ -46,6 +46,11 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
 export const erpSupabase = makeClient(ERP_STORAGE_KEY, "erp");
 export const marketSupabase = makeClient(MARKET_STORAGE_KEY, "market");
 
+function hasStoredRealmSession(storageKey: string): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.localStorage.getItem(storageKey));
+}
+
 /** Detect realm from current URL. Default = ERP. */
 export function detectRealm(pathname?: string): Realm {
   const p = pathname ?? (typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/");
@@ -53,6 +58,7 @@ export function detectRealm(pathname?: string): Realm {
   const realmParam = new URLSearchParams(query).get("realm");
   if (realmParam === "market") return "market";
   if (realmParam === "erp") return "erp";
+  if ((p === "/market" || p.startsWith("/market?")) && hasStoredRealmSession(ERP_STORAGE_KEY) && !hasStoredRealmSession(MARKET_STORAGE_KEY)) return "erp";
   if (p === "/market/inspections" || p.startsWith("/market/inspections?") || p === "/market/wallet" || p.startsWith("/market/wallet?") || p === "/market/payouts" || p.startsWith("/market/payouts?")) return "erp";
   if (p.startsWith("/market")) return "market";
   // market.* subdomain support

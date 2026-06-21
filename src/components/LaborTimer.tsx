@@ -32,9 +32,6 @@ function formatDuration(totalSeconds: number): string {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatHours(totalSeconds: number): string {
-  return (totalSeconds / 3600).toFixed(1);
-}
 
 export default function LaborTimer({ workOrderId, shopId, technicianName = '', laborRate = 0 }: LaborTimerProps) {
   const { t } = useLanguage();

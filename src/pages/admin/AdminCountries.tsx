@@ -8,10 +8,60 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Globe, Save, Plus, Edit, Power, Loader2 } from "lucide-react";
+import { Globe, Save, Plus, Edit, Power, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
+
+interface PlanPriceRowProps {
+  label: string;
+  plan: "pro" | "garage";
+  cycle: "monthly" | "yearly";
+  countryCode: string;
+  amount: number;
+  currentPriceId: string | null;
+  onAmountChange: (value: number) => void;
+  onApplied: (result: { amount: number; new_stripe_price_id: string; old_stripe_price_id: string | null }) => void;
+}
+
+function PlanPriceRow({ label, plan, cycle, countryCode, amount, currentPriceId, onAmountChange, onApplied }: PlanPriceRowProps) {
+  const [busy, setBusy] = useState(false);
+  const apply = async () => {
+    if (!countryCode) return toast.error("Guarda primeiro o país antes de aplicar no Stripe");
+    if (!amount || amount <= 0) return toast.error("Valor inválido");
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-update-plan-price", {
+        body: { country_code: countryCode, plan, cycle, amount },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`${label}: Stripe Price criado e propagado`);
+      onApplied(data as any);
+      // Broadcast for any open landing/billing tab to refresh immediately
+      try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch { /* ignore */ }
+    } catch (e: any) {
+      toast.error("Falha ao aplicar no Stripe: " + (e?.message || String(e)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex items-end gap-2 p-3 rounded-lg border bg-muted/30">
+      <div className="flex-1 min-w-0">
+        <Label className="text-xs">{label}</Label>
+        <Input type="number" step="0.01" value={amount} onChange={(e) => onAmountChange(Number(e.target.value))} />
+        <p className="text-[10px] text-muted-foreground mt-1 truncate font-mono">
+          {currentPriceId || "sem Stripe Price ainda"}
+        </p>
+      </div>
+      <Button type="button" size="sm" variant="outline" onClick={apply} disabled={busy} className="shrink-0">
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 mr-1" />}
+        Aplicar no Stripe
+      </Button>
+    </div>
+  );
+}
 
 interface CountryRow {
   code: string;

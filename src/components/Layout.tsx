@@ -57,6 +57,7 @@ import AppointmentsBell from "@/components/AppointmentsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
+import { useEnabledFeatureSet } from "@/lib/features";
 
 type NavItem = {
   path: string;

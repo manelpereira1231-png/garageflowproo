@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Settings, Shield, Bell, FileText, Loader2, DollarSign, Zap, Building2, Users, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
 
 interface PlanLimits {
   freePlanEnabled: boolean;

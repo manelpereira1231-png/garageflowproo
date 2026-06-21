@@ -20,6 +20,12 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import LandingLayout from "@/components/LandingLayout";
+import { useCountryPricing } from "@/hooks/useCountryPricing";
+
+// Affiliate commission percentages (the only fixed value — the monetary amount
+// is computed dynamically from the current plan price in country_settings).
+const PRO_COMMISSION_RATE = 0.10;
+const GARAGE_COMMISSION_RATE = 0.20;
 
 const PRODUCTION_DOMAIN = "https://garageflow.pt";
 

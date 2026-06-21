@@ -347,6 +347,7 @@ const adminRoutes = [
   { path: "/admin/emails", element: <AdminEmailLogs /> },
   { path: "/admin/adoption", element: <AdminFeatureAdoption /> },
   { path: "/admin/settings", element: <AdminSettings /> },
+  { path: "/admin/features", element: <AdminFeatureMatrix /> },
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },

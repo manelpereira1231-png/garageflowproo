@@ -14,6 +14,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { setSentryUser } from "@/lib/sentry";
 const PlanGate = lazy(() => import("@/components/PlanGate"));
+const FeatureGate = lazy(() => import("@/components/FeatureGate"));
 const CommandPalette = lazy(() => import("@/components/CommandPalette"));
 
 // Critical path - eagerly loaded for instant navigation

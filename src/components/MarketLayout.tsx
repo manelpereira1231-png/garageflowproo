@@ -70,11 +70,13 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     { path: "/market/wallet", label: "Carteira", icon: Wallet, isShop: true },
     { path: "/market/payouts", label: "Pagamentos", icon: FileCheck, isShop: true },
   ];
-  const NAV_ITEMS = isWorkshopPanel
-    ? workshopNav
-    : isShopOwner && !isDealer
-      ? [...baseNav, ...workshopNav.slice(0, 2)]
-      : baseNav;
+  // Navegação UNIFORME: o menu base do Market aparece sempre.
+  // Em rotas de painel de oficina (ou para utilizadores que são dono de oficina)
+  // adicionamos as entradas extra "Painel Oficina", "Carteira" e "Pagamentos"
+  // SEM substituir o resto — assim o menu nunca desaparece.
+  const NAV_ITEMS = (isWorkshopPanel || isShopOwner) && !isDealer
+    ? [...baseNav, ...workshopNav]
+    : baseNav;
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();

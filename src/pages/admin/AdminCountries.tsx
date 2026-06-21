@@ -119,8 +119,15 @@ export default function AdminCountries() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("country_settings").select("*").order("active", { ascending: false }).order("name");
-    setCountries((data as CountryRow[]) || []);
+    // Use SECURITY DEFINER RPC: returns full rows (including Stripe IDs) for super admins only.
+    // Direct SELECT * is column-restricted by security GRANTs.
+    const { data, error } = await (supabase as any).rpc("admin_list_country_settings");
+    if (error) {
+      toast.error("Erro a carregar países: " + error.message);
+      setCountries([]);
+    } else {
+      setCountries((data as CountryRow[]) || []);
+    }
     setLoading(false);
   };
 

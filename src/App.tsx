@@ -773,11 +773,6 @@ function AuthenticatedRoutes() {
             {garageMarketShopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
-          </Route>
-          <Route element={<MarketLayout />}>
-            {garageMarketShopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
-            ))}
             {garageMarketPublicRoutes.map((route) => (
               <Route key={`gmp-${route.path}`} path={route.path} element={route.element} />
             ))}

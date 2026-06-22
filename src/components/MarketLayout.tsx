@@ -56,6 +56,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [searchQ, setSearchQ] = useState("");
   const [isShopOwner, setIsShopOwner] = useState(false);
   const [pendingOffersCount, setPendingOffersCount] = useState(0);
+  const [hasErpSession, setHasErpSession] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(window.localStorage.getItem(ERP_STORAGE_KEY));
+  });
+  useEffect(() => {
+    const onStorage = () => setHasErpSession(Boolean(window.localStorage.getItem(ERP_STORAGE_KEY)));
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const t = useMarketT();
   const { theme } = useTheme();
   const isLight = theme === "light";

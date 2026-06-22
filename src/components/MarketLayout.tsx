@@ -165,7 +165,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
         )}
         {/* Top nav — premium glass */}
         <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group">
               <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
                   {isWorkshopPanel ? <Wrench className="h-4 w-4 text-amber-400" /> : isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}

@@ -292,28 +292,11 @@ function MarketLoginRouteRedirect() {
   return <Navigate to={`/market/auth?${params.toString()}`} replace />;
 }
 
+// Marketplace entry MUST always render the actual Marketplace home — never
+// auto-redirect an ERP-logged-in workshop into the shop panel. Workshops
+// reach `/market/inspections` only by clicking it explicitly.
 function GarageMarketEntryRedirect() {
-  const [erpSessionChecked, setErpSessionChecked] = useState(false);
-  const [hasErpSession, setHasErpSession] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    erpSupabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      setHasErpSession(Boolean(data.session));
-      setErpSessionChecked(true);
-    }).catch(() => {
-      if (cancelled) return;
-      setHasErpSession(false);
-      setErpSessionChecked(true);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (!erpSessionChecked) return <PageLoader />;
-  return hasErpSession
-    ? <Navigate to="/market/inspections" replace />
-    : <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
+  return <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
 }
 
 function AuthRouteRedirect({

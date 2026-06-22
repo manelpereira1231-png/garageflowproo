@@ -769,13 +769,24 @@ function AuthenticatedRoutes() {
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
           <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+          {/* /market (browse home) renders standalone — CarityMarketplace ships its own hero/nav, so we keep it OUT of MarketLayout to avoid a double navbar. */}
+          <Route path="/market" element={<GarageMarketEntryRedirect />} />
           <Route element={<MarketLayout />}>
             {garageMarketShopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
-            {garageMarketPublicRoutes.map((route) => (
-              <Route key={`gmp-${route.path}`} path={route.path} element={route.element} />
-            ))}
+            {garageMarketPublicRoutes
+              .filter((route) => route.path !== "/market")
+              .map((route) => (
+                <Route key={`gmp-${route.path}`} path={route.path} element={route.element} />
+              ))}
+            {/* Market-account routes that need a Market session — push to Market login carrying the original path */}
+            <Route path="/market/dashboard" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/my-listings" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/favoritos" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/purchases" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/messages" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
           </Route>
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>

@@ -531,6 +531,13 @@ const garageMarketShopRoutes = marketAuthedRoutes.filter((route) =>
   ["/market/inspections", "/market/wallet", "/market/payouts"].includes(route.path),
 );
 
+// Public marketplace browse routes that ERP-logged-in workshops can visit
+// without being kicked into the shop panel. They render inside MarketLayout
+// so the Market chrome (with "Voltar ao ERP") is visible.
+const garageMarketPublicRoutes = publicRoutes.filter((route) =>
+  route.path.startsWith("/market") && route.path !== "/market/auth",
+);
+
 const publicSeoRoutes = publicRoutes.filter((route) =>
   route.path === "/blog" ||
   route.path === "/blog/:slug" ||

@@ -774,9 +774,15 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
           </Route>
-          <Route path="/market" element={<Navigate to="/market/inspections" replace />} />
-          <Route path="/market/*" element={<Navigate to="/market/inspections" replace />} />
-          <Route path="/carity/*" element={<Navigate to="/market/inspections" replace />} />
+          <Route element={<MarketLayout />}>
+            {garageMarketShopRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+            {garageMarketPublicRoutes.map((route) => (
+              <Route key={`gmp-${route.path}`} path={route.path} element={route.element} />
+            ))}
+          </Route>
+          <Route path="/carity/*" element={<Navigate to="/market" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />

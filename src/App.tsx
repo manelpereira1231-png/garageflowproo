@@ -856,6 +856,11 @@ function AppRoutes() {
             <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
             <Route path="/market/my-listings" element={<MarketLoginRouteRedirect />} />
             <Route path="/market/pay/:id" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/favoritos" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/purchases" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/inspections" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/wallet" element={<MarketLoginRouteRedirect />} />
+            <Route path="/market/payouts" element={<MarketLoginRouteRedirect />} />
             <Route path="/market/make/:make" element={<Suspense fallback={<PageLoader />}><CarityByMake /></Suspense>} />
             <Route path="/market/city/:city" element={<Suspense fallback={<PageLoader />}><CarityByCity /></Suspense>} />
             <Route path="/market/modelo/:make/:model" element={<Suspense fallback={<PageLoader />}><CarityByModel /></Suspense>} />

@@ -150,7 +150,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     // Sign out ONLY of the Market realm — ERP session (if any) stays intact.
     await signOutRealm("market");
     toast.success(t("market.toast.signedOut"));
-    navigate("/market");
+    navigate("/market/auth");
   };
 
   return (

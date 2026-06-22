@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
+import { ERP_STORAGE_KEY } from "@/integrations/supabase/realmClients";
 import { Suspense, createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
@@ -55,6 +56,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [searchQ, setSearchQ] = useState("");
   const [isShopOwner, setIsShopOwner] = useState(false);
   const [pendingOffersCount, setPendingOffersCount] = useState(0);
+  const [hasErpSession, setHasErpSession] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(window.localStorage.getItem(ERP_STORAGE_KEY));
+  });
+  useEffect(() => {
+    const onStorage = () => setHasErpSession(Boolean(window.localStorage.getItem(ERP_STORAGE_KEY)));
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const t = useMarketT();
   const { theme } = useTheme();
   const isLight = theme === "light";
@@ -226,6 +236,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   </Button>
                 </Link>
               )}
+              {hasErpSession && (
+                <a
+                  href="/dashboard"
+                  className="ml-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
+                  title="Voltar para o ERP da oficina"
+                >
+                  <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
+                </a>
+              )}
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
                 <ThemeToggle />
               </div>
@@ -275,6 +294,11 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   <Plus className="h-4 w-4" /> {t("market.nav.newListing")}
                 </div>
               </Link>
+              {hasErpSession && (
+                <a href="/dashboard" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] font-semibold">
+                  <Wrench className="h-4 w-4" /> Voltar ao ERP da oficina
+                </a>
+              )}
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] w-full text-left transition-colors">
                 <LogOut className="h-4 w-4" /> {t("market.nav.logout")}
               </button>

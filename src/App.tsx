@@ -292,28 +292,11 @@ function MarketLoginRouteRedirect() {
   return <Navigate to={`/market/auth?${params.toString()}`} replace />;
 }
 
+// Marketplace entry MUST always render the actual Marketplace home — never
+// auto-redirect an ERP-logged-in workshop into the shop panel. Workshops
+// reach `/market/inspections` only by clicking it explicitly.
 function GarageMarketEntryRedirect() {
-  const [erpSessionChecked, setErpSessionChecked] = useState(false);
-  const [hasErpSession, setHasErpSession] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    erpSupabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      setHasErpSession(Boolean(data.session));
-      setErpSessionChecked(true);
-    }).catch(() => {
-      if (cancelled) return;
-      setHasErpSession(false);
-      setErpSessionChecked(true);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (!erpSessionChecked) return <PageLoader />;
-  return hasErpSession
-    ? <Navigate to="/market/inspections" replace />
-    : <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
+  return <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
 }
 
 function AuthRouteRedirect({
@@ -546,6 +529,13 @@ const publicRoutesGarageAuthed = publicRoutesAuthed.filter((route) =>
 );
 const garageMarketShopRoutes = marketAuthedRoutes.filter((route) =>
   ["/market/inspections", "/market/wallet", "/market/payouts"].includes(route.path),
+);
+
+// Public marketplace browse routes that ERP-logged-in workshops can visit
+// without being kicked into the shop panel. They render inside MarketLayout
+// so the Market chrome (with "Voltar ao ERP") is visible.
+const garageMarketPublicRoutes = publicRoutes.filter((route) =>
+  route.path.startsWith("/market") && route.path !== "/market/auth",
 );
 
 const publicSeoRoutes = publicRoutes.filter((route) =>
@@ -783,10 +773,11 @@ function AuthenticatedRoutes() {
             {garageMarketShopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
+            {garageMarketPublicRoutes.map((route) => (
+              <Route key={`gmp-${route.path}`} path={route.path} element={route.element} />
+            ))}
           </Route>
-          <Route path="/market" element={<Navigate to="/market/inspections" replace />} />
-          <Route path="/market/*" element={<Navigate to="/market/inspections" replace />} />
-          <Route path="/carity/*" element={<Navigate to="/market/inspections" replace />} />
+          <Route path="/carity/*" element={<Navigate to="/market" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />

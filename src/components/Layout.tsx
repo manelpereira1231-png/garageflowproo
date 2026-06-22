@@ -288,7 +288,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
-    { id: "market", label: "Market", paths: ["/market/inspections","/market/wallet"] },
+    { id: "market", label: "Marketplace", paths: ["/market","/market/inspections","/market/wallet"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);

@@ -252,10 +252,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, featureSlug: "loyalty" },
     { path: "/referrals", label: t("nav.referrals"), icon: Gift, featureSlug: "referrals" },
 
-    // ── Market oficina (controlado por is_carity_partner, não pelo plano) ──
-    { path: "/market/inspections", label: "Market Oficina", icon: ShieldCheck, badge: pendingMarketCount },
+    // ── Marketplace (área independente — abre fora do ERP, mantém ERP intacto) ──
+    { path: "/market", label: "Marketplace", icon: ShieldCheck },
     ...(isCarityPartner
-      ? [{ path: "/market/wallet", label: "Carteira Market", icon: Wallet } as NavItem]
+      ? [
+          { path: "/market/inspections", label: "Painel Oficina (Market)", icon: ShieldCheck, badge: pendingMarketCount } as NavItem,
+          { path: "/market/wallet", label: "Carteira Market", icon: Wallet } as NavItem,
+        ]
       : []),
 
     // ── Administração ──

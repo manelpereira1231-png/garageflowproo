@@ -236,6 +236,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   </Button>
                 </Link>
               )}
+              {hasErpSession && (
+                <a
+                  href="/dashboard"
+                  className="ml-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
+                  title="Voltar para o ERP da oficina"
+                >
+                  <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
+                </a>
+              )}
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
                 <ThemeToggle />
               </div>

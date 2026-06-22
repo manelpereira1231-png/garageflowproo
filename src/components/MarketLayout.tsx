@@ -294,6 +294,11 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   <Plus className="h-4 w-4" /> {t("market.nav.newListing")}
                 </div>
               </Link>
+              {hasErpSession && (
+                <a href="/dashboard" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] font-semibold">
+                  <Wrench className="h-4 w-4" /> Voltar ao ERP da oficina
+                </a>
+              )}
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] w-full text-left transition-colors">
                 <LogOut className="h-4 w-4" /> {t("market.nav.logout")}
               </button>

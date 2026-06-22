@@ -306,7 +306,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
           )}
         </nav>
 
-        <div className="max-w-6xl mx-auto px-4 py-6 page-in">
+        <div className="max-w-7xl mx-auto px-4 py-6 page-in">
           <Suspense fallback={<PageFallback />}>
             {children ?? <Outlet />}
           </Suspense>

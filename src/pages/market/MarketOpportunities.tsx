@@ -56,7 +56,7 @@ export default function MarketOpportunities() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
-          icon={Clock}
+          icon="⏳"
           title="Sem oportunidades neste momento"
           description="Assim que houver pedidos de inspeção compatíveis com a tua oficina, aparecem aqui."
         />

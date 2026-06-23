@@ -400,11 +400,17 @@ const shopRoutes = [
   { path: "/partners", element: <PartnersPortal /> },
   { path: "/referrals", element: <FeatureGate feature="referrals" requiredPlan="pro"><Referrals /></FeatureGate> },
   { path: "/warranties", element: <FeatureGate feature="warranties" requiredPlan="pro"><Warranties /></FeatureGate> },
-  // /market/inspections, /market/wallet and /market/payouts live under
-  // MarketLayout (see marketAuthedRoutes) so the shop panel renders inside
-  // the Market chrome — including the enrollment/config screen when the
-  // shop hasn't joined Market yet.
-
+  // Market = módulo interno do ERP. Para oficinas autenticadas as rotas
+  // operacionais Market renderizam DENTRO do Layout ERP (mesmo header, mesma
+  // sidebar, mesma sessão). MarketLayout fica reservado a navegação pública
+  // do Market e a sessões Market-only (compradores/vendedores externos).
+  { path: "/market/opportunities", element: <MarketOpportunities /> },
+  { path: "/market/inspections", element: <CarityShopInspections /> },
+  { path: "/market/offers", element: <MarketOffers /> },
+  { path: "/market/wallet", element: <MarketWallet /> },
+  { path: "/market/payouts", element: <MarketPayoutInfo /> },
+  { path: "/market/history", element: <MarketHistory /> },
+  { path: "/market/stats", element: <MarketStats /> },
 ];
 
 const preloadGarageNavigationRoutes = [

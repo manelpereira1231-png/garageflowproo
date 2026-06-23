@@ -252,14 +252,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, featureSlug: "loyalty" },
     { path: "/referrals", label: t("nav.referrals"), icon: Gift, featureSlug: "referrals" },
 
-    // ── Marketplace (área independente — abre fora do ERP, mantém ERP intacto) ──
-    { path: "/market", label: "Marketplace", icon: ShieldCheck },
+    // ── Market (módulo interno do ERP — partilha sessão, sidebar, dashboard) ──
+    // Sempre visíveis para oficinas parceiras. "Explorar carros" liga ao Market público.
     ...(isCarityPartner
       ? [
-          { path: "/market/inspections", label: "Painel Oficina (Market)", icon: ShieldCheck, badge: pendingMarketCount } as NavItem,
-          { path: "/market/wallet", label: "Carteira Market", icon: Wallet } as NavItem,
+          { path: "/market/opportunities", label: "Oportunidades", icon: Search, badge: pendingMarketCount } as NavItem,
+          { path: "/market/inspections", label: "Inspeções", icon: ClipboardCheck } as NavItem,
+          { path: "/market/offers", label: "Propostas", icon: FileText } as NavItem,
+          { path: "/market/wallet", label: "Carteira", icon: Wallet } as NavItem,
+          { path: "/market/history", label: "Histórico", icon: Receipt } as NavItem,
+          { path: "/market/stats", label: "Estatísticas", icon: TrendingUp } as NavItem,
+          { path: "/market", label: "Explorar carros", icon: ShieldCheck } as NavItem,
         ]
-      : []),
+      : [
+          { path: "/market/inspections", label: "Ativar Market", icon: ShieldCheck } as NavItem,
+        ]),
 
     // ── Administração ──
     { path: "/team", label: t("nav.team"), icon: UserPlus, featureSlug: "team_management" },

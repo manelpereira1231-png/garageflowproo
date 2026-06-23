@@ -37,6 +37,7 @@ import {
   Star as StarIcon,
   ArrowUp,
   ArrowDown,
+  TrendingUp,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import SidebarCustomizer from "@/components/SidebarCustomizer";

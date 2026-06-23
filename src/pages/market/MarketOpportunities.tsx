@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
-import { Loader2, Clock, MapPin, Car, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Car, ChevronRight } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 
 type Opportunity = {

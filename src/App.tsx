@@ -539,9 +539,10 @@ const publicRoutesAuthed = publicRoutesWithoutMarketAuth.filter((route) => route
 const publicRoutesGarageAuthed = publicRoutesAuthed.filter((route) =>
   !route.path.startsWith("/market") && !route.path.startsWith("/carity"),
 );
-const garageMarketShopRoutes = marketAuthedRoutes.filter((route) =>
-  ["/market/inspections", "/market/wallet", "/market/payouts"].includes(route.path),
-);
+// Market shop routes (inspections/wallet/payouts) agora vivem dentro do
+// Layout ERP — ver shopRoutes. Mantemos esta constante como array vazio para
+// compatibilidade com o branch de roteamento abaixo.
+const garageMarketShopRoutes: typeof marketAuthedRoutes = [];
 
 // Public marketplace browse routes that ERP-logged-in workshops can visit
 // without being kicked into the shop panel. They render inside MarketLayout

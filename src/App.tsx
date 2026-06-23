@@ -111,6 +111,12 @@ const MarketDealerDashboard = lazyRetry(() => import("@/pages/MarketDealerDashbo
 const MarketDealerBulkAdd = lazyRetry(() => import("@/pages/MarketDealerBulkAdd"));
 const MarketWallet = lazyRetry(() => import("@/pages/MarketWallet"));
 
+// Market — sub-páginas internas do ERP (renderizam dentro do Layout ERP)
+const MarketOpportunities = lazyRetry(() => import("@/pages/market/MarketOpportunities"));
+const MarketOffers = lazyRetry(() => import("@/pages/market/MarketOffers"));
+const MarketHistory = lazyRetry(() => import("@/pages/market/MarketHistory"));
+const MarketStats = lazyRetry(() => import("@/pages/market/MarketStats"));
+
 // Legal pages (RGPD)
 const PrivacyPolicy = lazyRetry(() => import("@/pages/legal/PrivacyPolicy"));
 const TermsOfService = lazyRetry(() => import("@/pages/legal/TermsOfService"));

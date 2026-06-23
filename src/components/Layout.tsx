@@ -37,6 +37,7 @@ import {
   Star as StarIcon,
   ArrowUp,
   ArrowDown,
+  TrendingUp,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
@@ -252,14 +253,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, featureSlug: "loyalty" },
     { path: "/referrals", label: t("nav.referrals"), icon: Gift, featureSlug: "referrals" },
 
-    // ── Marketplace (área independente — abre fora do ERP, mantém ERP intacto) ──
-    { path: "/market", label: "Marketplace", icon: ShieldCheck },
+    // ── Market (módulo interno do ERP — partilha sessão, sidebar, dashboard) ──
+    // Sempre visíveis para oficinas parceiras. "Explorar carros" liga ao Market público.
     ...(isCarityPartner
       ? [
-          { path: "/market/inspections", label: "Painel Oficina (Market)", icon: ShieldCheck, badge: pendingMarketCount } as NavItem,
-          { path: "/market/wallet", label: "Carteira Market", icon: Wallet } as NavItem,
+          { path: "/market/opportunities", label: "Oportunidades", icon: Search, badge: pendingMarketCount } as NavItem,
+          { path: "/market/inspections", label: "Inspeções", icon: ClipboardCheck } as NavItem,
+          { path: "/market/offers", label: "Propostas", icon: FileText } as NavItem,
+          { path: "/market/wallet", label: "Carteira", icon: Wallet } as NavItem,
+          { path: "/market/history", label: "Histórico", icon: Receipt } as NavItem,
+          { path: "/market/stats", label: "Estatísticas", icon: TrendingUp } as NavItem,
+          { path: "/market", label: "Explorar carros", icon: ShieldCheck } as NavItem,
         ]
-      : []),
+      : [
+          { path: "/market/inspections", label: "Ativar Market", icon: ShieldCheck } as NavItem,
+        ]),
 
     // ── Administração ──
     { path: "/team", label: t("nav.team"), icon: UserPlus, featureSlug: "team_management" },
@@ -288,7 +296,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
-    { id: "market", label: "Marketplace", paths: ["/market","/market/inspections","/market/wallet"] },
+    { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
@@ -507,16 +515,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   : NAV_GROUPS.map((group) => {
                       const groupItems = groupedRegular.filter(i => group.paths.includes(i.path));
                       if (groupItems.length === 0) return null;
-                      // Market must always be a direct navigation action for workshops.
-                      // If the shop is an active partner there can be 2 items (Market + wallet),
-                      // so do not render a collapsible "Market" header that swallows the click.
-                      if (group.id === "market") {
-                        return (
-                          <div key={group.id} className="mb-1 space-y-0.5">
-                            {groupItems.map((it) => renderItem(it, { fav: false }))}
-                          </div>
-                        );
-                      }
+                      // Market é grupo colapsável como qualquer outro — Market
+                      // é um módulo interno do ERP.
+
+
 
                       // Auto-flatten single-item groups: render the item directly so the
                       // group header doesn't swallow the click.

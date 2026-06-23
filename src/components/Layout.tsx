@@ -515,16 +515,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   : NAV_GROUPS.map((group) => {
                       const groupItems = groupedRegular.filter(i => group.paths.includes(i.path));
                       if (groupItems.length === 0) return null;
-                      // Market must always be a direct navigation action for workshops.
-                      // If the shop is an active partner there can be 2 items (Market + wallet),
-                      // so do not render a collapsible "Market" header that swallows the click.
-                      if (group.id === "market") {
-                        return (
-                          <div key={group.id} className="mb-1 space-y-0.5">
-                            {groupItems.map((it) => renderItem(it, { fav: false }))}
-                          </div>
-                        );
-                      }
+                      // Market é grupo colapsável como qualquer outro — Market
+                      // é um módulo interno do ERP.
+
+
 
                       // Auto-flatten single-item groups: render the item directly so the
                       // group header doesn't swallow the click.

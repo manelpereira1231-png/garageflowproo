@@ -1,81 +1,115 @@
-# Plano — Mensagens Sem Código + UI Consistente + Moeda EUR
 
-Três frentes independentes, executadas numa única entrega.
+# Unificação ERP ↔ Market (oficinas) + isolamento Market público (externos)
 
----
+## Princípio
 
-## 1. Sistema de Mensagens Automáticas (sem HTML)
+- **Oficina autenticada** → vive sempre no ERP. O Market é um *módulo interno* (sub-menu do ERP), partilha sessão, sidebar e dashboard. Nunca é redirecionada para `MarketLayout`.
+- **Comprador/Vendedor externo** → vive sempre no `MarketLayout` público. Nunca vê sidebar ERP, dashboard ERP nem rotas `/dashboard`, `/clients`, etc.
 
-### Backend
-- Nova tabela `message_templates` (shop_id, slug, channel `email|whatsapp|sms`, name, subject, body_text, variables jsonb, auto_send bool, schedule_minutes int, active bool) + RLS + GRANT.
-- Tabela `message_template_events` (slug do evento: quote_created, quote_approved, service_done, invoice_issued, reminder, etc.) — seed inicial.
-- Edge function `send-customer-message`:
-  - Recebe `{ shop_id, template_slug, channel, recipient, context }`.
-  - Renderiza variáveis `{{var}}` no texto puro.
-  - Para email: injeta texto num **layout HTML profissional fixo** (header com logo/cor da oficina vinda de `shops`, corpo, CTA opcional, footer) — utilizador nunca vê esse HTML.
-  - Para WhatsApp/SMS: envia texto puro.
+A separação já existe parcialmente (realms isolados, `MarketLayout`, `Layout` ERP). Falta:
+1. Consolidar o Market dentro do ERP como sub-secção (não como app paralela).
+2. Refletir dados do Market no Dashboard ERP.
+3. Garantir que oficinas nunca aterram em `MarketLayout`.
+4. Garantir que externos nunca aterram em ERP.
 
-### Frontend — `/settings/messages`
-- Lista de templates por evento.
-- Editor visual (sem HTML):
-  - Campo **Assunto** (input simples).
-  - Campo **Mensagem** (textarea estilo WhatsApp).
-  - Barra de **variáveis** clicáveis que inserem `{{cliente_nome}}` etc no cursor.
-  - **Pré-visualização ao vivo** com dados fictícios (João Silva / BMW Série 3).
-  - Toggle: Envio automático / Aprovação manual.
-  - Agendamento (atraso em minutos + janela horária permitida).
-- Tabs por canal (Email / WhatsApp / SMS — SMS marcado "em breve").
-- Nenhum input de HTML/CSS exposto.
+## Mudanças
 
-### Variáveis suportadas
-`cliente_nome, veiculo, matricula, numero_orcamento, numero_ordem_servico, valor_total, nome_oficina, email, telefone, link_portal`.
+### 1. ERP sidebar — Market como sub-grupo único (`src/components/Layout.tsx`)
+Substituir os links soltos atuais ("Marketplace", "Painel Oficina (Market)", "Carteira Market", "Inspeções Market") por **um grupo "Market" colapsável** com sub-itens internos ao ERP:
 
----
+- Oportunidades  → `/market/opportunities` (nova rota interna, listing de inspeções pendentes para a oficina)
+- Inspeções      → `/market/inspections` (já existe — `CarityShopInspections`)
+- Propostas      → `/market/offers` (nova rota — lista `carity_inspection_offers` da oficina)
+- Carteira       → `/market/wallet` (já existe)
+- Histórico      → `/market/history` (nova — escrows concluídos da oficina)
+- Estatísticas   → `/market/stats` (nova — KPIs Market da oficina)
+- Explorar carros → `/market` (link "discreto", abre Market público em nova aba **se** quiser navegar como comprador)
 
-## 2. Formatação Monetária Global (EUR pt-PT)
+Tudo dentro do `Layout` ERP — **sem** `MarketLayout`, **sem** navbar Market, **sem** "Voltar ao ERP" (porque nunca saiu).
 
-- Criar `src/lib/money.ts` com `formatMoney(value, { withSymbol=true })` → usa `Intl.NumberFormat('pt-PT', { style:'currency', currency:'EUR' })` → produz `0,69 €`, `35,00 €/h`.
-- Helper `formatHours(h)` → `0,0h`.
-- **Refatorar** todas as ocorrências de hardcode `${value}€`, `${value.toFixed(2)}€`, `0.0h × 35€/h` para usar os helpers. Foco prioritário:
-  - `WorkOrderTimer` / `LaborTimer` (caso reportado).
-  - Quotes, Invoices, Services, Dashboard KPIs, PDFs (jsPDF), Stock, Market listings (EUR onde país=PT).
-- Regra: sempre `€` como sufixo com espaço, separador decimal `,`, 2 casas decimais.
+### 2. Rotas: oficinas nunca renderizam `MarketLayout` operacional (`src/App.tsx`)
+Para utilizadores com sessão ERP ativa, as rotas operacionais do Market (`/market/inspections`, `/market/wallet`, `/market/dashboard`, `/market/my-listings`, `/market/purchases`, `/market/payouts`, novas `/market/opportunities|offers|history|stats`) renderizam dentro de `<Layout>` ERP, não `<MarketLayout>`.
 
-### Componente exemplo (timer mão-de-obra)
-```
-Mão-de-obra: 0,69 €
-Tempo: 0,0h × 35,00 €/h
-```
+`MarketLayout` fica reservado para:
+- visitantes não autenticados a navegar no Market público (`/market`, `/market/car/:id`, `/market/stands`, etc.)
+- sessões **Market-only** (comprador/vendedor sem oficina associada)
 
----
+Detecção: `hasErpSession` (já existe via `garageflow_active_shop` no localStorage). Se verdadeiro → wrap em `<Layout>`; senão → wrap em `<MarketLayout>`.
 
-## 3. Navegação Consistente no Market
+### 3. Dashboard ERP mostra dados do Market (`src/pages/Dashboard.tsx`)
+Adicionar bloco "Atividade Market" com:
+- Inspeções pendentes (count de `carity_inspections` com `shop_id = activeShop` e `status = 'pending'|'in_progress'`)
+- Propostas em aberto (`carity_inspection_offers` da oficina, status `pending`)
+- Carteira: saldo (`shop_wallets.balance`)
+- Receita Market do mês (soma `shop_wallet_transactions` tipo `inspection_paid`/`sale_commission` no mês)
 
-Problema: `/market/inspections` (e outras Carity) não usa o layout Market completo, perde menu.
+Mostrar só se `shops.is_carity_partner = true`. Caso contrário, CTA discreto "Ativar Market".
 
-- Auditar `src/App.tsx`: rotas `/market/*` devem **todas** estar dentro de `<MarketLayout>`.
-- Garantir que `MarketLayout` mostra a navegação Market (Dashboard, Listings, Inspections, Mensagens, Conta) idêntica em todas as páginas Market — mobile e desktop.
-- Páginas alvo a verificar: `MarketInspections`, `CarityShopInspections`, `MarketChat`, `MarketListings`, `MarketAccount`.
-- Não cruzar com o ERP (regra de segregação ERP/Market mantida).
+### 4. Fluxo de sincronização (já garantido a nível de DB, validar)
+Confirmar que ao completar uma inspeção Market:
+- `shop_wallet_transactions` recebe entrada → aparece em "Receita do mês" no Dashboard ERP
+- (futuro) criar `work_order` automático a partir de inspeção aceite — fora do scope desta entrega; deixar TODO.
 
----
+### 5. Isolamento externo (validação)
+- `MarketLayout` continua sem nenhum link para `/dashboard`, `/clients`, etc. (já é o caso).
+- O botão "Voltar ao ERP" no `MarketLayout` só aparece quando `hasErpSession` é verdadeiro, mas com a mudança #2 oficinas autenticadas raramente caem em `MarketLayout` (só quando exploram o Market público propositadamente).
+- Externos (Market-only) nunca veem botão "Voltar ao ERP".
+
+### 6. Novas páginas internas (esqueleto mínimo, dados reais)
+- `src/pages/market/MarketOpportunities.tsx` — lista inspeções disponíveis para a oficina aceitar
+- `src/pages/market/MarketOffers.tsx` — propostas enviadas pela oficina
+- `src/pages/market/MarketHistory.tsx` — histórico de transações Market da oficina
+- `src/pages/market/MarketStats.tsx` — KPIs (inspeções/mês, receita/mês, rating)
+
+Todas usam `<Layout>` (header ERP) e o `activeShopId`.
 
 ## Detalhes técnicos
-- Migração SQL com GRANTs + RLS multi-tenant via `activeShopId`.
-- Realtime na tabela `message_templates` para refletir mudanças sem refresh.
-- Email final continua a usar o pipeline `send-transactional-email` existente; novo template **dynamic-customer-message** registado no registry.
-- i18n: textos do editor em PT-PT.
-- Sem regressões: `PlanGate` mantido onde aplicável (mensagens automáticas podem ser feature gated por plano).
 
-## Ficheiros principais
-- `supabase/migrations/<ts>_message_templates.sql`
-- `supabase/functions/send-customer-message/index.ts`
-- `supabase/functions/_shared/transactional-email-templates/dynamic-customer-message.tsx`
-- `src/lib/money.ts`
-- `src/pages/settings/MessageTemplates.tsx` + componentes (`TemplateEditor`, `VariablePicker`, `LivePreview`)
-- `src/components/workshop/LaborTimer.tsx` (e demais sites monetários)
-- `src/App.tsx` (rotas Market)
-- `src/components/MarketLayout.tsx` (garantir nav presente em todas as sub-rotas)
+```text
+Layout ERP (oficinas autenticadas)
+├── Operação Diária
+├── Faturação
+├── Comunicação
+├── Crescimento
+├── Inventário
+├── Administração
+└── Market   ← NOVO grupo colapsável
+    ├── Oportunidades
+    ├── Inspeções
+    ├── Propostas
+    ├── Carteira
+    ├── Histórico
+    ├── Estatísticas
+    └── Explorar carros (link externo Market público)
 
-## Fora de âmbito
-- Integração real com WhatsApp Business API / provedor SMS — apenas estrutura preparada; envio efetivo de WhatsApp/SMS fica para passo seguinte (o pipeline de email entra já funcional).
+MarketLayout (externos / exploração pública)
+├── Comprar
+├── Vender
+├── Stands
+├── Favoritos / Mensagens / Conta   (se autenticado Market)
+└── (sem nada do ERP)
+```
+
+Roteamento (`App.tsx`):
+```text
+/market, /market/car/:id, /market/stands, /market/sell  → MarketLayout (público)
+/market/auth, /market/dashboard, /market/profile etc.    → MarketLayout (Market session)
+/market/inspections|wallet|opportunities|offers|history|stats
+   if hasErpSession  → Layout ERP
+   else              → MarketLayout (Market session)
+```
+
+## Ficheiros tocados
+
+- `src/components/Layout.tsx` — reorganizar grupo Market
+- `src/App.tsx` — wrap condicional Layout vs MarketLayout para rotas operacionais Market
+- `src/pages/Dashboard.tsx` — adicionar bloco "Atividade Market"
+- `src/pages/market/MarketOpportunities.tsx` *(novo)*
+- `src/pages/market/MarketOffers.tsx` *(novo)*
+- `src/pages/market/MarketHistory.tsx` *(novo)*
+- `src/pages/market/MarketStats.tsx` *(novo)*
+
+## Fora de scope
+
+- Conversão automática inspeção Market → work_order ERP (deixar TODO documentado).
+- Migrações DB: não há schema novo; tudo assenta em tabelas existentes (`carity_inspections`, `carity_inspection_offers`, `market_escrow`, `shop_wallets`, `shop_wallet_transactions`).

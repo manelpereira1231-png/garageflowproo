@@ -80,10 +80,10 @@ export default function MarketAuth() {
     try {
       if (mode === "forgot") {
         const { error } = await marketSupabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/reset-password?realm=market`,
         });
         if (error) throw error;
-        toast.success("Link de recuperação enviado para o seu email.");
+        toast.success("Se este email existir, enviaremos um link de recuperação. Verifique a caixa de entrada e a pasta de spam.");
         setMode("login");
         return;
       }

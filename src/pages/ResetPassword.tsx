@@ -71,22 +71,52 @@ export default function ResetPassword() {
       })
     );
 
-    // Also probe existing sessions (in case the hash was already consumed)
-    Promise.all(clients.map(async ({ realm, client }) => {
-      const { data } = await client.auth.getSession();
-      return data.session ? realm : null;
-    })).then((results) => {
+    const run = async () => {
+      // 1) PKCE flow: Supabase appends ?code=... — exchange it for a session
+      //    on the realm hinted by the sender (?realm=erp|market).
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const errDesc = url.searchParams.get("error_description") || url.searchParams.get("error");
+
+      if (errDesc) {
+        if (!cancelled) setChecked(true);
+        return;
+      }
+
+      if (code) {
+        const realm: Realm = realmHint === "market" ? "market" : "erp";
+        const client = realm === "market" ? marketSupabase : erpSupabase;
+        try {
+          const { error } = await client.auth.exchangeCodeForSession(code);
+          if (!error && !cancelled) setActiveRealm((prev) => prev ?? realm);
+        } catch {
+          // fall through to session probe
+        }
+        // Clean ?code from URL so a refresh doesn't replay it
+        url.searchParams.delete("code");
+        window.history.replaceState({}, document.title, url.pathname + (url.search || "") + url.hash);
+      }
+
+      // 2) Probe existing sessions (covers hash-based recovery already consumed by detectSessionInUrl)
+      const results = await Promise.all(clients.map(async ({ realm, client }) => {
+        const { data } = await client.auth.getSession();
+        return data.session ? realm : null;
+      }));
       if (cancelled) return;
       const found = results.find(Boolean) as Realm | undefined;
       if (found) setActiveRealm((prev) => prev ?? found);
       setChecked(true);
-    });
+    };
+
+    void run();
 
     return () => {
       cancelled = true;
       subs.forEach(({ data }) => data.subscription.unsubscribe());
     };
-  }, []);
+  }, [realmHint]);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

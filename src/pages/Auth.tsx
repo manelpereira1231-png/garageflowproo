@@ -54,7 +54,7 @@ export default function Auth() {
     try {
       if (mode === 'forgot') {
         const { error } = await erpSupabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/reset-password?realm=erp`,
         });
         if (error) throw error;
         toast.success(t('auth.resetSent'));

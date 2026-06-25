@@ -24,7 +24,7 @@ export default function CommercialPipeline() {
 
   const load = async () => {
     const { data } = await supabase.from("crm_leads" as any).select("id, name, email, estimated_value, pipeline_stage").order("updated_at", { ascending: false });
-    setLeads((data || []) as Lead[]);
+    setLeads(((data as unknown) || []) as Lead[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);

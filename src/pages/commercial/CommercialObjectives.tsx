@@ -48,7 +48,7 @@ export default function CommercialObjectives() {
 
   const load = async () => {
     const { data } = await supabase.from("crm_objectives" as any).select("*").order("period_start", { ascending: false });
-    const list = (data || []) as Objective[];
+    const list = ((data as unknown) || []) as Objective[];
     const enriched = await Promise.all(list.map(async (o) => ({ ...o, actual: await actualFor(o) })));
     setObjectives(enriched);
   };

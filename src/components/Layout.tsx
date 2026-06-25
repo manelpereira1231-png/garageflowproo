@@ -56,6 +56,7 @@ import { prefetchRoute } from "@/lib/routePrefetch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
+import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
 
 type NavItem = {
   path: string;
@@ -93,7 +94,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");
-  const [isCarityPartner, setIsCarityPartner] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
@@ -105,15 +105,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const sidebarPrefs = useSidebarPrefs(activeShopId);
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
+  // Single source of truth for Market enrollment. Subscribes to realtime
+  // changes on the shop row, so the sidebar flips from "Ativar Market" to the
+  // full Market navigation the instant `enroll_shop_in_market` runs — and
+  // never re-shows "Ativar Market" while the shop is an active partner.
+  const { isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
+
+  useEffect(() => {
+    if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
+  }, [shopMarketRow?.name]);
+
   useEffect(() => {
     if (!activeShopId) return;
     let cancelled = false;
-    const loadShopAndAlerts = async () => {
-      const { data: shop } = await supabase.from("shops").select("id, name, is_carity_partner, carity_active").eq("id", activeShopId).maybeSingle();
-      if (cancelled || !shop) return;
-      setShopName(shop.name || "");
-      setIsCarityPartner(shop.is_carity_partner === true && shop.carity_active !== false);
-    };
     const loadAlertCount = async () => {
       const { count } = await supabase
         .from("alerts")
@@ -122,7 +126,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         .eq("status", "pending");
       if (!cancelled) setPendingAlertCount(count || 0);
     };
-    loadShopAndAlerts();
     loadAlertCount();
 
     // Realtime: any change to this shop's alerts → refresh badge instantly.

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,13 +56,20 @@ export default function CarityShopInspections() {
   const [activeListing, setActiveListing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);
-  const [shopData, setShopData] = useState<any>(null);
 
-  // Partner enrollment state
-  const [isPartner, setIsPartner] = useState<boolean | null>(null);
-  const [isActive, setIsActive] = useState<boolean>(false);
+  // Single source of truth for shop + Market enrollment status.
+  // Subscribes to realtime updates on the shop row, so once enrolled this
+  // page (and the ERP sidebar) NEVER re-render the "Ativar Market" screen
+  // unless an admin explicitly deactivates the shop.
+  const {
+    ready: partnerChecked,
+    isPartner,
+    isActive,
+    shop: shopData,
+    refresh: refreshMarketStatus,
+  } = useShopMarketStatus(shopId);
+
   const [enrolling, setEnrolling] = useState(false);
-  const [partnerChecked, setPartnerChecked] = useState(false);
 
   // Schedule dialog
   const [scheduleDialog, setScheduleDialog] = useState<any>(null);
@@ -91,38 +99,6 @@ export default function CarityShopInspections() {
     lat: null, lng: null, city: "", country: "", capturing: false,
   });
 
-  // Step 1: Fast partner check (renders enrollment screen immediately)
-  useEffect(() => {
-    if (!shopId) {
-      // No active shop — mark as checked so we can render a clear empty state
-      // instead of an infinite spinner.
-      setShopData(null);
-      setIsPartner(false);
-      setIsActive(false);
-      setPartnerChecked(true);
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from("shops")
-      .select("id, name, address, phone, latitude, longitude, is_carity_partner, carity_active, email, nif")
-      .eq("id", shopId)
-      .maybeSingle()
-      .then(({ data: shopInfo }) => {
-        if (cancelled) return;
-        if (shopInfo) {
-          setShopData(shopInfo);
-          setIsPartner(shopInfo.is_carity_partner === true);
-          setIsActive(shopInfo.carity_active === true);
-        } else {
-          setShopData(null);
-          setIsPartner(false);
-          setIsActive(false);
-        }
-        setPartnerChecked(true);
-      });
-    return () => { cancelled = true; };
-  }, [shopId]);
 
 
   // Step 2: Load inspections only if active partner
@@ -1033,8 +1009,10 @@ export default function CarityShopInspections() {
         throw error;
       }
 
-      setIsPartner(true);
-      setIsActive(true);
+      // Force-refresh the shared market-status hook. Realtime will also fire,
+      // but this guarantees the page flips out of the enrollment screen
+      // immediately, even before the realtime event lands.
+      await refreshMarketStatus();
       toast.success("Oficina inscrita no GarageFlow Market! 🎉 Carteira ativada — já pode receber pedidos.");
       loadData();
     } catch (err: any) {

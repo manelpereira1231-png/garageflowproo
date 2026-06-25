@@ -701,11 +701,39 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
-  if (adminLoading || !authReady || !ready) {
+  if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // Administrador Comercial — painel dedicado, sem acesso ao admin técnico
+  if (isCommercialAdmin && !isSuperAdmin) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<CommercialLayout />}>
+              <Route path="/commercial" element={<CommercialDashboard />} />
+              <Route path="/commercial/crm" element={<CommercialCRM />} />
+              <Route path="/commercial/pipeline" element={<CommercialPipeline />} />
+              <Route path="/commercial/meetings" element={<CommercialMeetings />} />
+              <Route path="/commercial/retention" element={<CommercialRetention />} />
+              <Route path="/commercial/intelligence" element={<CommercialIntelligence />} />
+              <Route path="/commercial/reports" element={<CommercialReports />} />
+              <Route path="/commercial/objectives" element={<CommercialObjectives />} />
+            </Route>
+            <Route path="/auth" element={<Navigate to="/commercial" replace />} />
+            <Route path="/" element={<Navigate to="/commercial" replace />} />
+            {publicRoutesAuthed.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+            <Route path="*" element={<Navigate to="/commercial" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
     );
   }
 

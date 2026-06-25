@@ -43,9 +43,6 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
   });
 }
 
-export const erpSupabase = makeClient(ERP_STORAGE_KEY, "erp");
-export const marketSupabase = makeClient(MARKET_STORAGE_KEY, "market");
-
 const ERP_MARKET_PATHS = [
   "/market/opportunities",
   "/market/inspections",
@@ -58,7 +55,7 @@ const ERP_MARKET_PATHS = [
 
 function hasStoredRealmSession(storageKey: string): boolean {
   if (typeof window === "undefined") return false;
-  return Boolean(window.localStorage.getItem(storageKey));
+  try { return Boolean(window.localStorage.getItem(storageKey)); } catch { return false; }
 }
 
 /** Detect realm from current URL. Default = ERP. */
@@ -75,6 +72,10 @@ export function detectRealm(pathname?: string): Realm {
   if (typeof window !== "undefined" && window.location.hostname.startsWith("market.")) return "market";
   return "erp";
 }
+
+export const erpSupabase = makeClient(ERP_STORAGE_KEY, "erp");
+export const marketSupabase = makeClient(MARKET_STORAGE_KEY, "market");
+
 
 export function getRealmClient(realm?: Realm): SupabaseClient<Database> {
   const r = realm ?? detectRealm();

@@ -129,9 +129,10 @@ Deno.serve(async (req) => {
     const body_json = await req.json();
     const { action, shop_id, title, body, url, user_ids } = body_json;
 
-    // Handle client portal push subscription (no auth required)
+    // Client portal push subscription — requires a valid portal_token matching client_id+shop_id,
+    // OR an authenticated user that owns/belongs to the shop.
     if (action === "subscribe") {
-      const { client_id, endpoint, p256dh, auth } = body_json;
+      const { client_id, endpoint, p256dh, auth, portal_token } = body_json;
       if (!shop_id || !client_id || !endpoint || !p256dh || !auth) {
         return new Response(JSON.stringify({ error: "Missing fields for subscribe" }), {
           status: 400,
@@ -139,10 +140,39 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Use client_id as user_id for portal subscriptions (prefixed to distinguish)
-      const portalUserId = client_id;
+      // Authenticate either via portal_token or via user JWT.
+      let allowed = false;
+      if (portal_token) {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("id, shop_id, portal_token")
+          .eq("id", client_id)
+          .eq("shop_id", shop_id)
+          .eq("portal_token", portal_token)
+          .maybeSingle();
+        allowed = !!client;
+      }
+      if (!allowed) {
+        const authHeader = req.headers.get("Authorization") || "";
+        if (authHeader.startsWith("Bearer ")) {
+          const { data: u } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+          if (u?.user) {
+            const [{ data: mem }, { data: own }] = await Promise.all([
+              supabase.from("shop_users").select("shop_id").eq("user_id", u.user.id).eq("shop_id", shop_id).limit(1),
+              supabase.from("shops").select("id").eq("id", shop_id).eq("user_id", u.user.id).limit(1),
+            ]);
+            allowed = (mem?.length ?? 0) > 0 || (own?.length ?? 0) > 0;
+          }
+        }
+      }
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-      // Upsert: remove existing subscription for this client, then insert
+      const portalUserId = client_id;
       await supabase
         .from("push_subscriptions")
         .delete()
@@ -151,13 +181,7 @@ Deno.serve(async (req) => {
 
       const { error: insertErr } = await supabase
         .from("push_subscriptions")
-        .insert({
-          shop_id,
-          user_id: portalUserId,
-          endpoint,
-          p256dh,
-          auth,
-        });
+        .insert({ shop_id, user_id: portalUserId, endpoint, p256dh, auth });
 
       if (insertErr) {
         return new Response(JSON.stringify({ error: insertErr.message }), {

@@ -225,7 +225,7 @@ export default function CommercialDashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, debouncedReload)
       .subscribe();
 
-    const poll = window.setInterval(() => void load(true), 60000);
+    const poll = window.setInterval(() => void load(true), 20000);
     const onFocus = () => void load(true);
     window.addEventListener("focus", onFocus);
 

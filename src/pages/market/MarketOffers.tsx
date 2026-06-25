@@ -81,8 +81,7 @@ export default function MarketOffers() {
                       {it.listing?.make || "Veículo"} {it.listing?.model || ""} {it.listing?.year ? `(${it.listing.year})` : ""}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(it.created_at).toLocaleDateString("pt-PT")}
-                      {it.amount != null ? ` · €${Number(it.amount).toFixed(2)}` : ""}
+                      {new Date(it.offered_at).toLocaleDateString("pt-PT")}
                     </div>
                   </div>
                 </div>

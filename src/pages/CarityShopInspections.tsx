@@ -56,74 +56,20 @@ export default function CarityShopInspections() {
   const [activeListing, setActiveListing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);
-  const [shopData, setShopData] = useState<any>(null);
 
-  // Partner enrollment state
-  const [isPartner, setIsPartner] = useState<boolean | null>(null);
-  const [isActive, setIsActive] = useState<boolean>(false);
+  // Single source of truth for shop + Market enrollment status.
+  // Subscribes to realtime updates on the shop row, so once enrolled this
+  // page (and the ERP sidebar) NEVER re-render the "Ativar Market" screen
+  // unless an admin explicitly deactivates the shop.
+  const {
+    ready: partnerChecked,
+    isPartner,
+    isActive,
+    shop: shopData,
+    refresh: refreshMarketStatus,
+  } = useShopMarketStatus(shopId);
+
   const [enrolling, setEnrolling] = useState(false);
-  const [partnerChecked, setPartnerChecked] = useState(false);
-
-  // Schedule dialog
-  const [scheduleDialog, setScheduleDialog] = useState<any>(null);
-  const [schedDate, setSchedDate] = useState("");
-  const [schedTime, setSchedTime] = useState("");
-  const [scheduling, setScheduling] = useState(false);
-
-  // Report form state
-  const [report, setReport] = useState({
-    engine_status: "ok", transmission_status: "ok", brakes_status: "ok",
-    suspension_status: "ok", steering_status: "ok", tires_status: "ok",
-    electrical_status: "ok", overall_score: 7, recommendation: "recommended",
-    inspector_notes: "",
-  });
-  const [defects, setDefects] = useState<Defect[]>([]);
-  const [technicianName, setTechnicianName] = useState("");
-  const [reportLocked, setReportLocked] = useState(false);
-  const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
-    exterior_photos: [], interior_photos: [], engine_photos: [],
-    brakes_photos: [], suspension_photos: [],
-    tire_photos: [], damage_photos: [],
-  });
-  const [uploading, setUploading] = useState<string | null>(null);
-  const [mileageAtInspection, setMileageAtInspection] = useState<string>("");
-  const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [geo, setGeo] = useState<{ lat: number | null; lng: number | null; city: string; country: string; capturing: boolean }>({
-    lat: null, lng: null, city: "", country: "", capturing: false,
-  });
-
-  // Step 1: Fast partner check (renders enrollment screen immediately)
-  useEffect(() => {
-    if (!shopId) {
-      // No active shop — mark as checked so we can render a clear empty state
-      // instead of an infinite spinner.
-      setShopData(null);
-      setIsPartner(false);
-      setIsActive(false);
-      setPartnerChecked(true);
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from("shops")
-      .select("id, name, address, phone, latitude, longitude, is_carity_partner, carity_active, email, nif")
-      .eq("id", shopId)
-      .maybeSingle()
-      .then(({ data: shopInfo }) => {
-        if (cancelled) return;
-        if (shopInfo) {
-          setShopData(shopInfo);
-          setIsPartner(shopInfo.is_carity_partner === true);
-          setIsActive(shopInfo.carity_active === true);
-        } else {
-          setShopData(null);
-          setIsPartner(false);
-          setIsActive(false);
-        }
-        setPartnerChecked(true);
-      });
-    return () => { cancelled = true; };
-  }, [shopId]);
 
 
   // Step 2: Load inspections only if active partner

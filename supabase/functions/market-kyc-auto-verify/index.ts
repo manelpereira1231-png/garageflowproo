@@ -18,10 +18,14 @@ function isValidPtNif(nif: string): boolean {
   return expected === d[8];
 }
 
-async function signedUrl(supabase: any, path: string) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  const { data } = await supabase.storage.from("kyc-documents").createSignedUrl(path, 60 * 10);
+async function signedUrl(supabase: any, path: string, userId: string) {
+  if (!path || typeof path !== "string") return null;
+  // Reject any absolute URL — only storage paths inside kyc-documents are accepted.
+  if (/^[a-z]+:\/\//i.test(path)) return null;
+  // Enforce per-user folder prefix to prevent cross-user document use.
+  const normalized = path.replace(/^\/+/, "");
+  if (!normalized.startsWith(userId + "/")) return null;
+  const { data } = await supabase.storage.from("kyc-documents").createSignedUrl(normalized, 60 * 10);
   return data?.signedUrl ?? null;
 }
 

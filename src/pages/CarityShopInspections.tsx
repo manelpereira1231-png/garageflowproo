@@ -1022,26 +1022,26 @@ export default function CarityShopInspections() {
     }
   };
 
-  // --- NO ACTIVE SHOP STATE ---
-  if (partnerChecked && !shopId) {
+  // --- LOADING GUARD ---
+  // CRITICAL: never render the enrollment screen before the single source of
+  // truth (useShopMarketStatus) has resolved. Otherwise active partners briefly
+  // see "Ativar Market" on every navigation because the hook initialises
+  // isPartner=false until the realtime/DB read completes.
+  if (!partnerChecked || !shopId) {
     return (
-      <div className="max-w-lg mx-auto text-center space-y-4 pt-12">
-        <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
-          <ShieldCheck className="h-8 w-8 text-amber-600" />
-        </div>
-        <h1 className="text-2xl font-bold">GarageFlow Market</h1>
-        <p className="text-muted-foreground">
-          Para receber pedidos de inspeção e ganhar dinheiro extra, primeiro tens de criar/selecionar uma oficina nas Definições.
-        </p>
-        <Button asChild size="lg" className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold">
-          <a href="/settings">Ir para Definições</a>
-        </Button>
+      <div className="max-w-lg mx-auto text-center pt-16">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
       </div>
     );
   }
 
+  // --- NO ACTIVE SHOP STATE ---
+  // (shopId is guaranteed non-null here, but keep the explicit guard for clarity.)
+
   // --- ENROLLMENT SCREEN ---
-  if (isPartner === false) {
+  // Only rendered AFTER the single source of truth confirmed the shop is NOT
+  // a Market partner. Active partners fall through to the operational UI.
+  if (!isPartner || !isActive) {
     const hasName = !!shopData?.name?.trim();
     const hasPhone = !!shopData?.phone?.trim();
     const hasAddress = !!shopData?.address?.trim();

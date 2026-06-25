@@ -109,7 +109,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // changes on the shop row, so the sidebar flips from "Ativar Market" to the
   // full Market navigation the instant `enroll_shop_in_market` runs — and
   // never re-shows "Ativar Market" while the shop is an active partner.
-  const { isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
+  const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
@@ -256,7 +256,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     // ── Market (módulo interno do ERP — partilha sessão, sidebar, dashboard) ──
     // Sempre visíveis para oficinas parceiras. "Explorar carros" liga ao Market público.
-    ...(isCarityPartner
+    ...(!marketStatusReady
+      ? [] // Wait for the single source of truth before deciding which Market items to show — prevents "Ativar Market" flashing for already-enrolled shops.
+      : isCarityPartner
       ? [
           { path: "/market/opportunities", label: "Oportunidades", icon: Search, badge: pendingMarketCount } as NavItem,
           { path: "/market/inspections", label: "Inspeções", icon: ClipboardCheck } as NavItem,
@@ -280,7 +282,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
     { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
-  ], [pendingAlertCount, pendingMarketCount, t, isCarityPartner]);
+  ], [pendingAlertCount, pendingMarketCount, t, marketStatusReady, isCarityPartner]);
 
   // Filter menu by the feature matrix (single source of truth). Items
   // without a featureSlug or with permission stay; the rest disappear.

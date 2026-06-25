@@ -743,7 +743,8 @@ function AuthenticatedRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/admin/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route path="/auth" element={<Navigate to="/market/dashboard" replace />} />
+            {/* Allow Market-logged users to reach the ERP signup/login (different realm) */}
+            <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
             <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
             <Route element={<MarketLayout />}>
               {marketAuthedRoutes.map((route) => (

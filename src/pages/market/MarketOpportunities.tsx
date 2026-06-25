@@ -77,10 +77,10 @@ export default function MarketOpportunities() {
                     {it.listing?.make || "Veículo"} {it.listing?.model || ""} {it.listing?.year ? `(${it.listing.year})` : ""}
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                    {it.listing?.city && (
-                      <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" /> {it.listing.city}</span>
+                    {it.listing?.location_label && (
+                      <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" /> {it.listing.location_label}</span>
                     )}
-                    <span>{new Date(it.created_at).toLocaleDateString("pt-PT")}</span>
+                    <span>{new Date(it.offered_at).toLocaleDateString("pt-PT")}</span>
                   </div>
                 </div>
               </div>

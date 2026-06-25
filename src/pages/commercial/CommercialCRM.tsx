@@ -41,7 +41,19 @@ export default function CommercialCRM() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("commercial-crm-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "crm_leads" }, () => load())
+      .subscribe();
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    const iv = setInterval(load, 30000);
+    return () => { supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
+  }, []);
 
   const subByShop = useMemo(() => {
     const m = new Map<string, Sub>();

@@ -8,13 +8,13 @@ import EmptyState from "@/components/EmptyState";
 type Opportunity = {
   id: string;
   status: string;
-  created_at: string;
+  offered_at: string;
   listing: {
     id: string;
     make: string | null;
     model: string | null;
     year: number | null;
-    city: string | null;
+    location_label: string | null;
   } | null;
 };
 
@@ -28,15 +28,15 @@ export default function MarketOpportunities() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      // Inspection offers addressed to this shop, still pending acceptance.
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("carity_inspection_offers")
-        .select("id, status, created_at, listing:carity_listings(id, make, model, year, city)")
+        .select("id, status, offered_at, listing:carity_listings(id, make, model, year, location_label)")
         .eq("shop_id", shopId)
         .in("status", ["pending", "offered"])
-        .order("created_at", { ascending: false })
+        .order("offered_at", { ascending: false })
         .limit(50);
       if (cancelled) return;
+      if (error) console.error("[MarketOpportunities]", error);
       setItems((data as any) || []);
       setLoading(false);
     })();

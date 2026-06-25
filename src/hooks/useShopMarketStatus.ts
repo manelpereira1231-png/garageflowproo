@@ -130,7 +130,7 @@ export function useShopMarketStatus(shopId: string | null | undefined): ShopMark
 
     const cached = readCachedStatus(shopId);
     if (cached) setStatus(cached);
-    if (cached && !force) return;
+    if (cached?.isMarketEnabled && !force) return;
 
     const next = await fetchMarketStatus(shopId);
     setStatus(next);

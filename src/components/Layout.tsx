@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
@@ -103,6 +103,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
   const sidebarPrefs = useSidebarPrefs(activeShopId);
+  const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
   useEffect(() => {
     if (!activeShopId) return;
@@ -377,22 +378,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const isActive = isPathActive(location.pathname, item.path);
               const muted = sidebarPrefs.isMuted(item.path);
               const showBadge = !muted && item.badge && item.badge > 0;
+              const closeMobileSidebar = () => {
+                if (window.matchMedia("(max-width: 1023px)").matches) {
+                  setSidebarOpen(false);
+                }
+              };
               const handleClick = (e: React.MouseEvent) => {
                 // Native <Link> navigation — only side-effect is closing the
-                // mobile drawer. Do NOT preventDefault here: it was the cause
-                // of the "double click" bug because the inner star/arrow
-                // buttons were swallowing the first click.
+                // mobile drawer. Do NOT preventDefault for mouse/trackpad.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                setSidebarOpen(false);
+                closeMobileSidebar();
+              };
+              const handlePointerDown = (e: React.PointerEvent) => {
+                if (e.pointerType !== "touch") return;
+                touchStartRef.current = { x: e.clientX, y: e.clientY, path: item.path };
+              };
+              const handlePointerUp = (e: React.PointerEvent) => {
+                if (e.pointerType !== "touch") return;
+                const start = touchStartRef.current;
+                touchStartRef.current = null;
+                if (!start || start.path !== item.path) return;
+                const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+                if (moved > 10) return;
+
+                // Mobile Safari/Chrome can treat the first tap as focus/hover
+                // when a transformed drawer is open. Navigate on pointer-up so
+                // every sidebar item opens with one tap.
+                e.preventDefault();
+                e.stopPropagation();
+                closeMobileSidebar();
+                navigate(item.path);
               };
               const navLink = (
                 <Link
                   to={item.path}
                   onClick={handleClick}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
-                  onTouchStart={() => handlePrefetch(item.path)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  className={`flex min-h-11 touch-manipulation select-none items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

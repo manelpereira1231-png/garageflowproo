@@ -10,6 +10,7 @@ import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+import { useCommercialAdmin } from "@/hooks/useCommercialAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { setSentryUser } from "@/lib/sentry";
@@ -169,6 +170,17 @@ const AdminMarketingAutopilot = lazyRetry(() => import("@/pages/admin/AdminMarke
 const AdminGrowth = lazyRetry(() => import("@/pages/admin/AdminGrowth"));
 const OficinasPiloto = lazyRetry(() => import("@/pages/OficinasPiloto"));
 const StatusPage = lazyRetry(() => import("@/pages/StatusPage"));
+
+// Commercial admin (Administrador Comercial) panel
+const CommercialLayout = lazyRetry(() => import("@/components/CommercialLayout"));
+const CommercialDashboard = lazyRetry(() => import("@/pages/commercial/CommercialDashboard"));
+const CommercialCRM = lazyRetry(() => import("@/pages/commercial/CommercialCRM"));
+const CommercialPipeline = lazyRetry(() => import("@/pages/commercial/CommercialPipeline"));
+const CommercialMeetings = lazyRetry(() => import("@/pages/commercial/CommercialMeetings"));
+const CommercialRetention = lazyRetry(() => import("@/pages/commercial/CommercialRetention"));
+const CommercialIntelligence = lazyRetry(() => import("@/pages/commercial/CommercialIntelligence"));
+const CommercialReports = lazyRetry(() => import("@/pages/commercial/CommercialReports"));
+const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/CommercialObjectives"));
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -612,6 +624,7 @@ function writeCachedUserType(value: CachedUserType) {
 
 function AuthenticatedRoutes() {
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
+  const { isCommercialAdmin, loading: commercialLoading } = useCommercialAdmin();
   const { isReady: authReady, user } = useAuthReady();
 
   // Hydrate from session cache to AVOID the "create-shop / wrong dashboard" flash.
@@ -688,11 +701,39 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
-  if (adminLoading || !authReady || !ready) {
+  if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // Administrador Comercial — painel dedicado, sem acesso ao admin técnico
+  if (isCommercialAdmin && !isSuperAdmin) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<CommercialLayout />}>
+              <Route path="/commercial" element={<CommercialDashboard />} />
+              <Route path="/commercial/crm" element={<CommercialCRM />} />
+              <Route path="/commercial/pipeline" element={<CommercialPipeline />} />
+              <Route path="/commercial/meetings" element={<CommercialMeetings />} />
+              <Route path="/commercial/retention" element={<CommercialRetention />} />
+              <Route path="/commercial/intelligence" element={<CommercialIntelligence />} />
+              <Route path="/commercial/reports" element={<CommercialReports />} />
+              <Route path="/commercial/objectives" element={<CommercialObjectives />} />
+            </Route>
+            <Route path="/auth" element={<Navigate to="/commercial" replace />} />
+            <Route path="/" element={<Navigate to="/commercial" replace />} />
+            {publicRoutesAuthed.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+            <Route path="*" element={<Navigate to="/commercial" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
     );
   }
 
@@ -743,7 +784,8 @@ function AuthenticatedRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/admin/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route path="/auth" element={<Navigate to="/market/dashboard" replace />} />
+            {/* Allow Market-logged users to reach the ERP signup/login (different realm) */}
+            <Route path="/auth" element={<Suspense fallback={<PageLoader />}><Auth /></Suspense>} />
             <Route path="/market/auth" element={<AuthRouteRedirect fallback="/market/dashboard" realm="market" />} />
             <Route element={<MarketLayout />}>
               {marketAuthedRoutes.map((route) => (

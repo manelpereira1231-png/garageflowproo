@@ -1901,6 +1901,296 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_leads: {
+        Row: {
+          assigned_to: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          district: string | null
+          email: string | null
+          estimated_value: number | null
+          id: string
+          last_contact_at: string | null
+          name: string
+          next_contact_at: string | null
+          notes: string | null
+          owner_name: string | null
+          phone: string | null
+          pipeline_stage: string
+          priority: string | null
+          shop_id: string | null
+          source: string | null
+          status: string
+          target_plan: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          email?: string | null
+          estimated_value?: number | null
+          id?: string
+          last_contact_at?: string | null
+          name: string
+          next_contact_at?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          pipeline_stage?: string
+          priority?: string | null
+          shop_id?: string | null
+          source?: string | null
+          status?: string
+          target_plan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          email?: string | null
+          estimated_value?: number | null
+          id?: string
+          last_contact_at?: string | null
+          name?: string
+          next_contact_at?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          pipeline_stage?: string
+          priority?: string | null
+          shop_id?: string | null
+          source?: string | null
+          status?: string
+          target_plan?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_meetings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          lead_id: string | null
+          location: string | null
+          meeting_type: string
+          meeting_url: string | null
+          notes: string | null
+          scheduled_at: string
+          shop_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          scheduled_at: string
+          shop_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          scheduled_at?: string
+          shop_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_meetings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_meetings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_notes: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_id: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          shop_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_objectives: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          metric: string
+          owner_id: string | null
+          period: string
+          period_end: string
+          period_start: string
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric: string
+          owner_id?: string | null
+          period: string
+          period_end: string
+          period_start: string
+          target_value: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric?: string
+          owner_id?: string | null
+          period?: string
+          period_end?: string
+          period_start?: string
+          target_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          lead_id: string | null
+          priority: string | null
+          shop_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string | null
+          shop_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string | null
+          shop_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_health_scores: {
         Row: {
           activity_30d: number | null
@@ -6773,6 +7063,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_commercial_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_regional_admin_for: {
         Args: { _country_code: string; _user_id: string }
         Returns: boolean
@@ -6912,6 +7203,7 @@ export type Database = {
         | "admin"
         | "regional_admin"
         | "super_admin"
+        | "commercial_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7046,6 +7338,7 @@ export const Constants = {
         "admin",
         "regional_admin",
         "super_admin",
+        "commercial_admin",
       ],
     },
   },

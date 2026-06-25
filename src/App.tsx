@@ -10,6 +10,7 @@ import IndiaLanguagePrompt from "@/components/IndiaLanguagePrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/NotFound";
 import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+import { useCommercialAdmin } from "@/hooks/useCommercialAdmin";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { setSentryUser } from "@/lib/sentry";

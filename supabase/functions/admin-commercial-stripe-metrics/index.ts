@@ -9,7 +9,6 @@ const corsHeaders = {
 
 type MoneyCents = Record<string, number>;
 const ACTIVE_STATUSES = new Set(["active"]);
-const BILLING_ACTIVE_STATUSES = new Set(["active", "trialing"]);
 const INACTIVE_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired", "incomplete", "paused"]);
 
 const log = (message: string, data?: unknown) =>

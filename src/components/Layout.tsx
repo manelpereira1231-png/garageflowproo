@@ -34,8 +34,6 @@ import {
   Lock,
   Wallet,
   Star as StarIcon,
-  ArrowUp,
-  ArrowDown,
   TrendingUp,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
@@ -375,7 +373,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           )}
 
           {(() => {
-            const renderItem = (item: NavItem, opts: { fav: boolean; index?: number; total?: number }) => {
+            const renderItem = (item: NavItem) => {
               const isActive = isPathActive(location.pathname, item.path);
               const muted = sidebarPrefs.isMuted(item.path);
               const showBadge = !muted && item.badge && item.badge > 0;
@@ -386,11 +384,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 // buttons were swallowing the first click.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                 setSidebarOpen(false);
-              };
-              const handleFav = (fn: () => void) => (e: React.MouseEvent | React.KeyboardEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                fn();
               };
               const navLink = (
                 <Link
@@ -430,45 +423,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
 
-              return (
-                <div key={item.path} className="relative group/nav-item">
-                  {navLink}
-                  {!isGuidedMode && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden items-center gap-0.5 rounded-md bg-sidebar-accent/95 px-0.5 py-0.5 shadow-sm group-hover/nav-item:flex group-focus-within/nav-item:flex">
-                      {opts.fav && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))}
-                            disabled={opts.index === 0}
-                            className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20 disabled:pointer-events-none disabled:opacity-30"
-                            title="Subir"
-                          >
-                            <ArrowUp className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))}
-                            disabled={opts.total !== undefined && opts.index === opts.total - 1}
-                            className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20 disabled:pointer-events-none disabled:opacity-30"
-                            title="Descer"
-                          >
-                            <ArrowDown className="w-3 h-3" />
-                          </button>
-                        </>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleFav(() => sidebarPrefs.toggleFavorite(item.path))}
-                        className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20"
-                        title={opts.fav ? "Remover dos favoritos" : "Fixar nos favoritos"}
-                      >
-                        <StarIcon className={`w-3.5 h-3.5 ${opts.fav ? "fill-current" : ""}`} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
+              return <div key={item.path}>{navLink}</div>;
             };
 
             // Dashboard always pinned at very top (outside groups).
@@ -482,17 +437,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
                       <StarIcon className="w-3 h-3 fill-current" /> Favoritos
                     </div>
-                    {favoriteItems.map((it, i) => renderItem(it, { fav: true, index: i, total: favoriteItems.length }))}
+                    {favoriteItems.map((it) => renderItem(it))}
                     <div className="mt-2 border-t border-sidebar-border/60" />
                   </div>
                 )}
 
                 {dashboardItem && (
-                  <div className="mb-2">{renderItem(dashboardItem, { fav: false })}</div>
+                  <div className="mb-2">{renderItem(dashboardItem)}</div>
                 )}
 
                 {isGuidedMode
-                  ? groupedRegular.map((it) => renderItem(it, { fav: false }))
+                  ? groupedRegular.map((it) => renderItem(it))
                   : NAV_GROUPS.map((group) => {
                       const groupItems = groupedRegular.filter(i => group.paths.includes(i.path));
                       if (groupItems.length === 0) return null;
@@ -506,7 +461,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       if (groupItems.length === 1) {
                         return (
                           <div key={group.id} className="mb-1">
-                            {renderItem(groupItems[0], { fav: false })}
+                            {renderItem(groupItems[0])}
                           </div>
                         );
                       }
@@ -527,7 +482,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             )}
                           </div>
                           <div className="space-y-0.5 mt-0.5">
-                            {groupItems.map((it) => renderItem(it, { fav: false }))}
+                            {groupItems.map((it) => renderItem(it))}
                           </div>
                         </div>
                       );

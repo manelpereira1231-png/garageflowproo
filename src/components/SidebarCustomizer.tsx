@@ -40,9 +40,9 @@ export default function SidebarCustomizer({ shopId, items }: Props) {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Star className="w-3.5 h-3.5" /> Favoritos
           </h3>
-          <p className="text-[11px] text-muted-foreground">Fixa itens no topo. Clica na estrela em qualquer item do menu.</p>
+          <p className="text-[11px] text-muted-foreground">Fixa itens no topo sem interferir com os cliques de navegação.</p>
           {prefs.favorites.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">Sem favoritos. Passa o rato sobre um item do menu e clica na ⭐.</p>
+            <p className="text-xs text-muted-foreground italic">Sem favoritos ativos.</p>
           ) : (
             <ul className="space-y-1">
               {prefs.favorites.map((p, idx) => {
@@ -61,6 +61,23 @@ export default function SidebarCustomizer({ shopId, items }: Props) {
               })}
             </ul>
           )}
+          <div className="max-h-44 overflow-y-auto rounded-md border border-border/60">
+            {items.map((it) => {
+              const fav = prefs.isFavorite(it.path);
+              return (
+                <button
+                  key={it.path}
+                  type="button"
+                  onClick={() => prefs.toggleFavorite(it.path)}
+                  className="flex w-full items-center gap-2 px-2 py-2 text-left text-sm hover:bg-muted/50"
+                >
+                  <Star className={`w-3.5 h-3.5 ${fav ? "fill-current text-primary" : "text-muted-foreground"}`} />
+                  <span className="flex-1 truncate">{it.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{fav ? "Fixado" : "Fixar"}</span>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <section className="space-y-2 pt-2 border-t">

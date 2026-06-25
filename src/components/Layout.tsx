@@ -19,7 +19,6 @@ import {
   UserPlus,
   MessageCircle,
   Receipt,
-  ChevronDown,
   CalendarDays,
   BookOpen,
   Package,
@@ -301,30 +300,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
 
-  const groupStateKey = `garageflow_sidebar_groups_${activeShopId || "global"}`;
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    try {
-      const raw = localStorage.getItem(groupStateKey);
-      if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
-    return { ops: true, catalog: true, finance: true, growth: true, market: true, system: true };
-  });
-  useEffect(() => {
-    // Auto-open the group containing the current route for discoverability.
-    const activeGroup = NAV_GROUPS.find(g => g.paths.some(p => isPathActive(location.pathname, p)));
-    if (activeGroup && !openGroups[activeGroup.id]) {
-      setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
-  const toggleGroup = (id: string) => {
-    setOpenGroups(prev => {
-      const next = { ...prev, [id]: !prev[id] };
-      try { localStorage.setItem(groupStateKey, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
-  };
-
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
     // Sign out ONLY of the ERP realm — Market session (if any) stays intact.
@@ -424,7 +399,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
                   onTouchStart={() => handlePrefetch(item.path)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -433,46 +408,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <item.icon className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">{item.label}</span>
                   <span className="ml-auto flex items-center gap-1 shrink-0">
-                    {!isGuidedMode && opts.fav && (
-                      <>
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))}
-                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))(e); }}
-                          aria-disabled={opts.index === 0}
-                          className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 ${opts.index === 0 ? "pointer-events-none opacity-20" : ""}`}
-                          title="Subir"
-                        >
-                          <ArrowUp className="w-3 h-3" />
-                        </span>
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))}
-                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))(e); }}
-                          aria-disabled={opts.total !== undefined && opts.index === opts.total - 1}
-                          className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 ${opts.total !== undefined && opts.index === opts.total - 1 ? "pointer-events-none opacity-20" : ""}`}
-                          title="Descer"
-                        >
-                          <ArrowDown className="w-3 h-3" />
-                        </span>
-                      </>
-                    )}
-                    {!isGuidedMode && (
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={handleFav(() => sidebarPrefs.toggleFavorite(item.path))}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.toggleFavorite(item.path))(e); }}
-                        className={`p-0.5 rounded hover:bg-background/20 transition-opacity ${
-                          opts.fav ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                        }`}
-                        title={opts.fav ? "Remover dos favoritos" : "Fixar nos favoritos"}
-                      >
-                        <StarIcon className={`w-3.5 h-3.5 ${opts.fav ? "fill-current" : ""}`} />
-                      </span>
-                    )}
                     {item.planBadge && (
                       <span
                         className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
@@ -495,7 +430,45 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
 
-              return <div key={item.path}>{navLink}</div>;
+              return (
+                <div key={item.path} className="relative group/nav-item">
+                  {navLink}
+                  {!isGuidedMode && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden items-center gap-0.5 rounded-md bg-sidebar-accent/95 px-0.5 py-0.5 shadow-sm group-hover/nav-item:flex group-focus-within/nav-item:flex">
+                      {opts.fav && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))}
+                            disabled={opts.index === 0}
+                            className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20 disabled:pointer-events-none disabled:opacity-30"
+                            title="Subir"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))}
+                            disabled={opts.total !== undefined && opts.index === opts.total - 1}
+                            className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20 disabled:pointer-events-none disabled:opacity-30"
+                            title="Descer"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleFav(() => sidebarPrefs.toggleFavorite(item.path))}
+                        className="grid h-6 w-6 place-items-center rounded text-sidebar-foreground hover:bg-background/20"
+                        title={opts.fav ? "Remover dos favoritos" : "Fixar nos favoritos"}
+                      >
+                        <StarIcon className={`w-3.5 h-3.5 ${opts.fav ? "fill-current" : ""}`} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
             };
 
             // Dashboard always pinned at very top (outside groups).
@@ -537,30 +510,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           </div>
                         );
                       }
-                      const open = openGroups[group.id];
                       const hasActive = groupItems.some(i => isPathActive(location.pathname, i.path));
                       const totalBadge = groupItems.reduce((sum, i) => sum + (!sidebarPrefs.isMuted(i.path) && i.badge ? i.badge : 0), 0);
                       return (
                         <div key={group.id} className="mb-1">
-                          <button
-                            onClick={() => toggleGroup(group.id)}
+                          <div
                             className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
-                              hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55 hover:text-sidebar-foreground"
+                              hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55"
                             }`}
                           >
-                            <ChevronDown className={`w-3 h-3 mr-1.5 transition-transform ${open ? "" : "-rotate-90"}`} />
                             <span className="flex-1 text-left">{group.label}</span>
-                            {!open && totalBadge > 0 && (
+                            {totalBadge > 0 && (
                               <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
                                 {totalBadge > 99 ? "99+" : totalBadge}
                               </span>
                             )}
-                          </button>
-                          {open && (
-                            <div className="space-y-0.5 mt-0.5 animate-accordion-down overflow-hidden">
-                              {groupItems.map((it) => renderItem(it, { fav: false }))}
-                            </div>
-                          )}
+                          </div>
+                          <div className="space-y-0.5 mt-0.5">
+                            {groupItems.map((it) => renderItem(it, { fav: false }))}
+                          </div>
                         </div>
                       );
                     })}

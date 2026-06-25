@@ -307,7 +307,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(groupStateKey);
       if (raw) return JSON.parse(raw);
     } catch { /* ignore */ }
-    return { ops: true, catalog: false, finance: false, growth: false, market: false, system: false };
+    return { ops: true, catalog: true, finance: true, growth: true, market: true, system: true };
   });
   useEffect(() => {
     // Auto-open the group containing the current route for discoverability.

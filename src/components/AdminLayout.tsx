@@ -186,6 +186,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                     <Link
                       key={item.path}
                       to={item.path}
+                      onClick={() => setSidebarOpen(false)}
                       onMouseEnter={() => prefetchRoute(itemPath)}
                       onFocus={() => prefetchRoute(itemPath)}
                       onTouchStart={() => prefetchRoute(itemPath)}
@@ -196,6 +197,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                       <span className="flex-1">{item.label}</span>
                       {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
                     </Link>
+
                   );
                 })}
               </div>

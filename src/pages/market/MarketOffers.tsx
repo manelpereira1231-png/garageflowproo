@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 type Offer = {
   id: string;
   status: string;
-  created_at: string;
-  amount?: number | null;
+  offered_at: string;
   listing: {
     id: string;
     make: string | null;
@@ -36,13 +35,14 @@ export default function MarketOffers() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("carity_inspection_offers")
-        .select("id, status, created_at, amount, listing:carity_listings(id, make, model, year)")
+        .select("id, status, offered_at, listing:carity_listings(id, make, model, year)")
         .eq("shop_id", shopId)
-        .order("created_at", { ascending: false })
+        .order("offered_at", { ascending: false })
         .limit(100);
       if (cancelled) return;
+      if (error) console.error("[MarketOffers]", error);
       setItems((data as any) || []);
       setLoading(false);
     })();
@@ -81,8 +81,7 @@ export default function MarketOffers() {
                       {it.listing?.make || "Veículo"} {it.listing?.model || ""} {it.listing?.year ? `(${it.listing.year})` : ""}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(it.created_at).toLocaleDateString("pt-PT")}
-                      {it.amount != null ? ` · €${Number(it.amount).toFixed(2)}` : ""}
+                      {new Date(it.offered_at).toLocaleDateString("pt-PT")}
                     </div>
                   </div>
                 </div>

@@ -623,6 +623,7 @@ function writeCachedUserType(value: CachedUserType) {
 
 function AuthenticatedRoutes() {
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
+  const { isCommercialAdmin, loading: commercialLoading } = useCommercialAdmin();
   const { isReady: authReady, user } = useAuthReady();
 
   // Hydrate from session cache to AVOID the "create-shop / wrong dashboard" flash.

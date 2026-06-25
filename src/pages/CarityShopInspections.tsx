@@ -1009,8 +1009,10 @@ export default function CarityShopInspections() {
         throw error;
       }
 
-      setIsPartner(true);
-      setIsActive(true);
+      // Force-refresh the shared market-status hook. Realtime will also fire,
+      // but this guarantees the page flips out of the enrollment screen
+      // immediately, even before the realtime event lands.
+      await refreshMarketStatus();
       toast.success("Oficina inscrita no GarageFlow Market! 🎉 Carteira ativada — já pode receber pedidos.");
       loadData();
     } catch (err: any) {

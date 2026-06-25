@@ -116,10 +116,10 @@ class StripeMetricsService {
 
     let payingSubscriptions = 0;
     let trialingSubscriptions = 0;
-    let activeWorkshops = 0;
-    let inactiveWorkshops = 0;
     let cancellationsLast30 = 0;
     const subscriptionCustomers = new Set<string>();
+    const activeBillingCustomers = new Set<string>();
+    const inactiveBillingCustomers = new Set<string>();
 
     for await (const subscription of this.stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price.product"] }).autoPagingIterable()) {
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
@@ -127,17 +127,17 @@ class StripeMetricsService {
       const status = subscription.status;
       if (ACTIVE_STATUSES.has(status)) {
         payingSubscriptions += 1;
-        activeWorkshops += 1;
+        if (customerId) activeBillingCustomers.add(customerId);
         mergeMoney(mrrCents, monthlySubscriptionCents(subscription));
         const plan = normalizePlan(subscription.items.data[0]?.price);
         planCounts.set(plan, (planCounts.get(plan) || 0) + 1);
       } else if (status === "trialing") {
         trialingSubscriptions += 1;
-        activeWorkshops += 1;
+        if (customerId) activeBillingCustomers.add(customerId);
         const plan = normalizePlan(subscription.items.data[0]?.price);
         planCounts.set(`${plan} Trial`, (planCounts.get(`${plan} Trial`) || 0) + 1);
       } else if (INACTIVE_STATUSES.has(status)) {
-        inactiveWorkshops += 1;
+        if (customerId) inactiveBillingCustomers.add(customerId);
       }
 
       if (subscription.canceled_at && subscription.canceled_at >= thirtyDaysAgoTs) {
@@ -210,6 +210,8 @@ class StripeMetricsService {
     const churnRate = (payingSubscriptions + cancellationsLast30) > 0 ? (cancellationsLast30 / (payingSubscriptions + cancellationsLast30)) * 100 : 0;
     const retentionRate = Math.max(0, 100 - churnRate);
     const conversionRate = (trialToPaidConversions + trialingSubscriptions) > 0 ? (trialToPaidConversions / (trialToPaidConversions + trialingSubscriptions)) * 100 : 0;
+    const activeWorkshops = activeBillingCustomers.size;
+    const inactiveWorkshops = [...inactiveBillingCustomers].filter((id) => !activeBillingCustomers.has(id)).length;
 
     const topCustomers = [];
     for (const [customerId, revenue] of [...revenueByCustomer.entries()].sort(([, a], [, b]) => (b[primaryCurrency] || Object.values(b)[0] || 0) - (a[primaryCurrency] || Object.values(a)[0] || 0)).slice(0, 5)) {

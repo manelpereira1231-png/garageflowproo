@@ -109,7 +109,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // changes on the shop row, so the sidebar flips from "Ativar Market" to the
   // full Market navigation the instant `enroll_shop_in_market` runs — and
   // never re-shows "Ativar Market" while the shop is an active partner.
-  const { isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
+  const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");

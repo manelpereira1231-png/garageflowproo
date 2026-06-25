@@ -71,6 +71,35 @@ export default function CarityShopInspections() {
 
   const [enrolling, setEnrolling] = useState(false);
 
+  // Schedule dialog
+  const [scheduleDialog, setScheduleDialog] = useState<any>(null);
+  const [schedDate, setSchedDate] = useState("");
+  const [schedTime, setSchedTime] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+
+  // Report form state
+  const [report, setReport] = useState({
+    engine_status: "ok", transmission_status: "ok", brakes_status: "ok",
+    suspension_status: "ok", steering_status: "ok", tires_status: "ok",
+    electrical_status: "ok", overall_score: 7, recommendation: "recommended",
+    inspector_notes: "",
+  });
+  const [defects, setDefects] = useState<Defect[]>([]);
+  const [technicianName, setTechnicianName] = useState("");
+  const [reportLocked, setReportLocked] = useState(false);
+  const [photoSections, setPhotoSections] = useState<Record<string, string[]>>({
+    exterior_photos: [], interior_photos: [], engine_photos: [],
+    brakes_photos: [], suspension_photos: [],
+    tire_photos: [], damage_photos: [],
+  });
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [mileageAtInspection, setMileageAtInspection] = useState<string>("");
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [geo, setGeo] = useState<{ lat: number | null; lng: number | null; city: string; country: string; capturing: boolean }>({
+    lat: null, lng: null, city: "", country: "", capturing: false,
+  });
+
+
 
   // Step 2: Load inspections only if active partner
   const loadInspectionData = useCallback(async () => {

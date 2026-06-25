@@ -18,10 +18,14 @@ function isValidPtNif(nif: string): boolean {
   return expected === d[8];
 }
 
-async function signedUrl(supabase: any, path: string) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  const { data } = await supabase.storage.from("kyc-documents").createSignedUrl(path, 60 * 10);
+async function signedUrl(supabase: any, path: string, userId: string) {
+  if (!path || typeof path !== "string") return null;
+  // Reject any absolute URL — only storage paths inside kyc-documents are accepted.
+  if (/^[a-z]+:\/\//i.test(path)) return null;
+  // Enforce per-user folder prefix to prevent cross-user document use.
+  const normalized = path.replace(/^\/+/, "");
+  if (!normalized.startsWith(userId + "/")) return null;
+  const { data } = await supabase.storage.from("kyc-documents").createSignedUrl(normalized, 60 * 10);
   return data?.signedUrl ?? null;
 }
 
@@ -51,15 +55,16 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "rejected", reason: "NIF inválido (checksum)." }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    const docUrl = await signedUrl(admin, document_url);
-    const selfieUrl = await signedUrl(admin, selfie_url);
+    const docUrl = await signedUrl(admin, document_url, user.id);
+    const selfieUrl = await signedUrl(admin, selfie_url, user.id);
     if (!docUrl || !selfieUrl) {
-      return new Response(JSON.stringify({ status: "rejected", reason: "Não foi possível ler os ficheiros." }), { headers: { ...cors, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "rejected", reason: "Ficheiros inválidos. Reenvia os documentos." }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    // AI vision check
-    let aiOk = true;
+    // AI vision check — no fail-open. Rate-limit or service errors leave KYC pending.
+    let aiOk = false;
     let aiReason = "";
+    let aiPending = false;
     if (LOVABLE_API_KEY) {
       const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -87,18 +92,23 @@ serve(async (req) => {
         const j = await r.json();
         try {
           const parsed = JSON.parse(j.choices?.[0]?.message?.content || "{}");
-          aiOk = !!(parsed.doc_is_id && parsed.selfie_is_face && parsed.likely_same_person !== false && (parsed.confidence ?? 0.7) >= 0.4);
+          aiOk = !!(parsed.doc_is_id && parsed.selfie_is_face && parsed.likely_same_person !== false && (parsed.confidence ?? 0) >= 0.4);
           if (!aiOk) aiReason = parsed.reason || "Verificação visual falhou.";
-        } catch { aiOk = true; }
-      } else if (r.status === 429) {
-        // rate-limited: fallback approve to keep UX fast
-        aiOk = true;
-      } else if (r.status === 402) {
-        aiOk = true;
+        } catch {
+          aiPending = true;
+          aiReason = "Verificação pendente — não foi possível interpretar a resposta.";
+        }
+      } else {
+        // 429/402/5xx → leave pending for manual review, never auto-approve.
+        aiPending = true;
+        aiReason = "Verificação pendente — tenta novamente em breve.";
       }
+    } else {
+      aiPending = true;
+      aiReason = "Verificação pendente — análise indisponível.";
     }
 
-    const newStatus = aiOk ? "approved" : "rejected";
+    const newStatus = aiPending ? "pending" : (aiOk ? "approved" : "rejected");
     const update: any = {
       nif, address, document_type, document_number, document_url, selfie_url,
       kyc_status: newStatus,

@@ -7,16 +7,25 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const ALLOWED_HOSTS = [
+  "garageflow.pt",
+  "garageflow-pt.lovable.app",
+  "lovable.app",
+  "lovable.dev",
+];
+
 function safeUrl(raw: string | null): string {
-  if (!raw) return "https://garageflow.pt";
+  const fallback = "https://garageflow.pt";
+  if (!raw) return fallback;
   try {
     const u = new URL(raw);
-    if (u.protocol !== "https:" && u.protocol !== "http:") {
-      return "https://garageflow.pt";
-    }
+    if (u.protocol !== "https:" && u.protocol !== "http:") return fallback;
+    const host = u.hostname.toLowerCase();
+    const ok = ALLOWED_HOSTS.some((d) => host === d || host.endsWith("." + d));
+    if (!ok) return fallback;
     return u.toString();
   } catch {
-    return "https://garageflow.pt";
+    return fallback;
   }
 }
 

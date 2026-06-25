@@ -35,19 +35,22 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Require authenticated user OR service-role internal call
+    // Require service-role internal token OR an authenticated user limited to safe recipients.
     const authHeader = req.headers.get("Authorization") || "";
     const internalToken = req.headers.get("x-internal-token") || "";
     const serviceSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    let authorized = false;
+    let isInternal = false;
+    let callerUser: { id: string; email: string | null } | null = null;
     if (internalToken && internalToken === serviceSecret) {
-      authorized = true;
+      isInternal = true;
     } else if (authHeader.startsWith("Bearer ")) {
       const token = authHeader.replace("Bearer ", "");
       const { data, error } = await admin.auth.getUser(token);
-      if (!error && data?.user) authorized = true;
+      if (!error && data?.user) {
+        callerUser = { id: data.user.id, email: data.user.email ?? null };
+      }
     }
-    if (!authorized) {
+    if (!isInternal && !callerUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
@@ -58,6 +61,58 @@ serve(async (req: Request) => {
     if (!to || !subject || !html) {
       return new Response(JSON.stringify({ error: "Missing required fields: to, subject, html" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // For user-JWT callers, restrict recipients to: caller's own email, shop members,
+    // or clients of shops the caller belongs to. This prevents the function being abused
+    // as an open relay for phishing.
+    if (!isInternal && callerUser) {
+      const recipients = (Array.isArray(to) ? to : [to])
+        .map((e) => String(e).toLowerCase().trim())
+        .filter(Boolean);
+      if (recipients.length === 0 || recipients.length > 20) {
+        return new Response(JSON.stringify({ error: "Invalid recipients" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      }
+
+      // Allow caller's own email always.
+      const ownEmail = (callerUser.email ?? "").toLowerCase();
+
+      // Collect shop ids the user owns or is a member of.
+      const [{ data: ownedShops }, { data: memberShops }] = await Promise.all([
+        admin.from("shops").select("id").eq("user_id", callerUser.id),
+        admin.from("shop_users").select("shop_id").eq("user_id", callerUser.id),
+      ]);
+      const shopIds = [
+        ...((ownedShops ?? []).map((r: any) => r.id)),
+        ...((memberShops ?? []).map((r: any) => r.shop_id)),
+      ];
+
+      const allowed = new Set<string>();
+      if (ownEmail) allowed.add(ownEmail);
+
+      if (shopIds.length > 0) {
+        // Team member emails (shop owners + shop_users via auth.users via profile join).
+        // Clients of those shops.
+        const { data: clientRows } = await admin
+          .from("clients").select("email").in("shop_id", shopIds);
+        for (const c of clientRows ?? []) {
+          const e = String((c as any).email ?? "").toLowerCase().trim();
+          if (e) allowed.add(e);
+        }
+        const { data: ownerShops } = await admin
+          .from("shops").select("email").in("id", shopIds);
+        for (const s of ownerShops ?? []) {
+          const e = String((s as any).email ?? "").toLowerCase().trim();
+          if (e) allowed.add(e);
+        }
+      }
+
+      const blocked = recipients.filter((r) => !allowed.has(r));
+      if (blocked.length > 0) {
+        return new Response(JSON.stringify({ error: "Recipient not permitted" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      }
     }
 
     const finalHtml = branded

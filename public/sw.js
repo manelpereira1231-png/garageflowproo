@@ -1,6 +1,5 @@
-const CACHE_NAME = 'garageflow-v1';
+const CACHE_NAME = 'garageflow-v2';
 const STATIC_ASSETS = [
-  '/',
   '/favicon.ico',
   '/manifest.json',
 ];
@@ -32,10 +31,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/functions/') || url.hostname.includes('supabase')) return;
 
+  // Never serve stale application code. A cached JS/CSS chunk can leave the
+  // app permanently blank after a hotfix, so code assets are always network-first.
+  if (request.destination === 'script' || request.destination === 'style' || url.pathname.startsWith('/assets/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // Navigation requests - network first, fallback to cache
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/') || new Response('Offline', { status: 503 }))
+      fetch(request).catch(() => new Response('Offline', { status: 503 }))
     );
     return;
   }

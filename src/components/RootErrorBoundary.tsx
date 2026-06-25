@@ -10,7 +10,12 @@ const RECOVERY_KEY = "garageflow_root_recovery_at";
 const RECOVERY_WINDOW_MS = 60_000; // avoid reload loops
 
 const t = (key: "title" | "desc" | "reload" | "home" | "details") => {
-  const lang = (typeof localStorage !== "undefined" && localStorage.getItem("garageflow_language")) || "pt";
+  let lang = "pt";
+  try {
+    lang = (typeof localStorage !== "undefined" && localStorage.getItem("garageflow_language")) || "pt";
+  } catch {
+    lang = "pt";
+  }
   const dict: Record<string, Record<string, string>> = {
     pt: {
       title: "Algo correu mal",

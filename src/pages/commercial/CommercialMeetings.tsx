@@ -24,8 +24,8 @@ export default function CommercialMeetings() {
       supabase.from("crm_meetings" as any).select("*").order("scheduled_at", { ascending: true }),
       supabase.from("crm_tasks" as any).select("*").eq("status", "open").order("due_at", { ascending: true }),
     ]);
-    setMeetings((m.data || []) as Meeting[]);
-    setTasks((t.data || []) as Task[]);
+    setMeetings(((m.data as unknown) || []) as Meeting[]);
+    setTasks(((t.data as unknown) || []) as Task[]);
   };
   useEffect(() => { load(); }, []);
 

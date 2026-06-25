@@ -35,9 +35,9 @@ export default function CommercialCRM() {
       supabase.from("subscriptions").select("shop_id, plan, status"),
       supabase.from("crm_leads" as any).select("*").order("created_at", { ascending: false }),
     ]);
-    setShops((shopsRes.data || []) as Shop[]);
-    setSubs((subsRes.data || []) as Sub[]);
-    setLeads((leadsRes.data || []) as Lead[]);
+    setShops(((shopsRes.data as unknown) || []) as Shop[]);
+    setSubs(((subsRes.data as unknown) || []) as Sub[]);
+    setLeads(((leadsRes.data as unknown) || []) as Lead[]);
     setLoading(false);
   };
 

@@ -26,8 +26,7 @@ export default function MarketOpportunities() {
   useEffect(() => {
     if (!shopId) return;
     let cancelled = false;
-    (async () => {
-      setLoading(true);
+    const load = async () => {
       const { data, error } = await supabase
         .from("carity_inspection_offers")
         .select("id, status, offered_at, listing:carity_listings(id, make, model, year, location_label)")
@@ -39,8 +38,17 @@ export default function MarketOpportunities() {
       if (error) console.error("[MarketOpportunities]", error);
       setItems((data as any) || []);
       setLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+    setLoading(true);
+    load();
+    const ch = supabase
+      .channel(`market-opps-${shopId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "carity_inspection_offers", filter: `shop_id=eq.${shopId}` }, () => load())
+      .subscribe();
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    const iv = setInterval(load, 30000);
+    return () => { cancelled = true; supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
   }, [shopId]);
 
   return (

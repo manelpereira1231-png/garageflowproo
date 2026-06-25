@@ -29,19 +29,28 @@ export default function MarketHistory() {
   useEffect(() => {
     if (!shopId) return;
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase
+    const load = async () => {
+      const { data, error } = await supabase
         .from("shop_wallet_transactions")
         .select("id, type, amount, description, created_at")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
         .limit(200);
       if (cancelled) return;
+      if (error) console.error("[MarketHistory]", error);
       setItems((data as any) || []);
       setLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+    setLoading(true);
+    load();
+    const ch = supabase
+      .channel(`market-history-${shopId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "shop_wallet_transactions", filter: `shop_id=eq.${shopId}` }, () => load())
+      .subscribe();
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    const iv = setInterval(load, 30000);
+    return () => { cancelled = true; supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
   }, [shopId]);
 
   return (

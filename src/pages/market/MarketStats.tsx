@@ -19,8 +19,7 @@ export default function MarketStats() {
   useEffect(() => {
     if (!shopId) return;
     let cancelled = false;
-    (async () => {
-      setLoading(true);
+    const load = async () => {
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
@@ -33,7 +32,6 @@ export default function MarketStats() {
         supabase.from("shops").select("carity_rating").eq("id", shopId).maybeSingle(),
       ]);
 
-
       if (cancelled) return;
       const revenue = (monthRev.data || []).reduce((sum: number, r: any) => sum + Number(r.amount || 0), 0);
       setS({
@@ -44,8 +42,19 @@ export default function MarketStats() {
         rating: shop.data?.carity_rating ?? null,
       });
       setLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+    setLoading(true);
+    load();
+    const ch = supabase
+      .channel(`market-stats-${shopId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "carity_inspections", filter: `shop_id=eq.${shopId}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "shop_wallet_transactions", filter: `shop_id=eq.${shopId}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "shop_wallets", filter: `shop_id=eq.${shopId}` }, () => load())
+      .subscribe();
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    const iv = setInterval(load, 30000);
+    return () => { cancelled = true; supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
   }, [shopId]);
 
   return (

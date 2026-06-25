@@ -310,13 +310,15 @@ export default function CommercialDashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie data={pieData} dataKey="count" nameKey="plan" cx="50%" cy="50%" outerRadius={80} label={(e: any) => e.plan}>
+                <Pie data={pieData} dataKey="count" nameKey="plan" cx="50%" cy="50%" outerRadius="70%" innerRadius="40%">
                   {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
+                <Legend verticalAlign="bottom" height={30} iconSize={10} wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
+
         </Card>
 
         <Card className="lg:col-span-3">

@@ -46,6 +46,16 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
 export const erpSupabase = makeClient(ERP_STORAGE_KEY, "erp");
 export const marketSupabase = makeClient(MARKET_STORAGE_KEY, "market");
 
+const ERP_MARKET_PATHS = [
+  "/market/opportunities",
+  "/market/inspections",
+  "/market/offers",
+  "/market/wallet",
+  "/market/history",
+  "/market/stats",
+  "/market/payouts",
+];
+
 function hasStoredRealmSession(storageKey: string): boolean {
   if (typeof window === "undefined") return false;
   return Boolean(window.localStorage.getItem(storageKey));
@@ -59,7 +69,7 @@ export function detectRealm(pathname?: string): Realm {
   if (realmParam === "market") return "market";
   if (realmParam === "erp") return "erp";
   if ((p === "/market" || p.startsWith("/market?")) && hasStoredRealmSession(ERP_STORAGE_KEY)) return "erp";
-  if (p === "/market/inspections" || p.startsWith("/market/inspections?") || p === "/market/wallet" || p.startsWith("/market/wallet?") || p === "/market/payouts" || p.startsWith("/market/payouts?")) return "erp";
+  if (ERP_MARKET_PATHS.some((path) => p === path || p.startsWith(`${path}?`) || p.startsWith(`${path}/`))) return "erp";
   if (p.startsWith("/market")) return "market";
   // market.* subdomain support
   if (typeof window !== "undefined" && window.location.hostname.startsWith("market.")) return "market";

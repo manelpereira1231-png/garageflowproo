@@ -405,15 +405,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const muted = sidebarPrefs.isMuted(item.path);
               const showBadge = !muted && item.badge && item.badge > 0;
               const handleClick = (e: React.MouseEvent) => {
-                // Force programmatic navigation so nothing can intercept the Link click
-                // (e.g. service workers, prefetch, plan gates redirecting). This is
-                // especially important for the Market entry which must always navigate.
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // allow open-in-new-tab
-                e.preventDefault();
+                // Native <Link> navigation — only side-effect is closing the
+                // mobile drawer. Do NOT preventDefault here: it was the cause
+                // of the "double click" bug because the inner star/arrow
+                // buttons were swallowing the first click.
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                 setSidebarOpen(false);
-                if (location.pathname !== item.path) {
-                  navigate(item.path);
-                }
+              };
+              const handleFav = (fn: () => void) => (e: React.MouseEvent | React.KeyboardEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fn();
               };
               const navLink = (
                 <Link
@@ -430,40 +432,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <item.icon className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">{item.label}</span>
-                  <div className="ml-auto flex items-center gap-1 shrink-0">
+                  <span className="ml-auto flex items-center gap-1 shrink-0">
                     {!isGuidedMode && opts.fav && (
                       <>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.moveFavorite(item.path, -1); }}
-                          disabled={opts.index === 0}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 disabled:opacity-20 disabled:hover:bg-transparent"
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.moveFavorite(item.path, -1))(e); }}
+                          aria-disabled={opts.index === 0}
+                          className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 ${opts.index === 0 ? "pointer-events-none opacity-20" : ""}`}
                           title="Subir"
                         >
                           <ArrowUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.moveFavorite(item.path, 1); }}
-                          disabled={opts.total !== undefined && opts.index === opts.total - 1}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 disabled:opacity-20 disabled:hover:bg-transparent"
+                        </span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.moveFavorite(item.path, 1))(e); }}
+                          aria-disabled={opts.total !== undefined && opts.index === opts.total - 1}
+                          className={`opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background/20 ${opts.total !== undefined && opts.index === opts.total - 1 ? "pointer-events-none opacity-20" : ""}`}
                           title="Descer"
                         >
                           <ArrowDown className="w-3 h-3" />
-                        </button>
+                        </span>
                       </>
                     )}
                     {!isGuidedMode && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); sidebarPrefs.toggleFavorite(item.path); }}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={handleFav(() => sidebarPrefs.toggleFavorite(item.path))}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleFav(() => sidebarPrefs.toggleFavorite(item.path))(e); }}
                         className={`p-0.5 rounded hover:bg-background/20 transition-opacity ${
                           opts.fav ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                         }`}
                         title={opts.fav ? "Remover dos favoritos" : "Fixar nos favoritos"}
                       >
                         <StarIcon className={`w-3.5 h-3.5 ${opts.fav ? "fill-current" : ""}`} />
-                      </button>
+                      </span>
                     )}
                     {item.planBadge && (
                       <span
@@ -483,7 +491,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </span>
                     ) : null}
                     {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
-                  </div>
+                  </span>
                 </Link>
               );
 

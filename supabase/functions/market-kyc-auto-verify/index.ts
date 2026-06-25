@@ -55,10 +55,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "rejected", reason: "NIF inválido (checksum)." }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
-    const docUrl = await signedUrl(admin, document_url);
-    const selfieUrl = await signedUrl(admin, selfie_url);
+    const docUrl = await signedUrl(admin, document_url, user.id);
+    const selfieUrl = await signedUrl(admin, selfie_url, user.id);
     if (!docUrl || !selfieUrl) {
-      return new Response(JSON.stringify({ status: "rejected", reason: "Não foi possível ler os ficheiros." }), { headers: { ...cors, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "rejected", reason: "Ficheiros inválidos. Reenvia os documentos." }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     // AI vision check

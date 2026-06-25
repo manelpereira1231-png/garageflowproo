@@ -170,6 +170,17 @@ const AdminGrowth = lazyRetry(() => import("@/pages/admin/AdminGrowth"));
 const OficinasPiloto = lazyRetry(() => import("@/pages/OficinasPiloto"));
 const StatusPage = lazyRetry(() => import("@/pages/StatusPage"));
 
+// Commercial admin (Administrador Comercial) panel
+const CommercialLayout = lazyRetry(() => import("@/components/CommercialLayout"));
+const CommercialDashboard = lazyRetry(() => import("@/pages/commercial/CommercialDashboard"));
+const CommercialCRM = lazyRetry(() => import("@/pages/commercial/CommercialCRM"));
+const CommercialPipeline = lazyRetry(() => import("@/pages/commercial/CommercialPipeline"));
+const CommercialMeetings = lazyRetry(() => import("@/pages/commercial/CommercialMeetings"));
+const CommercialRetention = lazyRetry(() => import("@/pages/commercial/CommercialRetention"));
+const CommercialIntelligence = lazyRetry(() => import("@/pages/commercial/CommercialIntelligence"));
+const CommercialReports = lazyRetry(() => import("@/pages/commercial/CommercialReports"));
+const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/CommercialObjectives"));
+
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -5,6 +5,10 @@ const renderFatalBootError = (error: unknown) => {
   if (!root) return;
 
   const message = error instanceof Error ? error.message : "Erro inesperado ao iniciar a aplicação.";
+  const escapedMessage = message.replace(/[&<>"]/g, (char) => {
+    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" };
+    return entities[char] ?? char;
+  });
   console.error("[GarageFlow boot error]", error);
   root.innerHTML = `
     <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f14;color:#f5f5f4;padding:24px;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -15,7 +19,7 @@ const renderFatalBootError = (error: unknown) => {
         <button id="gf-reload" style="min-height:44px;width:100%;border:0;border-radius:8px;background:#f59e0b;color:#111827;font-weight:800;font-size:14px;cursor:pointer;">Recarregar GarageFlow</button>
         <details style="margin-top:16px;color:#94a3b8;font-size:12px;">
           <summary>Detalhes técnicos</summary>
-          <pre style="white-space:pre-wrap;overflow:auto;max-height:120px;background:rgba(255,255,255,.04);padding:10px;border-radius:8px;">${message.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] ?? char))}</pre>
+          <pre style="white-space:pre-wrap;overflow:auto;max-height:120px;background:rgba(255,255,255,.04);padding:10px;border-radius:8px;">${escapedMessage}</pre>
         </details>
       </section>
     </main>`;

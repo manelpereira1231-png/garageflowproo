@@ -27,11 +27,12 @@ export default function MarketStats() {
 
       const [totalInsp, monthInsp, monthRev, wallet, shop] = await Promise.all([
         supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "completed"),
-        supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "completed").gte("updated_at", monthStart.toISOString()),
+        supabase.from("carity_inspections").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "completed").gte("completed_at", monthStart.toISOString()),
         supabase.from("shop_wallet_transactions").select("amount").eq("shop_id", shopId).gte("created_at", monthStart.toISOString()).gt("amount", 0),
         supabase.from("shop_wallets").select("balance").eq("shop_id", shopId).maybeSingle(),
         supabase.from("shops").select("carity_rating").eq("id", shopId).maybeSingle(),
       ]);
+
 
       if (cancelled) return;
       const revenue = (monthRev.data || []).reduce((sum: number, r: any) => sum + Number(r.amount || 0), 0);

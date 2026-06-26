@@ -146,21 +146,25 @@ export default function CommercialDashboard() {
 
   const kpis: KPI[] = useMemo(() => {
     if (!metrics) return [];
+    const monthGrowth = metrics.monthGrowth ?? 0;
+    const conversionRate = metrics.conversionRate ?? 0;
+    const churnRate = metrics.churnRate ?? 0;
+    const retentionRate = metrics.retentionRate ?? 0;
     return [
-      { label: "MRR Stripe", value: fmtMoney(metrics.mrr, currency), icon: DollarSign, trend: metrics.monthGrowth, tone: metrics.monthGrowth >= 0 ? "good" : "bad" },
+      { label: "MRR Stripe", value: fmtMoney(metrics.mrr, currency), icon: DollarSign, trend: monthGrowth, tone: monthGrowth >= 0 ? "good" : "bad" },
       { label: "Receita Mensal Stripe", value: fmtMoney(metrics.monthlyRevenue, currency), icon: TrendingUp, tone: "good" },
       { label: "Receita Anual Stripe", value: fmtMoney(metrics.annualRevenue, currency), icon: TrendingUp, tone: "good" },
       { label: "Receita Total Stripe", value: fmtMoney(metrics.totalRevenue, currency), icon: DollarSign, tone: "neutral" },
       { label: "ARPU Stripe", value: fmtMoney(metrics.arpu, currency), icon: Crown, tone: "good" },
-      { label: "Oficinas Pagantes", value: String(metrics.payingSubscriptions), icon: CheckCircle2, tone: "good" },
-      { label: "Em Trial Stripe", value: String(metrics.trialingSubscriptions), icon: Clock, tone: "neutral" },
-      { label: "Conversão Trial→Pago", value: `${metrics.conversionRate.toFixed(1)}%`, icon: Zap, tone: metrics.conversionRate >= 20 ? "good" : "bad" },
-      { label: "Taxa Churn Stripe", value: `${metrics.churnRate.toFixed(1)}%`, icon: AlertTriangle, tone: metrics.churnRate <= 5 ? "good" : "bad" },
-      { label: "Retenção Stripe", value: `${metrics.retentionRate.toFixed(1)}%`, icon: CheckCircle2, tone: "good" },
-      { label: "Billing Ativo", value: String(metrics.activeWorkshops), icon: Activity, tone: "good" },
-      { label: "Billing Inativo", value: String(metrics.inactiveWorkshops), icon: AlertTriangle, tone: metrics.inactiveWorkshops > 0 ? "bad" : "neutral" },
-      { label: "Cancelamentos 30d", value: String(metrics.cancellationsLast30), icon: AlertTriangle, tone: metrics.cancellationsLast30 > 0 ? "bad" : "neutral" },
-      { label: "Conversões Reais", value: String(metrics.trialToPaidConversions), icon: Users, tone: "good" },
+      { label: "Oficinas Pagantes", value: String(metrics.payingSubscriptions ?? 0), icon: CheckCircle2, tone: "good" },
+      { label: "Em Trial Stripe", value: String(metrics.trialingSubscriptions ?? 0), icon: Clock, tone: "neutral" },
+      { label: "Conversão Trial→Pago", value: `${conversionRate.toFixed(1)}%`, icon: Zap, tone: conversionRate >= 20 ? "good" : "bad" },
+      { label: "Taxa Churn Stripe", value: `${churnRate.toFixed(1)}%`, icon: AlertTriangle, tone: churnRate <= 5 ? "good" : "bad" },
+      { label: "Retenção Stripe", value: `${retentionRate.toFixed(1)}%`, icon: CheckCircle2, tone: "good" },
+      { label: "Billing Ativo", value: String(metrics.activeWorkshops ?? 0), icon: Activity, tone: "good" },
+      { label: "Billing Inativo", value: String(metrics.inactiveWorkshops ?? 0), icon: AlertTriangle, tone: (metrics.inactiveWorkshops ?? 0) > 0 ? "bad" : "neutral" },
+      { label: "Cancelamentos 30d", value: String(metrics.cancellationsLast30 ?? 0), icon: AlertTriangle, tone: (metrics.cancellationsLast30 ?? 0) > 0 ? "bad" : "neutral" },
+      { label: "Conversões Reais", value: String(metrics.trialToPaidConversions ?? 0), icon: Users, tone: "good" },
     ];
   }, [currency, metrics]);
 

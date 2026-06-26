@@ -39,31 +39,41 @@ type ActivityItem = { id: string; type: "shop" | "payment" | "cancel"; label: st
 type TopCustomer = { id: string; name: string; email?: string | null; revenue: MoneyMap; plan?: string | null };
 type AtRiskCustomer = { id: string; name: string; reason: string; days: number };
 
+type UserActivity = {
+  dau: number;
+  wau: number;
+  mau: number;
+  recent: { user_id: string; last_seen_at: string; shop_id: string | null }[];
+};
+
 type StripeMetrics = {
   generated_at: string;
-  source: "stripe_live_api";
-  primaryCurrency: string;
-  mrr: MoneyMap;
-  monthlyRevenue: MoneyMap;
-  annualRevenue: MoneyMap;
-  totalRevenue: MoneyMap;
-  arpu: MoneyMap;
-  monthGrowth: number;
-  payingSubscriptions: number;
-  trialingSubscriptions: number;
-  trialToPaidConversions: number;
-  conversionRate: number;
-  cancellationsLast30: number;
-  churnRate: number;
-  retentionRate: number;
-  activeWorkshops: number;
-  inactiveWorkshops: number;
-  stripeCustomersWithSubscriptions: number;
-  monthlySeries: { month: string; newSubscriptions: number; activeSubscriptions: number; revenue: MoneyMap }[];
-  planSeries: { plan: string; count: number }[];
-  activity: ActivityItem[];
-  topCustomers: TopCustomer[];
-  atRisk: AtRiskCustomer[];
+  source?: "stripe_live_api";
+  degraded?: boolean;
+  stripeError?: string | null;
+  primaryCurrency?: string;
+  mrr?: MoneyMap;
+  monthlyRevenue?: MoneyMap;
+  annualRevenue?: MoneyMap;
+  totalRevenue?: MoneyMap;
+  arpu?: MoneyMap;
+  monthGrowth?: number;
+  payingSubscriptions?: number;
+  trialingSubscriptions?: number;
+  trialToPaidConversions?: number;
+  conversionRate?: number;
+  cancellationsLast30?: number;
+  churnRate?: number;
+  retentionRate?: number;
+  activeWorkshops?: number;
+  inactiveWorkshops?: number;
+  stripeCustomersWithSubscriptions?: number;
+  monthlySeries?: { month: string; newSubscriptions: number; activeSubscriptions: number; revenue: MoneyMap }[];
+  planSeries?: { plan: string; count: number }[];
+  activity?: ActivityItem[];
+  topCustomers?: TopCustomer[];
+  atRisk?: AtRiskCustomer[];
+  userActivity?: UserActivity;
 };
 
 const PIE_COLORS = [

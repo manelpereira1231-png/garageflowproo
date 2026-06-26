@@ -39,31 +39,41 @@ type ActivityItem = { id: string; type: "shop" | "payment" | "cancel"; label: st
 type TopCustomer = { id: string; name: string; email?: string | null; revenue: MoneyMap; plan?: string | null };
 type AtRiskCustomer = { id: string; name: string; reason: string; days: number };
 
+type UserActivity = {
+  dau: number;
+  wau: number;
+  mau: number;
+  recent: { user_id: string; last_seen_at: string; shop_id: string | null }[];
+};
+
 type StripeMetrics = {
   generated_at: string;
-  source: "stripe_live_api";
-  primaryCurrency: string;
-  mrr: MoneyMap;
-  monthlyRevenue: MoneyMap;
-  annualRevenue: MoneyMap;
-  totalRevenue: MoneyMap;
-  arpu: MoneyMap;
-  monthGrowth: number;
-  payingSubscriptions: number;
-  trialingSubscriptions: number;
-  trialToPaidConversions: number;
-  conversionRate: number;
-  cancellationsLast30: number;
-  churnRate: number;
-  retentionRate: number;
-  activeWorkshops: number;
-  inactiveWorkshops: number;
-  stripeCustomersWithSubscriptions: number;
-  monthlySeries: { month: string; newSubscriptions: number; activeSubscriptions: number; revenue: MoneyMap }[];
-  planSeries: { plan: string; count: number }[];
-  activity: ActivityItem[];
-  topCustomers: TopCustomer[];
-  atRisk: AtRiskCustomer[];
+  source?: "stripe_live_api";
+  degraded?: boolean;
+  stripeError?: string | null;
+  primaryCurrency?: string;
+  mrr?: MoneyMap;
+  monthlyRevenue?: MoneyMap;
+  annualRevenue?: MoneyMap;
+  totalRevenue?: MoneyMap;
+  arpu?: MoneyMap;
+  monthGrowth?: number;
+  payingSubscriptions?: number;
+  trialingSubscriptions?: number;
+  trialToPaidConversions?: number;
+  conversionRate?: number;
+  cancellationsLast30?: number;
+  churnRate?: number;
+  retentionRate?: number;
+  activeWorkshops?: number;
+  inactiveWorkshops?: number;
+  stripeCustomersWithSubscriptions?: number;
+  monthlySeries?: { month: string; newSubscriptions: number; activeSubscriptions: number; revenue: MoneyMap }[];
+  planSeries?: { plan: string; count: number }[];
+  activity?: ActivityItem[];
+  topCustomers?: TopCustomer[];
+  atRisk?: AtRiskCustomer[];
+  userActivity?: UserActivity;
 };
 
 const PIE_COLORS = [
@@ -136,21 +146,25 @@ export default function CommercialDashboard() {
 
   const kpis: KPI[] = useMemo(() => {
     if (!metrics) return [];
+    const monthGrowth = metrics.monthGrowth ?? 0;
+    const conversionRate = metrics.conversionRate ?? 0;
+    const churnRate = metrics.churnRate ?? 0;
+    const retentionRate = metrics.retentionRate ?? 0;
     return [
-      { label: "MRR Stripe", value: fmtMoney(metrics.mrr, currency), icon: DollarSign, trend: metrics.monthGrowth, tone: metrics.monthGrowth >= 0 ? "good" : "bad" },
+      { label: "MRR Stripe", value: fmtMoney(metrics.mrr, currency), icon: DollarSign, trend: monthGrowth, tone: monthGrowth >= 0 ? "good" : "bad" },
       { label: "Receita Mensal Stripe", value: fmtMoney(metrics.monthlyRevenue, currency), icon: TrendingUp, tone: "good" },
       { label: "Receita Anual Stripe", value: fmtMoney(metrics.annualRevenue, currency), icon: TrendingUp, tone: "good" },
       { label: "Receita Total Stripe", value: fmtMoney(metrics.totalRevenue, currency), icon: DollarSign, tone: "neutral" },
       { label: "ARPU Stripe", value: fmtMoney(metrics.arpu, currency), icon: Crown, tone: "good" },
-      { label: "Oficinas Pagantes", value: String(metrics.payingSubscriptions), icon: CheckCircle2, tone: "good" },
-      { label: "Em Trial Stripe", value: String(metrics.trialingSubscriptions), icon: Clock, tone: "neutral" },
-      { label: "Conversão Trial→Pago", value: `${metrics.conversionRate.toFixed(1)}%`, icon: Zap, tone: metrics.conversionRate >= 20 ? "good" : "bad" },
-      { label: "Taxa Churn Stripe", value: `${metrics.churnRate.toFixed(1)}%`, icon: AlertTriangle, tone: metrics.churnRate <= 5 ? "good" : "bad" },
-      { label: "Retenção Stripe", value: `${metrics.retentionRate.toFixed(1)}%`, icon: CheckCircle2, tone: "good" },
-      { label: "Billing Ativo", value: String(metrics.activeWorkshops), icon: Activity, tone: "good" },
-      { label: "Billing Inativo", value: String(metrics.inactiveWorkshops), icon: AlertTriangle, tone: metrics.inactiveWorkshops > 0 ? "bad" : "neutral" },
-      { label: "Cancelamentos 30d", value: String(metrics.cancellationsLast30), icon: AlertTriangle, tone: metrics.cancellationsLast30 > 0 ? "bad" : "neutral" },
-      { label: "Conversões Reais", value: String(metrics.trialToPaidConversions), icon: Users, tone: "good" },
+      { label: "Oficinas Pagantes", value: String(metrics.payingSubscriptions ?? 0), icon: CheckCircle2, tone: "good" },
+      { label: "Em Trial Stripe", value: String(metrics.trialingSubscriptions ?? 0), icon: Clock, tone: "neutral" },
+      { label: "Conversão Trial→Pago", value: `${conversionRate.toFixed(1)}%`, icon: Zap, tone: conversionRate >= 20 ? "good" : "bad" },
+      { label: "Taxa Churn Stripe", value: `${churnRate.toFixed(1)}%`, icon: AlertTriangle, tone: churnRate <= 5 ? "good" : "bad" },
+      { label: "Retenção Stripe", value: `${retentionRate.toFixed(1)}%`, icon: CheckCircle2, tone: "good" },
+      { label: "Billing Ativo", value: String(metrics.activeWorkshops ?? 0), icon: Activity, tone: "good" },
+      { label: "Billing Inativo", value: String(metrics.inactiveWorkshops ?? 0), icon: AlertTriangle, tone: (metrics.inactiveWorkshops ?? 0) > 0 ? "bad" : "neutral" },
+      { label: "Cancelamentos 30d", value: String(metrics.cancellationsLast30 ?? 0), icon: AlertTriangle, tone: (metrics.cancellationsLast30 ?? 0) > 0 ? "bad" : "neutral" },
+      { label: "Conversões Reais", value: String(metrics.trialToPaidConversions ?? 0), icon: Users, tone: "good" },
     ];
   }, [currency, metrics]);
 
@@ -195,9 +209,44 @@ export default function CommercialDashboard() {
         </Card>
       )}
 
-      {!metrics ? (
+      {metrics?.degraded && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardContent className="p-4 text-sm text-amber-700 dark:text-amber-400">
+            Stripe indisponível no momento{metrics.stripeError ? `: ${metrics.stripeError}` : ""}. Métricas financeiras serão atualizadas no próximo ciclo. Dados de acesso (abaixo) continuam em tempo real.
+          </CardContent>
+        </Card>
+      )}
+
+      {metrics?.userActivity && (
         <Card>
-          <CardContent className="p-8 text-sm text-muted-foreground">Sem resposta da Stripe. Nenhuma métrica financeira é mostrada sem Stripe.</CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-600" /> Último Acesso (tempo real)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Ativos hoje (DAU)</p><p className="text-2xl font-bold">{metrics.userActivity.dau}</p></div>
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Últimos 7 dias (WAU)</p><p className="text-2xl font-bold">{metrics.userActivity.wau}</p></div>
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Últimos 30 dias (MAU)</p><p className="text-2xl font-bold">{metrics.userActivity.mau}</p></div>
+            </div>
+            <div className="space-y-1.5 max-h-72 overflow-auto">
+              {metrics.userActivity.recent.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sem acessos recentes.</p>
+              ) : metrics.userActivity.recent.map((r) => (
+                <div key={r.user_id} className="flex items-center justify-between text-xs border-b border-border/40 py-1.5">
+                  <span className="font-mono truncate max-w-[60%]" title={r.user_id}>{r.user_id.slice(0, 8)}…</span>
+                  <span className="text-muted-foreground">{fmtRel(r.last_seen_at)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!metrics || (metrics.degraded && !metrics.mrr) ? (
+        <Card>
+          <CardContent className="p-8 text-sm text-muted-foreground">Aguardando resposta da Stripe… Os dados financeiros aparecerão automaticamente assim que disponíveis.</CardContent>
         </Card>
       ) : (
         <>

@@ -189,10 +189,17 @@ class StripeMetricsService {
     }
 
     let trialToPaidConversions = 0;
-    for await (const event of this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100 }).autoPagingIterable()) {
-      const previous = (event.data as any).previous_attributes;
-      const current = event.data.object as Stripe.Subscription;
-      if (previous?.status === "trialing" && current.status === "active") trialToPaidConversions += 1;
+    let eventsScanned = 0;
+    try {
+      for await (const event of this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100 }).autoPagingIterable()) {
+        eventsScanned += 1;
+        if (eventsScanned > 500) break;
+        const previous = (event.data as any).previous_attributes;
+        const current = event.data.object as Stripe.Subscription;
+        if (previous?.status === "trialing" && current.status === "active") trialToPaidConversions += 1;
+      }
+    } catch (eventsErr) {
+      log("events.list failed (non-fatal)", { error: eventsErr instanceof Error ? eventsErr.message : String(eventsErr) });
     }
 
     let cumulative = 0;

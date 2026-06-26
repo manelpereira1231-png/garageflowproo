@@ -209,9 +209,44 @@ export default function CommercialDashboard() {
         </Card>
       )}
 
-      {!metrics ? (
+      {metrics?.degraded && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardContent className="p-4 text-sm text-amber-700 dark:text-amber-400">
+            Stripe indisponível no momento{metrics.stripeError ? `: ${metrics.stripeError}` : ""}. Métricas financeiras serão atualizadas no próximo ciclo. Dados de acesso (abaixo) continuam em tempo real.
+          </CardContent>
+        </Card>
+      )}
+
+      {metrics?.userActivity && (
         <Card>
-          <CardContent className="p-8 text-sm text-muted-foreground">Sem resposta da Stripe. Nenhuma métrica financeira é mostrada sem Stripe.</CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-600" /> Último Acesso (tempo real)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Ativos hoje (DAU)</p><p className="text-2xl font-bold">{metrics.userActivity.dau}</p></div>
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Últimos 7 dias (WAU)</p><p className="text-2xl font-bold">{metrics.userActivity.wau}</p></div>
+              <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Últimos 30 dias (MAU)</p><p className="text-2xl font-bold">{metrics.userActivity.mau}</p></div>
+            </div>
+            <div className="space-y-1.5 max-h-72 overflow-auto">
+              {metrics.userActivity.recent.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sem acessos recentes.</p>
+              ) : metrics.userActivity.recent.map((r) => (
+                <div key={r.user_id} className="flex items-center justify-between text-xs border-b border-border/40 py-1.5">
+                  <span className="font-mono truncate max-w-[60%]" title={r.user_id}>{r.user_id.slice(0, 8)}…</span>
+                  <span className="text-muted-foreground">{fmtRel(r.last_seen_at)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!metrics || (metrics.degraded && !metrics.mrr) ? (
+        <Card>
+          <CardContent className="p-8 text-sm text-muted-foreground">Aguardando resposta da Stripe… Os dados financeiros aparecerão automaticamente assim que disponíveis.</CardContent>
         </Card>
       ) : (
         <>

@@ -271,12 +271,41 @@ serve(async (req) => {
     const { data: roles, error: roleError } = await supabaseClient.from("user_roles").select("role").eq("user_id", userData.user.id).in("role", ["commercial_admin", "super_admin", "admin"]);
     if (roleError || !Array.isArray(roles) || roles.length === 0) throw new Error("Not authorized");
 
-    const service = new StripeMetricsService(new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" }));
-    const metrics = await service.build();
-    return new Response(JSON.stringify(metrics), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+    // Fetch user activity stats (DAU/WAU/MAU + recent logins) — independent of Stripe
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 86400000).toISOString();
+    const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+    const monthAgo = new Date(now.getTime() - 30 * 86400000).toISOString();
+    const [dauRes, wauRes, mauRes, recentRes] = await Promise.all([
+      supabaseClient.from("user_activity").select("user_id", { count: "exact", head: true }).gte("last_seen_at", dayAgo),
+      supabaseClient.from("user_activity").select("user_id", { count: "exact", head: true }).gte("last_seen_at", weekAgo),
+      supabaseClient.from("user_activity").select("user_id", { count: "exact", head: true }).gte("last_seen_at", monthAgo),
+      supabaseClient.from("user_activity").select("user_id,last_seen_at,last_shop_id").order("last_seen_at", { ascending: false }).limit(20),
+    ]);
+    const userActivity = {
+      dau: dauRes.count || 0,
+      wau: wauRes.count || 0,
+      mau: mauRes.count || 0,
+      recent: (recentRes.data || []).map((r: any) => ({ user_id: r.user_id, last_seen_at: r.last_seen_at, shop_id: r.last_shop_id })),
+    };
+
+    let metrics: any = null;
+    let stripeError: string | null = null;
+    try {
+      const service = new StripeMetricsService(new Stripe(stripeKey, { apiVersion: "2025-08-27.basil", httpClient: Stripe.createFetchHttpClient() }));
+      metrics = await service.build();
+    } catch (stripeErr) {
+      stripeError = stripeErr instanceof Error ? stripeErr.message : String(stripeErr);
+      log("Stripe build failed", { stripeError });
+    }
+    const body = metrics
+      ? { ...metrics, userActivity }
+      : { degraded: true, stripeError, userActivity, generated_at: new Date().toISOString() };
+    return new Response(JSON.stringify(body), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log("ERROR", { message });
-    return new Response(JSON.stringify({ error: message }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: message === "Not authorized" ? 403 : 500 });
+    const status = message === "Not authorized" ? 403 : message === "Not authenticated" || message === "No authorization header" ? 401 : 500;
+    return new Response(JSON.stringify({ error: message }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status });
   }
 });

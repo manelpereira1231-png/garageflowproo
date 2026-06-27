@@ -192,19 +192,27 @@ export default function Quotes() {
   };
 
   const downloadPdf = async (q: any) => {
-    if (!shop) return;
-    const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
-    const doc = await generatePdf({
-      type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
-      validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
-      shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
-      clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,
-      clientPhone: (q.clients as any)?.phone, clientNif: (q.clients as any)?.nif,
-      vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
-      vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
-      total: q.total, profit: q.profit, notes: q.notes, currency: shop.currency || 'EUR', plan: plan,
-    }, limits.pdfWatermark);
-    doc.save(`${q.number}.pdf`);
+    if (!shop) {
+      toast.error("Dados da oficina não carregados. Recarregue a página.");
+      return;
+    }
+    try {
+      const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
+      const doc = await generatePdf({
+        type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
+        validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+        shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
+        clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,
+        clientPhone: (q.clients as any)?.phone, clientNif: (q.clients as any)?.nif,
+        vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
+        vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
+        total: q.total, profit: q.profit, notes: q.notes, currency: shop.currency || 'EUR', plan: plan,
+      }, limits.pdfWatermark);
+      doc.save(`${q.number}.pdf`);
+    } catch (err: any) {
+      console.error('PDF error', err);
+      toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    }
   };
 
   const handleExportCsv = () => {

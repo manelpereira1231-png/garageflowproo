@@ -260,15 +260,46 @@ export default function InvoiceForm() {
               </div>
               <div className="col-span-3 md:col-span-2">
                 {idx === 0 && <Label className="text-xs">{t('invoices.qty')}</Label>}
-                <Input type="number" min={1} value={item.quantity} onChange={e => updateItem(item.id, 'quantity', Number(e.target.value))} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={1}
+                  value={item.quantity === 0 ? '' : item.quantity}
+                  onFocus={e => e.target.select()}
+                  onChange={e => {
+                    const v = e.target.value;
+                    updateItem(item.id, 'quantity', v === '' ? 0 : Number(v));
+                  }}
+                />
               </div>
               <div className="col-span-4 md:col-span-2">
                 {idx === 0 && <Label className="text-xs">{t('invoices.unitPrice')}</Label>}
-                <Input type="number" min={0} step={0.01} value={item.unit_price} onChange={e => updateItem(item.id, 'unit_price', Number(e.target.value))} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  value={item.unit_price === 0 ? '' : item.unit_price}
+                  onFocus={e => e.target.select()}
+                  onChange={e => {
+                    const v = e.target.value;
+                    updateItem(item.id, 'unit_price', v === '' ? 0 : Number(v));
+                  }}
+                />
               </div>
               <div className="col-span-3 md:col-span-2">
                 {idx === 0 && <Label className="text-xs">IVA %</Label>}
-                <Input type="number" min={0} value={item.vat_rate} onChange={e => updateItem(item.id, 'vat_rate', Number(e.target.value))} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={item.vat_rate === 0 ? '' : item.vat_rate}
+                  onFocus={e => e.target.select()}
+                  onChange={e => {
+                    const v = e.target.value;
+                    updateItem(item.id, 'vat_rate', v === '' ? 0 : Number(v));
+                  }}
+                />
               </div>
               <div className="col-span-2 md:col-span-1 flex items-center justify-end">
                 <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} disabled={items.length <= 1} className="text-destructive">

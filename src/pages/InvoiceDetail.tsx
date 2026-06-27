@@ -110,20 +110,28 @@ export default function InvoiceDetail() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!invoice || !shop) return;
-    const doc = await generateInvoicePdf({
-      invoice, items, shop,
-      clientName: (invoice.clients as any)?.name || '',
-      clientEmail: (invoice.clients as any)?.email,
-      clientPhone: (invoice.clients as any)?.phone,
-      clientNif: (invoice.clients as any)?.nif,
-      vehicleMake: (invoice.vehicles as any)?.make,
-      vehicleModel: (invoice.vehicles as any)?.model,
-      vehiclePlate: (invoice.vehicles as any)?.plate,
-      totalPaid,
-      plan,
-    });
-    doc.save(`${invoice.number}.pdf`);
+    if (!invoice || !shop) {
+      toast.error("Dados não carregados. Recarregue a página.");
+      return;
+    }
+    try {
+      const doc = await generateInvoicePdf({
+        invoice, items, shop,
+        clientName: (invoice.clients as any)?.name || '',
+        clientEmail: (invoice.clients as any)?.email,
+        clientPhone: (invoice.clients as any)?.phone,
+        clientNif: (invoice.clients as any)?.nif,
+        vehicleMake: (invoice.vehicles as any)?.make,
+        vehicleModel: (invoice.vehicles as any)?.model,
+        vehiclePlate: (invoice.vehicles as any)?.plate,
+        totalPaid,
+        plan,
+      });
+      doc.save(`${invoice.number}.pdf`);
+    } catch (err: any) {
+      console.error('PDF error', err);
+      toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    }
   };
 
   if (!invoice) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;

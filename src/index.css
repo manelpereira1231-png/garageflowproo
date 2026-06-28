@@ -424,13 +424,12 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Raw <table> tags get a horizontal scroll wrapper-like behavior so they never overflow the page */
+/* Raw <table> tags should not push the viewport. shadcn <Table> already
+   wraps in an overflow-auto div; this is a safety net for hand-written tables. */
 table {
   max-width: 100%;
-  display: block;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
+
 
 /* Pre/code shouldn't push the viewport either */
 pre, code {

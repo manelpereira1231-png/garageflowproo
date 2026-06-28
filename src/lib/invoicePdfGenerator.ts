@@ -99,12 +99,20 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   doc.setFillColor(38, 38, 38);
   doc.rect(0, 0, pageW, 40, 'F');
 
-  // Logo
+  // Logo (auto-detect format)
   let logoLoaded = false;
   if (shop.logo_url) {
     const imgData = await loadImage(shop.logo_url);
     if (imgData) {
-      try { doc.addImage(imgData, 'PNG', 14, 6, 28, 28); logoLoaded = true; } catch { /* fallback */ }
+      const fmt = /^data:image\/(jpe?g|jpg);/i.test(imgData) ? 'JPEG'
+        : /^data:image\/webp/i.test(imgData) ? 'WEBP'
+        : 'PNG';
+      try { doc.addImage(imgData, fmt, 14, 6, 28, 28); logoLoaded = true; }
+      catch {
+        for (const alt of ['PNG', 'JPEG', 'WEBP'].filter(f => f !== fmt)) {
+          try { doc.addImage(imgData, alt, 14, 6, 28, 28); logoLoaded = true; break; } catch { /* keep trying */ }
+        }
+      }
     }
   }
 

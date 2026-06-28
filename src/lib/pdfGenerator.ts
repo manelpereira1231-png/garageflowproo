@@ -67,16 +67,22 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setFillColor(38, 38, 38);
   doc.rect(0, 0, pageW, 40, 'F');
 
-  // Try to load and place shop logo
+  // Try to load and place shop logo (auto-detect format)
   let logoLoaded = false;
   if (data.shopLogoUrl) {
     const imgData = await loadImage(data.shopLogoUrl);
     if (imgData) {
+      const fmt = /^data:image\/(jpe?g|jpg);/i.test(imgData) ? 'JPEG'
+        : /^data:image\/webp/i.test(imgData) ? 'WEBP'
+        : 'PNG';
       try {
-        doc.addImage(imgData, 'PNG', 14, 6, 28, 28);
+        doc.addImage(imgData, fmt, 14, 6, 28, 28);
         logoLoaded = true;
       } catch {
-        // fallback to text
+        // try alternate formats before giving up
+        for (const alt of ['PNG', 'JPEG', 'WEBP'].filter(f => f !== fmt)) {
+          try { doc.addImage(imgData, alt, 14, 6, 28, 28); logoLoaded = true; break; } catch { /* keep trying */ }
+        }
       }
     }
   }

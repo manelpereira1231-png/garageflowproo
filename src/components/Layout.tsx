@@ -441,9 +441,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onPointerUp={handlePointerUp}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
+                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : undefined}
                   className={`flex min-h-11 touch-manipulation select-none items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : item.locked
+                      ? "text-sidebar-foreground/55 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/70"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   }`}
                 >

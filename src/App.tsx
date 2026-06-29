@@ -391,7 +391,7 @@ const shopRoutes = [
   { path: "/services/edit/:id", element: <FeatureGate feature="services" requiredPlan="pro"><ServiceForm /></FeatureGate> },
   { path: "/settings", element: <SettingsPage /> },
   { path: "/settings/email-templates", element: <EmailTemplates /> },
-  { path: "/settings/messages", element: <EmailTemplates /> ? <MessageTemplates /> : <MessageTemplates /> },
+  { path: "/settings/messages", element: <MessageTemplates /> },
   { path: "/billing", element: <Billing /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },

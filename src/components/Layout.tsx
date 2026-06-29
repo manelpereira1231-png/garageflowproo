@@ -284,11 +284,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
   ], [pendingAlertCount, pendingMarketCount, t, marketStatusReady, isCarityPartner]);
 
-  // Filter menu by the feature matrix (single source of truth). Items
-  // without a featureSlug or with permission stay; the rest disappear.
+  // Show every item, but mark the ones the current plan can't use as
+  // `locked`. The sidebar renders a padlock + upgrade toast on click —
+  // the user always sees what they would unlock by upgrading.
   const enabledFeatures = useEnabledFeatureSet();
   const navItems: NavItem[] = useMemo(
-    () => _allNavItems.filter((i) => !i.featureSlug || enabledFeatures.has(i.featureSlug)),
+    () => _allNavItems.map((i) => {
+      if (!i.featureSlug) return i;
+      const allowed = enabledFeatures.has(i.featureSlug);
+      return allowed ? i : { ...i, locked: true };
+    }),
     [_allNavItems, enabledFeatures]
   );
 

@@ -324,7 +324,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Plan-based feature gating: hide items the current plan can't use.
   // Upgrade prompts remain available inside the destination page (PlanGate),
   // but the sidebar shows only what the user can actually open.
-  const planVisibleItems = navItems.filter((item) => !item.locked);
+  // Keep locked items visible so users discover what they would unlock
+  // by upgrading. The click handler intercepts and redirects to /billing.
+  const planVisibleItems = navItems;
   const baseVisibleItems = isGuidedMode
     ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));

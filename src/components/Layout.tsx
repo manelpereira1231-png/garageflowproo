@@ -284,11 +284,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
   ], [pendingAlertCount, pendingMarketCount, t, marketStatusReady, isCarityPartner]);
 
-  // Filter menu by the feature matrix (single source of truth). Items
-  // without a featureSlug or with permission stay; the rest disappear.
+  // Show every item, but mark the ones the current plan can't use as
+  // `locked`. The sidebar renders a padlock + upgrade toast on click —
+  // the user always sees what they would unlock by upgrading.
   const enabledFeatures = useEnabledFeatureSet();
   const navItems: NavItem[] = useMemo(
-    () => _allNavItems.filter((i) => !i.featureSlug || enabledFeatures.has(i.featureSlug)),
+    () => _allNavItems.map((i) => {
+      if (!i.featureSlug) return i;
+      const allowed = enabledFeatures.has(i.featureSlug);
+      return allowed ? i : { ...i, locked: true };
+    }),
     [_allNavItems, enabledFeatures]
   );
 
@@ -319,7 +324,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Plan-based feature gating: hide items the current plan can't use.
   // Upgrade prompts remain available inside the destination page (PlanGate),
   // but the sidebar shows only what the user can actually open.
-  const planVisibleItems = navItems.filter((item) => !item.locked);
+  // Keep locked items visible so users discover what they would unlock
+  // by upgrading. The click handler intercepts and redirects to /billing.
+  const planVisibleItems = navItems;
   const baseVisibleItems = isGuidedMode
     ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));
@@ -388,7 +395,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   setSidebarOpen(false);
                 }
               };
+              const handleLockedIntercept = (e: React.SyntheticEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMobileSidebar();
+                toast.warning("Esta funcionalidade não está disponível no seu plano atual.", {
+                  description: "Faça upgrade para desbloquear.",
+                  action: { label: "Ver planos", onClick: () => navigate("/billing") },
+                });
+                navigate("/billing");
+              };
               const handleClick = (e: React.MouseEvent) => {
+                if (item.locked) { handleLockedIntercept(e); return; }
                 // Native <Link> navigation — only side-effect is closing the
                 // mobile drawer. Do NOT preventDefault for mouse/trackpad.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
@@ -411,6 +429,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 // every sidebar item opens with one tap.
                 e.preventDefault();
                 e.stopPropagation();
+                if (item.locked) { handleLockedIntercept(e); return; }
                 closeMobileSidebar();
                 navigate(item.path);
               };
@@ -422,9 +441,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onPointerUp={handlePointerUp}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
+                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : undefined}
                   className={`flex min-h-11 touch-manipulation select-none items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : item.locked
+                      ? "text-sidebar-foreground/55 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/70"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   }`}
                 >

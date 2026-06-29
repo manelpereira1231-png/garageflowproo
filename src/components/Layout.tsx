@@ -395,7 +395,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   setSidebarOpen(false);
                 }
               };
+              const handleLockedIntercept = (e: React.SyntheticEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMobileSidebar();
+                toast.warning("Esta funcionalidade não está disponível no seu plano atual.", {
+                  description: "Faça upgrade para desbloquear.",
+                  action: { label: "Ver planos", onClick: () => navigate("/billing") },
+                });
+                navigate("/billing");
+              };
               const handleClick = (e: React.MouseEvent) => {
+                if (item.locked) { handleLockedIntercept(e); return; }
                 // Native <Link> navigation — only side-effect is closing the
                 // mobile drawer. Do NOT preventDefault for mouse/trackpad.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
@@ -418,6 +429,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 // every sidebar item opens with one tap.
                 e.preventDefault();
                 e.stopPropagation();
+                if (item.locked) { handleLockedIntercept(e); return; }
                 closeMobileSidebar();
                 navigate(item.path);
               };

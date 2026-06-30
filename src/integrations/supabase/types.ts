@@ -1819,11 +1819,16 @@ export type Database = {
           market_commission_rate: number
           name: string
           notes: string | null
+          saas_free_monthly: number
+          saas_free_yearly: number
           saas_garage_monthly: number
           saas_garage_yearly: number
           saas_pro_monthly: number
           saas_pro_yearly: number
           saas_trial_days: number
+          stripe_free_monthly: string | null
+          stripe_free_product_id: string | null
+          stripe_free_yearly: string | null
           stripe_garage_monthly: string | null
           stripe_garage_product_id: string | null
           stripe_garage_yearly: string | null
@@ -1851,11 +1856,16 @@ export type Database = {
           market_commission_rate?: number
           name: string
           notes?: string | null
+          saas_free_monthly?: number
+          saas_free_yearly?: number
           saas_garage_monthly?: number
           saas_garage_yearly?: number
           saas_pro_monthly?: number
           saas_pro_yearly?: number
           saas_trial_days?: number
+          stripe_free_monthly?: string | null
+          stripe_free_product_id?: string | null
+          stripe_free_yearly?: string | null
           stripe_garage_monthly?: string | null
           stripe_garage_product_id?: string | null
           stripe_garage_yearly?: string | null
@@ -1883,11 +1893,16 @@ export type Database = {
           market_commission_rate?: number
           name?: string
           notes?: string | null
+          saas_free_monthly?: number
+          saas_free_yearly?: number
           saas_garage_monthly?: number
           saas_garage_yearly?: number
           saas_pro_monthly?: number
           saas_pro_yearly?: number
           saas_trial_days?: number
+          stripe_free_monthly?: string | null
+          stripe_free_product_id?: string | null
+          stripe_free_yearly?: string | null
           stripe_garage_monthly?: string | null
           stripe_garage_product_id?: string | null
           stripe_garage_yearly?: string | null
@@ -6868,11 +6883,16 @@ export type Database = {
           market_commission_rate: number
           name: string
           notes: string | null
+          saas_free_monthly: number
+          saas_free_yearly: number
           saas_garage_monthly: number
           saas_garage_yearly: number
           saas_pro_monthly: number
           saas_pro_yearly: number
           saas_trial_days: number
+          stripe_free_monthly: string | null
+          stripe_free_product_id: string | null
+          stripe_free_yearly: string | null
           stripe_garage_monthly: string | null
           stripe_garage_product_id: string | null
           stripe_garage_yearly: string | null
@@ -7039,11 +7059,16 @@ export type Database = {
           market_commission_rate: number
           name: string
           notes: string | null
+          saas_free_monthly: number
+          saas_free_yearly: number
           saas_garage_monthly: number
           saas_garage_yearly: number
           saas_pro_monthly: number
           saas_pro_yearly: number
           saas_trial_days: number
+          stripe_free_monthly: string | null
+          stripe_free_product_id: string | null
+          stripe_free_yearly: string | null
           stripe_garage_monthly: string | null
           stripe_garage_product_id: string | null
           stripe_garage_yearly: string | null

@@ -15,7 +15,7 @@ import { clearPricingCache } from "@/hooks/useCountryPricing";
 
 interface PlanPriceRowProps {
   label: string;
-  plan: "pro" | "garage";
+  plan: "free" | "pro" | "garage";
   cycle: "monthly" | "yearly";
   countryCode: string;
   amount: number;

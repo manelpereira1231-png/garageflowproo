@@ -78,7 +78,8 @@ const navSections = [
   {
     label: "Configuração",
     items: [
-      { path: "/admin/countries", label: "Países e Mercados", icon: Globe },
+      { path: "/admin/plans", label: "Planos (Nome e Estado)", icon: CreditCard },
+      { path: "/admin/countries", label: "Países e Preços Stripe", icon: Globe },
       { path: "/admin/partners", label: "Parceiros", icon: Handshake },
       { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },
       { path: "/admin/support", label: "Suporte", icon: LifeBuoy },

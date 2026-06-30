@@ -1,115 +1,86 @@
 
-# Unificação ERP ↔ Market (oficinas) + isolamento Market público (externos)
+# Painel Admin SaaS + Stripe + Feature Gating real
 
-## Princípio
+Pedido tem âmbito enorme e toca em sistemas já em produção (Stripe BYOK, `subscriptions`, `country_settings.stripe_*`, `plan_features`, `features`, `useSubscription`, `FeatureGate`, edge function `admin-update-plan-price`, `admin-sync-stripe`, webhooks). Antes de mexer, importa não destruir o que já funciona (pagamentos atuais, clientes existentes, RLS).
 
-- **Oficina autenticada** → vive sempre no ERP. O Market é um *módulo interno* (sub-menu do ERP), partilha sessão, sidebar e dashboard. Nunca é redirecionada para `MarketLayout`.
-- **Comprador/Vendedor externo** → vive sempre no `MarketLayout` público. Nunca vê sidebar ERP, dashboard ERP nem rotas `/dashboard`, `/clients`, etc.
+Proponho 4 lotes incrementais. Cada lote é entregue, testado e validado por ti antes do próximo.
 
-A separação já existe parcialmente (realms isolados, `MarketLayout`, `Layout` ERP). Falta:
-1. Consolidar o Market dentro do ERP como sub-secção (não como app paralela).
-2. Refletir dados do Market no Dashboard ERP.
-3. Garantir que oficinas nunca aterram em `MarketLayout`.
-4. Garantir que externos nunca aterram em ERP.
+---
 
-## Mudanças
+## Lote 1 — Admin: CRUD real de planos (persistência + Stripe sync)
 
-### 1. ERP sidebar — Market como sub-grupo único (`src/components/Layout.tsx`)
-Substituir os links soltos atuais ("Marketplace", "Painel Oficina (Market)", "Carteira Market", "Inspeções Market") por **um grupo "Market" colapsável** com sub-itens internos ao ERP:
+**Objetivo:** poderes editar nome, preço, ciclo, descrição e estado de cada plano no painel, com persistência real e sync automático com Stripe.
 
-- Oportunidades  → `/market/opportunities` (nova rota interna, listing de inspeções pendentes para a oficina)
-- Inspeções      → `/market/inspections` (já existe — `CarityShopInspections`)
-- Propostas      → `/market/offers` (nova rota — lista `carity_inspection_offers` da oficina)
-- Carteira       → `/market/wallet` (já existe)
-- Histórico      → `/market/history` (nova — escrows concluídos da oficina)
-- Estatísticas   → `/market/stats` (nova — KPIs Market da oficina)
-- Explorar carros → `/market` (link "discreto", abre Market público em nova aba **se** quiser navegar como comprador)
+- Nova tabela `plans` (slug `free|pro|garage`, name, description, active, sort_order). Já existem `country_settings.saas_*` para preços por país — mantém-se como fonte de preço por país.
+- Página `/admin/plans` com:
+  - Editor por plano (nome, descrição, ativo).
+  - Editor de preço por país × ciclo (lê/grava `country_settings`).
+  - Botão "Sincronizar com Stripe" que invoca a edge function existente `admin-update-plan-price` (já cria novo `Price`, desativa o antigo, regista em `plan_price_history`).
+- Realtime em `plans` + `country_settings` para refletir em toda a app (landing + billing).
+- Plano "free" passa a editável: se preço > 0, comporta-se como pago (checkout Stripe normal).
 
-Tudo dentro do `Layout` ERP — **sem** `MarketLayout`, **sem** navbar Market, **sem** "Voltar ao ERP" (porque nunca saiu).
+**Garantias:** zero hardcode de preço, histórico preservado, subscrições antigas mantêm o Price antigo (Stripe não permite editar Price — já estás a criar novo).
 
-### 2. Rotas: oficinas nunca renderizam `MarketLayout` operacional (`src/App.tsx`)
-Para utilizadores com sessão ERP ativa, as rotas operacionais do Market (`/market/inspections`, `/market/wallet`, `/market/dashboard`, `/market/my-listings`, `/market/purchases`, `/market/payouts`, novas `/market/opportunities|offers|history|stats`) renderizam dentro de `<Layout>` ERP, não `<MarketLayout>`.
+---
 
-`MarketLayout` fica reservado para:
-- visitantes não autenticados a navegar no Market público (`/market`, `/market/car/:id`, `/market/stands`, etc.)
-- sessões **Market-only** (comprador/vendedor sem oficina associada)
+## Lote 2 — Feature gating real (backend = fonte de verdade)
 
-Detecção: `hasErpSession` (já existe via `garageflow_active_shop` no localStorage). Se verdadeiro → wrap em `<Layout>`; senão → wrap em `<MarketLayout>`.
+**Objetivo:** quando desativas "Faturas" no plano Free no admin, um utilizador Free perde acesso real (sidebar + URL + API).
 
-### 3. Dashboard ERP mostra dados do Market (`src/pages/Dashboard.tsx`)
-Adicionar bloco "Atividade Market" com:
-- Inspeções pendentes (count de `carity_inspections` com `shop_id = activeShop` e `status = 'pending'|'in_progress'`)
-- Propostas em aberto (`carity_inspection_offers` da oficina, status `pending`)
-- Carteira: saldo (`shop_wallets.balance`)
-- Receita Market do mês (soma `shop_wallet_transactions` tipo `inspection_paid`/`sale_commission` no mês)
+- Já existe `plan_features` e RPC `user_can_use_feature` (vejo `supabase/functions/_shared/canUseFeature.ts`).
+- Auditar todas as edge functions sensíveis (invoices, quotes, services, clients, vehicles) e adicionar `ensureFeature(req, "<slug>")` no topo.
+- Garantir que `useFeature()` e `FeatureGate` lêem o mesmo `plan_features` (já fazem).
+- Página `/admin/features` (já existe) — verificar que escreve em `plan_features` em vez de só em memória.
+- Realtime já está ligado em `src/lib/features.ts` (`features-matrix` channel).
 
-Mostrar só se `shops.is_carity_partner = true`. Caso contrário, CTA discreto "Ativar Market".
+**Resultado:** uma alteração no admin propaga em < 1s sem refresh, e o backend rejeita pedidos não autorizados.
 
-### 4. Fluxo de sincronização (já garantido a nível de DB, validar)
-Confirmar que ao completar uma inspeção Market:
-- `shop_wallet_transactions` recebe entrada → aparece em "Receita do mês" no Dashboard ERP
-- (futuro) criar `work_order` automático a partir de inspeção aceite — fora do scope desta entrega; deixar TODO.
+---
 
-### 5. Isolamento externo (validação)
-- `MarketLayout` continua sem nenhum link para `/dashboard`, `/clients`, etc. (já é o caso).
-- O botão "Voltar ao ERP" no `MarketLayout` só aparece quando `hasErpSession` é verdadeiro, mas com a mudança #2 oficinas autenticadas raramente caem em `MarketLayout` (só quando exploram o Market público propositadamente).
-- Externos (Market-only) nunca veem botão "Voltar ao ERP".
+## Lote 3 — Webhooks Stripe (acesso automático)
 
-### 6. Novas páginas internas (esqueleto mínimo, dados reais)
-- `src/pages/market/MarketOpportunities.tsx` — lista inspeções disponíveis para a oficina aceitar
-- `src/pages/market/MarketOffers.tsx` — propostas enviadas pela oficina
-- `src/pages/market/MarketHistory.tsx` — histórico de transações Market da oficina
-- `src/pages/market/MarketStats.tsx` — KPIs (inspeções/mês, receita/mês, rating)
+**Objetivo:** quando alguém paga / cancela / falha pagamento no Stripe, o acesso muda automaticamente sem clicar em "sincronizar".
 
-Todas usam `<Layout>` (header ERP) e o `activeShopId`.
+- Nova edge function pública `stripe-webhook` (verify_jwt=false) com verificação de assinatura (`STRIPE_WEBHOOK_SECRET`).
+- Eventos tratados:
+  - `checkout.session.completed` → upsert `subscriptions` (plan, status=active).
+  - `customer.subscription.updated` → atualiza plano/ciclo/status.
+  - `customer.subscription.deleted` → status=canceled, plan=free.
+  - `invoice.payment_failed` → status=past_due.
+- Tabela `stripe_webhook_events` já existe — usar para idempotência.
+- Mantém `admin-sync-stripe` como fallback manual.
 
-## Detalhes técnicos
+**Pré-requisito:** preciso que adiciones o secret `STRIPE_WEBHOOK_SECRET` (vou pedir via `add_secret`) e configures o endpoint no Stripe Dashboard depois.
 
-```text
-Layout ERP (oficinas autenticadas)
-├── Operação Diária
-├── Faturação
-├── Comunicação
-├── Crescimento
-├── Inventário
-├── Administração
-└── Market   ← NOVO grupo colapsável
-    ├── Oportunidades
-    ├── Inspeções
-    ├── Propostas
-    ├── Carteira
-    ├── Histórico
-    ├── Estatísticas
-    └── Explorar carros (link externo Market público)
+---
 
-MarketLayout (externos / exploração pública)
-├── Comprar
-├── Vender
-├── Stands
-├── Favoritos / Mensagens / Conta   (se autenticado Market)
-└── (sem nada do ERP)
-```
+## Lote 4 — Separação Clientes vs Veículos
 
-Roteamento (`App.tsx`):
-```text
-/market, /market/car/:id, /market/stands, /market/sell  → MarketLayout (público)
-/market/auth, /market/dashboard, /market/profile etc.    → MarketLayout (Market session)
-/market/inspections|wallet|opportunities|offers|history|stats
-   if hasErpSession  → Layout ERP
-   else              → MarketLayout (Market session)
-```
+**Importante:** já estão separados na BD (`clients` e `vehicles` são tabelas distintas, FK `vehicles.client_id → clients.id`). O que provavelmente vês é UI a misturar (ex: lista de veículos a mostrar dados do cliente no mesmo card).
 
-## Ficheiros tocados
+Antes de mexer preciso que me digas **exatamente onde vês a mistura** (página, screenshot ou descrição):
+- `/clients` mostra veículos misturados?
+- `/vehicles` mostra clientes como se fossem o mesmo registo?
+- Form de criação une os dois?
 
-- `src/components/Layout.tsx` — reorganizar grupo Market
-- `src/App.tsx` — wrap condicional Layout vs MarketLayout para rotas operacionais Market
-- `src/pages/Dashboard.tsx` — adicionar bloco "Atividade Market"
-- `src/pages/market/MarketOpportunities.tsx` *(novo)*
-- `src/pages/market/MarketOffers.tsx` *(novo)*
-- `src/pages/market/MarketHistory.tsx` *(novo)*
-- `src/pages/market/MarketStats.tsx` *(novo)*
+Sem isto arrisco refatorar algo que está bem. Lote 4 fica em espera até confirmares.
 
-## Fora de scope
+---
 
-- Conversão automática inspeção Market → work_order ERP (deixar TODO documentado).
-- Migrações DB: não há schema novo; tudo assenta em tabelas existentes (`carity_inspections`, `carity_inspection_offers`, `market_escrow`, `shop_wallets`, `shop_wallet_transactions`).
+## Riscos / não vou fazer
+
+- **Não vou** recriar a integração Stripe (já existe BYOK + `admin-update-plan-price`). Vou reutilizar.
+- **Não vou** apagar `subscriptions` existentes nem mexer em Prices antigos no Stripe.
+- **Não vou** mudar slugs de plano (`free|pro|garage`) — quebraria toda a matriz.
+- **Não vou** tocar em `src/integrations/supabase/client.ts`, `types.ts`, `supabase/config.toml` (auto-gerados).
+
+---
+
+## Como avançar
+
+Confirma:
+1. **Começo pelo Lote 1** (admin CRUD + sync Stripe)? Sim/Não.
+2. **Lote 3 (webhooks):** tens acesso ao Stripe Dashboard para configurar o endpoint e gerar o `STRIPE_WEBHOOK_SECRET`?
+3. **Lote 4:** onde exatamente vês clientes e veículos misturados? (página + descrição curta)
+
+Assim que confirmares, arranco o Lote 1.

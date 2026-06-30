@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type Plan = "pro" | "garage";
+type Plan = "free" | "pro" | "garage";
 type Cycle = "monthly" | "yearly";
 
 interface UpdateRequest {
@@ -67,7 +67,7 @@ serve(async (req) => {
     const amount = Number(body.amount);
 
     if (!country) return badRequest("country_code_required");
-    if (plan !== "pro" && plan !== "garage") return badRequest("plan_invalid");
+    if (plan !== "free" && plan !== "pro" && plan !== "garage") return badRequest("plan_invalid");
     if (cycle !== "monthly" && cycle !== "yearly") return badRequest("cycle_invalid");
     if (!Number.isFinite(amount) || amount <= 0) return badRequest("amount_invalid");
 
@@ -82,7 +82,7 @@ serve(async (req) => {
 
     const currency = (body.currency || countryRow.currency || "EUR").toLowerCase();
 
-    const productCol = plan === "pro" ? "stripe_pro_product_id" : "stripe_garage_product_id";
+    const productCol = `stripe_${plan}_product_id`;
     const priceCol = `stripe_${plan}_${cycle}`;          // stripe_pro_monthly, etc.
     const amountCol = `saas_${plan}_${cycle}`;           // saas_pro_monthly, etc.
 
@@ -95,7 +95,7 @@ serve(async (req) => {
     let productId: string | null = (countryRow as any)[productCol] ?? null;
     if (!productId) {
       const product = await stripe.products.create({
-        name: `GarageFlow ${plan === "pro" ? "Pro" : "Garage"} — ${country}`,
+        name: `GarageFlow ${plan === "pro" ? "Pro" : plan === "garage" ? "Garage" : "Entrada"} — ${country}`,
         metadata: { country, plan, source: "admin-update-plan-price" },
       });
       productId = product.id;

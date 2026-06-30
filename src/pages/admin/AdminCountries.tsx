@@ -305,10 +305,12 @@ export default function AdminCountries() {
                 </p>
                 <div className="grid grid-cols-1 gap-3">
                   {([
-                    { key: "saas_pro_monthly",     plan: "pro" as const,    cycle: "monthly" as const, label: "Pro mensal",     priceCol: "stripe_pro_monthly" },
-                    { key: "saas_pro_yearly",      plan: "pro" as const,    cycle: "yearly" as const,  label: "Pro anual",      priceCol: "stripe_pro_yearly" },
-                    { key: "saas_garage_monthly", plan: "garage" as const, cycle: "monthly" as const, label: "Garage mensal", priceCol: "stripe_garage_monthly" },
-                    { key: "saas_garage_yearly",   plan: "garage" as const, cycle: "yearly" as const,  label: "Garage anual",   priceCol: "stripe_garage_yearly" },
+                    { key: "saas_free_monthly",   plan: "free" as const,   cycle: "monthly" as const, label: "Entrada mensal", priceCol: "stripe_free_monthly" },
+                    { key: "saas_free_yearly",    plan: "free" as const,   cycle: "yearly" as const,  label: "Entrada anual",  priceCol: "stripe_free_yearly" },
+                    { key: "saas_pro_monthly",    plan: "pro" as const,    cycle: "monthly" as const, label: "Pro mensal",     priceCol: "stripe_pro_monthly" },
+                    { key: "saas_pro_yearly",     plan: "pro" as const,    cycle: "yearly" as const,  label: "Pro anual",      priceCol: "stripe_pro_yearly" },
+                    { key: "saas_garage_monthly", plan: "garage" as const, cycle: "monthly" as const, label: "Garage mensal",  priceCol: "stripe_garage_monthly" },
+                    { key: "saas_garage_yearly",  plan: "garage" as const, cycle: "yearly" as const,  label: "Garage anual",   priceCol: "stripe_garage_yearly" },
                   ]).map((row) => (
                     <PlanPriceRow
                       key={row.key}

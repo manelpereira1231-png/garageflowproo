@@ -37,12 +37,19 @@ function PlanPriceRow({ label, plan, cycle, countryCode, amount, currentPriceId,
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast.success(`${label}: Stripe Price criado e propagado`);
+      const isFree = plan === "free" && amount === 0;
+      if (isFree) {
+        toast.success(`${label}: definido como gratuito. Stripe Price antigo desativado e referências limpas.`);
+      } else {
+        toast.success(`${label}: Stripe Price criado e propagado (${(data as any)?.new_stripe_price_id ?? "—"})`);
+      }
       onApplied(data as any);
       // Broadcast for any open landing/billing tab to refresh immediately
       try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch { /* ignore */ }
     } catch (e: any) {
-      toast.error("Falha ao aplicar no Stripe: " + (e?.message || String(e)));
+      const msg = e?.message || e?.error?.message || String(e);
+      toast.error(`Falha ao aplicar no Stripe (${label}): ${msg}`);
+      console.error("[admin-update-plan-price] error:", e);
     } finally {
       setBusy(false);
     }

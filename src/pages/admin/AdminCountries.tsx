@@ -21,7 +21,7 @@ interface PlanPriceRowProps {
   amount: number;
   currentPriceId: string | null;
   onAmountChange: (value: number) => void;
-  onApplied: (result: { amount: number; new_stripe_price_id: string; old_stripe_price_id: string | null }) => void;
+  onApplied: (result: { amount: number; new_stripe_price_id: string | null; old_stripe_price_id: string | null }) => void;
 }
 
 function PlanPriceRow({ label, plan, cycle, countryCode, amount, currentPriceId, onAmountChange, onApplied }: PlanPriceRowProps) {

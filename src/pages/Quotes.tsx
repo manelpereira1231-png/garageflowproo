@@ -377,18 +377,18 @@ export default function Quotes() {
               </TableRow>
             ) : filtered.map(q => (
               <TableRow key={q.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium mono">{q.number}</TableCell>
-                <TableCell>{(q.clients as any)?.name}</TableCell>
-                <TableCell className="hidden md:table-cell">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
-                <TableCell className="font-semibold mono">€{q.total?.toFixed(2)}</TableCell>
-                <TableCell className="hidden lg:table-cell mono text-success">€{q.profit?.toFixed(2)}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium mono whitespace-nowrap">{q.number}</TableCell>
+                <TableCell className="whitespace-nowrap">{(q.clients as any)?.name}</TableCell>
+                <TableCell className="hidden md:table-cell whitespace-nowrap">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
+                <TableCell className="font-semibold mono whitespace-nowrap">€{q.total?.toFixed(2)}</TableCell>
+                <TableCell className="hidden lg:table-cell mono text-success whitespace-nowrap">€{q.profit?.toFixed(2)}</TableCell>
+                <TableCell className="whitespace-nowrap">
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap justify-end gap-1 min-w-[280px]">
                     {!['converted'].includes(q.status) && (
                       <Link to={`/quotes/edit/${q.id}`}>
                         <Button variant="ghost" size="sm" className="text-xs">

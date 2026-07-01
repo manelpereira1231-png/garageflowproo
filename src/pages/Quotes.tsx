@@ -355,17 +355,17 @@ export default function Quotes() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead>{t('quotes.number')}</TableHead>
-              <TableHead>{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell">{t('quotes.vehicle')}</TableHead>
-              <TableHead>{t('quotes.total')}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t('quotes.profit')}</TableHead>
-              <TableHead>{t('quotes.status')}</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.number')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.client')}</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">{t('quotes.vehicle')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.total')}</TableHead>
+              <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('quotes.profit')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.status')}</TableHead>
+              <TableHead className="whitespace-nowrap text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

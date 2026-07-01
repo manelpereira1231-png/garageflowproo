@@ -69,7 +69,9 @@ serve(async (req) => {
     if (!country) return badRequest("country_code_required");
     if (plan !== "free" && plan !== "pro" && plan !== "garage") return badRequest("plan_invalid");
     if (cycle !== "monthly" && cycle !== "yearly") return badRequest("cycle_invalid");
-    if (!Number.isFinite(amount) || amount <= 0) return badRequest("amount_invalid");
+    // Free plan may legitimately be priced at 0 (no Stripe price needed).
+    if (!Number.isFinite(amount) || amount < 0) return badRequest("amount_invalid");
+    if (amount === 0 && plan !== "free") return badRequest("amount_invalid");
 
     // ── Load country config ──
     const { data: countryRow, error: countryErr } = await supabase

@@ -93,6 +93,36 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
+    // ── Special case: Free plan with amount === 0 ──
+    // Free-of-charge plan doesn't need a Stripe Price. Clear old price/product references,
+    // deactivate any leftover price, and persist amount=0.
+    if (plan === "free" && amount === 0) {
+      if (oldPriceId) {
+        try { await stripe.prices.update(oldPriceId, { active: false }); }
+        catch (e) { console.warn("Could not deactivate old free price:", oldPriceId, e); }
+      }
+      const { error: updErr } = await supabase
+        .from("country_settings")
+        .update({ [priceCol]: null, [amountCol]: 0 })
+        .eq("code", country);
+      if (updErr) throw updErr;
+
+      await supabase.from("plan_price_history").insert({
+        country_code: country, plan, cycle,
+        currency: currency.toUpperCase(),
+        old_amount: oldAmount, new_amount: 0,
+        old_stripe_price_id: oldPriceId, new_stripe_price_id: null,
+        stripe_product_id: (countryRow as any)[productCol] ?? null,
+        changed_by: userData.user.id,
+        notes: body.notes ?? "free_plan_zero_price",
+      });
+
+      return new Response(
+        JSON.stringify({ ok: true, country, plan, cycle, amount: 0, new_stripe_price_id: null, old_stripe_price_id: oldPriceId }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // ── Ensure Stripe Product exists for this country/plan ──
     let productId: string | null = (countryRow as any)[productCol] ?? null;
     if (!productId) {

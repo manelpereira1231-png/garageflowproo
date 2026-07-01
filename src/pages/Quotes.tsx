@@ -355,17 +355,17 @@ export default function Quotes() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead>{t('quotes.number')}</TableHead>
-              <TableHead>{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell">{t('quotes.vehicle')}</TableHead>
-              <TableHead>{t('quotes.total')}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t('quotes.profit')}</TableHead>
-              <TableHead>{t('quotes.status')}</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.number')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.client')}</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">{t('quotes.vehicle')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.total')}</TableHead>
+              <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('quotes.profit')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('quotes.status')}</TableHead>
+              <TableHead className="whitespace-nowrap text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -377,18 +377,18 @@ export default function Quotes() {
               </TableRow>
             ) : filtered.map(q => (
               <TableRow key={q.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium mono">{q.number}</TableCell>
-                <TableCell>{(q.clients as any)?.name}</TableCell>
-                <TableCell className="hidden md:table-cell">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
-                <TableCell className="font-semibold mono">€{q.total?.toFixed(2)}</TableCell>
-                <TableCell className="hidden lg:table-cell mono text-success">€{q.profit?.toFixed(2)}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium mono whitespace-nowrap">{q.number}</TableCell>
+                <TableCell className="whitespace-nowrap">{(q.clients as any)?.name}</TableCell>
+                <TableCell className="hidden md:table-cell whitespace-nowrap">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
+                <TableCell className="font-semibold mono whitespace-nowrap">€{q.total?.toFixed(2)}</TableCell>
+                <TableCell className="hidden lg:table-cell mono text-success whitespace-nowrap">€{q.profit?.toFixed(2)}</TableCell>
+                <TableCell className="whitespace-nowrap">
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap justify-end gap-1 min-w-[280px]">
                     {!['converted'].includes(q.status) && (
                       <Link to={`/quotes/edit/${q.id}`}>
                         <Button variant="ghost" size="sm" className="text-xs">

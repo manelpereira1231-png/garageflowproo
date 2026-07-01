@@ -28,7 +28,8 @@ function PlanPriceRow({ label, plan, cycle, countryCode, amount, currentPriceId,
   const [busy, setBusy] = useState(false);
   const apply = async () => {
     if (!countryCode) return toast.error("Guarda primeiro o país antes de aplicar no Stripe");
-    if (!amount || amount <= 0) return toast.error("Valor inválido");
+    if (!Number.isFinite(amount) || amount < 0) return toast.error("Valor inválido");
+    if (amount === 0 && plan !== "free") return toast.error("Só o plano de Entrada pode ter valor 0");
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-update-plan-price", {

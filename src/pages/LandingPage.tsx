@@ -499,16 +499,16 @@ export default function LandingPage() {
                   <div className="mb-5 sm:mb-6" />
                 )}
                 <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                  {plan.featureKeys.map(fk => (
-                    <li key={fk} className="flex items-center gap-2 text-sm">
+                  {plan.featureLabels.map(label => (
+                    <li key={label} className="flex items-center gap-2 text-sm">
                       <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                      {t(fk)}
+                      {label}
                     </li>
                   ))}
-                  {plan.lockedFeatureKeys.map(fk => (
-                    <li key={`locked-${fk}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {plan.lockedFeatureLabels.map(label => (
+                    <li key={`locked-${label}`} className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      {t(fk)}
+                      {label}
                     </li>
                   ))}
                 </ul>

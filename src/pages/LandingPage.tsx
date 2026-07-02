@@ -38,6 +38,10 @@ export default function LandingPage() {
     captureAdsParams();
     trackLandingVisit();
 
+    // Force fresh pricing from DB on every landing mount so admin edits show
+    // up even when Realtime hasn't propagated yet (fresh tabs, cold cache).
+    import("@/lib/regionConfig").then((m) => m.reloadCountriesFromDB()).catch(() => {});
+
     const handleScroll = () => {
       const scrollPercent = Math.round(
         (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
@@ -52,15 +56,17 @@ export default function LandingPage() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Live update when admin changes pricing in /admin/countries
+    // Live update when admin changes pricing in /admin/countries or /admin/plans
     const onPricingUpdate = () => setPricingRev((r) => r + 1);
     window.addEventListener('garageflow:pricing-updated', onPricingUpdate);
     window.addEventListener('garageflow:country-detected', onPricingUpdate);
+    window.addEventListener('garageflow:platform-settings-updated', onPricingUpdate);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('garageflow:pricing-updated', onPricingUpdate);
       window.removeEventListener('garageflow:country-detected', onPricingUpdate);
+      window.removeEventListener('garageflow:platform-settings-updated', onPricingUpdate);
     };
   }, []);
   void pricingRev; // referenced to force re-render on pricing event

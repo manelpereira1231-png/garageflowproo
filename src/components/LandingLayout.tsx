@@ -30,7 +30,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             <Link to="/#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</Link>
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
               {languages.map(lang => (
                 <button
@@ -56,15 +56,18 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             </Link>
           </div>
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+            aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={mobileMenuOpen}
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
         {mobileMenuOpen && (
-          <div className="sm:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
+          <div className="md:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
             <Link to="/#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</Link>
             <Link to="/#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</Link>
             <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>

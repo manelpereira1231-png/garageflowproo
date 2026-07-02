@@ -38,6 +38,10 @@ export default function LandingPage() {
     captureAdsParams();
     trackLandingVisit();
 
+    // Force fresh pricing from DB on every landing mount so admin edits show
+    // up even when Realtime hasn't propagated yet (fresh tabs, cold cache).
+    import("@/lib/regionConfig").then((m) => m.reloadCountriesFromDB()).catch(() => {});
+
     const handleScroll = () => {
       const scrollPercent = Math.round(
         (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
@@ -52,15 +56,17 @@ export default function LandingPage() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Live update when admin changes pricing in /admin/countries
+    // Live update when admin changes pricing in /admin/countries or /admin/plans
     const onPricingUpdate = () => setPricingRev((r) => r + 1);
     window.addEventListener('garageflow:pricing-updated', onPricingUpdate);
     window.addEventListener('garageflow:country-detected', onPricingUpdate);
+    window.addEventListener('garageflow:platform-settings-updated', onPricingUpdate);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('garageflow:pricing-updated', onPricingUpdate);
       window.removeEventListener('garageflow:country-detected', onPricingUpdate);
+      window.removeEventListener('garageflow:platform-settings-updated', onPricingUpdate);
     };
   }, []);
   void pricingRev; // referenced to force re-render on pricing event
@@ -153,7 +159,7 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <LanguageDropdown />
             <ThemeToggle />
             <Link to="/auth?mode=login">
@@ -165,7 +171,7 @@ export default function LandingPage() {
               </Button>
             </Link>
           </div>
-          <div className="sm:hidden flex items-center gap-1">
+          <div className="md:hidden flex items-center gap-1">
             <ThemeToggle />
             <button
               type="button"
@@ -180,7 +186,7 @@ export default function LandingPage() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="sm:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
+          <div className="md:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
             <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>

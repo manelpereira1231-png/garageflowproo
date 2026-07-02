@@ -153,7 +153,7 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
             <Link to="/afiliados" className="hover:text-foreground transition-colors">{t('landing.navAffiliates')}</Link>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <LanguageDropdown />
             <ThemeToggle />
             <Link to="/auth?mode=login">
@@ -165,7 +165,7 @@ export default function LandingPage() {
               </Button>
             </Link>
           </div>
-          <div className="sm:hidden flex items-center gap-1">
+          <div className="md:hidden flex items-center gap-1">
             <ThemeToggle />
             <button
               type="button"
@@ -180,7 +180,7 @@ export default function LandingPage() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="sm:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
+          <div className="md:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
             <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>

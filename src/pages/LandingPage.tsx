@@ -71,14 +71,33 @@ export default function LandingPage() {
     };
   }, []);
   void pricingRev; // referenced to force re-render on pricing event
+
+  // Live features matrix from admin panel (realtime via /admin/features)
+  const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
+  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
+    const enabled: string[] = [];
+    const locked: string[] = [];
+    // Only surface non-core features; sort alphabetically by name for stability
+    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
+    for (const f of nonCore) {
+      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
+      if (row?.enabled) enabled.push(f.name);
+      else locked.push(f.name);
+    }
+    return { enabled, locked };
+  };
+  const freeLists = buildFeatureLists("free");
+  const proLists = buildFeatureLists("pro");
+  const garageLists = buildFeatureLists("garage");
+
   const planConfigs = [
     {
       nameKey: 'landing.planFree',
       price: formatPrice(0),
       periodKey: '',
       subtitleKey: '',
-      featureKeys: ['landing.feat.quotes10', 'landing.feat.1user', 'landing.feat.basicDash', 'landing.feat.watermarkPdf'],
-      lockedFeatureKeys: ['landing.feat.5users', 'landing.feat.basicAlerts', 'landing.feat.advancedReports', 'landing.feat.automations'],
+      featureLabels: freeLists.enabled,
+      lockedFeatureLabels: freeLists.locked,
       ctaKey: 'landing.ctaFree',
       highlighted: false,
     },
@@ -87,8 +106,8 @@ export default function LandingPage() {
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: 'landing.trial30',
-      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.5users', 'landing.feat.fullDash', 'landing.feat.proPdf', 'landing.feat.basicAlerts', 'landing.feat.autoEmails', 'landing.feat.export'],
-      lockedFeatureKeys: ['landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
+      featureLabels: proLists.enabled,
+      lockedFeatureLabels: proLists.locked,
       ctaKey: 'landing.ctaPro',
       highlighted: true,
     },
@@ -97,8 +116,8 @@ export default function LandingPage() {
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: 'landing.trial30',
-      featureKeys: ['landing.feat.unlimitedQuotes', 'landing.feat.unlimitedUsers', 'landing.feat.advancedDash', 'landing.feat.proPdf', 'landing.feat.advancedAlerts', 'landing.feat.automations', 'landing.feat.advancedReports', 'landing.feat.multiShop', 'landing.feat.chatbot', 'landing.feat.api'],
-      lockedFeatureKeys: [],
+      featureLabels: garageLists.enabled,
+      lockedFeatureLabels: garageLists.locked,
       ctaKey: 'landing.ctaGarage',
       highlighted: false,
     },

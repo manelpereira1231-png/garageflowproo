@@ -41,7 +41,7 @@ const statusIcons: Record<ServiceStatus, any> = {
   approved: ThumbsUp,
   in_progress: Play,
   completed: CheckCircle,
-  delivered: Truck,
+  delivered: CheckCircle,
   cancelled: XCircle,
 };
 
@@ -329,7 +329,7 @@ export default function Services() {
             <EmptyState
               icon="🔧"
               title={t('services.empty') || 'Ainda sem serviços'}
-              description={t('services.emptyDesc') || 'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
+              description={'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
               action={
                 <Link to="/services/new">
                   <Button size="lg" className="px-6">
@@ -416,7 +416,7 @@ export default function Services() {
                     <EmptyState
                       icon="🔧"
                       title={t('services.empty') || 'Ainda sem serviços'}
-                      description={t('services.emptyDesc') || 'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
+                      description={'Cria a primeira ordem de serviço a partir de um orçamento ou diretamente.'}
                       action={
                         <Link to="/services/new">
                           <Button size="lg" className="px-6">

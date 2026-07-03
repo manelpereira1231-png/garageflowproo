@@ -62,12 +62,16 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
 export function openWhatsApp(params: WhatsAppMessageParams): boolean {
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
-  // Use location assignment on mobile for better app handoff; window.open for desktop.
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (isMobile) {
     window.location.href = url;
-  } else {
-    window.open(url, '_blank', 'noopener');
+    return true;
+  }
+  // Desktop: try new tab, fall back to same-window navigation if the popup is blocked.
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win || win.closed || typeof win.closed === 'undefined') {
+    window.location.href = url;
   }
   return true;
 }
+

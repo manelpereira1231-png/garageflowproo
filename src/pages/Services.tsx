@@ -409,6 +409,9 @@ export default function Services() {
                   </Link>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>
+                <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
+                  {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
+                </Button>
                 <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
                   const phone = (s.clients as any)?.phone;
                   if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }

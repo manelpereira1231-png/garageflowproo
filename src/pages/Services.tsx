@@ -99,6 +99,43 @@ export default function Services() {
   const [dataLoading, setDataLoading] = useState(!_sCache);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  const sendServiceEmail = async (s: any) => {
+    const clientEmail = (s.clients as any)?.email;
+    if (!clientEmail) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
+    if (!shop) { toast.error('Dados da oficina não carregados'); return; }
+    setSendingEmail(s.id);
+    try {
+      const subject = `Ordem de serviço ${s.number} — ${shop.name}`;
+      const vehicle = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''} — ${(s.vehicles as any)?.plate || ''}`.trim();
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#111">
+          <h2 style="margin:0 0 12px">Ordem de serviço ${s.number}</h2>
+          <p>Olá ${(s.clients as any)?.name || ''},</p>
+          <p>A sua ordem de serviço referente a <strong>${vehicle}</strong> está disponível.</p>
+          <p><strong>Estado:</strong> ${s.status}</p>
+          <p><strong>Total:</strong> €${Number(s.total || 0).toFixed(2)}</p>
+          ${s.diagnosis ? `<p><strong>Diagnóstico:</strong> ${s.diagnosis}</p>` : ''}
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
+          <p style="color:#666;font-size:12px">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
+        </div>`;
+      await sendEmail({ to: clientEmail, subject, html });
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      if (activeId) {
+        await supabase.from("email_logs").insert({
+          shop_id: activeId, to_email: clientEmail, subject, status: 'sent',
+          entity_type: 'service', entity_id: s.id,
+        });
+      }
+      toast.success(t('quotes.emailSent') || 'Email enviado');
+    } catch (err: any) {
+      console.error('Email error:', err);
+      toast.error(t('quotes.emailError') || 'Erro ao enviar email');
+    } finally {
+      setSendingEmail(null);
+    }
+  };
 
   const activeShopId = useActiveShopId();
 

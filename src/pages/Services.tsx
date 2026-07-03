@@ -30,7 +30,7 @@ const statusColors: Record<ServiceStatus, string> = {
   approved: "bg-success/10 text-success",
   in_progress: "bg-primary/10 text-primary",
   completed: "bg-success/10 text-success",
-  delivered: "bg-muted text-muted-foreground",
+  delivered: "bg-success/10 text-success",
   cancelled: "bg-destructive/10 text-destructive",
 };
 
@@ -55,8 +55,10 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
     <div className="flex items-center gap-0.5 overflow-x-auto py-1">
       {statusFlow.map((s, i) => {
         const Icon = statusIcons[s];
-        const isActive = i === currentIdx;
-        const isDone = i < currentIdx;
+        // When the WO is already delivered, the flow is complete — paint every step as done (green).
+        const isFinal = status === 'delivered';
+        const isActive = !isFinal && i === currentIdx;
+        const isDone = isFinal || i < currentIdx;
         const isCancelled = status === 'cancelled';
         
         return (

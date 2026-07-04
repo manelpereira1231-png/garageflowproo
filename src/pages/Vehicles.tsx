@@ -17,6 +17,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -37,6 +38,7 @@ export default function Vehicles() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [passportId, setPassportId] = useState<string | null>(null);
+  const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
@@ -48,6 +50,8 @@ export default function Vehicles() {
   });
 
   const activeShopId = useActiveShopId();
+  const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
+  const plateExample = plateExampleFor(plateRegion);
 
   const fetchData = async () => {
     if (!activeShopId) { setDataLoading(false); return; }

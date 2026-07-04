@@ -501,33 +501,36 @@ export default function Services() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-0.5 justify-end flex-wrap">
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title={t('common.edit') || 'Editar'}>
+                          <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs">PDF</Button>
-                    <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs">
-                      {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}
-                      Email
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(s)} title="PDF">
+                      <FileDown className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => {
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
+                      {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
                       const phone = (s.clients as any)?.phone;
                       if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
                       openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
                     }}>
-                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                      <MessageCircle className="w-3.5 h-3.5" />
                     </Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <>
-                        <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs gap-1">
+                        <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs gap-1 h-8 px-2">
                           <ChevronRightIcon className="w-3.5 h-3.5" />
-                          {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
+                          <span className="hidden xl:inline">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => cancelService(s.id)} className="text-xs text-destructive">✕</Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                          <XCircle className="w-3.5 h-3.5" />
+                        </Button>
                       </>
                     )}
                   </div>

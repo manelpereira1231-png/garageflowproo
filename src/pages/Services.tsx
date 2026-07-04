@@ -321,7 +321,7 @@ export default function Services() {
           <p className="text-2xl font-bold mt-1 text-info">{statusCountsAll.open || 0}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{shop?.currency === 'BRL' ? 'R$' : '€'} {(t('dashboard.thisMonth') || 'Este mês')}</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Este mês</p>
           <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
         </div>
       </div>

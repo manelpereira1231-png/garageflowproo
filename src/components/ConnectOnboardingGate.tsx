@@ -76,11 +76,23 @@ export default function ConnectOnboardingGate({
           return_path: returnPath || window.location.pathname,
         },
       });
-      if (error) throw error;
+      if (error) {
+        // Extract the real error message returned by the edge function body
+        let realMsg = error.message;
+        try {
+          const ctxResp: Response | undefined = (error as any).context?.response;
+          if (ctxResp) {
+            const body = await ctxResp.clone().json().catch(() => null);
+            if (body?.error) realMsg = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(realMsg);
+      }
       if (!data?.url) throw new Error("Sem URL de onboarding");
       window.location.href = data.url;
     } catch (err: any) {
-      toast.error(err.message || "Erro ao iniciar onboarding");
+      console.error("[ConnectGate] onboarding error", err);
+      toast.error(err.message || "Erro ao iniciar onboarding", { duration: 8000 });
       setStarting(false);
     }
   };

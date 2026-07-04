@@ -17,6 +17,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -37,6 +38,7 @@ export default function Vehicles() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [passportId, setPassportId] = useState<string | null>(null);
+  const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
@@ -48,6 +50,8 @@ export default function Vehicles() {
   });
 
   const activeShopId = useActiveShopId();
+  const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
+  const plateExample = plateExampleFor(plateRegion);
 
   const fetchData = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
@@ -66,6 +70,8 @@ export default function Vehicles() {
       if (count !== null) setTotalCount(count);
       const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
+      const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
+      if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
       pageCache.set(key, { rows: v ?? [], clients: c ?? [], count: count ?? 0 });
     } finally {
       setDataLoading(false);
@@ -81,10 +87,16 @@ export default function Vehicles() {
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
     if (!form.client_id) { toast.error(t('vehicles.selectClient')); setLoading(false); return; }
     if (!form.make || !form.model) { toast.error(t('vehicles.make') + ' / ' + t('vehicles.model')); setLoading(false); return; }
+    const normalizedPlate = autoFormatPlate(form.plate, plateRegion);
+    if (!isValidPlate(normalizedPlate, plateRegion)) {
+      toast.error(`Matrícula inválida — formato esperado: ${plateExample}`);
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
-      year: parseInt(form.year), plate: form.plate.toUpperCase(), vin: form.vin || null,
+      year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     };
 
@@ -177,7 +189,18 @@ export default function Vehicles() {
                   onModelChange={(v) => setForm((current) => ({ ...current, model: v }))}
                 />
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
-                <div className="space-y-1.5"><Label>{t('vehicles.plate')} *</Label><Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" /></div>
+                <div className="space-y-1.5">
+                  <Label>{t('vehicles.plate')} *</Label>
+                  <Input
+                    value={form.plate}
+                    onChange={e => setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)})}
+                    required
+                    placeholder={plateExample}
+                    aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
+                    className={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion) ? "border-destructive" : ""}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
+                </div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="number" value={form.mileage} onChange={e => setForm({...form, mileage: e.target.value})} /></div>
                 <div className="space-y-1.5">

@@ -70,6 +70,8 @@ export default function Vehicles() {
       if (count !== null) setTotalCount(count);
       const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
+      const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
+      if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
       pageCache.set(key, { rows: v ?? [], clients: c ?? [], count: count ?? 0 });
     } finally {
       setDataLoading(false);
@@ -85,10 +87,16 @@ export default function Vehicles() {
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
     if (!form.client_id) { toast.error(t('vehicles.selectClient')); setLoading(false); return; }
     if (!form.make || !form.model) { toast.error(t('vehicles.make') + ' / ' + t('vehicles.model')); setLoading(false); return; }
+    const normalizedPlate = autoFormatPlate(form.plate, plateRegion);
+    if (!isValidPlate(normalizedPlate, plateRegion)) {
+      toast.error(`Matrícula inválida — formato esperado: ${plateExample}`);
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
-      year: parseInt(form.year), plate: form.plate.toUpperCase(), vin: form.vin || null,
+      year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     };
 

@@ -32,36 +32,52 @@ serve(async (req) => {
     );
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Não autenticado");
+    if (!authHeader) throw new Error("Sessão expirada. Volte a iniciar sessão.");
     const token = authHeader.replace("Bearer ", "");
     const { data: authData } = await supabaseClient.auth.getUser(token);
     const user = authData.user;
-    if (!user?.email) throw new Error("Não autenticado");
+    if (!user?.email) throw new Error("Sessão expirada. Volte a iniciar sessão.");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Pagamentos ainda não estão configurados na plataforma. Contacte o suporte.");
+    }
 
     const body = await req.json().catch(() => ({}));
     const role: "seller" | "shop" = body.role === "shop" ? "shop" : "seller";
     const shopId: string | undefined = body.shop_id;
     const returnPath: string = body.return_path || "/market/seller";
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     let accountId: string | null = null;
     let countryCode = "PT";
 
     if (role === "seller") {
-      const { data: profile } = await supabaseAdmin
+      let { data: profile } = await supabaseAdmin
         .from("carity_seller_profiles")
         .select("id, stripe_connect_account_id, country_code")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (!profile) throw new Error("Perfil de vendedor não encontrado. Conclua o KYC primeiro.");
-      accountId = profile.stripe_connect_account_id;
-      countryCode = (profile.country_code || "PT").toUpperCase();
+
+      // Auto-create a minimal seller profile so onboarding never blocks with "perfil não encontrado".
+      // The user can still complete KYC afterwards.
+      if (!profile) {
+        const { data: created, error: createErr } = await supabaseAdmin
+          .from("carity_seller_profiles")
+          .insert({ user_id: user.id, country_code: "PT" })
+          .select("id, stripe_connect_account_id, country_code")
+          .maybeSingle();
+        if (createErr) {
+          console.error("[connect-onboarding] auto-create profile error", createErr);
+          throw new Error("Não foi possível criar o perfil de vendedor. Tente novamente ou contacte o suporte.");
+        }
+        profile = created;
+      }
+      accountId = profile?.stripe_connect_account_id ?? null;
+      countryCode = (profile?.country_code || "PT").toUpperCase();
     } else {
       if (!shopId) throw new Error("shop_id é obrigatório para oficinas");
-      // Verify user belongs to shop (via RLS by querying as user)
       const { data: shop } = await supabaseClient
         .from("shops")
         .select("id, stripe_connect_account_id, country")
@@ -72,20 +88,28 @@ serve(async (req) => {
       countryCode = (shop.country || "PT").toUpperCase();
     }
 
-    // Create Express account if not exists
+    // Country codes must be ISO-2 uppercase (Stripe reject invalid values with 400)
+    if (!/^[A-Z]{2}$/.test(countryCode)) countryCode = "PT";
+
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        country: countryCode,
-        email: user.email,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-        business_type: role === "shop" ? "company" : "individual",
-        metadata: { user_id: user.id, role, shop_id: shopId || "" },
-      });
-      accountId = account.id;
+      try {
+        const account = await stripe.accounts.create({
+          type: "express",
+          country: countryCode,
+          email: user.email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          business_type: role === "shop" ? "company" : "individual",
+          metadata: { user_id: user.id, role, shop_id: shopId || "" },
+        });
+        accountId = account.id;
+      } catch (stripeErr: any) {
+        console.error("[connect-onboarding] stripe.accounts.create failed", stripeErr);
+        const msg = stripeErr?.raw?.message || stripeErr?.message || "Erro Stripe";
+        throw new Error(`Stripe rejeitou a criação da conta (${countryCode}): ${msg}`);
+      }
 
       const updatePayload = {
         stripe_connect_account_id: accountId,
@@ -117,7 +141,7 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("[connect-onboarding] error", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message || "Erro desconhecido" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });

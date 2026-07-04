@@ -189,7 +189,18 @@ export default function Vehicles() {
                   onModelChange={(v) => setForm((current) => ({ ...current, model: v }))}
                 />
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
-                <div className="space-y-1.5"><Label>{t('vehicles.plate')} *</Label><Input value={form.plate} onChange={e => setForm({...form, plate: e.target.value})} required placeholder="AA-00-BB" /></div>
+                <div className="space-y-1.5">
+                  <Label>{t('vehicles.plate')} *</Label>
+                  <Input
+                    value={form.plate}
+                    onChange={e => setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)})}
+                    required
+                    placeholder={plateExample}
+                    aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
+                    className={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion) ? "border-destructive" : ""}
+                  />
+                  <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
+                </div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="number" value={form.mileage} onChange={e => setForm({...form, mileage: e.target.value})} /></div>
                 <div className="space-y-1.5">

@@ -342,7 +342,7 @@ export function getRegionalPricing(): RegionalPricing {
     currency: c.currency,
     currencySymbol: c.currencySymbol,
     locale: c.locale,
-    free: { monthly: 0, yearly: 0 },
+    free: c.saas.free ?? { monthly: 0, yearly: 0 },
     pro: c.saas.pro,
     garage: c.saas.garage,
     trialDays: c.saas.trialDays,

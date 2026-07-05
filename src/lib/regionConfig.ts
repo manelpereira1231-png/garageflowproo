@@ -26,6 +26,7 @@ export interface CountryConfig {
   defaultLanguage: string;
   taxLabel: string;
   saas: {
+    free: { monthly: number; yearly: number };
     pro: { monthly: number; yearly: number };
     garage: { monthly: number; yearly: number };
     trialDays: number;
@@ -49,7 +50,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'PT', name: 'Portugal', flag: '🇵🇹',
     currency: 'EUR', currencySymbol: '€', locale: 'pt-PT',
     defaultLanguage: 'pt', taxLabel: 'IVA',
-    saas: { pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {
       proMonthly: 'price_1T4YARE1zL2Sl1ZT0iAS9Cmk',
@@ -63,7 +64,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'BR', name: 'Brasil', flag: '🇧🇷',
     currency: 'BRL', currencySymbol: 'R$', locale: 'pt-BR',
     defaultLanguage: 'pt-BR', taxLabel: 'Impostos',
-    saas: { pro: { monthly: 97, yearly: 970 }, garage: { monthly: 197, yearly: 1970 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 97, yearly: 970 }, garage: { monthly: 197, yearly: 1970 }, trialDays: 30 },
     inspection: { price: 89.90, shopShare: 50.00, platformShare: 39.90 },
     stripe: {
       proMonthly: 'price_1TFP7uE1zL2Sl1ZTQxdzHWRv',
@@ -77,7 +78,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'IN', name: 'India', flag: '🇮🇳',
     currency: 'INR', currencySymbol: '₹', locale: 'en-IN',
     defaultLanguage: 'en', taxLabel: 'GST',
-    saas: { pro: { monthly: 999, yearly: 9990 }, garage: { monthly: 1999, yearly: 19990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 999, yearly: 9990 }, garage: { monthly: 1999, yearly: 19990 }, trialDays: 30 },
     inspection: { price: 499, shopShare: 300, platformShare: 199 },
     stripe: {},
     active: true,
@@ -86,7 +87,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'ES', name: 'España', flag: '🇪🇸',
     currency: 'EUR', currencySymbol: '€', locale: 'es-ES',
     defaultLanguage: 'es', taxLabel: 'IVA',
-    saas: { pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
     active: false,
@@ -95,7 +96,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'FR', name: 'France', flag: '🇫🇷',
     currency: 'EUR', currencySymbol: '€', locale: 'fr-FR',
     defaultLanguage: 'fr', taxLabel: 'TVA',
-    saas: { pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
     active: false,
@@ -104,7 +105,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'DE', name: 'Deutschland', flag: '🇩🇪',
     currency: 'EUR', currencySymbol: '€', locale: 'de-DE',
     defaultLanguage: 'de', taxLabel: 'MwSt',
-    saas: { pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
     active: false,
@@ -113,7 +114,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'UK', name: 'United Kingdom', flag: '🇬🇧',
     currency: 'GBP', currencySymbol: '£', locale: 'en-GB',
     defaultLanguage: 'en', taxLabel: 'VAT',
-    saas: { pro: { monthly: 45, yearly: 450 }, garage: { monthly: 89, yearly: 890 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 45, yearly: 450 }, garage: { monthly: 89, yearly: 890 }, trialDays: 30 },
     inspection: { price: 29, shopShare: 17, platformShare: 12 },
     stripe: {},
     active: false,
@@ -122,7 +123,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'US', name: 'United States', flag: '🇺🇸',
     currency: 'USD', currencySymbol: '$', locale: 'en-US',
     defaultLanguage: 'en', taxLabel: 'Sales Tax',
-    saas: { pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
+    saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 34.90, shopShare: 20.00, platformShare: 14.90 },
     stripe: {},
     active: false,
@@ -155,6 +156,7 @@ export async function loadCountriesFromDB(): Promise<void> {
         defaultLanguage: row.default_language,
         taxLabel: row.tax_label,
         saas: {
+          free: { monthly: Number(row.saas_free_monthly ?? 0), yearly: Number(row.saas_free_yearly ?? 0) },
           pro: { monthly: Number(row.saas_pro_monthly), yearly: Number(row.saas_pro_yearly) },
           garage: { monthly: Number(row.saas_garage_monthly), yearly: Number(row.saas_garage_yearly) },
           trialDays: row.saas_trial_days,
@@ -340,7 +342,7 @@ export function getRegionalPricing(): RegionalPricing {
     currency: c.currency,
     currencySymbol: c.currencySymbol,
     locale: c.locale,
-    free: { monthly: 0, yearly: 0 },
+    free: c.saas.free ?? { monthly: 0, yearly: 0 },
     pro: c.saas.pro,
     garage: c.saas.garage,
     trialDays: c.saas.trialDays,

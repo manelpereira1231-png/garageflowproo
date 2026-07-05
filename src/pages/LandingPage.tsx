@@ -93,8 +93,8 @@ export default function LandingPage() {
   const planConfigs = [
     {
       nameKey: 'landing.planFree',
-      price: formatPrice(0),
-      periodKey: '',
+      price: formatPrice(pricing.free[billingCycle]),
+      periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
       subtitleKey: '',
       featureLabels: freeLists.enabled,
       lockedFeatureLabels: freeLists.locked,

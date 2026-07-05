@@ -1,86 +1,74 @@
+Vou dividir em 4 frentes independentes. Todas usam código existente sempre que possível.
 
-# Painel Admin SaaS + Stripe + Feature Gating real
+## 1) Aprovação de Orçamentos/Serviços via link único (Email + WhatsApp)
 
-Pedido tem âmbito enorme e toca em sistemas já em produção (Stripe BYOK, `subscriptions`, `country_settings.stripe_*`, `plan_features`, `features`, `useSubscription`, `FeatureGate`, edge function `admin-update-plan-price`, `admin-sync-stripe`, webhooks). Antes de mexer, importa não destruir o que já funciona (pagamentos atuais, clientes existentes, RLS).
+**Backend**
+- Migração: adicionar às tabelas `quotes` e `work_orders` (serviços) as colunas `approval_token uuid unique`, `approved_at timestamptz`, `approved_by_name text`, `approval_ip text`, `rejected_at timestamptz`, `reject_reason text`. Gerar token automaticamente via trigger `BEFORE INSERT` (default `gen_random_uuid()`).
+- Nova policy pública (anon `SELECT`) restrita a linhas com token válido — filtro `USING (approval_token IS NOT NULL)` mas só através de RPC `get_public_approval(token uuid)` (SECURITY DEFINER) que devolve os dados necessários e nada do shop privado.
+- RPC `approve_document(token uuid, name text, ip text)` e `reject_document(token uuid, reason text)` — SECURITY DEFINER, atualizam registo, gravam `audit_logs`.
 
-Proponho 4 lotes incrementais. Cada lote é entregue, testado e validado por ti antes do próximo.
+**Frontend**
+- Página pública `/approve/:token` (já existe `QuoteApproval.tsx` — estender para suportar quotes + services). Mostra: oficina, viatura, itens, total, botões Aprovar / Rejeitar, campo nome do cliente, disclaimer legal.
+- Adicionar botões "Enviar link de aprovação" nos cartões/tabelas de Quotes e Services que:
+  - Constroem URL pública `https://.../approve/<token>`.
+  - Abrem WhatsApp com mensagem pré-preenchida (`openWhatsApp` existente).
+  - Enviam email via `send-transactional-email` novo template `approval-request`.
 
----
+## 2) Contabilidade GarageFlow (Painel Admin)
 
-## Lote 1 — Admin: CRUD real de planos (persistência + Stripe sync)
+Nova página `/admin/accounting` (sidebar em "Sistema" ou nova secção "Contabilidade"):
 
-**Objetivo:** poderes editar nome, preço, ciclo, descrição e estado de cada plano no painel, com persistência real e sync automático com Stripe.
+**Filtros:** período (mês/trimestre/ano/personalizado) + botões de exportação CSV/PDF por relatório.
 
-- Nova tabela `plans` (slug `free|pro|garage`, name, description, active, sort_order). Já existem `country_settings.saas_*` para preços por país — mantém-se como fonte de preço por país.
-- Página `/admin/plans` com:
-  - Editor por plano (nome, descrição, ativo).
-  - Editor de preço por país × ciclo (lê/grava `country_settings`).
-  - Botão "Sincronizar com Stripe" que invoca a edge function existente `admin-update-plan-price` (já cria novo `Price`, desativa o antigo, regista em `plan_price_history`).
-- Realtime em `plans` + `country_settings` para refletir em toda a app (landing + billing).
-- Plano "free" passa a editável: se preço > 0, comporta-se como pago (checkout Stripe normal).
+**Relatórios (dados apenas do SaaS, não das oficinas):**
+1. Faturação GarageFlow — de `payments` + `subscriptions`.
+2. Subscrições ativas — `subscriptions where status='active'`.
+3. Pagamentos recebidos — `payments where status='paid'`.
+4. Pagamentos pendentes — `payments where status in ('pending','failed')`.
+5. Reembolsos — `payments where amount<0 or status='refunded'` (usar Stripe API se necessário).
+6. MRR / ARR — soma dos preços das subscrições ativas × 1 (MRR) e ×12 (ARR).
+7. IVA liquidado/recebido — 23% PT sobre valor líquido dos pagamentos EU (usar `country` do shop).
+8. Receita por plano — group by `plan`.
+9. **SAF-T PT (GarageFlow SaaS)** — XML gerado com dados da empresa (constantes `GARAGEFLOW_COMPANY_*` num ficheiro config) + faturas de subscrição. Aviso claro "Software não certificado pela AT".
 
-**Garantias:** zero hardcode de preço, histórico preservado, subscrições antigas mantêm o Price antigo (Stripe não permite editar Price — já estás a criar novo).
+Reaproveitar `CommercialReports.tsx` como base para CSV/PDF export.
 
----
+## 3) Sincronizar preço plano Admin ↔ Landing ↔ Billing
 
-## Lote 2 — Feature gating real (backend = fonte de verdade)
+Diagnóstico: `AdminPlans` grava em `plans` table mas Landing e `Billing` usam preços hardcoded ou `country_settings`.
 
-**Objetivo:** quando desativas "Faturas" no plano Free no admin, um utilizador Free perde acesso real (sidebar + URL + API).
+**Fix:**
+- Landing (`LandingPage.tsx`) já ouve `plans` realtime — verificar campo consultado; se está a ler `plans.price_monthly` mas admin grava noutra coluna, alinhar.
+- `Billing.tsx` (oficina logada) — trocar valores hardcoded por leitura de `plans` (com fallback ao `country_settings` só se `plans` vazio).
+- Garantir que `AdminPlans` grava e emite realtime event; adicionar `channel.subscribe` na Landing + Billing (invalidação de cache).
 
-- Já existe `plan_features` e RPC `user_can_use_feature` (vejo `supabase/functions/_shared/canUseFeature.ts`).
-- Auditar todas as edge functions sensíveis (invoices, quotes, services, clients, vehicles) e adicionar `ensureFeature(req, "<slug>")` no topo.
-- Garantir que `useFeature()` e `FeatureGate` lêem o mesmo `plan_features` (já fazem).
-- Página `/admin/features` (já existe) — verificar que escreve em `plan_features` em vez de só em memória.
-- Realtime já está ligado em `src/lib/features.ts` (`features-matrix` channel).
+## 4) Uniformização de tabelas ao estilo Veículos
 
-**Resultado:** uma alteração no admin propaga em < 1s sem refresh, e o backend rejeita pedidos não autorizados.
+Padrão de referência atual em `Vehicles.tsx`: `<Table>` shadcn + `<div className="w-full">` sem container `max-w-*`, colunas com `truncate` e larguras `w-*`, dual-view mobile (`sm:hidden` cards).
 
----
+Aplicar a: `Services.tsx`, `Quotes.tsx`, `Workshop.tsx` (reparações), `Invoices.tsx`, `Clients.tsx`, `Stock.tsx`, `Warranties.tsx`, `Appointments/Agenda.tsx`.
 
-## Lote 3 — Webhooks Stripe (acesso automático)
+**Regras técnicas:**
+- Remover `overflow-x-auto` do wrapper da página; manter apenas dentro de `<Table>` (shadcn já faz isso via `relative w-full overflow-auto`).
+- Container da página: `w-full` sem `max-w-*`.
+- Colunas com `min-w-0 truncate` + `title={value}` para tooltip.
+- Botões de ação em coluna sticky à direita OU dropdown `MoreHorizontal` se >3 ações.
+- Mobile <640px: cartões (`sm:hidden`), com todas as informações e ações visíveis (sem esconder nada).
+- Nenhuma coluna oculta: campos longos ficam com truncate + tooltip, nunca `display:none`.
 
-**Objetivo:** quando alguém paga / cancela / falha pagamento no Stripe, o acesso muda automaticamente sem clicar em "sincronizar".
+## Ordem de execução
+1. Sincronizar preço (rápido, alto valor visível) — 1 iteração.
+2. Uniformizar tabelas — 1 iteração (várias páginas em paralelo).
+3. Aprovação por link — 1 iteração (migração + página + botões).
+4. Contabilidade GarageFlow + SAF-T — 1 iteração (nova página admin + export).
 
-- Nova edge function pública `stripe-webhook` (verify_jwt=false) com verificação de assinatura (`STRIPE_WEBHOOK_SECRET`).
-- Eventos tratados:
-  - `checkout.session.completed` → upsert `subscriptions` (plan, status=active).
-  - `customer.subscription.updated` → atualiza plano/ciclo/status.
-  - `customer.subscription.deleted` → status=canceled, plan=free.
-  - `invoice.payment_failed` → status=past_due.
-- Tabela `stripe_webhook_events` já existe — usar para idempotência.
-- Mantém `admin-sync-stripe` como fallback manual.
+## Detalhes técnicos
 
-**Pré-requisito:** preciso que adiciones o secret `STRIPE_WEBHOOK_SECRET` (vou pedir via `add_secret`) e configures o endpoint no Stripe Dashboard depois.
+- Migrações SQL separadas para (a) approval tokens e (b) index/optimizações.
+- Novo edge function `send-approval-link` (opcional — pode ser chamada direta do frontend com `send-transactional-email`).
+- SAF-T PT: template XML mínimo (Header + MasterFiles.Customer + SourceDocuments.SalesInvoices). Marcar `<TaxRegistrationNumber>` da GarageFlow (constante). Sem certificação AT — obrigatório disclaimer.
+- Dados da empresa GarageFlow (NIF, morada, capital social) precisam ser guardados — proponho tabela `platform_company_info` (single row) editável em `/admin/settings`.
 
----
-
-## Lote 4 — Separação Clientes vs Veículos
-
-**Importante:** já estão separados na BD (`clients` e `vehicles` são tabelas distintas, FK `vehicles.client_id → clients.id`). O que provavelmente vês é UI a misturar (ex: lista de veículos a mostrar dados do cliente no mesmo card).
-
-Antes de mexer preciso que me digas **exatamente onde vês a mistura** (página, screenshot ou descrição):
-- `/clients` mostra veículos misturados?
-- `/vehicles` mostra clientes como se fossem o mesmo registo?
-- Form de criação une os dois?
-
-Sem isto arrisco refatorar algo que está bem. Lote 4 fica em espera até confirmares.
-
----
-
-## Riscos / não vou fazer
-
-- **Não vou** recriar a integração Stripe (já existe BYOK + `admin-update-plan-price`). Vou reutilizar.
-- **Não vou** apagar `subscriptions` existentes nem mexer em Prices antigos no Stripe.
-- **Não vou** mudar slugs de plano (`free|pro|garage`) — quebraria toda a matriz.
-- **Não vou** tocar em `src/integrations/supabase/client.ts`, `types.ts`, `supabase/config.toml` (auto-gerados).
-
----
-
-## Como avançar
-
-Confirma:
-1. **Começo pelo Lote 1** (admin CRUD + sync Stripe)? Sim/Não.
-2. **Lote 3 (webhooks):** tens acesso ao Stripe Dashboard para configurar o endpoint e gerar o `STRIPE_WEBHOOK_SECRET`?
-3. **Lote 4:** onde exatamente vês clientes e veículos misturados? (página + descrição curta)
-
-Assim que confirmares, arranco o Lote 1.
+## Perguntas
+- **NIF/morada/dados fiscais do GarageFlow** para o SAF-T: prefere que eu crie a UI em Admin → Configurações para preencheres, ou já tens os dados para eu meter hardcoded no config?
+- **Aprovação:** deve exigir assinatura digital (canvas) como já existe em `SignaturePad.tsx`, ou basta nome + checkbox de aceitação?

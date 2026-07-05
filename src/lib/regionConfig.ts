@@ -156,6 +156,7 @@ export async function loadCountriesFromDB(): Promise<void> {
         defaultLanguage: row.default_language,
         taxLabel: row.tax_label,
         saas: {
+          free: { monthly: Number(row.saas_free_monthly ?? 0), yearly: Number(row.saas_free_yearly ?? 0) },
           pro: { monthly: Number(row.saas_pro_monthly), yearly: Number(row.saas_pro_yearly) },
           garage: { monthly: Number(row.saas_garage_monthly), yearly: Number(row.saas_garage_yearly) },
           trialDays: row.saas_trial_days,

@@ -26,6 +26,7 @@ export interface CountryConfig {
   defaultLanguage: string;
   taxLabel: string;
   saas: {
+    free: { monthly: number; yearly: number };
     pro: { monthly: number; yearly: number };
     garage: { monthly: number; yearly: number };
     trialDays: number;

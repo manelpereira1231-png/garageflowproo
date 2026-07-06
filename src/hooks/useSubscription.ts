@@ -364,6 +364,7 @@ export function useSubscription() {
     loading,
     shopId,
     isTrialing,
+    isTrialExpired,
     trialDaysLeft,
     canUseFeature,
     checkQuoteLimit,

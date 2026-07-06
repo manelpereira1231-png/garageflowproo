@@ -235,9 +235,18 @@ export default function InvoiceDetail() {
               <CreditCard className="w-4 h-4 mr-1" />{t('invoices.registerPayment')}
             </Button>
           )}
+          {invoice.credit_note_pdf_url && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={invoice.credit_note_pdf_url} target="_blank" rel="noreferrer">
+                <ShieldCheck className="w-4 h-4 mr-1" />Nota de crédito
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
+            </Button>
+          )}
           {['draft', 'issued'].includes(invoice.status) && (
             <Button variant="destructive" size="sm" onClick={handleCancel}>
-              <Ban className="w-4 h-4 mr-1" />{t('invoices.cancel')}
+              <Ban className="w-4 h-4 mr-1" />
+              {invoice.provider_invoice_id ? "Anular (Nota de Crédito)" : t('invoices.cancel')}
             </Button>
           )}
         </div>

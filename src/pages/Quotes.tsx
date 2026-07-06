@@ -324,6 +324,15 @@ export default function Quotes() {
                 </Link>
               )}
               <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs h-7">PDF</Button>
+              {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'expired'].includes(q.status) && (
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={async () => {
+                  const url = `${window.location.origin}/quote/${q.token}`;
+                  try { await navigator.clipboard.writeText(url); toast.success('Link copiado'); }
+                  catch { window.prompt('Copie o link:', url); }
+                }}>
+                  <Copy className="w-3 h-3 mr-1" />Link
+                </Button>
+              )}
               {!['converted', 'rejected', 'expired'].includes(q.status) && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs h-7">
@@ -333,7 +342,7 @@ export default function Quotes() {
                   <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
                     const phone = (q.clients as any)?.phone;
                     if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                    const approvalUrl = q.token ? `https://garageflow.pt/quote/${q.token}` : undefined;
+                    const approvalUrl = q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
                     openWhatsApp({ phone, clientName: (q.clients as any)?.name, type: 'quote', number: q.number, plate: (q.vehicles as any)?.plate, link: approvalUrl });
                   }}>
                     <MessageCircle className="w-3 h-3 mr-1" />WhatsApp

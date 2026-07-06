@@ -99,6 +99,9 @@ verify_jwt = false
 [functions.invoicexpress-emit]
 verify_jwt = false
 
+[functions.invoicexpress-credit-note]
+verify_jwt = false
+
 [functions.email-open-pixel]
 verify_jwt = false
 

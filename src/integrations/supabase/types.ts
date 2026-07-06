@@ -2884,8 +2884,14 @@ export type Database = {
       invoices: {
         Row: {
           atcud: string | null
+          cancelled_at: string | null
           client_id: string
           created_at: string
+          credit_note_atcud: string | null
+          credit_note_number: string | null
+          credit_note_pdf_url: string | null
+          credit_note_permalink: string | null
+          credit_note_provider_id: string | null
           currency: string
           due_date: string | null
           emitida_em: string | null
@@ -2908,8 +2914,14 @@ export type Database = {
         }
         Insert: {
           atcud?: string | null
+          cancelled_at?: string | null
           client_id: string
           created_at?: string
+          credit_note_atcud?: string | null
+          credit_note_number?: string | null
+          credit_note_pdf_url?: string | null
+          credit_note_permalink?: string | null
+          credit_note_provider_id?: string | null
           currency?: string
           due_date?: string | null
           emitida_em?: string | null
@@ -2932,8 +2944,14 @@ export type Database = {
         }
         Update: {
           atcud?: string | null
+          cancelled_at?: string | null
           client_id?: string
           created_at?: string
+          credit_note_atcud?: string | null
+          credit_note_number?: string | null
+          credit_note_pdf_url?: string | null
+          credit_note_permalink?: string | null
+          credit_note_provider_id?: string | null
           currency?: string
           due_date?: string | null
           emitida_em?: string | null

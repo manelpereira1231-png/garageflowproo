@@ -140,7 +140,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     setMeta('meta[name="twitter:image"]', "name", "twitter:image", ogUrl);
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
-      supabase.from("carity_inspection_reports").select("*").eq("listing_id", id).single(),
+      supabase.from("carity_inspection_reports").select("id, listing_id, shop_id, inspection_id, overall_score, recommendation, defects, exterior_photos, interior_photos, engine_photos, damage_photos, notes, mileage_km, is_locked, created_at, updated_at").eq("listing_id", id).single(),
       supabase.from("carity_seller_profiles").select("*").eq("user_id", listingData.seller_id).single(),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
     ]);

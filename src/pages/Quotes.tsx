@@ -153,7 +153,7 @@ export default function Quotes() {
     try {
       const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
       const vehicleInfo = `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model} — ${(q.vehicles as any)?.plate}`;
-      const approvalUrl = q.token && canUseFeature('quoteApproval') ? `https://garageflow.pt/quote/${q.token}` : undefined;
+      const approvalUrl = q.token && canUseFeature('quoteApproval') ? `${window.location.origin}/quote/${q.token}` : undefined;
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
       const subject = `${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;

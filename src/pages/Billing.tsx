@@ -429,7 +429,7 @@ export default function Billing() {
                   ? `${t('billing.renewsOn')} ${formatDate(subscription.current_period_end)}`
                   : plan === 'free'
                   ? t('billing.freePlanActive')
-                  : t(`billing.plan.${plan}`)
+                  : getPlanName(plan, t(`billing.plan.${plan}`))
                 }
               </p>
             </div>

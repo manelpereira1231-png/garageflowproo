@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, FileDown, Ban, CreditCard, Printer } from "lucide-react";
+import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -39,6 +39,41 @@ export default function InvoiceDetail() {
   const [payRef, setPayRef] = useState("");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const [emitting, setEmitting] = useState(false);
+
+  const handleEmitCertified = async () => {
+    if (!invoice) return;
+    if (invoice.provider_invoice_id) {
+      if (invoice.provider_pdf_url) window.open(invoice.provider_pdf_url, "_blank");
+      return;
+    }
+    if (!confirm("Emitir fatura certificada via InvoiceXpress? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.")) return;
+    setEmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invoicexpress-emit", {
+        body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
+          if (resp) {
+            const body = await resp.clone().json().catch(() => null);
+            if (body?.error) msg = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Fatura certificada emitida: ${data.number || data.provider_invoice_id}`);
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao emitir fatura", { duration: 10000 });
+    } finally {
+      setEmitting(false);
+    }
+  };
 
   const loadData = async () => {
     if (!id) return;
@@ -148,10 +183,25 @@ export default function InvoiceDetail() {
             {t(`invoices.status_${invoice.status}`)}
           </Badge>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
             <Printer className="w-4 h-4 mr-1" />PDF
           </Button>
+          {invoice.provider_invoice_id ? (
+            <Button variant="secondary" size="sm" asChild>
+              <a href={invoice.provider_pdf_url || invoice.provider_permalink || "#"} target="_blank" rel="noreferrer">
+                <ShieldCheck className="w-4 h-4 mr-1" />PDF certificado
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
+            </Button>
+          ) : (
+            invoice.status !== "cancelled" && (
+              <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
+                {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
+                Emitir fatura certificada
+              </Button>
+            )
+          )}
           {invoice.status === 'draft' && (
             <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>
           )}

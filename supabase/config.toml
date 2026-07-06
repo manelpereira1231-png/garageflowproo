@@ -93,6 +93,12 @@ verify_jwt = false
 [functions.seo-publish-scheduled]
 verify_jwt = false
 
+[functions.invoicexpress-connect]
+verify_jwt = false
+
+[functions.invoicexpress-emit]
+verify_jwt = false
+
 [functions.email-open-pixel]
 verify_jwt = false
 

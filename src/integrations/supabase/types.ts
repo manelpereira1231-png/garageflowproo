@@ -2790,6 +2790,59 @@ export type Database = {
           },
         ]
       }
+      integracao_faturacao: {
+        Row: {
+          account_name: string
+          api_key_encrypted: string
+          ativo: boolean
+          created_at: string
+          documento_default: string
+          id: string
+          last_error: string | null
+          last_test_ok_at: string | null
+          provider: string
+          serie_default: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          api_key_encrypted: string
+          ativo?: boolean
+          created_at?: string
+          documento_default?: string
+          id?: string
+          last_error?: string | null
+          last_test_ok_at?: string | null
+          provider: string
+          serie_default?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          api_key_encrypted?: string
+          ativo?: boolean
+          created_at?: string
+          documento_default?: string
+          id?: string
+          last_error?: string | null
+          last_test_ok_at?: string | null
+          provider?: string
+          serie_default?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integracao_faturacao_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           description: string
@@ -2830,13 +2883,19 @@ export type Database = {
       }
       invoices: {
         Row: {
+          atcud: string | null
           client_id: string
           created_at: string
           currency: string
           due_date: string | null
+          emitida_em: string | null
           id: string
           notes: string | null
           number: string
+          provider: string | null
+          provider_invoice_id: string | null
+          provider_pdf_url: string | null
+          provider_permalink: string | null
           quote_id: string | null
           shop_id: string
           status: string
@@ -2848,13 +2907,19 @@ export type Database = {
           work_order_id: string | null
         }
         Insert: {
+          atcud?: string | null
           client_id: string
           created_at?: string
           currency?: string
           due_date?: string | null
+          emitida_em?: string | null
           id?: string
           notes?: string | null
           number: string
+          provider?: string | null
+          provider_invoice_id?: string | null
+          provider_pdf_url?: string | null
+          provider_permalink?: string | null
           quote_id?: string | null
           shop_id: string
           status?: string
@@ -2866,13 +2931,19 @@ export type Database = {
           work_order_id?: string | null
         }
         Update: {
+          atcud?: string | null
           client_id?: string
           created_at?: string
           currency?: string
           due_date?: string | null
+          emitida_em?: string | null
           id?: string
           notes?: string | null
           number?: string
+          provider?: string | null
+          provider_invoice_id?: string | null
+          provider_pdf_url?: string | null
+          provider_permalink?: string | null
           quote_id?: string | null
           shop_id?: string
           status?: string
@@ -7134,6 +7205,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_inspection_verification_token: {
+        Args: { _report_id: string }
+        Returns: string
       }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }

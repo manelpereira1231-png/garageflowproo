@@ -57,6 +57,7 @@ const Quotes = lazyRetry(() => import("@/pages/Quotes"));
 const Services = lazyRetry(() => import("@/pages/Services"));
 const SettingsPage = lazyRetry(() => import("@/pages/Settings"));
 const MessageTemplates = lazyRetry(() => import("@/pages/settings/MessageTemplates"));
+const BillingIntegration = lazyRetry(() => import("@/pages/settings/BillingIntegration"));
 const EmailTemplates = lazyRetry(() => import("@/pages/EmailTemplates"));
 const Agenda = lazyRetry(() => import("@/pages/Agenda"));
 const Invoices = lazyRetry(() => import("@/pages/Invoices"));
@@ -396,6 +397,7 @@ const shopRoutes = [
   { path: "/settings", element: <SettingsPage /> },
   { path: "/settings/email-templates", element: <EmailTemplates /> },
   { path: "/settings/messages", element: <MessageTemplates /> },
+  { path: "/settings/billing-integration", element: <BillingIntegration /> },
   { path: "/billing", element: <Billing /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },

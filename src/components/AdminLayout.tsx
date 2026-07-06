@@ -30,6 +30,7 @@ const navSections = [
       { path: "/admin/billing", label: "Planos e Subscrições", icon: CreditCard },
       { path: "/admin/finance", label: "Receita e Crescimento", icon: TrendingUp },
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
+      { path: "/admin/accounting", label: "Contabilidade", icon: FileText },
     ],
   },
   {

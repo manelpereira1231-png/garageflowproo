@@ -57,6 +57,7 @@ const Quotes = lazyRetry(() => import("@/pages/Quotes"));
 const Services = lazyRetry(() => import("@/pages/Services"));
 const SettingsPage = lazyRetry(() => import("@/pages/Settings"));
 const MessageTemplates = lazyRetry(() => import("@/pages/settings/MessageTemplates"));
+const BillingIntegration = lazyRetry(() => import("@/pages/settings/BillingIntegration"));
 const EmailTemplates = lazyRetry(() => import("@/pages/EmailTemplates"));
 const Agenda = lazyRetry(() => import("@/pages/Agenda"));
 const Invoices = lazyRetry(() => import("@/pages/Invoices"));

@@ -400,7 +400,7 @@ export default function Billing() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-lg">{t(`billing.plan.${plan}`)}</span>
+                <span className="font-bold text-lg">{getPlanName(plan, t(`billing.plan.${plan}`))}</span>
                 {isTrialing && (
                   <Badge variant="secondary" className="bg-warning/10 text-warning">
                     <Clock className="w-3 h-3 mr-1" />

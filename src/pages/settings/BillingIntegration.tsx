@@ -209,10 +209,13 @@ export default function BillingIntegration() {
               <Select value={provider} onValueChange={(v) => setProvider(v as Provider)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="invoicexpress">InvoiceXpress</SelectItem>
-                  <SelectItem value="moloni">Moloni</SelectItem>
+                  <SelectItem value="invoicexpress">InvoiceXpress (recomendado)</SelectItem>
+                  <SelectItem value="moloni" disabled>Moloni — em breve</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                InvoiceXpress cobre 100% dos requisitos legais AT: ATCUD, QR Code, hash, série sequencial e SAF-T oficial.
+              </p>
             </div>
 
             {provider === "invoicexpress" ? (

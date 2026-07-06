@@ -8,6 +8,7 @@ import { Settings, Shield, Bell, FileText, Loader2, DollarSign, Zap, Building2, 
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 interface PlanLimits {
   freePlanEnabled: boolean;

@@ -183,10 +183,25 @@ export default function InvoiceDetail() {
             {t(`invoices.status_${invoice.status}`)}
           </Badge>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
             <Printer className="w-4 h-4 mr-1" />PDF
           </Button>
+          {invoice.provider_invoice_id ? (
+            <Button variant="secondary" size="sm" asChild>
+              <a href={invoice.provider_pdf_url || invoice.provider_permalink || "#"} target="_blank" rel="noreferrer">
+                <ShieldCheck className="w-4 h-4 mr-1" />PDF certificado
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
+            </Button>
+          ) : (
+            invoice.status !== "cancelled" && (
+              <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
+                {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
+                Emitir fatura certificada
+              </Button>
+            )
+          )}
           {invoice.status === 'draft' && (
             <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>
           )}

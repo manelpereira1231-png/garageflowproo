@@ -315,7 +315,7 @@ export function useSubscription() {
   const rawPlan: Plan = (subscription?.plan as Plan) || 'free';
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state
-    : subscription?.status === 'canceled' || subscription?.status === 'cancelled' || subscription?.status === 'past_due'
+    : subscription?.status === 'canceled' || subscription?.status === 'cancelled' || subscription?.status === 'past_due' || subscription?.status === 'trial_expired'
       ? 'free'
       : rawPlan;
   

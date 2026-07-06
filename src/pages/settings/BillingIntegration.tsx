@@ -1,13 +1,8 @@
 /**
  * Definições → Faturação Certificada (por oficina)
  *
- * A oficina liga a SUA PRÓPRIA conta InvoiceXpress (ou Moloni no futuro).
- * A API key é enviada para a edge function `invoicexpress-connect`, que a
- * testa contra a API do provider e depois grava encriptada em
- * `integracao_faturacao`. Nunca sai do backend.
- *
- * GarageFlow NÃO gera ATCUD, QR Code, hash ou SAF-T — isso é feito pelo
- * software certificado do provider.
+ * Suporta InvoiceXpress (API key) e Moloni (OAuth password grant).
+ * A oficina liga a SUA PRÓPRIA conta. Credenciais encriptadas AES-GCM antes de gravar.
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -23,13 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+type Provider = "invoicexpress" | "moloni";
+
 type Row = {
   id: string;
   shop_id: string;
-  provider: "invoicexpress" | "moloni";
+  provider: Provider;
   account_name: string;
   serie_default: string | null;
   documento_default: string;
+  moloni_company_id: number | null;
   ativo: boolean;
   last_test_ok_at: string | null;
   last_error: string | null;
@@ -39,11 +37,19 @@ export default function BillingIntegration() {
   const shopId = useActiveShopId();
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
-  const [provider, setProvider] = useState<"invoicexpress" | "moloni">("invoicexpress");
-  const [accountName, setAccountName] = useState("");
-  const [apiKey, setApiKey] = useState("");
+
+  const [provider, setProvider] = useState<Provider>("invoicexpress");
+  // Shared
   const [serie, setSerie] = useState("");
   const [documento, setDocumento] = useState("invoice");
+  // InvoiceXpress
+  const [accountName, setAccountName] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  // Moloni
+  const [moloniEmail, setMoloniEmail] = useState("");
+  const [moloniPassword, setMoloniPassword] = useState("");
+  const [moloniCompanyId, setMoloniCompanyId] = useState("");
+
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
@@ -53,16 +59,21 @@ export default function BillingIntegration() {
       setLoading(true);
       const { data } = await supabase
         .from("integracao_faturacao")
-        .select("id, shop_id, provider, account_name, serie_default, documento_default, ativo, last_test_ok_at, last_error")
+        .select("id, shop_id, provider, account_name, serie_default, documento_default, moloni_company_id, ativo, last_test_ok_at, last_error")
         .eq("shop_id", shopId)
         .maybeSingle();
       if (data) {
         const r = data as unknown as Row;
         setRow(r);
         setProvider(r.provider);
-        setAccountName(r.account_name);
         setSerie(r.serie_default || "");
         setDocumento(r.documento_default);
+        if (r.provider === "invoicexpress") {
+          setAccountName(r.account_name);
+        } else {
+          setMoloniEmail(r.account_name);
+          setMoloniCompanyId(r.moloni_company_id ? String(r.moloni_company_id) : "");
+        }
       }
       setLoading(false);
     })();
@@ -70,42 +81,61 @@ export default function BillingIntegration() {
 
   const invoke = async (test_only: boolean) => {
     if (!shopId) return;
-    if (!accountName.trim() || !apiKey.trim()) {
-      toast.error("Nome da conta e API key são obrigatórios");
-      return;
-    }
     const setter = test_only ? setTesting : setSaving;
     setter(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invoicexpress-connect", {
-        body: {
+      let fn = "invoicexpress-connect";
+      let body: Record<string, unknown> = {};
+      if (provider === "invoicexpress") {
+        if (!accountName.trim() || !apiKey.trim()) {
+          toast.error("Nome da conta e API key são obrigatórios");
+          return;
+        }
+        body = {
           shop_id: shopId,
           account_name: accountName.trim(),
           api_key: apiKey.trim(),
           serie_default: serie.trim() || null,
           documento_default: documento,
           test_only,
-        },
-      });
+        };
+      } else {
+        fn = "moloni-connect";
+        if (!moloniEmail.trim() || !moloniPassword.trim() || !moloniCompanyId.trim()) {
+          toast.error("Email, password e Company ID Moloni são obrigatórios");
+          return;
+        }
+        body = {
+          shop_id: shopId,
+          account_email: moloniEmail.trim(),
+          account_password: moloniPassword,
+          moloni_company_id: Number(moloniCompanyId),
+          serie_default: serie.trim() || null,
+          documento_default: documento,
+          test_only,
+        };
+      }
+
+      const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) {
         let msg = error.message;
         try {
           const ctx = (error as any).context;
           const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
           if (resp) {
-            const body = await resp.clone().json().catch(() => null);
-            if (body?.error) msg = body.error;
+            const b = await resp.clone().json().catch(() => null);
+            if (b?.error) msg = b.error;
           }
         } catch { /* ignore */ }
         throw new Error(msg);
       }
-      if (data?.error) throw new Error(data.error);
+      if ((data as any)?.error) throw new Error((data as any).error);
       toast.success(test_only ? "Ligação OK" : "Integração gravada e testada");
       if (!test_only) {
-        setApiKey("");
+        setApiKey(""); setMoloniPassword("");
         const { data: fresh } = await supabase
           .from("integracao_faturacao")
-          .select("id, shop_id, provider, account_name, serie_default, documento_default, ativo, last_test_ok_at, last_error")
+          .select("id, shop_id, provider, account_name, serie_default, documento_default, moloni_company_id, ativo, last_test_ok_at, last_error")
           .eq("shop_id", shopId)
           .maybeSingle();
         if (fresh) setRow(fresh as unknown as Row);
@@ -123,7 +153,7 @@ export default function BillingIntegration() {
         <Link to="/settings"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Definições</Button></Link>
         <div>
           <h1 className="text-xl font-bold">Faturação Certificada</h1>
-          <p className="text-sm text-muted-foreground">Liga a tua conta InvoiceXpress certificada pela AT. As faturas são emitidas sob a conta AT da tua oficina.</p>
+          <p className="text-sm text-muted-foreground">Liga a tua conta InvoiceXpress ou Moloni. As faturas são emitidas com ATCUD, QR Code, hash e SAF-T oficial sob a conta AT da tua oficina.</p>
         </div>
       </div>
 
@@ -131,7 +161,7 @@ export default function BillingIntegration() {
         <ShieldCheck className="h-4 w-4" />
         <AlertTitle>Como funciona</AlertTitle>
         <AlertDescription className="text-sm">
-          O GarageFlow envia os dados da fatura → o InvoiceXpress emite o documento certificado com ATCUD, QR Code, hash e numeração sequencial → guardamos a referência e o PDF certificado devolvido. Nós NÃO geramos SAF-T por conta própria — isso é responsabilidade do provider certificado.
+          O GarageFlow envia os dados da fatura → o provider certificado (InvoiceXpress ou Moloni) emite o documento legal com ATCUD, QR Code, hash e numeração sequencial → guardamos a referência e o PDF certificado. O SAF-T oficial descarrega-se do painel do provider.
         </AlertDescription>
       </Alert>
 
@@ -156,8 +186,12 @@ export default function BillingIntegration() {
                     : "Ainda não ligado"}
                 </CardDescription>
               </div>
-              <a href="https://invoicexpress.com/pt" target="_blank" rel="noreferrer" className="text-xs text-primary flex items-center gap-1">
-                Criar conta <ExternalLink className="w-3 h-3" />
+              <a
+                href={provider === "moloni" ? "https://www.moloni.pt" : "https://invoicexpress.com/pt"}
+                target="_blank" rel="noreferrer"
+                className="text-xs text-primary flex items-center gap-1"
+              >
+                {provider === "moloni" ? "Moloni" : "InvoiceXpress"} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           </CardHeader>
@@ -170,43 +204,56 @@ export default function BillingIntegration() {
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label>Provider</Label>
-                <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="invoicexpress">InvoiceXpress</SelectItem>
-                    <SelectItem value="moloni" disabled>Moloni (em breve)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Nome da conta (subdomínio)</Label>
-                <Input
-                  placeholder="minhaoficina"
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
-                />
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Se acedes em <code>minhaoficina.app.invoicexpress.com</code>, escreve <code>minhaoficina</code>.
-                </p>
-              </div>
+            <div>
+              <Label>Provider</Label>
+              <Select value={provider} onValueChange={(v) => setProvider(v as Provider)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="invoicexpress">InvoiceXpress</SelectItem>
+                  <SelectItem value="moloni">Moloni</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div>
-              <Label>API Key</Label>
-              <Input
-                type="password"
-                placeholder={row ? "•••••••• (deixa em branco para manter)" : "Cola aqui a tua API key"}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                autoComplete="new-password"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                No InvoiceXpress: <strong>Definições → API</strong>. A chave é encriptada antes de ser gravada e nunca é devolvida ao browser.
-              </p>
-            </div>
+            {provider === "invoicexpress" ? (
+              <>
+                <div>
+                  <Label>Nome da conta (subdomínio)</Label>
+                  <Input placeholder="minhaoficina" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Se acedes em <code>minhaoficina.app.invoicexpress.com</code>, escreve <code>minhaoficina</code>.
+                  </p>
+                </div>
+                <div>
+                  <Label>API Key</Label>
+                  <Input type="password" placeholder={row?.provider === "invoicexpress" ? "•••••••• (deixa em branco para manter)" : "Cola a tua API key"} value={apiKey} onChange={(e) => setApiKey(e.target.value)} autoComplete="new-password" />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    No InvoiceXpress: <strong>Definições → API</strong>. A chave é encriptada e nunca é devolvida ao browser.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Email Moloni</Label>
+                    <Input type="email" placeholder="oficina@exemplo.pt" value={moloniEmail} onChange={(e) => setMoloniEmail(e.target.value)} autoComplete="off" />
+                  </div>
+                  <div>
+                    <Label>Company ID Moloni</Label>
+                    <Input inputMode="numeric" placeholder="ex: 12345" value={moloniCompanyId} onChange={(e) => setMoloniCompanyId(e.target.value.replace(/\D/g, ""))} />
+                    <p className="text-[11px] text-muted-foreground mt-1">Vê em Moloni → Definições → Empresa.</p>
+                  </div>
+                </div>
+                <div>
+                  <Label>Password Moloni</Label>
+                  <Input type="password" placeholder={row?.provider === "moloni" ? "•••••••• (deixa em branco para manter)" : "Password da tua conta Moloni"} value={moloniPassword} onChange={(e) => setMoloniPassword(e.target.value)} autoComplete="new-password" />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    A password é usada uma vez para obter tokens OAuth (access + refresh) e depois descartada. Só os tokens ficam encriptados.
+                  </p>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -214,15 +261,15 @@ export default function BillingIntegration() {
                 <Select value={documento} onValueChange={setDocumento}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="invoice">Fatura (Invoice)</SelectItem>
-                    <SelectItem value="invoice_receipt">Fatura-Recibo</SelectItem>
-                    <SelectItem value="simplified_invoice">Fatura Simplificada</SelectItem>
+                    <SelectItem value="invoice">Fatura (FT)</SelectItem>
+                    <SelectItem value="invoice_receipt">Fatura-Recibo (FR)</SelectItem>
+                    <SelectItem value="simplified_invoice">Fatura Simplificada (FS)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Série (opcional)</Label>
-                <Input placeholder="ex: A" value={serie} onChange={(e) => setSerie(e.target.value)} />
+                <Input placeholder={provider === "moloni" ? "document_set_id (ex: 42)" : "ex: A"} value={serie} onChange={(e) => setSerie(e.target.value)} />
               </div>
             </div>
 

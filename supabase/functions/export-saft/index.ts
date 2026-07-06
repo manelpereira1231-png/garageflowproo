@@ -91,6 +91,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 🔒 Ownership check — user must belong to the requested shop, OR be super_admin.
+    // Without this, any authenticated user could export ANY shop's SAF-T (fiscal PII).
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const [{ data: idsRes }, { data: isAdminRes }] = await Promise.all([
+      admin.rpc("get_user_shop_ids", { _user_id: user.id }),
+      admin.rpc("is_super_admin", { _user_id: user.id }).catch(() => ({ data: false })),
+    ]);
+    const shopIds: string[] = Array.isArray(idsRes) ? idsRes.map((r: any) => r.get_user_shop_ids ?? r) : [];
+    const isSuperAdmin = !!isAdminRes;
+    if (!isSuperAdmin && !shopIds.includes(shop_id)) {
+      return new Response(JSON.stringify({ error: "Forbidden — não tem acesso a esta oficina" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const fiscalYear = year || new Date().getFullYear();
     const periodStart = start_date || `${fiscalYear}-01-01`;
     const periodEnd = end_date || `${fiscalYear}-12-31`;

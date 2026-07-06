@@ -18,9 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileDown, FileText, Loader2, AlertTriangle, Building2, Save } from "lucide-react";
+import { FileDown, FileText, Loader2, AlertTriangle, Building2, Save, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
+import { Textarea } from "@/components/ui/textarea";
 
 type Period = "month" | "quarter" | "year" | "custom";
 
@@ -88,6 +89,9 @@ export default function AdminAccounting() {
 
   const [info, setInfo] = useState<PlatformInfo>(DEFAULT_INFO);
   const [savingInfo, setSavingInfo] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [lastSent, setLastSent] = useState<{ email: string; at: string } | null>(null);
 
   // Set period presets
   useEffect(() => {
@@ -176,7 +180,8 @@ export default function AdminAccounting() {
     }
   };
 
-  const exportCsv = () => {
+  // ------ builders (pure, reused for both download and send-to-accountant) ------
+  const buildCsvRows = () => {
     const rows: any[] = [];
     subs.forEach((s) => {
       const shop = shopById.get(s.shop_id);
@@ -184,13 +189,9 @@ export default function AdminAccounting() {
       const factor = s.billing_cycle === "yearly" ? 12 : 1;
       const disc = 1 - (Number(s.discount_percent) || 0) / 100;
       rows.push({
-        Tipo: "Subscrição",
-        Data: (s.created_at || "").slice(0, 10),
-        Oficina: shop?.name || s.shop_id,
-        NIF_Cliente: shop?.nif || "",
-        Plano: s.plan,
-        Ciclo: s.billing_cycle,
-        Estado: s.status,
+        Tipo: "Subscrição", Data: (s.created_at || "").slice(0, 10),
+        Oficina: shop?.name || s.shop_id, NIF_Cliente: shop?.nif || "",
+        Plano: s.plan, Ciclo: s.billing_cycle, Estado: s.status,
         Valor_EUR: (base * factor * disc).toFixed(2),
         Stripe_Sub: s.stripe_subscription_id || "",
       });
@@ -200,26 +201,27 @@ export default function AdminAccounting() {
       rows.push({
         Tipo: "Comissão Market",
         Data: (e.captured_at || e.released_at || e.created_at || "").slice(0, 10),
-        Oficina: shop?.name || e.seller_id,
-        NIF_Cliente: shop?.nif || "",
-        Plano: "",
-        Ciclo: "",
-        Estado: e.status,
-        Valor_EUR: Number(e.platform_fee || 0).toFixed(2),
-        Stripe_Sub: "",
+        Oficina: shop?.name || e.seller_id, NIF_Cliente: shop?.nif || "",
+        Plano: "", Ciclo: "", Estado: e.status,
+        Valor_EUR: Number(e.platform_fee || 0).toFixed(2), Stripe_Sub: "",
       });
     });
-    if (rows.length === 0) { toast.error("Sem dados para exportar"); return; }
-    exportToCsv(rows, `garageflow_contabilidade_${dateFrom}_${dateTo}`);
-    toast.success("CSV exportado");
+    return rows;
   };
 
-  const exportSaftXml = () => {
-    // Subset "Faturação" — SAF-T PT NÃO-CERTIFICADO. Estrutura simplificada.
-    const now = new Date().toISOString();
-    const totalDebit = 0;
-    const totalCredit = totals.total;
+  const csvString = (rows: any[]) => {
+    if (rows.length === 0) return "";
+    const headers = Object.keys(rows[0]);
+    const escape = (v: any) => {
+      const s = String(v ?? "");
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+  };
 
+  const buildSaftXml = () => {
+    const now = new Date().toISOString();
+    const totalCredit = totals.total;
     const customers = shops
       .filter((sh) => subs.some((s) => s.shop_id === sh.id) || escrows.some((e) => e.seller_id === sh.id))
       .map((sh, idx) => `
@@ -236,7 +238,6 @@ export default function AdminAccounting() {
     const invoices: string[] = [];
     subs.forEach((s) => {
       invoiceIdx++;
-      const sh = shopById.get(s.shop_id);
       const cust = shops.findIndex((x) => x.id === s.shop_id);
       const base = PLAN_PRICE_EUR[s.plan] || 0;
       const factor = s.billing_cycle === "yearly" ? 12 : 1;
@@ -249,8 +250,7 @@ export default function AdminAccounting() {
         <InvoiceNo>FT GF/${String(invoiceIdx).padStart(5, "0")}</InvoiceNo>
         <ATCUD>0</ATCUD>
         <DocumentStatus><InvoiceStatus>N</InvoiceStatus><InvoiceStatusDate>${(s.created_at || now).slice(0, 19)}</InvoiceStatusDate><SourceID>GarageFlow</SourceID><SourceBilling>P</SourceBilling></DocumentStatus>
-        <Hash>0</Hash>
-        <HashControl>0</HashControl>
+        <Hash>0</Hash><HashControl>0</HashControl>
         <Period>${new Date(s.created_at || now).getMonth() + 1}</Period>
         <InvoiceDate>${(s.created_at || now).slice(0, 10)}</InvoiceDate>
         <InvoiceType>FT</InvoiceType>
@@ -258,27 +258,21 @@ export default function AdminAccounting() {
         <SourceID>GarageFlow</SourceID>
         <SystemEntryDate>${(s.created_at || now).slice(0, 19)}</SystemEntryDate>
         <CustomerID>C${cust + 1}</CustomerID>
-        <Line>
-          <LineNumber>1</LineNumber>
-          <ProductCode>PLAN_${s.plan?.toUpperCase()}</ProductCode>
+        <Line><LineNumber>1</LineNumber><ProductCode>PLAN_${s.plan?.toUpperCase()}</ProductCode>
           <ProductDescription>Subscrição GarageFlow — Plano ${xmlEscape(s.plan)} (${xmlEscape(s.billing_cycle)})</ProductDescription>
-          <Quantity>1</Quantity>
-          <UnitOfMeasure>UN</UnitOfMeasure>
-          <UnitPrice>${net.toFixed(2)}</UnitPrice>
+          <Quantity>1</Quantity><UnitOfMeasure>UN</UnitOfMeasure><UnitPrice>${net.toFixed(2)}</UnitPrice>
           <TaxPointDate>${(s.created_at || now).slice(0, 10)}</TaxPointDate>
-          <Description>Subscrição SaaS</Description>
-          <CreditAmount>${net.toFixed(2)}</CreditAmount>
+          <Description>Subscrição SaaS</Description><CreditAmount>${net.toFixed(2)}</CreditAmount>
           <Tax><TaxType>IVA</TaxType><TaxCountryRegion>PT</TaxCountryRegion><TaxCode>NOR</TaxCode><TaxPercentage>23.00</TaxPercentage></Tax>
         </Line>
         <DocumentTotals><TaxPayable>${tax.toFixed(2)}</TaxPayable><NetTotal>${net.toFixed(2)}</NetTotal><GrossTotal>${gross.toFixed(2)}</GrossTotal></DocumentTotals>
       </Invoice>`);
     });
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ATENÇÃO: Ficheiro SAF-T PT gerado por GarageFlow em modo INFORMATIVO.
-  Este sistema NÃO está certificado pela Autoridade Tributária (AT).
-  Utilize apenas como apoio ao envio de dados para o seu contabilista.
+  ATENÇÃO: SAF-T PT gerado por GarageFlow em modo INFORMATIVO.
+  Sistema NÃO certificado pela AT. Utilize apenas como apoio ao contabilista.
   Gerado em ${now}. Período ${dateFrom} a ${dateTo}.
 -->
 <AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_1.04_01">
@@ -295,15 +289,12 @@ export default function AdminAccounting() {
       <Country>${xmlEscape(info.country || "PT")}</Country>
     </CompanyAddress>
     <FiscalYear>${new Date(dateFrom).getFullYear()}</FiscalYear>
-    <StartDate>${dateFrom}</StartDate>
-    <EndDate>${dateTo}</EndDate>
-    <CurrencyCode>EUR</CurrencyCode>
-    <DateCreated>${now.slice(0, 10)}</DateCreated>
+    <StartDate>${dateFrom}</StartDate><EndDate>${dateTo}</EndDate>
+    <CurrencyCode>EUR</CurrencyCode><DateCreated>${now.slice(0, 10)}</DateCreated>
     <TaxEntity>Global</TaxEntity>
     <ProductCompanyTaxID>${xmlEscape(info.tax_id || "999999990")}</ProductCompanyTaxID>
     <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
-    <ProductID>GarageFlow/GarageFlow</ProductID>
-    <ProductVersion>1.0</ProductVersion>
+    <ProductID>GarageFlow/GarageFlow</ProductID><ProductVersion>1.0</ProductVersion>
     <HeaderComment>SAF-T informativo — sistema NÃO certificado pela AT.</HeaderComment>
   </Header>
   <MasterFiles>${customers}
@@ -311,19 +302,14 @@ export default function AdminAccounting() {
   <SourceDocuments>
     <SalesInvoices>
       <NumberOfEntries>${invoices.length}</NumberOfEntries>
-      <TotalDebit>${totalDebit.toFixed(2)}</TotalDebit>
+      <TotalDebit>0.00</TotalDebit>
       <TotalCredit>${totalCredit.toFixed(2)}</TotalCredit>${invoices.join("")}
     </SalesInvoices>
   </SourceDocuments>
 </AuditFile>`;
-    downloadFile(`SAFT_GARAGEFLOW_${dateFrom}_${dateTo}.xml`, xml, "application/xml");
-    toast.success("SAF-T exportado (informativo, não certificado)");
   };
 
-  const exportAccountantReport = () => {
-    // Relatório contabilista em HTML (imprimível para PDF via Ctrl+P)
-    const win = window.open("", "_blank");
-    if (!win) { toast.error("Bloqueado pelo browser"); return; }
+  const buildReportHtml = (autoprint = false) => {
     const rowsHtml = [
       ...subs.map((s) => {
         const sh = shopById.get(s.shop_id);
@@ -339,26 +325,118 @@ export default function AdminAccounting() {
       }),
     ].join("");
 
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório Contabilístico ${dateFrom} — ${dateTo}</title>
-    <style>body{font-family:Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222}h1{font-size:22px;margin:0 0 4px}h2{font-size:14px;color:#666;margin:0 0 24px;font-weight:500}
-    .warn{background:#fff7ed;border-left:4px solid #f59e0b;padding:12px 14px;font-size:12px;color:#7c2d12;margin:16px 0;border-radius:4px}
-    table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f9fafb;font-weight:600}
-    .tot{margin-top:24px;padding:12px 14px;background:#f9fafb;border-radius:6px;font-size:13px}
-    </style></head><body>
-    <h1>Relatório Contabilístico — GarageFlow</h1>
-    <h2>${xmlEscape(info.legal_name)} · NIF ${xmlEscape(info.tax_id || "—")} · Período ${dateFrom} a ${dateTo}</h2>
-    <div class="warn"><strong>Aviso legal:</strong> GarageFlow não é software certificado pela AT. Este relatório serve apenas como apoio ao seu contabilista.</div>
-    <table><thead><tr><th>Data</th><th>Tipo</th><th>Oficina/Cliente</th><th>NIF</th><th>Plano</th><th style="text-align:right">Valor</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-    <div class="tot">
-      <div><strong>Receita subscrições:</strong> €${totals.subsRevenue.toFixed(2)}</div>
-      <div><strong>Comissões Marketplace:</strong> €${totals.marketCommissions.toFixed(2)}</div>
-      <div style="margin-top:6px;font-size:15px"><strong>Total período:</strong> €${totals.total.toFixed(2)}</div>
-    </div>
-    <p style="color:#999;font-size:11px;margin-top:32px">Gerado em ${new Date().toLocaleString("pt-PT")}</p>
-    <script>window.print();</script>
-    </body></html>`);
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Relatório Contabilístico ${dateFrom} — ${dateTo}</title>
+<style>body{font-family:Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222}h1{font-size:22px;margin:0 0 4px}h2{font-size:14px;color:#666;margin:0 0 24px;font-weight:500}
+.warn{background:#fff7ed;border-left:4px solid #f59e0b;padding:12px 14px;font-size:12px;color:#7c2d12;margin:16px 0;border-radius:4px}
+.info{background:#f8fafc;border:1px solid #e2e8f0;padding:10px 12px;font-size:12px;color:#334155;margin:0 0 16px;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f9fafb;font-weight:600}
+.tot{margin-top:24px;padding:12px 14px;background:#f9fafb;border-radius:6px;font-size:13px}
+</style></head><body>
+<h1>Relatório Contabilístico — ${xmlEscape(info.legal_name)}</h1>
+<h2>NIF ${xmlEscape(info.tax_id || "—")} · ${xmlEscape(info.address || "")} ${xmlEscape(info.postal_code || "")} ${xmlEscape(info.city || "")} · Período ${dateFrom} a ${dateTo}</h2>
+<div class="warn"><strong>Aviso legal:</strong> GarageFlow não é software de faturação certificado pela AT. Este relatório e os anexos (CSV, SAF-T XML) são informativos e servem apenas como apoio ao contabilista, que emitirá/certificará os documentos oficiais no seu sistema certificado.</div>
+<div class="info"><strong>IBAN:</strong> ${xmlEscape(info.iban || "—")} &nbsp;·&nbsp; <strong>Contabilista:</strong> ${xmlEscape(info.accountant_name || "—")} &lt;${xmlEscape(info.accountant_email || "—")}&gt;</div>
+<table><thead><tr><th>Data</th><th>Tipo</th><th>Oficina/Cliente</th><th>NIF</th><th>Plano</th><th style="text-align:right">Valor</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+<div class="tot">
+  <div><strong>Receita subscrições:</strong> €${totals.subsRevenue.toFixed(2)}</div>
+  <div><strong>Comissões Marketplace:</strong> €${totals.marketCommissions.toFixed(2)}</div>
+  <div style="margin-top:6px;font-size:15px"><strong>Total período:</strong> €${totals.total.toFixed(2)}</div>
+</div>
+<p style="color:#999;font-size:11px;margin-top:32px">Gerado em ${new Date().toLocaleString("pt-PT")}</p>
+${autoprint ? "<script>window.print();</script>" : ""}
+</body></html>`;
+  };
+
+  const exportCsv = () => {
+    const rows = buildCsvRows();
+    if (rows.length === 0) { toast.error("Sem dados para exportar"); return; }
+    exportToCsv(rows, `garageflow_contabilidade_${dateFrom}_${dateTo}`);
+    toast.success("CSV exportado");
+  };
+
+  const exportSaftXml = () => {
+    const xml = buildSaftXml();
+    downloadFile(`SAFT_GARAGEFLOW_${dateFrom}_${dateTo}.xml`, xml, "application/xml");
+    toast.success("SAF-T exportado (informativo, não certificado)");
+  };
+
+  const exportAccountantReport = () => {
+    const win = window.open("", "_blank");
+    if (!win) { toast.error("Bloqueado pelo browser"); return; }
+    win.document.write(buildReportHtml(true));
     win.document.close();
   };
+
+  // ------ Enviar tudo ao contabilista (email com anexos) ------
+  const b64 = (s: string) => {
+    // btoa não suporta unicode — usar TextEncoder
+    const bytes = new TextEncoder().encode(s);
+    let bin = "";
+    bytes.forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin);
+  };
+
+  const canSend = !!(info.accountant_email && info.accountant_email.includes("@"))
+    && !!info.legal_name && !!info.tax_id
+    && (subs.length + escrows.length) > 0;
+
+  const sendToAccountant = async () => {
+    if (!info.accountant_email || !info.accountant_email.includes("@")) {
+      toast.error("Configura o email do contabilista em Dados fiscais");
+      return;
+    }
+    if (!info.tax_id || !info.legal_name) {
+      toast.error("Preenche NIF e nome legal da empresa antes de enviar");
+      return;
+    }
+    if (subs.length + escrows.length === 0) {
+      toast.error("Sem movimentos no período selecionado");
+      return;
+    }
+    const ok = confirm(
+      `Enviar pacote contabilístico para ${info.accountant_email}?\n\n` +
+      `Período: ${dateFrom} → ${dateTo}\n` +
+      `Total: €${totals.total.toFixed(2)}\n\n` +
+      `Anexos: CSV, relatório PDF (HTML imprimível), SAF-T PT XML.\n` +
+      `O contabilista fica com tudo o que precisa para certificar.`,
+    );
+    if (!ok) return;
+
+    setSending(true);
+    try {
+      const rows = buildCsvRows();
+      const csv = csvString(rows);
+      const xml = buildSaftXml();
+      const html = buildReportHtml(false);
+
+      const { data, error } = await supabase.functions.invoke("send-accountant-package", {
+        body: {
+          date_from: dateFrom,
+          date_to: dateTo,
+          csv_base64: b64(csv),
+          saft_base64: b64(xml),
+          report_html_base64: b64(html),
+          totals: {
+            subs: +totals.subsRevenue.toFixed(2),
+            market: +totals.marketCommissions.toFixed(2),
+            total: +totals.total.toFixed(2),
+          },
+          message: message.trim() || undefined,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setLastSent({ email: (data as any)?.sent_to || info.accountant_email, at: new Date().toISOString() });
+      setMessage("");
+      toast.success(`Pacote enviado para ${(data as any)?.sent_to || info.accountant_email}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao enviar ao contabilista");
+    } finally {
+      setSending(false);
+    }
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -447,15 +525,84 @@ export default function AdminAccounting() {
         </div>
       </div>
 
-      {/* Exportações */}
+      {/* Exportações manuais */}
       <section className="bg-card border border-border rounded-xl p-5">
-        <h2 className="font-semibold mb-3">Exportações</h2>
+        <h2 className="font-semibold mb-1">Descarregar ficheiros</h2>
+        <p className="text-xs text-muted-foreground mb-3">Descarrega os anexos individualmente (opcional — o envio direto ao contabilista já inclui os três).</p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportCsv}><FileDown className="w-4 h-4 mr-2" />CSV para contabilista</Button>
-          <Button variant="outline" onClick={exportAccountantReport}><FileText className="w-4 h-4 mr-2" />Relatório imprimível (PDF)</Button>
-          <Button variant="outline" onClick={exportSaftXml}><FileDown className="w-4 h-4 mr-2" />SAF-T PT (informativo)</Button>
+          <Button variant="outline" onClick={exportCsv}><FileDown className="w-4 h-4 mr-2" />CSV</Button>
+          <Button variant="outline" onClick={exportAccountantReport}><FileText className="w-4 h-4 mr-2" />Relatório PDF</Button>
+          <Button variant="outline" onClick={exportSaftXml}><FileDown className="w-4 h-4 mr-2" />SAF-T PT XML</Button>
         </div>
       </section>
+
+      {/* Enviar tudo ao contabilista */}
+      <section className="bg-card border-2 border-primary/40 rounded-xl p-5 bg-primary/5">
+        <div className="flex items-start gap-3 mb-3">
+          <Send className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <h2 className="font-semibold">Enviar pacote ao contabilista</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Envia num único email o CSV, o relatório PDF e o SAF-T PT XML do período para{" "}
+              <strong>{info.accountant_email || <span className="text-destructive">(não configurado)</span>}</strong>.
+              O contabilista fica com tudo o que precisa para emitir/certificar os documentos oficiais no seu sistema certificado.
+            </p>
+          </div>
+        </div>
+
+        {/* Checklist de pré-envio */}
+        <ul className="text-xs space-y-1 mb-4 ml-8">
+          <li className="flex items-center gap-2">
+            {info.legal_name && info.tax_id
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Nome legal e NIF preenchidos
+          </li>
+          <li className="flex items-center gap-2">
+            {info.accountant_email && info.accountant_email.includes("@")
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Email do contabilista válido
+          </li>
+          <li className="flex items-center gap-2">
+            {(subs.length + escrows.length) > 0
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Há movimentos no período ({subs.length + escrows.length})
+          </li>
+        </ul>
+
+        <div className="ml-8">
+          <Label className="text-xs">Mensagem para o contabilista (opcional)</Label>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ex.: Bom dia, envio o pacote de outubro. Qualquer questão, digam."
+            rows={3}
+            className="mt-1"
+            maxLength={2000}
+          />
+        </div>
+
+        <div className="flex items-center justify-between mt-4 ml-8 gap-3 flex-wrap">
+          {lastSent && (
+            <p className="text-xs text-success flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Último envio: {lastSent.email} · {new Date(lastSent.at).toLocaleString("pt-PT")}
+            </p>
+          )}
+          <Button
+            size="lg"
+            onClick={sendToAccountant}
+            disabled={!canSend || sending}
+            className="ml-auto"
+          >
+            {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+            Enviar tudo ao contabilista
+          </Button>
+        </div>
+      </section>
+
 
       {/* Detalhe */}
       <section className="bg-card border border-border rounded-xl overflow-hidden">

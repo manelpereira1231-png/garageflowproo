@@ -8,6 +8,7 @@ import { Settings, Shield, Bell, FileText, Loader2, DollarSign, Zap, Building2, 
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 interface PlanLimits {
   freePlanEnabled: boolean;
@@ -80,6 +81,7 @@ const DEFAULT_GARAGE_FEATURES = [...ALL_FEATURES.map(f => f.key)];
 
 export default function AdminSettings() {
   const { toast } = useToast();
+  const { getName: getPlanName } = usePlanNames();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [planLimits, setPlanLimits] = useState<PlanLimits>({
@@ -218,21 +220,21 @@ export default function AdminSettings() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border">
             <div className="flex items-center justify-between">
-              <Label className="font-semibold">Plano Free</Label>
+              <Label className="font-semibold">Plano {getPlanName('free', 'Free')}</Label>
               <Switch checked={planLimits.freePlanEnabled} onCheckedChange={v => setPlanLimits(s => ({ ...s, freePlanEnabled: v }))} />
             </div>
             <Badge variant="outline" className="bg-muted text-muted-foreground">€0/mês</Badge>
           </div>
           <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
             <div className="flex items-center justify-between">
-              <Label className="font-semibold">Plano Pro</Label>
+              <Label className="font-semibold">Plano {getPlanName('pro', 'Pro')}</Label>
               <Switch checked={planLimits.proPlanEnabled} onCheckedChange={v => setPlanLimits(s => ({ ...s, proPlanEnabled: v }))} />
             </div>
             <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30">€{pricing.proMonthly}/mês</Badge>
           </div>
           <div className="space-y-2 p-3 rounded-lg bg-success/5 border border-success/20">
             <div className="flex items-center justify-between">
-              <Label className="font-semibold">Plano Garage</Label>
+              <Label className="font-semibold">Plano {getPlanName('garage', 'Garage')}</Label>
               <Switch checked={planLimits.garagePlanEnabled} onCheckedChange={v => setPlanLimits(s => ({ ...s, garagePlanEnabled: v }))} />
             </div>
             <Badge variant="outline" className="bg-success/15 text-success border-success/30">€{pricing.garageMonthly}/mês</Badge>

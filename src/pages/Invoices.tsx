@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle } from "lucide-react";
+import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle, FileArchive, Loader2 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -85,6 +85,33 @@ export default function Invoices() {
     toast.success(t('common.exported'));
   };
 
+  const [saftLoading, setSaftLoading] = useState(false);
+  const handleExportSaft = async () => {
+    if (!activeShopId) return;
+    if (!confirm("Exportar SAF-T PT do ano atual?\n\nAviso: se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente do InvoiceXpress — este ficheiro é apenas informativo e não substitui o SAF-T do provider certificado.")) return;
+    setSaftLoading(true);
+    try {
+      const year = new Date().getFullYear();
+      const { data, error } = await supabase.functions.invoke("export-saft", {
+        body: { shop_id: activeShopId, year },
+      });
+      if (error) throw error;
+      const xml = typeof data === "string" ? data : (data?.xml || "");
+      if (!xml) throw new Error("SAF-T vazio");
+      const blob = new Blob([xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `SAFT_${activeShopId}_${year}.xml`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("SAF-T exportado (informativo)");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao exportar SAF-T");
+    } finally {
+      setSaftLoading(false);
+    }
+  };
+
   const cur = getCurrencySymbol(shop?.currency);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -98,6 +125,10 @@ export default function Invoices() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
             <FileDown className="w-4 h-4 mr-1" />CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
+            {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
+            SAF-T
           </Button>
           <Button onClick={() => navigate("/invoices/new")}>
             <Plus className="w-4 h-4 mr-2" />{t('invoices.new')}

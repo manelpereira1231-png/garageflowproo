@@ -135,3 +135,6 @@ verify_jwt = false
 
 
 
+
+[functions.send-accountant-package]
+verify_jwt = false

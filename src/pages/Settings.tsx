@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Settings, Building2, Globe, FileText, Palette, AlertTriangle, Copy, ExternalLink, Clock } from "lucide-react";
+import { Upload, Settings, Building2, Globe, FileText, Palette, AlertTriangle, Copy, ExternalLink, Clock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";

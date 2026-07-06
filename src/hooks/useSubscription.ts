@@ -326,6 +326,7 @@ export function useSubscription() {
   const limits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
   // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
+  const isTrialExpired = subscription?.status === 'trial_expired';
   const trialDaysLeft = subscription?.trial_end
     ? Math.max(0, Math.ceil((new Date(subscription.trial_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;

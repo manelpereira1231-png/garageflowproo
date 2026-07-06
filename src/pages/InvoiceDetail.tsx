@@ -39,6 +39,41 @@ export default function InvoiceDetail() {
   const [payRef, setPayRef] = useState("");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const [emitting, setEmitting] = useState(false);
+
+  const handleEmitCertified = async () => {
+    if (!invoice) return;
+    if (invoice.provider_invoice_id) {
+      if (invoice.provider_pdf_url) window.open(invoice.provider_pdf_url, "_blank");
+      return;
+    }
+    if (!confirm("Emitir fatura certificada via InvoiceXpress? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.")) return;
+    setEmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invoicexpress-emit", {
+        body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
+          if (resp) {
+            const body = await resp.clone().json().catch(() => null);
+            if (body?.error) msg = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Fatura certificada emitida: ${data.number || data.provider_invoice_id}`);
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao emitir fatura", { duration: 10000 });
+    } finally {
+      setEmitting(false);
+    }
+  };
 
   const loadData = async () => {
     if (!id) return;

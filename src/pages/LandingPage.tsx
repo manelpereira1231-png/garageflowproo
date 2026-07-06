@@ -91,8 +91,11 @@ export default function LandingPage() {
   const proLists = buildFeatureLists("pro");
   const garageLists = buildFeatureLists("garage");
 
+  const { getName: getPlanName } = usePlanNames();
+
   const planConfigs = [
     {
+      slug: 'free' as const,
       nameKey: 'landing.planFree',
       price: formatPrice(pricing.free[billingCycle]),
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
@@ -103,6 +106,7 @@ export default function LandingPage() {
       highlighted: false,
     },
     {
+      slug: 'pro' as const,
       nameKey: 'landing.planPro',
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
@@ -113,6 +117,7 @@ export default function LandingPage() {
       highlighted: true,
     },
     {
+      slug: 'garage' as const,
       nameKey: 'landing.planGarage',
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',

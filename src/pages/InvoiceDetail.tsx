@@ -132,8 +132,33 @@ export default function InvoiceDetail() {
 
   const handleCancel = async () => {
     if (!invoice) return;
-    await supabase.from("invoices").update({ status: 'cancelled' }).eq("id", invoice.id);
-    toast.success(t('invoices.cancelled'));
+    // Se a fatura já foi emitida no provider certificado, tem de ser anulada por Nota de Crédito (AT exige)
+    if (invoice.provider_invoice_id) {
+      const reason = window.prompt("Motivo da anulação (obrigatório para a Nota de Crédito):", "Anulação a pedido do cliente");
+      if (!reason || !reason.trim()) return;
+      try {
+        const { data, error } = await supabase.functions.invoke("invoicexpress-credit-note", {
+          body: { invoice_id: invoice.id, reason: reason.trim() },
+        });
+        if (error) {
+          let msg = error.message;
+          try {
+            const ctx = (error as any).context;
+            const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
+            if (resp) { const b = await resp.clone().json().catch(() => null); if (b?.error) msg = b.error; }
+          } catch {}
+          throw new Error(msg);
+        }
+        if (data?.error) throw new Error(data.error);
+        toast.success(`Nota de crédito emitida: ${data.credit_note_number || data.credit_note_provider_id}`);
+      } catch (e: any) {
+        toast.error(e.message || "Falha ao emitir nota de crédito", { duration: 8000 });
+        return;
+      }
+    } else {
+      await supabase.from("invoices").update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq("id", invoice.id);
+      toast.success(t('invoices.cancelled'));
+    }
     loadData();
   };
 

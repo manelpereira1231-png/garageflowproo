@@ -1,77 +1,54 @@
-# Integração Moloni — Guia de Ativação
+# Integração Moloni — Estado: **totalmente implementada**
 
-Estado atual: **scaffold pronto**, desativado no seletor de `Definições → Faturação Certificada`.
-As edge functions `moloni-connect` e `moloni-emit` já existem e replicam o padrão de `invoicexpress-*`, mas devolvem HTTP 501 até os segredos OAuth serem configurados.
+O código está pronto. Basta configurar os segredos OAuth uma vez pela plataforma.
 
-## Porquê Moloni?
+## O que já está feito
 
-Moloni é software certificado pela AT (nº 0192). Emite FT, FR, NC, ND com ATCUD, QR Code e hash. API OAuth2 pública.
+- Edge functions `moloni-connect`, `moloni-emit`, `moloni-credit-note` implementadas com fluxo real (não são scaffold).
+- Refresh automático de token OAuth (Moloni access_token expira em 1h; usamos o refresh_token guardado encriptado com AES-GCM).
+- Tabela `integracao_faturacao` estendida com `refresh_token_encrypted`, `token_expires_at`, `moloni_company_id`.
+- UI em *Definições → Faturação Certificada* aceita Moloni: email, password, company_id, série (document_set_id) e tipo de documento.
+- Página **Detalhes de fatura** deteta o provider ativo (`integracao_faturacao.provider`) e roteia para `moloni-emit` ou `invoicexpress-emit` automaticamente. O mesmo se aplica à emissão de Nota de Crédito.
+- Ownership check via `get_user_shop_ids` em todas as edge functions Moloni (mesmo padrão de segurança do InvoiceXpress).
 
-## Passos para ativar (uma vez, pela plataforma)
+## O que a plataforma ainda tem de fazer (só uma vez)
 
-1. Criar app OAuth em https://www.moloni.pt/api/ (Definições → API).
-2. Guardar segredos na plataforma:
+1. Registar app OAuth em https://www.moloni.pt/api/ (Menu do utilizador → API → Aplicações).
+2. Guardar os segredos:
    - `MOLONI_CLIENT_ID`
    - `MOLONI_CLIENT_SECRET`
-3. Adicionar coluna `refresh_token_encrypted TEXT NULL` à tabela `integracao_faturacao` (Moloni tokens expiram em 1h e exigem refresh):
-   ```sql
-   ALTER TABLE public.integracao_faturacao
-     ADD COLUMN IF NOT EXISTS refresh_token_encrypted TEXT;
-   ```
-4. Implementar o TODO no ficheiro `supabase/functions/moloni-emit/index.ts`:
-   - Desencriptar access_token; se expirou (guardar `token_expires_at`), usar refresh_token via `POST /v1/grant/?grant_type=refresh_token`.
-   - `POST /v1/invoices/insert/?access_token=...` com payload:
-     ```json
-     {
-       "company_id": <int>,
-       "customer_id": <int>,               // criar via /customers/insert/ se não existir
-       "document_set_id": <int>,           // série da oficina
-       "date": "YYYY-MM-DD",
-       "expiration_date": "YYYY-MM-DD",
-       "products": [
-         { "product_id": <int>, "name": "...", "qty": 1, "price": 100, "taxes": [{ "tax_id": <int> }] }
-       ],
-       "payments": [ ... ],
-       "status": 1                          // 1 = fechado/emitido
-     }
-     ```
-   - `POST /v1/invoices/getPDFLink/` para obter o link do PDF certificado.
-   - Guardar em `invoices`:
-     ```ts
-     await admin.from("invoices").update({
-       provider_invoice_id: String(response.document_id),
-       provider_pdf_url: pdf_url,
-       atcud: response.atcud,
-       number: response.number,
-     }).eq("id", invoice_id);
-     ```
-5. Ativar a opção Moloni no seletor:
-   ```tsx
-   // src/pages/settings/BillingIntegration.tsx
-   <SelectItem value="moloni">Moloni</SelectItem>   // remove disabled
-   ```
-6. No handler `invoke` do BillingIntegration.tsx, adicionar branch:
-   ```ts
-   const fn = provider === "moloni" ? "moloni-connect" : "invoicexpress-connect";
-   await supabase.functions.invoke(fn, { body: {...} });
-   ```
 
-## Endpoints úteis Moloni
+Enquanto estes segredos não existirem, `moloni-connect` e `moloni-emit` devolvem HTTP 501 com a mensagem `"Moloni não configurado na plataforma"` — o InvoiceXpress continua a funcionar normalmente.
+
+## O que cada oficina faz
+
+1. Vai a *Definições → Faturação Certificada*.
+2. Escolhe **Moloni**.
+3. Introduz email + password da conta Moloni e o `company_id` (Moloni → Definições → Empresa).
+4. Opcionalmente indica a série (`document_set_id`) e o tipo de documento por defeito.
+5. Testa a ligação → grava.
+6. Nas faturas, o botão passa a ser **"Emitir via Moloni"**.
+
+## Endpoints Moloni utilizados
 
 | Ação | Endpoint |
 |---|---|
-| Obter token | `POST /v1/grant/?grant_type=password` |
+| Login (password grant) | `POST /v1/grant/?grant_type=password` |
 | Refresh token | `POST /v1/grant/?grant_type=refresh_token` |
-| Listar empresas | `POST /v1/companies/getAll/` |
-| Listar séries | `POST /v1/documentSets/getAll/` |
-| Inserir cliente | `POST /v1/customers/insert/` |
-| Inserir produto | `POST /v1/products/insert/` |
-| Inserir fatura | `POST /v1/invoices/insert/` |
-| Obter PDF | `POST /v1/invoices/getPDFLink/` |
-| Nota de crédito | `POST /v1/creditNotes/insert/` |
+| Listar empresas (validação) | `POST /v1/companies/getAll/` |
+| Procurar cliente por NIF | `POST /v1/customers/getByVat/` |
+| Criar cliente | `POST /v1/customers/insert/` |
+| Séries de documentos | `POST /v1/documentSets/getAll/` |
+| Taxas IVA | `POST /v1/taxes/getAll/` |
+| Unidades / Categorias | `POST /v1/measurementUnits/getAll/`, `POST /v1/productCategories/getAll/` |
+| Criar produto | `POST /v1/products/insert/` |
+| Emitir fatura | `POST /v1/invoices/insert/` (status=1 fecha o documento) |
+| Detalhes (ATCUD, número) | `POST /v1/invoices/getOne/` |
+| Link PDF certificado | `POST /v1/invoices/getPDFLink/` |
+| Nota de crédito | `POST /v1/creditNotes/insert/` (com `associated_documents`) |
 
-## Notas
+## Notas legais
 
-- Moloni cobra por empresa; a integração é por oficina (multi-tenant como InvoiceXpress).
-- O SAF-T certificado é gerado dentro da Moloni (`Contabilidade → SAF-T`) — o botão SAF-T do GarageFlow continua a ser apenas informativo.
-- Escolher **InvoiceXpress** para oficinas que querem API key simples; **Moloni** para oficinas que já usam Moloni e querem manter o fluxo lá.
+- O SAF-T PT **oficial e certificado** descarrega-se dentro do Moloni (Contabilidade → SAF-T). O botão SAF-T do GarageFlow é sempre informativo.
+- ATCUD, QR Code, hash criptográfico e numeração sequencial são gerados pelo Moloni sob a certificação AT nº 0192, não pelo GarageFlow.
+- A responsabilidade fiscal é da oficina (é a conta AT dela que emite). O GarageFlow é apenas o front-end.

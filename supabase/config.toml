@@ -108,6 +108,9 @@ verify_jwt = false
 [functions.moloni-emit]
 verify_jwt = false
 
+[functions.moloni-credit-note]
+verify_jwt = false
+
 [functions.email-open-pixel]
 verify_jwt = false
 

@@ -40,6 +40,7 @@ export default function InvoiceDetail() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
+  const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | null>(null);
 
   const handleEmitCertified = async () => {
     if (!invoice) return;
@@ -47,10 +48,13 @@ export default function InvoiceDetail() {
       if (invoice.provider_pdf_url) window.open(invoice.provider_pdf_url, "_blank");
       return;
     }
-    if (!confirm("Emitir fatura certificada via InvoiceXpress? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.")) return;
+    const providerLabel = billingProvider === "moloni" ? "Moloni" : "InvoiceXpress";
+    if (!billingProvider) { toast.error("Configura primeiro a Faturação Certificada em Definições."); return; }
+    if (!confirm(`Emitir fatura certificada via ${providerLabel}? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.`)) return;
     setEmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invoicexpress-emit", {
+      const fn = billingProvider === "moloni" ? "moloni-emit" : "invoicexpress-emit";
+      const { data, error } = await supabase.functions.invoke(fn, {
         body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
       });
       if (error) {
@@ -93,6 +97,14 @@ export default function InvoiceDetail() {
     if (itemsRes.data) setItems(itemsRes.data);
     if (paymentsRes.data) setPayments(paymentsRes.data);
     if (shopRes.data) setShop(shopRes.data);
+
+    // Descobre qual provider de faturação está configurado nesta oficina
+    const { data: integ } = await supabase
+      .from("integracao_faturacao")
+      .select("provider, ativo")
+      .eq("shop_id", inv.shop_id)
+      .maybeSingle();
+    setBillingProvider((integ?.ativo && (integ.provider as any)) || null);
   };
 
   useEffect(() => { loadData(); }, [id]);
@@ -137,7 +149,8 @@ export default function InvoiceDetail() {
       const reason = window.prompt("Motivo da anulação (obrigatório para a Nota de Crédito):", "Anulação a pedido do cliente");
       if (!reason || !reason.trim()) return;
       try {
-        const { data, error } = await supabase.functions.invoke("invoicexpress-credit-note", {
+        const fn = billingProvider === "moloni" ? "moloni-credit-note" : "invoicexpress-credit-note";
+        const { data, error } = await supabase.functions.invoke(fn, {
           body: { invoice_id: invoice.id, reason: reason.trim() },
         });
         if (error) {
@@ -220,10 +233,10 @@ export default function InvoiceDetail() {
               </a>
             </Button>
           ) : (
-            invoice.status !== "cancelled" && (
+            invoice.status !== "cancelled" && billingProvider && (
               <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
                 {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
-                Emitir fatura certificada
+                Emitir via {billingProvider === "moloni" ? "Moloni" : "InvoiceXpress"}
               </Button>
             )
           )}

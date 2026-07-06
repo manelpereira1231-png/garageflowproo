@@ -2800,9 +2800,12 @@ export type Database = {
           id: string
           last_error: string | null
           last_test_ok_at: string | null
+          moloni_company_id: number | null
           provider: string
+          refresh_token_encrypted: string | null
           serie_default: string | null
           shop_id: string
+          token_expires_at: string | null
           updated_at: string
         }
         Insert: {
@@ -2814,9 +2817,12 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_test_ok_at?: string | null
+          moloni_company_id?: number | null
           provider: string
+          refresh_token_encrypted?: string | null
           serie_default?: string | null
           shop_id: string
+          token_expires_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -2828,9 +2834,12 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_test_ok_at?: string | null
+          moloni_company_id?: number | null
           provider?: string
+          refresh_token_encrypted?: string | null
           serie_default?: string | null
           shop_id?: string
+          token_expires_at?: string | null
           updated_at?: string
         }
         Relationships: [

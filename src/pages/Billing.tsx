@@ -160,7 +160,7 @@ export default function Billing() {
       icon: Zap,
       color: 'text-muted-foreground',
       features: [
-        t('billing.feature.quotes10'),
+        t('billing.feature.quotes10').replace(/\d+/, String(freeQuoteLimit)),
         t('billing.feature.1user'),
         t('billing.feature.basicDashboard'),
         t('billing.feature.watermarkPdf'),

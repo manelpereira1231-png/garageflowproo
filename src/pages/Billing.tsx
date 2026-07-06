@@ -76,6 +76,7 @@ function ReferralFreeMonths() {
 export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const { getName: getPlanName } = usePlanNames();
   const [pricingTick, setPricingTick] = useState(0);
   useEffect(() => {
     const onUpdate = () => setPricingTick((t) => t + 1);

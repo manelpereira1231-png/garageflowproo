@@ -380,6 +380,7 @@ const adminRoutes = [
   { path: "/admin/rate-limits", element: <AdminRateLimits /> },
   { path: "/admin/marketing-autopilot", element: <AdminMarketingAutopilot /> },
   { path: "/admin/growth", element: <AdminGrowth /> },
+  { path: "/admin/accounting", element: <AdminAccounting /> },
 ];
 
 const shopRoutes = [

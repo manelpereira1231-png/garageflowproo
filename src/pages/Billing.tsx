@@ -604,7 +604,7 @@ export default function Billing() {
 
               <div className="text-center mb-6">
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
-                <h3 className="text-xl font-bold">{t(`billing.plan.${key}`)}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(key, t(`billing.plan.${key}`))}</h3>
                 <div className="mt-3">
                   <span className="text-4xl font-bold mono">{formatPrice(price)}</span>
                   {price > 0 && (

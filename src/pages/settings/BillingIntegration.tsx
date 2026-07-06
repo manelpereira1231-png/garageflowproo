@@ -187,7 +187,7 @@ export default function BillingIntegration() {
                 </CardDescription>
               </div>
               <a
-                href={provider === "moloni" ? "https://www.moloni.pt" : "https://invoicexpress.com/pt"}
+                href={provider === "moloni" ? "https://www.moloni.pt" : "https://invoicexpress.com/"}
                 target="_blank" rel="noreferrer"
                 className="text-xs text-primary flex items-center gap-1"
               >

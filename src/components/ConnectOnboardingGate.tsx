@@ -77,12 +77,16 @@ export default function ConnectOnboardingGate({
         },
       });
       if (error) {
-        // Extract the real error message returned by the edge function body
+        // Extract real error body from Supabase FunctionsHttpError. Depending on
+        // supabase-js version the Response is either at `error.context` or
+        // `error.context.response`.
         let realMsg = error.message;
         try {
-          const ctxResp: Response | undefined = (error as any).context?.response;
-          if (ctxResp) {
-            const body = await ctxResp.clone().json().catch(() => null);
+          const ctx = (error as any).context;
+          const resp: Response | undefined =
+            ctx instanceof Response ? ctx : ctx?.response;
+          if (resp) {
+            const body = await resp.clone().json().catch(() => null);
             if (body?.error) realMsg = body.error;
           }
         } catch { /* ignore */ }

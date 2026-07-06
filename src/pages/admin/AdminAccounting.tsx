@@ -525,15 +525,84 @@ ${autoprint ? "<script>window.print();</script>" : ""}
         </div>
       </div>
 
-      {/* Exportações */}
+      {/* Exportações manuais */}
       <section className="bg-card border border-border rounded-xl p-5">
-        <h2 className="font-semibold mb-3">Exportações</h2>
+        <h2 className="font-semibold mb-1">Descarregar ficheiros</h2>
+        <p className="text-xs text-muted-foreground mb-3">Descarrega os anexos individualmente (opcional — o envio direto ao contabilista já inclui os três).</p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportCsv}><FileDown className="w-4 h-4 mr-2" />CSV para contabilista</Button>
-          <Button variant="outline" onClick={exportAccountantReport}><FileText className="w-4 h-4 mr-2" />Relatório imprimível (PDF)</Button>
-          <Button variant="outline" onClick={exportSaftXml}><FileDown className="w-4 h-4 mr-2" />SAF-T PT (informativo)</Button>
+          <Button variant="outline" onClick={exportCsv}><FileDown className="w-4 h-4 mr-2" />CSV</Button>
+          <Button variant="outline" onClick={exportAccountantReport}><FileText className="w-4 h-4 mr-2" />Relatório PDF</Button>
+          <Button variant="outline" onClick={exportSaftXml}><FileDown className="w-4 h-4 mr-2" />SAF-T PT XML</Button>
         </div>
       </section>
+
+      {/* Enviar tudo ao contabilista */}
+      <section className="bg-card border-2 border-primary/40 rounded-xl p-5 bg-primary/5">
+        <div className="flex items-start gap-3 mb-3">
+          <Send className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <h2 className="font-semibold">Enviar pacote ao contabilista</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Envia num único email o CSV, o relatório PDF e o SAF-T PT XML do período para{" "}
+              <strong>{info.accountant_email || <span className="text-destructive">(não configurado)</span>}</strong>.
+              O contabilista fica com tudo o que precisa para emitir/certificar os documentos oficiais no seu sistema certificado.
+            </p>
+          </div>
+        </div>
+
+        {/* Checklist de pré-envio */}
+        <ul className="text-xs space-y-1 mb-4 ml-8">
+          <li className="flex items-center gap-2">
+            {info.legal_name && info.tax_id
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Nome legal e NIF preenchidos
+          </li>
+          <li className="flex items-center gap-2">
+            {info.accountant_email && info.accountant_email.includes("@")
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Email do contabilista válido
+          </li>
+          <li className="flex items-center gap-2">
+            {(subs.length + escrows.length) > 0
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              : <AlertTriangle className="w-3.5 h-3.5 text-warning" />}
+            Há movimentos no período ({subs.length + escrows.length})
+          </li>
+        </ul>
+
+        <div className="ml-8">
+          <Label className="text-xs">Mensagem para o contabilista (opcional)</Label>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ex.: Bom dia, envio o pacote de outubro. Qualquer questão, digam."
+            rows={3}
+            className="mt-1"
+            maxLength={2000}
+          />
+        </div>
+
+        <div className="flex items-center justify-between mt-4 ml-8 gap-3 flex-wrap">
+          {lastSent && (
+            <p className="text-xs text-success flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Último envio: {lastSent.email} · {new Date(lastSent.at).toLocaleString("pt-PT")}
+            </p>
+          )}
+          <Button
+            size="lg"
+            onClick={sendToAccountant}
+            disabled={!canSend || sending}
+            className="ml-auto"
+          >
+            {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+            Enviar tudo ao contabilista
+          </Button>
+        </div>
+      </section>
+
 
       {/* Detalhe */}
       <section className="bg-card border border-border rounded-xl overflow-hidden">

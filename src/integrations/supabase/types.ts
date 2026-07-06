@@ -4594,6 +4594,54 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_company_info: {
+        Row: {
+          accountant_email: string | null
+          accountant_name: string | null
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          iban: string | null
+          id: string
+          legal_name: string
+          notes: string | null
+          postal_code: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          accountant_email?: string | null
+          accountant_name?: string | null
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          iban?: string | null
+          id?: string
+          legal_name?: string
+          notes?: string | null
+          postal_code?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accountant_email?: string | null
+          accountant_name?: string | null
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          iban?: string | null
+          id?: string
+          legal_name?: string
+          notes?: string | null
+          postal_code?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           id: string

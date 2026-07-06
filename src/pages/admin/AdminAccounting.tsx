@@ -89,6 +89,9 @@ export default function AdminAccounting() {
 
   const [info, setInfo] = useState<PlatformInfo>(DEFAULT_INFO);
   const [savingInfo, setSavingInfo] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [lastSent, setLastSent] = useState<{ email: string; at: string } | null>(null);
 
   // Set period presets
   useEffect(() => {

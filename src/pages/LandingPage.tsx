@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle, ShieldCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -356,6 +356,65 @@ export default function LandingPage() {
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>
+      </Reveal>
+
+      {/* Faturação certificada — mensagem 100% honesta */}
+      <Reveal>
+      <section aria-labelledby="billing-title" className="py-16 sm:py-20 px-4 border-t border-border">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Faturação legal em Portugal
+              </div>
+              <h2 id="billing-title" className="text-2xl sm:text-4xl font-bold mb-4">
+                Faturas certificadas pela AT, sem trocar de programa
+              </h2>
+              <p className="text-muted-foreground text-base sm:text-lg mb-4 leading-relaxed">
+                O GarageFlow <strong>integra</strong> com o <strong>InvoiceXpress</strong> — software de faturação
+                certificado pela Autoridade Tributária (nº 192). A tua oficina liga a conta InvoiceXpress em
+                <em> Definições → Faturação Certificada</em> e passa a emitir faturas diretamente da ficha de serviço,
+                com <strong>ATCUD, QR Code, hash criptográfico, série sequencial e SAF-T oficial</strong>.
+              </p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex gap-2"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5" /> Emissão a 1 clique a partir da ordem de serviço</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5" /> Anulação legal por Nota de Crédito automática</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5" /> SAF-T PT oficial descarregado do painel InvoiceXpress</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-primary shrink-0 mt-0.5" /> Credenciais encriptadas AES-GCM, isoladas por oficina</li>
+              </ul>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Transparência total</h3>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className="font-semibold text-foreground mb-1">O GarageFlow por si só NÃO é certificado</div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    O PDF gerado internamente pelo GarageFlow é apenas para orçamentos, propostas e uso interno —
+                    tem sempre a menção "documento não certificado".
+                  </p>
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground mb-1">A certificação vem do InvoiceXpress</div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    É a conta AT da <strong>tua oficina</strong> que emite. O GarageFlow envia os dados e recebe de volta
+                    o PDF legal já assinado, com ATCUD e QR válidos perante a AT.
+                  </p>
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground mb-1">Precisas de uma conta InvoiceXpress</div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    30 dias grátis, sem cartão.{" "}
+                    <a href="https://invoicexpress.com/" target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                      invoicexpress.com <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

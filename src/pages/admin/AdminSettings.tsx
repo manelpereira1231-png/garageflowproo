@@ -81,6 +81,7 @@ const DEFAULT_GARAGE_FEATURES = [...ALL_FEATURES.map(f => f.key)];
 
 export default function AdminSettings() {
   const { toast } = useToast();
+  const { getName: getPlanName } = usePlanNames();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [planLimits, setPlanLimits] = useState<PlanLimits>({

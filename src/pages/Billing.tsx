@@ -79,13 +79,20 @@ export default function Billing() {
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
   const { getName: getPlanName } = usePlanNames();
   const [pricingTick, setPricingTick] = useState(0);
+  const [freeQuoteLimit, setFreeQuoteLimit] = useState<number>(getCachedPlatformSettings().planLimits.freeQuoteLimit);
   useEffect(() => {
-    const onUpdate = () => setPricingTick((t) => t + 1);
+    loadPlatformSettings().then((s) => setFreeQuoteLimit(s.planLimits.freeQuoteLimit));
+    const onUpdate = () => {
+      setPricingTick((t) => t + 1);
+      loadPlatformSettings(true).then((s) => setFreeQuoteLimit(s.planLimits.freeQuoteLimit));
+    };
     window.addEventListener("garageflow:pricing-updated", onUpdate);
     window.addEventListener("garageflow:country-detected", onUpdate);
+    window.addEventListener("garageflow:platform-settings-updated", onUpdate);
     return () => {
       window.removeEventListener("garageflow:pricing-updated", onUpdate);
       window.removeEventListener("garageflow:country-detected", onUpdate);
+      window.removeEventListener("garageflow:platform-settings-updated", onUpdate);
     };
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps

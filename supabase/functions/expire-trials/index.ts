@@ -23,13 +23,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find subscriptions where trial has expired and plan is still free
+    // Find trialing subscriptions whose trial_end has passed and no Stripe sub took over.
     const { data: expired, error } = await supabase
       .from("subscriptions")
-      .select("id, shop_id")
-      .eq("plan", "free")
-      .eq("status", "active")
+      .select("id, shop_id, stripe_subscription_id")
+      .in("status", ["trialing", "active"])
       .lt("trial_end", new Date().toISOString())
+      .is("stripe_subscription_id", null)
       .not("trial_end", "is", null);
 
     if (error) throw error;

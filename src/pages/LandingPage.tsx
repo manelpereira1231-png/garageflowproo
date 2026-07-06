@@ -18,6 +18,7 @@ import HeroMockup from "@/components/landing/HeroMockup";
 import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
 import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 import { SITE_URL } from "@/lib/seoConfig";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];

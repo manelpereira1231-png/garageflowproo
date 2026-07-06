@@ -233,10 +233,10 @@ export default function InvoiceDetail() {
               </a>
             </Button>
           ) : (
-            invoice.status !== "cancelled" && (
+            invoice.status !== "cancelled" && billingProvider && (
               <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
                 {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
-                Emitir fatura certificada
+                Emitir via {billingProvider === "moloni" ? "Moloni" : "InvoiceXpress"}
               </Button>
             )
           )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSubscription, type Plan } from "@/hooks/useSubscription";
+import { loadPlatformSettings, getCachedPlatformSettings } from "@/lib/platformSettings";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";

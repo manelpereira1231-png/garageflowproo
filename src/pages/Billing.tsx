@@ -16,6 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();
@@ -75,6 +76,7 @@ function ReferralFreeMonths() {
 export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const { getName: getPlanName } = usePlanNames();
   const [pricingTick, setPricingTick] = useState(0);
   useEffect(() => {
     const onUpdate = () => setPricingTick((t) => t + 1);
@@ -398,7 +400,7 @@ export default function Billing() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-lg">{t(`billing.plan.${plan}`)}</span>
+                <span className="font-bold text-lg">{getPlanName(plan, t(`billing.plan.${plan}`))}</span>
                 {isTrialing && (
                   <Badge variant="secondary" className="bg-warning/10 text-warning">
                     <Clock className="w-3 h-3 mr-1" />
@@ -427,7 +429,7 @@ export default function Billing() {
                   ? `${t('billing.renewsOn')} ${formatDate(subscription.current_period_end)}`
                   : plan === 'free'
                   ? t('billing.freePlanActive')
-                  : t(`billing.plan.${plan}`)
+                  : getPlanName(plan, t(`billing.plan.${plan}`))
                 }
               </p>
             </div>
@@ -602,7 +604,7 @@ export default function Billing() {
 
               <div className="text-center mb-6">
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
-                <h3 className="text-xl font-bold">{t(`billing.plan.${key}`)}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(key, t(`billing.plan.${key}`))}</h3>
                 <div className="mt-3">
                   <span className="text-4xl font-bold mono">{formatPrice(price)}</span>
                   {price > 0 && (

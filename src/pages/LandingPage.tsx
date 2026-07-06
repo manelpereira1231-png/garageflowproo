@@ -18,6 +18,7 @@ import HeroMockup from "@/components/landing/HeroMockup";
 import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
 import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 import { SITE_URL } from "@/lib/seoConfig";
+import { usePlanNames } from "@/hooks/usePlanNames";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -90,8 +91,11 @@ export default function LandingPage() {
   const proLists = buildFeatureLists("pro");
   const garageLists = buildFeatureLists("garage");
 
+  const { getName: getPlanName } = usePlanNames();
+
   const planConfigs = [
     {
+      slug: 'free' as const,
       nameKey: 'landing.planFree',
       price: formatPrice(pricing.free[billingCycle]),
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
@@ -102,6 +106,7 @@ export default function LandingPage() {
       highlighted: false,
     },
     {
+      slug: 'pro' as const,
       nameKey: 'landing.planPro',
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
@@ -112,6 +117,7 @@ export default function LandingPage() {
       highlighted: true,
     },
     {
+      slug: 'garage' as const,
       nameKey: 'landing.planGarage',
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
@@ -488,7 +494,7 @@ export default function LandingPage() {
                 {plan.highlighted && (
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
                 )}
-                <h3 className="text-xl font-bold">{t(plan.nameKey)}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey))}</h3>
                 <div className="mt-2 mb-2">
                   <span className="text-4xl font-bold">{plan.price}</span>
                   {plan.periodKey && <span className="text-muted-foreground text-sm">{t(plan.periodKey)}</span>}

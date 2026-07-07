@@ -311,7 +311,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Linear/Notion-style grouping. Order = workshop daily priority.
   // Inventário fica no fim — é dado de referência, não tarefa diária.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
-    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda","/inspections"] },
+    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },

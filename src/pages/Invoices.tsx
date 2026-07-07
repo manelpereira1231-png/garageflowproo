@@ -149,25 +149,6 @@ export default function Invoices() {
     }
   };
 
-  /** Uploads the invoice PDF to storage and returns a long-lived signed URL. */
-  const uploadInvoicePdf = async (inv: any, blob: Blob): Promise<string | null> => {
-    try {
-      const path = `${activeShopId}/invoices/${inv.id}/${inv.number || inv.id}.pdf`;
-      const { error: upErr } = await supabase.storage
-        .from("document-pdfs")
-        .upload(path, blob, { contentType: "application/pdf", upsert: true });
-      if (upErr) { console.warn("[invoices] upload failed", upErr); return null; }
-      // 1-year signed URL (bucket is private).
-      const { data: signed } = await supabase.storage
-        .from("document-pdfs")
-        .createSignedUrl(path, 60 * 60 * 24 * 365);
-      return signed?.signedUrl || null;
-    } catch (err) {
-      console.warn('[invoices] upload/sign failed', err);
-      return null;
-    }
-  };
-
   const blobToBase64 = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
@@ -188,15 +169,12 @@ export default function Invoices() {
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
-      // Link assinado é opcional (fallback); a mensagem NÃO o inclui — vai o PDF real.
-      const link = await uploadInvoicePdf(inv, pdfBlob).catch(() => null);
       await openWhatsApp({
         phone,
         clientName: (inv.clients as any)?.name,
         type: 'invoice',
         number: inv.number,
         plate: (inv.vehicles as any)?.plate,
-        link: link || undefined,
         pdfBlob,
         pdfFilename: `${inv.number}.pdf`,
       });

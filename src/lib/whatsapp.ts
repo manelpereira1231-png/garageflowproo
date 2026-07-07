@@ -1,7 +1,4 @@
-/**
- * WhatsApp utility for sending messages via wa.me links.
- * Uses api.whatsapp.com/send for maximum compatibility (Android, iOS, Web).
- */
+/** WhatsApp utility for sharing documents without exposing PDF links in the message. */
 
 export interface WhatsAppMessageParams {
   phone?: string | null;
@@ -27,7 +24,7 @@ function cleanPhone(phone: string): string {
 }
 
 function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }): string {
-  const includeLink = opts?.includeLink !== false; // default true (for email); WhatsApp forces false
+  const includeLink = opts?.includeLink !== false; // default true for email; WhatsApp forces false
   const greeting = `Olá${p.clientName ? ` ${p.clientName}` : ''},`;
   const vehicleRef = p.plate || p.model ? ` referente ao veículo ${[p.plate, p.model].filter(Boolean).join(' - ')}` : '';
 
@@ -61,6 +58,19 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   // WhatsApp text NEVER carries the signed link — we send the actual PDF instead.
   const message = buildMessage(params, { includeLink: false });
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+}
+
+function buildPdfFile(params: WhatsAppMessageParams): File | null {
+  if (!params.pdfBlob) return null;
+  const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
+  return new File([params.pdfBlob], filename, { type: 'application/pdf' });
+}
+
+function canSharePdfFile(file: File, message: string, title: string): boolean {
+  if (typeof navigator === 'undefined' || typeof (navigator as any).share !== 'function') return false;
+  const shareData: any = { files: [file], text: message, title };
+  if (typeof (navigator as any).canShare !== 'function') return true;
+  return Boolean((navigator as any).canShare(shareData));
 }
 
 function openUrlInNewTab(url: string) {
@@ -107,32 +117,22 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
 
   const message = buildMessage(params, { includeLink: false });
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
-  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const file = buildPdfFile(params);
 
-  // 1) Mobile with Web Share API + files → true native attachment flow.
-  if (isMobile && params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
+  // 1) Preferred flow: native share with the PDF file attached + message text.
+  // This is the only browser-supported way to hand a Blob to WhatsApp as a real file.
+  if (file && canSharePdfFile(file, message, params.number || 'Documento')) {
     try {
-      const file = new File([params.pdfBlob], filename, { type: 'application/pdf' });
       const shareData: any = { files: [file], text: message, title: params.number || 'Documento' };
-      if ((navigator as any).canShare(shareData)) {
-        await (navigator as any).share(shareData);
-        return true;
-      }
+      await (navigator as any).share(shareData);
+      return true;
     } catch (err) {
       console.warn('[whatsapp] share failed, falling back', err);
     }
   }
 
-  // 2) Mobile fallback (no Web Share files support): download PDF, open WhatsApp.
-  if (isMobile) {
-    if (params.pdfBlob) downloadPdfBlob(params.pdfBlob, filename);
-    window.location.href = url;
-    return true;
-  }
-
-  // 3) Desktop: open WhatsApp Web with message pre-filled + auto-download PDF
-  //    so the user just drags it into the conversation. WhatsApp Web has no
-  //    supported way to pre-attach a file via URL.
+  // 2) Fallback: WhatsApp URLs cannot pre-attach files. We still never place the
+  // signed PDF link in the message; the PDF is downloaded locally to attach.
   openUrlInNewTab(url);
   if (params.pdfBlob) {
     setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 400);

@@ -238,14 +238,34 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
     doc.text(noteLines, 14, notesY + 6);
   }
 
-  // Legal disclaimer
-  // pageH already declared at top
-  doc.setFillColor(245, 245, 245);
-  doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
-  doc.setTextColor(120, 120, 120);
-  doc.setFontSize(6);
-  doc.setFont("helvetica", "italic");
-  doc.text(t('disclaimer', lang), pageW / 2, pageH - 22, { align: "center" });
+  // Legal disclaimer (conditional on certification status)
+  const isCertified = invoice?.legal_status === 'certified' && (invoice?.atcud || invoice?.certified_series);
+  const isCancelled = invoice?.legal_status === 'cancelled';
+  if (isCertified) {
+    doc.setFillColor(232, 245, 233); // green tint
+    doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+    doc.setTextColor(46, 125, 50);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    const parts = ['DOCUMENTO CERTIFICADO'];
+    if (invoice.atcud) parts.push(`ATCUD: ${invoice.atcud}`);
+    if (invoice.certified_series) parts.push(`Série: ${invoice.certified_series}`);
+    doc.text(parts.join(' · '), pageW / 2, pageH - 22, { align: "center" });
+  } else if (isCancelled) {
+    doc.setFillColor(255, 235, 238);
+    doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+    doc.setTextColor(198, 40, 40);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text('DOCUMENTO ANULADO — Substituído por Nota de Crédito', pageW / 2, pageH - 22, { align: "center" });
+  } else {
+    doc.setFillColor(255, 249, 224); // yellow tint
+    doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
+    doc.setTextColor(140, 90, 0);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "italic");
+    doc.text('DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Emita fatura certificada via InvoiceXpress/Moloni.', pageW / 2, pageH - 22, { align: "center" });
+  }
 
   // Footer
   doc.setTextColor(150, 150, 150);

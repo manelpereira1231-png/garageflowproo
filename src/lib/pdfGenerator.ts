@@ -264,14 +264,20 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.restoreGraphicsState();
   }
 
-  // Legal disclaimer
+  // Legal disclaimer — ALL internal documents (quotes/services/OS) are NEVER fiscally valid
   const pageH = doc.internal.pageSize.getHeight();
-  doc.setFillColor(245, 245, 245);
+  doc.setFillColor(255, 249, 224);
   doc.rect(14, pageH - 28, pageW - 28, 12, 'F');
-  doc.setTextColor(120, 120, 120);
+  doc.setTextColor(140, 90, 0);
   doc.setFontSize(6);
   doc.setFont("helvetica", "italic");
-  doc.text(tl('disclaimer'), pageW / 2, pageH - 22, { align: "center" });
+  const noticeByLang: Record<string, string> = {
+    pt: 'DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Para efeitos fiscais emita fatura certificada (InvoiceXpress/Moloni).',
+    en: 'NON-FISCAL DOCUMENT — not certified by the Tax Authority. Issue a certified invoice for fiscal purposes.',
+    es: 'DOCUMENTO SIN VALOR FISCAL — no certificado por la Agencia Tributaria. Emita factura certificada para efectos fiscales.',
+    'pt-BR': 'DOCUMENTO SEM VALOR FISCAL — apenas gestão interna. Emita NF-e no software fiscal para efeitos legais.',
+  };
+  doc.text(noticeByLang[lang] || noticeByLang.pt, pageW / 2, pageH - 22, { align: "center" });
 
   // Footer
   doc.setTextColor(150, 150, 150);

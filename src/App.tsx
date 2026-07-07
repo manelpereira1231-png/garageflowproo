@@ -599,6 +599,7 @@ const publicSeoRoutes = publicRoutes.filter((route) =>
 );
 
 const USER_TYPE_CACHE_KEY = "garageflow_user_type_cache";
+const ACCESS_PROFILE_TIMEOUT_MS = 3000;
 
 type CachedUserType = {
   userId: string;
@@ -626,6 +627,10 @@ function writeCachedUserType(value: CachedUserType) {
   } catch {
     /* storage full / disabled — ignore */
   }
+}
+
+function timeoutResult<T>(value: T, ms = ACCESS_PROFILE_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
 
 function AuthenticatedRoutes() {
@@ -659,7 +664,10 @@ function AuthenticatedRoutes() {
 
     let cancelled = false;
     const checkUserState = async () => {
-      const accessProfile = await getUserAccessProfile(user);
+      const accessProfile = await Promise.race([
+        getUserAccessProfile(user),
+        timeoutResult({ isAffiliate: false, isGarageUser: true, isMarketUser: false, hasGarageRole: true, hasMarketRole: false, hasShopAccess: true }),
+      ]);
 
       if (cancelled) return;
 

@@ -5,6 +5,11 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 // Hardcoded super admin email — checked FIRST, before any DB query,
 // so deleting shops/users can never lock out the super admin.
 const SUPER_ADMIN_EMAIL = "manelpereira11@gmail.com";
+const ADMIN_CHECK_TIMEOUT_MS = 3000;
+
+function timeoutResult<T>(value: T, ms = ADMIN_CHECK_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
 
 /**
  * Reads from useAuthReady (single shared subscription) instead of calling
@@ -42,12 +47,15 @@ export function useSuperAdmin() {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
-          .from("shop_users")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "super_admin")
-          .maybeSingle();
+        const { data } = await Promise.race([
+          supabase
+            .from("shop_users")
+            .select("role")
+            .eq("user_id", user.id)
+            .eq("role", "super_admin")
+            .maybeSingle(),
+          timeoutResult({ data: null }),
+        ]);
         if (!cancelled) {
           setIsSuperAdmin(!!data);
           setLoading(false);

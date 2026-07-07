@@ -366,7 +366,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Garage<span className="text-sidebar-primary">Flow</span>
             </span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto lg:hidden p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label={t("common.close") || "Fechar menu"}
+            className="ml-auto lg:hidden p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground min-h-11 min-w-11 flex items-center justify-center"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

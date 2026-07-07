@@ -32,6 +32,8 @@ export default function QuoteForm() {
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [partsList, setPartsList] = useState<any[]>([]);
   const [clientId, setClientId] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [validityDays, setValidityDays] = useState("30");

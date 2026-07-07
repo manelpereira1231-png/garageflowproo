@@ -50,6 +50,11 @@ export default function QuoteForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
+      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate").eq("shop_id", activeShopId).order("name");
+      if (cat) setCatalog(cat);
+      const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
+      if (pts) setPartsList(pts);
+
 
       // Load existing quote for editing
       if (editId) {

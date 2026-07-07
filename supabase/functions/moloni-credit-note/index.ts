@@ -42,14 +42,16 @@ Deno.serve(async (req) => {
 
     const { data: inv } = await admin.from("invoices").select("*, invoice_items(*)").eq("id", invoice_id).maybeSingle();
     if (!inv) return json({ error: "Fatura não encontrada" }, 404);
+
+    // 🔒 Ownership check ANTES de qualquer short-circuit (evita IDOR entre oficinas)
+    const { data: ids } = await admin.rpc("get_user_shop_ids", { _user_id: user.id });
+    const shopIds = Array.isArray(ids) ? ids.map((r: any) => r.get_user_shop_ids ?? r) : [];
+    if (!shopIds.includes(inv.shop_id)) return json({ error: "Sem permissão" }, 403);
+
     if (!inv.provider_invoice_id) return json({ error: "Fatura ainda não emitida no provider" }, 400);
     if (inv.credit_note_provider_id) {
       return json({ ok: true, credit_note_provider_id: inv.credit_note_provider_id, credit_note_pdf_url: inv.credit_note_pdf_url, cached: true });
     }
-
-    const { data: ids } = await admin.rpc("get_user_shop_ids", { _user_id: user.id });
-    const shopIds = Array.isArray(ids) ? ids.map((r: any) => r.get_user_shop_ids ?? r) : [];
-    if (!shopIds.includes(inv.shop_id)) return json({ error: "Sem permissão" }, 403);
 
     const { data: integ } = await admin.from("integracao_faturacao").select("*").eq("shop_id", inv.shop_id).eq("provider", "moloni").maybeSingle();
     if (!integ) return json({ error: "Integração Moloni não encontrada" }, 400);

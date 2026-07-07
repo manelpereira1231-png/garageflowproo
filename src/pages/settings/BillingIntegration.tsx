@@ -33,10 +33,18 @@ type Row = {
   last_error: string | null;
 };
 
+type Compliance = {
+  certified: number;
+  draft: number;
+  cancelled: number;
+  clientsMissingNif: number;
+};
+
 export default function BillingIntegration() {
   const shopId = useActiveShopId();
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
+  const [compliance, setCompliance] = useState<Compliance>({ certified: 0, draft: 0, cancelled: 0, clientsMissingNif: 0 });
 
   const [provider, setProvider] = useState<Provider>("invoicexpress");
   // Shared
@@ -57,11 +65,28 @@ export default function BillingIntegration() {
     if (!shopId) return;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("integracao_faturacao")
-        .select("id, shop_id, provider, account_name, serie_default, documento_default, moloni_company_id, ativo, last_test_ok_at, last_error")
-        .eq("shop_id", shopId)
-        .maybeSingle();
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [{ data }, invRes, clientsRes] = await Promise.all([
+        supabase
+          .from("integracao_faturacao")
+          .select("id, shop_id, provider, account_name, serie_default, documento_default, moloni_company_id, ativo, last_test_ok_at, last_error")
+          .eq("shop_id", shopId)
+          .maybeSingle(),
+        supabase
+          .from("invoices")
+          .select("legal_status")
+          .eq("shop_id", shopId)
+          .gte("created_at", monthStart.toISOString()),
+        supabase
+          .from("clients")
+          .select("id", { count: "exact", head: true })
+          .eq("shop_id", shopId)
+          .is("nif", null),
+      ]);
+
       if (data) {
         const r = data as unknown as Row;
         setRow(r);
@@ -75,6 +100,15 @@ export default function BillingIntegration() {
           setMoloniCompanyId(r.moloni_company_id ? String(r.moloni_company_id) : "");
         }
       }
+
+      const rows = (invRes.data ?? []) as { legal_status: string | null }[];
+      setCompliance({
+        certified: rows.filter((r) => r.legal_status === "certified").length,
+        draft: rows.filter((r) => !r.legal_status || r.legal_status === "draft").length,
+        cancelled: rows.filter((r) => r.legal_status === "cancelled").length,
+        clientsMissingNif: clientsRes.count || 0,
+      });
+
       setLoading(false);
     })();
   }, [shopId]);

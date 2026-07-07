@@ -273,10 +273,31 @@ export default function QuoteForm() {
                   onValueChange={(val) => {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);
-                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.default_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      if (item) {
+                        // Labor rate + VAT vêm SEMPRE das Definições da oficina.
+                        // Se o serviço tiver tempo (default_time em min), o preço = tempo × labor_rate.
+                        // Caso contrário, mantém o preço definido no catálogo.
+                        const timeMin = Number(item.default_time) || 0;
+                        const laborPrice = timeMin > 0
+                          ? round2((timeMin / 60) * shopDefaults.labor_rate)
+                          : Number(item.default_price) || 0;
+                        setLines(prev => prev.map(l => l.id === line.id ? {
+                          ...l,
+                          name: timeMin > 0 ? `${item.name} (${timeMin} min)` : item.name,
+                          unit_price: laborPrice,
+                          unit_cost: Number(item.internal_cost) || 0,
+                          vat_rate: shopDefaults.vat_rate,
+                        } : l));
+                      }
                     } else {
                       const item = partsList.find(p => p.id === val);
-                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.sale_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      if (item) setLines(prev => prev.map(l => l.id === line.id ? {
+                        ...l,
+                        name: item.name,
+                        unit_price: Number(item.sale_price) || 0,
+                        unit_cost: Number(item.internal_cost) || 0,
+                        vat_rate: shopDefaults.vat_rate,
+                      } : l));
                     }
                   }}
                 >
@@ -286,13 +307,24 @@ export default function QuoteForm() {
                   <SelectContent className="max-h-80">
                     {options.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-muted-foreground">{pickerLabel}</div>
-                    ) : options.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} — €{Number(line.type === 'service' ? c.default_price : c.sale_price).toFixed(2)}
-                      </SelectItem>
-                    ))}
+                    ) : options.map((c: any) => {
+                      const previewPrice = line.type === 'service'
+                        ? ((Number(c.default_time) || 0) > 0
+                            ? round2((Number(c.default_time) / 60) * shopDefaults.labor_rate)
+                            : Number(c.default_price) || 0)
+                        : Number(c.sale_price) || 0;
+                      const timeLabel = line.type === 'service' && Number(c.default_time) > 0
+                        ? ` · ${c.default_time} min`
+                        : '';
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}{timeLabel} — €{previewPrice.toFixed(2)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+
               </div>
 
               {/* Editable fields */}

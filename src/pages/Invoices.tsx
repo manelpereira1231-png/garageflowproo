@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
 import ListSkeleton from "@/components/ListSkeleton";
+import CertifiedBadge from "@/components/CertifiedBadge";
 import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<string, string> = {

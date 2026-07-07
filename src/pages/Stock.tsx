@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { formatMoney } from "@/lib/money";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
@@ -150,6 +151,32 @@ export default function Stock() {
     load();
   };
 
+  // Gera encomendas automáticas agrupadas por fornecedor, para todas as peças em stock baixo.
+  // Quantidade sugerida = (min_stock * 2) - stock_quantity (repõe até 2x o mínimo).
+  const generateReorders = async () => {
+    if (!activeShopId) return;
+    if (lowStock.length === 0) { toast.info("Sem peças em falta"); return; }
+    const rows = lowStock.map(p => {
+      const suggestedQty = Math.max(1, (p.min_stock * 2) - p.stock_quantity);
+      return {
+        shop_id: activeShopId,
+        supplier_id: null,
+        work_order_id: null,
+        part_name: p.name,
+        part_reference: p.reference,
+        quantity: suggestedQty,
+        unit_price: p.internal_cost || 0,
+        total: suggestedQty * (p.internal_cost || 0),
+        status: "draft",
+        notes: p.supplier ? `Fornecedor sugerido: ${p.supplier}` : null,
+      };
+    });
+    const { error } = await supabase.from("parts_orders").insert(rows as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} encomendas criadas em rascunho`);
+    load();
+  };
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -203,16 +230,16 @@ export default function Stock() {
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.stockValue')}</p>
-          <p className="text-xl font-bold text-primary">€{totalStockValue.toFixed(2)}</p>
+          <p className="text-xl font-bold text-primary">{formatMoney(totalStockValue)}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.stockCost')}</p>
-          <p className="text-xl font-bold">€{totalStockCost.toFixed(2)}</p>
+          <p className="text-xl font-bold">{formatMoney(totalStockCost)}</p>
         </CardContent></Card>
         <Card className={lowStock.length > 0 ? "border-warning/40" : ""}><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.lowStockAlert')}</p>
           <p className={`text-xl font-bold ${lowStock.length > 0 ? 'text-warning' : 'text-success'}`}>{lowStock.length}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t('stock.stockMargin')}: €{totalMargin.toFixed(0)}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('stock.stockMargin')}: {formatMoney(totalMargin)}</p>
         </CardContent></Card>
       </div>
 
@@ -220,9 +247,15 @@ export default function Stock() {
       {lowStock.length > 0 && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="py-4 px-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-warning">
-              <AlertTriangle className="w-4 h-4" />
-              {t('stock.lowStockAlert')} ({lowStock.length})
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+                <AlertTriangle className="w-4 h-4" />
+                {t('stock.lowStockAlert')} ({lowStock.length})
+              </div>
+              <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={generateReorders}>
+                <ShoppingCart className="w-3.5 h-3.5" />
+                Encomendar em falta
+              </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {lowStock.map(p => (
@@ -300,7 +333,7 @@ export default function Stock() {
                     <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
                     {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
                   </div>
-                  <span className="font-semibold text-sm">€{p.sale_price.toFixed(2)}</span>
+                  <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
                 {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
               </div>
@@ -347,8 +380,8 @@ export default function Stock() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">€{p.internal_cost.toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">€{p.sale_price.toFixed(2)}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{formatMoney(p.internal_cost)}</TableCell>
+                      <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}>
@@ -391,7 +424,7 @@ export default function Stock() {
                   <span>{format(new Date(o.created_at), 'dd/MM/yyyy')}</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-border">
-                  <span className="font-semibold text-sm">€{(o.total || 0).toFixed(2)}</span>
+                  <span className="font-semibold text-sm">{formatMoney(o.total || 0)}</span>
                   {o.status !== 'delivered' && o.status !== 'cancelled' && (
                     <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={async () => {
                       const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
@@ -435,7 +468,7 @@ export default function Stock() {
                       <TableCell className="font-medium">{o.part_name}</TableCell>
                       <TableCell className="text-muted-foreground">{(o.suppliers as any)?.name || '—'}</TableCell>
                       <TableCell>{o.quantity}</TableCell>
-                      <TableCell className="font-semibold">€{(o.total || 0).toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold">{formatMoney(o.total || 0)}</TableCell>
                       <TableCell>
                         <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
                           {t(`stock.orders.${o.status}`) || o.status}

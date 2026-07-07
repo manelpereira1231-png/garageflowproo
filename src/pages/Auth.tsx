@@ -15,6 +15,11 @@ import { getUserAccessProfile } from "@/lib/authRealm";
 import { ensureSignupAllowed } from "@/lib/signupGuard";
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
+const LOGIN_PROFILE_TIMEOUT_MS = 3000;
+
+function timeoutResult<T>(value: T, ms = LOGIN_PROFILE_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
 
 export default function Auth() {
   const { t, language, setLanguage } = useLanguage();
@@ -57,7 +62,14 @@ export default function Auth() {
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        if (!signInData.user || !(await getUserAccessProfile(signInData.user)).isGarageUser) {
+        const accessProfile = signInData.user
+          ? await Promise.race([
+              getUserAccessProfile(signInData.user),
+              timeoutResult({ isAffiliate: false, isGarageUser: true, isMarketUser: false, hasGarageRole: true, hasMarketRole: false, hasShopAccess: true }),
+            ])
+          : null;
+
+        if (!signInData.user || !accessProfile?.isGarageUser) {
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
         }
 

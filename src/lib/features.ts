@@ -49,6 +49,8 @@ const FALLBACK_PLAN_FEATURES: Record<Plan, string[]> = {
   ],
 };
 
+const GARAGE_ONLY_FEATURES = new Set(["marketing", "loyalty"]);
+
 const fallbackFeatureSetFor = (plan: Plan) => new Set(FALLBACK_PLAN_FEATURES[plan] ?? FALLBACK_PLAN_FEATURES.free);
 
 const listeners = new Set<() => void>();
@@ -132,6 +134,9 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
   return useMemo(() => {
     if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };
     if (mustSubscribe) return { allowed: false, loaded: true, limits: {} };
+    if (GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage") {
+      return { allowed: false, loaded: true, limits: {} };
+    }
     if (!loaded || matrix.length === 0) {
       return { allowed: fallbackFeatureSetFor(plan).has(slug), loaded: true, limits: {} };
     }
@@ -160,8 +165,13 @@ export function useEnabledFeatureSet(): Set<string> {
     if (mustSubscribe) return new Set<string>();
     if (!loaded || matrix.length === 0) return fallbackFeatureSetFor(plan);
     const out = new Set<string>();
-    for (const f of features) if (f.is_core) out.add(f.slug);
+    for (const f of features) {
+      if (f.is_core && (plan === "garage" || !GARAGE_ONLY_FEATURES.has(f.slug))) out.add(f.slug);
+    }
     for (const r of matrix) if (r.plan_slug === plan && r.enabled) out.add(r.feature_slug);
+    if (plan !== "garage") {
+      for (const slug of GARAGE_ONLY_FEATURES) out.delete(slug);
+    }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matrix, features, plan, loaded, subscriptionReady, mustSubscribe]);

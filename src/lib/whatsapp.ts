@@ -26,7 +26,8 @@ function cleanPhone(phone: string): string {
   return cleaned;
 }
 
-function buildMessage(p: WhatsAppMessageParams): string {
+function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }): string {
+  const includeLink = opts?.includeLink !== false; // default true (for email); WhatsApp forces false
   const greeting = `Olá${p.clientName ? ` ${p.clientName}` : ''},`;
   const vehicleRef = p.plate || p.model ? ` referente ao veículo ${[p.plate, p.model].filter(Boolean).join(' - ')}` : '';
 
@@ -34,20 +35,20 @@ function buildMessage(p: WhatsAppMessageParams): string {
     case 'invoice': {
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nSegue em anexo a fatura${num}${vehicleRef}.`;
-      if (p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
+      if (includeLink && p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
       msg += `\n\nObrigado pela preferência.`;
       return msg;
     }
     case 'quote': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting}\n\nO seu orçamento${num}${vehicleRef} está disponível para aprovação.`;
-      if (p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
+      let msg = `${greeting}\n\nSegue em anexo o orçamento${num}${vehicleRef} para aprovação.`;
+      if (includeLink && p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
       return msg;
     }
     case 'service': {
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nA sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
-      if (p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;
+      if (includeLink && p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;
       return msg;
     }
   }

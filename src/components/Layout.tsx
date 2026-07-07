@@ -615,11 +615,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col h-screen min-w-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col h-screen min-w-0 overflow-y-auto overflow-x-hidden">
         <MarketInspectionBanner shopId={activeShopId} isPartner={isCarityPartner} />
         <header className="h-14 lg:h-16 border-b border-border/60 flex items-center px-3 lg:px-6 bg-card/70 backdrop-blur-xl sticky top-0 z-30 shrink-0 shadow-premium-sm">
 
-          <Button variant="ghost" size="icon" className="lg:hidden mr-2 shrink-0 h-9 w-9" onClick={() => setSidebarOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Abrir menu"
+            className="lg:hidden mr-2 shrink-0 h-11 w-11"
+            onClick={() => setSidebarOpen(true)}
+          >
             <Menu className="w-5 h-5" />
           </Button>
 
@@ -627,16 +633,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <span className="text-sm font-medium text-muted-foreground hidden lg:block truncate tracking-tight">{shopName}</span>
 
-          <div className="flex-1 flex justify-center px-2 lg:px-6">
+          <div className="flex-1 flex justify-center px-2 lg:px-6 min-w-0">
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
               className="group inline-flex items-center gap-2 w-full max-w-md h-9 px-3 rounded-lg border border-border/60 bg-muted/40 hover:bg-muted hover:border-border transition-colors text-left"
               title={language === "pt" ? "Pesquisar (Ctrl+K)" : "Search (Ctrl+K)"}
+              aria-label={language === "pt" ? "Pesquisar" : "Search"}
             >
               <Search className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-muted-foreground truncate flex-1">
-                {language === "pt" ? "Pesquisar clientes, veículos, orçamentos…" : "Search clients, vehicles, quotes…"}
+                {language === "pt" ? "Pesquisar…" : "Search…"}
               </span>
               <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground bg-background border border-border/60 rounded px-1.5 py-0.5">
                 <span className="text-xs">⌘</span>K
@@ -649,7 +656,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <AppointmentsBell />
 
           {pendingAlertCount > 0 && (
-            <Link to="/alerts" className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1 group">
+            <Link
+              to="/alerts"
+              aria-label={`${pendingAlertCount} alertas pendentes`}
+              className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1 group"
+            >
               <Bell className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
               <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-background">
                 {pendingAlertCount > 9 ? "9+" : pendingAlertCount}
@@ -660,7 +671,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden h-9 w-9 text-muted-foreground hover:text-destructive"
+            aria-label={t("auth.logout")}
+            className="lg:hidden h-11 w-11 text-muted-foreground hover:text-destructive"
             onClick={handleLogout}
             title={t("auth.logout")}
           >
@@ -669,11 +681,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="flex-1 p-3 sm:p-4 lg:p-6 page-in">
-          {/* No fallback — keeps the previous page visible until the next chunk
-              is ready. Combined with hover/idle prefetch, navigation feels instant. */}
-          <Suspense fallback={null}>
-            {children}
-          </Suspense>
+          <div className="page-shell">
+            {/* No fallback — keeps the previous page visible until the next chunk
+                is ready. Combined with hover/idle prefetch, navigation feels instant. */}
+            <Suspense fallback={null}>
+              {children}
+            </Suspense>
+          </div>
         </div>
       </main>
     </div>

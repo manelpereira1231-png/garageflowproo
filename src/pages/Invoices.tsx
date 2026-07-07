@@ -224,6 +224,9 @@ export default function Invoices() {
                 <TableCell className="font-semibold mono">{cur}{inv.total?.toFixed(2)}</TableCell>
                 <TableCell className="hidden md:table-cell">{inv.due_date || '—'}</TableCell>
                 <TableCell>
+                  <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
+                </TableCell>
+                <TableCell>
                   <Badge variant="secondary" className={statusColors[inv.status] || ''}>
                     {t(`invoices.status_${inv.status}`)}
                   </Badge>

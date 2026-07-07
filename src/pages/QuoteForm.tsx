@@ -238,13 +238,22 @@ export default function QuoteForm() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="font-semibold">{t('quotes.lines')}</h3>
             <Button type="button" variant="outline" size="sm" onClick={addLine}>
               <Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}
             </Button>
           </div>
+          <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+            <span>
+              Tarifa mão-de-obra: <strong className="text-foreground">€{shopDefaults.labor_rate.toFixed(2)}/h</strong>
+              {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
+              {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
+            </span>
+            <span className="text-[10px]">Ao escolher um serviço do catálogo, o preço é (tempo × tarifa das Definições).</span>
+          </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
+
           {lines.map((line, idx) => {
             const options = line.type === 'service' ? catalog : partsList;
             const pickerLabel = line.type === 'service'

@@ -18,6 +18,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded content of the file. */
+  content: string;
+  content_type?: string;
+}
+
 interface SendEmailRequest {
   to: string | string[];
   subject: string;
@@ -29,6 +36,7 @@ interface SendEmailRequest {
   preheader?: string;
   cta?: { label: string; url: string };
   footerNote?: string;
+  attachments?: EmailAttachment[];
 }
 
 serve(async (req: Request) => {

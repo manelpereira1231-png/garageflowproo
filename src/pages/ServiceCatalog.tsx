@@ -46,18 +46,19 @@ const emptyForm = {
 // Preços de referência assumindo mão-de-obra a 35€/h — a oficina ajusta depois.
 const TEMPLATE_PACK: Array<Omit<CatalogService, "id" | "shop_id" | "created_at" | "active"> & { active?: boolean }> = [
   // nome                                     descrição                                                     min   preço  peças  IVA  km      meses
-  { name: "Mudança de óleo + filtro",         description: "Óleo motor 5L + filtro óleo (peças)",           default_time: 30,  default_price: 65,  internal_cost: 15,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
-  { name: "Revisão completa",                  description: "Filtros óleo/ar/habitáculo + óleo (peças)",     default_time: 90,  default_price: 150, internal_cost: 25,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
-  { name: "Substituição de pastilhas travão",  description: "Jogo pastilhas frente ou trás (peças)",         default_time: 60,  default_price: 90,  internal_cost: 25,  vat_rate: 23, recurrence_km: 40000,  recurrence_months: null },
-  { name: "Substituição de discos + pastilhas",description: "Discos + pastilhas frente ou trás (peças)",     default_time: 90,  default_price: 180, internal_cost: 60,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
-  { name: "Alinhamento de direção",            description: "Alinhamento 4 rodas (sem peças)",               default_time: 45,  default_price: 55,  internal_cost: 0,   vat_rate: 23, recurrence_km: 20000,  recurrence_months: null },
-  { name: "Equilibragem de rodas",             description: "4 rodas + pesos (peças)",                       default_time: 30,  default_price: 30,  internal_cost: 3,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
-  { name: "Diagnóstico eletrónico OBD",        description: "Leitura + análise códigos de erro",             default_time: 30,  default_price: 40,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
-  { name: "Substituição correia distribuição", description: "Correia + tensor + bomba água (peças)",         default_time: 240, default_price: 550, internal_cost: 160, vat_rate: 23, recurrence_km: 120000, recurrence_months: 72 },
-  { name: "Substituição bateria",              description: "Montagem + codificação (bateria à parte)",      default_time: 20,  default_price: 30,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: 48 },
-  { name: "Filtro ar habitáculo",              description: "Substituição filtro pólen (peça)",              default_time: 15,  default_price: 25,  internal_cost: 8,   vat_rate: 23, recurrence_km: 20000,  recurrence_months: 12 },
-  { name: "Enchimento AC + verificação",       description: "Recarga R134a ou R1234yf (gás)",                default_time: 45,  default_price: 75,  internal_cost: 15,  vat_rate: 23, recurrence_km: null,   recurrence_months: 24 },
-  { name: "Pré-inspeção IPO",                  description: "Verificação pré-centro inspeção",               default_time: 30,  default_price: 30,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  // Preço ao cliente = internal_cost (peças) + (default_time/60) × 35€/h (tarifa default das Definições)
+  { name: "Mudança de óleo + filtro",         description: "Óleo motor 5L + filtro óleo (peças)",           default_time: 30,  default_price: 32.50,  internal_cost: 15,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
+  { name: "Revisão completa",                  description: "Filtros óleo/ar/habitáculo + óleo (peças)",     default_time: 90,  default_price: 77.50,  internal_cost: 25,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
+  { name: "Substituição de pastilhas travão",  description: "Jogo pastilhas frente ou trás (peças)",         default_time: 60,  default_price: 60.00,  internal_cost: 25,  vat_rate: 23, recurrence_km: 40000,  recurrence_months: null },
+  { name: "Substituição de discos + pastilhas",description: "Discos + pastilhas frente ou trás (peças)",     default_time: 90,  default_price: 112.50, internal_cost: 60,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
+  { name: "Alinhamento de direção",            description: "Alinhamento 4 rodas (sem peças)",               default_time: 45,  default_price: 26.25,  internal_cost: 0,   vat_rate: 23, recurrence_km: 20000,  recurrence_months: null },
+  { name: "Equilibragem de rodas",             description: "4 rodas + pesos (peças)",                       default_time: 30,  default_price: 20.50,  internal_cost: 3,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Diagnóstico eletrónico OBD",        description: "Leitura + análise códigos de erro",             default_time: 30,  default_price: 17.50,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Substituição correia distribuição", description: "Correia + tensor + bomba água (peças)",         default_time: 240, default_price: 300.00, internal_cost: 160, vat_rate: 23, recurrence_km: 120000, recurrence_months: 72 },
+  { name: "Substituição bateria",              description: "Montagem + codificação (bateria à parte)",      default_time: 20,  default_price: 11.67,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: 48 },
+  { name: "Filtro ar habitáculo",              description: "Substituição filtro pólen (peça)",              default_time: 15,  default_price: 16.75,  internal_cost: 8,   vat_rate: 23, recurrence_km: 20000,  recurrence_months: 12 },
+  { name: "Enchimento AC + verificação",       description: "Recarga R134a ou R1234yf (gás)",                default_time: 45,  default_price: 41.25,  internal_cost: 15,  vat_rate: 23, recurrence_km: null,   recurrence_months: 24 },
+  { name: "Pré-inspeção IPO",                  description: "Verificação pré-centro inspeção",               default_time: 30,  default_price: 17.50,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
 ];
 
 export default function ServiceCatalog() {

@@ -196,6 +196,7 @@ export default function Invoices() {
               <TableHead className="hidden md:table-cell">{t('invoices.vehicle')}</TableHead>
               <TableHead>{t('invoices.total')}</TableHead>
               <TableHead className="hidden md:table-cell">{t('invoices.dueDate')}</TableHead>
+              <TableHead>Legal</TableHead>
               <TableHead>{t('invoices.status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>

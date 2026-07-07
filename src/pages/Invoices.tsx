@@ -301,6 +301,12 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                       </Button>
                     </Link>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => {
+                      e.preventDefault();
+                      sendInvoiceByEmail(inv);
+                    }}>
+                      <Mail className="w-3.5 h-3.5 mr-1" />Email
+                    </Button>
                     <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={(e) => {
                       e.preventDefault();
                       sendInvoiceOnWhatsApp(inv);

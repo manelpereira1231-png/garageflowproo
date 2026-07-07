@@ -105,21 +105,21 @@ export default function AdminMarketListings() {
                     <Badge variant="outline" className="text-[10px] mt-1">{r.status}</Badge>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Abrir página pública">
+                    <Button asChild size="icon" aria-label="Abrir página pública" variant="ghost" className="h-8 w-8" title="Abrir página pública">
                       <Link to={`/market/car/${r.id}`} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></Link>
                     </Button>
                     {r.status !== "cancelled" && r.status !== "sold" ? (
-                      <Button size="icon" variant="ghost" className="h-8 w-8" title="Despublicar"
+                      <Button size="icon" aria-label="Despublicar" variant="ghost" className="h-8 w-8" title="Despublicar"
                         disabled={busy === r.id} onClick={() => setListingStatus(r.id, "cancelled")}>
                         <EyeOff className="w-4 h-4 text-amber-600" />
                       </Button>
                     ) : r.status === "cancelled" ? (
-                      <Button size="icon" variant="ghost" className="h-8 w-8" title="Republicar"
+                      <Button size="icon" aria-label="Republicar" variant="ghost" className="h-8 w-8" title="Republicar"
                         disabled={busy === r.id} onClick={() => setListingStatus(r.id, "published")}>
                         <Eye className="w-4 h-4 text-emerald-600" />
                       </Button>
                     ) : null}
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Eliminar"
+                    <Button size="icon" aria-label="Eliminar" variant="ghost" className="h-8 w-8" title="Eliminar"
                       disabled={busy === r.id} onClick={() => removeListing(r.id)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>

@@ -243,8 +243,34 @@ export default function QuoteForm() {
               </div>
               <div className="col-span-12 sm:col-span-3">
                 <Label className="text-xs">{t('line.description')}</Label>
-                <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                <div className="flex gap-1">
+                  <Input className="h-9 text-sm flex-1" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                  <Select
+                    value=""
+                    onValueChange={(val) => {
+                      if (line.type === 'service') {
+                        const item = catalog.find(c => c.id === val);
+                        if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.default_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      } else {
+                        const item = partsList.find(p => p.id === val);
+                        if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.sale_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-9 w-9 px-2 shrink-0" aria-label="Escolher do catálogo"><span className="text-xs">📋</span></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {line.type === 'service'
+                        ? (catalog.length === 0
+                            ? <div className="px-2 py-1.5 text-xs text-muted-foreground">Catálogo vazio</div>
+                            : catalog.map(c => <SelectItem key={c.id} value={c.id}>{c.name} — €{Number(c.default_price).toFixed(2)}</SelectItem>))
+                        : (partsList.length === 0
+                            ? <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem peças</div>
+                            : partsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name} — €{Number(p.sale_price).toFixed(2)}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
               <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
               <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
               <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>

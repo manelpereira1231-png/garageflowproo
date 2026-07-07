@@ -115,6 +115,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
   }, [shopMarketRow?.name]);
 
+  // Hard paywall: there is NO free tier. When the subscription is canceled,
+  // past_due or an admin-managed plan expired, force the user to /billing.
+  useEffect(() => {
+    if (!mustSubscribe) return;
+    const allowed = ["/billing", "/settings", "/support", "/auth"];
+    if (!allowed.some((p) => location.pathname.startsWith(p))) {
+      navigate("/billing", { replace: true });
+    }
+  }, [mustSubscribe, location.pathname, navigate]);
+
+
   useEffect(() => {
     if (!activeShopId) return;
     let cancelled = false;

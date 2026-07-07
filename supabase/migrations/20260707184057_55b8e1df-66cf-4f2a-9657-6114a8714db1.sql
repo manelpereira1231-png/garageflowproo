@@ -1,0 +1,10 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.automation_rules TO authenticated;
+GRANT ALL ON public.automation_rules TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.automation_logs TO authenticated;
+GRANT ALL ON public.automation_logs TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.campaigns TO authenticated;
+GRANT ALL ON public.campaigns TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.email_logs TO authenticated;
+GRANT ALL ON public.email_logs TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.message_templates TO authenticated;
+GRANT ALL ON public.message_templates TO service_role;

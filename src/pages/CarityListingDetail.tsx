@@ -146,16 +146,17 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     ]);
     
     if (reportRes.data) {
+      const rd = reportRes.data as any;
       setReport({
-        ...reportRes.data,
-        defects: Array.isArray(reportRes.data.defects) ? reportRes.data.defects : [],
-        exterior_photos: Array.isArray(reportRes.data.exterior_photos) ? reportRes.data.exterior_photos : [],
-        interior_photos: Array.isArray(reportRes.data.interior_photos) ? reportRes.data.interior_photos : [],
-        engine_photos: Array.isArray(reportRes.data.engine_photos) ? reportRes.data.engine_photos : [],
-        damage_photos: Array.isArray(reportRes.data.damage_photos) ? reportRes.data.damage_photos : [],
+        ...rd,
+        defects: Array.isArray(rd.defects) ? rd.defects : [],
+        exterior_photos: Array.isArray(rd.exterior_photos) ? rd.exterior_photos : [],
+        interior_photos: Array.isArray(rd.interior_photos) ? rd.interior_photos : [],
+        engine_photos: Array.isArray(rd.engine_photos) ? rd.engine_photos : [],
+        damage_photos: Array.isArray(rd.damage_photos) ? rd.damage_photos : [],
       });
-      if (reportRes.data.shop_id) {
-        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", reportRes.data.shop_id).single();
+      if (rd.shop_id) {
+        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", rd.shop_id).single();
         if (shop) setShopInfo(shop);
       }
     }

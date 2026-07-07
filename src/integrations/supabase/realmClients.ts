@@ -45,10 +45,9 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
       persistSession: true,
       autoRefreshToken: true,
       lock: nonBlockingAuthLock,
-      lockAcquireTimeout: 2000,
       detectSessionInUrl: detectRealm() === realm,
     },
-  });
+  }) as SupabaseClient<Database>;
 }
 
 const ERP_MARKET_PATHS = [

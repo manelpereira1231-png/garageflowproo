@@ -288,13 +288,15 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
 
         <SystemBroadcastBanner />
         <div className="flex-1 p-3 sm:p-4 lg:p-6">
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-64">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          }>
-            {children ?? <Outlet />}
-          </Suspense>
+          <div className="page-shell">
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              {children ?? <Outlet />}
+            </Suspense>
+          </div>
         </div>
       </main>
     </div>

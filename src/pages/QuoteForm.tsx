@@ -108,7 +108,7 @@ export default function QuoteForm() {
   }, [clientId, vehicles, editId]);
 
   const addLine = () => {
-    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 23 }]);
+    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: shopDefaults.vat_rate }]);
   };
 
   const updateLine = (id: string, field: string, value: any) => {
@@ -117,11 +117,15 @@ export default function QuoteForm() {
 
   const removeLine = (id: string) => setLines(lines.filter(l => l.id !== id));
 
-  const subtotal = lines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
-  const vatTotal = lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0);
-  const total = subtotal + vatTotal;
-  const costTotal = lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0);
-  const profit = total - costTotal;
+  // Financial totals — VAT is passthrough tax (not revenue),
+  // so profit is subtotal (net revenue) minus cost, NOT total (which includes VAT).
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const total = round2(subtotal + vatTotal);
+  const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
+  const profit = round2(subtotal - costTotal);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

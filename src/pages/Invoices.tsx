@@ -117,6 +117,49 @@ export default function Invoices() {
 
   const cur = getCurrencySymbol(shop?.currency);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const { plan } = useSubscription();
+
+  const sendInvoiceOnWhatsApp = async (inv: any) => {
+    const phone = (inv.clients as any)?.phone;
+    if (!phone) { toast.error(t('quotes.noClientPhone')); return; }
+    let pdfBlob: Blob | null = null;
+    try {
+      if (shop) {
+        const { data: items } = await supabase
+          .from("invoice_items")
+          .select("*")
+          .eq("invoice_id", inv.id)
+          .order("created_at", { ascending: true });
+        const doc = await generateInvoicePdf({
+          invoice: inv,
+          items: items || [],
+          shop,
+          clientName: (inv.clients as any)?.name || '',
+          clientEmail: (inv.clients as any)?.email,
+          clientPhone: (inv.clients as any)?.phone,
+          clientNif: (inv.clients as any)?.nif,
+          vehicleMake: (inv.vehicles as any)?.make,
+          vehicleModel: (inv.vehicles as any)?.model,
+          vehiclePlate: (inv.vehicles as any)?.plate,
+          totalPaid: Number(inv.total_paid || 0),
+          plan,
+        });
+        pdfBlob = doc.output('blob');
+      }
+    } catch (err) {
+      console.warn('[invoices] pdf generation failed for whatsapp', err);
+      toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
+    }
+    await openWhatsApp({
+      phone,
+      clientName: (inv.clients as any)?.name,
+      type: 'invoice',
+      number: inv.number,
+      plate: (inv.vehicles as any)?.plate,
+      pdfBlob,
+      pdfFilename: `${inv.number}.pdf`,
+    });
+  };
 
   return (
     <div>

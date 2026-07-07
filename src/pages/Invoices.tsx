@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle, FileArchive, Loader2, Mail } from "lucide-react";
-import { openWhatsApp, openEmailDraft } from "@/lib/whatsapp";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { sendEmail } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -148,36 +149,105 @@ export default function Invoices() {
     }
   };
 
+  /** Uploads the invoice PDF to storage and returns a long-lived signed URL. */
+  const uploadInvoicePdf = async (inv: any, blob: Blob): Promise<string | null> => {
+    try {
+      const path = `${activeShopId}/invoices/${inv.id}/${inv.number || inv.id}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("document-pdfs")
+        .upload(path, blob, { contentType: "application/pdf", upsert: true });
+      if (upErr) { console.warn("[invoices] upload failed", upErr); return null; }
+      // 1-year signed URL (bucket is private).
+      const { data: signed } = await supabase.storage
+        .from("document-pdfs")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      return signed?.signedUrl || null;
+    } catch (err) {
+      console.warn('[invoices] upload/sign failed', err);
+      return null;
+    }
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const b64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(b64);
+    };
+    reader.readAsDataURL(blob);
+  });
+
+  const [sendingInvoice, setSendingInvoice] = useState<string | null>(null);
+
   const sendInvoiceOnWhatsApp = async (inv: any) => {
     const phone = (inv.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone')); return; }
-    const pdfBlob = await buildInvoicePdfBlob(inv);
-    if (!pdfBlob) toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
-    await openWhatsApp({
-      phone,
-      clientName: (inv.clients as any)?.name,
-      type: 'invoice',
-      number: inv.number,
-      plate: (inv.vehicles as any)?.plate,
-      pdfBlob,
-      pdfFilename: `${inv.number}.pdf`,
-    });
+    setSendingInvoice(inv.id);
+    try {
+      const pdfBlob = await buildInvoicePdfBlob(inv);
+      let link: string | undefined;
+      if (pdfBlob) {
+        const url = await uploadInvoicePdf(inv, pdfBlob);
+        if (url) link = url;
+      }
+      if (!link) toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
+      await openWhatsApp({
+        phone,
+        clientName: (inv.clients as any)?.name,
+        type: 'invoice',
+        number: inv.number,
+        plate: (inv.vehicles as any)?.plate,
+        link,
+        // Fallback (só é usado se o cliente não conseguir abrir a partilha nativa).
+        pdfBlob,
+        pdfFilename: `${inv.number}.pdf`,
+      });
+    } finally {
+      setSendingInvoice(null);
+    }
   };
 
   const sendInvoiceByEmail = async (inv: any) => {
     const email = (inv.clients as any)?.email;
     if (!email) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
-    const pdfBlob = await buildInvoicePdfBlob(inv);
-    openEmailDraft({
-      email,
-      clientName: (inv.clients as any)?.name,
-      type: 'invoice',
-      number: inv.number,
-      plate: (inv.vehicles as any)?.plate,
-      pdfBlob,
-      pdfFilename: `${inv.number}.pdf`,
-    });
-    toast.success('A abrir o email. O PDF foi transferido para anexar.');
+    if (!shop) { toast.error('Dados da oficina não carregados'); return; }
+    setSendingInvoice(inv.id);
+    try {
+      const pdfBlob = await buildInvoicePdfBlob(inv);
+      if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
+      const base64 = await blobToBase64(pdfBlob);
+      const vehicle = `${(inv.vehicles as any)?.make || ''} ${(inv.vehicles as any)?.model || ''} — ${(inv.vehicles as any)?.plate || ''}`.trim();
+      const subject = `Fatura ${inv.number} — ${shop.name}`;
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#111">
+          <h2 style="margin:0 0 12px">Fatura ${inv.number}</h2>
+          <p>Olá ${(inv.clients as any)?.name || ''},</p>
+          <p>Segue em anexo a sua fatura${vehicle ? ` referente a <strong>${vehicle}</strong>` : ''}.</p>
+          <p><strong>Total:</strong> €${Number(inv.total || 0).toFixed(2)}</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
+          <p style="color:#666;font-size:12px">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
+        </div>`;
+      await sendEmail({
+        to: email,
+        subject,
+        html,
+        attachments: [{ filename: `${inv.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+      });
+      if (activeShopId) {
+        await supabase.from("email_logs").insert({
+          shop_id: activeShopId, to_email: email, subject, status: 'sent',
+          entity_type: 'invoice', entity_id: inv.id,
+        });
+      }
+      toast.success('Email enviado com o PDF em anexo.');
+    } catch (err: any) {
+      console.error('[invoices] email error', err);
+      toast.error('Erro ao enviar email: ' + (err?.message || 'desconhecido'));
+    } finally {
+      setSendingInvoice(null);
+    }
   };
 
   return (
@@ -238,11 +308,11 @@ export default function Invoices() {
               <Link to={`/invoices/${inv.id}`} className="flex-1">
                 <Button variant="ghost" size="sm" className="w-full text-xs h-7"><Eye className="w-3 h-3 mr-1" />{t('common.view')}</Button>
               </Link>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => sendInvoiceByEmail(inv)}>
-                <Mail className="w-3 h-3 mr-1" />Email
+              <Button variant="ghost" size="sm" className="text-xs h-7" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceByEmail(inv)}>
+                {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}Email
               </Button>
-              <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendInvoiceOnWhatsApp(inv)}>
-                <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+              <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceOnWhatsApp(inv)}>
+                {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <MessageCircle className="w-3 h-3 mr-1" />}WhatsApp
               </Button>
             </div>
           </div>
@@ -301,17 +371,17 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                       </Button>
                     </Link>
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => {
+                    <Button variant="ghost" size="sm" className="text-xs" disabled={sendingInvoice === inv.id} onClick={(e) => {
                       e.preventDefault();
                       sendInvoiceByEmail(inv);
                     }}>
-                      <Mail className="w-3.5 h-3.5 mr-1" />Email
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}Email
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={(e) => {
+                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => {
                       e.preventDefault();
                       sendInvoiceOnWhatsApp(inv);
                     }}>
-                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 mr-1" />}WhatsApp
                     </Button>
                   </div>
                 </TableCell>

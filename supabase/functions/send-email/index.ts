@@ -18,6 +18,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded content of the file. */
+  content: string;
+  content_type?: string;
+}
+
 interface SendEmailRequest {
   to: string | string[];
   subject: string;
@@ -29,6 +36,7 @@ interface SendEmailRequest {
   preheader?: string;
   cta?: { label: string; url: string };
   footerNote?: string;
+  attachments?: EmailAttachment[];
 }
 
 serve(async (req: Request) => {
@@ -56,7 +64,7 @@ serve(async (req: Request) => {
     }
 
     const body = await req.json() as SendEmailRequest;
-    const { to, subject, html, from, branded, brand, preheader, cta, footerNote } = body;
+    const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments } = body;
 
     if (!to || !subject || !html) {
       return new Response(JSON.stringify({ error: "Missing required fields: to, subject, html" }),
@@ -148,14 +156,22 @@ serve(async (req: Request) => {
 
 
 
-    console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject}`);
+    console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject} | attachments: ${attachments?.length ?? 0}`);
 
-    const { data, error } = await resend.emails.send({
+    const resendPayload: any = {
       from: finalFrom,
       to: finalTo,
       subject: finalSubject,
       html: trackedHtml,
-    });
+    };
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      resendPayload.attachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        content_type: a.content_type || "application/pdf",
+      }));
+    }
+    const { data, error } = await resend.emails.send(resendPayload);
 
     const emailId = (data as any)?.id || emailIdEarly;
 

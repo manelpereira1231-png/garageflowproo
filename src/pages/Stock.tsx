@@ -419,8 +419,9 @@ export default function Stock() {
                   <TableRow>
                     <TableHead>{t('stock.partName')}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t('stock.reference')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('stock.supplier')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('stock.supplier')}</TableHead>
                     <TableHead>{t('stock.currentStock')}</TableHead>
+                    <TableHead className="hidden md:table-cell">Consumo 30d</TableHead>
                     <TableHead className="hidden md:table-cell">{t('stock.costPrice')}</TableHead>
                     <TableHead>{t('stock.salePrice')}</TableHead>
                     <TableHead className="w-28"></TableHead>
@@ -428,28 +429,50 @@ export default function Stock() {
                 </TableHeader>
                 <TableBody>
                   {dataLoading && parts.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.empty')}</TableCell></TableRow>
-                  ) : filtered.map(p => (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <div className="space-y-3">
+                        <p>{t('stock.empty')}</p>
+                        {parts.length === 0 && (
+                          <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                            <Sparkles className="w-3.5 h-3.5" /> Criar pack inicial (12 peças comuns)
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell></TableRow>
+                  ) : filtered.map(p => {
+                    const cov = coverageDays(p);
+                    const c30 = consumption30d[p.id] || 0;
+                    return (
                     <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
                       <TableCell>
                         <div className="font-medium">{p.name}</div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">{p.reference || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{p.supplier || "—"}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{p.supplier || "—"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>
+                        <div className="flex items-center gap-1.5">
+                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0} title="Saída 1"><Minus className="w-3 h-3" /></Button>
+                          <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"} className="min-w-9 justify-center">
                             {p.stock_quantity}
                           </Badge>
+                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)} title="Entrada 1"><Plus className="w-3 h-3" /></Button>
                           {p.min_stock > 0 && (
-                            <span className="text-xs text-muted-foreground">/ min {p.min_stock}</span>
+                            <span className="text-xs text-muted-foreground ml-1">/ {p.min_stock}</span>
                           )}
                           {p.stock_quantity <= p.min_stock && p.active && (
                             <TrendingDown className="w-3 h-3 text-destructive" />
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs">
+                        {c30 > 0 ? (
+                          <div>
+                            <div>{c30} un.</div>
+                            {cov !== null && <div className={`text-[11px] ${cov < 15 ? 'text-warning' : 'text-muted-foreground'}`}>Cobertura ~{cov}d</div>}
+                          </div>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">{formatMoney(p.internal_cost)}</TableCell>
                       <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
@@ -467,9 +490,11 @@ export default function Stock() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
+
             </CardContent>
           </Card>
         </TabsContent>

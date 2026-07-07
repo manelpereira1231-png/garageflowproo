@@ -238,6 +238,9 @@ export default function Invoices() {
               <Link to={`/invoices/${inv.id}`} className="flex-1">
                 <Button variant="ghost" size="sm" className="w-full text-xs h-7"><Eye className="w-3 h-3 mr-1" />{t('common.view')}</Button>
               </Link>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => sendInvoiceByEmail(inv)}>
+                <Mail className="w-3 h-3 mr-1" />Email
+              </Button>
               <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendInvoiceOnWhatsApp(inv)}>
                 <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
               </Button>

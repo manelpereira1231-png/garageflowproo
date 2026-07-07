@@ -319,11 +319,9 @@ export default function QuoteForm() {
                     ) : options.map((c: any) => {
                       const cost = Number(c.internal_cost) || 0;
                       const timeMin = Number(c.default_time) || 0;
-                      const labor = timeMin > 0 ? round2((timeMin / 60) * shopDefaults.labor_rate) : 0;
-                      const computed = round2(cost + labor);
-                      const catalogPrice = Number(c.default_price) || 0;
+                      const labor = round2((timeMin / 60) * shopDefaults.labor_rate);
                       const previewPrice = line.type === 'service'
-                        ? (catalogPrice > 0 ? catalogPrice : computed)
+                        ? round2(cost + labor)
                         : Number(c.sale_price) || 0;
                       const timeLabel = line.type === 'service' && timeMin > 0
                         ? ` · ${timeMin} min`

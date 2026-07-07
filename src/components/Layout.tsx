@@ -98,7 +98,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature } = useSubscription();
+  const { canUseFeature, mustSubscribe } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
@@ -114,6 +114,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
   }, [shopMarketRow?.name]);
+
+  // Hard paywall: there is NO free tier. When the subscription is canceled,
+  // past_due or an admin-managed plan expired, force the user to /billing.
+  useEffect(() => {
+    if (!mustSubscribe) return;
+    const allowed = ["/billing", "/settings", "/support", "/auth"];
+    if (!allowed.some((p) => location.pathname.startsWith(p))) {
+      navigate("/billing", { replace: true });
+    }
+  }, [mustSubscribe, location.pathname, navigate]);
+
 
   useEffect(() => {
     if (!activeShopId) return;

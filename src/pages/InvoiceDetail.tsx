@@ -270,6 +270,38 @@ export default function InvoiceDetail() {
         </div>
       </div>
 
+      {/* Legal status banner */}
+      {invoice.legal_status === 'certified' && (
+        <div className="mb-4 rounded-xl border-2 border-success/30 bg-success/5 p-4 flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-success shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm">
+            <p className="font-semibold text-success">Fatura certificada — imutável (art. 36º CIVA)</p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Este documento tem valor fiscal, ATCUD {invoice.atcud || '—'}{invoice.certified_series ? ` e série ${invoice.certified_series}` : ''}. Não pode ser editado ou apagado. Para corrigir, emita uma <strong>Nota de Crédito</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+      {invoice.legal_status === 'cancelled' && (
+        <div className="mb-4 rounded-xl border-2 border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+          <Ban className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm">
+            <p className="font-semibold text-destructive">Fatura anulada por Nota de Crédito</p>
+            <p className="text-muted-foreground text-xs mt-1">
+              {invoice.credit_note_number ? `NC ${invoice.credit_note_number}` : 'Nota de crédito emitida'}{invoice.cancelled_at ? ` em ${formatLocalDate(invoice.cancelled_at)}` : ''}.
+            </p>
+          </div>
+        </div>
+      )}
+      {(!invoice.legal_status || invoice.legal_status === 'draft') && (
+        <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 flex items-start gap-2 text-xs">
+          <FileText className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <p className="text-muted-foreground">
+            <strong className="text-foreground">Rascunho interno</strong> — sem valor fiscal. Para emitir uma fatura legalmente válida, use o botão <em>“Emitir via {billingProvider === "moloni" ? "Moloni" : "InvoiceXpress"}”</em>{!billingProvider ? " após ligar a integração em Definições → Faturação" : ""}.
+          </p>
+        </div>
+      )}
+
       {/* Client & Vehicle Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <Card>

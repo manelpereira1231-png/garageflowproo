@@ -368,8 +368,18 @@ export default function Stock() {
             {dataLoading && parts.length === 0 ? (
               <ListSkeleton rows={5} />
             ) : filtered.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.empty')}</div>
-            ) : filtered.map(p => (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5 space-y-3">
+                <p>{t('stock.empty')}</p>
+                {parts.length === 0 && (
+                  <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                    <Sparkles className="w-3.5 h-3.5" /> Criar pack inicial (12 peças comuns)
+                  </Button>
+                )}
+              </div>
+            ) : filtered.map(p => {
+              const cov = coverageDays(p);
+              const c30 = consumption30d[p.id] || 0;
+              return (
               <div key={p.id} className={`bg-card border border-border rounded-xl p-4 space-y-2 ${!p.active ? 'opacity-50' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -384,15 +394,22 @@ export default function Stock() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0}><Minus className="w-3 h-3" /></Button>
+                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"} className="min-w-8 justify-center">{p.stock_quantity}</Badge>
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)}><Plus className="w-3 h-3" /></Button>
                     {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
                   </div>
                   <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
-                {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  {c30 > 0 ? <span>Saídas 30d: <strong className="text-foreground">{c30}</strong>{cov !== null && <> · Cobertura: <strong className={cov < 15 ? "text-warning" : "text-foreground"}>{cov}d</strong></>}</span> : <span>Sem consumo nos últimos 30d</span>}
+                  {p.supplier && <span>{p.supplier}</span>}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+
 
           {/* Desktop: Table view */}
           <Card className="hidden sm:block">

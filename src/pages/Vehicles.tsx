@@ -12,7 +12,7 @@ import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown,
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
-import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
+import VehicleMakeModelSelector, { getModelsForMake } from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -40,12 +40,12 @@ export default function Vehicles() {
   const [passportId, setPassportId] = useState<string | null>(null);
   const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
-    client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
+    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
   const resetForm = () => setForm({
-    client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
+    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
@@ -94,8 +94,12 @@ export default function Vehicles() {
       return;
     }
 
+    const modelToSave = form.variant.trim()
+      ? `${form.model} ${form.variant.trim()}`
+      : form.model;
+
     const payload = {
-      shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
+      shop_id: shopId, client_id: form.client_id, make: form.make, model: modelToSave,
       year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     };
@@ -117,9 +121,23 @@ export default function Vehicles() {
 
   const openEdit = (v: any) => {
     setEditingId(v.id);
+    // Try to split "model variant" back apart using the known model list for that make
+    const knownModels: string[] = getModelsForMake(v.make);
+    let baseModel: string = v.model || "";
+    let variant = "";
+    const stored: string = v.model || "";
+    const match = knownModels
+      .slice()
+      .sort((a, b) => b.length - a.length)
+      .find((m) => stored === m || stored.startsWith(m + " "));
+    if (match) {
+      baseModel = match;
+      variant = stored.slice(match.length).trim();
+    }
     setForm({
-      client_id: v.client_id, make: v.make, model: v.model, year: String(v.year),
-      plate: v.plate, vin: v.vin || "", mileage: String(v.mileage), fuel: v.fuel, notes: v.notes || ""
+      client_id: v.client_id, make: v.make, model: baseModel, variant,
+      year: String(v.year), plate: v.plate, vin: v.vin || "",
+      mileage: String(v.mileage), fuel: v.fuel, notes: v.notes || "",
     });
     setOpen(true);
   };
@@ -185,9 +203,12 @@ export default function Vehicles() {
                 <VehicleMakeModelSelector
                   make={form.make}
                   model={form.model}
-                  onMakeChange={(v) => setForm((current) => ({ ...current, make: v }))}
-                  onModelChange={(v) => setForm((current) => ({ ...current, model: v }))}
+                  variant={form.variant}
+                  onMakeChange={(v) => setForm((current) => ({ ...current, make: v, model: "", variant: "" }))}
+                  onModelChange={(v) => setForm((current) => ({ ...current, model: v, variant: "" }))}
+                  onVariantChange={(v) => setForm((current) => ({ ...current, variant: v }))}
                 />
+
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
                 <div className="space-y-1.5">
                   <Label>{t('vehicles.plate')} *</Label>

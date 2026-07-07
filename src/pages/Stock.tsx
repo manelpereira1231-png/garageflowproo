@@ -230,16 +230,16 @@ export default function Stock() {
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.stockValue')}</p>
-          <p className="text-xl font-bold text-primary">€{totalStockValue.toFixed(2)}</p>
+          <p className="text-xl font-bold text-primary">{formatMoney(totalStockValue)}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.stockCost')}</p>
-          <p className="text-xl font-bold">€{totalStockCost.toFixed(2)}</p>
+          <p className="text-xl font-bold">{formatMoney(totalStockCost)}</p>
         </CardContent></Card>
         <Card className={lowStock.length > 0 ? "border-warning/40" : ""}><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground">{t('stock.lowStockAlert')}</p>
           <p className={`text-xl font-bold ${lowStock.length > 0 ? 'text-warning' : 'text-success'}`}>{lowStock.length}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t('stock.stockMargin')}: €{totalMargin.toFixed(0)}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('stock.stockMargin')}: {formatMoney(totalMargin)}</p>
         </CardContent></Card>
       </div>
 
@@ -327,7 +327,7 @@ export default function Stock() {
                     <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
                     {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
                   </div>
-                  <span className="font-semibold text-sm">€{p.sale_price.toFixed(2)}</span>
+                  <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
                 {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
               </div>
@@ -374,8 +374,8 @@ export default function Stock() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">€{p.internal_cost.toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">€{p.sale_price.toFixed(2)}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{formatMoney(p.internal_cost)}</TableCell>
+                      <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}>
@@ -418,7 +418,7 @@ export default function Stock() {
                   <span>{format(new Date(o.created_at), 'dd/MM/yyyy')}</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-border">
-                  <span className="font-semibold text-sm">€{(o.total || 0).toFixed(2)}</span>
+                  <span className="font-semibold text-sm">{formatMoney(o.total || 0)}</span>
                   {o.status !== 'delivered' && o.status !== 'cancelled' && (
                     <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={async () => {
                       const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
@@ -462,7 +462,7 @@ export default function Stock() {
                       <TableCell className="font-medium">{o.part_name}</TableCell>
                       <TableCell className="text-muted-foreground">{(o.suppliers as any)?.name || '—'}</TableCell>
                       <TableCell>{o.quantity}</TableCell>
-                      <TableCell className="font-semibold">€{(o.total || 0).toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold">{formatMoney(o.total || 0)}</TableCell>
                       <TableCell>
                         <Badge variant={o.status === 'delivered' ? 'default' : o.status === 'sent' ? 'secondary' : o.status === 'cancelled' ? 'destructive' : 'outline'}>
                           {t(`stock.orders.${o.status}`) || o.status}

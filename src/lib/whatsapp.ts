@@ -33,20 +33,21 @@ function buildMessage(p: WhatsAppMessageParams): string {
   switch (p.type) {
     case 'invoice': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting} a sua fatura${num}${vehicleRef} está disponível. Pode consultá-la através do PDF em anexo.`;
-      if (p.link) msg += `\n\nLink: ${p.link}`;
+      let msg = `${greeting}\n\nSegue em anexo a fatura${num}${vehicleRef}.`;
+      if (p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
+      msg += `\n\nObrigado pela preferência.`;
       return msg;
     }
     case 'quote': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting} o seu orçamento${num}${vehicleRef} está disponível para aprovação.`;
-      if (p.link) msg += `\n\nConsulte e aprove aqui: ${p.link}`;
+      let msg = `${greeting}\n\nO seu orçamento${num}${vehicleRef} está disponível para aprovação.`;
+      if (p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
       return msg;
     }
     case 'service': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting} a sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
-      if (p.link) msg += `\n\nDetalhes: ${p.link}`;
+      let msg = `${greeting}\n\nA sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
+      if (p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;
       return msg;
     }
   }

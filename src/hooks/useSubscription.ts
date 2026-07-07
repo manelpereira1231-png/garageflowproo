@@ -317,19 +317,35 @@ export function useSubscription() {
     || subscription?.status === 'cancelled'
     || subscription?.status === 'past_due'
     || subscription?.status === 'trial_expired';
+
+  // Client-side detection: an admin-managed plan (no stripe_subscription_id)
+  // whose current_period_end is in the past must be treated as expired even
+  // if the server hasn't flipped it yet. There is NO free fallback.
+  const adminExpiredClient = !!subscription
+    && !subscription.stripe_subscription_id
+    && !!subscription.current_period_end
+    && new Date(subscription.current_period_end).getTime() < Date.now();
+
+  // A subscription row without a stripe_subscription_id AND without any
+  // admin-set period is not a valid paid plan — force resubscribe.
+  const noPaidBacking = !!subscription
+    && !subscription.stripe_subscription_id
+    && !subscription.current_period_end
+    && subscription.status !== 'trialing';
+
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state
-    : lockedStatus
+    : (lockedStatus || adminExpiredClient || noPaidBacking)
       ? 'free'
       : rawPlan;
 
   // There is NO free tier — even the entry "Start" plan is paid (€19.99+).
   // A shop with no active/trialing subscription (canceled, past_due, expired)
   // must resubscribe. Any admin-managed plan without stripe_subscription_id
-  // is still valid until its current_period_end (server marks it past_due after).
+  // is only valid until its current_period_end.
   const mustSubscribe = subscriptionLoaded
     && !!subscription
-    && lockedStatus;
+    && (lockedStatus || adminExpiredClient || noPaidBacking);
 
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive

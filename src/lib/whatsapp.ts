@@ -11,6 +11,8 @@ export interface WhatsAppMessageParams {
   plate?: string;
   model?: string;
   link?: string;
+  pdfBlob?: Blob | null;
+  pdfFilename?: string;
 }
 
 function cleanPhone(phone: string): string {
@@ -59,15 +61,54 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
-export function openWhatsApp(params: WhatsAppMessageParams): boolean {
+export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boolean> {
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
+  const message = buildMessage(params);
+
+  // If a PDF blob is provided and the platform supports sharing files
+  // (Android Chrome, iOS Safari 16+), use Web Share API so the user can
+  // pick WhatsApp and the PDF gets attached in the same flow.
+  if (params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
+    try {
+      const file = new File(
+        [params.pdfBlob],
+        params.pdfFilename || `${params.number || 'documento'}.pdf`,
+        { type: 'application/pdf' }
+      );
+      const shareData: any = { files: [file], text: message, title: params.number || 'Documento' };
+      if ((navigator as any).canShare(shareData)) {
+        await (navigator as any).share(shareData);
+        return true;
+      }
+    } catch (err) {
+      // User cancelled or share failed — fall through to link + download.
+      console.warn('[whatsapp] share failed, falling back', err);
+    }
+  }
+
+  // Fallback: download the PDF locally so the user can attach it manually,
+  // then open WhatsApp with the pre-filled message.
+  if (params.pdfBlob) {
+    try {
+      const objectUrl = URL.createObjectURL(params.pdfBlob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = params.pdfFilename || `${params.number || 'documento'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    } catch (err) {
+      console.warn('[whatsapp] pdf download failed', err);
+    }
+  }
+
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (isMobile) {
     window.location.href = url;
     return true;
   }
-  // Desktop: try new tab, fall back to same-window navigation if the popup is blocked.
   const win = window.open(url, '_blank', 'noopener,noreferrer');
   if (!win || win.closed || typeof win.closed === 'undefined') {
     window.location.href = url;

@@ -219,13 +219,25 @@ export default function AdminShopDetail() {
       `Tem a certeza que pretende alterar o plano de ${oldPlan.toUpperCase()} para ${newPlan.toUpperCase()}?`,
       async () => {
         const { data: existing } = await supabase.from("subscriptions").select("id").eq("shop_id", id).maybeSingle();
+        // Downgrading to "free" via admin is NOT a free tier — there is no
+        // free plan. Force past_due so the shop is prompted to pay immediately.
+        const isFreeDowngrade = newPlan === 'free';
+        const periodEnd = isFreeDowngrade ? null : (() => {
+          const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString();
+        })();
+        const payload = {
+          plan: newPlan,
+          status: isFreeDowngrade ? 'past_due' : 'active',
+          revenue_type: isFreeDowngrade ? 'free' : 'manual_admin',
+          stripe_subscription_id: null,
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        } as any;
         let error;
         if (existing) {
-          ({ error } = await supabase.from("subscriptions").update({
-            plan: newPlan, status: 'active', stripe_subscription_id: null, updated_at: new Date().toISOString(),
-          }).eq("shop_id", id));
+          ({ error } = await supabase.from("subscriptions").update(payload).eq("shop_id", id));
         } else {
-          ({ error } = await supabase.from("subscriptions").insert({ shop_id: id, plan: newPlan, status: 'active' }));
+          ({ error } = await supabase.from("subscriptions").insert({ shop_id: id, ...payload }));
         }
         if (error) { toast.error("Erro ao alterar plano: " + error.message); return; }
         await logAudit({ action: "plan_changed", entityType: "subscription", entityId: id, details: { name: shop?.name, from: oldPlan, to: newPlan } });

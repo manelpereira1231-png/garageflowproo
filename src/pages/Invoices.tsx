@@ -155,11 +155,14 @@ export default function Invoices() {
         ) : filtered.map(inv => (
           <div key={inv.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
             <Link to={`/invoices/${inv.id}`} className="block">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-medium mono text-sm">{inv.number}</span>
-                <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                  {t(`invoices.status_${inv.status}`)}
-                </Badge>
+                <div className="flex items-center gap-1">
+                  <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
+                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
+                    {t(`invoices.status_${inv.status}`)}
+                  </Badge>
+                </div>
               </div>
               <p className="text-sm font-semibold">{(inv.clients as any)?.name}</p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">

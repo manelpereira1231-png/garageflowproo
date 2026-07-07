@@ -313,17 +313,52 @@ export function useSubscription() {
   // - Only downgrade to free if status is explicitly canceled/past_due
   // - NEVER fallback to free silently for admin-managed plans
   const rawPlan: Plan = (subscription?.plan as Plan) || 'free';
+  const lockedStatus = subscription?.status === 'canceled'
+    || subscription?.status === 'cancelled'
+    || subscription?.status === 'past_due'
+    || subscription?.status === 'trial_expired';
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state
-    : subscription?.status === 'canceled' || subscription?.status === 'cancelled' || subscription?.status === 'past_due' || subscription?.status === 'trial_expired'
+    : lockedStatus
       ? 'free'
       : rawPlan;
-  
+
+  // There is NO free tier — even the entry "Start" plan is paid (€19.99+).
+  // A shop with no active/trialing subscription (canceled, past_due, expired)
+  // must resubscribe. Any admin-managed plan without stripe_subscription_id
+  // is still valid until its current_period_end (server marks it past_due after).
+  const mustSubscribe = subscriptionLoaded
+    && !!subscription
+    && lockedStatus;
+
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive
   // every feature gate across the app in real time.
   const overrides = limitOverridesFor(effectivePlan, platformSettings);
-  const limits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
+  const baseLimits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
+  // When mustSubscribe is true, lock EVERY feature (no free access at all).
+  const LOCKED_LIMITS: PlanLimits = {
+    maxQuotesPerMonth: 0,
+    maxUsers: 0,
+    teamManagement: false,
+    pdfWatermark: true,
+    advancedAlerts: false,
+    basicAlerts: false,
+    automations: false,
+    basicAutomations: false,
+    advancedReports: false,
+    basicReports: false,
+    multiShop: false,
+    chatbot: false,
+    api: false,
+    marketing: false,
+    loyalty: false,
+    quoteApproval: false,
+    fullUploads: false,
+    fullInspections: false,
+    csvExport: false,
+  };
+  const limits: PlanLimits = mustSubscribe ? LOCKED_LIMITS : baseLimits;
   // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
   const isTrialExpired = subscription?.status === 'trial_expired';
@@ -334,6 +369,7 @@ export function useSubscription() {
   const canUseFeature = (feature: keyof PlanLimits): boolean => {
     return !!limits[feature];
   };
+
 
   const checkQuoteLimit = async (): Promise<boolean> => {
     if (limits.maxQuotesPerMonth === Infinity) return true;

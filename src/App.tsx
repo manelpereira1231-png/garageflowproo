@@ -939,7 +939,7 @@ function AppRoutes() {
             <Route path="/carity" element={<Navigate to="/market" replace />} />
             <Route path="/carity/auth" element={<Navigate to="/market/auth" replace />} />
             <Route path="/carity/*" element={<Navigate to="/market" replace />} />
-            <Route path="*" element={<Navigate to="/auth?mode=login" replace />} />
+            <Route path="*" element={<LoginRouteRedirect />} />
           </Routes>
         </Suspense>
       </ChunkErrorBoundary>

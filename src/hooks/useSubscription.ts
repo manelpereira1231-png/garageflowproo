@@ -326,12 +326,14 @@ export function useSubscription() {
     && !!subscription.current_period_end
     && new Date(subscription.current_period_end).getTime() < Date.now();
 
-  // A subscription row without a stripe_subscription_id AND without any
-  // admin-set period is not a valid paid plan — force resubscribe.
+  // Admin-managed plans are valid when explicitly active/trialing, even when
+  // they do not have a Stripe id or period end. Several real Garage plans are
+  // granted this way from the admin panel; treating them as unpaid was locking
+  // Garage-only modules like Marketing/Fidelização.
   const noPaidBacking = !!subscription
     && !subscription.stripe_subscription_id
     && !subscription.current_period_end
-    && subscription.status !== 'trialing';
+    && !['active', 'trialing'].includes(subscription.status);
 
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state

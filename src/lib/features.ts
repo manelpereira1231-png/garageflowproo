@@ -126,8 +126,12 @@ export function useCurrentPlan(): "free" | "pro" | "garage" {
 /** Hook: can the current user use a given feature slug? */
 export function useFeature(slug: string): { allowed: boolean; loaded: boolean; limits: Record<string, any> } {
   const { matrix, features, loaded } = useFeatureMatrix();
-  const plan = useCurrentPlan();
+  const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
+  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
+    if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };
+    if (mustSubscribe) return { allowed: false, loaded: true, limits: {} };
     if (!loaded || matrix.length === 0) {
       return { allowed: fallbackFeatureSetFor(plan).has(slug), loaded: true, limits: {} };
     }
@@ -139,21 +143,28 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
       loaded,
       limits: row?.limits ?? {},
     };
-  }, [matrix, features, plan, slug, loaded]);
+  }, [matrix, features, plan, slug, loaded, subscriptionReady, mustSubscribe]);
 }
 
 /** Returns the full list of feature slugs the current user is allowed to access. */
 export function useEnabledFeatureSet(): Set<string> {
   const { matrix, features, loaded } = useFeatureMatrix();
-  const plan = useCurrentPlan();
+  const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
+  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
+    // While the subscription is still resolving, do not falsely mark Garage
+    // modules as locked in the sidebar. Route-level FeatureGate still waits
+    // for the final plan before rendering protected content.
+    if (!subscriptionReady) return fallbackFeatureSetFor("garage");
+    if (mustSubscribe) return new Set<string>();
     if (!loaded || matrix.length === 0) return fallbackFeatureSetFor(plan);
     const out = new Set<string>();
     for (const f of features) if (f.is_core) out.add(f.slug);
     for (const r of matrix) if (r.plan_slug === plan && r.enabled) out.add(r.feature_slug);
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matrix, features, plan, loaded]);
+  }, [matrix, features, plan, loaded, subscriptionReady, mustSubscribe]);
 }
 
 /** Imperative check (e.g. for event handlers). */

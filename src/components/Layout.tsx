@@ -98,7 +98,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
-  const { canUseFeature } = useSubscription();
+  const { canUseFeature, mustSubscribe } = useSubscription();
   const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();

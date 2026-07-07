@@ -94,8 +94,12 @@ export default function Vehicles() {
       return;
     }
 
+    const modelToSave = form.variant.trim()
+      ? `${form.model} ${form.variant.trim()}`
+      : form.model;
+
     const payload = {
-      shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
+      shop_id: shopId, client_id: form.client_id, make: form.make, model: modelToSave,
       year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
     };
@@ -117,9 +121,25 @@ export default function Vehicles() {
 
   const openEdit = (v: any) => {
     setEditingId(v.id);
+    // Try to split "model variant" back apart using the known model list for that make
+    const knownModels: string[] = (
+      (typeof window !== "undefined" && (window as any).__gf_vehicle_models_for?.(v.make)) || []
+    );
+    let baseModel: string = v.model || "";
+    let variant = "";
+    const stored: string = v.model || "";
+    const match = knownModels
+      .slice()
+      .sort((a, b) => b.length - a.length)
+      .find((m) => stored === m || stored.startsWith(m + " "));
+    if (match) {
+      baseModel = match;
+      variant = stored.slice(match.length).trim();
+    }
     setForm({
-      client_id: v.client_id, make: v.make, model: v.model, year: String(v.year),
-      plate: v.plate, vin: v.vin || "", mileage: String(v.mileage), fuel: v.fuel, notes: v.notes || ""
+      client_id: v.client_id, make: v.make, model: baseModel, variant,
+      year: String(v.year), plate: v.plate, vin: v.vin || "",
+      mileage: String(v.mileage), fuel: v.fuel, notes: v.notes || "",
     });
     setOpen(true);
   };

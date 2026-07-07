@@ -31,6 +31,12 @@ export type Realm = "erp" | "market";
 export const ERP_STORAGE_KEY = "gf-erp-auth";
 export const MARKET_STORAGE_KEY = "gf-market-auth";
 
+const nonBlockingAuthLock = async <R,>(
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<R>,
+): Promise<R> => fn();
+
 function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> {
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
@@ -38,6 +44,8 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
       storageKey,
       persistSession: true,
       autoRefreshToken: true,
+      lock: nonBlockingAuthLock,
+      lockAcquireTimeout: 2000,
       detectSessionInUrl: detectRealm() === realm,
     },
   });

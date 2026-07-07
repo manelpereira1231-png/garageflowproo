@@ -193,24 +193,33 @@ export default function Workshop() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold">{t('nav.workshop')}</h1>
+      <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-primary" />
+            <div>
+              <h1 className="text-lg font-bold leading-tight">{t('nav.workshop')}</h1>
+              <p className="text-[11px] text-muted-foreground leading-tight">Execução na bancada · timer, checklist, fotos</p>
+            </div>
+          </div>
+          <div className="flex gap-1">
+            {filterTabs.map(ft => (
+              <button
+                key={ft.key}
+                onClick={() => setFilter(ft.key)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  filter === ft.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {ft.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-1">
-          {filterTabs.map(ft => (
-            <button
-              key={ft.key}
-              onClick={() => setFilter(ft.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                filter === ft.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              {ft.label}
-            </button>
-          ))}
-        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Quer emitir faturas, imprimir OS ou exportar CSV?{" "}
+          <a href="/services" className="text-primary hover:underline font-medium">Abrir Serviços (gestão) →</a>
+        </p>
       </div>
 
       {/* Work orders grid - tablet optimized */}

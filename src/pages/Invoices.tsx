@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
 import ListSkeleton from "@/components/ListSkeleton";
+import CertifiedBadge from "@/components/CertifiedBadge";
 import { pageCache } from "@/lib/pageCache";
 
 const statusColors: Record<string, string> = {
@@ -120,7 +121,9 @@ export default function Invoices() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('invoices.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('invoices.title').toLowerCase()}</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {totalCount} {t('invoices.title').toLowerCase()} · <span className="text-success font-medium">Certificadas</span> têm valor fiscal · <span className="text-muted-foreground italic">Rascunhos</span> são internos
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
@@ -152,11 +155,14 @@ export default function Invoices() {
         ) : filtered.map(inv => (
           <div key={inv.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
             <Link to={`/invoices/${inv.id}`} className="block">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-medium mono text-sm">{inv.number}</span>
-                <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                  {t(`invoices.status_${inv.status}`)}
-                </Badge>
+                <div className="flex items-center gap-1">
+                  <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
+                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
+                    {t(`invoices.status_${inv.status}`)}
+                  </Badge>
+                </div>
               </div>
               <p className="text-sm font-semibold">{(inv.clients as any)?.name}</p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -190,6 +196,7 @@ export default function Invoices() {
               <TableHead className="hidden md:table-cell">{t('invoices.vehicle')}</TableHead>
               <TableHead>{t('invoices.total')}</TableHead>
               <TableHead className="hidden md:table-cell">{t('invoices.dueDate')}</TableHead>
+              <TableHead>Legal</TableHead>
               <TableHead>{t('invoices.status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -197,13 +204,13 @@ export default function Invoices() {
           <TableBody>
             {dataLoading && invoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0 ? t('invoices.empty') : t('invoices.noResults')}
                 </TableCell>
               </TableRow>
@@ -216,6 +223,9 @@ export default function Invoices() {
                 </TableCell>
                 <TableCell className="font-semibold mono">{cur}{inv.total?.toFixed(2)}</TableCell>
                 <TableCell className="hidden md:table-cell">{inv.due_date || '—'}</TableCell>
+                <TableCell>
+                  <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
+                </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={statusColors[inv.status] || ''}>
                     {t(`invoices.status_${inv.status}`)}

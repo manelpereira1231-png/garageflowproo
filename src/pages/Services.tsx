@@ -294,7 +294,13 @@ export default function Services() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('services.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('services.title').toLowerCase()}</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            <span className="font-medium text-foreground">Gestão administrativa</span> · {totalCount} ordens · emitir faturas, imprimir, exportar
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Precisa registar tempo, checklist, fotos ou trabalhar na bancada?{" "}
+            <Link to="/workshop" className="text-primary hover:underline font-medium">Abrir Modo Oficina →</Link>
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>

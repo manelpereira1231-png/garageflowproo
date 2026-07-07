@@ -2894,6 +2894,7 @@ export type Database = {
         Row: {
           atcud: string | null
           cancelled_at: string | null
+          certified_series: string | null
           client_id: string
           created_at: string
           credit_note_atcud: string | null
@@ -2905,12 +2906,14 @@ export type Database = {
           due_date: string | null
           emitida_em: string | null
           id: string
+          legal_status: string
           notes: string | null
           number: string
           provider: string | null
           provider_invoice_id: string | null
           provider_pdf_url: string | null
           provider_permalink: string | null
+          qr_code: string | null
           quote_id: string | null
           shop_id: string
           status: string
@@ -2924,6 +2927,7 @@ export type Database = {
         Insert: {
           atcud?: string | null
           cancelled_at?: string | null
+          certified_series?: string | null
           client_id: string
           created_at?: string
           credit_note_atcud?: string | null
@@ -2935,12 +2939,14 @@ export type Database = {
           due_date?: string | null
           emitida_em?: string | null
           id?: string
+          legal_status?: string
           notes?: string | null
           number: string
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          qr_code?: string | null
           quote_id?: string | null
           shop_id: string
           status?: string
@@ -2954,6 +2960,7 @@ export type Database = {
         Update: {
           atcud?: string | null
           cancelled_at?: string | null
+          certified_series?: string | null
           client_id?: string
           created_at?: string
           credit_note_atcud?: string | null
@@ -2965,12 +2972,14 @@ export type Database = {
           due_date?: string | null
           emitida_em?: string | null
           id?: string
+          legal_status?: string
           notes?: string | null
           number?: string
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          qr_code?: string | null
           quote_id?: string | null
           shop_id?: string
           status?: string

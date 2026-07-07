@@ -79,13 +79,15 @@ Deno.serve(async (req) => {
     const { data: inv } = await admin
       .from("invoices").select("*, clients(*), invoice_items(*)").eq("id", invoice_id).maybeSingle();
     if (!inv) return json({ error: "Fatura não encontrada" }, 404);
-    if (inv.provider_invoice_id) {
-      return json({ ok: true, provider_invoice_id: inv.provider_invoice_id, provider_pdf_url: inv.provider_pdf_url, number: inv.number, cached: true });
-    }
 
+    // 🔒 Ownership check ANTES de qualquer short-circuit (evita IDOR entre oficinas)
     const { data: ids } = await admin.rpc("get_user_shop_ids", { _user_id: user.id });
     const shopIds = Array.isArray(ids) ? ids.map((r: any) => r.get_user_shop_ids ?? r) : [];
     if (!shopIds.includes(inv.shop_id)) return json({ error: "Sem permissão nesta oficina" }, 403);
+
+    if (inv.provider_invoice_id) {
+      return json({ ok: true, provider_invoice_id: inv.provider_invoice_id, provider_pdf_url: inv.provider_pdf_url, number: inv.number, cached: true });
+    }
 
     const { data: integ } = await admin.from("integracao_faturacao")
       .select("*").eq("shop_id", inv.shop_id).eq("provider", "moloni").maybeSingle();

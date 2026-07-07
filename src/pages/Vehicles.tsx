@@ -122,9 +122,7 @@ export default function Vehicles() {
   const openEdit = (v: any) => {
     setEditingId(v.id);
     // Try to split "model variant" back apart using the known model list for that make
-    const knownModels: string[] = (
-      (typeof window !== "undefined" && (window as any).__gf_vehicle_models_for?.(v.make)) || []
-    );
+    const knownModels: string[] = getModelsForMake(v.make);
     let baseModel: string = v.model || "";
     let variant = "";
     const stored: string = v.model || "";

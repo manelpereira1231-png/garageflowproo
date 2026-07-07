@@ -119,37 +119,40 @@ export default function Invoices() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const { plan } = useSubscription();
 
+  const buildInvoicePdfBlob = async (inv: any): Promise<Blob | null> => {
+    if (!shop) return null;
+    try {
+      const { data: items } = await supabase
+        .from("invoice_items")
+        .select("*")
+        .eq("invoice_id", inv.id)
+        .order("created_at", { ascending: true });
+      const doc = await generateInvoicePdf({
+        invoice: inv,
+        items: items || [],
+        shop,
+        clientName: (inv.clients as any)?.name || '',
+        clientEmail: (inv.clients as any)?.email,
+        clientPhone: (inv.clients as any)?.phone,
+        clientNif: (inv.clients as any)?.nif,
+        vehicleMake: (inv.vehicles as any)?.make,
+        vehicleModel: (inv.vehicles as any)?.model,
+        vehiclePlate: (inv.vehicles as any)?.plate,
+        totalPaid: Number(inv.total_paid || 0),
+        plan,
+      });
+      return doc.output('blob');
+    } catch (err) {
+      console.warn('[invoices] pdf generation failed', err);
+      return null;
+    }
+  };
+
   const sendInvoiceOnWhatsApp = async (inv: any) => {
     const phone = (inv.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone')); return; }
-    let pdfBlob: Blob | null = null;
-    try {
-      if (shop) {
-        const { data: items } = await supabase
-          .from("invoice_items")
-          .select("*")
-          .eq("invoice_id", inv.id)
-          .order("created_at", { ascending: true });
-        const doc = await generateInvoicePdf({
-          invoice: inv,
-          items: items || [],
-          shop,
-          clientName: (inv.clients as any)?.name || '',
-          clientEmail: (inv.clients as any)?.email,
-          clientPhone: (inv.clients as any)?.phone,
-          clientNif: (inv.clients as any)?.nif,
-          vehicleMake: (inv.vehicles as any)?.make,
-          vehicleModel: (inv.vehicles as any)?.model,
-          vehiclePlate: (inv.vehicles as any)?.plate,
-          totalPaid: Number(inv.total_paid || 0),
-          plan,
-        });
-        pdfBlob = doc.output('blob');
-      }
-    } catch (err) {
-      console.warn('[invoices] pdf generation failed for whatsapp', err);
-      toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
-    }
+    const pdfBlob = await buildInvoicePdfBlob(inv);
+    if (!pdfBlob) toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
     await openWhatsApp({
       phone,
       clientName: (inv.clients as any)?.name,
@@ -159,6 +162,22 @@ export default function Invoices() {
       pdfBlob,
       pdfFilename: `${inv.number}.pdf`,
     });
+  };
+
+  const sendInvoiceByEmail = async (inv: any) => {
+    const email = (inv.clients as any)?.email;
+    if (!email) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
+    const pdfBlob = await buildInvoicePdfBlob(inv);
+    openEmailDraft({
+      email,
+      clientName: (inv.clients as any)?.name,
+      type: 'invoice',
+      number: inv.number,
+      plate: (inv.vehicles as any)?.plate,
+      pdfBlob,
+      pdfFilename: `${inv.number}.pdf`,
+    });
+    toast.success('A abrir o email. O PDF foi transferido para anexar.');
   };
 
   return (

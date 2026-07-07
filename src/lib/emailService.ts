@@ -1,16 +1,24 @@
 import { supabase } from "@/integrations/supabase/client";
 
+interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded content (no data: prefix). */
+  content: string;
+  content_type?: string;
+}
+
 interface SendEmailParams {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
+  attachments?: EmailAttachment[];
 }
 
-export async function sendEmail({ to, subject, html, from }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, from, attachments }: SendEmailParams) {
   try {
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: { to, subject, html, from },
+      body: { to, subject, html, from, attachments },
     });
 
     if (error) {

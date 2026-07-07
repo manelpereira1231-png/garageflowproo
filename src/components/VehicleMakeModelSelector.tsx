@@ -430,6 +430,10 @@ function Plus({ className }: { className?: string }) {
   );
 }
 
+export function getModelsForMake(make: string): string[] {
+  return VEHICLE_DATA[make]?.models || [];
+}
+
 export default function VehicleMakeModelSelector({ make, model, variant, onMakeChange, onModelChange, onVariantChange }: Props) {
   const { t } = useLanguage();
 

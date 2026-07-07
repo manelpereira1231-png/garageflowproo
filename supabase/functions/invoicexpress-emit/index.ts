@@ -186,12 +186,15 @@ Deno.serve(async (req) => {
     const pdfUrl: string | undefined = finalDoc?.public_pdf_url || finalDoc?.pdf_url;
 
     // 4) Update GarageFlow invoice with the certified references
+    const seriesFromNumber = (providerNumber || "").split("/")[0] || null;
     await admin.from("invoices")
       .update({
         status: "issued",
+        legal_status: "certified",
         provider: "invoicexpress",
         provider_invoice_id: providerId,
         atcud: atcud || null,
+        certified_series: seriesFromNumber,
         provider_pdf_url: pdfUrl || null,
         provider_permalink: permalink || null,
         emitida_em: new Date().toISOString(),

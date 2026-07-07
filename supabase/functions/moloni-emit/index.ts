@@ -246,12 +246,17 @@ Deno.serve(async (req) => {
       providerNumber = one?.document_no || one?.number || null;
     } catch { /* ignore */ }
 
+    const seriesFromNumber = (providerNumber || "").split("/")[0] || null;
     await admin.from("invoices").update({
+      provider: "moloni",
       provider_invoice_id: String(providerDocId),
       provider_pdf_url: pdfUrl,
       atcud,
+      certified_series: seriesFromNumber,
       number: providerNumber || inv.number,
       status: "issued",
+      legal_status: "certified",
+      emitida_em: new Date().toISOString(),
     }).eq("id", inv.id);
 
     return json({

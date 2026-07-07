@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
       credit_note_pdf_url: ncPdf,
       cancelled_at: new Date().toISOString(),
       status: "cancelled",
+      legal_status: "cancelled",
     }).eq("id", inv.id);
 
     return json({ ok: true, credit_note_provider_id: String(ncId), credit_note_number: ncNumber, credit_note_pdf_url: ncPdf });

@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
 
     await admin.from("invoices").update({
       status: "cancelled",
+      legal_status: "cancelled",
       cancelled_at: new Date().toISOString(),
       credit_note_provider_id: cnId,
       credit_note_number: cn?.inverted_sequence_number || cn?.sequence_number || null,

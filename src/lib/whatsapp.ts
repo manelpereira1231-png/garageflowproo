@@ -116,7 +116,7 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
 
-  const message = buildMessage(params, { includeLink: false });
+  const message = buildMessage(params, { includeLink: true });
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
   const file = buildPdfFile(params);
 

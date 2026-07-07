@@ -28,7 +28,18 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY a
 
 export type Realm = "erp" | "market";
 
-export const ERP_STORAGE_KEY = "gf-erp-auth";
+const DEFAULT_AUTH_STORAGE_KEY = (() => {
+  try {
+    return `sb-${new URL(SUPABASE_URL).hostname.split(".")[0]}-auth-token`;
+  } catch {
+    return "garageflow-auth-token";
+  }
+})();
+
+// ERP must keep the original Supabase storage key so existing GarageFlow
+// workshop sessions continue to hydrate after deploys. Market stays isolated
+// with its own key, so the two products still do not collide.
+export const ERP_STORAGE_KEY = DEFAULT_AUTH_STORAGE_KEY;
 export const MARKET_STORAGE_KEY = "gf-market-auth";
 
 const nonBlockingAuthLock = async <R,>(

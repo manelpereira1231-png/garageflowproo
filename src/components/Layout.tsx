@@ -242,7 +242,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/services", label: t("nav.services"), icon: Wrench, featureSlug: "services" },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat, featureSlug: "workshop_mode" },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays, featureSlug: "agenda" },
-    { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck, featureSlug: "inspections" },
+    // Inspeções ERP removidas — só as do Marketplace fazem sentido neste contexto (/market/inspections).
 
     // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },

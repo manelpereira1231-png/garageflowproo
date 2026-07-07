@@ -60,9 +60,36 @@ serve(async (req) => {
     // If no stripe_subscription_id exists, the plan was set manually by admin — DO NOT overwrite.
     const { data: existingSub } = await supabaseClient
       .from("subscriptions")
-      .select("stripe_subscription_id, plan, status, revenue_type")
+      .select("stripe_subscription_id, plan, status, revenue_type, current_period_end")
       .eq("shop_id", shop.id)
       .maybeSingle();
+
+    // Admin-managed plan (no Stripe subscription id, revenue_type = manual_admin).
+    // If the admin-set period has expired, mark as past_due so the app locks
+    // premium access — there is no free tier, the "Start" plan costs money too.
+    const now = Date.now();
+    const adminExpired = existingSub &&
+      existingSub.revenue_type === "manual_admin" &&
+      existingSub.current_period_end &&
+      new Date(existingSub.current_period_end).getTime() < now;
+
+    if (adminExpired) {
+      await supabaseClient.from("subscriptions").update({
+        status: "past_due",
+        revenue_type: "free",
+        updated_at: new Date().toISOString(),
+      }).eq("shop_id", shop.id);
+      log("Admin-managed plan expired — marked past_due", { shopId: shop.id });
+      return new Response(JSON.stringify({
+        subscribed: false,
+        plan: existingSub.plan,
+        status: "past_due",
+        admin_managed: false,
+        must_subscribe: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const isManualAdminPlan = existingSub &&
       !existingSub.stripe_subscription_id &&
@@ -89,21 +116,25 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      // No Stripe customer — only downgrade if subscription was Stripe-managed
-      if (existingSub?.stripe_subscription_id) {
+      // No Stripe customer — no paid subscription exists.
+      // There is NO free tier: mark as past_due so the app forces subscription.
+      if (existingSub) {
         await supabaseClient.from("subscriptions").update({
-          plan: "free",
-          status: "active",
+          plan: existingSub.plan || "free",
+          status: "past_due",
           revenue_type: "free",
           stripe_customer_id: null,
           stripe_subscription_id: null,
-          trial_end: null,
-          current_period_end: null,
           updated_at: new Date().toISOString(),
         }).eq("shop_id", shop.id);
       }
 
-      return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
+      return new Response(JSON.stringify({
+        subscribed: false,
+        plan: existingSub?.plan || "free",
+        status: "past_due",
+        must_subscribe: true,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -120,21 +151,24 @@ serve(async (req) => {
     const activeSub = subscriptions.data.find((s: any) => ["active", "trialing"].includes(s.status));
 
     if (!activeSub) {
-      // No active subscription — downgrade to free
+      // No active subscription — mark as past_due (NO free tier).
       await supabaseClient.from("subscriptions").update({
-        plan: "free",
-        status: "active",
+        plan: existingSub?.plan || "free",
+        status: "past_due",
         revenue_type: "free",
         stripe_customer_id: customerId,
         stripe_subscription_id: null,
-        trial_end: null,
-        current_period_end: null,
         updated_at: new Date().toISOString(),
       }).eq("shop_id", shop.id);
 
-      log("No active Stripe sub — synced to free", { customerId });
+      log("No active Stripe sub — marked past_due (no free tier)", { customerId });
 
-      return new Response(JSON.stringify({ subscribed: false, plan: "free" }), {
+      return new Response(JSON.stringify({
+        subscribed: false,
+        plan: existingSub?.plan || "free",
+        status: "past_due",
+        must_subscribe: true,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

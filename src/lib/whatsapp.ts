@@ -61,58 +61,118 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
+function openUrlInNewTab(url: string) {
+  // Anchor click preserves the user-gesture better than window.open() after
+  // an async PDF generation, so desktop popup blockers usually let it through.
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener,noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function downloadPdfBlob(blob: Blob, filename: string) {
+  try {
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+  } catch (err) {
+    console.warn('[whatsapp] pdf download failed', err);
+  }
+}
+
 export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boolean> {
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
   const message = buildMessage(params);
+  const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
 
-  // If a PDF blob is provided and the platform supports sharing files
-  // (Android Chrome, iOS Safari 16+), use Web Share API so the user can
-  // pick WhatsApp and the PDF gets attached in the same flow.
-  if (params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
+  // Mobile with file-share support: try Web Share API so the user picks WhatsApp
+  // and the PDF is attached in one flow.
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile && params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
     try {
-      const file = new File(
-        [params.pdfBlob],
-        params.pdfFilename || `${params.number || 'documento'}.pdf`,
-        { type: 'application/pdf' }
-      );
+      const file = new File([params.pdfBlob], filename, { type: 'application/pdf' });
       const shareData: any = { files: [file], text: message, title: params.number || 'Documento' };
       if ((navigator as any).canShare(shareData)) {
         await (navigator as any).share(shareData);
         return true;
       }
     } catch (err) {
-      // User cancelled or share failed — fall through to link + download.
       console.warn('[whatsapp] share failed, falling back', err);
     }
   }
 
-  // Fallback: download the PDF locally so the user can attach it manually,
-  // then open WhatsApp with the pre-filled message.
-  if (params.pdfBlob) {
-    try {
-      const objectUrl = URL.createObjectURL(params.pdfBlob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = params.pdfFilename || `${params.number || 'documento'}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-    } catch (err) {
-      console.warn('[whatsapp] pdf download failed', err);
-    }
-  }
-
-  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Fallback: open WhatsApp FIRST (keeps the click gesture), then download the PDF
+  // so the user can drag/attach it in the WhatsApp window that just opened.
   if (isMobile) {
+    if (params.pdfBlob) downloadPdfBlob(params.pdfBlob, filename);
     window.location.href = url;
     return true;
   }
-  const win = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!win || win.closed || typeof win.closed === 'undefined') {
-    window.location.href = url;
+
+  openUrlInNewTab(url);
+  if (params.pdfBlob) {
+    // Slight delay so the new tab opens before the download prompt appears.
+    setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 300);
   }
   return true;
 }
+
+// ============================================================
+// Email helper — mirrors WhatsApp so any doc can also be emailed.
+// ============================================================
+
+export interface EmailShareParams {
+  email?: string | null;
+  clientName?: string;
+  type: 'quote' | 'invoice' | 'service';
+  number?: string;
+  plate?: string;
+  model?: string;
+  link?: string;
+  pdfBlob?: Blob | null;
+  pdfFilename?: string;
+}
+
+function buildEmailSubject(p: EmailShareParams): string {
+  switch (p.type) {
+    case 'invoice': return `Fatura ${p.number || ''}`.trim();
+    case 'quote':   return `Orçamento ${p.number || ''}`.trim();
+    case 'service': return `Ordem de serviço ${p.number || ''}`.trim();
+  }
+}
+
+function buildEmailBody(p: EmailShareParams): string {
+  // Reuse the same wording as WhatsApp for consistency.
+  const message = buildMessage({ ...p, phone: '0' } as any);
+  return message;
+}
+
+/**
+ * Opens the user's default mail client with subject + body pre-filled,
+ * and triggers a local download of the PDF so it can be attached manually.
+ * This is the "any device, any client" fallback — works even without a
+ * transactional email service configured.
+ */
+export function openEmailDraft(params: EmailShareParams): boolean {
+  const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
+  const subject = buildEmailSubject(params);
+  const body = buildEmailBody(params);
+  const to = (params.email || '').trim();
+  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  if (params.pdfBlob) downloadPdfBlob(params.pdfBlob, filename);
+  // mailto: must stay same-tab to trigger the OS handler on desktop.
+  window.location.href = mailto;
+  return true;
+}
+
 

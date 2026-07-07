@@ -40,7 +40,21 @@ const DEFAULT_AUTH_STORAGE_KEY = (() => {
 // workshop sessions continue to hydrate after deploys. Market stays isolated
 // with its own key, so the two products still do not collide.
 export const ERP_STORAGE_KEY = DEFAULT_AUTH_STORAGE_KEY;
+const LEGACY_ERP_STORAGE_KEY = "gf-erp-auth";
 export const MARKET_STORAGE_KEY = "gf-market-auth";
+
+function migrateLegacyErpSession() {
+  if (typeof window === "undefined") return;
+  try {
+    const current = window.localStorage.getItem(ERP_STORAGE_KEY);
+    const legacy = window.localStorage.getItem(LEGACY_ERP_STORAGE_KEY);
+    if (!current && legacy) window.localStorage.setItem(ERP_STORAGE_KEY, legacy);
+  } catch {
+    // Storage can be disabled; auth will simply behave as signed out.
+  }
+}
+
+migrateLegacyErpSession();
 
 const nonBlockingAuthLock = async <R,>(
   _name: string,

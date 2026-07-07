@@ -16,11 +16,43 @@ Deno.serve(async (req) => {
   );
 
   try {
+    // 🔒 Auth: exigir JWT do próprio utilizador que está a ser atribuído.
+    // Sem isto, qualquer pessoa poderia atribuir comissões a shops arbitrários.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.slice("Bearer ".length);
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerId = userData.user.id;
+
     const { partner_id, user_id, email, shop_name } = await req.json();
 
     if (!partner_id || !user_id) {
       return new Response(JSON.stringify({ error: "Missing partner_id or user_id" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Caller só pode atribuir referral em nome do PRÓPRIO utilizador recém-criado.
+    if (callerId !== user_id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Janela temporal: só permitir atribuição nas primeiras 24h após criação da conta.
+    const createdAt = userData.user.created_at ? new Date(userData.user.created_at).getTime() : 0;
+    if (createdAt && Date.now() - createdAt > 24 * 60 * 60 * 1000) {
+      return new Response(JSON.stringify({ error: "Signup window expired" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

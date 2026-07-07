@@ -11,6 +11,8 @@ export interface WhatsAppMessageParams {
   plate?: string;
   model?: string;
   link?: string;
+  pdfBlob?: Blob | null;
+  pdfFilename?: string;
 }
 
 function cleanPhone(phone: string): string {

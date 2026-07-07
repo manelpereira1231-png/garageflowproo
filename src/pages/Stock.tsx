@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart } from "lucide-react";
+import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart, Minus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -151,6 +151,59 @@ export default function Stock() {
     load();
   };
 
+  // Ajuste rápido de stock (+1 / -1) — grava movimento e atualiza quantidade.
+  const quickAdjust = async (part: Part, delta: number) => {
+    if (!activeShopId) return;
+    const newQty = part.stock_quantity + delta;
+    if (newQty < 0) { toast.error("Stock não pode ficar negativo"); return; }
+    const type = delta > 0 ? "in" : "out";
+    await supabase.from("stock_movements").insert({
+      shop_id: activeShopId, part_id: part.id, type,
+      quantity: Math.abs(delta), reason: "Ajuste rápido",
+    } as any);
+    await supabase.from("parts").update({ stock_quantity: newQty } as any).eq("id", part.id);
+    // Otimista: atualiza local sem esperar reload completo
+    setParts(prev => prev.map(p => p.id === part.id ? { ...p, stock_quantity: newQty } : p));
+    load();
+  };
+
+  // Consumo dos últimos 30 dias por peça (soma de saídas)
+  const cutoff30d = Date.now() - 30 * 86400000;
+  const consumption30d: Record<string, number> = {};
+  movements.forEach(m => {
+    if (m.type === "out" && new Date(m.created_at).getTime() >= cutoff30d) {
+      consumption30d[m.part_id] = (consumption30d[m.part_id] || 0) + m.quantity;
+    }
+  });
+  const coverageDays = (p: Part): number | null => {
+    const c = consumption30d[p.id] || 0;
+    if (c <= 0) return null;
+    return Math.floor((p.stock_quantity / c) * 30);
+  };
+
+  // Pack inicial de peças comuns (PT) — cria 12 SKUs quando o stock está vazio.
+  const seedInitialParts = async () => {
+    if (!activeShopId) return;
+    const pack = [
+      { name: "Óleo motor 5W30 (5L)", reference: "OIL-5W30-5L", internal_cost: 18, sale_price: 35, vat_rate: 23, stock_quantity: 6, min_stock: 3 },
+      { name: "Filtro de óleo", reference: "FILT-OIL", internal_cost: 4, sale_price: 12, vat_rate: 23, stock_quantity: 10, min_stock: 4 },
+      { name: "Filtro de ar", reference: "FILT-AIR", internal_cost: 5, sale_price: 14, vat_rate: 23, stock_quantity: 8, min_stock: 3 },
+      { name: "Filtro de combustível", reference: "FILT-FUEL", internal_cost: 8, sale_price: 22, vat_rate: 23, stock_quantity: 5, min_stock: 2 },
+      { name: "Filtro de habitáculo", reference: "FILT-CAB", internal_cost: 6, sale_price: 18, vat_rate: 23, stock_quantity: 6, min_stock: 2 },
+      { name: "Pastilhas travão dianteiras", reference: "BRK-PAD-F", internal_cost: 22, sale_price: 55, vat_rate: 23, stock_quantity: 4, min_stock: 2 },
+      { name: "Pastilhas travão traseiras", reference: "BRK-PAD-R", internal_cost: 20, sale_price: 48, vat_rate: 23, stock_quantity: 4, min_stock: 2 },
+      { name: "Discos travão dianteiros (par)", reference: "BRK-DISC-F", internal_cost: 45, sale_price: 95, vat_rate: 23, stock_quantity: 2, min_stock: 1 },
+      { name: "Velas de ignição (jogo)", reference: "SPARK-4", internal_cost: 12, sale_price: 32, vat_rate: 23, stock_quantity: 5, min_stock: 2 },
+      { name: "Bateria 60Ah", reference: "BAT-60", internal_cost: 55, sale_price: 110, vat_rate: 23, stock_quantity: 2, min_stock: 1 },
+      { name: "Lâmpada H7", reference: "LAMP-H7", internal_cost: 4, sale_price: 12, vat_rate: 23, stock_quantity: 12, min_stock: 4 },
+      { name: 'Palhetas limpa para-brisas 24"/16"', reference: "WIPE-24-16", internal_cost: 9, sale_price: 24, vat_rate: 23, stock_quantity: 6, min_stock: 2 },
+    ].map(p => ({ ...p, shop_id: activeShopId, supplier: null, active: true }));
+    const { error } = await supabase.from("parts").insert(pack as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Pack inicial de peças criado (12 SKUs)");
+    load();
+  };
+
   // Gera encomendas automáticas agrupadas por fornecedor, para todas as peças em stock baixo.
   // Quantidade sugerida = (min_stock * 2) - stock_quantity (repõe até 2x o mínimo).
   const generateReorders = async () => {
@@ -177,6 +230,7 @@ export default function Stock() {
     load();
   };
 
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -188,9 +242,16 @@ export default function Stock() {
           <p className="text-sm text-muted-foreground mt-0.5">{t('stock.subtitle')}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditId(null); setForm(emptyForm); } }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1" />{t('stock.newPart')}</Button>
-          </DialogTrigger>
+          <div className="flex gap-2">
+            {parts.length === 0 && (
+              <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                <Sparkles className="w-4 h-4" /> Pack inicial
+              </Button>
+            )}
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="w-4 h-4 mr-1" />{t('stock.newPart')}</Button>
+            </DialogTrigger>
+          </div>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>{editId ? t('stock.editPart') : t('stock.newPart')}</DialogTitle></DialogHeader>
             <div className="space-y-3">
@@ -314,8 +375,18 @@ export default function Stock() {
             {dataLoading && parts.length === 0 ? (
               <ListSkeleton rows={5} />
             ) : filtered.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.empty')}</div>
-            ) : filtered.map(p => (
+              <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5 space-y-3">
+                <p>{t('stock.empty')}</p>
+                {parts.length === 0 && (
+                  <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                    <Sparkles className="w-3.5 h-3.5" /> Criar pack inicial (12 peças comuns)
+                  </Button>
+                )}
+              </div>
+            ) : filtered.map(p => {
+              const cov = coverageDays(p);
+              const c30 = consumption30d[p.id] || 0;
+              return (
               <div key={p.id} className={`bg-card border border-border rounded-xl p-4 space-y-2 ${!p.active ? 'opacity-50' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -330,15 +401,22 @@ export default function Stock() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>{p.stock_quantity}</Badge>
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0}><Minus className="w-3 h-3" /></Button>
+                    <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"} className="min-w-8 justify-center">{p.stock_quantity}</Badge>
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)}><Plus className="w-3 h-3" /></Button>
                     {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
                   </div>
                   <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
-                {p.supplier && <p className="text-xs text-muted-foreground">{p.supplier}</p>}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  {c30 > 0 ? <span>Saídas 30d: <strong className="text-foreground">{c30}</strong>{cov !== null && <> · Cobertura: <strong className={cov < 15 ? "text-warning" : "text-foreground"}>{cov}d</strong></>}</span> : <span>Sem consumo nos últimos 30d</span>}
+                  {p.supplier && <span>{p.supplier}</span>}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+
 
           {/* Desktop: Table view */}
           <Card className="hidden sm:block">
@@ -348,8 +426,9 @@ export default function Stock() {
                   <TableRow>
                     <TableHead>{t('stock.partName')}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t('stock.reference')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('stock.supplier')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('stock.supplier')}</TableHead>
                     <TableHead>{t('stock.currentStock')}</TableHead>
+                    <TableHead className="hidden md:table-cell">Consumo 30d</TableHead>
                     <TableHead className="hidden md:table-cell">{t('stock.costPrice')}</TableHead>
                     <TableHead>{t('stock.salePrice')}</TableHead>
                     <TableHead className="w-28"></TableHead>
@@ -357,28 +436,50 @@ export default function Stock() {
                 </TableHeader>
                 <TableBody>
                   {dataLoading && parts.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('stock.empty')}</TableCell></TableRow>
-                  ) : filtered.map(p => (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <div className="space-y-3">
+                        <p>{t('stock.empty')}</p>
+                        {parts.length === 0 && (
+                          <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                            <Sparkles className="w-3.5 h-3.5" /> Criar pack inicial (12 peças comuns)
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell></TableRow>
+                  ) : filtered.map(p => {
+                    const cov = coverageDays(p);
+                    const c30 = consumption30d[p.id] || 0;
+                    return (
                     <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
                       <TableCell>
                         <div className="font-medium">{p.name}</div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">{p.reference || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{p.supplier || "—"}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{p.supplier || "—"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"}>
+                        <div className="flex items-center gap-1.5">
+                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0} title="Saída 1"><Minus className="w-3 h-3" /></Button>
+                          <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"} className="min-w-9 justify-center">
                             {p.stock_quantity}
                           </Badge>
+                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)} title="Entrada 1"><Plus className="w-3 h-3" /></Button>
                           {p.min_stock > 0 && (
-                            <span className="text-xs text-muted-foreground">/ min {p.min_stock}</span>
+                            <span className="text-xs text-muted-foreground ml-1">/ {p.min_stock}</span>
                           )}
                           {p.stock_quantity <= p.min_stock && p.active && (
                             <TrendingDown className="w-3 h-3 text-destructive" />
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs">
+                        {c30 > 0 ? (
+                          <div>
+                            <div>{c30} un.</div>
+                            {cov !== null && <div className={`text-[11px] ${cov < 15 ? 'text-warning' : 'text-muted-foreground'}`}>Cobertura ~{cov}d</div>}
+                          </div>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">{formatMoney(p.internal_cost)}</TableCell>
                       <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
@@ -396,9 +497,11 @@ export default function Stock() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
+
             </CardContent>
           </Card>
         </TabsContent>

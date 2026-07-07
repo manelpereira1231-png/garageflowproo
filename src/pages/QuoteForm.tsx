@@ -229,58 +229,72 @@ export default function QuoteForm() {
             </Button>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
-          {lines.map(line => (
-            <div key={line.id} className="grid grid-cols-12 gap-2 items-end border-b border-border pb-3">
-              <div className="col-span-6 sm:col-span-1">
-                <Label className="text-xs">{t('line.type')}</Label>
-                <Select value={line.type} onValueChange={v => updateLine(line.id, 'type', v)}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="service">{t('line.service')}</SelectItem><SelectItem value="part">{t('line.part')}</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-6 sm:col-span-1 flex sm:hidden justify-end">
-                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-              </div>
-              <div className="col-span-12 sm:col-span-3">
-                <Label className="text-xs">{t('line.description')}</Label>
-                <div className="flex gap-1">
-                  <Input className="h-9 text-sm flex-1" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
-                  <Select
-                    value=""
-                    onValueChange={(val) => {
-                      if (line.type === 'service') {
-                        const item = catalog.find(c => c.id === val);
-                        if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.default_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
-                      } else {
-                        const item = partsList.find(p => p.id === val);
-                        if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.sale_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-9 w-9 px-2 shrink-0" aria-label="Escolher do catálogo"><span className="text-xs">📋</span></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {line.type === 'service'
-                        ? (catalog.length === 0
-                            ? <div className="px-2 py-1.5 text-xs text-muted-foreground">Catálogo vazio</div>
-                            : catalog.map(c => <SelectItem key={c.id} value={c.id}>{c.name} — €{Number(c.default_price).toFixed(2)}</SelectItem>))
-                        : (partsList.length === 0
-                            ? <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem peças</div>
-                            : partsList.map(p => <SelectItem key={p.id} value={p.id}>{p.name} — €{Number(p.sale_price).toFixed(2)}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {lines.map((line, idx) => {
+            const options = line.type === 'service' ? catalog : partsList;
+            const pickerLabel = line.type === 'service'
+              ? (catalog.length === 0 ? 'Catálogo vazio — cria serviços em Catálogo' : 'Escolher serviço do catálogo…')
+              : (partsList.length === 0 ? 'Sem peças — cria peças em Stock' : 'Escolher peça do stock…');
+            return (
+            <div key={line.id} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Linha #{idx + 1}</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-destructive gap-1" onClick={() => removeLine(line.id)}>
+                  <Trash2 className="w-3.5 h-3.5" /> Remover
+                </Button>
               </div>
 
-              <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-6 sm:col-span-1"><Label className="text-xs">{t('line.vat')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-6 sm:col-span-1 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-medium h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
-              <div className="hidden sm:flex sm:col-span-1 justify-end">
-                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+              {/* Prominent catalog/stock picker */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={line.type} onValueChange={v => updateLine(line.id, 'type', v)}>
+                  <SelectTrigger className="h-10 w-full sm:w-32 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="service">🔧 {t('line.service')}</SelectItem>
+                    <SelectItem value="part">📦 {t('line.part')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (line.type === 'service') {
+                      const item = catalog.find(c => c.id === val);
+                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.default_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                    } else {
+                      const item = partsList.find(p => p.id === val);
+                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.sale_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-10 flex-1 text-sm border-primary/40 bg-primary/5 hover:bg-primary/10">
+                    <SelectValue placeholder={pickerLabel} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {options.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">{pickerLabel}</div>
+                    ) : options.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} — €{Number(line.type === 'service' ? c.default_price : c.sale_price).toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Editable fields */}
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-12 sm:col-span-4">
+                  <Label className="text-xs">{t('line.description')} *</Label>
+                  <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                </div>
+                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.vat')}%</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-8 sm:col-span-2 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-semibold h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
               </div>
             </div>
-          ))}
+            );
+          })}
+
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5">

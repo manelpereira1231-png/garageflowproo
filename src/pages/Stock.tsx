@@ -151,6 +151,59 @@ export default function Stock() {
     load();
   };
 
+  // Ajuste rápido de stock (+1 / -1) — grava movimento e atualiza quantidade.
+  const quickAdjust = async (part: Part, delta: number) => {
+    if (!activeShopId) return;
+    const newQty = part.stock_quantity + delta;
+    if (newQty < 0) { toast.error("Stock não pode ficar negativo"); return; }
+    const type = delta > 0 ? "in" : "out";
+    await supabase.from("stock_movements").insert({
+      shop_id: activeShopId, part_id: part.id, type,
+      quantity: Math.abs(delta), reason: "Ajuste rápido",
+    } as any);
+    await supabase.from("parts").update({ stock_quantity: newQty } as any).eq("id", part.id);
+    // Otimista: atualiza local sem esperar reload completo
+    setParts(prev => prev.map(p => p.id === part.id ? { ...p, stock_quantity: newQty } : p));
+    load();
+  };
+
+  // Consumo dos últimos 30 dias por peça (soma de saídas)
+  const cutoff30d = Date.now() - 30 * 86400000;
+  const consumption30d: Record<string, number> = {};
+  movements.forEach(m => {
+    if (m.type === "out" && new Date(m.created_at).getTime() >= cutoff30d) {
+      consumption30d[m.part_id] = (consumption30d[m.part_id] || 0) + m.quantity;
+    }
+  });
+  const coverageDays = (p: Part): number | null => {
+    const c = consumption30d[p.id] || 0;
+    if (c <= 0) return null;
+    return Math.floor((p.stock_quantity / c) * 30);
+  };
+
+  // Pack inicial de peças comuns (PT) — cria 12 SKUs quando o stock está vazio.
+  const seedInitialParts = async () => {
+    if (!activeShopId) return;
+    const pack = [
+      { name: "Óleo motor 5W30 (5L)", reference: "OIL-5W30-5L", internal_cost: 18, sale_price: 35, vat_rate: 23, stock_quantity: 6, min_stock: 3 },
+      { name: "Filtro de óleo", reference: "FILT-OIL", internal_cost: 4, sale_price: 12, vat_rate: 23, stock_quantity: 10, min_stock: 4 },
+      { name: "Filtro de ar", reference: "FILT-AIR", internal_cost: 5, sale_price: 14, vat_rate: 23, stock_quantity: 8, min_stock: 3 },
+      { name: "Filtro de combustível", reference: "FILT-FUEL", internal_cost: 8, sale_price: 22, vat_rate: 23, stock_quantity: 5, min_stock: 2 },
+      { name: "Filtro de habitáculo", reference: "FILT-CAB", internal_cost: 6, sale_price: 18, vat_rate: 23, stock_quantity: 6, min_stock: 2 },
+      { name: "Pastilhas travão dianteiras", reference: "BRK-PAD-F", internal_cost: 22, sale_price: 55, vat_rate: 23, stock_quantity: 4, min_stock: 2 },
+      { name: "Pastilhas travão traseiras", reference: "BRK-PAD-R", internal_cost: 20, sale_price: 48, vat_rate: 23, stock_quantity: 4, min_stock: 2 },
+      { name: "Discos travão dianteiros (par)", reference: "BRK-DISC-F", internal_cost: 45, sale_price: 95, vat_rate: 23, stock_quantity: 2, min_stock: 1 },
+      { name: "Velas de ignição (jogo)", reference: "SPARK-4", internal_cost: 12, sale_price: 32, vat_rate: 23, stock_quantity: 5, min_stock: 2 },
+      { name: "Bateria 60Ah", reference: "BAT-60", internal_cost: 55, sale_price: 110, vat_rate: 23, stock_quantity: 2, min_stock: 1 },
+      { name: "Lâmpada H7", reference: "LAMP-H7", internal_cost: 4, sale_price: 12, vat_rate: 23, stock_quantity: 12, min_stock: 4 },
+      { name: 'Palhetas limpa para-brisas 24"/16"', reference: "WIPE-24-16", internal_cost: 9, sale_price: 24, vat_rate: 23, stock_quantity: 6, min_stock: 2 },
+    ].map(p => ({ ...p, shop_id: activeShopId, supplier: null, active: true }));
+    const { error } = await supabase.from("parts").insert(pack as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Pack inicial de peças criado (12 SKUs)");
+    load();
+  };
+
   // Gera encomendas automáticas agrupadas por fornecedor, para todas as peças em stock baixo.
   // Quantidade sugerida = (min_stock * 2) - stock_quantity (repõe até 2x o mínimo).
   const generateReorders = async () => {
@@ -176,6 +229,7 @@ export default function Stock() {
     toast.success(`${rows.length} encomendas criadas em rascunho`);
     load();
   };
+
 
   return (
     <div className="space-y-4 lg:space-y-6">

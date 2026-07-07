@@ -92,12 +92,25 @@ function downloadPdfBlob(blob: Blob, filename: string) {
 export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boolean> {
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
+
+  // Preferred flow: a signed link to the PDF is already inside the message,
+  // so we just open WhatsApp — no local downloads, no manual attachments.
+  if (params.link) {
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = url;
+    } else {
+      openUrlInNewTab(url);
+    }
+    return true;
+  }
+
+  // Fallback (no signed link available): try Web Share on mobile, otherwise
+  // open WhatsApp and offer the PDF as a local download so it can be attached.
   const message = buildMessage(params);
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
-
-  // Mobile with file-share support: try Web Share API so the user picks WhatsApp
-  // and the PDF is attached in one flow.
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   if (isMobile && params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
     try {
       const file = new File([params.pdfBlob], filename, { type: 'application/pdf' });
@@ -111,8 +124,6 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
     }
   }
 
-  // Fallback: open WhatsApp FIRST (keeps the click gesture), then download the PDF
-  // so the user can drag/attach it in the WhatsApp window that just opened.
   if (isMobile) {
     if (params.pdfBlob) downloadPdfBlob(params.pdfBlob, filename);
     window.location.href = url;
@@ -121,7 +132,6 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
 
   openUrlInNewTab(url);
   if (params.pdfBlob) {
-    // Slight delay so the new tab opens before the download prompt appears.
     setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 300);
   }
   return true;

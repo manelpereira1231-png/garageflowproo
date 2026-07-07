@@ -121,7 +121,9 @@ export default function Invoices() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('invoices.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('invoices.title').toLowerCase()}</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {totalCount} {t('invoices.title').toLowerCase()} · <span className="text-success font-medium">Certificadas</span> têm valor fiscal · <span className="text-muted-foreground italic">Rascunhos</span> são internos
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>

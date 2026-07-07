@@ -402,6 +402,7 @@ export function useSubscription() {
     isTrialing,
     isTrialExpired,
     trialDaysLeft,
+    mustSubscribe,
     canUseFeature,
     checkQuoteLimit,
     syncWithStripe,

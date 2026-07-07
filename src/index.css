@@ -465,3 +465,30 @@ summary {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ============================================================
+ * .page-shell — canonical content container for every page
+ * Uses full width intelligently: max-w-screen-2xl (1536px) so
+ * wide monitors don't stretch text to unreadable line-lengths,
+ * yet regular laptops (1440/1280) still get 100% usable width.
+ * ============================================================ */
+.page-shell {
+  width: 100%;
+  max-width: 1536px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* All shadcn/hand-rolled tables inside .page-shell scroll horizontally
+   only inside their own wrapper — never push the whole page. */
+.page-shell table {
+  min-width: 100%;
+}
+
+/* Every DialogFooter on mobile stacks buttons full-width with tap targets ≥ 44px */
+@media (max-width: 640px) {
+  [role="dialog"] button {
+    min-height: 44px;
+  }
+}
+
+

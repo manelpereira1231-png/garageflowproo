@@ -26,7 +26,8 @@ function cleanPhone(phone: string): string {
   return cleaned;
 }
 
-function buildMessage(p: WhatsAppMessageParams): string {
+function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }): string {
+  const includeLink = opts?.includeLink !== false; // default true (for email); WhatsApp forces false
   const greeting = `Olá${p.clientName ? ` ${p.clientName}` : ''},`;
   const vehicleRef = p.plate || p.model ? ` referente ao veículo ${[p.plate, p.model].filter(Boolean).join(' - ')}` : '';
 
@@ -34,20 +35,20 @@ function buildMessage(p: WhatsAppMessageParams): string {
     case 'invoice': {
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nSegue em anexo a fatura${num}${vehicleRef}.`;
-      if (p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
+      if (includeLink && p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
       msg += `\n\nObrigado pela preferência.`;
       return msg;
     }
     case 'quote': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting}\n\nO seu orçamento${num}${vehicleRef} está disponível para aprovação.`;
-      if (p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
+      let msg = `${greeting}\n\nSegue em anexo o orçamento${num}${vehicleRef} para aprovação.`;
+      if (includeLink && p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
       return msg;
     }
     case 'service': {
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nA sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
-      if (p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;
+      if (includeLink && p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;
       return msg;
     }
   }
@@ -57,14 +58,12 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   if (!params.phone) return null;
   const phone = cleanPhone(params.phone);
   if (phone.length < 9) return null;
-  const message = buildMessage(params);
-  // api.whatsapp.com/send is more reliable than wa.me across iOS, Android e WhatsApp Web.
+  // WhatsApp text NEVER carries the signed link — we send the actual PDF instead.
+  const message = buildMessage(params, { includeLink: false });
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
 function openUrlInNewTab(url: string) {
-  // Anchor click preserves the user-gesture better than window.open() after
-  // an async PDF generation, so desktop popup blockers usually let it through.
   const a = document.createElement('a');
   a.href = url;
   a.target = '_blank';
@@ -89,28 +88,28 @@ function downloadPdfBlob(blob: Blob, filename: string) {
   }
 }
 
+/**
+ * Sends the document to WhatsApp as an actual PDF attachment whenever possible.
+ *
+ * - Mobile (Android/iOS): uses the Web Share API with `files` so WhatsApp
+ *   receives the PDF + the pre-filled message in a single native share sheet.
+ * - Desktop: opens WhatsApp Web with the message pre-filled and automatically
+ *   downloads the PDF so the user just drops it into the chat. WhatsApp Web
+ *   does not accept file attachments via URL, so this is the closest to a
+ *   "one click send" experience the platform allows.
+ *
+ * The signed PDF link is intentionally NOT included in the message body —
+ * the goal is a professional flow where the PDF itself is delivered.
+ */
 export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boolean> {
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
 
-  // Preferred flow: a signed link to the PDF is already inside the message,
-  // so we just open WhatsApp — no local downloads, no manual attachments.
-  if (params.link) {
-    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.location.href = url;
-    } else {
-      openUrlInNewTab(url);
-    }
-    return true;
-  }
-
-  // Fallback (no signed link available): try Web Share on mobile, otherwise
-  // open WhatsApp and offer the PDF as a local download so it can be attached.
-  const message = buildMessage(params);
+  const message = buildMessage(params, { includeLink: false });
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+  // 1) Mobile with Web Share API + files → true native attachment flow.
   if (isMobile && params.pdfBlob && typeof navigator !== 'undefined' && (navigator as any).canShare) {
     try {
       const file = new File([params.pdfBlob], filename, { type: 'application/pdf' });
@@ -124,15 +123,19 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
     }
   }
 
+  // 2) Mobile fallback (no Web Share files support): download PDF, open WhatsApp.
   if (isMobile) {
     if (params.pdfBlob) downloadPdfBlob(params.pdfBlob, filename);
     window.location.href = url;
     return true;
   }
 
+  // 3) Desktop: open WhatsApp Web with message pre-filled + auto-download PDF
+  //    so the user just drags it into the conversation. WhatsApp Web has no
+  //    supported way to pre-attach a file via URL.
   openUrlInNewTab(url);
   if (params.pdfBlob) {
-    setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 300);
+    setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 400);
   }
   return true;
 }

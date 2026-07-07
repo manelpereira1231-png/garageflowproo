@@ -188,19 +188,16 @@ export default function Invoices() {
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
-      const link = await uploadInvoicePdf(inv, pdfBlob);
-      if (!link) {
-        toast.error('Não foi possível preparar o link do PDF. Tente novamente.');
-        return;
-      }
+      // Link assinado é opcional (fallback); a mensagem NÃO o inclui — vai o PDF real.
+      const link = await uploadInvoicePdf(inv, pdfBlob).catch(() => null);
       await openWhatsApp({
         phone,
         clientName: (inv.clients as any)?.name,
         type: 'invoice',
         number: inv.number,
         plate: (inv.vehicles as any)?.plate,
-        link,
-        // Sem pdfBlob: com link assinado não queremos downloads/anexos manuais.
+        link: link || undefined,
+        pdfBlob,
         pdfFilename: `${inv.number}.pdf`,
       });
     } finally {

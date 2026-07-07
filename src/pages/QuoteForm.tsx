@@ -283,17 +283,12 @@ export default function QuoteForm() {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);
                       if (item) {
-                        // Regra correta: o preço guardado no Catálogo é o preço final
-                        // que a oficina decidiu cobrar ao cliente e já inclui a mão-de-obra.
-                        // Por isso não se volta a somar a tarifa/hora aqui.
-                        // Só quando o Catálogo não tem preço definido é que usamos fallback:
-                        //     custo_interno + (tempo_min / 60) × tarifa_hora das Definições.
+                        // Regra definitiva: preço ao cliente = custo interno + (tempo_min/60) × tarifa/hora das Definições.
+                        // O campo default_price do Catálogo NÃO é usado — é apenas informativo/legado.
                         const cost = Number(item.internal_cost) || 0;
                         const timeMin = Number(item.default_time) || 0;
-                        const labor = timeMin > 0 ? round2((timeMin / 60) * shopDefaults.labor_rate) : 0;
-                        const computed = round2(cost + labor);
-                        const catalogPrice = Number(item.default_price) || 0;
-                        const unitPrice = catalogPrice > 0 ? catalogPrice : computed;
+                        const labor = round2((timeMin / 60) * shopDefaults.labor_rate);
+                        const unitPrice = round2(cost + labor);
                         const vatRate = Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate;
                         setLines(prev => prev.map(l => l.id === line.id ? {
                           ...l,

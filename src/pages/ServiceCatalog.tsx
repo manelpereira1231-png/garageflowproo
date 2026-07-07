@@ -67,21 +67,33 @@ export default function ServiceCatalog() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [laborRate, setLaborRate] = useState<number>(35);
 
   const activeShopId = useActiveShopId();
 
   const load = async () => {
     if (!activeShopId) return;
-    const { data } = await supabase
-      .from("service_catalog")
-      .select("*")
-      .eq("shop_id", activeShopId)
-      .order("name");
+    const [{ data }, { data: shop }] = await Promise.all([
+      supabase.from("service_catalog").select("*").eq("shop_id", activeShopId).order("name"),
+      supabase.from("shops").select("labor_rate").eq("id", activeShopId).maybeSingle(),
+    ]);
     if (data) setServices(data as CatalogService[]);
+    if (shop) setLaborRate(Number((shop as any).labor_rate) || 35);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [activeShopId]);
+
+  // Labor cost derived from time × hourly rate (Settings). Shown separately so
+  // "Custo peças" stays clean and the user sees where the labor comes from.
+  const laborCost = useMemo(
+    () => Math.round(((Number(form.default_time) || 0) / 60) * laborRate * 100) / 100,
+    [form.default_time, laborRate]
+  );
+  const totalCost = useMemo(
+    () => Math.round((Number(form.internal_cost || 0) + laborCost) * 100) / 100,
+    [form.internal_cost, laborCost]
+  );
 
   const filtered = useMemo(() => services.filter(s => {
     const q = search.toLowerCase();

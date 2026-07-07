@@ -42,13 +42,6 @@ export default function Auth() {
     return urlPartnerId || localStorage.getItem(PARTNER_STORAGE_KEY);
   };
 
-  const isGarageContextAccount = async (userId: string) => {
-    const { data: { session } } = await erpSupabase.auth.getSession();
-    const user = session?.user;
-    if (!user || user.id !== userId) return false;
-    return (await getUserAccessProfile(user)).isGarageUser;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -64,7 +57,7 @@ export default function Auth() {
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        if (!signInData.user || !(await isGarageContextAccount(signInData.user.id))) {
+        if (!signInData.user || !(await getUserAccessProfile(signInData.user)).isGarageUser) {
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
         }
 

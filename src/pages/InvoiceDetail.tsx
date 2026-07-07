@@ -218,9 +218,13 @@ export default function InvoiceDetail() {
         </Button>
         <div className="flex-1">
           <h1 className="page-title">{invoice.number}</h1>
-          <Badge variant="secondary" className={statusColors[invoice.status] || ''}>
-            {t(`invoices.status_${invoice.status}`)}
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            <CertifiedBadge legalStatus={invoice.legal_status} atcud={invoice.atcud} series={invoice.certified_series} size="md" />
+            <Badge variant="secondary" className={statusColors[invoice.status] || ''}>
+              {t(`invoices.status_${invoice.status}`)}
+            </Badge>
+            {invoice.atcud && <span className="text-[10px] text-muted-foreground mono">ATCUD: {invoice.atcud}</span>}
+          </div>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf}>

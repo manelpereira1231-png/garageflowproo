@@ -250,7 +250,7 @@ export default function QuoteForm() {
               {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
               {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
             </span>
-            <span className="text-[10px]">Preço ao cliente = <strong>custo interno + (tempo/60) × tarifa/hora</strong>. O campo "preço" do catálogo é ignorado.</span>
+            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>.</span>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
 

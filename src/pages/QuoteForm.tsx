@@ -283,12 +283,13 @@ export default function QuoteForm() {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);
                       if (item) {
-                        // Regra definitiva: preço ao cliente = custo interno + (tempo_min/60) × tarifa/hora das Definições.
-                        // O campo default_price do Catálogo NÃO é usado — é apenas informativo/legado.
+                        // Preço ao cliente vem do CATÁLOGO (default_price). Se estiver a 0,
+                        // aplica-se o fallback pela fórmula: internal_cost + (tempo/60) × tarifa/hora.
                         const cost = Number(item.internal_cost) || 0;
                         const timeMin = Number(item.default_time) || 0;
+                        const catalogPrice = Number(item.default_price) || 0;
                         const labor = round2((timeMin / 60) * shopDefaults.labor_rate);
-                        const unitPrice = round2(cost + labor);
+                        const unitPrice = catalogPrice > 0 ? round2(catalogPrice) : round2(cost + labor);
                         const vatRate = Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate;
                         setLines(prev => prev.map(l => l.id === line.id ? {
                           ...l,

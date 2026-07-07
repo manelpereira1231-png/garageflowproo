@@ -422,10 +422,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               };
               const handleClick = (e: React.MouseEvent) => {
                 if (item.locked) { handleLockedIntercept(e); return; }
-                // Native <Link> navigation — only side-effect is closing the
-                // mobile drawer. Do NOT preventDefault for mouse/trackpad.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                e.preventDefault();
                 closeMobileSidebar();
+                navigate(item.path);
               };
               const handlePointerDown = (e: React.PointerEvent) => {
                 if (e.pointerType !== "touch") return;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import {
   loadPlatformSettings,
   getCachedPlatformSettings,
@@ -149,6 +150,7 @@ async function fetchSubscriptionForShop(shopId: string, force = false): Promise<
 
 export function useSubscription() {
   const activeShopId = useActiveShopId();
+  const { user, isReady: authReady } = useAuthReady("erp");
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [shopId, setShopId] = useState<string | null>(null);
@@ -172,8 +174,7 @@ export function useSubscription() {
 
   // Resolve active shop ID
   const resolveShopId = useCallback(async (): Promise<string | null> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    if (!authReady || !user) return null;
 
     const activeId = localStorage.getItem(STORAGE_KEY);
     if (activeId) {
@@ -192,7 +193,7 @@ export function useSubscription() {
       .limit(1)
       .maybeSingle();
     return shop?.id || null;
-  }, []);
+  }, [authReady, user]);
 
   // Load subscription from DB only (source of truth)
   const loadSubscription = useCallback(async (resolvedShopId?: string, force = false) => {
@@ -268,6 +269,7 @@ export function useSubscription() {
     let mounted = true;
 
     const init = async () => {
+      if (!authReady) return;
       const sid = activeShopId || await resolveShopId();
       if (!mounted) return;
       if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
@@ -306,7 +308,7 @@ export function useSubscription() {
         channelRef.current = null;
       }
     };
-  }, [activeShopId, resolveShopId, loadSubscription, setupRealtime]);
+  }, [activeShopId, authReady, resolveShopId, loadSubscription, setupRealtime]);
 
   // CRITICAL: Calculate effectivePlan correctly
   // - While loading, don't calculate (loading state prevents UI from rendering wrong plan)

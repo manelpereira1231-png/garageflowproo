@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Megaphone, Plus, Send, Mail, Users, TrendingUp, Clock, Trash2, Eye, Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useShopContext } from "@/hooks/useShopContext";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -27,7 +26,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Marketing() {
   const { t } = useLanguage();
-  const { loading: subLoading } = useSubscription();
   const { activeShopId } = useShopContext();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -169,13 +167,6 @@ export default function Marketing() {
     load();
   };
 
-  if (subLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   const totalSent = campaigns.filter(c => c.status === 'sent').length;
   const totalRecipients = campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.recipients_count || 0), 0);

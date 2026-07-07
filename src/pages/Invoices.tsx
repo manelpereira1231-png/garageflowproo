@@ -187,12 +187,12 @@ export default function Invoices() {
     setSendingInvoice(inv.id);
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
-      let link: string | undefined;
-      if (pdfBlob) {
-        const url = await uploadInvoicePdf(inv, pdfBlob);
-        if (url) link = url;
+      if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
+      const link = await uploadInvoicePdf(inv, pdfBlob);
+      if (!link) {
+        toast.error('Não foi possível preparar o link do PDF. Tente novamente.');
+        return;
       }
-      if (!link) toast.error('Não foi possível gerar o PDF, a enviar apenas a mensagem.');
       await openWhatsApp({
         phone,
         clientName: (inv.clients as any)?.name,
@@ -200,8 +200,7 @@ export default function Invoices() {
         number: inv.number,
         plate: (inv.vehicles as any)?.plate,
         link,
-        // Fallback (só é usado se o cliente não conseguir abrir a partilha nativa).
-        pdfBlob,
+        // Sem pdfBlob: com link assinado não queremos downloads/anexos manuais.
         pdfFilename: `${inv.number}.pdf`,
       });
     } finally {

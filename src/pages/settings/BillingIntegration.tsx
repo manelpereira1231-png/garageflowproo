@@ -199,6 +199,53 @@ export default function BillingIntegration() {
         </AlertDescription>
       </Alert>
 
+      {/* Painel de Conformidade */}
+      {!loading && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Conformidade este mês</CardTitle>
+            <CardDescription className="text-xs">Estado legal dos documentos emitidos desde o dia 1</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="rounded-xl border border-success/30 bg-success/5 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Certificadas</p>
+                <p className="text-2xl font-bold text-success mt-1">{compliance.certified}</p>
+                <p className="text-[10px] text-muted-foreground">Com valor fiscal</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Rascunhos</p>
+                <p className="text-2xl font-bold mt-1">{compliance.draft}</p>
+                <p className="text-[10px] text-muted-foreground">Internos, sem valor fiscal</p>
+              </div>
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Anuladas</p>
+                <p className="text-2xl font-bold text-destructive mt-1">{compliance.cancelled}</p>
+                <p className="text-[10px] text-muted-foreground">Via Nota de Crédito</p>
+              </div>
+              <div className={`rounded-xl border p-3 ${compliance.clientsMissingNif > 0 ? "border-warning/30 bg-warning/5" : "border-border bg-muted/30"}`}>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Clientes sem NIF</p>
+                <p className={`text-2xl font-bold mt-1 ${compliance.clientsMissingNif > 0 ? "text-warning" : ""}`}>{compliance.clientsMissingNif}</p>
+                <p className="text-[10px] text-muted-foreground">Bloqueiam fatura B2B</p>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1.5 text-xs">
+              {!row?.last_test_ok_at && (
+                <p className="text-warning">⚠️ Integração não ligada — nenhuma fatura pode ser certificada.</p>
+              )}
+              {row?.last_test_ok_at && compliance.draft > 0 && (
+                <p className="text-muted-foreground">💡 Tem {compliance.draft} fatura(s) em rascunho — abra cada uma e clique <strong>Emitir via {row.provider === "moloni" ? "Moloni" : "InvoiceXpress"}</strong> para lhes dar valor legal.</p>
+              )}
+              {row?.last_test_ok_at && (
+                <p className="text-muted-foreground">📥 SAF-T PT oficial descarrega-se em <a href={row.provider === "moloni" ? "https://www.moloni.pt" : `https://${row.account_name}.app.invoicexpress.com/settings/exports`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{row.provider === "moloni" ? "Moloni" : "InvoiceXpress"} → Exportações</a>.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> A carregar…</div>
       ) : (

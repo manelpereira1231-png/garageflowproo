@@ -250,7 +250,7 @@ export default function QuoteForm() {
               {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
               {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
             </span>
-            <span className="text-[10px]">Preço de cada serviço = <strong>custo interno + (tempo × tarifa/hora)</strong>. A tarifa é sempre respeitada.</span>
+            <span className="text-[10px]">O preço do Catálogo é o preço final do cliente e já inclui mão-de-obra. Sem preço, calcula <strong>custo + tempo × tarifa/hora</strong>.</span>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
 
@@ -283,18 +283,17 @@ export default function QuoteForm() {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);
                       if (item) {
-                        // Regra da casa: o preço tem de garantir o custo do serviço
-                        // (materiais/consumíveis internos) mais a mão-de-obra ao valor
-                        // configurado nas Definições. Fórmula:
-                        //     preço = custo_interno + (tempo_min / 60) × tarifa_hora
-                        // Se o serviço não tiver tempo definido, cai para o preço do
-                        // catálogo (que se assume já inclui a mão-de-obra da oficina).
+                        // Regra correta: o preço guardado no Catálogo é o preço final
+                        // que a oficina decidiu cobrar ao cliente e já inclui a mão-de-obra.
+                        // Por isso não se volta a somar a tarifa/hora aqui.
+                        // Só quando o Catálogo não tem preço definido é que usamos fallback:
+                        //     custo_interno + (tempo_min / 60) × tarifa_hora das Definições.
                         const cost = Number(item.internal_cost) || 0;
                         const timeMin = Number(item.default_time) || 0;
                         const labor = timeMin > 0 ? round2((timeMin / 60) * shopDefaults.labor_rate) : 0;
                         const computed = round2(cost + labor);
                         const catalogPrice = Number(item.default_price) || 0;
-                        const unitPrice = timeMin > 0 ? computed : (catalogPrice > 0 ? catalogPrice : computed);
+                        const unitPrice = catalogPrice > 0 ? catalogPrice : computed;
                         const vatRate = Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate;
                         setLines(prev => prev.map(l => l.id === line.id ? {
                           ...l,
@@ -329,7 +328,7 @@ export default function QuoteForm() {
                       const computed = round2(cost + labor);
                       const catalogPrice = Number(c.default_price) || 0;
                       const previewPrice = line.type === 'service'
-                        ? (timeMin > 0 ? computed : (catalogPrice > 0 ? catalogPrice : computed))
+                        ? (catalogPrice > 0 ? catalogPrice : computed)
                         : Number(c.sale_price) || 0;
                       const timeLabel = line.type === 'service' && timeMin > 0
                         ? ` · ${timeMin} min`

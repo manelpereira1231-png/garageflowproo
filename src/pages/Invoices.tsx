@@ -371,17 +371,17 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                       </Button>
                     </Link>
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => {
+                    <Button variant="ghost" size="sm" className="text-xs" disabled={sendingInvoice === inv.id} onClick={(e) => {
                       e.preventDefault();
                       sendInvoiceByEmail(inv);
                     }}>
-                      <Mail className="w-3.5 h-3.5 mr-1" />Email
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}Email
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={(e) => {
+                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => {
                       e.preventDefault();
                       sendInvoiceOnWhatsApp(inv);
                     }}>
-                      <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 mr-1" />}WhatsApp
                     </Button>
                   </div>
                 </TableCell>

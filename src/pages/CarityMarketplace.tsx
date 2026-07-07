@@ -160,7 +160,7 @@ export default function CarityMarketplace() {
         ? supabase.from("shops").select("id, name, address").in("id", shopIds)
         : Promise.resolve({ data: [] as any[] }),
       listingIds.length > 0
-        ? supabase.from("carity_inspection_reports").select("listing_id, overall_score, recommendation").in("listing_id", listingIds)
+        ? supabase.from("carity_inspection_reports_public" as any).select("listing_id, overall_score, recommendation").in("listing_id", listingIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 

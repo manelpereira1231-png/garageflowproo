@@ -140,22 +140,23 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     setMeta('meta[name="twitter:image"]', "name", "twitter:image", ogUrl);
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
-      supabase.from("carity_inspection_reports").select("id, listing_id, shop_id, inspection_id, overall_score, recommendation, defects, exterior_photos, interior_photos, engine_photos, tire_photos, brakes_photos, suspension_photos, damage_photos, inspector_notes, technician_name, mileage_at_inspection, is_locked, risk_score, risk_level, risk_flags, engine_status, transmission_status, brakes_status, suspension_status, steering_status, tires_status, electrical_status, inspection_city, inspection_country, inspection_lat, inspection_lng, completed_at, created_at").eq("listing_id", id).single(),
+      supabase.from("carity_inspection_reports_public" as any).select("id, listing_id, shop_id, inspection_id, overall_score, recommendation, defects, exterior_photos, interior_photos, engine_photos, tire_photos, brakes_photos, suspension_photos, damage_photos, inspector_notes, technician_name, mileage_at_inspection, is_locked, engine_status, transmission_status, brakes_status, suspension_status, steering_status, tires_status, electrical_status, inspection_city, inspection_country, inspection_lat, inspection_lng, completed_at, created_at").eq("listing_id", id).maybeSingle(),
       supabase.from("carity_seller_profiles").select("*").eq("user_id", listingData.seller_id).single(),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
     ]);
     
     if (reportRes.data) {
+      const rd = reportRes.data as any;
       setReport({
-        ...reportRes.data,
-        defects: Array.isArray(reportRes.data.defects) ? reportRes.data.defects : [],
-        exterior_photos: Array.isArray(reportRes.data.exterior_photos) ? reportRes.data.exterior_photos : [],
-        interior_photos: Array.isArray(reportRes.data.interior_photos) ? reportRes.data.interior_photos : [],
-        engine_photos: Array.isArray(reportRes.data.engine_photos) ? reportRes.data.engine_photos : [],
-        damage_photos: Array.isArray(reportRes.data.damage_photos) ? reportRes.data.damage_photos : [],
+        ...rd,
+        defects: Array.isArray(rd.defects) ? rd.defects : [],
+        exterior_photos: Array.isArray(rd.exterior_photos) ? rd.exterior_photos : [],
+        interior_photos: Array.isArray(rd.interior_photos) ? rd.interior_photos : [],
+        engine_photos: Array.isArray(rd.engine_photos) ? rd.engine_photos : [],
+        damage_photos: Array.isArray(rd.damage_photos) ? rd.damage_photos : [],
       });
-      if (reportRes.data.shop_id) {
-        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", reportRes.data.shop_id).single();
+      if (rd.shop_id) {
+        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", rd.shop_id).single();
         if (shop) setShopInfo(shop);
       }
     }
@@ -215,7 +216,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (currentUserId) {
       isFavorite(id!, currentUserId).then(setFavorited);
       // Check if user is a verified buyer of this listing's workshop
-      if (reportRes.data?.shop_id) {
+      if ((reportRes.data as any)?.shop_id) {
         const { data: completedEscrow } = await supabase
           .from("market_escrow" as any)
           .select("id")
@@ -229,7 +230,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             .from("carity_inspections")
             .select("id")
             .eq("listing_id", id!)
-            .eq("shop_id", reportRes.data.shop_id)
+            .eq("shop_id", (reportRes.data as any).shop_id)
             .maybeSingle();
           if (insp) setActiveInspectionId(insp.id);
         }

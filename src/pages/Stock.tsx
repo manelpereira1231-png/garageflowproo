@@ -247,9 +247,15 @@ export default function Stock() {
       {lowStock.length > 0 && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="py-4 px-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-warning">
-              <AlertTriangle className="w-4 h-4" />
-              {t('stock.lowStockAlert')} ({lowStock.length})
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+                <AlertTriangle className="w-4 h-4" />
+                {t('stock.lowStockAlert')} ({lowStock.length})
+              </div>
+              <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={generateReorders}>
+                <ShoppingCart className="w-3.5 h-3.5" />
+                Encomendar em falta
+              </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {lowStock.map(p => (

@@ -55,8 +55,9 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   if (!params.phone) return null;
   const phone = cleanPhone(params.phone);
   if (phone.length < 9) return null;
-  // WhatsApp text NEVER carries the signed link — we send the actual PDF instead.
-  const message = buildMessage(params, { includeLink: false });
+  // Include the public link in the WhatsApp message — quotes need it to approve,
+  // and invoices need it as a PDF download fallback for desktop chats.
+  const message = buildMessage(params, { includeLink: true });
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
 }
 
@@ -115,7 +116,7 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   const url = buildWhatsAppUrl(params);
   if (!url) return false;
 
-  const message = buildMessage(params, { includeLink: false });
+  const message = buildMessage(params, { includeLink: true });
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
   const file = buildPdfFile(params);
 

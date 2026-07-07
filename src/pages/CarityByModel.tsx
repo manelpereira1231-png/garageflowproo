@@ -58,7 +58,7 @@ export default function CarityByModel() {
     const ids = raw.map((l: any) => l.id);
     let scoreMap: Record<string, number> = {};
     if (ids.length > 0) {
-      const { data: reports } = await supabase.from("carity_inspection_reports").select("listing_id, overall_score").in("listing_id", ids);
+      const { data: reports } = await supabase.from("carity_inspection_reports_public" as any).select("listing_id, overall_score").in("listing_id", ids);
       (reports || []).forEach((r: any) => { scoreMap[r.listing_id] = r.overall_score; });
     }
 

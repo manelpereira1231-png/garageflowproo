@@ -45,7 +45,7 @@ export default function CarityFavorites() {
     }
 
     let scoreMap: Record<string, number> = {};
-    const { data: reports } = await supabase.from("carity_inspection_reports").select("listing_id, overall_score").in("listing_id", ids);
+    const { data: reports } = await supabase.from("carity_inspection_reports_public" as any).select("listing_id, overall_score").in("listing_id", ids);
     (reports || []).forEach((r: any) => { scoreMap[r.listing_id] = r.overall_score; });
 
     setItems((listings || []).map((l: any) => ({

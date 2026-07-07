@@ -6978,6 +6978,64 @@ export type Database = {
       }
     }
     Views: {
+      carity_inspection_reports_public: {
+        Row: {
+          brakes_photos: Json | null
+          brakes_status: string | null
+          completed_at: string | null
+          created_at: string | null
+          damage_photos: Json | null
+          defects: Json | null
+          electrical_status: string | null
+          engine_photos: Json | null
+          engine_status: string | null
+          exterior_photos: Json | null
+          id: string | null
+          inspection_city: string | null
+          inspection_country: string | null
+          inspection_id: string | null
+          inspection_lat: number | null
+          inspection_lng: number | null
+          inspector_notes: string | null
+          interior_photos: Json | null
+          is_locked: boolean | null
+          listing_id: string | null
+          mileage_at_inspection: number | null
+          overall_score: number | null
+          recommendation: string | null
+          shop_id: string | null
+          steering_status: string | null
+          suspension_photos: Json | null
+          suspension_status: string | null
+          technician_name: string | null
+          tire_photos: Json | null
+          tires_status: string | null
+          transmission_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_inspection_reports_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "carity_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carity_inspection_reports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealer_directory: {
         Row: {
           active_listings: number | null

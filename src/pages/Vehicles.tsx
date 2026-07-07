@@ -12,7 +12,7 @@ import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown,
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
-import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
+import VehicleMakeModelSelector, { getModelsForMake } from "@/components/VehicleMakeModelSelector";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";

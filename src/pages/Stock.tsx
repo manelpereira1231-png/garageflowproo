@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart } from "lucide-react";
+import { Plus, Search, Pencil, Package, Trash2, ArrowUpDown, AlertTriangle, TrendingDown, Filter, Truck, ShoppingCart, Minus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";

@@ -156,14 +156,22 @@ serve(async (req: Request) => {
 
 
 
-    console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject}`);
+    console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject} | attachments: ${attachments?.length ?? 0}`);
 
-    const { data, error } = await resend.emails.send({
+    const resendPayload: any = {
       from: finalFrom,
       to: finalTo,
       subject: finalSubject,
       html: trackedHtml,
-    });
+    };
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      resendPayload.attachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        content_type: a.content_type || "application/pdf",
+      }));
+    }
+    const { data, error } = await resend.emails.send(resendPayload);
 
     const emailId = (data as any)?.id || emailIdEarly;
 

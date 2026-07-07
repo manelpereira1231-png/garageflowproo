@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,13 @@ import { ensureSignupAllowed } from "@/lib/signupGuard";
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;
 
+const getSafeGarageRedirectPath = (candidate: string | null) => {
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//") || candidate.startsWith("/market")) {
+    return "/dashboard";
+  }
+  return candidate;
+};
+
 function timeoutResult<T>(value: T, ms = LOGIN_PROFILE_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
@@ -24,6 +31,7 @@ function timeoutResult<T>(value: T, ms = LOGIN_PROFILE_TIMEOUT_MS): Promise<T> {
 export default function Auth() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
   const [loading, setLoading] = useState(false);
@@ -75,6 +83,7 @@ export default function Auth() {
 
         toast.success(t('auth.welcomeBack'));
         import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "erp" }));
+        navigate(getSafeGarageRedirectPath(searchParams.get("redirect")), { replace: true });
 
       } else {
         const refCode = searchParams.get('ref') || '';
@@ -145,6 +154,7 @@ export default function Auth() {
         trackSignupConversion(email);
         if (signUpData?.session) {
           toast.success(t('auth.accountCreated'));
+          navigate(getSafeGarageRedirectPath(searchParams.get("redirect")), { replace: true });
         } else {
           toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
           setMode('login');

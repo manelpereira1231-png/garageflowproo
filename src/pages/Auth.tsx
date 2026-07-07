@@ -42,8 +42,9 @@ export default function Auth() {
     return urlPartnerId || localStorage.getItem(PARTNER_STORAGE_KEY);
   };
 
-  const isGarageContextAccount = async (userId: string, userMetadata?: Record<string, any>) => {
-    const { data: { user } } = await supabase.auth.getUser();
+  const isGarageContextAccount = async (userId: string) => {
+    const { data: { session } } = await erpSupabase.auth.getSession();
+    const user = session?.user;
     if (!user || user.id !== userId) return false;
     return (await getUserAccessProfile(user)).isGarageUser;
   };
@@ -63,7 +64,7 @@ export default function Auth() {
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        if (!signInData.user || !(await isGarageContextAccount(signInData.user.id, signInData.user.user_metadata))) {
+        if (!signInData.user || !(await isGarageContextAccount(signInData.user.id))) {
           throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
         }
 

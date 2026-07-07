@@ -18,6 +18,7 @@ const authStates: Record<Realm, AuthReadyState> = {
 const initializedRealms: Partial<Record<Realm, boolean>> = {};
 const hydrationIds: Record<Realm, number> = { erp: 0, market: 0 };
 const focusRefreshInstalled: Partial<Record<Realm, boolean>> = {};
+const AUTH_HYDRATION_TIMEOUT_MS = 3000;
 
 function emit() {
   listeners.forEach((listener) => listener());
@@ -30,6 +31,22 @@ function setAuthState(realm: Realm, next: Partial<AuthReadyState>) {
 
 function pickClient(realm: Realm) {
   return realm === "market" ? marketSupabase : erpSupabase;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = window.setTimeout(() => reject(new Error("auth_hydration_timeout")), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(id);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(id);
+        reject(error);
+      },
+    );
+  });
 }
 
 function installFocusRefresh(realm: Realm) {
@@ -64,7 +81,7 @@ function ensureAuthReadySubscription(realm: Realm) {
   const client = pickClient(realm);
   const initialHydrationId = ++hydrationIds[realm];
 
-  client.auth.getSession().then(({ data: { session } }) => {
+  withTimeout(client.auth.getSession(), AUTH_HYDRATION_TIMEOUT_MS).then(({ data: { session } }) => {
     if (initialHydrationId !== hydrationIds[realm]) return;
     setAuthState(realm, { session: session ?? null, user: session?.user ?? null, isReady: true });
   }).catch(() => {

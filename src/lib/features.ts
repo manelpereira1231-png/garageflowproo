@@ -10,7 +10,7 @@
  */
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, type Plan } from "@/hooks/useSubscription";
 
 export interface FeatureRow {
   slug: string;
@@ -33,6 +33,23 @@ type State = {
   matrix: PlanFeatureRow[];
   loaded: boolean;
 };
+
+const FALLBACK_PLAN_FEATURES: Record<Plan, string[]> = {
+  free: ["dashboard", "clients", "vehicles", "quotes", "services", "billing", "settings"],
+  pro: [
+    "dashboard", "clients", "vehicles", "quotes", "services", "billing", "settings",
+    "alerts_basic", "team_management", "invoices", "financial_reports_basic", "agenda",
+    "service_catalog", "inspections", "workshop_mode", "referrals", "warranties",
+  ],
+  garage: [
+    "dashboard", "clients", "vehicles", "quotes", "services", "billing", "settings",
+    "alerts_basic", "team_management", "invoices", "financial_reports_basic", "agenda",
+    "service_catalog", "inspections", "workshop_mode", "referrals", "warranties",
+    "chat", "marketing", "automations", "loyalty", "api", "stock", "multiShop",
+  ],
+};
+
+const fallbackFeatureSetFor = (plan: Plan) => new Set(FALLBACK_PLAN_FEATURES[plan] ?? FALLBACK_PLAN_FEATURES.free);
 
 const listeners = new Set<() => void>();
 let cache: State = { features: [], matrix: [], loaded: false };
@@ -101,8 +118,7 @@ export function useFeatureMatrix() {
 
 /** Returns the active plan slug for the current user (free|pro|garage). */
 export function useCurrentPlan(): "free" | "pro" | "garage" {
-  const { subscription } = useSubscription();
-  const plan = (subscription?.plan ?? "free") as string;
+  const { plan } = useSubscription();
   if (plan === "garage" || plan === "pro" || plan === "free") return plan;
   return "free";
 }
@@ -112,6 +128,9 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
   const { matrix, features, loaded } = useFeatureMatrix();
   const plan = useCurrentPlan();
   return useMemo(() => {
+    if (!loaded || matrix.length === 0) {
+      return { allowed: fallbackFeatureSetFor(plan).has(slug), loaded: true, limits: {} };
+    }
     const feat = features.find((f) => f.slug === slug);
     if (feat?.is_core) return { allowed: true, loaded, limits: {} };
     const row = matrix.find((r) => r.plan_slug === plan && r.feature_slug === slug);
@@ -128,6 +147,7 @@ export function useEnabledFeatureSet(): Set<string> {
   const { matrix, features, loaded } = useFeatureMatrix();
   const plan = useCurrentPlan();
   return useMemo(() => {
+    if (!loaded || matrix.length === 0) return fallbackFeatureSetFor(plan);
     const out = new Set<string>();
     for (const f of features) if (f.is_core) out.add(f.slug);
     for (const r of matrix) if (r.plan_slug === plan && r.enabled) out.add(r.feature_slug);

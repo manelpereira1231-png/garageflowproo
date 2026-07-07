@@ -40,6 +40,11 @@ export default function QuoteForm() {
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  // Shop defaults from Settings — authoritative source for labor rate + VAT
+  const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
+    labor_rate: 35,
+    vat_rate: 23,
+  });
 
   const activeShopId = localStorage.getItem("garageflow_active_shop");
 
@@ -50,10 +55,17 @@ export default function QuoteForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
-      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate").eq("shop_id", activeShopId).order("name");
+      // Shop-level defaults (labor rate + VAT rate) from Settings
+      const { data: shop } = await supabase.from("shops").select("labor_rate, vat_rate").eq("id", activeShopId).maybeSingle();
+      const laborRate = Number((shop as any)?.labor_rate) || 35;
+      const shopVat = Number((shop as any)?.vat_rate) || 23;
+      setShopDefaults({ labor_rate: laborRate, vat_rate: shopVat });
+      // Catalog now also brings default_time (min) so we can compute labor cost from Settings rate
+      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate, default_time").eq("shop_id", activeShopId).order("name");
       if (cat) setCatalog(cat);
       const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
       if (pts) setPartsList(pts);
+
 
 
       // Load existing quote for editing

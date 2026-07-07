@@ -40,12 +40,12 @@ export default function Vehicles() {
   const [passportId, setPassportId] = useState<string | null>(null);
   const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
-    client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
+    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
   const resetForm = () => setForm({
-    client_id: "", make: "", model: "", year: new Date().getFullYear().toString(),
+    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 

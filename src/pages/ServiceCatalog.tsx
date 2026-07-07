@@ -265,7 +265,7 @@ export default function ServiceCatalog() {
                     <Input type="number" step="0.01" value={form.default_price || ""} placeholder="0,00" onChange={e => setForm({ ...form, default_price: Number(e.target.value) })} />
                   </div>
                   <div>
-                    <Label>{t('catalog.cost')} (€)</Label>
+                    <Label>Custo peças (€)</Label>
                     <Input type="number" step="0.01" value={form.internal_cost || ""} placeholder="0,00" onChange={e => setForm({ ...form, internal_cost: Number(e.target.value) })} />
                   </div>
                   <div>
@@ -273,14 +273,34 @@ export default function ServiceCatalog() {
                     <Input type="number" value={form.default_time || ""} placeholder="60" onChange={e => setForm({ ...form, default_time: Number(e.target.value) })} />
                   </div>
                 </div>
-                {form.default_price > 0 && (
-                  <div className="rounded-lg bg-muted/40 border border-border p-2.5 text-xs flex justify-between">
-                    <span className="text-muted-foreground">Margem estimada</span>
-                    <span className="font-semibold">
-                      {formatMoney(form.default_price - form.internal_cost)} · {(((form.default_price - form.internal_cost) / form.default_price) * 100).toFixed(0)}%
-                    </span>
+
+                {/* Breakdown do custo — deixa claro o que é peças vs mão-de-obra */}
+                <div className="rounded-lg bg-muted/40 border border-border p-3 text-xs space-y-1.5">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Custo peças</span>
+                    <span>{formatMoney(Number(form.internal_cost) || 0)}</span>
                   </div>
-                )}
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Mão-de-obra ({form.default_time || 0}min × {laborRate.toFixed(2)}€/h)</span>
+                    <span>{formatMoney(laborCost)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t border-border pt-1.5">
+                    <span>Custo total</span>
+                    <span>{formatMoney(totalCost)}</span>
+                  </div>
+                  {form.default_price > 0 && (
+                    <div className="flex justify-between pt-1.5 border-t border-border">
+                      <span className="text-muted-foreground">Margem</span>
+                      <span className={`font-semibold ${form.default_price - totalCost >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        {formatMoney(form.default_price - totalCost)}
+                        {form.default_price > 0 && ` · ${(((form.default_price - totalCost) / form.default_price) * 100).toFixed(0)}%`}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground pt-1 leading-relaxed">
+                    A mão-de-obra é calculada automaticamente a partir do tempo × tarifa/hora (Definições). Em "Custo peças" coloca só o valor dos materiais.
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>{t('catalog.vatRate')} (%)</Label>

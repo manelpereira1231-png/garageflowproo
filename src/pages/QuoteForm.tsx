@@ -40,6 +40,11 @@ export default function QuoteForm() {
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  // Shop defaults from Settings — authoritative source for labor rate + VAT
+  const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
+    labor_rate: 35,
+    vat_rate: 23,
+  });
 
   const activeShopId = localStorage.getItem("garageflow_active_shop");
 
@@ -50,10 +55,17 @@ export default function QuoteForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
-      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate").eq("shop_id", activeShopId).order("name");
+      // Shop-level defaults (labor rate + VAT rate) from Settings
+      const { data: shop } = await supabase.from("shops").select("labor_rate, vat_rate").eq("id", activeShopId).maybeSingle();
+      const laborRate = Number((shop as any)?.labor_rate) || 35;
+      const shopVat = Number((shop as any)?.vat_rate) || 23;
+      setShopDefaults({ labor_rate: laborRate, vat_rate: shopVat });
+      // Catalog now also brings default_time (min) so we can compute labor cost from Settings rate
+      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate, default_time").eq("shop_id", activeShopId).order("name");
       if (cat) setCatalog(cat);
       const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
       if (pts) setPartsList(pts);
+
 
 
       // Load existing quote for editing
@@ -96,7 +108,7 @@ export default function QuoteForm() {
   }, [clientId, vehicles, editId]);
 
   const addLine = () => {
-    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 23 }]);
+    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: shopDefaults.vat_rate }]);
   };
 
   const updateLine = (id: string, field: string, value: any) => {
@@ -105,11 +117,15 @@ export default function QuoteForm() {
 
   const removeLine = (id: string) => setLines(lines.filter(l => l.id !== id));
 
-  const subtotal = lines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
-  const vatTotal = lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0);
-  const total = subtotal + vatTotal;
-  const costTotal = lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0);
-  const profit = total - costTotal;
+  // Financial totals — VAT is passthrough tax (not revenue),
+  // so profit is subtotal (net revenue) minus cost, NOT total (which includes VAT).
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const total = round2(subtotal + vatTotal);
+  const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
+  const profit = round2(subtotal - costTotal);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,13 +238,22 @@ export default function QuoteForm() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="font-semibold">{t('quotes.lines')}</h3>
             <Button type="button" variant="outline" size="sm" onClick={addLine}>
               <Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}
             </Button>
           </div>
+          <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+            <span>
+              Tarifa mão-de-obra: <strong className="text-foreground">€{shopDefaults.labor_rate.toFixed(2)}/h</strong>
+              {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
+              {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
+            </span>
+            <span className="text-[10px]">Ao escolher um serviço do catálogo, o preço é (tempo × tarifa das Definições).</span>
+          </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
+
           {lines.map((line, idx) => {
             const options = line.type === 'service' ? catalog : partsList;
             const pickerLabel = line.type === 'service'
@@ -257,10 +282,31 @@ export default function QuoteForm() {
                   onValueChange={(val) => {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);
-                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.default_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      if (item) {
+                        // Labor rate + VAT vêm SEMPRE das Definições da oficina.
+                        // Se o serviço tiver tempo (default_time em min), o preço = tempo × labor_rate.
+                        // Caso contrário, mantém o preço definido no catálogo.
+                        const timeMin = Number(item.default_time) || 0;
+                        const laborPrice = timeMin > 0
+                          ? round2((timeMin / 60) * shopDefaults.labor_rate)
+                          : Number(item.default_price) || 0;
+                        setLines(prev => prev.map(l => l.id === line.id ? {
+                          ...l,
+                          name: timeMin > 0 ? `${item.name} (${timeMin} min)` : item.name,
+                          unit_price: laborPrice,
+                          unit_cost: Number(item.internal_cost) || 0,
+                          vat_rate: shopDefaults.vat_rate,
+                        } : l));
+                      }
                     } else {
                       const item = partsList.find(p => p.id === val);
-                      if (item) setLines(prev => prev.map(l => l.id === line.id ? { ...l, name: item.name, unit_price: Number(item.sale_price) || 0, unit_cost: Number(item.internal_cost) || 0, vat_rate: Number(item.vat_rate) ?? 23 } : l));
+                      if (item) setLines(prev => prev.map(l => l.id === line.id ? {
+                        ...l,
+                        name: item.name,
+                        unit_price: Number(item.sale_price) || 0,
+                        unit_cost: Number(item.internal_cost) || 0,
+                        vat_rate: shopDefaults.vat_rate,
+                      } : l));
                     }
                   }}
                 >
@@ -270,13 +316,24 @@ export default function QuoteForm() {
                   <SelectContent className="max-h-80">
                     {options.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-muted-foreground">{pickerLabel}</div>
-                    ) : options.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} — €{Number(line.type === 'service' ? c.default_price : c.sale_price).toFixed(2)}
-                      </SelectItem>
-                    ))}
+                    ) : options.map((c: any) => {
+                      const previewPrice = line.type === 'service'
+                        ? ((Number(c.default_time) || 0) > 0
+                            ? round2((Number(c.default_time) / 60) * shopDefaults.labor_rate)
+                            : Number(c.default_price) || 0)
+                        : Number(c.sale_price) || 0;
+                      const timeLabel = line.type === 'service' && Number(c.default_time) > 0
+                        ? ` · ${c.default_time} min`
+                        : '';
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}{timeLabel} — €{previewPrice.toFixed(2)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+
               </div>
 
               {/* Editable fields */}

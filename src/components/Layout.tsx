@@ -242,7 +242,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/services", label: t("nav.services"), icon: Wrench, featureSlug: "services" },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat, featureSlug: "workshop_mode" },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays, featureSlug: "agenda" },
-    { path: "/inspections", label: t("nav.inspections"), icon: ClipboardCheck, featureSlug: "inspections" },
+    // Inspeções ERP removidas — só as do Marketplace fazem sentido neste contexto (/market/inspections).
 
     // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },
@@ -311,7 +311,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Linear/Notion-style grouping. Order = workshop daily priority.
   // Inventário fica no fim — é dado de referência, não tarefa diária.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
-    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda","/inspections"] },
+    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },

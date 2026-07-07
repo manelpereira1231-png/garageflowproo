@@ -216,7 +216,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (currentUserId) {
       isFavorite(id!, currentUserId).then(setFavorited);
       // Check if user is a verified buyer of this listing's workshop
-      if (reportRes.data?.shop_id) {
+      if ((reportRes.data as any)?.shop_id) {
         const { data: completedEscrow } = await supabase
           .from("market_escrow" as any)
           .select("id")
@@ -230,7 +230,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             .from("carity_inspections")
             .select("id")
             .eq("listing_id", id!)
-            .eq("shop_id", reportRes.data.shop_id)
+            .eq("shop_id", (reportRes.data as any).shop_id)
             .maybeSingle();
           if (insp) setActiveInspectionId(insp.id);
         }

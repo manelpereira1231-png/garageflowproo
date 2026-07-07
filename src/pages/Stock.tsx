@@ -151,6 +151,32 @@ export default function Stock() {
     load();
   };
 
+  // Gera encomendas automáticas agrupadas por fornecedor, para todas as peças em stock baixo.
+  // Quantidade sugerida = (min_stock * 2) - stock_quantity (repõe até 2x o mínimo).
+  const generateReorders = async () => {
+    if (!activeShopId) return;
+    if (lowStock.length === 0) { toast.info("Sem peças em falta"); return; }
+    const rows = lowStock.map(p => {
+      const suggestedQty = Math.max(1, (p.min_stock * 2) - p.stock_quantity);
+      return {
+        shop_id: activeShopId,
+        supplier_id: null,
+        work_order_id: null,
+        part_name: p.name,
+        part_reference: p.reference,
+        quantity: suggestedQty,
+        unit_price: p.internal_cost || 0,
+        total: suggestedQty * (p.internal_cost || 0),
+        status: "draft",
+        notes: p.supplier ? `Fornecedor sugerido: ${p.supplier}` : null,
+      };
+    });
+    const { error } = await supabase.from("parts_orders").insert(rows as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} encomendas criadas em rascunho`);
+    load();
+  };
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

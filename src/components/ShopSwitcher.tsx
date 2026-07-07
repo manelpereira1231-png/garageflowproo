@@ -98,7 +98,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         {showCreate && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
+              <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
                 <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>

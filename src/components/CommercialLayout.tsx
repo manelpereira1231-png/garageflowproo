@@ -84,15 +84,21 @@ export default function CommercialLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-h-screen min-w-0">
+      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         <header className="h-14 lg:h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
-          <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Abrir menu"
+            className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent min-h-11 min-w-11 flex items-center justify-center"
+          >
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="font-semibold text-sm">Painel Comercial</h1>
         </header>
-        <div className="flex-1 p-4 lg:p-6">
-          <Outlet />
+        <div className="flex-1 p-3 sm:p-4 lg:p-6">
+          <div className="page-shell">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

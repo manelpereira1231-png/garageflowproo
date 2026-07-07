@@ -1,89 +1,88 @@
 
-# Plano: Serviços vs Modo Oficina + Parte Legal 100% blindada
+# Auditoria completa de UI/UX e responsividade — GarageFlow
 
-Vou fazer as duas coisas em paralelo. Recomendo aplicar **as 4 medidas legais** — cada uma tapa um buraco diferente e juntas deixam o sistema totalmente defensável perante a AT e perante o cliente da oficina.
+Esta auditoria toca ~120 páginas e dezenas de componentes. Para garantir qualidade real (não cosmética) e não gastar créditos em fixes ao lado, proponho um plano em **4 fases sequenciais**, cada fase entregável e verificável antes de avançar.
 
----
+## Regras globais que vou aplicar em todas as fases
 
-## 1. Separar Serviços vs Modo Oficina
+1. **Nunca só ícones**: cada botão de ação ganha texto (ou `aria-label` quando o ícone é secundário como fechar/menu). Regra confirmada.
+2. **Zero scroll horizontal em desktop**: `overflow-x-hidden` no `<main>` + tabelas grandes com wrapper `overflow-x-auto` (só em mobile).
+3. **Tokens semânticos apenas**: sem `text-white`, `bg-black`, `#hex` — tudo via `hsl(var(--...))`.
+4. **Tap targets ≥ 44px** em mobile; ícones-only ≥ 40×40.
+5. **Um `<main>` por rota** no Layout, não nas páginas.
+6. **Container padrão**: `max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8` — largura total inteligente sem "esticar" texto.
+7. **Tabelas responsivas**: padrão dual view `hidden sm:block` (tabela) + `sm:hidden` (cards) já existente, aplicado onde falta.
+8. **Modais**: `max-h-[90vh] overflow-y-auto`, `w-[95vw]` em mobile, botões sempre visíveis (footer sticky).
+9. **Tipografia consistente**: `text-xl lg:text-2xl` para h1 de página, `text-sm` corpo, `text-xs` metadados.
 
-Hoje sobrepõem-se. Depois desta mudança cada um tem um papel único e claro.
+## Fase 1 — Auditoria automática (1 turno)
 
-### Serviços (`/services`) — Gestão administrativa
-Para o **dono / rececionista / gestor**, no PC.
-- Lista de todas as ordens de trabalho (abertas, concluídas, entregues, canceladas).
-- Filtros: estado, cliente, viatura, técnico, período, valor.
-- Ações: criar OS, converter orçamento→OS, editar dados administrativos, **emitir fatura certificada**, imprimir, arquivar, exportar CSV.
-- Colunas: nº, cliente, viatura, técnico, estado, total, lucro, data.
-- Sem timer, sem checklist mecânico — é a "secretária".
+Executo Playwright em 3 viewports (375, 768, 1440) sobre ~25 páginas críticas:
+Landing, Auth, Dashboard, Clients, Vehicles, Services, Quotes, QuoteForm, Workshop, Invoices, InvoiceForm, Stock, ServiceCatalog, Agenda, Team, Reports, Settings, BillingIntegration, Market landing, MarketDashboard, MarketListingDetail, Admin Dashboard, Admin Shops, Admin Users, Admin Support.
 
-### Modo Oficina (`/workshop`) — Execução no terreno
-Para o **mecânico**, no tablet/telemóvel na bancada. Interface grande, mãos sujas.
-- **Kanban vertical mobile** com 4 colunas: A fazer / Em diagnóstico / Em execução / Pronta a entregar.
-- Cada cartão OS abre em ecrã cheio com:
-  - Timer grande de mão‑de‑obra (start/pause/stop, guarda em `work_order_times`).
-  - Checklist de inspeção (`inspection_checklists`) com toque grande.
-  - Botões enormes para **fotos** (antes / durante / depois) e **áudio de diagnóstico**.
-  - Assinatura digital do cliente na entrega.
-  - Peças usadas → decremento automático de stock.
-  - Botão único "Concluir" que muda estado e notifica o rececionista.
-- Sem preços editáveis, sem faturação, sem CSV — é a "bancada".
+Por cada página: screenshot + deteção de `document.documentElement.scrollWidth > clientWidth` (overflow horizontal) + inventário de botões só-ícone sem label. Resultado consolidado num relatório `docs/UI_AUDIT.md`.
 
-Link cruzado: cada OS em Serviços tem "Abrir no Modo Oficina" e vice‑versa.
+## Fase 2 — Fundações globais (1 turno)
 
----
+Ficheiros afetados: `src/components/Layout.tsx`, `src/components/MarketLayout.tsx`, `src/components/AdminLayout.tsx`, `src/components/CommercialLayout.tsx`, `src/index.css`.
 
-## 2. Parte legal — as 4 medidas, todas
+- Wrapper principal com container padrão + `overflow-x-hidden`.
+- `<main>` único por layout.
+- Ajuste do sidebar/topbar em breakpoints (drawer em mobile, colapsável em tablet, fixo em desktop).
+- Classe utilitária `.page-shell` e `.page-header` em `index.css` para uniformizar.
 
-### 2.1 Botão "Emitir fatura certificada" com estado visível
-- Faturas ganham coluna de estado: **Rascunho** (cinza) / **Certificada** (verde, com ATCUD/QR/série InvoiceXpress) / **Anulada** (vermelho, com nº da Nota de Crédito).
-- Em `Services` (ao concluir OS) e em `InvoiceDetail` aparece o botão único **"Emitir fatura certificada"** → chama edge function `invoicexpress-emit` → guarda `atcud`, `qr_code`, `series`, `certified_pdf_url`, `invoicexpress_id` na tabela `invoices`.
-- Badge visível em qualquer listagem (Faturas, Serviços, Dashboard).
+## Fase 3 — Correções página a página (2–3 turnos)
 
-### 2.2 Bloqueio de edição pós‑certificação + Nota de Crédito obrigatória
-- Trigger SQL: `invoices` com `status='certified'` bloqueia UPDATE em campos fiscais (linhas, totais, NIF, datas).
-- Botão "Editar" desaparece; aparece **"Anular via Nota de Crédito"** → chama `invoicexpress-credit-note`, gera NC certificada, muda estado da fatura para "anulada" e liga as duas por `credit_note_id`.
-- Impede violação do artigo 36º do CIVA (imutabilidade de documento fiscal).
+Em cada página do checklist do utilizador aplico:
+- Substituição de botões só-ícone por versões com texto (mantendo `size="icon"` só onde é universalmente reconhecido: menu ☰, fechar ✕, arrastar).
+- Tabelas → dual view mobile/desktop consistente.
+- Formulários → `grid grid-cols-1 sm:grid-cols-2` com labels sempre acima do input.
+- Cards KPI → `grid grid-cols-2 sm:grid-cols-4`.
+- Modais → tamanhos e scroll internos.
+- Remoção de duplicados de headers e ações.
 
-### 2.3 Aviso em TODOS os PDFs internos
-Já existe em faturas, alargar a **orçamentos, ordens de trabalho, relatórios de inspeção, recibos internos** — rodapé fixo:
-> "Documento sem valor fiscal — não certificado pela AT. Para fatura legalmente válida, emita através da integração de faturação certificada."
-- Se a oficina tiver InvoiceXpress ligado e o documento **for** certificado, o aviso desaparece e é substituído por "Documento certificado — ATCUD: XXX-YY / Série: ZZZ".
+Ordem de execução (prioridade por uso real):
+1. Dashboard, Clients, Vehicles, Quotes/QuoteForm, Services/ServiceForm, Workshop, Invoices/InvoiceForm
+2. Stock, ServiceCatalog, Agenda, Team, Reports, Settings, BillingIntegration
+3. Admin (Dashboard, Shops, Users, Support, restantes)
+4. Market (Dashboard, ListingDetail, Chat, Wallet)
+5. Landing pages (LandingPage, GratisLanding, Auth)
 
-### 2.4 Painel de Conformidade (Definições → Faturação)
-Substitui a página atual por dashboard vivo:
-- ✅/❌ **InvoiceXpress ligado** (mostra conta, série ativa, expiração da API key).
-- 📊 **Documentos deste mês**: X certificados, Y rascunhos, Z anulados via NC.
-- 📥 **Último SAF-T PT** descarregado do painel InvoiceXpress (link direto + data).
-- ⚠️ **Alertas**: NIF em falta em clientes, série a esgotar, credencial inválida.
-- 📚 Guia "Como validar no e-Fatura" com 3 passos.
+## Fase 4 — Verificação final (1 turno)
 
----
+Nova varredura Playwright nos mesmos 25 endpoints × 3 viewports. Confirmo:
+- Zero overflow horizontal em desktop.
+- Todos os botões críticos com texto visível.
+- Zero elementos cortados/sobrepostos nas screenshots.
 
-## Ficheiros afetados (resumo técnico)
+Atualizo `docs/UI_AUDIT.md` com o "antes/depois".
+
+## Detalhes técnicos
 
 ```text
-Novos:
-  supabase/migrations/…_invoice_legal_lock.sql      (trigger imutabilidade + colunas status/atcud/qr)
-  supabase/functions/invoicexpress-credit-note/     (já existe, garantir wiring)
-  src/pages/workshop/WorkshopBoard.tsx              (Kanban mobile-first)
-  src/pages/workshop/WorkOrderExecution.tsx         (execução: timer + checklist + fotos)
-  src/components/CertifiedBadge.tsx                 (badge reutilizável)
-  src/components/UncertifiedFooter.tsx              (rodapé PDF condicional)
-  src/pages/settings/BillingCompliance.tsx          (painel conformidade)
+Container padrão:
+  <div class="max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8">
 
-Alterados:
-  src/pages/Services.tsx                            (só gestão + botão emitir fatura)
-  src/pages/Workshop.tsx                            (redirecionar para novo board)
-  src/pages/Invoices.tsx + InvoiceDetail.tsx        (estado visível, bloqueio edição, NC)
-  src/pages/Quotes.tsx + QuoteForm.tsx              (rodapé "não certificado")
-  src/lib/pdfGenerator.ts + invoicePdfGenerator.ts  (rodapé condicional)
-  src/pages/settings/BillingIntegration.tsx         (redireciona para BillingCompliance)
-  src/App.tsx                                       (rotas /workshop/board, /workshop/os/:id)
+Botão com texto (padrão):
+  <Button><Icon class="w-4 h-4" /><span>Ação</span></Button>
+
+Ícone-only (raro, só menu/fechar):
+  <Button size="icon" aria-label="Fechar"><X /></Button>
+
+Tabela responsiva:
+  <div class="hidden sm:block"><Table>...</Table></div>
+  <div class="sm:hidden space-y-2">{items.map(Card)}</div>
+
+Modal responsivo:
+  <DialogContent class="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
 ```
 
-Nenhuma alteração no domínio Market. Nada mexe fora do ERP.
+## O que **não** faz parte deste plano
 
----
+- Redesign visual (mudança de paleta, fontes, ilustrações) — mantém-se a identidade dark industrial + amber já definida em memória.
+- Novas features ou lógica de negócio.
+- Traduções (i18n) — só copy que já existe.
 
-Aprovas o plano completo? Se sim começo já pela migração de bloqueio legal (é a base) e depois faço o resto em paralelo.
+## Confirmação
+
+Confirmas que avanço pela Fase 1 (auditoria automática + relatório) já a seguir? Se quiseres priorizar diferente (ex.: saltar Landing/Market e focar só no ERP), diz agora.

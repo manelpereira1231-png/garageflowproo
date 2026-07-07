@@ -231,10 +231,14 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-h-screen min-w-0">
+      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         <header className="h-14 lg:h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
           {/* Mobile menu button */}
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Abrir menu"
+            className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent min-h-11 min-w-11 flex items-center justify-center"
+          >
             <Menu className="w-5 h-5" />
           </button>
 
@@ -284,13 +288,15 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
 
         <SystemBroadcastBanner />
         <div className="flex-1 p-3 sm:p-4 lg:p-6">
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-64">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          }>
-            {children ?? <Outlet />}
-          </Suspense>
+          <div className="page-shell">
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              {children ?? <Outlet />}
+            </Suspense>
+          </div>
         </div>
       </main>
     </div>

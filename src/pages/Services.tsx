@@ -510,7 +510,7 @@ export default function Services() {
                   <div className="flex items-center gap-0.5 justify-end flex-wrap">
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title={t('common.edit') || 'Editar'}>
+                        <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8" title={t('common.edit') || 'Editar'}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
@@ -521,7 +521,7 @@ export default function Services() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
                       {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
+                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
                       const phone = (s.clients as any)?.phone;
                       if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
                       openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
@@ -534,7 +534,7 @@ export default function Services() {
                           <ChevronRightIcon className="w-3.5 h-3.5" />
                           <span className="hidden xl:inline">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                        <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                           <XCircle className="w-3.5 h-3.5" />
                         </Button>
                       </>

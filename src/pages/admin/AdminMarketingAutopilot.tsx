@@ -677,25 +677,25 @@ function CreativesLibrary({ campaigns }: { campaigns: Campaign[] }) {
                 <div className="flex gap-1 flex-wrap">
                   {it.image_url && (
                     <>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Descarregar (PNG)"
+                      <Button size="icon" aria-label="Descarregar (PNG)" variant="ghost" className="h-7 w-7" title="Descarregar (PNG)"
                         onClick={() => downloadImg(it)}>
                         <Download className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Copiar URL"
+                      <Button size="icon" aria-label="Copiar URL" variant="ghost" className="h-7 w-7" title="Copiar URL"
                         onClick={() => copyUrl(it.image_url!)}>
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir em nova janela"
+                      <Button size="icon" aria-label="Abrir em nova janela" variant="ghost" className="h-7 w-7" title="Abrir em nova janela"
                         onClick={() => window.open(it.image_url!, "_blank")}>
                         <ImageIcon className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="Usar em email"
+                      <Button size="icon" aria-label="Usar em email" variant="ghost" className="h-7 w-7" title="Usar em email"
                         onClick={() => setEmailDlg(it)}>
                         <Send className="h-3.5 w-3.5" />
                       </Button>
                     </>
                   )}
-                  <Button size="icon" variant="ghost" className="h-7 w-7 ml-auto" title="Apagar"
+                  <Button size="icon" aria-label="Apagar" variant="ghost" className="h-7 w-7 ml-auto" title="Apagar"
                     onClick={() => remove(it.id)}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>

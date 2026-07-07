@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/marketPrice";
+import CertifiedBadge from "@/components/CertifiedBadge";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { formatMoney } from "@/lib/money";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;

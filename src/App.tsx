@@ -872,7 +872,9 @@ function AuthenticatedRoutes() {
 }
 
 function AppRoutes() {
+  const location = useLocation();
   const { isReady, session, user } = useAuthReady();
+  const authRedirect = new URLSearchParams(location.search).get("redirect");
 
   useEffect(() => {
     if (isReady) {
@@ -883,6 +885,18 @@ function AppRoutes() {
   useEffect(() => {
     setSentryUser(user ? { id: user.id, email: user.email } : null);
   }, [user]);
+
+  if (location.pathname === "/auth") {
+    if (isReady && session) {
+      return <Navigate to={getSafeGarageRedirectPath(authRedirect, "/dashboard")} replace />;
+    }
+
+    return (
+      <ChunkErrorBoundary>
+        <Auth />
+      </ChunkErrorBoundary>
+    );
+  }
 
   if (!isReady) {
     return (

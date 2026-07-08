@@ -229,8 +229,8 @@ export default function Warranties() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('warranties.description')}</TableHead>
-                  <TableHead>{t('common.client')}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t('common.vehicle')}</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead className="hidden md:table-cell">Veículo</TableHead>
                   <TableHead>{t('warranties.type')}</TableHead>
                   <TableHead>{t('warranties.period')}</TableHead>
                   <TableHead>{t('common.status')}</TableHead>

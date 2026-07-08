@@ -610,12 +610,7 @@ export default function Stock() {
                 <div className="flex items-center justify-between pt-1 border-t border-border">
                   <span className="font-semibold text-sm">{formatMoney(o.total || 0)}</span>
                   {o.status !== 'delivered' && o.status !== 'cancelled' && (
-                    <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={async () => {
-                      const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
-                      if (error) { toast.error(error.message); return; }
-                      toast.success(t('stock.orders.deliveryConfirmed'));
-                      load();
-                    }}>
+                    <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => confirmDelivery(o)}>
                       <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
                     </Button>
                   )}

@@ -138,6 +138,42 @@ export default function Services() {
     }
   };
 
+  /**
+   * WhatsApp handler shared by the list actions. When the WO has a linked
+   * quote we use its token directly; otherwise (WO created without a source
+   * quote), we fall back to the most recent quote of the same client/vehicle
+   * so the customer still receives the approval link on the waiting_approval
+   * stage — matching the behaviour of the Quotes page.
+   */
+  const sendServiceWhatsApp = async (s: any) => {
+    const phone = (s.clients as any)?.phone;
+    if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+    let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
+    if (!quoteToken) {
+      const clientId = s.client_id;
+      const vehicleId = s.vehicle_id;
+      const shopId = s.shop_id || localStorage.getItem('garageflow_active_shop');
+      if (clientId && shopId) {
+        let q = supabase.from('quotes').select('token').eq('shop_id', shopId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(1);
+        if (vehicleId) q = q.eq('vehicle_id', vehicleId) as any;
+        const { data: qData } = await q.maybeSingle();
+        quoteToken = (qData as any)?.token || undefined;
+      }
+    }
+    const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
+    openWhatsApp({
+      phone,
+      clientName: (s.clients as any)?.name,
+      type: 'service',
+      number: s.number,
+      plate: (s.vehicles as any)?.plate,
+      model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(),
+      serviceStage: s.status as any,
+      total: s.total,
+      link,
+    });
+  };
+
   const activeShopId = useActiveShopId();
 
   const fetchStats = async (shopId: string) => {
@@ -427,13 +463,7 @@ export default function Services() {
                 <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
                   {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
                 </Button>
-                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
-                  const phone = (s.clients as any)?.phone;
-                  if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                  const quoteToken = (s.quotes as any)?.token;
-                  const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
-                  openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate, model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(), serviceStage: s.status as any, total: s.total, link });
-                }}>
+                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
                   <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
                 </Button>
                 {!['delivered', 'cancelled'].includes(s.status) && (
@@ -532,13 +562,7 @@ export default function Services() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
                       {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
-                      const phone = (s.clients as any)?.phone;
-                      if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                      const quoteToken = (s.quotes as any)?.token;
-                      const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
-                      openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate, model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(), serviceStage: s.status as any, total: s.total, link });
-                    }}>
+                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
                       <MessageCircle className="w-3.5 h-3.5" />
                     </Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (

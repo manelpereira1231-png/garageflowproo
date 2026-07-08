@@ -122,6 +122,12 @@ export default function Workshop() {
           '/workshop'
         );
       }
+      // Auto-criar fatura ao concluir o serviço
+      if (nextStatus === 'completed') {
+        const invRes = await autoCreateInvoiceFromWorkOrder(wo.id);
+        if (invRes.error) toast.error(`Fatura não criada: ${invRes.error}`);
+        else if (invRes.created) toast.success("Fatura criada automaticamente");
+      }
       fetchOrders();
       if (selected?.id === wo.id) setSelected({ ...wo, ...updates });
     }

@@ -33,7 +33,7 @@ export default function ServiceForm() {
   const [entryMileage, setEntryMileage] = useState("0");
   const [clientDescription, setClientDescription] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
-  
+  const [laborHours, setLaborHours] = useState("0");
   const [technician, setTechnician] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);

@@ -604,8 +604,8 @@ export default function Billing() {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {plans.filter(p => p.key !== 'free').map(({ key, icon: Icon, color, features, lockedFeatures }) => {
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
           const price = prices[key][billingCycle];
           // When the user has no active subscription, NO card must show as
           // "Plano Atual" — every card is a fresh subscription option and the

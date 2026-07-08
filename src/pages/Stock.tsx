@@ -656,12 +656,7 @@ export default function Stock() {
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
                         {o.status !== 'delivered' && o.status !== 'cancelled' && (
-                          <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
-                            const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
-                            if (error) { toast.error(error.message); return; }
-                            toast.success(t('stock.orders.deliveryConfirmed'));
-                            load();
-                          }}>
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmDelivery(o)}>
                             <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
                           </Button>
                         )}

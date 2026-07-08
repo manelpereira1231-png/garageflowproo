@@ -33,7 +33,7 @@ export default function ServiceForm() {
   const [entryMileage, setEntryMileage] = useState("0");
   const [clientDescription, setClientDescription] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
-  
+  const [laborHours, setLaborHours] = useState("0");
   const [technician, setTechnician] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
@@ -70,6 +70,7 @@ export default function ServiceForm() {
           setEntryMileage(String(service.entry_mileage || 0));
           setClientDescription(service.client_description || "");
           setDiagnosis(service.diagnosis || "");
+          setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
           const svcLines = Array.isArray(service.lines) ? service.lines : [];
@@ -106,8 +107,10 @@ export default function ServiceForm() {
   };
   const removeLine = (id: string) => setLines(lines.filter(l => l.id !== id));
 
-  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
-  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
+  const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const subtotal = round2(linesSubtotal + laborCharge);
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);
   const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
   const profit = round2(subtotal - costTotal);
@@ -123,7 +126,7 @@ export default function ServiceForm() {
       const { error } = await supabase.from("work_orders").update({
         client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, notes: notes || null,
       }).eq("id", editId);
@@ -137,7 +140,7 @@ export default function ServiceForm() {
       const { data: inserted, error } = await supabase.from("work_orders").insert({
         shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, status: 'open', notes: notes || null,
       }).select("id").single();
@@ -201,6 +204,7 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5"><Label>{t('services.entryMileage')}</Label><Input type="number" value={entryMileage} onChange={e => setEntryMileage(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>{t('services.technician')}</Label><Input value={technician} onChange={e => setTechnician(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({shopDefaults.labor_rate.toFixed(2)}€/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>
@@ -219,7 +223,7 @@ export default function ServiceForm() {
               {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
               {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
             </span>
-            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>.</span>
+            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>. As <strong>horas de mão-de-obra</strong> extra são somadas ao total quando o tempo previsto no catálogo não chega.</span>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
 
@@ -323,6 +327,7 @@ export default function ServiceForm() {
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
+            {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × €{shopDefaults.labor_rate.toFixed(2)}/h)</span><span className="mono">€{laborCharge.toFixed(2)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>
             <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">€{total.toFixed(2)}</span></div>
             <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">€{profit.toFixed(2)}</span></div>

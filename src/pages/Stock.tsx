@@ -54,6 +54,8 @@ export default function Stock() {
   const [parts, setParts] = useState<Part[]>(_stCache?.parts ?? []);
   const [movements, setMovements] = useState<StockMovement[]>(_stCache?.movements ?? []);
   const [orders, setOrders] = useState<PartsOrder[]>(_stCache?.orders ?? []);
+  const [reserved, setReserved] = useState<Record<string, number>>({});
+  const [movementSearch, setMovementSearch] = useState("");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);

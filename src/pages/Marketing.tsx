@@ -24,6 +24,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+const MARKETING_QUERY_TIMEOUT_MS = 3000;
+
+function timeoutResult<T>(value: T, ms = MARKETING_QUERY_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
+
 export default function Marketing() {
   const { t } = useLanguage();
   const { activeShopId } = useShopContext();
@@ -44,8 +50,14 @@ export default function Marketing() {
     setDataLoading(true);
     try {
       const [campRes, clientRes] = await Promise.all([
-        supabase.from("campaigns").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-        supabase.from("clients").select("id, email, name").eq("shop_id", activeShopId).is("deleted_at", null).neq("email", ""),
+        Promise.race([
+          supabase.from("campaigns").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+          timeoutResult({ data: [] }),
+        ]),
+        Promise.race([
+          supabase.from("clients").select("id, email, name").eq("shop_id", activeShopId).is("deleted_at", null).neq("email", ""),
+          timeoutResult({ data: [] }),
+        ]),
       ]);
       if (campRes.data) setCampaigns(campRes.data);
       if (clientRes.data) setClients(clientRes.data);

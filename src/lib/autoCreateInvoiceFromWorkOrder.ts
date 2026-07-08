@@ -81,7 +81,7 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
         subtotal: Number(wo.subtotal || 0),
         vat_total: Number(wo.vat_total || 0),
         total: Number(wo.total || 0),
-        currency: wo.currency || "EUR",
+        currency: (wo as any).currency || "EUR",
         notes: wo.notes || null,
       })
       .select()

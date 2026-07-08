@@ -117,7 +117,7 @@ export default function Quotes() {
     const { data: nextNum } = await supabase.rpc('next_number', { _shop_id: shopId, _prefix: 'ORC' });
     const { error } = await supabase.from("quotes").insert({
       shop_id: shopId, number: nextNum || `ORC-COPY`, client_id: q.client_id, vehicle_id: q.vehicle_id,
-      lines: q.lines, notes: q.notes, subtotal: q.subtotal, vat_total: q.vat_total,
+      lines: q.lines, labor_hours: q.labor_hours || 0, notes: q.notes, subtotal: q.subtotal, vat_total: q.vat_total,
       total: q.total, cost_total: q.cost_total, profit: q.profit, status: 'draft',
     });
     if (error) { toastError(error, "Não foi possível duplicar o orçamento"); return; }

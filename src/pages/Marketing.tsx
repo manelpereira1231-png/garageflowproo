@@ -179,6 +179,41 @@ export default function Marketing() {
     toast.info(`${t('marketing.sending')} (${recipients.length})...`);
     load();
 
+    // Fetch shop name once and each recipient's most recent vehicle so
+    // template variables ({{shop_name}}, {{vehicle_*}}, {{client_name}})
+    // are always replaced. Emails must never leave with raw placeholders.
+    const { data: shopData } = await supabase
+      .from("shops").select("name").eq("id", activeShopId).maybeSingle();
+    const shopName = (shopData as any)?.name || "";
+
+    const clientIds = recipients.map(r => r.id).filter(Boolean);
+    const vehicleByClient: Record<string, { make?: string; model?: string; plate?: string }> = {};
+    if (clientIds.length) {
+      const { data: vehData } = await supabase
+        .from("vehicles").select("client_id, make, model, plate, created_at")
+        .in("client_id", clientIds).order("created_at", { ascending: false });
+      for (const v of (vehData || []) as any[]) {
+        if (!vehicleByClient[v.client_id]) {
+          vehicleByClient[v.client_id] = { make: v.make, model: v.model, plate: v.plate };
+        }
+      }
+    }
+
+    const interpolate = (raw: string, client: any): string => {
+      const veh = vehicleByClient[client.id] || {};
+      return (raw || "")
+        .replace(/\{\{\s*client_name\s*\}\}/g, client.name || "")
+        .replace(/\{\{\s*shop_name\s*\}\}/g, shopName)
+        .replace(/\{\{\s*vehicle_make\s*\}\}/g, veh.make || "")
+        .replace(/\{\{\s*vehicle_model\s*\}\}/g, veh.model || "")
+        .replace(/\{\{\s*vehicle_plate\s*\}\}/g, veh.plate || "")
+        // Collapse leftover spacing from empty vars and any unknown placeholders.
+        .replace(/\{\{\s*[a-zA-Z0-9_.]+\s*\}\}/g, "")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\(\s*\)/g, "")
+        .trim();
+    };
+
     let successCount = 0;
     let failCount = 0;
 
@@ -186,16 +221,18 @@ export default function Marketing() {
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
       const promises = batch.map(async (client) => {
+        const personalSubject = interpolate(campaign.subject || campaign.name, client);
+        const personalContent = interpolate(campaign.content || "", client);
         try {
           const { data, error } = await supabase.functions.invoke("send-email", {
             body: {
               to: client.email,
-              subject: campaign.subject || campaign.name,
+              subject: personalSubject,
               html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-                <h2 style="color:#1a1a1a;">${campaign.subject || campaign.name}</h2>
-                <div style="color:#333;line-height:1.6;white-space:pre-wrap;">${campaign.content || ''}</div>
+                <h2 style="color:#1a1a1a;">${personalSubject}</h2>
+                <div style="color:#333;line-height:1.6;white-space:pre-wrap;">${personalContent}</div>
                 <hr style="margin:20px 0;border:none;border-top:1px solid #eee;"/>
-                <p style="color:#999;font-size:12px;">Enviado via GarageFlow</p>
+                <p style="color:#999;font-size:12px;">Enviado via ${shopName || 'GarageFlow'}</p>
               </div>`,
             },
           });
@@ -203,14 +240,14 @@ export default function Marketing() {
           successCount++;
           await supabase.from("email_logs").insert({
             shop_id: activeShopId, to_email: client.email,
-            subject: campaign.subject || campaign.name,
+            subject: personalSubject,
             status: 'sent', entity_type: 'campaign', entity_id: campaign.id,
           });
         } catch (err: any) {
           failCount++;
           await supabase.from("email_logs").insert({
             shop_id: activeShopId, to_email: client.email,
-            subject: campaign.subject || campaign.name,
+            subject: personalSubject,
             status: 'failed', error_message: err?.message || 'Unknown error',
             entity_type: 'campaign', entity_id: campaign.id,
           });

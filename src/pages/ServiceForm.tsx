@@ -83,6 +83,7 @@ export default function ServiceForm() {
             unit_price: l.unit_price || 0,
             unit_cost: l.unit_cost || 0,
             vat_rate: l.vat_rate ?? 23,
+            ref_id: l.ref_id ?? null,
           })));
         }
         setLoadingData(false);

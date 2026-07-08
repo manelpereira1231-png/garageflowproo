@@ -333,7 +333,6 @@ export default function Billing() {
   };
 
   const handleUpgrade = async (targetPlan: Plan) => {
-    if (targetPlan === 'free') return;
     setUpgrading(true);
     try {
       await runExternalRedirect(() => createCheckoutUrl(targetPlan));

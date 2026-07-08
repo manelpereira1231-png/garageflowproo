@@ -273,9 +273,7 @@ export default function Billing() {
   };
 
   const createCheckoutUrl = async (targetPlan: Plan) => {
-    if (targetPlan === 'free') {
-      throw new Error('FREE_PLAN_NO_CHECKOUT');
-    }
+
 
     const { data: sessionData } = await supabase.auth.getSession();
     let session = sessionData.session;

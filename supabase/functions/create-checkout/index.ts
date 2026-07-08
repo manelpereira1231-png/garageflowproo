@@ -9,6 +9,8 @@ const corsHeaders = {
 
 // Fallback EUR price IDs (Portugal) used if a country has no specific Stripe IDs configured
 const FALLBACK_EUR = {
+  free_monthly: "price_1TqzbMKIsGuKgNEHjtqeXdRd",
+  free_yearly: "price_1Tqzc5KIsGuKgNEHwF8nig2i",
   pro_monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",
   pro_yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",
   garage_monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",

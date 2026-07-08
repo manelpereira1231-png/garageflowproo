@@ -240,6 +240,10 @@ export default function QuoteForm() {
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Horas de mão-de-obra ({shopDefaults.labor_rate.toFixed(2)}€/h)</Label>
+              <Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} />
+            </div>
           </div>
         </div>
 

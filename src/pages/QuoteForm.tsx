@@ -77,6 +77,7 @@ export default function QuoteForm() {
           setVehicleId(quote.vehicle_id);
           setNotes(quote.notes || "");
           setQuoteStatus(quote.status);
+          setLaborHours(String(quote.labor_hours || 0));
           const quoteLines = Array.isArray(quote.lines) ? quote.lines : [];
           setLines(quoteLines.map((l: any) => ({
             id: l.id || crypto.randomUUID(),

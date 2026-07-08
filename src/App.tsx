@@ -80,6 +80,7 @@ const Loyalty = lazyRetry(() => import("@/pages/Loyalty"));
 const Marketing = lazyRetry(() => import("@/pages/Marketing"));
 const Workshop = lazyRetry(() => import("@/pages/Workshop"));
 const Automations = lazyRetry(() => import("@/pages/Automations"));
+const AutomationsHub = lazyRetry(() => import("@/pages/AutomationsHub"));
 const Developers = lazyRetry(() => import("@/pages/Developers"));
 const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
 const Referrals = lazyRetry(() => import("@/pages/Referrals"));
@@ -411,9 +412,9 @@ const shopRoutes = [
   { path: "/stock", element: <FeatureGate feature="stock" requiredPlan="pro"><Stock /></FeatureGate> },
   { path: "/inspections", element: <FeatureGate feature="inspections" requiredPlan="pro"><Inspections /></FeatureGate> },
   { path: "/loyalty", element: <FeatureGate feature="loyalty" requiredPlan="garage"><Loyalty /></FeatureGate> },
-  { path: "/marketing", element: <FeatureGate feature="marketing" requiredPlan="garage"><Marketing /></FeatureGate> },
+  { path: "/marketing", element: <FeatureGate feature="automations" requiredPlan="garage"><AutomationsHub /></FeatureGate> },
   { path: "/workshop", element: <FeatureGate feature="workshop_mode" requiredPlan="pro"><Workshop /></FeatureGate> },
-  { path: "/automations", element: <FeatureGate feature="automations" requiredPlan="garage"><Automations /></FeatureGate> },
+  { path: "/automations", element: <FeatureGate feature="automations" requiredPlan="garage"><AutomationsHub /></FeatureGate> },
   { path: "/developers", element: <FeatureGate feature="api" requiredPlan="garage"><Developers /></FeatureGate> },
   { path: "/partners", element: <PartnersPortal /> },
   { path: "/referrals", element: <FeatureGate feature="referrals" requiredPlan="pro"><Referrals /></FeatureGate> },

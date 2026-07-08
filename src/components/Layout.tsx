@@ -260,7 +260,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/chat", label: t("nav.chat"), icon: MessageCircle, featureSlug: "chat" },
 
     // ── Crescimento ──
-    { path: "/marketing", label: t("nav.marketing"), icon: Megaphone, featureSlug: "marketing" },
     { path: "/automations", label: t("nav.automations"), icon: Zap, featureSlug: "automations" },
     { path: "/loyalty", label: t("nav.loyalty"), icon: Star, featureSlug: "loyalty" },
     { path: "/referrals", label: t("nav.referrals"), icon: Gift, featureSlug: "referrals" },

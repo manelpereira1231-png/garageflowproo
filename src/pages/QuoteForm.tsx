@@ -178,7 +178,8 @@ export default function QuoteForm() {
       const { data: inserted, error } = await supabase.from("quotes").insert({
         shop_id: shopId, number: num, date: now.toISOString().split('T')[0],
         validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
-        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
+        subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),
       }).select("id").single();
 

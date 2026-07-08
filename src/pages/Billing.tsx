@@ -351,13 +351,15 @@ export default function Billing() {
         await runExternalRedirect(createCustomerPortalUrl);
         return;
       }
-      // For admin-managed plans or fallback — downgrade to free locally
+      // For admin-managed plans or fallback — cancel locally WITHOUT assigning
+      // any new plan. The subscription simply loses its active status; the
+      // last known plan value is preserved for reference only.
       const shopId = subscription?.shop_id;
       if (shopId) {
         const { error } = await supabase.from("subscriptions").update({
-          plan: 'free',
           status: 'canceled',
           current_period_end: new Date().toISOString(),
+          revenue_type: 'free',
         }).eq("shop_id", shopId);
         if (error) throw error;
         toast.success(t('billing.cancelSuccess'));

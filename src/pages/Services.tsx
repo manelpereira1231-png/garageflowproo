@@ -226,6 +226,14 @@ export default function Services() {
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
     if (error) { toastError(error, "Não foi possível concluir o serviço"); return; }
 
+    // Auto-criar fatura (rascunho) ligada à OS concluída
+    const invRes = await autoCreateInvoiceFromWorkOrder(service.id);
+    if (invRes.error) {
+      toast.error(`Serviço concluído, mas falhou a criar fatura: ${invRes.error}`);
+    } else if (invRes.created) {
+      toast.success("Fatura criada automaticamente");
+    }
+
     if (createReminder && reminderDate) {
       const activeId = localStorage.getItem("garageflow_active_shop");
       await supabase.from("service_reminders").insert({

@@ -204,6 +204,7 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5"><Label>{t('services.entryMileage')}</Label><Input type="number" value={entryMileage} onChange={e => setEntryMileage(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>{t('services.technician')}</Label><Input value={technician} onChange={e => setTechnician(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({shopDefaults.labor_rate.toFixed(2)}€/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>

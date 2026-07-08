@@ -37,6 +37,7 @@ interface PdfData {
   technician?: string;
   diagnosis?: string;
   laborHours?: number;
+  laborRate?: number;
   currency: string;
   plan?: 'free' | 'pro' | 'garage';
   language?: string;
@@ -126,6 +127,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     total: { pt: 'Total', en: 'Total', es: 'Total', 'pt-BR': 'Total' },
     serviceType: { pt: 'Serviço', en: 'Service', es: 'Servicio', 'pt-BR': 'Serviço' },
     partType: { pt: 'Peça', en: 'Part', es: 'Pieza', 'pt-BR': 'Peça' },
+    laborType: { pt: 'Mão de obra', en: 'Labor', es: 'Mano de obra', 'pt-BR': 'Mão de obra' },
+    partsSubtotal: { pt: 'Peças', en: 'Parts', es: 'Piezas', 'pt-BR': 'Peças' },
+    laborSubtotal: { pt: 'Mão de obra', en: 'Labor', es: 'Mano de obra', 'pt-BR': 'Mão de obra' },
+    servicesSubtotal: { pt: 'Outros serviços', en: 'Other services', es: 'Otros servicios', 'pt-BR': 'Outros serviços' },
     diagnosis: { pt: 'DIAGNÓSTICO', en: 'DIAGNOSIS', es: 'DIAGNÓSTICO', 'pt-BR': 'DIAGNÓSTICO' },
     notes: { pt: 'NOTAS', en: 'NOTES', es: 'NOTAS', 'pt-BR': 'NOTAS' },
     disclaimer: {
@@ -183,8 +188,37 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
 
   // Lines table
   const tableY = Math.max(y + 12, 82);
-  const tableData = data.lines.map(l => [
-    l.type === 'service' ? tl('serviceType') : tl('partType'),
+  // Lines table — inclui linha virtual "Mão de obra" quando há horas
+  // extra de mão-de-obra (labor_hours × labor_rate). Não altera cálculos:
+  // este valor já está incluído em `data.subtotal`/`data.vatTotal` a montante.
+  const laborH = Number(data.laborHours || 0);
+  const laborR = Number(data.laborRate || 0);
+  const laborCharge = laborH > 0 && laborR > 0 ? +(laborH * laborR).toFixed(2) : 0;
+  // IVA aplicado às linhas maioritárias (fallback 23% se não conseguir inferir)
+  const laborVat = data.lines[0]?.vat_rate ?? 23;
+
+  const linesForTable: PdfLine[] = laborCharge > 0
+    ? [
+        ...data.lines,
+        {
+          type: 'labor',
+          name: `${tl('laborType')} (${laborH}h × ${cur}${laborR.toFixed(2)}/h)`,
+          quantity: laborH,
+          unit_price: laborR,
+          unit_cost: 0,
+          vat_rate: laborVat,
+        },
+      ]
+    : data.lines;
+
+  const typeCell = (t: string) =>
+    t === 'service' ? tl('serviceType')
+    : t === 'part' ? tl('partType')
+    : t === 'labor' ? tl('laborType')
+    : t;
+
+  const tableData = linesForTable.map(l => [
+    typeCell(l.type),
     l.name,
     String(l.quantity),
     `${cur}${l.unit_price.toFixed(2)}`,
@@ -209,13 +243,39 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     margin: { left: 14, right: 14 },
   });
 
+  // Sumário por categoria (só apresentação; não afeta totais)
+  const sumBy = (t: string) =>
+    data.lines
+      .filter(l => l.type === t)
+      .reduce((s, l) => s + l.quantity * l.unit_price, 0);
+  const partsSum = +sumBy('part').toFixed(2);
+  const servicesSum = +sumBy('service').toFixed(2);
+  const summaryLines: Array<[string, number]> = [];
+  if (partsSum > 0) summaryLines.push([tl('partsSubtotal'), partsSum]);
+  if (servicesSum > 0) summaryLines.push([tl('servicesSubtotal'), servicesSum]);
+  if (laborCharge > 0) summaryLines.push([tl('laborSubtotal'), laborCharge]);
+
   // Totals
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  let finalY = (doc as any).lastAutoTable.finalY + 10;
   const totalsX = pageW - 14;
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(38, 38, 38);
+
+  // Renderiza breakdown por categoria (à esquerda) quando faz sentido
+  if (summaryLines.length >= 2) {
+    let sy = finalY;
+    doc.setFont("helvetica", "bold");
+    doc.text('Discriminação:', 14, sy);
+    doc.setFont("helvetica", "normal");
+    for (const [label, val] of summaryLines) {
+      sy += 5;
+      doc.text(`${label}: ${cur}${val.toFixed(2)}`, 14, sy);
+    }
+    finalY = Math.max(finalY, sy - 4);
+  }
+
   doc.text(`Subtotal: ${cur}${data.subtotal.toFixed(2)}`, totalsX, finalY, { align: "right" });
   doc.text(`${tl('vat')}: ${cur}${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
 

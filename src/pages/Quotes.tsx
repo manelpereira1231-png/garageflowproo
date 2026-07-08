@@ -207,6 +207,7 @@ export default function Quotes() {
         vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
         vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
         total: q.total, profit: q.profit, notes: q.notes, currency: shop.currency || 'EUR', plan: plan,
+        laborHours: q.labor_hours, laborRate: shop.labor_rate,
       }, limits.pdfWatermark);
       doc.save(`${q.number}.pdf`);
     } catch (err: any) {

@@ -327,6 +327,7 @@ export default function ServiceForm() {
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
+            {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × €{shopDefaults.labor_rate.toFixed(2)}/h)</span><span className="mono">€{laborCharge.toFixed(2)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>
             <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">€{total.toFixed(2)}</span></div>
             <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">€{profit.toFixed(2)}</span></div>

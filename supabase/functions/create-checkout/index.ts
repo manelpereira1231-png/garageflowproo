@@ -83,8 +83,8 @@ serve(async (req) => {
     const user = userData.user;
     const { plan, billing_cycle, region, country_code } = await req.json();
 
-    if (!plan || !["pro", "garage"].includes(plan)) {
-      throw new Error("O plano gratuito não requer checkout Stripe. Escolha Pro ou Garage para subscrever.");
+    if (!plan || !["free", "pro", "garage"].includes(plan)) {
+      throw new Error("Plano inválido. Escolha Start, Pro ou Garage.");
     }
     const cycle = (billing_cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly";
 

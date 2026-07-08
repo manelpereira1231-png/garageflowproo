@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
-import { sendEmail } from "@/lib/emailService";
+import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { ServiceStatus } from "@/types/garage";
@@ -85,7 +85,7 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
 
 export default function Services() {
   const { t } = useLanguage();
-  const { limits, plan } = useSubscription();
+  const { limits, plan, canUseFeature } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _sCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`services:${_shopInit}:0:all`);
   const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
@@ -102,25 +102,74 @@ export default function Services() {
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
+  /**
+   * Envia email da OS reutilizando exatamente o mesmo template dos Orçamentos
+   * (`quoteEmailHtml`). Quando a OS está em `waiting_approval` e tem um quote
+   * associado com token, inclui o botão de aprovação online — igual ao
+   * comportamento do módulo de Orçamentos. Isto uniformiza o envio pelos dois
+   * pontos de entrada (Orçamentos e Ordens de Serviço).
+   */
   const sendServiceEmail = async (s: any) => {
     const clientEmail = (s.clients as any)?.email;
     if (!clientEmail) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
     if (!shop) { toast.error('Dados da oficina não carregados'); return; }
     setSendingEmail(s.id);
     try {
-      const subject = `Ordem de serviço ${s.number} — ${shop.name}`;
-      const vehicle = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''} — ${(s.vehicles as any)?.plate || ''}`.trim();
-      const html = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#111">
-          <h2 style="margin:0 0 12px">Ordem de serviço ${s.number}</h2>
-          <p>Olá ${(s.clients as any)?.name || ''},</p>
-          <p>A sua ordem de serviço referente a <strong>${vehicle}</strong> está disponível.</p>
-          <p><strong>Estado:</strong> ${s.status}</p>
-          <p><strong>Total:</strong> €${Number(s.total || 0).toFixed(2)}</p>
-          ${s.diagnosis ? `<p><strong>Diagnóstico:</strong> ${s.diagnosis}</p>` : ''}
-          <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
-          <p style="color:#666;font-size:12px">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
-        </div>`;
+      // Resolver token do orçamento associado (para o botão Aprovar).
+      // Igual à lógica do WhatsApp: usa o token direto se existir, senão
+      // procura o orçamento mais recente do mesmo cliente/veículo.
+      let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
+      let quoteRow: any = null;
+      if (!quoteToken) {
+        const clientId = s.client_id;
+        const vehicleId = s.vehicle_id;
+        const shopId = s.shop_id || localStorage.getItem('garageflow_active_shop');
+        if (clientId && shopId) {
+          let qb = supabase.from('quotes').select('*').eq('shop_id', shopId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(1);
+          if (vehicleId) qb = qb.eq('vehicle_id', vehicleId) as any;
+          const { data: qData } = await qb.maybeSingle();
+          quoteRow = qData || null;
+          quoteToken = quoteRow?.token || undefined;
+        }
+      }
+
+      const approvalUrl = quoteToken && canUseFeature('quoteApproval')
+        ? `${window.location.origin}/quote/${quoteToken}`
+        : undefined;
+
+      const lines = (Array.isArray(s.lines) ? s.lines : (Array.isArray(quoteRow?.lines) ? quoteRow.lines : [])) as any[];
+      const vehicleInfo = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''} — ${(s.vehicles as any)?.plate || ''}`.trim();
+      const lang = shop.language || 'pt';
+      const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
+      // Assunto: quando estamos a pedir aprovação, tratamos como Orçamento
+      // (é isso que o cliente vê no link); caso contrário, mantemos "Ordem de serviço".
+      const isApprovalStage = s.status === 'waiting_approval' && !!approvalUrl;
+      const subject = isApprovalStage
+        ? `${langLabels[lang] || langLabels.pt} ${s.number} — ${shop.name}`
+        : `Ordem de serviço ${s.number} — ${shop.name}`;
+
+      const html = quoteEmailHtml({
+        shopName: shop.name,
+        shopEmail: shop.email,
+        shopPhone: shop.phone,
+        shopNif: shop.nif,
+        shopAddress: shop.address,
+        shopLogoUrl: shop.logo_url,
+        clientName: (s.clients as any)?.name || '',
+        quoteNumber: s.number,
+        quoteDate: formatLocalDate(s.created_at),
+        validityDate: quoteRow?.validity_date || '',
+        lines,
+        subtotal: Number(s.subtotal || 0),
+        vatTotal: Number(s.vat_total || 0),
+        total: Number(s.total || 0),
+        currency: shop.currency || 'EUR',
+        vehicleInfo,
+        notes: s.notes || s.diagnosis || undefined,
+        approvalUrl,
+        lang,
+      });
+
       await sendEmail({ to: clientEmail, subject, html });
       const activeId = localStorage.getItem("garageflow_active_shop");
       if (activeId) {
@@ -132,6 +181,13 @@ export default function Services() {
       toast.success(t('quotes.emailSent') || 'Email enviado');
     } catch (err: any) {
       console.error('Email error:', err);
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      if (activeId) {
+        await supabase.from("email_logs").insert({
+          shop_id: activeId, to_email: clientEmail, subject: `${s.number} — email failed`, status: 'failed',
+          error_message: err.message, entity_type: 'service', entity_id: s.id,
+        });
+      }
       toast.error(t('quotes.emailError') || 'Erro ao enviar email');
     } finally {
       setSendingEmail(null);

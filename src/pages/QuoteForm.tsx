@@ -122,8 +122,10 @@ export default function QuoteForm() {
   // Financial totals — VAT is passthrough tax (not revenue),
   // so profit is subtotal (net revenue) minus cost, NOT total (which includes VAT).
   const round2 = (n: number) => Math.round(n * 100) / 100;
-  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
-  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
+  const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const subtotal = round2(linesSubtotal + laborCharge);
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);
   const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
   const profit = round2(subtotal - costTotal);

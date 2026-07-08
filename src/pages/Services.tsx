@@ -177,7 +177,7 @@ export default function Services() {
       const to = from + PAGE_SIZE - 1;
       let query = supabase
         .from("work_orders")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)", { count: "exact" })
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
         .range(from, to);

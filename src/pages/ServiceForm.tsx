@@ -26,6 +26,8 @@ export default function ServiceForm() {
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [partsList, setPartsList] = useState<any[]>([]);
   const [clientId, setClientId] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [entryMileage, setEntryMileage] = useState("0");
@@ -35,8 +37,13 @@ export default function ServiceForm() {
   const [technician, setTechnician] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
+  const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
+    labor_rate: 35,
+    vat_rate: 23,
+  });
 
   const activeShopId = localStorage.getItem("garageflow_active_shop");
+  const round2 = (n: number) => Math.round(n * 100) / 100;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,6 +52,14 @@ export default function ServiceForm() {
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
+      const { data: shop } = await supabase.from("shops").select("labor_rate, vat_rate").eq("id", activeShopId).maybeSingle();
+      const laborRate = Number((shop as any)?.labor_rate) || 35;
+      const shopVat = Number((shop as any)?.vat_rate) || 23;
+      setShopDefaults({ labor_rate: laborRate, vat_rate: shopVat });
+      const { data: cat } = await supabase.from("service_catalog").select("id, name, default_price, internal_cost, vat_rate, default_time").eq("shop_id", activeShopId).order("name");
+      if (cat) setCatalog(cat);
+      const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
+      if (pts) setPartsList(pts);
 
       // Load existing service for editing
       if (editId) {
@@ -85,18 +100,18 @@ export default function ServiceForm() {
   }, [clientId, vehicles, editId]);
 
   const addLine = () => {
-    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 23 }]);
+    setLines([...lines, { id: crypto.randomUUID(), type: 'service', name: '', quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: shopDefaults.vat_rate }]);
   };
   const updateLine = (id: string, field: string, value: any) => {
     setLines(lines.map(l => l.id === id ? { ...l, [field]: value } : l));
   };
   const removeLine = (id: string) => setLines(lines.filter(l => l.id !== id));
 
-  const subtotal = lines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
-  const vatTotal = lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0);
-  const total = subtotal + vatTotal;
-  const costTotal = lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0);
-  const profit = total - costTotal;
+  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const total = round2(subtotal + vatTotal);
+  const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
+  const profit = round2(subtotal - costTotal);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +121,6 @@ export default function ServiceForm() {
     const shopId = activeShopId;
 
     if (editId) {
-      // Update existing service
       const { error } = await supabase.from("work_orders").update({
         client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
@@ -118,7 +132,6 @@ export default function ServiceForm() {
       if (error) toast.error(error.message);
       else { toast.success(t('services.updated')); navigate("/services"); }
     } else {
-      // Create new service
       const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "SRV" });
       const num = numData || `SRV-${Date.now()}`;
 
@@ -195,32 +208,117 @@ export default function ServiceForm() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="font-semibold">{t('quotes.lines')}</h3>
-            <Button type="button" variant="outline" size="sm" onClick={addLine}><Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}</Button>
+            <Button type="button" variant="outline" size="sm" onClick={addLine}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}
+            </Button>
+          </div>
+          <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+            <span>
+              Tarifa mão-de-obra: <strong className="text-foreground">€{shopDefaults.labor_rate.toFixed(2)}/h</strong>
+              {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
+              {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
+            </span>
+            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>.</span>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
-          {lines.map(line => (
-            <div key={line.id} className="grid grid-cols-12 gap-2 items-end border-b border-border pb-3">
-              <div className="col-span-6 sm:col-span-1">
-                <Label className="text-xs">{t('line.type')}</Label>
+
+          {lines.map((line, idx) => {
+            const options = line.type === 'service' ? catalog : partsList;
+            const pickerLabel = line.type === 'service'
+              ? (catalog.length === 0 ? 'Catálogo vazio — cria serviços em Catálogo' : 'Escolher serviço do catálogo…')
+              : (partsList.length === 0 ? 'Sem peças — cria peças em Stock' : 'Escolher peça do stock…');
+            return (
+            <div key={line.id} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">Linha #{idx + 1}</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-destructive gap-1" onClick={() => removeLine(line.id)}>
+                  <Trash2 className="w-3.5 h-3.5" /> Remover
+                </Button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={line.type} onValueChange={v => updateLine(line.id, 'type', v)}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="service">{t('line.service')}</SelectItem><SelectItem value="part">{t('line.part')}</SelectItem></SelectContent>
+                  <SelectTrigger className="h-10 w-full sm:w-32 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="service">🔧 {t('line.service')}</SelectItem>
+                    <SelectItem value="part">📦 {t('line.part')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (line.type === 'service') {
+                      const item = catalog.find(c => c.id === val);
+                      if (item) {
+                        const cost = Number(item.internal_cost) || 0;
+                        const timeMin = Number(item.default_time) || 0;
+                        const catalogPrice = Number(item.default_price) || 0;
+                        const labor = round2((timeMin / 60) * shopDefaults.labor_rate);
+                        const unitPrice = catalogPrice > 0 ? round2(catalogPrice) : round2(cost + labor);
+                        const vatRate = Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate;
+                        setLines(prev => prev.map(l => l.id === line.id ? {
+                          ...l,
+                          name: timeMin > 0 ? `${item.name} (${timeMin} min)` : item.name,
+                          unit_price: unitPrice,
+                          unit_cost: cost,
+                          vat_rate: vatRate,
+                        } : l));
+                      }
+                    } else {
+                      const item = partsList.find(p => p.id === val);
+                      if (item) setLines(prev => prev.map(l => l.id === line.id ? {
+                        ...l,
+                        name: item.name,
+                        unit_price: Number(item.sale_price) || 0,
+                        unit_cost: Number(item.internal_cost) || 0,
+                        vat_rate: Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate,
+                      } : l));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-10 flex-1 text-sm border-primary/40 bg-primary/5 hover:bg-primary/10">
+                    <SelectValue placeholder={pickerLabel} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {options.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">{pickerLabel}</div>
+                    ) : options.map((c: any) => {
+                      const cost = Number(c.internal_cost) || 0;
+                      const timeMin = Number(c.default_time) || 0;
+                      const labor = round2((timeMin / 60) * shopDefaults.labor_rate);
+                      const catalogPrice = Number(c.default_price) || 0;
+                      const previewPrice = line.type === 'service'
+                        ? (catalogPrice > 0 ? round2(catalogPrice) : round2(cost + labor))
+                        : Number(c.sale_price) || 0;
+                      const timeLabel = line.type === 'service' && timeMin > 0
+                        ? ` · ${timeMin} min`
+                        : '';
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}{timeLabel} — €{previewPrice.toFixed(2)}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-6 sm:col-span-1 flex sm:hidden justify-end">
-                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-12 sm:col-span-4">
+                  <Label className="text-xs">{t('line.description')} *</Label>
+                  <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                </div>
+                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.vat')}%</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-8 sm:col-span-2 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-semibold h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
               </div>
-              <div className="col-span-12 sm:col-span-3"><Label className="text-xs">{t('line.description')}</Label><Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required /></div>
-              <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-6 sm:col-span-1"><Label className="text-xs">{t('line.vat')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
-              <div className="col-span-6 sm:col-span-1 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-medium h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
-              <div className="hidden sm:flex sm:col-span-1 justify-end"><Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeLine(line.id)}><Trash2 className="w-3.5 h-3.5" /></Button></div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5">

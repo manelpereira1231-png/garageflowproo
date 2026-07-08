@@ -51,7 +51,7 @@ function buildServiceStageMessage(p: WhatsAppMessageParams): string | null {
     case 'diagnosis':
       return `${header}\n\nOlá${name},\n\nEstamos a realizar o diagnóstico do seu ${veh} para identificar a origem da intervenção necessária.\n\nCaso seja necessário algum serviço adicional ou exista alguma alteração ao orçamento, entraremos em contacto antes de avançar.`;
     case 'waiting_approval':
-      return `${header}\n\nOlá${name},\n\nO diagnóstico do seu veículo foi concluído.\n\nO orçamento encontra-se disponível para a sua análise e aprovação.\n\nAssim que recebermos a sua confirmação, iniciaremos os trabalhos.`;
+      return `${header}\n\nOlá${name},\n\nO diagnóstico do seu veículo foi concluído.\n\nO orçamento encontra-se disponível para a sua análise e aprovação.${p.link ? `\n\n📄 Consultar e aprovar:\n${p.link}` : ''}\n\nAssim que recebermos a sua confirmação, iniciaremos os trabalhos.`;
     case 'approved':
       return `${header}\n\nOlá${name},\n\nConfirmamos que o orçamento para o seu ${veh} foi aprovado.${total ? `\n\nValor aprovado: ${total}` : ''}\n\nA intervenção será iniciada em breve. Iremos mantê-lo(a) informado(a) sobre a evolução dos trabalhos.`;
     case 'in_progress':

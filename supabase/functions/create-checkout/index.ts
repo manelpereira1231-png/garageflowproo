@@ -118,6 +118,8 @@ serve(async (req) => {
 
     // Determine price ID — fallback to EUR if not set for this country
     const priceMap: Record<string, string | null | undefined> = {
+      free_monthly: countryConfig?.stripe_free_monthly,
+      free_yearly: countryConfig?.stripe_free_yearly,
       pro_monthly: countryConfig?.stripe_pro_monthly,
       pro_yearly: countryConfig?.stripe_pro_yearly,
       garage_monthly: countryConfig?.stripe_garage_monthly,

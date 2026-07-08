@@ -562,13 +562,7 @@ export default function Services() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
                       {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
-                      const phone = (s.clients as any)?.phone;
-                      if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                      const quoteToken = (s.quotes as any)?.token;
-                      const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
-                      openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate, model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(), serviceStage: s.status as any, total: s.total, link });
-                    }}>
+                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
                       <MessageCircle className="w-3.5 h-3.5" />
                     </Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (

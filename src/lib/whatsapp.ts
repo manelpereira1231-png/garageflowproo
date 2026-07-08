@@ -1,5 +1,14 @@
 /** WhatsApp utility for sharing documents without exposing PDF links in the message. */
 
+export type ServiceStage =
+  | 'open'
+  | 'diagnosis'
+  | 'waiting_approval'
+  | 'approved'
+  | 'in_progress'
+  | 'completed'
+  | 'delivered';
+
 export interface WhatsAppMessageParams {
   phone?: string | null;
   clientName?: string;
@@ -10,6 +19,49 @@ export interface WhatsAppMessageParams {
   link?: string;
   pdfBlob?: Blob | null;
   pdfFilename?: string;
+  /** For type='service' — pre-fills the stage-specific message from the workshop timeline. */
+  serviceStage?: ServiceStage;
+  /** Optional approved total (used in the "approved" stage message). */
+  total?: number;
+}
+
+function vehicleLabel(p: WhatsAppMessageParams): string {
+  const parts = [p.model, p.plate].filter(Boolean);
+  if (!parts.length) return 'o seu veículo';
+  if (p.model && p.plate) return `${p.model} (${p.plate})`;
+  return parts.join(' ');
+}
+
+function formatEUR(v?: number): string {
+  if (typeof v !== 'number' || isNaN(v)) return '';
+  return `€${v.toFixed(2)}`;
+}
+
+function buildServiceStageMessage(p: WhatsAppMessageParams): string | null {
+  const stage = p.serviceStage;
+  if (!stage) return null;
+  const name = p.clientName ? ` ${p.clientName}` : '';
+  const header = `Ordem de Serviço${p.number ? ` ${p.number}` : ''}`;
+  const veh = vehicleLabel(p);
+  const total = formatEUR(p.total);
+
+  switch (stage) {
+    case 'open':
+      return `${header}\n\nOlá${name},\n\nO seu veículo ${veh} foi recebido nas nossas instalações.\n\nA nossa equipa irá realizar a avaliação inicial e mantê-lo(a) informado(a) sobre os próximos passos.\n\nObrigado pela sua confiança.`;
+    case 'diagnosis':
+      return `${header}\n\nOlá${name},\n\nEstamos a realizar o diagnóstico do seu ${veh} para identificar a origem da intervenção necessária.\n\nCaso seja necessário algum serviço adicional ou exista alguma alteração ao orçamento, entraremos em contacto antes de avançar.`;
+    case 'waiting_approval':
+      return `${header}\n\nOlá${name},\n\nO diagnóstico do seu veículo foi concluído.\n\nO orçamento encontra-se disponível para a sua análise e aprovação.\n\nAssim que recebermos a sua confirmação, iniciaremos os trabalhos.`;
+    case 'approved':
+      return `${header}\n\nOlá${name},\n\nConfirmamos que o orçamento para o seu ${veh} foi aprovado.${total ? `\n\nValor aprovado: ${total}` : ''}\n\nA intervenção será iniciada em breve. Iremos mantê-lo(a) informado(a) sobre a evolução dos trabalhos.`;
+    case 'in_progress':
+      return `${header}\n\nOlá${name},\n\nInformamos que os trabalhos no seu ${veh} já se encontram em execução.\n\nA nossa equipa está a realizar a intervenção prevista e iremos notificá-lo(a) assim que esta estiver concluída.`;
+    case 'completed':
+      return `${header}\n\nOlá${name},\n\nTemos o prazer de informar que a intervenção no seu ${veh} foi concluída com sucesso.\n\nO veículo encontra-se preparado para entrega. Entraremos em contacto consigo caso ainda seja necessário agendar a recolha.`;
+    case 'delivered':
+      return `${header}\n\nOlá${name},\n\nConfirmamos a entrega do seu ${veh}.\n\nAgradecemos a confiança depositada nos nossos serviços e esperamos voltar a recebê-lo numa próxima oportunidade.\n\nSe tiver alguma questão ou necessitar de assistência, estaremos sempre disponíveis.`;
+  }
+  return null;
 }
 
 function cleanPhone(phone: string): string {
@@ -43,6 +95,8 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
       return msg;
     }
     case 'service': {
+      const staged = buildServiceStageMessage(p);
+      if (staged) return staged;
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nA sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
       if (includeLink && p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;

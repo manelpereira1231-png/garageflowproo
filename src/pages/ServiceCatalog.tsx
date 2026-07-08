@@ -159,6 +159,57 @@ const TEMPLATE_PACK: Array<Omit<CatalogService, "id" | "shop_id" | "created_at" 
   { name: "Programação de chave/comando",           description: "[Outros] Sincronização de comando ou chave adicional",                 default_time: 60,  default_price: 90.00,  internal_cost: 40,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
   { name: "Substituição pilha do comando",          description: "[Outros] Pilha CR2032/CR2025 + montagem",                              default_time: 10,  default_price: 12.00,  internal_cost: 5,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
   { name: "Cárter proteção motor",                  description: "[Outros] Substituição do cárter/proteção inferior (peça)",             default_time: 45,  default_price: 100.00, internal_cost: 65,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // ─── AMPLIAÇÃO — SERVIÇOS COMUNS EM OFICINAS MULTIMARCA PORTUGUESAS ────────
+
+  // REVISÕES / LUBRIFICAÇÃO (complemento)
+  { name: "Mudança de óleo motor",                  description: "[Revisões] Substituição de óleo motor 5W-30 (5L) sem filtro — inclui consumível",  default_time: 20,  default_price: 55.00,  internal_cost: 35,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
+  { name: "Revisão anual",                           description: "[Revisões] Óleo + filtro óleo + inspeção multi-ponto + verificação de fluidos e travões (peças e consumíveis)", default_time: 75,  default_price: 120.00, internal_cost: 60,  vat_rate: 23, recurrence_km: 20000,  recurrence_months: 12 },
+
+  // TRAVAGEM (complemento — discos e pastilhas separados por eixo)
+  { name: "Substituição discos dianteiros",         description: "[Travagem] Par de discos travão do eixo dianteiro (peças) — inclui verificação de pastilhas",                     default_time: 60,  default_price: 145.00, internal_cost: 85,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
+  { name: "Substituição discos traseiros",          description: "[Travagem] Par de discos travão do eixo traseiro (peças) — inclui verificação de pastilhas",                      default_time: 60,  default_price: 135.00, internal_cost: 75,  vat_rate: 23, recurrence_km: 80000,  recurrence_months: null },
+  { name: "Substituição pastilhas dianteiras",      description: "[Travagem] Jogo de pastilhas travão do eixo dianteiro (peças) — inclui limpeza e lubrificação de guias",          default_time: 45,  default_price: 85.00,  internal_cost: 40,  vat_rate: 23, recurrence_km: 40000,  recurrence_months: null },
+  { name: "Substituição pastilhas traseiras",       description: "[Travagem] Jogo de pastilhas travão do eixo traseiro (peças) — inclui limpeza e lubrificação de guias",           default_time: 45,  default_price: 80.00,  internal_cost: 35,  vat_rate: 23, recurrence_km: 50000,  recurrence_months: null },
+  { name: "Substituição servofreio",                description: "[Travagem] Servofreio + verificação de vácuo e purga do sistema (peça)",                                          default_time: 150, default_price: 320.00, internal_cost: 220, vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // DIREÇÃO (complemento)
+  { name: "Geometria completa (4 rodas)",           description: "[Direção] Geometria total 4 rodas (convergência, camber, caster) em máquina 3D — sem peças",                     default_time: 60,  default_price: 65.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: 20000,  recurrence_months: 12 },
+  { name: "Substituição terminais de direção (par)", description: "[Direção] Par de terminais de direção + alinhamento (peças e consumíveis incluídos)",                            default_time: 75,  default_price: 130.00, internal_cost: 60,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Substituição caixa de direção",          description: "[Direção] Caixa de direção nova ou reconstruída + alinhamento (peça)",                                            default_time: 240, default_price: 520.00, internal_cost: 320, vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // SUSPENSÃO (complemento)
+  { name: "Substituição casquilhos suspensão",      description: "[Suspensão] Casquilhos/silent-blocks de braços de suspensão (peças)",                                             default_time: 90,  default_price: 130.00, internal_cost: 60,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Substituição bielas estabilizadoras (par)", description: "[Suspensão] Par de bielas da barra estabilizadora (peças)",                                                    default_time: 45,  default_price: 75.00,  internal_cost: 35,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Substituição topos amortecedor (par)",   description: "[Suspensão] Par de topos/rolamentos superiores de amortecedor (peças)",                                           default_time: 90,  default_price: 165.00, internal_cost: 90,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Substituição rolamento de roda",         description: "[Suspensão] Rolamento de cubo de roda (peça) — inclui torque em ficha",                                           default_time: 90,  default_price: 150.00, internal_cost: 80,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // MOTOR (complemento)
+  { name: "Limpeza da admissão",                    description: "[Motor] Descarbonização química da admissão + válvulas (sem desmontagem) — inclui consumíveis",                  default_time: 90,  default_price: 130.00, internal_cost: 45,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
+  { name: "Limpeza do turbo",                       description: "[Motor] Limpeza química do turbocompressor + válvula geometria (sem desmontagem) — inclui aditivo",              default_time: 90,  default_price: 140.00, internal_cost: 50,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
+  { name: "Descarbonização motor por hidrogénio",   description: "[Motor] Descarbonização interna do motor por injeção de hidrogénio — inclui consumíveis",                        default_time: 60,  default_price: 90.00,  internal_cost: 25,  vat_rate: 23, recurrence_km: 60000,  recurrence_months: null },
+  { name: "Teste de compressão do motor",           description: "[Motor] Teste de compressão a todos os cilindros + relatório — sem peças",                                       default_time: 60,  default_price: 55.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // ELETRÓNICA / DIAGNÓSTICO (complemento)
+  { name: "Codificação de bateria AGM/EFB",         description: "[Diagnóstico] Codificação eletrónica da nova bateria no BMS/módulo de gestão — sem peças",                        default_time: 30,  default_price: 35.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Atualização de software ECU",            description: "[Diagnóstico] Atualização de firmware do módulo motor via oficial/OEM — inclui diagnóstico",                     default_time: 90,  default_price: 90.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Programação de sensores TPMS",           description: "[Diagnóstico] Programação/emparelhamento dos sensores de pressão dos pneus — sem peças",                         default_time: 30,  default_price: 40.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // PNEUS (complemento)
+  { name: "Rodízio de pneus (4 rodas)",             description: "[Pneus] Permuta dos pneus entre eixos + ajuste de pressões (sem peças)",                                          default_time: 30,  default_price: 20.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: 10000,  recurrence_months: null },
+  { name: "Substituição sensor TPMS (unidade)",     description: "[Pneus] Sensor TPMS novo + programação + montagem por roda (peça)",                                               default_time: 30,  default_price: 65.00,  internal_cost: 40,  vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+
+  // IPO (complemento)
+  { name: "Verificação de iluminação e sinalização", description: "[IPO] Verificação e regulação de faróis, mínimos, stops e piscas (sem peças)",                                   default_time: 30,  default_price: 20.00,  internal_cost: 0,   vat_rate: 23, recurrence_km: null,   recurrence_months: 12 },
+
+  // AD BLUE / OUTROS FLUIDOS
+  { name: "Enchimento AdBlue",                      description: "[Outros] Reposição de fluido AdBlue (5L) + verificação do sistema SCR — inclui consumível",                      default_time: 15,  default_price: 25.00,  internal_cost: 12,  vat_rate: 23, recurrence_km: 15000,  recurrence_months: 12 },
+
+  // LAVAGEM / DETALHE
+  { name: "Lavagem exterior",                       description: "[Lavagem] Lavagem exterior completa + shampoo + cera (inclui consumíveis)",                                       default_time: 30,  default_price: 15.00,  internal_cost: 4,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Lavagem interior",                       description: "[Lavagem] Aspiração completa + limpeza de plásticos e tapetes (inclui consumíveis)",                             default_time: 45,  default_price: 25.00,  internal_cost: 5,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Lavagem completa (interior + exterior)", description: "[Lavagem] Lavagem exterior + aspiração e limpeza interior (inclui consumíveis)",                                  default_time: 75,  default_price: 35.00,  internal_cost: 8,   vat_rate: 23, recurrence_km: null,   recurrence_months: null },
+  { name: "Lavagem do motor",                       description: "[Lavagem] Desengorduramento e lavagem controlada do compartimento motor (inclui consumíveis)",                    default_time: 45,  default_price: 30.00,  internal_cost: 6,   vat_rate: 23, recurrence_km: null,   recurrence_months: 24 },
 ];
 
 export default function ServiceCatalog() {

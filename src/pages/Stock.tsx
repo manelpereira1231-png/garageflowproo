@@ -450,6 +450,9 @@ export default function Stock() {
                 <SelectItem value="ok">{t('stock.okOnly')}</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" className="gap-1" onClick={exportCsv} disabled={filtered.length === 0} title="Exportar CSV">
+              <ArrowUpDown className="w-3.5 h-3.5" /> CSV
+            </Button>
           </div>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">

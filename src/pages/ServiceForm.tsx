@@ -140,7 +140,7 @@ export default function ServiceForm() {
       const { data: inserted, error } = await supabase.from("work_orders").insert({
         shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, status: 'open', notes: notes || null,
       }).select("id").single();

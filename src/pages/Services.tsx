@@ -217,6 +217,9 @@ export default function Services() {
       }
     }
     const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
+    // Paridade com email: anexa o PDF da OS ao WhatsApp (via Web Share no mobile,
+    // ou download automático em desktop). Se a geração falhar, envia só a mensagem.
+    const pdf = await buildServicePdfBlob(s);
     openWhatsApp({
       phone,
       clientName: (s.clients as any)?.name,
@@ -227,6 +230,8 @@ export default function Services() {
       serviceStage: s.status as any,
       total: s.total,
       link,
+      pdfBlob: pdf?.blob ?? null,
+      pdfFilename: pdf?.filename,
     });
   };
 
@@ -388,10 +393,15 @@ export default function Services() {
     else { toast.success(t('service.cancelled')); fetchServices(); }
   };
 
-  const downloadPdf = async (s: any) => {
-    if (!shop) return;
+  /**
+   * Gera o jsPDF da OS. Partilhado por `downloadPdf` (guarda no disco) e pelo
+   * botão WhatsApp (converte para Blob e anexa via Web Share / download em
+   * desktop — paridade com o envio por email, que já entrega o PDF).
+   */
+  const buildServicePdfDoc = async (s: any) => {
+    if (!shop) throw new Error('shop_not_loaded');
     const lines = (Array.isArray(s.lines) ? s.lines : []) as any[];
-    const doc = await generatePdf({
+    return generatePdf({
       type: 'service', number: s.number, date: formatLocalDate(s.created_at),
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
       shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
@@ -402,7 +412,28 @@ export default function Services() {
       total: s.total, profit: s.profit, notes: s.notes, technician: s.technician, diagnosis: s.diagnosis,
       laborHours: s.labor_hours, laborRate: shop.labor_rate, currency: shop.currency || 'EUR', plan: plan,
     }, limits.pdfWatermark);
-    doc.save(`${s.number}.pdf`);
+  };
+
+  const downloadPdf = async (s: any) => {
+    if (!shop) return;
+    try {
+      const doc = await buildServicePdfDoc(s);
+      doc.save(`${s.number}.pdf`);
+    } catch (err: any) {
+      console.error('PDF error', err);
+      toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    }
+  };
+
+  /** Blob do PDF da OS para partilha (WhatsApp). Retorna null se falhar. */
+  const buildServicePdfBlob = async (s: any): Promise<{ blob: Blob; filename: string } | null> => {
+    try {
+      const doc = await buildServicePdfDoc(s);
+      return { blob: doc.output('blob'), filename: `${s.number}.pdf` };
+    } catch (err) {
+      console.warn('[services] pdf blob build failed', err);
+      return null;
+    }
   };
 
   const handleExportCsv = () => {

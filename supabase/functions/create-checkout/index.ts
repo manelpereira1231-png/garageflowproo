@@ -9,6 +9,8 @@ const corsHeaders = {
 
 // Fallback EUR price IDs (Portugal) used if a country has no specific Stripe IDs configured
 const FALLBACK_EUR = {
+  free_monthly: "price_1TqzbMKIsGuKgNEHjtqeXdRd",
+  free_yearly: "price_1Tqzc5KIsGuKgNEHwF8nig2i",
   pro_monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",
   pro_yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",
   garage_monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",
@@ -81,8 +83,8 @@ serve(async (req) => {
     const user = userData.user;
     const { plan, billing_cycle, region, country_code } = await req.json();
 
-    if (!plan || !["pro", "garage"].includes(plan)) {
-      throw new Error("O plano gratuito não requer checkout Stripe. Escolha Pro ou Garage para subscrever.");
+    if (!plan || !["free", "pro", "garage"].includes(plan)) {
+      throw new Error("Plano inválido. Escolha Start, Pro ou Garage.");
     }
     const cycle = (billing_cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly";
 
@@ -116,6 +118,8 @@ serve(async (req) => {
 
     // Determine price ID — fallback to EUR if not set for this country
     const priceMap: Record<string, string | null | undefined> = {
+      free_monthly: countryConfig?.stripe_free_monthly,
+      free_yearly: countryConfig?.stripe_free_yearly,
       pro_monthly: countryConfig?.stripe_pro_monthly,
       pro_yearly: countryConfig?.stripe_pro_yearly,
       garage_monthly: countryConfig?.stripe_garage_monthly,

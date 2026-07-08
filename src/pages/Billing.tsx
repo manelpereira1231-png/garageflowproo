@@ -390,26 +390,30 @@ export default function Billing() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              isCanceled ? 'bg-destructive/10' : 'gradient-primary'
+              noActivePlan ? 'bg-destructive/10' : 'gradient-primary'
             }`}>
-              {isCanceled ? <XCircle className="w-5 h-5 text-destructive" /> : <Crown className="w-5 h-5 text-primary-foreground" />}
+              {noActivePlan ? <XCircle className="w-5 h-5 text-destructive" /> : <Crown className="w-5 h-5 text-primary-foreground" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-lg">{getPlanName(plan, t(`billing.plan.${plan}`))}</span>
-                {isTrialing && (
+                <span className="font-bold text-lg">
+                  {noActivePlan
+                    ? (t('billing.noActivePlan') || 'Sem plano ativo')
+                    : getPlanName(plan, t(`billing.plan.${plan}`))}
+                </span>
+                {isTrialing && !noActivePlan && (
                   <Badge variant="secondary" className="bg-warning/10 text-warning">
                     <Clock className="w-3 h-3 mr-1" />
                     Trial — {trialDaysLeft} {t('billing.daysLeft')}
                   </Badge>
                 )}
-                {isCanceled && (
+                {noActivePlan && (
                   <Badge variant="secondary" className="bg-destructive/10 text-destructive">
                     <XCircle className="w-3 h-3 mr-1" />
-                    {t('billing.statusCanceled')}
+                    {t('billing.statusCanceled') || 'Expirado'}
                   </Badge>
                 )}
-                {isAdminManaged && !isCanceled && (
+                {isAdminManaged && !noActivePlan && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary">
                     <Shield className="w-3 h-3 mr-1" />
                     {t('billing.managedPlan')}
@@ -417,14 +421,13 @@ export default function Billing() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {isCanceled
-                  ? t('billing.planCanceledDesc')
+                {noActivePlan
+                  ? (t('billing.mustSubscribeMessage')
+                    || 'A sua subscrição expirou. Escolha um plano para continuar a utilizar todas as funcionalidades do GarageFlow.')
                   : isAdminManaged
                   ? t('billing.adminManagedNote')
                   : subscription?.current_period_end
                   ? `${t('billing.renewsOn')} ${formatDate(subscription.current_period_end)}`
-                  : plan === 'free'
-                  ? t('billing.freePlanActive')
                   : getPlanName(plan, t(`billing.plan.${plan}`))
                 }
               </p>
@@ -432,7 +435,7 @@ export default function Billing() {
           </div>
           <div className="flex gap-2 flex-wrap">
             {/* Stripe-managed: show portal button */}
-            {hasStripe && !isCanceled && (
+            {hasStripe && !noActivePlan && (
               <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={managingPortal}>
                 {managingPortal ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -442,25 +445,25 @@ export default function Billing() {
                 {t('billing.manage')}
               </Button>
             )}
-            {/* Cancel button for paid plans */}
-            {plan !== 'free' && !isCanceled && (
+            {/* Cancel button — only when there is an active plan */}
+            {!noActivePlan && (
               <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={() => setCancelDialogOpen(true)}>
                 <XCircle className="w-4 h-4 mr-2" />
                 {t('billing.cancelSubscription')}
               </Button>
             )}
-            {/* Reactivate / upgrade for free or canceled */}
-            {(plan === 'free' || isCanceled) && (
+            {/* Subscribe — shown when the user has no active plan */}
+            {noActivePlan && (
               <Button onClick={() => handleUpgrade('pro')} disabled={upgrading} className="gradient-primary text-primary-foreground">
                 <Crown className="w-4 h-4 mr-2" />
-                {t('billing.tryPro')}
+                {t('billing.subscribe') || 'Subscrever'}
               </Button>
             )}
           </div>
         </div>
 
-        {/* Subscription details row */}
-        {plan !== 'free' && !isCanceled && (
+        {/* Subscription details row — only meaningful while an active plan exists */}
+        {!noActivePlan && (
           <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-6 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="w-4 h-4" />
@@ -481,6 +484,7 @@ export default function Billing() {
           </div>
         )}
       </div>
+
 
       {/* Referral Free Months */}
       <ReferralFreeMonths />

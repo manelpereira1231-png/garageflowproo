@@ -492,6 +492,12 @@ export default function Stock() {
                   </div>
                   <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
+                {reserved[p.id] > 0 && (
+                  <div className="text-[11px] text-warning">
+                    {reserved[p.id]} reservado{reserved[p.id] > 1 ? 's' : ''} em serviços abertos
+                    {p.stock_quantity - reserved[p.id] < 0 && <span className="ml-1 text-destructive font-semibold">(défice)</span>}
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   {c30 > 0 ? <span>Saídas 30d: <strong className="text-foreground">{c30}</strong>{cov !== null && <> · Cobertura: <strong className={cov < 15 ? "text-warning" : "text-foreground"}>{cov}d</strong></>}</span> : <span>Sem consumo nos últimos 30d</span>}
                   {p.supplier && <span>{p.supplier}</span>}

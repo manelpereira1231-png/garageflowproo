@@ -217,6 +217,9 @@ export default function Services() {
       }
     }
     const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
+    // Paridade com email: anexa o PDF da OS ao WhatsApp (via Web Share no mobile,
+    // ou download automático em desktop). Se a geração falhar, envia só a mensagem.
+    const pdf = await buildServicePdfBlob(s);
     openWhatsApp({
       phone,
       clientName: (s.clients as any)?.name,
@@ -227,6 +230,8 @@ export default function Services() {
       serviceStage: s.status as any,
       total: s.total,
       link,
+      pdfBlob: pdf?.blob ?? null,
+      pdfFilename: pdf?.filename,
     });
   };
 

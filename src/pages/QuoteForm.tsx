@@ -160,7 +160,8 @@ export default function QuoteForm() {
       const { error } = await supabase.from("quotes").update({
         client_id: clientId, vehicle_id: vehicleId,
         validity_date: validity.toISOString().split('T')[0],
-        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
+        subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         notes: notes || null,
       }).eq("id", editId);
 

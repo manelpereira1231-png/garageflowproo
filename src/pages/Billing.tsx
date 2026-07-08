@@ -611,11 +611,14 @@ export default function Billing() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
           const price = prices[key][billingCycle];
-          // When the user has no active subscription, NO card must show as
-          // "Plano Atual" — every card is a fresh subscription option and the
-          // button always reads "Subscrever".
-          const isCurrentPlan = !noActivePlan && plan === key;
-
+          // Centralised button state — never derive Upgrade/Downgrade/Plano Atual
+          // with local ifs. See src/lib/planHierarchy.ts.
+          const btnState = getPlanButtonState({
+            displayedPlan: key,
+            activePlan: plan,
+            hasActiveSubscription: !noActivePlan,
+          });
+          const isCurrentPlan = btnState.action === 'current';
 
           return (
             <div
@@ -671,17 +674,10 @@ export default function Billing() {
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading}
+                disabled={btnState.disabled || upgrading}
                 onClick={() => handleUpgrade(key)}
               >
-                {isCurrentPlan
-                  ? t('billing.currentPlan')
-                  : upgrading
-                  ? t('common.loading')
-                  : noActivePlan
-                  ? (t('billing.subscribe') || 'Subscrever')
-                  : t('billing.upgrade')
-                }
+                {upgrading && !isCurrentPlan ? t('common.loading') : t(btnState.labelKey)}
               </Button>
             </div>
           );

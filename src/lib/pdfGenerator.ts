@@ -37,6 +37,7 @@ interface PdfData {
   technician?: string;
   diagnosis?: string;
   laborHours?: number;
+  laborRate?: number;
   currency: string;
   plan?: 'free' | 'pro' | 'garage';
   language?: string;
@@ -126,6 +127,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     total: { pt: 'Total', en: 'Total', es: 'Total', 'pt-BR': 'Total' },
     serviceType: { pt: 'Serviço', en: 'Service', es: 'Servicio', 'pt-BR': 'Serviço' },
     partType: { pt: 'Peça', en: 'Part', es: 'Pieza', 'pt-BR': 'Peça' },
+    laborType: { pt: 'Mão de obra', en: 'Labor', es: 'Mano de obra', 'pt-BR': 'Mão de obra' },
+    partsSubtotal: { pt: 'Peças', en: 'Parts', es: 'Piezas', 'pt-BR': 'Peças' },
+    laborSubtotal: { pt: 'Mão de obra', en: 'Labor', es: 'Mano de obra', 'pt-BR': 'Mão de obra' },
+    servicesSubtotal: { pt: 'Outros serviços', en: 'Other services', es: 'Otros servicios', 'pt-BR': 'Outros serviços' },
     diagnosis: { pt: 'DIAGNÓSTICO', en: 'DIAGNOSIS', es: 'DIAGNÓSTICO', 'pt-BR': 'DIAGNÓSTICO' },
     notes: { pt: 'NOTAS', en: 'NOTES', es: 'NOTAS', 'pt-BR': 'NOTAS' },
     disclaimer: {

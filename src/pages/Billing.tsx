@@ -585,7 +585,10 @@ export default function Billing() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
           const price = prices[key][billingCycle];
-          const isCurrentPlan = plan === key;
+          // When the user has no active subscription, NO card must show as
+          // "Plano Atual" — every card is a fresh subscription option and the
+          // button always reads "Subscrever".
+          const isCurrentPlan = !noActivePlan && plan === key;
 
           return (
             <div
@@ -613,11 +616,9 @@ export default function Billing() {
                     </span>
                   )}
                 </div>
-                {key !== 'free' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('billing.trial30')}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('billing.trial30')}
+                </p>
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -643,16 +644,15 @@ export default function Billing() {
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}
-                variant={key === 'free' ? 'outline' : 'default'}
                 disabled={isCurrentPlan || upgrading}
                 onClick={() => handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
-                  : key === 'free'
-                  ? t('billing.downgrade')
                   : upgrading
                   ? t('common.loading')
+                  : noActivePlan
+                  ? (t('billing.subscribe') || 'Subscrever')
                   : t('billing.upgrade')
                 }
               </Button>
@@ -660,6 +660,7 @@ export default function Billing() {
           );
         })}
       </div>
+
 
       {/* Cancel Subscription Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

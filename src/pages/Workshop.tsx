@@ -15,6 +15,7 @@ import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 import { sendPushNotification } from "@/lib/pushNotifications";
 import { pageCache } from "@/lib/pageCache";
+import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));

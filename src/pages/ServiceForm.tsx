@@ -279,6 +279,7 @@ export default function ServiceForm() {
                         unit_price: Number(item.sale_price) || 0,
                         unit_cost: Number(item.internal_cost) || 0,
                         vat_rate: Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate,
+                        ref_id: item.id,
                       } : l));
                     }
                   }}

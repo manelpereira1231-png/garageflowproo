@@ -740,9 +740,9 @@ export default function Stock() {
                 <TableBody>
                   {dataLoading && movements.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
-                  ) : movements.length === 0 ? (
+                  ) : filteredMov.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('stock.noMovements')}</TableCell></TableRow>
-                  ) : movements.map(m => {
+                  ) : filteredMov.map(m => {
                     const part = parts.find(p => p.id === m.part_id);
                     return (
                       <TableRow key={m.id}>
@@ -764,6 +764,7 @@ export default function Stock() {
               </Table>
             </CardContent>
           </Card>
+          </>); })()}
         </TabsContent>
       </Tabs>
 

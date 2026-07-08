@@ -21,6 +21,22 @@ const REGION_TO_COUNTRY: Record<string, string> = {
   uk: "UK", gb: "UK", de: "DE", es: "ES", fr: "FR",
 };
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+}
+
+function publicErrorMessage(error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.includes("No such price")) return "Stripe Price não encontrado na conta configurada.";
+  if (msg.includes("No such customer")) return "Cliente Stripe inválido. Tente novamente.";
+  if (msg.includes("No Stripe price configured")) return msg;
+  if (msg.includes("Not authenticated") || msg.includes("authorization")) return msg;
+  return msg || "Erro ao criar checkout";
+}
+
 // ─── Local payment methods per country (subscription mode = recurring-compatible only) ───
 const SUBSCRIPTION_METHODS: Record<string, string[]> = {
   PT: ["card", "sepa_debit", "link"],
@@ -92,6 +108,10 @@ serve(async (req) => {
       .eq("active", true)
       .maybeSingle();
 
+    if (!countryConfig) {
+      console.warn("[create-checkout] country settings missing or inactive", { resolvedCountry, plan, cycle });
+    }
+
     // Determine price ID — fallback to EUR if not set for this country
     const priceMap: Record<string, string | null | undefined> = {
       free_monthly: (countryConfig as any)?.stripe_free_monthly,
@@ -108,6 +128,29 @@ serve(async (req) => {
     const trialDays = countryConfig?.saas_trial_days ?? 30;
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      if (!price.active) {
+        throw new Error(`Stripe Price inactive: ${priceId}`);
+      }
+      if (price.type !== "recurring" || !price.recurring) {
+        throw new Error(`Stripe Price is not recurring: ${priceId}`);
+      }
+      const expectedInterval = cycle === "yearly" ? "year" : "month";
+      if (price.recurring.interval !== expectedInterval) {
+        throw new Error(`Stripe Price interval mismatch for ${plan}/${cycle}: ${priceId}`);
+      }
+    } catch (priceError) {
+      console.error("[create-checkout] invalid price", {
+        country: resolvedCountry,
+        plan,
+        cycle,
+        priceId,
+        message: priceError instanceof Error ? priceError.message : String(priceError),
+      });
+      throw priceError;
+    }
 
     // Validate email — if invalid (test/legacy accounts), let Stripe collect a valid one at checkout
     const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -127,12 +170,15 @@ serve(async (req) => {
     const userPhone = shopData?.phone || null;
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 
-    const { data: eligible } = await supabaseClient.rpc("check_trial_eligibility", {
+    const { data: eligible, error: eligibilityError } = await supabaseClient.rpc("check_trial_eligibility", {
       _email: user.email,
       _nif: userNif,
       _phone: userPhone,
       _stripe_customer_id: customerId || null,
     });
+    if (eligibilityError) {
+      console.warn("[create-checkout] trial eligibility check failed; continuing without trial", eligibilityError.message);
+    }
 
     let stripeHadTrial = false;
     if (customerId) {
@@ -146,7 +192,7 @@ serve(async (req) => {
       );
     }
 
-    const canTrial = eligible === true && !stripeHadTrial && trialDays > 0;
+    const canTrial = !eligibilityError && eligible === true && !stripeHadTrial && trialDays > 0;
 
     // Always use the custom domain
     const rawOrigin = req.headers.get("origin") || "";
@@ -174,7 +220,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (canTrial && shopData) {
-      await supabaseClient.from("trial_records").insert({
+      const { error: trialInsertError } = await supabaseClient.from("trial_records").insert({
         user_id: user.id,
         shop_id: shopData.id,
         email: user.email,
@@ -185,22 +231,20 @@ serve(async (req) => {
         trial_start: new Date().toISOString(),
         trial_end: new Date(Date.now() + trialDays * 86400000).toISOString(),
       });
+      if (trialInsertError) {
+        console.warn("[create-checkout] trial record insert failed", trialInsertError.message);
+      }
     }
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
       url: session.url,
       trial_granted: canTrial,
       country: resolvedCountry,
       currency: countryConfig?.currency || "EUR",
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: msg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const msg = publicErrorMessage(error);
+    console.error("[create-checkout] error", msg);
+    return jsonResponse({ error: msg }, 500);
   }
 });

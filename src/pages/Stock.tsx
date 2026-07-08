@@ -248,6 +248,69 @@ export default function Stock() {
     load();
   };
 
+  // Confirma entrega de uma encomenda — repõe stock e regista movimento de entrada.
+  const confirmDelivery = async (o: PartsOrder) => {
+    if (!activeShopId) return;
+    // Encontra a peça correspondente por referência ou nome
+    const match = parts.find(p =>
+      (o.part_reference && p.reference && p.reference.trim().toLowerCase() === o.part_reference.trim().toLowerCase()) ||
+      p.name.trim().toLowerCase() === o.part_name.trim().toLowerCase()
+    );
+    const qty = Number(o.quantity) || 0;
+    const { error: upErr } = await supabase.from('parts_orders')
+      .update({ status: 'delivered', delivered_at: new Date().toISOString() } as any)
+      .eq('id', o.id);
+    if (upErr) { toast.error(upErr.message); return; }
+    if (match && qty > 0) {
+      await supabase.from('parts')
+        .update({ stock_quantity: (Number(match.stock_quantity) || 0) + qty } as any)
+        .eq('id', match.id);
+      await supabase.from('stock_movements').insert({
+        shop_id: activeShopId,
+        part_id: match.id,
+        type: 'in',
+        quantity: qty,
+        reason: `Entrega de encomenda${o.part_reference ? ` (${o.part_reference})` : ''}`,
+      } as any);
+      toast.success(`Entrega confirmada — +${qty} em stock (${match.name})`);
+    } else {
+      toast.success(t('stock.orders.deliveryConfirmed'));
+      if (qty > 0) toast.info("Peça não corresponde a nenhum artigo em stock — não foi reposto automaticamente");
+    }
+    load();
+  };
+
+  // Exporta a lista de peças para CSV
+  const exportCsv = () => {
+    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço","IVA","Ativo"];
+    const rows = filtered.map(p => [
+      p.name,
+      p.reference || "",
+      p.supplier || "",
+      p.stock_quantity,
+      reserved[p.id] || 0,
+      p.min_stock,
+      p.internal_cost,
+      p.sale_price,
+      p.vat_rate,
+      p.active ? "sim" : "não",
+    ]);
+    const esc = (v: any) => {
+      const s = String(v ?? "");
+      return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [header, ...rows].map(r => r.map(esc).join(";")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+
+
 
   return (
     <div className="space-y-4 lg:space-y-6">

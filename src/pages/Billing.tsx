@@ -76,7 +76,7 @@ function ReferralFreeMonths() {
 
 export default function Billing() {
   const { t } = useLanguage();
-  const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId } = useSubscription();
+  const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId, mustSubscribe } = useSubscription();
   const { getName: getPlanName } = usePlanNames();
   const [pricingTick, setPricingTick] = useState(0);
   const [freeQuoteLimit, setFreeQuoteLimit] = useState<number>(getCachedPlatformSettings().planLimits.freeQuoteLimit);

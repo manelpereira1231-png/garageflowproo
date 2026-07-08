@@ -556,6 +556,14 @@ export default function Stock() {
                             <TrendingDown className="w-3 h-3 text-destructive" />
                           )}
                         </div>
+                        {reserved[p.id] > 0 && (
+                          <div className="text-[11px] text-warning mt-1">
+                            {reserved[p.id]} reservado{reserved[p.id] > 1 ? 's' : ''} em serviços abertos
+                            {p.stock_quantity - reserved[p.id] < 0 && (
+                              <span className="ml-1 text-destructive font-semibold">(défice)</span>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-xs">
                         {c30 > 0 ? (

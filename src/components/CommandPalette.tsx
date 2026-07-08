@@ -62,7 +62,7 @@ export default function CommandPalette() {
       setSearching(true);
       const searchTerm = `%${q}%`;
 
-      const [clientsRes, vehiclesRes, quotesRes, invoicesRes, partsRes] =
+      const [clientsRes, vehiclesRes, quotesRes, invoicesRes, partsRes, servicesRes, catalogRes, apptsRes] =
         await Promise.all([
           supabase
             .from("clients")
@@ -96,6 +96,24 @@ export default function CommandPalette() {
             .eq("shop_id", activeShopId)
             .or(`name.ilike.${searchTerm},reference.ilike.${searchTerm}`)
             .limit(5),
+          supabase
+            .from("work_orders")
+            .select("id, number, total, status, technician, clients(name), vehicles(plate,make,model)")
+            .eq("shop_id", activeShopId)
+            .or(`number.ilike.${searchTerm},technician.ilike.${searchTerm}`)
+            .limit(5),
+          supabase
+            .from("service_catalog")
+            .select("id, name, description, default_price, default_time")
+            .eq("shop_id", activeShopId)
+            .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+            .limit(5),
+          supabase
+            .from("appointments")
+            .select("id, scheduled_at, status, notes, clients(name), vehicles(plate)")
+            .eq("shop_id", activeShopId)
+            .or(`notes.ilike.${searchTerm}`)
+            .limit(5),
         ]);
 
       const all: SearchResult[] = [
@@ -117,11 +135,23 @@ export default function CommandPalette() {
           title: q.number,
           subtitle: `${(q.clients as any)?.name || ""} · €${(q.total || 0).toFixed(2)}`,
         })),
+        ...(servicesRes.data || []).map((s: any) => ({
+          id: s.id,
+          type: "service" as const,
+          title: s.number,
+          subtitle: `${(s.clients as any)?.name || ""} · ${(s.vehicles as any)?.plate || ""} · ${s.status}`,
+        })),
         ...(invoicesRes.data || []).map((i) => ({
           id: i.id,
           type: "invoice" as const,
           title: i.number,
           subtitle: `${(i.clients as any)?.name || ""} · €${(i.total || 0).toFixed(2)}`,
+        })),
+        ...(catalogRes.data || []).map((c: any) => ({
+          id: c.id,
+          type: "catalog" as const,
+          title: c.name,
+          subtitle: `${c.default_time || 0}min · €${Number(c.default_price || 0).toFixed(2)}`,
         })),
         ...(partsRes.data || []).map((p) => ({
           id: p.id,
@@ -129,12 +159,18 @@ export default function CommandPalette() {
           title: p.name,
           subtitle: `${p.reference || ""} · Stock: ${p.stock_quantity}`,
         })),
+        ...(apptsRes.data || []).map((a: any) => ({
+          id: a.id,
+          type: "appointment" as const,
+          title: (a.clients as any)?.name || (isPt ? "Marcação" : "Appointment"),
+          subtitle: `${new Date(a.scheduled_at).toLocaleString(isPt ? "pt-PT" : "en-US")} · ${(a.vehicles as any)?.plate || ""}`,
+        })),
       ];
 
       setResults(all);
       setSearching(false);
     },
-    [activeShopId]
+    [activeShopId, isPt]
   );
 
   useEffect(() => {

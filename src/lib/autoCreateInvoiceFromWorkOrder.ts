@@ -91,19 +91,33 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
       return { invoiceId: null, created: false, error: invErr?.message || "Falha a criar fatura" };
     }
 
-    // 6. Inserir itens
+    // 6. Inserir itens — preserva discriminação Peça / Serviço / Mão de obra.
+    //    Os `lines` do work_order usam `name` (não `description`); mantemos
+    //    fallback para não perder a descrição real de cada linha.
+    const typeLabel = (t?: string) => {
+      if (t === 'part') return 'Peça';
+      if (t === 'service') return 'Serviço';
+      return null;
+    };
     const itemsToInsert = [
-      ...lines.map((l: any) => ({
-        invoice_id: invoice.id,
-        description: l.description || "Serviço",
-        quantity: Number(l.quantity || 1),
-        unit_price: Number(l.unit_price || 0),
-        vat_rate: Number(l.vat_rate || 23),
-        total:
-          Number(l.quantity || 1) *
-          Number(l.unit_price || 0) *
-          (1 + Number(l.vat_rate || 23) / 100),
-      })),
+      ...lines.map((l: any) => {
+        const rawName = l.description || l.name || null;
+        const prefix = typeLabel(l.type);
+        const description = rawName
+          ? (prefix ? `${prefix}: ${rawName}` : rawName)
+          : (prefix || 'Item');
+        return {
+          invoice_id: invoice.id,
+          description,
+          quantity: Number(l.quantity || 1),
+          unit_price: Number(l.unit_price || 0),
+          vat_rate: Number(l.vat_rate || 23),
+          total:
+            Number(l.quantity || 1) *
+            Number(l.unit_price || 0) *
+            (1 + Number(l.vat_rate || 23) / 100),
+        };
+      }),
       ...extraLines.map((l: any) => ({
         invoice_id: invoice.id,
         description: l.description,

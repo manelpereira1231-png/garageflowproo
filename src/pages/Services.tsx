@@ -268,7 +268,7 @@ export default function Services() {
       const svcLines = Array.isArray(service.lines) ? service.lines : [];
       const partLines = svcLines.filter((l: any) => l?.type === 'part' && l?.ref_id && Number(l?.quantity) > 0);
       if (partLines.length > 0 && activeId) {
-        const partIds = Array.from(new Set(partLines.map((l: any) => l.ref_id)));
+        const partIds = Array.from(new Set(partLines.map((l: any) => String(l.ref_id)))) as string[];
         const { data: partsData } = await supabase
           .from("parts").select("id, name, stock_quantity")
           .in("id", partIds).eq("shop_id", activeId);

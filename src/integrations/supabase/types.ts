@@ -4819,6 +4819,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          labor_hours: number
           lines: Json
           notes: string | null
           number: string
@@ -4843,6 +4844,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          labor_hours?: number
           lines?: Json
           notes?: string | null
           number: string
@@ -4867,6 +4869,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          labor_hours?: number
           lines?: Json
           notes?: string | null
           number?: string

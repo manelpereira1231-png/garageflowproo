@@ -78,15 +78,27 @@ export default function Stock() {
       setDataLoading(true);
     }
     try {
-      const [partsRes, movRes, ordersRes] = await Promise.all([
+      const [partsRes, movRes, ordersRes, openWoRes] = await Promise.all([
         supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
         supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
         supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
+        supabase.from("work_orders").select("lines").eq("shop_id", activeShopId).in("status", ["open","diagnosis","waiting_approval","approved","in_progress"]),
       ]);
       const p = (partsRes.data ?? []) as Part[];
       const m = (movRes.data ?? []) as StockMovement[];
       const o = (ordersRes.data ?? []) as PartsOrder[];
-      setParts(p); setMovements(m); setOrders(o);
+      // Stock reservado — soma das quantidades de linhas type='part' em serviços abertos
+      const res: Record<string, number> = {};
+      for (const wo of (openWoRes.data ?? []) as any[]) {
+        const lines = Array.isArray(wo?.lines) ? wo.lines : [];
+        for (const l of lines) {
+          if (l?.type === 'part' && l?.ref_id) {
+            const q = Number(l.quantity) || 0;
+            if (q > 0) res[l.ref_id] = (res[l.ref_id] || 0) + q;
+          }
+        }
+      }
+      setParts(p); setMovements(m); setOrders(o); setReserved(res);
       pageCache.set(key, { parts: p, movements: m, orders: o });
     } finally {
       setDataLoading(false);

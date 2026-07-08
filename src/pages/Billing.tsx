@@ -273,6 +273,10 @@ export default function Billing() {
   };
 
   const createCheckoutUrl = async (targetPlan: Plan) => {
+    if (targetPlan === 'free') {
+      throw new Error('FREE_PLAN_NO_CHECKOUT');
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     let session = sessionData.session;
 
@@ -345,6 +349,8 @@ export default function Billing() {
       } else if (msg === 'SESSION_EXPIRED' || msg.includes('Not authenticated') || msg.includes('No authorization')) {
         toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
         navigate('/auth');
+      } else if (msg === 'FREE_PLAN_NO_CHECKOUT') {
+        toast.error('O plano gratuito não precisa de checkout Stripe. Escolha Pro ou Garage para subscrever.');
       } else {
         toast.error(msg && msg !== 'CHECKOUT_FAILED' ? msg : t('billing.errorCheckout'));
       }
@@ -612,6 +618,7 @@ export default function Billing() {
           // "Plano Atual" — every card is a fresh subscription option and the
           // button always reads "Subscrever".
           const isCurrentPlan = !noActivePlan && plan === key;
+          const isFreePlan = key === 'free';
 
           return (
             <div
@@ -667,11 +674,13 @@ export default function Billing() {
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading}
+                disabled={isCurrentPlan || upgrading || isFreePlan}
                 onClick={() => handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
+                  : isFreePlan
+                  ? (t('billing.freePlanUnavailable') || 'Não disponível')
                   : upgrading
                   ? t('common.loading')
                   : noActivePlan

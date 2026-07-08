@@ -400,7 +400,7 @@ export default function Services() {
       vehicleMake: (s.vehicles as any)?.make || '', vehicleModel: (s.vehicles as any)?.model || '',
       vehiclePlate: (s.vehicles as any)?.plate || '', lines, subtotal: s.subtotal, vatTotal: s.vat_total,
       total: s.total, profit: s.profit, notes: s.notes, technician: s.technician, diagnosis: s.diagnosis,
-      laborHours: s.labor_hours, currency: shop.currency || 'EUR', plan: plan,
+      laborHours: s.labor_hours, laborRate: shop.labor_rate, currency: shop.currency || 'EUR', plan: plan,
     }, limits.pdfWatermark);
     doc.save(`${s.number}.pdf`);
   };

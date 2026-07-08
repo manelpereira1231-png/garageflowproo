@@ -686,14 +686,24 @@ export default function Stock() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="movements">
+        <TabsContent value="movements" className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={movementSearch} onChange={e => setMovementSearch(e.target.value)} placeholder="Pesquisar por peça ou motivo..." className="pl-9" />
+          </div>
+          {(() => { const filteredMov = movements.filter(m => {
+            if (!movementSearch.trim()) return true;
+            const q = movementSearch.toLowerCase();
+            const part = parts.find(p => p.id === m.part_id);
+            return (part?.name || "").toLowerCase().includes(q) || (m.reason || "").toLowerCase().includes(q);
+          }); return (<>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
             {dataLoading && movements.length === 0 ? (
               <ListSkeleton rows={5} />
-            ) : movements.length === 0 ? (
+            ) : filteredMov.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.noMovements')}</div>
-            ) : movements.map(m => {
+            ) : filteredMov.map(m => {
               const part = parts.find(p => p.id === m.part_id);
               return (
                 <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-1">

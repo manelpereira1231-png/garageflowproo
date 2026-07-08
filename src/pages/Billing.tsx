@@ -150,28 +150,15 @@ export default function Billing() {
     );
   }
 
-  const isAdminManaged = subscription && !subscription.stripe_subscription_id && plan !== 'free';
+  const isAdminManaged = subscription && !subscription.stripe_subscription_id && plan !== 'free' && !mustSubscribe;
   const hasStripe = !!subscription?.stripe_subscription_id;
   const isCanceled = subscription?.status === 'canceled' || subscription?.status === 'cancelled';
+  // No free tier exists: any user without an active/trialing subscription must
+  // resubscribe. `mustSubscribe` (from useSubscription) is the single source of
+  // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
+  const noActivePlan = mustSubscribe || isCanceled;
 
   const plans: { key: Plan; icon: React.ElementType; color: string; features: string[]; lockedFeatures?: string[] }[] = [
-    {
-      key: 'free',
-      icon: Zap,
-      color: 'text-muted-foreground',
-      features: [
-        t('billing.feature.quotes10').replace(/\d+/, String(freeQuoteLimit)),
-        t('billing.feature.1user'),
-        t('billing.feature.basicDashboard'),
-        t('billing.feature.watermarkPdf'),
-      ],
-      lockedFeatures: [
-        t('billing.feature.5users'),
-        t('billing.feature.basicAlerts'),
-        t('billing.feature.advancedReports'),
-        t('billing.feature.automations'),
-      ],
-    },
     {
       key: 'pro',
       icon: Crown,
@@ -211,6 +198,7 @@ export default function Billing() {
       lockedFeatures: [],
     },
   ];
+
 
   const isEmbeddedRuntime = () => {
     try {

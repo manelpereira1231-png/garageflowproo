@@ -374,6 +374,8 @@ export default function AdminCountries() {
                   Mostrados apenas para auditoria.
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                  <div className="truncate">Entrada mensal: {(editing as any).stripe_free_monthly || "—"}</div>
+                  <div className="truncate">Entrada anual: {(editing as any).stripe_free_yearly || "—"}</div>
                   <div className="truncate">Pro mensal: {editing.stripe_pro_monthly || "—"}</div>
                   <div className="truncate">Pro anual: {editing.stripe_pro_yearly || "—"}</div>
                   <div className="truncate">Garage mensal: {editing.stripe_garage_monthly || "—"}</div>

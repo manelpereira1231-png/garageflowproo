@@ -191,29 +191,68 @@ export default function Quotes() {
     finally { setSendingEmail(null); }
   };
 
+  /**
+   * Gera o jsPDF do orçamento a partir do estado atual da linha da lista.
+   * Partilhado por `downloadPdf` (guarda no disco) e pelo botão WhatsApp
+   * (converte para Blob e envia como anexo real via Web Share / download
+   * automático em desktop — paridade com o email, que já envia o PDF).
+   */
+  const buildQuotePdfDoc = async (q: any) => {
+    if (!shop) throw new Error('shop_not_loaded');
+    const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
+    return generatePdf({
+      type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
+      validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
+      shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
+      clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,
+      clientPhone: (q.clients as any)?.phone, clientNif: (q.clients as any)?.nif,
+      vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
+      vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
+      total: q.total, profit: q.profit, notes: q.notes, currency: shop.currency || 'EUR', plan: plan,
+      laborHours: q.labor_hours, laborRate: shop.labor_rate,
+    }, limits.pdfWatermark);
+  };
+
   const downloadPdf = async (q: any) => {
     if (!shop) {
       toast.error("Dados da oficina não carregados. Recarregue a página.");
       return;
     }
     try {
-      const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
-      const doc = await generatePdf({
-        type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
-        validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
-        shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
-        clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,
-        clientPhone: (q.clients as any)?.phone, clientNif: (q.clients as any)?.nif,
-        vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
-        vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
-        total: q.total, profit: q.profit, notes: q.notes, currency: shop.currency || 'EUR', plan: plan,
-        laborHours: q.labor_hours, laborRate: shop.labor_rate,
-      }, limits.pdfWatermark);
+      const doc = await buildQuotePdfDoc(q);
       doc.save(`${q.number}.pdf`);
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
     }
+  };
+
+  /** Devolve o PDF do orçamento como Blob para partilha (WhatsApp). Não bloqueia se falhar — o WhatsApp abre na mesma com a mensagem. */
+  const buildQuotePdfBlob = async (q: any): Promise<{ blob: Blob; filename: string } | null> => {
+    try {
+      const doc = await buildQuotePdfDoc(q);
+      return { blob: doc.output('blob'), filename: `${q.number}.pdf` };
+    } catch (err) {
+      console.warn('[quotes] pdf blob build failed', err);
+      return null;
+    }
+  };
+
+  const sendQuoteWhatsApp = async (q: any) => {
+    const phone = (q.clients as any)?.phone;
+    if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+    const approvalUrl = q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
+    const pdf = await buildQuotePdfBlob(q);
+    openWhatsApp({
+      phone,
+      clientName: (q.clients as any)?.name,
+      type: 'quote',
+      number: q.number,
+      plate: (q.vehicles as any)?.plate,
+      link: approvalUrl,
+      pdfBlob: pdf?.blob ?? null,
+      pdfFilename: pdf?.filename,
+    });
   };
 
   const handleExportCsv = () => {

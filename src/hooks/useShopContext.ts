@@ -11,6 +11,11 @@ interface Shop {
 }
 
 const STORAGE_KEY = "garageflow_active_shop";
+const SHOP_CONTEXT_TIMEOUT_MS = 3000;
+
+function timeoutResult<T>(value: T, ms = SHOP_CONTEXT_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
 
 export function useShopContext() {
   const { isReady, user } = useAuthReady();
@@ -31,44 +36,55 @@ export function useShopContext() {
       return;
     }
 
-    // Get shops where user is owner
-    const { data: ownedShops } = await supabase
-      .from("shops")
-      .select("id, name, logo_url, currency, language")
-      .eq("user_id", user.id);
+    try {
+      // Get shops where user is owner
+      const { data: ownedShops } = await Promise.race([
+        supabase
+          .from("shops")
+          .select("id, name, logo_url, currency, language")
+          .eq("user_id", user.id),
+        timeoutResult({ data: [] }),
+      ]);
 
-    // Get shops where user is a team member
-    const { data: memberEntries } = await supabase
-      .from("shop_users")
-      .select("shop_id")
-      .eq("user_id", user.id);
+      // Get shops where user is a team member
+      const { data: memberEntries } = await Promise.race([
+        supabase
+          .from("shop_users")
+          .select("shop_id")
+          .eq("user_id", user.id),
+        timeoutResult({ data: [] }),
+      ]);
 
-    const memberShopIds = (memberEntries || [])
-      .map(e => e.shop_id)
-      .filter(id => !(ownedShops || []).some(s => s.id === id));
+      const memberShopIds = (memberEntries || [])
+        .map(e => e.shop_id)
+        .filter(id => !(ownedShops || []).some(s => s.id === id));
 
-    let memberShops: Shop[] = [];
-    if (memberShopIds.length > 0) {
-      const { data } = await supabase
-        .from("shops")
-        .select("id, name, logo_url, currency, language")
-        .in("id", memberShopIds);
-      memberShops = data || [];
+      let memberShops: Shop[] = [];
+      if (memberShopIds.length > 0) {
+        const { data } = await Promise.race([
+          supabase
+            .from("shops")
+            .select("id, name, logo_url, currency, language")
+            .in("id", memberShopIds),
+          timeoutResult({ data: [] }),
+        ]);
+        memberShops = data || [];
+      }
+
+      const allShops = [...(ownedShops || []), ...memberShops];
+      setShops(allShops);
+
+      // Restore or pick default
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && allShops.some(s => s.id === stored)) {
+        setActiveShopId(stored);
+      } else if (allShops.length > 0) {
+        setActiveShopId(allShops[0].id);
+        localStorage.setItem(STORAGE_KEY, allShops[0].id);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    const allShops = [...(ownedShops || []), ...memberShops];
-    setShops(allShops);
-
-    // Restore or pick default
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && allShops.some(s => s.id === stored)) {
-      setActiveShopId(stored);
-    } else if (allShops.length > 0) {
-      setActiveShopId(allShops[0].id);
-      localStorage.setItem(STORAGE_KEY, allShops[0].id);
-    }
-
-    setLoading(false);
   }, [isReady, user]);
 
   useEffect(() => { loadShops(); }, [loadShops]);

@@ -50,6 +50,11 @@ const FALLBACK_PLAN_FEATURES: Record<Plan, string[]> = {
 };
 
 const GARAGE_ONLY_FEATURES = new Set(["marketing", "loyalty"]);
+const FEATURE_LOAD_TIMEOUT_MS = 3000;
+
+function timeoutResult<T>(value: T, ms = FEATURE_LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
 
 const fallbackFeatureSetFor = (plan: Plan) => new Set(FALLBACK_PLAN_FEATURES[plan] ?? FALLBACK_PLAN_FEATURES.free);
 
@@ -69,8 +74,14 @@ async function loadOnce(): Promise<State> {
   if (inflight) return inflight;
   inflight = (async () => {
     const [{ data: features }, { data: matrix }] = await Promise.all([
-      supabase.from("features").select("*").eq("active", true),
-      supabase.from("plan_features").select("*"),
+      Promise.race([
+        supabase.from("features").select("*").eq("active", true),
+        timeoutResult({ data: null }),
+      ]),
+      Promise.race([
+        supabase.from("plan_features").select("*"),
+        timeoutResult({ data: null }),
+      ]),
     ]);
     cache = {
       features: (features as any) ?? [],

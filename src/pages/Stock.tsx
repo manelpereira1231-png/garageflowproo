@@ -38,6 +38,10 @@ interface StockMovement {
   work_order_id: string | null;
 }
 
+interface OpenServiceLine {
+  ref_id: string; quantity: number;
+}
+
 const emptyForm = {
   name: "", reference: "", supplier: "", internal_cost: 0, sale_price: 0,
   vat_rate: 23, stock_quantity: 0, min_stock: 0, active: true,
@@ -50,6 +54,8 @@ export default function Stock() {
   const [parts, setParts] = useState<Part[]>(_stCache?.parts ?? []);
   const [movements, setMovements] = useState<StockMovement[]>(_stCache?.movements ?? []);
   const [orders, setOrders] = useState<PartsOrder[]>(_stCache?.orders ?? []);
+  const [reserved, setReserved] = useState<Record<string, number>>({});
+  const [movementSearch, setMovementSearch] = useState("");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);
@@ -72,15 +78,27 @@ export default function Stock() {
       setDataLoading(true);
     }
     try {
-      const [partsRes, movRes, ordersRes] = await Promise.all([
+      const [partsRes, movRes, ordersRes, openWoRes] = await Promise.all([
         supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
         supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
         supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
+        supabase.from("work_orders").select("lines").eq("shop_id", activeShopId).in("status", ["open","diagnosis","waiting_approval","approved","in_progress"]),
       ]);
       const p = (partsRes.data ?? []) as Part[];
       const m = (movRes.data ?? []) as StockMovement[];
       const o = (ordersRes.data ?? []) as PartsOrder[];
-      setParts(p); setMovements(m); setOrders(o);
+      // Stock reservado — soma das quantidades de linhas type='part' em serviços abertos
+      const res: Record<string, number> = {};
+      for (const wo of (openWoRes.data ?? []) as any[]) {
+        const lines = Array.isArray(wo?.lines) ? wo.lines : [];
+        for (const l of lines) {
+          if (l?.type === 'part' && l?.ref_id) {
+            const q = Number(l.quantity) || 0;
+            if (q > 0) res[l.ref_id] = (res[l.ref_id] || 0) + q;
+          }
+        }
+      }
+      setParts(p); setMovements(m); setOrders(o); setReserved(res);
       pageCache.set(key, { parts: p, movements: m, orders: o });
     } finally {
       setDataLoading(false);
@@ -230,6 +248,69 @@ export default function Stock() {
     load();
   };
 
+  // Confirma entrega de uma encomenda — repõe stock e regista movimento de entrada.
+  const confirmDelivery = async (o: PartsOrder) => {
+    if (!activeShopId) return;
+    // Encontra a peça correspondente por referência ou nome
+    const match = parts.find(p =>
+      (o.part_reference && p.reference && p.reference.trim().toLowerCase() === o.part_reference.trim().toLowerCase()) ||
+      p.name.trim().toLowerCase() === o.part_name.trim().toLowerCase()
+    );
+    const qty = Number(o.quantity) || 0;
+    const { error: upErr } = await supabase.from('parts_orders')
+      .update({ status: 'delivered', delivered_at: new Date().toISOString() } as any)
+      .eq('id', o.id);
+    if (upErr) { toast.error(upErr.message); return; }
+    if (match && qty > 0) {
+      await supabase.from('parts')
+        .update({ stock_quantity: (Number(match.stock_quantity) || 0) + qty } as any)
+        .eq('id', match.id);
+      await supabase.from('stock_movements').insert({
+        shop_id: activeShopId,
+        part_id: match.id,
+        type: 'in',
+        quantity: qty,
+        reason: `Entrega de encomenda${o.part_reference ? ` (${o.part_reference})` : ''}`,
+      } as any);
+      toast.success(`Entrega confirmada — +${qty} em stock (${match.name})`);
+    } else {
+      toast.success(t('stock.orders.deliveryConfirmed'));
+      if (qty > 0) toast.info("Peça não corresponde a nenhum artigo em stock — não foi reposto automaticamente");
+    }
+    load();
+  };
+
+  // Exporta a lista de peças para CSV
+  const exportCsv = () => {
+    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço","IVA","Ativo"];
+    const rows = filtered.map(p => [
+      p.name,
+      p.reference || "",
+      p.supplier || "",
+      p.stock_quantity,
+      reserved[p.id] || 0,
+      p.min_stock,
+      p.internal_cost,
+      p.sale_price,
+      p.vat_rate,
+      p.active ? "sim" : "não",
+    ]);
+    const esc = (v: any) => {
+      const s = String(v ?? "");
+      return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [header, ...rows].map(r => r.map(esc).join(";")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+
+
 
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -369,6 +450,9 @@ export default function Stock() {
                 <SelectItem value="ok">{t('stock.okOnly')}</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" className="gap-1" onClick={exportCsv} disabled={filtered.length === 0} title="Exportar CSV">
+              <ArrowUpDown className="w-3.5 h-3.5" /> CSV
+            </Button>
           </div>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
@@ -408,6 +492,12 @@ export default function Stock() {
                   </div>
                   <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
                 </div>
+                {reserved[p.id] > 0 && (
+                  <div className="text-[11px] text-warning">
+                    {reserved[p.id]} reservado{reserved[p.id] > 1 ? 's' : ''} em serviços abertos
+                    {p.stock_quantity - reserved[p.id] < 0 && <span className="ml-1 text-destructive font-semibold">(défice)</span>}
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   {c30 > 0 ? <span>Saídas 30d: <strong className="text-foreground">{c30}</strong>{cov !== null && <> · Cobertura: <strong className={cov < 15 ? "text-warning" : "text-foreground"}>{cov}d</strong></>}</span> : <span>Sem consumo nos últimos 30d</span>}
                   {p.supplier && <span>{p.supplier}</span>}
@@ -472,6 +562,14 @@ export default function Stock() {
                             <TrendingDown className="w-3 h-3 text-destructive" />
                           )}
                         </div>
+                        {reserved[p.id] > 0 && (
+                          <div className="text-[11px] text-warning mt-1">
+                            {reserved[p.id]} reservado{reserved[p.id] > 1 ? 's' : ''} em serviços abertos
+                            {p.stock_quantity - reserved[p.id] < 0 && (
+                              <span className="ml-1 text-destructive font-semibold">(défice)</span>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-xs">
                         {c30 > 0 ? (
@@ -529,12 +627,7 @@ export default function Stock() {
                 <div className="flex items-center justify-between pt-1 border-t border-border">
                   <span className="font-semibold text-sm">{formatMoney(o.total || 0)}</span>
                   {o.status !== 'delivered' && o.status !== 'cancelled' && (
-                    <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={async () => {
-                      const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
-                      if (error) { toast.error(error.message); return; }
-                      toast.success(t('stock.orders.deliveryConfirmed'));
-                      load();
-                    }}>
+                    <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => confirmDelivery(o)}>
                       <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
                     </Button>
                   )}
@@ -580,12 +673,7 @@ export default function Stock() {
                       <TableCell className="text-muted-foreground text-sm">{format(new Date(o.created_at), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
                         {o.status !== 'delivered' && o.status !== 'cancelled' && (
-                          <Button size="sm" variant="outline" className="gap-1" onClick={async () => {
-                            const { error } = await supabase.from('parts_orders').update({ status: 'delivered' } as any).eq('id', o.id);
-                            if (error) { toast.error(error.message); return; }
-                            toast.success(t('stock.orders.deliveryConfirmed'));
-                            load();
-                          }}>
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmDelivery(o)}>
                             <Truck className="w-3.5 h-3.5" />{t('stock.orders.confirmDelivery')}
                           </Button>
                         )}
@@ -598,14 +686,24 @@ export default function Stock() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="movements">
+        <TabsContent value="movements" className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={movementSearch} onChange={e => setMovementSearch(e.target.value)} placeholder="Pesquisar por peça ou motivo..." className="pl-9" />
+          </div>
+          {(() => { const filteredMov = movements.filter(m => {
+            if (!movementSearch.trim()) return true;
+            const q = movementSearch.toLowerCase();
+            const part = parts.find(p => p.id === m.part_id);
+            return (part?.name || "").toLowerCase().includes(q) || (m.reason || "").toLowerCase().includes(q);
+          }); return (<>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
             {dataLoading && movements.length === 0 ? (
               <ListSkeleton rows={5} />
-            ) : movements.length === 0 ? (
+            ) : filteredMov.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5">{t('stock.noMovements')}</div>
-            ) : movements.map(m => {
+            ) : filteredMov.map(m => {
               const part = parts.find(p => p.id === m.part_id);
               return (
                 <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-1">
@@ -642,9 +740,9 @@ export default function Stock() {
                 <TableBody>
                   {dataLoading && movements.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
-                  ) : movements.length === 0 ? (
+                  ) : filteredMov.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('stock.noMovements')}</TableCell></TableRow>
-                  ) : movements.map(m => {
+                  ) : filteredMov.map(m => {
                     const part = parts.find(p => p.id === m.part_id);
                     return (
                       <TableRow key={m.id}>
@@ -666,6 +764,7 @@ export default function Stock() {
               </Table>
             </CardContent>
           </Card>
+          </>); })()}
         </TabsContent>
       </Tabs>
 

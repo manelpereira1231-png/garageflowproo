@@ -367,7 +367,7 @@ export default function Warranties() {
               <Textarea value={form.coverage} onChange={e => setForm(f => ({ ...f, coverage: e.target.value }))} placeholder={t('warranties.coveragePlaceholder')} rows={2} />
             </div>
             <div>
-              <Label>{t('common.notes')}</Label>
+              <Label>Notas</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
             </div>
           </div>

@@ -160,6 +160,27 @@ export default function Billing() {
 
   const plans: { key: Plan; icon: React.ElementType; color: string; features: string[]; lockedFeatures?: string[] }[] = [
     {
+      key: 'free',
+      icon: Gift,
+      color: 'text-muted-foreground',
+      features: [
+        `${freeQuoteLimit} ${t('billing.feature.quotes10').replace(/^\d+\s*/, '')}`,
+        t('billing.feature.1user'),
+        t('billing.feature.basicDashboard'),
+        t('billing.feature.watermarkPdf'),
+      ],
+      lockedFeatures: [
+        t('billing.feature.unlimitedQuotes'),
+        t('billing.feature.emailAuto'),
+        t('billing.feature.export'),
+        t('billing.feature.automations'),
+        t('billing.feature.advancedReports'),
+        t('billing.feature.multiShop'),
+        t('billing.feature.chatbot'),
+        t('billing.feature.api'),
+      ],
+    },
+    {
       key: 'pro',
       icon: Crown,
       color: 'text-primary',
@@ -618,9 +639,11 @@ export default function Billing() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('billing.trial30')}
-                </p>
+                {key !== 'free' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('billing.trial30')}
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -644,13 +667,17 @@ export default function Billing() {
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
                     : key === 'pro'
                     ? 'gradient-primary text-primary-foreground'
+                    : key === 'free'
+                    ? 'bg-muted text-foreground hover:bg-muted/80'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading}
-                onClick={() => handleUpgrade(key)}
+                disabled={isCurrentPlan || upgrading || key === 'free'}
+                onClick={() => key !== 'free' && handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
+                  : key === 'free'
+                  ? (t('billing.plan.free') || 'Entrada')
                   : upgrading
                   ? t('common.loading')
                   : noActivePlan

@@ -18,7 +18,12 @@ const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;
 
 const getSafeGarageRedirectPath = (candidate: string | null) => {
-  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//") || candidate.startsWith("/market")) {
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+    return "/dashboard";
+  }
+  // Only the Market realm paths must bounce back to /dashboard — "/marketing"
+  // is an ERP module and must be preserved as a valid redirect target.
+  if (candidate === "/market" || candidate.startsWith("/market/")) {
     return "/dashboard";
   }
   return candidate;

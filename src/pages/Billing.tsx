@@ -347,9 +347,8 @@ export default function Billing() {
       } else if (msg === 'SESSION_EXPIRED' || msg.includes('Not authenticated') || msg.includes('No authorization')) {
         toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
         navigate('/auth');
-      } else if (msg === 'FREE_PLAN_NO_CHECKOUT') {
-        toast.error('O plano gratuito não precisa de checkout Stripe. Escolha Pro ou Garage para subscrever.');
       } else {
+
         toast.error(msg && msg !== 'CHECKOUT_FAILED' ? msg : t('billing.errorCheckout'));
       }
     } finally {

@@ -132,13 +132,31 @@ export default function InvoiceDetail() {
     if (error) { toast.error(error.message); setSaving(false); return; }
 
     const newTotalPaid = totalPaid + payAmount;
-    const newStatus = newTotalPaid >= Number(invoice.total) ? 'paid' : 'partial';
+    const isFullyPaid = newTotalPaid >= Number(invoice.total);
+    const newStatus = isFullyPaid ? 'paid' : 'partial';
     await supabase.from("invoices").update({ status: newStatus }).eq("id", invoice.id);
 
     toast.success(t('invoices.paymentRegistered'));
     setShowPayment(false);
     setPayAmount(0);
     setPayRef("");
+
+    // Auto-emitir Fatura-Recibo no InvoiceExpress quando o pagamento fica completo
+    if (isFullyPaid && !invoice.provider_invoice_id && billingProvider === 'invoicexpress') {
+      try {
+        const { data, error: emitErr } = await supabase.functions.invoke('invoicexpress-emit', {
+          body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
+        });
+        if (emitErr || data?.error) {
+          toast.error(`Pagamento registado, mas falhou a emitir Fatura-Recibo: ${data?.error || emitErr?.message}`, { duration: 8000 });
+        } else {
+          toast.success(`Fatura-Recibo emitida: ${data?.number || data?.provider_invoice_id}`);
+        }
+      } catch (e: any) {
+        toast.error(`Falha ao emitir Fatura-Recibo: ${e.message}`, { duration: 8000 });
+      }
+    }
+
     setSaving(false);
     loadData();
   };

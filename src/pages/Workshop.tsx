@@ -15,6 +15,7 @@ import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 import { sendPushNotification } from "@/lib/pushNotifications";
 import { pageCache } from "@/lib/pageCache";
+import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
@@ -120,6 +121,12 @@ export default function Workshop() {
           `${vehicle} (${(wo.clients as any)?.name || ''})`,
           '/workshop'
         );
+      }
+      // Auto-criar fatura ao concluir o serviço
+      if (nextStatus === 'completed') {
+        const invRes = await autoCreateInvoiceFromWorkOrder(wo.id);
+        if (invRes.error) toast.error(`Fatura não criada: ${invRes.error}`);
+        else if (invRes.created) toast.success("Fatura criada automaticamente");
       }
       fetchOrders();
       if (selected?.id === wo.id) setSelected({ ...wo, ...updates });

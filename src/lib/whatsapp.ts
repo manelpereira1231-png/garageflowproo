@@ -95,6 +95,8 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
       return msg;
     }
     case 'service': {
+      const staged = buildServiceStageMessage(p);
+      if (staged) return staged;
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nA sua ordem de serviço${num}${vehicleRef} está concluída. Pode levantar o veículo na oficina.`;
       if (includeLink && p.link) msg += `\n\n📄 Detalhes:\n${p.link}`;

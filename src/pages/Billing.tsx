@@ -638,11 +638,9 @@ export default function Billing() {
                     </span>
                   )}
                 </div>
-                {key !== 'free' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('billing.trial30')}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('billing.trial30')}
+                </p>
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -666,17 +664,13 @@ export default function Billing() {
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
                     : key === 'pro'
                     ? 'gradient-primary text-primary-foreground'
-                    : key === 'free'
-                    ? 'bg-muted text-foreground hover:bg-muted/80'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading || key === 'free'}
-                onClick={() => key !== 'free' && handleUpgrade(key)}
+                disabled={isCurrentPlan || upgrading}
+                onClick={() => handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
-                  : key === 'free'
-                  ? (t('billing.plan.free') || 'Entrada')
                   : upgrading
                   ? t('common.loading')
                   : noActivePlan

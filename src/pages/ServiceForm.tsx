@@ -70,7 +70,6 @@ export default function ServiceForm() {
           setEntryMileage(String(service.entry_mileage || 0));
           setClientDescription(service.client_description || "");
           setDiagnosis(service.diagnosis || "");
-          setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
           const svcLines = Array.isArray(service.lines) ? service.lines : [];

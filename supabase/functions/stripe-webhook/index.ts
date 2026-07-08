@@ -240,11 +240,16 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          // IMPORTANT: after a Stripe cancellation reaches its period end the
+          // user must NOT be silently placed on any other plan. We only flip
+          // the status to "canceled" and drop the Stripe subscription id.
+          // The `plan` column is left untouched on purpose so the UI can still
+          // reference the last known tier while the feature gates lock every
+          // premium capability based on status alone.
           await supabaseAdmin
             .from("subscriptions")
             .update({
               status: "canceled",
-              plan: "free",
               stripe_subscription_id: null,
               revenue_type: "free",
               current_period_end: null,
@@ -253,10 +258,11 @@ serve(async (req) => {
             })
             .eq("id", sub.id);
 
-          log("Subscription deleted — downgraded to free", { customerId });
+          log("Subscription deleted — status set to canceled (no auto plan)", { customerId });
         }
         break;
       }
+
 
       // ============= MARKET ESCROW HANDLERS =============
       case "payment_intent.succeeded": {

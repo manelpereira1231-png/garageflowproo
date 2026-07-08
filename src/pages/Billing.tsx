@@ -665,13 +665,17 @@ export default function Billing() {
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
                     : key === 'pro'
                     ? 'gradient-primary text-primary-foreground'
+                    : key === 'free'
+                    ? 'bg-muted text-foreground hover:bg-muted/80'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading}
-                onClick={() => handleUpgrade(key)}
+                disabled={isCurrentPlan || upgrading || key === 'free'}
+                onClick={() => key !== 'free' && handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
+                  : key === 'free'
+                  ? (t('billing.plan.free') || 'Entrada')
                   : upgrading
                   ? t('common.loading')
                   : noActivePlan

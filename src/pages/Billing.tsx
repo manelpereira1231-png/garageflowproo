@@ -160,27 +160,6 @@ export default function Billing() {
 
   const plans: { key: Plan; icon: React.ElementType; color: string; features: string[]; lockedFeatures?: string[] }[] = [
     {
-      key: 'free',
-      icon: Gift,
-      color: 'text-muted-foreground',
-      features: [
-        `${freeQuoteLimit} ${t('billing.feature.quotes10').replace(/^\d+\s*/, '')}`,
-        t('billing.feature.1user'),
-        t('billing.feature.basicDashboard'),
-        t('billing.feature.watermarkPdf'),
-      ],
-      lockedFeatures: [
-        t('billing.feature.unlimitedQuotes'),
-        t('billing.feature.emailAuto'),
-        t('billing.feature.export'),
-        t('billing.feature.automations'),
-        t('billing.feature.advancedReports'),
-        t('billing.feature.multiShop'),
-        t('billing.feature.chatbot'),
-        t('billing.feature.api'),
-      ],
-    },
-    {
       key: 'pro',
       icon: Crown,
       color: 'text-primary',

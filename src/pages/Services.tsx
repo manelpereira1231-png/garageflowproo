@@ -262,6 +262,44 @@ export default function Services() {
     const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
     if (error) { toastError(error, "Não foi possível concluir o serviço"); return; }
 
+    // Descontar peças do stock (linhas type='part' com ref_id)
+    try {
+      const activeId = localStorage.getItem("garageflow_active_shop");
+      const svcLines = Array.isArray(service.lines) ? service.lines : [];
+      const partLines = svcLines.filter((l: any) => l?.type === 'part' && l?.ref_id && Number(l?.quantity) > 0);
+      if (partLines.length > 0 && activeId) {
+        const partIds = Array.from(new Set(partLines.map((l: any) => l.ref_id)));
+        const { data: partsData } = await supabase
+          .from("parts").select("id, name, stock_quantity")
+          .in("id", partIds).eq("shop_id", activeId);
+        const partsMap = new Map<string, any>((partsData || []).map((p: any) => [p.id, p]));
+        const insufficient: string[] = [];
+        for (const l of partLines) {
+          const p = partsMap.get(l.ref_id);
+          if (!p) continue;
+          const qty = Number(l.quantity) || 0;
+          const newStock = (Number(p.stock_quantity) || 0) - qty;
+          if (newStock < 0) insufficient.push(`${p.name} (falta ${Math.abs(newStock)})`);
+          await supabase.from("parts").update({ stock_quantity: newStock }).eq("id", p.id);
+          await supabase.from("stock_movements").insert({
+            shop_id: activeId,
+            part_id: p.id,
+            type: 'out',
+            quantity: qty,
+            reason: `Consumo em serviço ${service.number || ''}`.trim(),
+            work_order_id: service.id,
+          } as any);
+        }
+        if (insufficient.length > 0) {
+          toast.warning(`Stock ficou negativo: ${insufficient.join(', ')}`);
+        } else if (partLines.length > 0) {
+          toast.success(`${partLines.length} peça(s) descontada(s) do stock`);
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao descontar stock:", e);
+    }
+
     // Auto-criar fatura (rascunho) ligada à OS concluída
     const invRes = await autoCreateInvoiceFromWorkOrder(service.id);
     if (invRes.error) {

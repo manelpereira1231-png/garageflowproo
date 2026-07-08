@@ -533,7 +533,7 @@ export default function Services() {
                     <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => {
                       const phone = (s.clients as any)?.phone;
                       if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                      openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate });
+                      openWhatsApp({ phone, clientName: (s.clients as any)?.name, type: 'service', number: s.number, plate: (s.vehicles as any)?.plate, model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(), serviceStage: s.status as any, total: s.total });
                     }}>
                       <MessageCircle className="w-3.5 h-3.5" />
                     </Button>

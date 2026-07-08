@@ -87,20 +87,22 @@ serve(async (req) => {
     // Load country settings (Stripe price IDs + trial days)
     const { data: countryConfig } = await supabaseClient
       .from("country_settings")
-      .select("stripe_pro_monthly,stripe_pro_yearly,stripe_garage_monthly,stripe_garage_yearly,saas_trial_days,currency")
+      .select("stripe_free_monthly,stripe_free_yearly,stripe_pro_monthly,stripe_pro_yearly,stripe_garage_monthly,stripe_garage_yearly,saas_trial_days,currency")
       .eq("code", resolvedCountry)
       .eq("active", true)
       .maybeSingle();
 
     // Determine price ID — fallback to EUR if not set for this country
     const priceMap: Record<string, string | null | undefined> = {
+      free_monthly: (countryConfig as any)?.stripe_free_monthly,
+      free_yearly: (countryConfig as any)?.stripe_free_yearly,
       pro_monthly: countryConfig?.stripe_pro_monthly,
       pro_yearly: countryConfig?.stripe_pro_yearly,
       garage_monthly: countryConfig?.stripe_garage_monthly,
       garage_yearly: countryConfig?.stripe_garage_yearly,
     };
-    const key = `${plan}_${cycle}` as keyof typeof FALLBACK_EUR;
-    const priceId = priceMap[key] || FALLBACK_EUR[key];
+    const key = `${plan}_${cycle}`;
+    const priceId = priceMap[key] || (FALLBACK_EUR as any)[key];
     if (!priceId) throw new Error(`No Stripe price configured for ${plan}/${cycle} in ${resolvedCountry}`);
 
     const trialDays = countryConfig?.saas_trial_days ?? 30;

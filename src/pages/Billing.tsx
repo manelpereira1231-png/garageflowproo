@@ -671,13 +671,11 @@ export default function Billing() {
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}
-                disabled={isCurrentPlan || upgrading || isFreePlan}
+                disabled={isCurrentPlan || upgrading}
                 onClick={() => handleUpgrade(key)}
               >
                 {isCurrentPlan
                   ? t('billing.currentPlan')
-                  : isFreePlan
-                  ? (t('billing.freePlanUnavailable') || 'Não disponível')
                   : upgrading
                   ? t('common.loading')
                   : noActivePlan

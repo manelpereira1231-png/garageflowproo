@@ -379,12 +379,7 @@ export default function Quotes() {
                     {sendingEmail === q.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
                     Email
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => {
-                    const phone = (q.clients as any)?.phone;
-                    if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-                    const approvalUrl = q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
-                    openWhatsApp({ phone, clientName: (q.clients as any)?.name, type: 'quote', number: q.number, plate: (q.vehicles as any)?.plate, link: approvalUrl });
-                  }}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendQuoteWhatsApp(q)}>
                     <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
                   </Button>
                 </>

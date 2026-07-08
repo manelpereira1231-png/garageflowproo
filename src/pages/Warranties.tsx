@@ -229,8 +229,8 @@ export default function Warranties() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('warranties.description')}</TableHead>
-                  <TableHead>{t('common.client')}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t('common.vehicle')}</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead className="hidden md:table-cell">Veículo</TableHead>
                   <TableHead>{t('warranties.type')}</TableHead>
                   <TableHead>{t('warranties.period')}</TableHead>
                   <TableHead>{t('common.status')}</TableHead>
@@ -311,18 +311,18 @@ export default function Warranties() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>{t('common.client')} *</Label>
+              <Label>Cliente *</Label>
               <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v, vehicle_id: "" }))}>
-                <SelectTrigger><SelectValue placeholder={t('common.select')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
                   {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>{t('common.vehicle')} *</Label>
+              <Label>Veículo *</Label>
               <Select value={form.vehicle_id} onValueChange={v => setForm(f => ({ ...f, vehicle_id: v }))}>
-                <SelectTrigger><SelectValue placeholder={t('common.select')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
                   {filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}
                 </SelectContent>

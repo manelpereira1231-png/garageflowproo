@@ -20,7 +20,7 @@ import {
 
 interface SearchResult {
   id: string;
-  type: "client" | "vehicle" | "quote" | "invoice" | "part";
+  type: "client" | "vehicle" | "quote" | "invoice" | "part" | "service" | "catalog" | "appointment";
   title: string;
   subtitle: string;
 }

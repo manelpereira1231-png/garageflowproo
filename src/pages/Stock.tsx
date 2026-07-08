@@ -38,6 +38,10 @@ interface StockMovement {
   work_order_id: string | null;
 }
 
+interface OpenServiceLine {
+  ref_id: string; quantity: number;
+}
+
 const emptyForm = {
   name: "", reference: "", supplier: "", internal_cost: 0, sale_price: 0,
   vat_rate: 23, stock_quantity: 0, min_stock: 0, active: true,

@@ -615,7 +615,7 @@ export default function Billing() {
           // "Plano Atual" — every card is a fresh subscription option and the
           // button always reads "Subscrever".
           const isCurrentPlan = !noActivePlan && plan === key;
-          const isFreePlan = key === 'free';
+
 
           return (
             <div

@@ -65,7 +65,7 @@ serve(async (req) => {
     const user = userData.user;
     const { plan, billing_cycle, region, country_code } = await req.json();
 
-    if (!plan || !["pro", "garage"].includes(plan)) throw new Error("Invalid plan");
+    if (!plan || !["free", "pro", "garage"].includes(plan)) throw new Error("Invalid plan");
     const cycle = (billing_cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly";
 
     // Resolve country: explicit country_code > legacy region > shop country > PT fallback

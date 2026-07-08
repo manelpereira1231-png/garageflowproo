@@ -39,6 +39,7 @@ export default function QuoteForm() {
   const [validityDays, setValidityDays] = useState("30");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
+  const [laborHours, setLaborHours] = useState("0");
   const [quoteStatus, setQuoteStatus] = useState("draft");
   // Shop defaults from Settings — authoritative source for labor rate + VAT
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
@@ -76,6 +77,7 @@ export default function QuoteForm() {
           setVehicleId(quote.vehicle_id);
           setNotes(quote.notes || "");
           setQuoteStatus(quote.status);
+          setLaborHours(String(quote.labor_hours || 0));
           const quoteLines = Array.isArray(quote.lines) ? quote.lines : [];
           setLines(quoteLines.map((l: any) => ({
             id: l.id || crypto.randomUUID(),
@@ -120,8 +122,10 @@ export default function QuoteForm() {
   // Financial totals — VAT is passthrough tax (not revenue),
   // so profit is subtotal (net revenue) minus cost, NOT total (which includes VAT).
   const round2 = (n: number) => Math.round(n * 100) / 100;
-  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
-  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
+  const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const subtotal = round2(linesSubtotal + laborCharge);
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);
   const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
   const profit = round2(subtotal - costTotal);
@@ -156,7 +160,8 @@ export default function QuoteForm() {
       const { error } = await supabase.from("quotes").update({
         client_id: clientId, vehicle_id: vehicleId,
         validity_date: validity.toISOString().split('T')[0],
-        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
+        subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         notes: notes || null,
       }).eq("id", editId);
 
@@ -173,7 +178,8 @@ export default function QuoteForm() {
       const { data: inserted, error } = await supabase.from("quotes").insert({
         shop_id: shopId, number: num, date: now.toISOString().split('T')[0],
         validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
-        lines: lines as any, subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
+        lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
+        subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),
       }).select("id").single();
 
@@ -234,6 +240,10 @@ export default function QuoteForm() {
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Horas de mão-de-obra ({shopDefaults.labor_rate.toFixed(2)}€/h)</Label>
+              <Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} />
+            </div>
           </div>
         </div>
 
@@ -250,7 +260,7 @@ export default function QuoteForm() {
               {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
               {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
             </span>
-            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>.</span>
+            <span className="text-[10px]">Preço ao cliente = <strong>preço do catálogo</strong> (se definido). Sem preço no catálogo, aplica-se <strong>custo peças + (tempo/60) × tarifa/hora</strong>. As <strong>horas de mão-de-obra</strong> extra são somadas ao total quando o tempo previsto no catálogo não chega.</span>
           </div>
           {lines.length === 0 && <p className="text-muted-foreground text-sm text-center py-4">{t('quotes.emptyLines')}</p>}
 
@@ -360,6 +370,7 @@ export default function QuoteForm() {
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
+            {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × €{shopDefaults.labor_rate.toFixed(2)}/h)</span><span className="mono">€{laborCharge.toFixed(2)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>
             <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">€{total.toFixed(2)}</span></div>
             <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">€{profit.toFixed(2)}</span></div>

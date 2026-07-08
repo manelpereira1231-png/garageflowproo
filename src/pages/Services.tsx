@@ -138,6 +138,42 @@ export default function Services() {
     }
   };
 
+  /**
+   * WhatsApp handler shared by the list actions. When the WO has a linked
+   * quote we use its token directly; otherwise (WO created without a source
+   * quote), we fall back to the most recent quote of the same client/vehicle
+   * so the customer still receives the approval link on the waiting_approval
+   * stage — matching the behaviour of the Quotes page.
+   */
+  const sendServiceWhatsApp = async (s: any) => {
+    const phone = (s.clients as any)?.phone;
+    if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
+    let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
+    if (!quoteToken) {
+      const clientId = s.client_id;
+      const vehicleId = s.vehicle_id;
+      const shopId = s.shop_id || localStorage.getItem('garageflow_active_shop');
+      if (clientId && shopId) {
+        let q = supabase.from('quotes').select('token').eq('shop_id', shopId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(1);
+        if (vehicleId) q = q.eq('vehicle_id', vehicleId) as any;
+        const { data: qData } = await q.maybeSingle();
+        quoteToken = (qData as any)?.token || undefined;
+      }
+    }
+    const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
+    openWhatsApp({
+      phone,
+      clientName: (s.clients as any)?.name,
+      type: 'service',
+      number: s.number,
+      plate: (s.vehicles as any)?.plate,
+      model: `${(s.vehicles as any)?.make ?? ''} ${(s.vehicles as any)?.model ?? ''}`.trim(),
+      serviceStage: s.status as any,
+      total: s.total,
+      link,
+    });
+  };
+
   const activeShopId = useActiveShopId();
 
   const fetchStats = async (shopId: string) => {

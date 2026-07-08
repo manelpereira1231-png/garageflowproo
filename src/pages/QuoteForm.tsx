@@ -39,6 +39,7 @@ export default function QuoteForm() {
   const [validityDays, setValidityDays] = useState("30");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
+  const [laborHours, setLaborHours] = useState("0");
   const [quoteStatus, setQuoteStatus] = useState("draft");
   // Shop defaults from Settings — authoritative source for labor rate + VAT
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({

@@ -9,12 +9,12 @@ const corsHeaders = {
 
 // Fallback EUR price IDs (Portugal) used if a country has no specific Stripe IDs configured
 const FALLBACK_EUR = {
-  free_monthly: "price_1TqzbMKIsGuKgNEHjtqeXdRd",
-  free_yearly: "price_1Tqzc5KIsGuKgNEHwF8nig2i",
-  pro_monthly: "price_1T4YARE1zL2Sl1ZT0iAS9Cmk",
-  pro_yearly: "price_1T49EZE1zL2Sl1ZTHGB40FiB",
-  garage_monthly: "price_1T4YAeE1zL2Sl1ZTrqc35wZy",
-  garage_yearly: "price_1T49EnE1zL2Sl1ZTs0crtbLM",
+  free_monthly: "price_1TqzvYKIsGuKgNEHiTGzsXsD",
+  free_yearly: "price_1TqzvYKIsGuKgNEHlAdN8hr2",
+  pro_monthly: "price_1TqzvYKIsGuKgNEHKClzwOV9",
+  pro_yearly: "price_1TqzvZKIsGuKgNEHhApnFUJ4",
+  garage_monthly: "price_1TqzvbKIsGuKgNEHcj52SHIV",
+  garage_yearly: "price_1TqzvcKIsGuKgNEH4dWeTbaV",
 };
 
 // Map legacy region codes to country codes

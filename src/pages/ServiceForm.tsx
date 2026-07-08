@@ -107,8 +107,10 @@ export default function ServiceForm() {
   };
   const removeLine = (id: string) => setLines(lines.filter(l => l.id !== id));
 
-  const subtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
-  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0));
+  const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
+  const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const subtotal = round2(linesSubtotal + laborCharge);
+  const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);
   const costTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0));
   const profit = round2(subtotal - costTotal);

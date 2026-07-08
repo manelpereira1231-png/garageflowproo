@@ -321,9 +321,6 @@ export default function ServiceForm() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-1.5"><Label>{t('services.laborHours')}</Label><Input type="number" step="0.5" value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
-          </div>
           <div className="space-y-2 text-sm max-w-xs ml-auto">
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>

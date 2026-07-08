@@ -187,6 +187,9 @@ export default function CommandPalette() {
       case "quote": navigate(`/quotes/edit/${id}`); break;
       case "invoice": navigate(`/invoices/${id}`); break;
       case "part": navigate("/stock"); break;
+      case "service": navigate(`/services/edit/${id}`); break;
+      case "catalog": navigate("/catalog"); break;
+      case "appointment": navigate("/agenda"); break;
       default: break;
     }
   };
@@ -203,6 +206,9 @@ export default function CommandPalette() {
     quote: FileText,
     invoice: Receipt,
     part: Package,
+    service: Wrench,
+    catalog: BookOpen,
+    appointment: CalendarDays,
   };
 
   const typeLabels: Record<string, string> = {
@@ -211,6 +217,9 @@ export default function CommandPalette() {
     quote: isPt ? "Orçamento" : "Quote",
     invoice: isPt ? "Fatura" : "Invoice",
     part: isPt ? "Peça" : "Part",
+    service: isPt ? "Serviço" : "Service",
+    catalog: isPt ? "Catálogo" : "Catalog",
+    appointment: isPt ? "Marcação" : "Appointment",
   };
 
   const pages = [

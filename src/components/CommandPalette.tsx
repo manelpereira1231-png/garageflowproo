@@ -250,7 +250,7 @@ export default function CommandPalette() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder={isPt ? "Pesquisar clientes, veículos, orçamentos..." : "Search clients, vehicles, quotes..."}
+        placeholder={isPt ? "Pesquisar clientes, veículos, orçamentos, serviços, catálogo, faturas, peças, marcações…" : "Search clients, vehicles, quotes, services, catalog, invoices, parts, appointments…"}
         value={query}
         onValueChange={setQuery}
       />

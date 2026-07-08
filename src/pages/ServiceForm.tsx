@@ -126,7 +126,7 @@ export default function ServiceForm() {
       const { error } = await supabase.from("work_orders").update({
         client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any,
+        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, notes: notes || null,
       }).eq("id", editId);

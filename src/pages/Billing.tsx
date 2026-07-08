@@ -3,7 +3,7 @@ import { useSubscription, type Plan } from "@/hooks/useSubscription";
 import { loadPlatformSettings, getCachedPlatformSettings } from "@/lib/platformSettings";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";
+import { getRegionalPricing, formatPrice, isBrazil, getCountryCode } from "@/lib/regionConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -299,6 +299,7 @@ export default function Billing() {
       body: JSON.stringify({
         plan: targetPlan,
         billing_cycle: billingCycle,
+        country_code: getCountryCode(),
         region: isBR ? 'br' : 'eu',
       }),
     });
@@ -345,7 +346,7 @@ export default function Billing() {
         toast.error(t('billing.errorSessionExpired') || 'Sessão expirada. Faça login novamente.');
         navigate('/auth');
       } else {
-        toast.error(t('billing.errorCheckout'));
+        toast.error(msg && msg !== 'CHECKOUT_FAILED' ? msg : t('billing.errorCheckout'));
       }
     } finally {
       setUpgrading(false);

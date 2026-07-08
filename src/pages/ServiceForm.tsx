@@ -33,7 +33,7 @@ export default function ServiceForm() {
   const [entryMileage, setEntryMileage] = useState("0");
   const [clientDescription, setClientDescription] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
-  const [laborHours, setLaborHours] = useState("0");
+  
   const [technician, setTechnician] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
@@ -70,7 +70,6 @@ export default function ServiceForm() {
           setEntryMileage(String(service.entry_mileage || 0));
           setClientDescription(service.client_description || "");
           setDiagnosis(service.diagnosis || "");
-          setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
           const svcLines = Array.isArray(service.lines) ? service.lines : [];
@@ -124,7 +123,7 @@ export default function ServiceForm() {
       const { error } = await supabase.from("work_orders").update({
         client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
+        diagnosis: diagnosis || null, lines: lines as any,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, notes: notes || null,
       }).eq("id", editId);
@@ -138,7 +137,7 @@ export default function ServiceForm() {
       const { data: inserted, error } = await supabase.from("work_orders").insert({
         shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
-        diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours),
+        diagnosis: diagnosis || null, lines: lines as any,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, status: 'open', notes: notes || null,
       }).select("id").single();
@@ -322,9 +321,6 @@ export default function ServiceForm() {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-1.5"><Label>{t('services.laborHours')}</Label><Input type="number" step="0.5" value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
-          </div>
           <div className="space-y-2 text-sm max-w-xs ml-auto">
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>

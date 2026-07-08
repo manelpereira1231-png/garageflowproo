@@ -81,7 +81,9 @@ serve(async (req) => {
     const user = userData.user;
     const { plan, billing_cycle, region, country_code } = await req.json();
 
-    if (!plan || !["free", "pro", "garage"].includes(plan)) throw new Error("Invalid plan");
+    if (!plan || !["pro", "garage"].includes(plan)) {
+      throw new Error("O plano gratuito não requer checkout Stripe. Escolha Pro ou Garage para subscrever.");
+    }
     const cycle = (billing_cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly";
 
     // Resolve country: explicit country_code > legacy region > shop country > PT fallback
@@ -114,8 +116,6 @@ serve(async (req) => {
 
     // Determine price ID — fallback to EUR if not set for this country
     const priceMap: Record<string, string | null | undefined> = {
-      free_monthly: (countryConfig as any)?.stripe_free_monthly,
-      free_yearly: (countryConfig as any)?.stripe_free_yearly,
       pro_monthly: countryConfig?.stripe_pro_monthly,
       pro_yearly: countryConfig?.stripe_pro_yearly,
       garage_monthly: countryConfig?.stripe_garage_monthly,

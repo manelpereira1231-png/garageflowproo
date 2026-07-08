@@ -7,7 +7,7 @@ import { getRegionalPricing, formatPrice, isBrazil } from "@/lib/regionConfig";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Crown, Zap, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge, Gift, Lock } from "lucide-react";
+import { Check, Crown, Building2, Clock, ExternalLink, XCircle, RefreshCw, Shield, CalendarDays, Gauge, Gift, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {

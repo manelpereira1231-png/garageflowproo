@@ -15,6 +15,7 @@ import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
   quantity: number; unit_price: number; unit_cost: number; vat_rate: number;
+  ref_id?: string | null;
 }
 
 export default function ServiceForm() {

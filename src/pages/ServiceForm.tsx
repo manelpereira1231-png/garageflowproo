@@ -15,6 +15,7 @@ import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
   quantity: number; unit_price: number; unit_cost: number; vat_rate: number;
+  ref_id?: string | null;
 }
 
 export default function ServiceForm() {
@@ -82,6 +83,7 @@ export default function ServiceForm() {
             unit_price: l.unit_price || 0,
             unit_cost: l.unit_cost || 0,
             vat_rate: l.vat_rate ?? 23,
+            ref_id: l.ref_id ?? null,
           })));
         }
         setLoadingData(false);
@@ -277,6 +279,7 @@ export default function ServiceForm() {
                         unit_price: Number(item.sale_price) || 0,
                         unit_cost: Number(item.internal_cost) || 0,
                         vat_rate: Number(item.vat_rate) > 0 ? Number(item.vat_rate) : shopDefaults.vat_rate,
+                        ref_id: item.id,
                       } : l));
                     }
                   }}

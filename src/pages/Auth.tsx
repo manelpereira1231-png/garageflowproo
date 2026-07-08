@@ -28,7 +28,7 @@ function timeoutResult<T>(value: T, ms = LOGIN_PROFILE_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
 
-export default function Auth() {
+export default function Auth({ defaultRedirect }: { defaultRedirect?: string } = {}) {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ export default function Auth() {
 
         toast.success(t('auth.welcomeBack'));
         import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "erp" }));
-        navigate(getSafeGarageRedirectPath(searchParams.get("redirect")), { replace: true });
+        navigate(getSafeGarageRedirectPath(searchParams.get("redirect") ?? defaultRedirect ?? null), { replace: true });
 
       } else {
         const refCode = searchParams.get('ref') || '';
@@ -154,7 +154,7 @@ export default function Auth() {
         trackSignupConversion(email);
         if (signUpData?.session) {
           toast.success(t('auth.accountCreated'));
-          navigate(getSafeGarageRedirectPath(searchParams.get("redirect")), { replace: true });
+          navigate(getSafeGarageRedirectPath(searchParams.get("redirect") ?? defaultRedirect ?? null), { replace: true });
         } else {
           toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
           setMode('login');

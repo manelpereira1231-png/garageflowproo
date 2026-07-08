@@ -116,8 +116,13 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
 // Use that helper directly wherever you need to display a plan price.
 
 const STORAGE_KEY = "garageflow_active_shop";
+const SUBSCRIPTION_QUERY_TIMEOUT_MS = 3000;
 const subscriptionCache = new Map<string, Subscription | null>();
 const subscriptionInflight = new Map<string, Promise<Subscription | null>>();
+
+function timeoutResult<T>(value: T, ms = SUBSCRIPTION_QUERY_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
 
 async function fetchSubscriptionForShop(shopId: string, force = false): Promise<Subscription | null> {
   if (!force && subscriptionCache.has(shopId)) {
@@ -130,11 +135,14 @@ async function fetchSubscriptionForShop(shopId: string, force = false): Promise<
 
   const request = (async () => {
     try {
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("shop_id", shopId)
-        .maybeSingle();
+      const { data } = await Promise.race([
+        supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("shop_id", shopId)
+          .maybeSingle(),
+        timeoutResult({ data: null }),
+      ]);
 
       const next = (data as unknown as Subscription | null) ?? null;
       subscriptionCache.set(shopId, next);
@@ -178,20 +186,26 @@ export function useSubscription() {
 
     const activeId = localStorage.getItem(STORAGE_KEY);
     if (activeId) {
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("id")
-        .eq("id", activeId)
-        .maybeSingle();
+      const { data: shop } = await Promise.race([
+        supabase
+          .from("shops")
+          .select("id")
+          .eq("id", activeId)
+          .maybeSingle(),
+        timeoutResult({ data: { id: activeId } }),
+      ]);
       if (shop) return shop.id;
     }
 
-    const { data: shop } = await supabase
-      .from("shops")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+    const { data: shop } = await Promise.race([
+      supabase
+        .from("shops")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle(),
+      timeoutResult({ data: null }),
+    ]);
     return shop?.id || null;
   }, [authReady, user]);
 
@@ -207,10 +221,15 @@ export function useSubscription() {
     }
 
     setShopId((prev) => (prev === sid ? prev : sid));
-    const sub = await fetchSubscriptionForShop(sid, force);
-    setSubscription(sub);
-    setSubscriptionLoaded(true);
-    setLoading(false);
+    try {
+      const sub = await fetchSubscriptionForShop(sid, force);
+      setSubscription(sub);
+    } catch {
+      setSubscription(null);
+    } finally {
+      setSubscriptionLoaded(true);
+      setLoading(false);
+    }
   }, [activeShopId, resolveShopId]);
 
   // Sync with Stripe (only for Stripe-managed subscriptions, not admin overrides)
@@ -218,11 +237,14 @@ export function useSubscription() {
     try {
       const sid = shopId || activeShopId || await resolveShopId();
       if (sid) {
-        const { data: sub } = await supabase
-          .from("subscriptions")
-          .select("stripe_subscription_id")
-          .eq("shop_id", sid)
-          .maybeSingle();
+        const { data: sub } = await Promise.race([
+          supabase
+            .from("subscriptions")
+            .select("stripe_subscription_id")
+            .eq("shop_id", sid)
+            .maybeSingle(),
+          timeoutResult({ data: null }),
+        ]);
         
         // CRITICAL: Skip sync if no stripe_subscription_id (admin-managed plan)
         if (!sub?.stripe_subscription_id) {
@@ -270,30 +292,40 @@ export function useSubscription() {
 
     const init = async () => {
       if (!authReady) return;
-      const sid = activeShopId || await resolveShopId();
-      if (!mounted) return;
-      if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
+      try {
+        const sid = activeShopId || await resolveShopId();
+        if (!mounted) return;
+        if (!sid) { setLoading(false); setSubscriptionLoaded(true); return; }
 
-      // Load from DB (fast)
-      await loadSubscription(sid);
+        // Load from DB (fast)
+        await loadSubscription(sid);
 
-      // Setup Realtime for this specific shop
-      setupRealtime(sid);
+        // Setup Realtime for this specific shop
+        setupRealtime(sid);
 
-      // Background Stripe sync — only if shop has stripe_subscription_id
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("stripe_subscription_id")
-        .eq("shop_id", sid)
-        .maybeSingle();
-      
-      if (sub?.stripe_subscription_id) {
-        supabase.functions.invoke('check-subscription').then(() => {
-          if (mounted) {
-            subscriptionCache.delete(sid);
-            loadSubscription(sid, true);
-          }
-        }).catch(() => {});
+        // Background Stripe sync — only if shop has stripe_subscription_id
+        const { data: sub } = await Promise.race([
+          supabase
+            .from("subscriptions")
+            .select("stripe_subscription_id")
+            .eq("shop_id", sid)
+            .maybeSingle(),
+          timeoutResult({ data: null }),
+        ]);
+
+        if (sub?.stripe_subscription_id) {
+          supabase.functions.invoke('check-subscription').then(() => {
+            if (mounted) {
+              subscriptionCache.delete(sid);
+              loadSubscription(sid, true);
+            }
+          }).catch(() => {});
+        }
+      } catch {
+        if (mounted) {
+          setLoading(false);
+          setSubscriptionLoaded(true);
+        }
       }
     };
 

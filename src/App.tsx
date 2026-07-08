@@ -922,6 +922,7 @@ function AppRoutes() {
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/marketing" element={<Auth defaultRedirect="/marketing" />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/afiliados/login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />

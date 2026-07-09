@@ -2237,7 +2237,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.tryPro': 'Try Pro 30 days free',
     'billing.daysLeft': 'days left',
     'billing.renewsOn': 'Renews on',
-    'billing.freePlanActive': 'Free plan active',
+    'billing.freePlanActive': 'Start plan active',
     'billing.stripeComingSoon': 'Stripe integration coming soon!',
     'billing.limitsTitle': 'Plan Usage & Limits',
     'billing.limitsQuotes': 'Quotes this month',

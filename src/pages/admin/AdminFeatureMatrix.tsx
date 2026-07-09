@@ -35,7 +35,7 @@ type FeatureRow = {
 type MatrixRow = { plan_slug: Plan; feature_slug: string; enabled: boolean };
 
 const PLANS: { slug: Plan; label: string; color: string }[] = [
-  { slug: "free", label: "Free", color: "bg-zinc-500/15 text-zinc-300" },
+  { slug: "free", label: "Start", color: "bg-zinc-500/15 text-zinc-300" },
   { slug: "pro", label: "Pro", color: "bg-blue-500/15 text-blue-300" },
   { slug: "garage", label: "Garage", color: "bg-amber-500/15 text-amber-300" },
 ];

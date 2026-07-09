@@ -2441,7 +2441,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.pricingSubtitle': 'No commitment. No hassle. Choose the right plan for your workshop.',
     'landing.popular': 'Most Popular',
     'landing.trial30': '30-day trial included',
-    'landing.planFree': 'Free',
+    'landing.planFree': 'Start',
     'landing.planPro': 'Pro',
     'landing.planGarage': 'Garage',
     'landing.ctaFree': 'Create Free Account',

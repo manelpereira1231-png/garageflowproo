@@ -7275,7 +7275,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.popular': 'सबसे लोकप्रिय',
     'landing.trial30': '30 दिन का ट्रायल शामिल',
     'landing.trial15': '15 दिन का मुफ़्त ट्रायल शामिल',
-    'landing.planFree': 'मुफ़्त',
+    'landing.planFree': 'Start',
     'landing.planPro': 'प्रो',
     'landing.planGarage': 'गैरेज',
     'landing.ctaFree': 'मुफ़्त खाता बनाएँ',

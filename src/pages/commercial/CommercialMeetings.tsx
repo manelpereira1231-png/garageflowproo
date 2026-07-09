@@ -117,6 +117,41 @@ export default function CommercialMeetings() {
       </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            🎯 Pedidos de Demonstração
+            <Badge variant="secondary">{demos.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {demos.length === 0 && <div className="text-sm text-muted-foreground">Sem pedidos ativos. Partilhe <code>garageflow.pt/demo</code>.</div>}
+          <div className="space-y-2">
+            {demos.slice(0, 10).map((d) => (
+              <div key={d.id} className="flex items-center justify-between border rounded-lg p-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm truncate">{d.shop_name}</span>
+                    <Badge variant={d.status === "new" ? "default" : "outline"}>
+                      {d.status === "new" ? "Novo" : d.status === "contacted" ? "Em contacto" : "Agendada"}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 truncate">
+                    {d.name} · {d.phone}
+                    {d.scheduled_at && <> · 📅 {new Date(d.scheduled_at).toLocaleString('pt-PT')}</>}
+                    {!d.scheduled_at && d.best_contact_time && <> · ⏰ {d.best_contact_time}</>}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" asChild><a href={`tel:${d.phone}`}>Ligar</a></Button>
+                  <Button size="sm" variant="outline" asChild><a href="/commercial/demos">Gerir</a></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Próximas reuniões</CardTitle></CardHeader>
         <CardContent>
           {upcoming.length === 0 && <div className="text-sm text-muted-foreground">Sem reuniões agendadas.</div>}

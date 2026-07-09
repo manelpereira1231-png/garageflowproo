@@ -153,6 +153,11 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     navigate("/market/auth");
   };
 
+  const handleReturnToErp = () => {
+    sessionStorage.removeItem("garageflow_user_type_cache");
+    window.location.assign("/dashboard?realm=erp");
+  };
+
   return (
     <MarketLayoutContext.Provider value={true}>
       <div className={`market-root ${isLight ? "market-light" : "market-dark"} min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>
@@ -236,14 +241,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   </Button>
                 </Link>
               )}
-              {hasErpSession && (
-                <a
-                  href="/dashboard?realm=erp"
+              {hasErpSession && isShopOwner && (
+                <button
+                  type="button"
+                  onClick={handleReturnToErp}
                   className="ml-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
                   title="Voltar para o ERP da oficina"
                 >
                   <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
-                </a>
+                </button>
               )}
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
                 <ThemeToggle />
@@ -294,10 +300,10 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   <Plus className="h-4 w-4" /> {t("market.nav.newListing")}
                 </div>
               </Link>
-              {hasErpSession && (
-                <a href="/dashboard?realm=erp" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] font-semibold">
+              {hasErpSession && isShopOwner && (
+                <button type="button" onClick={handleReturnToErp} className="flex w-full items-center gap-2 px-3 py-2.5 rounded-lg text-white border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] font-semibold">
                   <Wrench className="h-4 w-4" /> Voltar ao ERP da oficina
-                </a>
+                </button>
               )}
               <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] w-full text-left transition-colors">
                 <LogOut className="h-4 w-4" /> {t("market.nav.logout")}

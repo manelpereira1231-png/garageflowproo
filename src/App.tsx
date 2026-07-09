@@ -614,6 +614,7 @@ type CachedUserType = {
   userId: string;
   isAffiliate: boolean;
   isCarityUser: boolean;
+  hasGarageAccess?: boolean;
 };
 
 function readCachedUserType(userId: string | undefined): CachedUserType | null {
@@ -643,15 +644,18 @@ function timeoutResult<T>(value: T, ms = ACCESS_PROFILE_TIMEOUT_MS): Promise<T> 
 }
 
 function AuthenticatedRoutes() {
+  const location = useLocation();
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isCommercialAdmin, loading: commercialLoading } = useCommercialAdmin();
   const { isReady: authReady, user } = useAuthReady();
 
   // Hydrate from session cache to AVOID the "create-shop / wrong dashboard" flash.
   const cached = readCachedUserType(user?.id);
+  const hasCompleteCache = Boolean(cached && typeof cached.hasGarageAccess === "boolean");
   const [isAffiliate, setIsAffiliate] = useState(cached?.isAffiliate ?? false);
   const [isCarityUser, setIsCarityUser] = useState(cached?.isCarityUser ?? false);
-  const [ready, setReady] = useState(Boolean(cached));
+  const [hasGarageAccess, setHasGarageAccess] = useState(cached?.hasGarageAccess ?? false);
+  const [ready, setReady] = useState(hasCompleteCache);
 
   // Touch activity once when user is hydrated (login + page reloads).
   useEffect(() => {
@@ -682,11 +686,13 @@ function AuthenticatedRoutes() {
 
       const isAff = accessProfile.isAffiliate;
       const isCarity = accessProfile.isMarketUser;
+      const hasGarage = accessProfile.isGarageUser;
 
       setIsAffiliate(isAff);
       setIsCarityUser(isCarity);
+      setHasGarageAccess(hasGarage);
       setReady(true);
-      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity });
+      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity, hasGarageAccess: hasGarage });
     };
 
     void checkUserState();
@@ -806,13 +812,18 @@ function AuthenticatedRoutes() {
     );
   }
 
+  const routeParams = new URLSearchParams(location.search);
+  const forcedErp = routeParams.get("realm") === "erp";
+  const isMarketPath = location.pathname.startsWith("/market") || location.pathname.startsWith("/carity");
+  const shouldUseMarketRoutes = isCarityUser && !forcedErp && (!hasGarageAccess || isMarketPath);
+
   const defaultRoute = isAffiliate
     ? "/affiliate-dashboard"
-    : isCarityUser
+    : shouldUseMarketRoutes
       ? "/market/dashboard"
       : "/dashboard";
 
-  if (isCarityUser) {
+  if (shouldUseMarketRoutes) {
     return (
       <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>

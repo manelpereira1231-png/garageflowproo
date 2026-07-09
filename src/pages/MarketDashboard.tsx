@@ -171,6 +171,11 @@ export default function MarketDashboard() {
     setLoading(false);
   };
 
+  const handleReturnToErp = () => {
+    sessionStorage.removeItem("garageflow_user_type_cache");
+    window.location.assign("/dashboard?realm=erp");
+  };
+
   const trustColors: Record<string, string> = {
     new: "bg-muted text-muted-foreground",
     bronze: "bg-amber-100 text-amber-800",
@@ -232,13 +237,14 @@ export default function MarketDashboard() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {isShopOwner && (
-            <a
-              href="/dashboard?realm=erp"
+            <button
+              type="button"
+              onClick={handleReturnToErp}
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-colors"
               title="Voltar ao ERP da oficina"
             >
               <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
-            </a>
+            </button>
           )}
           {verified ? (
             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">

@@ -184,7 +184,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailError': 'Erro ao enviar email.',
     'quotes.noClientEmail': 'Cliente não tem email definido.',
     'quotes.limitReached': 'Limite de orçamentos atingido!',
-    'quotes.limitMessage': 'O plano Free permite apenas {limit} orçamentos por mês. Faça upgrade para Pro para orçamentos ilimitados.',
+    'quotes.limitMessage': 'O plano Start permite apenas {limit} orçamentos por mês. Faça upgrade para Pro para orçamentos ilimitados.',
     'quotes.quotesUsed': '{used} de {limit} orçamentos este mês',
     'quotes.upgrade': 'Fazer Upgrade',
     'quotes.limitBlocked': 'Limite de {limit} orçamentos/mês atingido. Faça upgrade para continuar.',

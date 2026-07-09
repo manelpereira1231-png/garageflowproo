@@ -4040,6 +4040,53 @@ export type Database = {
           },
         ]
       }
+      marketplace_activation_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_activation_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           active: boolean
@@ -7607,6 +7654,10 @@ export type Database = {
         Returns: Json
       }
       retry_failed_jobs: { Args: { _limit?: number }; Returns: number }
+      review_marketplace_activation: {
+        Args: { _approve: boolean; _notes?: string; _request_id: string }
+        Returns: Json
+      }
       seed_email_templates_for_shop: {
         Args: { _shop_id: string }
         Returns: undefined

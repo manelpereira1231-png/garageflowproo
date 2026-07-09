@@ -26,6 +26,7 @@ const navSections = [
     label: "Negócio",
     items: [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
+      { path: "/admin/demos", label: "Pedidos de Demonstração", icon: Users },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
       { path: "/admin/billing", label: "Planos e Subscrições", icon: CreditCard },
       { path: "/admin/finance", label: "Receita e Crescimento", icon: TrendingUp },

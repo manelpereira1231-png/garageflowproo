@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, KanbanSquare, CalendarClock, HeartHandshake,
-  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase,
+  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase, Sparkles,
 } from "lucide-react";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { useAuthReady } from "@/hooks/useAuthReady";

@@ -238,7 +238,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
               )}
               {hasErpSession && (
                 <a
-                  href="/dashboard"
+                  href="/dashboard?realm=erp"
                   className="ml-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
                   title="Voltar para o ERP da oficina"
                 >

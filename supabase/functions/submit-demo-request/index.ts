@@ -42,6 +42,35 @@ serve(async (req) => {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
     const ua = req.headers.get("user-agent") || null;
 
+    // Lote B: rate-limit — máx. 3 pedidos/hora por IP e 2/24h por email.
+    try {
+      if (ip) {
+        const { data: ipCheck } = await admin.rpc("check_and_bump_rate_limit" as any, {
+          _identifier: `ip:${ip}`, _action: "submit_demo_request", _max: 3, _window_seconds: 3600,
+        });
+        if (ipCheck && (ipCheck as any).allowed === false) {
+          return new Response(
+            JSON.stringify({ error: "Demasiados pedidos deste IP. Tente novamente daqui a 1 hora." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
+      const emailKey = String(email).trim().toLowerCase();
+      const { data: emailCheck } = await admin.rpc("check_and_bump_rate_limit" as any, {
+        _identifier: `email:${emailKey}`, _action: "submit_demo_request", _max: 2, _window_seconds: 86400,
+      });
+      if (emailCheck && (emailCheck as any).allowed === false) {
+        return new Response(
+          JSON.stringify({ error: "Já registámos o seu pedido. A nossa equipa vai contactá-lo em breve." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    } catch (rlErr) {
+      // Fail-open on rate-limit infrastructure errors — don't block real demos.
+      console.warn("rate-limit check failed, allowing:", rlErr);
+    }
+
+
     const { data: inserted, error } = await admin
       .from("demo_requests")
       .insert({

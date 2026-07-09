@@ -745,6 +745,7 @@ function AuthenticatedRoutes() {
               <Route path="/commercial/intelligence" element={<CommercialIntelligence />} />
               <Route path="/commercial/reports" element={<CommercialReports />} />
               <Route path="/commercial/objectives" element={<CommercialObjectives />} />
+              <Route path="/commercial/demos" element={<CommercialDemos />} />
             </Route>
             <Route path="/auth" element={<Navigate to="/commercial" replace />} />
             <Route path="/" element={<Navigate to="/commercial" replace />} />

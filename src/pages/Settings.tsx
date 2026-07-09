@@ -101,9 +101,12 @@ export default function SettingsPage() {
       }
     }
 
+    // NOTE: `country`, `country_code` and `currency` are intentionally
+    // omitted here — the shop's country is fixed at creation and can only
+    // be changed by a platform administrator (fiscal/legal reasons).
     const payload: any = {
       name: form.name, email: form.email, phone: form.phone,
-      country: form.country, currency: form.currency, vat_rate: parseFloat(form.vat_rate),
+      vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
       nif: form.nif, address: form.address, timezone: form.timezone,
     };

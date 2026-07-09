@@ -162,6 +162,7 @@ const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"))
 const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesGlobal"));
 const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
 const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
+const AdminMarketActivations = lazyRetry(() => import("@/pages/admin/AdminMarketActivations"));
 const AdminSeo = lazyRetry(() => import("@/pages/admin/AdminSeo"));
 const AdminSeoBlog = lazyRetry(() => import("@/pages/admin/AdminSeoBlog"));
 const AdminGrowthOpportunities = lazyRetry(() => import("@/pages/admin/AdminGrowthOpportunities"));

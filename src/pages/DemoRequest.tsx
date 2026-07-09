@@ -96,7 +96,7 @@ export default function DemoRequest() {
 
           <Card>
             <CardContent className="p-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary" /> +351 912 345 678</div>
+              
               <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-primary" /> contact@garageflow.pt</div>
               <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> Seg-Sex, 9h–18h</div>
               <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> Portugal, Espanha, Brasil</div>

@@ -91,7 +91,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Serviços Recentes',
     'dashboard.noServices': 'Sem serviços este mês',
     'dashboard.vsLastMonth': 'vs mês anterior',
-    'dashboard.freeBanner': 'Está a usar o plano Free',
+    'dashboard.freeBanner': 'Está a usar o plano Start',
     'dashboard.trialBanner': 'Período de teste ativo',
     'dashboard.daysLeft': 'dias restantes',
     'dashboard.upgradeBenefits': 'Desbloqueie alertas, relatórios avançados, marketing e muito mais.',

@@ -92,8 +92,16 @@ export default function MarketAuth() {
         const { data: signInData, error } = await marketSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        if (!signInData.user || !(await isMarketContextAccount(signInData.user.id, signInData.user.user_metadata))) {
-          throw new Error("Esta conta pertence ao GarageFlow ERP. Entre em /auth.");
+        // Lote A: contas unificadas. Uma oficina que activou o Market pode
+        // fazer login aqui com a mesma conta. Só rejeita se for uma conta
+        // ERP-only que ainda NÃO activou o Market (sem role buyer/seller).
+        if (!signInData.user) throw new Error("Falha no login.");
+        const { data: { user } } = await marketSupabase.auth.getUser();
+        const profile = user ? await getUserAccessProfile(user) : null;
+        if (!profile?.isMarketUser) {
+          throw new Error(
+            "Esta conta ainda não tem acesso ao Marketplace. Entre no ERP e active o Marketplace em Definições, ou registe-se aqui como particular."
+          );
         }
 
         try {

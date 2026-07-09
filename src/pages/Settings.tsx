@@ -17,6 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
+import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
 
 const countries = Object.keys(VAT_RATES);
 
@@ -338,6 +339,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Marketplace — Lote A: aderir com a mesma conta */}
+        <ActivateMarketplace shopId={shopId} />
 
         {/* Push Notifications */}
         <Card>

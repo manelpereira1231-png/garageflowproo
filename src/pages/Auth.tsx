@@ -75,6 +75,9 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
+        // Lote A: contas unificadas. Só bloqueia se a conta for exclusivamente
+        // Market (particular sem shop nem role ERP). Contas de oficina que
+        // também activaram o Market continuam a poder entrar no ERP.
         const accessProfile = signInData.user
           ? await Promise.race([
               getUserAccessProfile(signInData.user),
@@ -83,7 +86,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
           : null;
 
         if (!signInData.user || !accessProfile?.isGarageUser) {
-          throw new Error('Esta conta pertence ao GarageFlow Market. Entre em /market/auth.');
+          throw new Error('Esta conta é apenas do GarageFlow Market. Entre em /market/auth.');
         }
 
         toast.success(t('auth.welcomeBack'));

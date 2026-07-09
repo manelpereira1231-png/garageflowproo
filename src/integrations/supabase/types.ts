@@ -7257,6 +7257,10 @@ export type Database = {
       }
     }
     Functions: {
+      activate_marketplace_for_shop: {
+        Args: { _shop_id: string }
+        Returns: Json
+      }
       admin_list_country_settings: {
         Args: never
         Returns: {
@@ -7334,6 +7338,15 @@ export type Database = {
         Returns: Json
       }
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
+      check_and_bump_rate_limit: {
+        Args: {
+          _action: string
+          _identifier: string
+          _max: number
+          _window_seconds: number
+        }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           _action_type: string

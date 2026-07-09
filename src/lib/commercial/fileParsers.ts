@@ -82,7 +82,9 @@ export async function parseDocx(file: File): Promise<ParsedLead[]> {
 /** Extract text from a PDF via pdfjs (loaded from a CDN to avoid worker bundle issues). */
 export async function parsePdf(file: File): Promise<ParsedLead[]> {
   // Lazy-load pdfjs from a CDN so we don't add ~1 MB to the main bundle.
-  const pdfjs: any = await import(/* @vite-ignore */ "https://esm.sh/pdfjs-dist@4.7.76/build/pdf.min.mjs");
+  const pdfUrl = "https://esm.sh/pdfjs-dist@4.7.76/build/pdf.min.mjs";
+  // @ts-ignore -- dynamic remote ESM import, no local types
+  const pdfjs: any = await import(/* @vite-ignore */ pdfUrl);
   pdfjs.GlobalWorkerOptions.workerSrc =
     "https://esm.sh/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
   const buf = await file.arrayBuffer();

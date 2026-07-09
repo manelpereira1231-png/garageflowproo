@@ -185,6 +185,10 @@ const CommercialRetention = lazyRetry(() => import("@/pages/commercial/Commercia
 const CommercialIntelligence = lazyRetry(() => import("@/pages/commercial/CommercialIntelligence"));
 const CommercialReports = lazyRetry(() => import("@/pages/commercial/CommercialReports"));
 const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/CommercialObjectives"));
+const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDemos"));
+const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
+const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
+
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -383,7 +387,9 @@ const adminRoutes = [
   { path: "/admin/marketing-autopilot", element: <AdminMarketingAutopilot /> },
   { path: "/admin/growth", element: <AdminGrowth /> },
   { path: "/admin/accounting", element: <AdminAccounting /> },
+  { path: "/admin/demos", element: <AdminDemoRequests /> },
 ];
+
 
 const shopRoutes = [
   { path: "/dashboard", element: <Dashboard /> },
@@ -716,6 +722,15 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
+  // Public "Marcar Demonstração" page — sempre acessível, seja qual for a sessão.
+  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <DemoRequestPage />
+      </Suspense>
+    );
+  }
+
   if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -723,6 +738,7 @@ function AuthenticatedRoutes() {
       </div>
     );
   }
+
 
   // Administrador Comercial — painel dedicado, sem acesso ao admin técnico
   if (isCommercialAdmin && !isSuperAdmin) {
@@ -739,6 +755,7 @@ function AuthenticatedRoutes() {
               <Route path="/commercial/intelligence" element={<CommercialIntelligence />} />
               <Route path="/commercial/reports" element={<CommercialReports />} />
               <Route path="/commercial/objectives" element={<CommercialObjectives />} />
+              <Route path="/commercial/demos" element={<CommercialDemos />} />
             </Route>
             <Route path="/auth" element={<Navigate to="/commercial" replace />} />
             <Route path="/" element={<Navigate to="/commercial" replace />} />

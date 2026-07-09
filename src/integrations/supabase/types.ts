@@ -2355,6 +2355,75 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_requests: {
+        Row: {
+          assigned_to: string | null
+          best_contact_time: string | null
+          city: string | null
+          contacted_at: string | null
+          converted_at: string | null
+          created_at: string
+          current_software: string | null
+          email: string
+          employees: string | null
+          id: string
+          ip_address: string | null
+          name: string
+          notes: string | null
+          phone: string
+          scheduled_at: string | null
+          shop_name: string
+          source: string | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          best_contact_time?: string | null
+          city?: string | null
+          contacted_at?: string | null
+          converted_at?: string | null
+          created_at?: string
+          current_software?: string | null
+          email: string
+          employees?: string | null
+          id?: string
+          ip_address?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          scheduled_at?: string | null
+          shop_name: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          best_contact_time?: string | null
+          city?: string | null
+          contacted_at?: string | null
+          converted_at?: string | null
+          created_at?: string
+          current_software?: string | null
+          email?: string
+          employees?: string | null
+          id?: string
+          ip_address?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          scheduled_at?: string | null
+          shop_name?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       email_campaign_metrics: {
         Row: {
           campaign_id: string

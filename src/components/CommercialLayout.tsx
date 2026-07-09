@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, KanbanSquare, CalendarClock, HeartHandshake,
-  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase,
+  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase, Sparkles,
 } from "lucide-react";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { useAuthReady } from "@/hooks/useAuthReady";
@@ -10,6 +10,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 const nav = [
   { path: "/commercial", label: "Dashboard Executivo", icon: LayoutDashboard, exact: true },
   { path: "/commercial/crm", label: "CRM de Oficinas", icon: Users },
+  { path: "/commercial/demos", label: "Pedidos de Demonstração", icon: Sparkles },
   { path: "/commercial/pipeline", label: "Pipeline de Vendas", icon: KanbanSquare },
   { path: "/commercial/meetings", label: "Centro de Reuniões", icon: CalendarClock },
   { path: "/commercial/retention", label: "Centro de Retenção", icon: HeartHandshake },

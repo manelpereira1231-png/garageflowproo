@@ -2487,7 +2487,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.faq3Q': 'Do I need to install anything?',
     'landing.faq3A': 'No. GarageFlow works 100% online. Just open your browser and sign in.',
     'landing.faq4Q': 'Can I try before paying?',
-    'landing.faq4A': 'Yes. The Free plan is free forever. Pro and Garage plans include a free trial with no credit card required.',
+    'landing.faq4A': 'Yes. The Start plan has essential features to get you going. Pro and Garage plans include a free trial with no credit card required.',
     'landing.faq5Q': 'Is it suitable for small workshops?',
     'landing.faq5A': 'Yes, absolutely. Many workshops with 1 to 3 people use GarageFlow to organize quotes, clients and services.',
     'landing.faq6Q': 'Can I use it with my team?',

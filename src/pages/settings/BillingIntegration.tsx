@@ -229,60 +229,22 @@ export default function BillingIntegration() {
     }
   };
 
-  // Non-PT countries: their national fiscal provider adapter is not yet wired
-  // up. Show a country-aware "coming soon" panel and hide the InvoiceXpress/
-  // Moloni configuration UI entirely. PT keeps the current behaviour intact.
+  // Non-PT countries: render the same UX (Test / Save) but bound to the
+  // generic `billing-connect` edge function and the country's official
+  // provider slug. The country is locked (immutable after shop creation),
+  // so the provider is always the correct one — no dropdown.
   if (!isPT) {
     return (
-      <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <Link to="/settings"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Definições</Button></Link>
-          <div>
-            <h1 className="text-xl font-bold">Fiscal Billing</h1>
-            <p className="text-sm text-muted-foreground">
-              País da oficina: <strong>{countryCfg.name ?? countryCode}</strong> · Provider: <strong>{providerLabel}</strong>
-            </p>
-          </div>
-        </div>
-
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertTitle>Integração {providerLabel} em breve</AlertTitle>
-          <AlertDescription className="text-sm space-y-2">
-            <p>
-              O GarageFlow está preparado para emitir documentos fiscais certificados através do
-              provider oficial do teu país ({providerLabel}). A ligação nativa ainda não está
-              disponível — assim que estiver, aparece automaticamente aqui, sem migrações.
-            </p>
-            <p className="text-muted-foreground">
-              Enquanto isso, podes continuar a gerar orçamentos, ordens de serviço e faturas
-              internas (PDF) normalmente. Nenhuma outra funcionalidade fica bloqueada.
-            </p>
-          </AlertDescription>
-        </Alert>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              Configuração fiscal deste país
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Os identificadores fiscais e o formato de documentos seguem a legislação de {countryCfg.name ?? countryCode}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1.5">
-            {fiscal.fields.map((f) => (
-              <div key={f.key} className="flex items-center justify-between border-b border-border/40 py-1.5 last:border-0">
-                <span className="text-muted-foreground">{f.label}</span>
-                <span className="text-xs">{f.required ? "obrigatório" : "opcional"}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+      <IntlBillingForm
+        shopId={shopId}
+        countryCode={countryCode}
+        countryName={(countryCfg as { name?: string })?.name ?? countryCode}
+        providerSlug={fiscal.billingProvider}
+        providerLabel={providerLabel}
+      />
     );
   }
+
 
   return (
     <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">

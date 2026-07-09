@@ -1,0 +1,2 @@
+ALTER TABLE public.integracao_faturacao DROP CONSTRAINT IF EXISTS integracao_faturacao_provider_check;
+ALTER TABLE public.integracao_faturacao ADD CONSTRAINT integracao_faturacao_provider_check CHECK (provider IN ('invoicexpress','moloni','nuvem_fiscal','quickbooks','xero','holded','pennylane','sevdesk','zoho_books','cleartax','generic'));

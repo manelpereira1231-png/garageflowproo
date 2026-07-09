@@ -239,12 +239,15 @@ Deno.serve(async (req) => {
               emailMessage = `Os seguintes serviços foram concluídos nas últimas 24 horas.`;
               emailItems = completed.slice(0, 10).map(wo => {
                 const v = wo.vehicles as any;
-                return `${wo.number} — ${v?.make || ''} ${v?.model || ''} (${(wo.clients as any)?.name || ''})`;
+                return `${wo.number} — ${v?.make || ''} ${v?.model || ''} (${(wo.clients as any)?.name || ''}) · Total: ${money(Number(wo.total) || 0)} · ${laborLine((wo as any).labor_hours)}`;
               });
-              // Notify clients their vehicle is ready
+              // Notify clients their vehicle is ready (with labor breakdown)
               for (const wo of completed) {
                 const clientEmail = (wo.clients as any)?.email;
-                if (clientEmail) recipientEmails.push(clientEmail);
+                if (clientEmail) {
+                  recipientEmails.push(clientEmail);
+                  recipientLabor[clientEmail] = laborLine((wo as any).labor_hours);
+                }
               }
             }
             break;

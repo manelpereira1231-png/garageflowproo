@@ -7782,7 +7782,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'country.france': 'फ्रांस',
     'billing.title': 'योजना और बिलिंग',
     'billing.subtitle': 'अपनी योजना और भुगतान प्रबंधित करें',
-    'billing.plan.free': 'मुफ़्त',
+    'billing.plan.free': 'Start',
     'billing.plan.pro': 'प्रो',
     'billing.plan.garage': 'गैरेज',
     'billing.mo': 'माह',

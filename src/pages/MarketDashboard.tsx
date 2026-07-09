@@ -80,6 +80,10 @@ export default function MarketDashboard() {
     setVerified(profile?.verified || false);
     setHasPhone(!!phoneVal);
 
+    // Detecta se o utilizador tem oficina (mostra CTA "Voltar ao ERP")
+    const { data: shopRow } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+    setIsShopOwner(Boolean(shopRow));
+
     const { data: trust } = await supabase
       .from("seller_trust_scores")
       .select("score_points, trust_level, successful_sales, total_inspections, avg_rating")

@@ -722,6 +722,15 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
+  // Public "Marcar Demonstração" page — sempre acessível, seja qual for a sessão.
+  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <DemoRequestPage />
+      </Suspense>
+    );
+  }
+
   if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -729,6 +738,7 @@ function AuthenticatedRoutes() {
       </div>
     );
   }
+
 
   // Administrador Comercial — painel dedicado, sem acesso ao admin técnico
   if (isCommercialAdmin && !isSuperAdmin) {

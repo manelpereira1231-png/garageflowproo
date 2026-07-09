@@ -5687,7 +5687,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.tryPro': 'Experimentar Pro por 30 dias',
     'billing.daysLeft': 'dias restantes',
     'billing.renewsOn': 'Renova em',
-    'billing.freePlanActive': 'Plano gratuito ativo',
+    'billing.freePlanActive': 'Plano Start ativo',
     'billing.stripeComingSoon': 'Integração Stripe em breve!',
     'billing.limitsTitle': 'Uso e Limites do Plano',
     'billing.limitsQuotes': 'Orçamentos este mês',

@@ -182,7 +182,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
             {/* Desktop search — only for particular */}
             {!isDealer && (
-              <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-md mx-6 relative">
+              <form onSubmit={submitSearch} className="hidden lg:flex flex-1 max-w-md mx-6 relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
                 <Input
                   value={searchQ}
@@ -194,7 +194,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
             )}
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-0.5">
+            <div className="hidden lg:flex items-center gap-0.5">
               {NAV_ITEMS.map((item: any) => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);
@@ -254,14 +254,14 @@ export default function MarketLayout({ children, variant }: { children?: React.R
             </div>
 
             {/* Mobile toggle */}
-            <button className="md:hidden text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button className="lg:hidden text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
 
           {/* Mobile nav */}
           {mobileOpen && (
-            <div className="md:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
+            <div className="lg:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
               {/* Mobile search */}
               <form onSubmit={submitSearch} className="relative mb-2">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />

@@ -4160,7 +4160,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.pricingSubtitle': 'Sin permanencia. Sin complicaciones. Elige el plan adecuado para tu taller.',
     'landing.popular': 'Más Popular',
     'landing.trial30': 'Prueba de 30 días incluida',
-    'landing.planFree': 'Free',
+    'landing.planFree': 'Start',
     'landing.planPro': 'Pro',
     'landing.planGarage': 'Garage',
     'landing.ctaFree': 'Crear Cuenta Gratis',

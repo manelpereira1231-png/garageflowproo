@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 type Meeting = { id: string; title: string; meeting_type: string; scheduled_at: string; status: string; notes?: string; lead_id?: string };
 type Task = { id: string; title: string; due_at?: string; status: string; priority?: string };
+type DemoReq = { id: string; shop_name: string; name: string; phone: string; email: string; status: string; scheduled_at?: string; best_contact_time?: string; created_at: string };
 
 export default function CommercialMeetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);

@@ -387,7 +387,9 @@ const adminRoutes = [
   { path: "/admin/marketing-autopilot", element: <AdminMarketingAutopilot /> },
   { path: "/admin/growth", element: <AdminGrowth /> },
   { path: "/admin/accounting", element: <AdminAccounting /> },
+  { path: "/admin/demos", element: <AdminDemoRequests /> },
 ];
+
 
 const shopRoutes = [
   { path: "/dashboard", element: <Dashboard /> },

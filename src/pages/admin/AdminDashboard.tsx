@@ -395,6 +395,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <DemoRequestsBanner target="/admin/demos" />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">{t('admin.dashboard.title')}</h1>

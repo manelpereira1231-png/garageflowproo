@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DemoRequestsBanner } from "@/components/DemoRequestsBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,6 +180,7 @@ export default function CommercialDashboard() {
 
   return (
     <div className="space-y-6">
+      <DemoRequestsBanner target="/commercial/demos" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">

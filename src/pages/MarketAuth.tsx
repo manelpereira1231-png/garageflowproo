@@ -528,9 +528,13 @@ export default function MarketAuth() {
           )}
           <p className="text-xs text-slate-600">
             Tem uma oficina?{" "}
-            <a href="/auth?mode=signup&realm=erp" className="text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => { window.location.href = "/auth?mode=signup"; }}
+              className="text-primary hover:underline font-medium"
+            >
               Registe-se no GarageFlow ERP →
-            </a>
+            </button>
           </p>
 
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500 pt-3 border-t border-slate-800">

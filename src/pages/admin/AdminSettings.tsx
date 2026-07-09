@@ -398,8 +398,8 @@ export default function AdminSettings() {
         </h2>
         <div className="flex items-center justify-between">
           <div>
-            <Label>Marca d'água "GarageFlow" no plano Free</Label>
-            <p className="text-xs text-muted-foreground">PDFs do plano Free incluem marca d'água com a marca GarageFlow</p>
+            <Label>Marca d'água "GarageFlow" no plano Start</Label>
+            <p className="text-xs text-muted-foreground">PDFs do plano Start incluem marca d'água com a marca GarageFlow</p>
           </div>
           <Switch checked={pdf.watermarkOnFree} onCheckedChange={v => setPdf(s => ({ ...s, watermarkOnFree: v }))} />
         </div>

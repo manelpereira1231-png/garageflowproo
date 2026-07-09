@@ -61,6 +61,7 @@ export default function SettingsPage() {
         setShopId(shopData.id);
         setShopSlug(shopData.slug || "");
         setLogoFile(null);
+        setCountryCode((shopData.country_code || "PT").toUpperCase());
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
           country: shopData.country || "Portugal", currency: shopData.currency || "EUR",

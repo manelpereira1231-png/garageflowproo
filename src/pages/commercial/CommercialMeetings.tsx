@@ -12,22 +12,32 @@ import { toast } from "sonner";
 
 type Meeting = { id: string; title: string; meeting_type: string; scheduled_at: string; status: string; notes?: string; lead_id?: string };
 type Task = { id: string; title: string; due_at?: string; status: string; priority?: string };
+type DemoReq = { id: string; shop_name: string; name: string; phone: string; email: string; status: string; scheduled_at?: string; best_contact_time?: string; created_at: string };
 
 export default function CommercialMeetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [demos, setDemos] = useState<DemoReq[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", meeting_type: "meeting", scheduled_at: "", duration_minutes: "30" });
 
   const load = async () => {
-    const [m, t] = await Promise.all([
+    const [m, t, d] = await Promise.all([
       supabase.from("crm_meetings" as any).select("*").order("scheduled_at", { ascending: true }),
       supabase.from("crm_tasks" as any).select("*").eq("status", "open").order("due_at", { ascending: true }),
+      supabase.from("demo_requests" as any).select("*").in("status", ["new", "contacted", "scheduled"]).order("created_at", { ascending: false }),
     ]);
     setMeetings(((m.data as unknown) || []) as Meeting[]);
     setTasks(((t.data as unknown) || []) as Task[]);
+    setDemos(((d.data as unknown) || []) as DemoReq[]);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("commercial-meetings-demos")
+      .on("postgres_changes", { event: "*", schema: "public", table: "demo_requests" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const create = async () => {
     if (!form.title.trim() || !form.scheduled_at) { toast.error("Título e data obrigatórios"); return; }
@@ -105,6 +115,41 @@ export default function CommercialMeetings() {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Próximas</div><div className="text-2xl font-bold">{upcoming.length}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Tarefas pendentes</div><div className="text-2xl font-bold">{tasks.length}</div></CardContent></Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            🎯 Pedidos de Demonstração
+            <Badge variant="secondary">{demos.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {demos.length === 0 && <div className="text-sm text-muted-foreground">Sem pedidos ativos. Partilhe <code>garageflow.pt/demo</code>.</div>}
+          <div className="space-y-2">
+            {demos.slice(0, 10).map((d) => (
+              <div key={d.id} className="flex items-center justify-between border rounded-lg p-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm truncate">{d.shop_name}</span>
+                    <Badge variant={d.status === "new" ? "default" : "outline"}>
+                      {d.status === "new" ? "Novo" : d.status === "contacted" ? "Em contacto" : "Agendada"}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 truncate">
+                    {d.name} · {d.phone}
+                    {d.scheduled_at && <> · 📅 {new Date(d.scheduled_at).toLocaleString('pt-PT')}</>}
+                    {!d.scheduled_at && d.best_contact_time && <> · ⏰ {d.best_contact_time}</>}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="outline" asChild><a href={`tel:${d.phone}`}>Ligar</a></Button>
+                  <Button size="sm" variant="outline" asChild><a href="/commercial/demos">Gerir</a></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Próximas reuniões</CardTitle></CardHeader>

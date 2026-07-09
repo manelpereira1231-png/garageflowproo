@@ -191,7 +191,7 @@ export default function LandingPage() {
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
-            <Link to="/auth?mode=signup">
+            <Link to="/demo">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-md">
                 {t('landing.ctaDemo')}
               </Button>
@@ -223,7 +223,7 @@ export default function LandingPage() {
               <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full">{t('landing.login')}</Button>
               </Link>
-              <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
               </Link>
             </div>
@@ -248,7 +248,7 @@ export default function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto" onClick={() => trackCtaClick('hero_demo')}>
+            <Link to="/demo" className="w-full sm:w-auto" onClick={() => trackCtaClick('hero_demo')}>
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base px-10 h-14 text-lg font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -577,7 +577,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth?mode=signup">
+                <Link to={plan.ctaKey === 'landing.ctaGarage' ? '/demo' : '/auth?mode=signup'}>
                   <Button
                     className={`w-full ${plan.highlighted ? "gradient-primary text-primary-foreground" : ""}`}
                     variant={plan.highlighted ? "default" : "outline"}
@@ -649,7 +649,7 @@ export default function LandingPage() {
             {t('landing.ctaSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+            <Link to="/demo" className="w-full sm:w-auto">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

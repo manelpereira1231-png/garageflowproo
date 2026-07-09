@@ -16,6 +16,7 @@ import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 
 const countries = Object.keys(VAT_RATES);
 

@@ -56,7 +56,7 @@ export default function CommercialIntelligence() {
       const lostCount = subs.filter((s: any) => s.status === 'canceled').length;
       const sugg: string[] = [];
       if (inactiveCount > 0) sugg.push(`Contactar ${inactiveCount} oficinas inativas há mais de 30 dias.`);
-      if (freeCount > 0) sugg.push(`Propor upgrade a ${freeCount} oficinas no plano Free.`);
+      if (freeCount > 0) sugg.push(`Propor upgrade a ${freeCount} oficinas no plano Start.`);
       if (lostCount > 0) sugg.push(`Tentar recuperar ${lostCount} oficinas que cancelaram.`);
       if (distArr.length > 0) sugg.push(`Distrito com mais oficinas: ${distArr[0].name} (${distArr[0].count}). Reforçar campanhas locais.`);
       if (distArr.length > 3) sugg.push(`Distritos com menor presença: ${distArr.slice(-3).map(d => d.name).join(", ")}. Avaliar expansão.`);

@@ -84,11 +84,22 @@ Deno.serve(async (req) => {
         // Get shop info for emails
         const { data: shop } = await supabase
           .from("shops")
-          .select("name, email")
+          .select("name, email, labor_rate, currency")
           .eq("id", rule.shop_id)
           .single();
         const shopName = shop?.name || "GarageFlow";
         const shopEmail = shop?.email || "";
+        const laborRate = Number((shop as any)?.labor_rate) || 0;
+        const currency = ((shop as any)?.currency as string) || "EUR";
+        const money = (v: number) =>
+          new Intl.NumberFormat("pt-PT", { style: "currency", currency, minimumFractionDigits: 2 }).format(v || 0);
+        const laborLine = (hours: number | null | undefined) => {
+          const h = Number(hours) || 0;
+          if (h <= 0 || laborRate <= 0) return "Mão-de-obra: não aplicável";
+          return `Mão-de-obra: ${money(h * laborRate)} (${h.toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h × ${money(laborRate)}/h)`;
+        };
+        // Track per-recipient labor summary for client emails
+        const recipientLabor: Record<string, string> = {};
 
         switch (rule.trigger_type) {
           case "invoice_overdue": {
@@ -198,7 +209,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: approved } = await supabase
               .from("quotes")
-              .select("id, number, total, clients(name, email)")
+              .select("id, number, total, labor_hours, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "approved")
               .gte("created_at", oneDayAgo);
@@ -207,7 +218,9 @@ Deno.serve(async (req) => {
               details = { count: approved.length };
               emailSubject = `✅ ${approved.length} orçamento(s) aprovado(s)`;
               emailMessage = `Os seguintes orçamentos foram aprovados pelo cliente.`;
-              emailItems = approved.slice(0, 10).map(q => `${q.number} — ${(q.clients as any)?.name || ''}`);
+              emailItems = approved.slice(0, 10).map(q =>
+                `${q.number} — ${(q.clients as any)?.name || ''} · Total: ${money(Number(q.total) || 0)} · ${laborLine((q as any).labor_hours)}`
+              );
             }
             break;
           }
@@ -215,7 +228,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: completed } = await supabase
               .from("work_orders")
-              .select("id, number, total, clients(name, email), vehicles(make, model, plate)")
+              .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);
@@ -226,12 +239,15 @@ Deno.serve(async (req) => {
               emailMessage = `Os seguintes serviços foram concluídos nas últimas 24 horas.`;
               emailItems = completed.slice(0, 10).map(wo => {
                 const v = wo.vehicles as any;
-                return `${wo.number} — ${v?.make || ''} ${v?.model || ''} (${(wo.clients as any)?.name || ''})`;
+                return `${wo.number} — ${v?.make || ''} ${v?.model || ''} (${(wo.clients as any)?.name || ''}) · Total: ${money(Number(wo.total) || 0)} · ${laborLine((wo as any).labor_hours)}`;
               });
-              // Notify clients their vehicle is ready
+              // Notify clients their vehicle is ready (with labor breakdown)
               for (const wo of completed) {
                 const clientEmail = (wo.clients as any)?.email;
-                if (clientEmail) recipientEmails.push(clientEmail);
+                if (clientEmail) {
+                  recipientEmails.push(clientEmail);
+                  recipientLabor[clientEmail] = laborLine((wo as any).labor_hours);
+                }
               }
             }
             break;
@@ -280,7 +296,7 @@ Deno.serve(async (req) => {
                     shopName,
                     "O seu veículo está pronto! 🚗",
                     `O serviço do seu veículo foi concluído na ${shopName}. Pode levantar o veículo quando for mais conveniente.`,
-                    [],
+                    [recipientLabor[email] || "Mão-de-obra: não aplicável"],
                   );
                   await resend.emails.send({
                     from: `${shopName} <noreply@garageflow.pt>`,

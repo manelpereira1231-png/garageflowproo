@@ -31,6 +31,9 @@ const VARIABLES = [
   { key: "numero_orcamento", label: "Nº Orçamento", sample: "ORC-2026-0042" },
   { key: "numero_ordem_servico", label: "Nº Ordem Serviço", sample: "OS-2026-0017" },
   { key: "valor_total", label: "Valor Total", sample: formatMoney(289.5) },
+  { key: "valor_mao_obra", label: "Mão-de-obra (discriminada)", sample: `${formatMoney(70)} (2,0h × ${formatMoney(35)}/h)` },
+  { key: "horas_mao_obra", label: "Horas de mão-de-obra", sample: "2,0h" },
+  { key: "tarifa_mao_obra", label: "Tarifa horária", sample: `${formatMoney(35)}/h` },
   { key: "nome_oficina", label: "Nome Oficina", sample: "Auto Center Lisboa" },
   { key: "email", label: "Email Oficina", sample: "geral@oficina.pt" },
   { key: "telefone", label: "Telefone Oficina", sample: "+351 21 000 0000" },
@@ -47,11 +50,11 @@ const DEFAULTS: Record<string, { subject: string; body: string }> = {
   quote_created: {
     subject: "O seu orçamento {{numero_orcamento}} está pronto",
     body:
-      "Olá {{cliente_nome}},\n\nO orçamento para o seu {{veiculo}} ({{matricula}}) está pronto.\n\nNº: {{numero_orcamento}}\nValor total: {{valor_total}}\n\nPode consultá-lo aqui: {{link_portal}}\n\nObrigado,\n{{nome_oficina}}",
+      "Olá {{cliente_nome}},\n\nO orçamento para o seu {{veiculo}} ({{matricula}}) está pronto.\n\nNº: {{numero_orcamento}}\nMão-de-obra: {{valor_mao_obra}}\nValor total: {{valor_total}}\n\nPode consultá-lo aqui: {{link_portal}}\n\nObrigado,\n{{nome_oficina}}",
   },
   quote_approved: {
     subject: "Recebemos a aprovação do orçamento {{numero_orcamento}}",
-    body: "Olá {{cliente_nome}},\n\nRecebemos a sua aprovação. Vamos avançar com o trabalho no {{veiculo}}.\n\nObrigado,\n{{nome_oficina}}",
+    body: "Olá {{cliente_nome}},\n\nRecebemos a sua aprovação. Vamos avançar com o trabalho no {{veiculo}}.\n\nResumo:\n• Mão-de-obra: {{valor_mao_obra}}\n• Total aprovado: {{valor_total}}\n\nObrigado,\n{{nome_oficina}}",
   },
   service_started: {
     subject: "Começámos o serviço no seu {{veiculo}}",
@@ -59,11 +62,11 @@ const DEFAULTS: Record<string, { subject: string; body: string }> = {
   },
   service_done: {
     subject: "O seu {{veiculo}} está pronto para entrega",
-    body: "Olá {{cliente_nome}},\n\nO trabalho no {{veiculo}} ({{matricula}}) terminou e está pronto para levantamento.\n\nObrigado,\n{{nome_oficina}}\n{{telefone}}",
+    body: "Olá {{cliente_nome}},\n\nO trabalho no {{veiculo}} ({{matricula}}) terminou e está pronto para levantamento.\n\nMão-de-obra: {{valor_mao_obra}}\nValor total: {{valor_total}}\n\nObrigado,\n{{nome_oficina}}\n{{telefone}}",
   },
   invoice_issued: {
     subject: "Fatura emitida — {{numero_ordem_servico}}",
-    body: "Olá {{cliente_nome}},\n\nEmitimos a fatura referente ao serviço {{numero_ordem_servico}}.\nValor: {{valor_total}}\n\n{{nome_oficina}}",
+    body: "Olá {{cliente_nome}},\n\nEmitimos a fatura referente ao serviço {{numero_ordem_servico}}.\n\nMão-de-obra: {{valor_mao_obra}}\nValor total: {{valor_total}}\n\n{{nome_oficina}}",
   },
   appointment_reminder: {
     subject: "Lembrete: marcação na {{nome_oficina}}",

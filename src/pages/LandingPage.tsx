@@ -223,7 +223,7 @@ export default function LandingPage() {
               <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full">{t('landing.login')}</Button>
               </Link>
-              <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
               </Link>
             </div>

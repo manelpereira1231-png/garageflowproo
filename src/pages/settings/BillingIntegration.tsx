@@ -6,9 +6,11 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useShopCountry } from "@/hooks/useShopCountry";
+import { getCountryFiscalConfig } from "@/lib/countryFields";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Human-readable provider names shown in the "coming soon" panel per country.
+const PROVIDER_LABEL: Record<string, string> = {
+  invoicexpress: "InvoiceXpress",
+  nuvem_fiscal: "Nuvem Fiscal",
+  quickbooks: "QuickBooks",
+  xero: "Xero",
+  holded: "Holded",
+  pennylane: "Pennylane",
+  sevdesk: "sevDesk",
+  zoho_books: "Zoho Books",
+  cleartax: "ClearTax",
+  generic: "Fiscal Provider",
+};
 
 type Provider = "invoicexpress" | "moloni";
 

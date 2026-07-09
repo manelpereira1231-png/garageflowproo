@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useShopCountry } from "@/hooks/useShopCountry";

@@ -296,7 +296,7 @@ Deno.serve(async (req) => {
                     shopName,
                     "O seu veículo está pronto! 🚗",
                     `O serviço do seu veículo foi concluído na ${shopName}. Pode levantar o veículo quando for mais conveniente.`,
-                    [],
+                    [recipientLabor[email] || "Mão-de-obra: não aplicável"],
                   );
                   await resend.emails.send({
                     from: `${shopName} <noreply@garageflow.pt>`,

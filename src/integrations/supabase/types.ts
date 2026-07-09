@@ -1916,9 +1916,96 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activity: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          lead_id: string | null
+          meta: Json | null
+          shop_id: string | null
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          lead_id?: string | null
+          meta?: Json | null
+          shop_id?: string | null
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          lead_id?: string | null
+          meta?: Json | null
+          shop_id?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activity_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_calls: {
+        Row: {
+          called_at: string
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          outcome: string
+          shop_id: string | null
+        }
+        Insert: {
+          called_at?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          outcome: string
+          shop_id?: string | null
+        }
+        Update: {
+          called_at?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          outcome?: string
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_calls_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_leads: {
         Row: {
+          address: string | null
           assigned_to: string | null
+          city: string | null
           country: string | null
           created_at: string
           created_by: string | null
@@ -1926,6 +2013,7 @@ export type Database = {
           email: string | null
           estimated_value: number | null
           id: string
+          import_batch_id: string | null
           last_contact_at: string | null
           name: string
           next_contact_at: string | null
@@ -1935,13 +2023,17 @@ export type Database = {
           pipeline_stage: string
           priority: string | null
           shop_id: string | null
+          shop_link_id: string | null
           source: string | null
           status: string
           target_plan: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           assigned_to?: string | null
+          city?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -1949,6 +2041,7 @@ export type Database = {
           email?: string | null
           estimated_value?: number | null
           id?: string
+          import_batch_id?: string | null
           last_contact_at?: string | null
           name: string
           next_contact_at?: string | null
@@ -1958,13 +2051,17 @@ export type Database = {
           pipeline_stage?: string
           priority?: string | null
           shop_id?: string | null
+          shop_link_id?: string | null
           source?: string | null
           status?: string
           target_plan?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           assigned_to?: string | null
+          city?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -1972,6 +2069,7 @@ export type Database = {
           email?: string | null
           estimated_value?: number | null
           id?: string
+          import_batch_id?: string | null
           last_contact_at?: string | null
           name?: string
           next_contact_at?: string | null
@@ -1981,15 +2079,24 @@ export type Database = {
           pipeline_stage?: string
           priority?: string | null
           shop_id?: string | null
+          shop_link_id?: string | null
           source?: string | null
           status?: string
           target_plan?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "crm_leads_shop_id_fkey"
             columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_shop_link_id_fkey"
+            columns: ["shop_link_id"]
             isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]

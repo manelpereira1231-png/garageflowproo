@@ -101,14 +101,36 @@ Deno.serve(async (req) => {
     const hasNif = client.nif && String(client.nif).trim() !== "";
     const clientTaxId = hasNif ? String(client.nif).trim() : null;
 
-    // Build the InvoiceXpress payload (JSON API)
-    const itemsPayload = (inv.invoice_items || []).map((it: any) => ({
-      name: (it.description || "Serviço").slice(0, 150),
-      description: (it.description || "").slice(0, 950) || undefined,
-      unit_price: Number(it.unit_price || 0),
-      quantity: Number(it.quantity || 1),
-      tax: { name: `IVA ${Number(it.vat_rate || 23)}%` },
-    }));
+    // Build the InvoiceXpress payload (JSON API).
+    // Preserva a discriminação Peça / Mão de obra / Serviço já inserida no
+    // campo `description` pelo GarageFlow (prefixo "Peça:" / "Mão de obra:" /
+    // "Serviço:"). O InvoiceXpress recebe:
+    //   - `name`: o texto tal como aparece na fatura (inclui prefixo)
+    //   - `description`: mesma linha, para o SAF-T PT manter categoria explícita
+    const detectCategory = (desc: string): string | null => {
+      if (/^\s*Peça\s*:/i.test(desc)) return 'Peça';
+      if (/^\s*M[ãa]o[- ]de[- ]obra\s*:/i.test(desc)) return 'Mão de obra';
+      if (/^\s*Servi[çc]o\s*:/i.test(desc)) return 'Serviço';
+      return null;
+    };
+    const itemsPayload = (inv.invoice_items || []).map((it: any) => {
+      const rawDesc = String(it.description || '').trim();
+      const category = detectCategory(rawDesc);
+      // `name` mantém o prefixo (evita perder categoria no listing IX)
+      const name = (rawDesc || category || 'Serviço').slice(0, 150);
+      // `description` no IX é opcional; usamos a categoria explícita quando
+      // detectada para o SAF-T PT ficar auto-explicativo em cada linha.
+      const description = category
+        ? `[${category}] ${rawDesc}`.slice(0, 950)
+        : (rawDesc.slice(0, 950) || undefined);
+      return {
+        name,
+        description,
+        unit_price: Number(it.unit_price || 0),
+        quantity: Number(it.quantity || 1),
+        tax: { name: `IVA ${Number(it.vat_rate || 23)}%` },
+      };
+    });
 
     const payload: any = {
       [kind.type.toLowerCase().replace(/([A-Z])/g, "_$1")]: undefined, // placeholder

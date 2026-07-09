@@ -200,6 +200,41 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   const finalY = (doc as any).lastAutoTable.finalY + 10;
   const totalsX = pageW - 14;
 
+  // ---- Discriminação por categoria (paridade com Orçamentos/OS) ----
+  // Detecta o prefixo já inserido no `description` ("Peça:", "Mão de obra:",
+  // "Serviço:") — introduzido por autoCreateInvoiceFromWorkOrder e InvoiceForm.
+  // Não requer alteração de schema.
+  const bucket = { part: 0, labor: 0, service: 0, other: 0 };
+  for (const it of items) {
+    const desc = String(it.description || '');
+    const line = Number(it.total || 0);
+    if (/^\s*Peça\s*:/i.test(desc)) bucket.part += line;
+    else if (/^\s*M[ãa]o[- ]de[- ]obra\s*:/i.test(desc)) bucket.labor += line;
+    else if (/^\s*Servi[çc]o\s*:/i.test(desc)) bucket.service += line;
+    else bucket.other += line;
+  }
+  const hasBreakdown = (bucket.part > 0 ? 1 : 0) + (bucket.labor > 0 ? 1 : 0) + (bucket.service > 0 ? 1 : 0) + (bucket.other > 0 ? 1 : 0) >= 2;
+  let breakdownEndY = finalY;
+  if (hasBreakdown) {
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(80, 80, 80);
+    doc.text('Discriminação:', 14, finalY);
+    doc.setFont("helvetica", "normal");
+    let by = finalY + 5;
+    const row = (lbl: string, val: number) => {
+      if (val <= 0) return;
+      doc.text(lbl, 14, by);
+      doc.text(`${cur}${val.toFixed(2)}`, 90, by, { align: 'right' });
+      by += 5;
+    };
+    row('Peças', bucket.part);
+    row('Mão de obra', bucket.labor);
+    row('Outros serviços', bucket.service);
+    row('Outros', bucket.other);
+    breakdownEndY = by;
+  }
+
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(38, 38, 38);
@@ -213,16 +248,17 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   doc.setFont("helvetica", "bold");
   doc.text(`TOTAL: ${cur}${Number(invoice.total).toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
 
-  // Payment status
+  // Payment status (posicionado abaixo do bloco de discriminação para não sobrepor)
+  const paidY = Math.max(finalY + 26, breakdownEndY + 4);
   if (data.totalPaid > 0) {
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`${t('paid', lang)}: ${cur}${data.totalPaid.toFixed(2)}`, totalsX, finalY + 26, { align: "right" });
+    doc.text(`${t('paid', lang)}: ${cur}${data.totalPaid.toFixed(2)}`, totalsX, paidY, { align: "right" });
     const remaining = Number(invoice.total) - data.totalPaid;
     if (remaining > 0) {
       doc.setTextColor(200, 50, 50);
-      doc.text(`${t('remaining', lang)}: ${cur}${remaining.toFixed(2)}`, totalsX, finalY + 32, { align: "right" });
+      doc.text(`${t('remaining', lang)}: ${cur}${remaining.toFixed(2)}`, totalsX, paidY + 6, { align: "right" });
     }
   }
 

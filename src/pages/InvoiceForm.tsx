@@ -57,6 +57,27 @@ export default function InvoiceForm() {
       if (clientsRes.data) setClients(clientsRes.data);
       if (vehiclesRes.data) setVehicles(vehiclesRes.data);
 
+      // Discriminação Peça/Mão de obra/Serviço — igual à conversão automática
+      // OS→Fatura (autoCreateInvoiceFromWorkOrder). Garante que a fatura
+      // manual preenchida a partir de orçamento/OS não perde a categoria.
+      const typeLabel = (tp?: string) => {
+        if (tp === 'part') return 'Peça';
+        if (tp === 'labor') return 'Mão de obra';
+        if (tp === 'service') return 'Serviço';
+        return null;
+      };
+      const mapLineToItem = (l: any) => {
+        const raw = l.name || l.description || "";
+        const prefix = typeLabel(l.type);
+        return {
+          id: crypto.randomUUID(),
+          description: raw ? (prefix ? `${prefix}: ${raw}` : raw) : (prefix || ''),
+          quantity: l.quantity || 1,
+          unit_price: l.unit_price || 0,
+          vat_rate: l.vat_rate || 23,
+        };
+      };
+
       // Pre-fill from quote
       if (fromQuote) {
         const { data: quote } = await supabase.from("quotes").select("*").eq("id", fromQuote).maybeSingle();
@@ -65,15 +86,7 @@ export default function InvoiceForm() {
           setVehicleId(quote.vehicle_id);
           setNotes(quote.notes || "");
           const lines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-          if (lines.length > 0) {
-            setItems(lines.map((l: any) => ({
-              id: crypto.randomUUID(),
-              description: l.name || l.description || "",
-              quantity: l.quantity || 1,
-              unit_price: l.unit_price || 0,
-              vat_rate: l.vat_rate || 23,
-            })));
-          }
+          if (lines.length > 0) setItems(lines.map(mapLineToItem));
         }
       }
 
@@ -87,15 +100,7 @@ export default function InvoiceForm() {
           setWorkOrderId(wo.id);
           if (wo.quote_id) setQuoteId(wo.quote_id);
           const lines = Array.isArray(wo.lines) ? (wo.lines as any[]) : [];
-          if (lines.length > 0) {
-            setItems(lines.map((l: any) => ({
-              id: crypto.randomUUID(),
-              description: l.name || l.description || "",
-              quantity: l.quantity || 1,
-              unit_price: l.unit_price || 0,
-              vat_rate: l.vat_rate || 23,
-            })));
-          }
+          if (lines.length > 0) setItems(lines.map(mapLineToItem));
         }
       }
     };

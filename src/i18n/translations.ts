@@ -4206,7 +4206,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.faq3Q': '¿Necesito instalar algo?',
     'landing.faq3A': 'No. GarageFlow funciona 100% online. Solo abre el navegador y accede a tu cuenta.',
     'landing.faq4Q': '¿Puedo probar antes de pagar?',
-    'landing.faq4A': 'Sí. El plan Free es gratuito para siempre. Los planes Pro y Garage incluyen un periodo de prueba sin tarjeta de crédito.',
+    'landing.faq4A': 'Sí. El plan Start tiene funcionalidades esenciales para empezar. Los planes Pro y Garage incluyen un periodo de prueba sin tarjeta de crédito.',
     'landing.faq5Q': '¿Sirve para talleres pequeños?',
     'landing.faq5A': 'Sí, perfectamente. Muchos talleres con 1 a 3 personas usan GarageFlow para organizar presupuestos, clientes y servicios.',
     'landing.faq6Q': '¿Puedo usarlo con mi equipo?',

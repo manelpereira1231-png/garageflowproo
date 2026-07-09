@@ -378,6 +378,7 @@ const adminRoutes = [
   { path: "/admin/vehicles", element: <AdminVehiclesGlobal /> },
   { path: "/admin/market-listings", element: <AdminMarketListings /> },
   { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
+  { path: "/admin/market-activations", element: <AdminMarketActivations /> },
   { path: "/admin/seo", element: <AdminSeo /> },
   { path: "/admin/seo-blog", element: <AdminSeoBlog /> },
   { path: "/admin/growth-opportunities", element: <AdminGrowthOpportunities /> },

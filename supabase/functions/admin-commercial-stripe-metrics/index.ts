@@ -203,7 +203,7 @@ class StripeMetricsService {
     let trialToPaidConversions = 0;
     let eventsScanned = 0;
     try {
-      for await (const event of this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100 }).autoPagingIterable()) {
+      for await (const event of paginate<Stripe.Event>((starting_after) => this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100, starting_after }))) {
         eventsScanned += 1;
         if (eventsScanned > 500) break;
         const previous = (event.data as any).previous_attributes;

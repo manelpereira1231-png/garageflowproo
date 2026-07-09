@@ -14,6 +14,18 @@ const INACTIVE_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired", "
 const log = (message: string, data?: unknown) =>
   console.log(`[ADMIN-COMMERCIAL-STRIPE-METRICS] ${message}`, data ? JSON.stringify(data) : "");
 
+async function* paginate<T extends { id: string }>(
+  fetchPage: (startingAfter?: string) => Promise<{ data: T[]; has_more: boolean }>,
+): AsyncGenerator<T> {
+  let startingAfter: string | undefined = undefined;
+  while (true) {
+    const page = await fetchPage(startingAfter);
+    for (const item of page.data) yield item;
+    if (!page.has_more || page.data.length === 0) return;
+    startingAfter = page.data[page.data.length - 1].id;
+  }
+}
+
 function addMoney(target: MoneyCents, currency: string | null | undefined, cents: number | null | undefined) {
   const key = (currency || "eur").toUpperCase();
   target[key] = (target[key] || 0) + Math.round(Number(cents || 0));
@@ -121,7 +133,7 @@ class StripeMetricsService {
     const activeBillingCustomers = new Set<string>();
     const inactiveBillingCustomers = new Set<string>();
 
-    for await (const subscription of this.stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price.product"] }).autoPagingIterable()) {
+    for await (const subscription of paginate<Stripe.Subscription>((starting_after) => this.stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price.product"], starting_after }))) {
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
       if (customerId) subscriptionCustomers.add(customerId);
       const status = subscription.status;
@@ -162,7 +174,7 @@ class StripeMetricsService {
       if (bucket) bucket.newSubscriptions += 1;
     }
 
-    for await (const invoice of this.stripe.invoices.list({ status: "paid", limit: 100 }).autoPagingIterable()) {
+    for await (const invoice of paginate<Stripe.Invoice>((starting_after) => this.stripe.invoices.list({ status: "paid", limit: 100, starting_after }))) {
       const paidAt = invoice.status_transitions?.paid_at || invoice.created;
       const paidCents = invoice.amount_paid || 0;
       addMoney(totalInvoiceCents, invoice.currency, paidCents);
@@ -191,7 +203,7 @@ class StripeMetricsService {
     let trialToPaidConversions = 0;
     let eventsScanned = 0;
     try {
-      for await (const event of this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100 }).autoPagingIterable()) {
+      for await (const event of paginate<Stripe.Event>((starting_after) => this.stripe.events.list({ type: "customer.subscription.updated", created: { gte: yearAgoTs }, limit: 100, starting_after }))) {
         eventsScanned += 1;
         if (eventsScanned > 500) break;
         const previous = (event.data as any).previous_attributes;

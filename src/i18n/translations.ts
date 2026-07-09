@@ -2154,7 +2154,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'onboarding.step5': 'Confirmation',
     'onboarding.brandingDesc': 'Your logo appears on quote and service PDFs, on the dashboard and in emails sent to clients.',
     'onboarding.pdfPreviewTitle': 'PDF Preview',
-    'onboarding.pdfPreviewDesc': 'Your logo will be applied to all generated PDFs. On the FREE plan, PDFs include a "GarageFlow" watermark. On PRO/GARAGE plans the watermark is removed.',
+    'onboarding.pdfPreviewDesc': 'Your logo will be applied to all generated PDFs. On the Start plan, PDFs include a "GarageFlow" watermark. On PRO/GARAGE plans the watermark is removed.',
     'onboarding.next': 'Continue',
     'onboarding.back': 'Back',
     'onboarding.finish': 'Start using!',

@@ -2070,7 +2070,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailError': 'Error sending email.',
     'quotes.noClientEmail': 'Client has no email address.',
     'quotes.limitReached': 'Quote limit reached!',
-    'quotes.limitMessage': 'The Free plan allows only {limit} quotes per month. Upgrade to Pro for unlimited quotes.',
+    'quotes.limitMessage': 'The Start plan allows only {limit} quotes per month. Upgrade to Pro for unlimited quotes.',
     'quotes.quotesUsed': '{used} of {limit} quotes this month',
     'quotes.upgrade': 'Upgrade',
     'quotes.limitBlocked': 'Limit of {limit} quotes/month reached. Upgrade to continue.',

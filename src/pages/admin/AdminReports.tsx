@@ -167,7 +167,7 @@ export default function AdminReports() {
     const funnelMax = Math.max(totalAccounts, 1);
     const funnel = [
       { stage: "Contas Criadas", count: totalAccounts, percent: 100 },
-      { stage: "Free", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
+      { stage: "Start", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
       { stage: "Trial", count: trialingSubs, percent: Math.round((trialingSubs / funnelMax) * 100) },
       { stage: "Pago", count: paidSubs, percent: Math.round((paidSubs / funnelMax) * 100) },
       { stage: "Cancelado", count: cancelledSubs, percent: Math.round((cancelledSubs / funnelMax) * 100) },

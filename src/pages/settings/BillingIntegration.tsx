@@ -6,9 +6,11 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useShopCountry } from "@/hooks/useShopCountry";
+import { getCountryFiscalConfig } from "@/lib/countryFields";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Human-readable provider names shown in the "coming soon" panel per country.
+const PROVIDER_LABEL: Record<string, string> = {
+  invoicexpress: "InvoiceXpress",
+  nuvem_fiscal: "Nuvem Fiscal",
+  quickbooks: "QuickBooks",
+  xero: "Xero",
+  holded: "Holded",
+  pennylane: "Pennylane",
+  sevdesk: "sevDesk",
+  zoho_books: "Zoho Books",
+  cleartax: "ClearTax",
+  generic: "Fiscal Provider",
+};
 
 type Provider = "invoicexpress" | "moloni";
 
@@ -42,6 +58,11 @@ type Compliance = {
 
 export default function BillingIntegration() {
   const shopId = useActiveShopId();
+  const { code: countryCode, config: countryCfg } = useShopCountry();
+  const fiscal = getCountryFiscalConfig(countryCode);
+  const isPT = countryCode === "PT";
+  const providerLabel = PROVIDER_LABEL[fiscal.billingProvider] ?? fiscal.billingProvider;
+
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [compliance, setCompliance] = useState<Compliance>({ certified: 0, draft: 0, cancelled: 0, clientsMissingNif: 0 });
@@ -180,6 +201,61 @@ export default function BillingIntegration() {
       setter(false);
     }
   };
+
+  // Non-PT countries: their national fiscal provider adapter is not yet wired
+  // up. Show a country-aware "coming soon" panel and hide the InvoiceXpress/
+  // Moloni configuration UI entirely. PT keeps the current behaviour intact.
+  if (!isPT) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Link to="/settings"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Definições</Button></Link>
+          <div>
+            <h1 className="text-xl font-bold">Fiscal Billing</h1>
+            <p className="text-sm text-muted-foreground">
+              País da oficina: <strong>{countryCfg.name ?? countryCode}</strong> · Provider: <strong>{providerLabel}</strong>
+            </p>
+          </div>
+        </div>
+
+        <Alert>
+          <Clock className="h-4 w-4" />
+          <AlertTitle>Integração {providerLabel} em breve</AlertTitle>
+          <AlertDescription className="text-sm space-y-2">
+            <p>
+              O GarageFlow está preparado para emitir documentos fiscais certificados através do
+              provider oficial do teu país ({providerLabel}). A ligação nativa ainda não está
+              disponível — assim que estiver, aparece automaticamente aqui, sem migrações.
+            </p>
+            <p className="text-muted-foreground">
+              Enquanto isso, podes continuar a gerar orçamentos, ordens de serviço e faturas
+              internas (PDF) normalmente. Nenhuma outra funcionalidade fica bloqueada.
+            </p>
+          </AlertDescription>
+        </Alert>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              Configuração fiscal deste país
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Os identificadores fiscais e o formato de documentos seguem a legislação de {countryCfg.name ?? countryCode}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm space-y-1.5">
+            {fiscal.fields.map((f) => (
+              <div key={f.key} className="flex items-center justify-between border-b border-border/40 py-1.5 last:border-0">
+                <span className="text-muted-foreground">{f.label}</span>
+                <span className="text-xs">{f.required ? "obrigatório" : "opcional"}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">

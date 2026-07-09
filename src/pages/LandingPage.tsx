@@ -649,7 +649,7 @@ export default function LandingPage() {
             {t('landing.ctaSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/auth?mode=signup" className="w-full sm:w-auto">
+            <Link to="/demo" className="w-full sm:w-auto">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
                 {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

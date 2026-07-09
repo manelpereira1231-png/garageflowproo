@@ -48,6 +48,7 @@ const navSections = [
       { path: "/admin/market", label: "Inspeções", icon: Wrench },
       { path: "/admin/market-escrows", label: "Escrow e Disputas", icon: ShieldCheck },
       { path: "/admin/market-kyc", label: "KYC e Verificações", icon: IdCard },
+      { path: "/admin/market-activations", label: "Adesões Marketplace", icon: Store },
       { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
     ],
   },

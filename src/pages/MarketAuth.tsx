@@ -528,9 +528,9 @@ export default function MarketAuth() {
           )}
           <p className="text-xs text-slate-600">
             Tem uma oficina?{" "}
-            <Link to="/auth?mode=signup" className="text-primary hover:underline">
+            <a href="/auth?mode=signup&realm=erp" className="text-primary hover:underline">
               Registe-se no GarageFlow ERP →
-            </Link>
+            </a>
           </p>
 
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-500 pt-3 border-t border-slate-800">

@@ -162,6 +162,7 @@ const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"))
 const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesGlobal"));
 const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
 const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
+const AdminMarketActivations = lazyRetry(() => import("@/pages/admin/AdminMarketActivations"));
 const AdminSeo = lazyRetry(() => import("@/pages/admin/AdminSeo"));
 const AdminSeoBlog = lazyRetry(() => import("@/pages/admin/AdminSeoBlog"));
 const AdminGrowthOpportunities = lazyRetry(() => import("@/pages/admin/AdminGrowthOpportunities"));
@@ -377,6 +378,7 @@ const adminRoutes = [
   { path: "/admin/vehicles", element: <AdminVehiclesGlobal /> },
   { path: "/admin/market-listings", element: <AdminMarketListings /> },
   { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
+  { path: "/admin/market-activations", element: <AdminMarketActivations /> },
   { path: "/admin/seo", element: <AdminSeo /> },
   { path: "/admin/seo-blog", element: <AdminSeoBlog /> },
   { path: "/admin/growth-opportunities", element: <AdminGrowthOpportunities /> },

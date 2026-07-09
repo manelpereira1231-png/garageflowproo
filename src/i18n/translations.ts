@@ -5900,7 +5900,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.pricingSubtitle': 'Sem fidelidade. Sem complicações. Escolha o plano certo para sua oficina.',
     'landing.popular': 'Mais Popular',
     'landing.trial30': 'Teste de 30 dias incluído',
-    'landing.planFree': 'Free',
+    'landing.planFree': 'Start',
     'landing.planPro': 'Pro',
     'landing.planGarage': 'Garage',
     'landing.ctaFree': 'Criar Conta Grátis',

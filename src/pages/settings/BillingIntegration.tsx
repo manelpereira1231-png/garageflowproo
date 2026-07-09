@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useShopCountry } from "@/hooks/useShopCountry";
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Human-readable provider names shown in the "coming soon" panel per country.
+// Human-readable provider names + external URLs per country.
 const PROVIDER_LABEL: Record<string, string> = {
   invoicexpress: "InvoiceXpress",
   nuvem_fiscal: "Nuvem Fiscal",
@@ -32,6 +32,33 @@ const PROVIDER_LABEL: Record<string, string> = {
   zoho_books: "Zoho Books",
   cleartax: "ClearTax",
   generic: "Fiscal Provider",
+};
+const PROVIDER_URL: Record<string, string> = {
+  nuvem_fiscal: "https://www.nuvemfiscal.com.br",
+  quickbooks: "https://quickbooks.intuit.com",
+  xero: "https://www.xero.com",
+  holded: "https://www.holded.com",
+  pennylane: "https://www.pennylane.com",
+  sevdesk: "https://sevdesk.com",
+  zoho_books: "https://www.zoho.com/books/",
+  cleartax: "https://cleartax.in",
+};
+const PROVIDER_DOC_TYPES: Record<string, { value: string; label: string }[]> = {
+  nuvem_fiscal: [
+    { value: "nfse", label: "NFS-e (Serviço)" },
+    { value: "nfe", label: "NF-e (Produto)" },
+    { value: "nfce", label: "NFC-e (Consumidor)" },
+  ],
+  quickbooks: [{ value: "invoice", label: "Invoice" }, { value: "sales_receipt", label: "Sales Receipt" }],
+  xero: [{ value: "ACCREC", label: "Invoice" }, { value: "ACCRECCREDIT", label: "Credit Note" }],
+  holded: [{ value: "invoice", label: "Factura" }, { value: "salesreceipt", label: "Ticket" }],
+  pennylane: [{ value: "invoice", label: "Facture" }, { value: "credit_note", label: "Avoir" }],
+  sevdesk: [{ value: "invoice", label: "Rechnung" }, { value: "credit_note", label: "Gutschrift" }],
+  zoho_books: [{ value: "invoice", label: "Invoice" }],
+  cleartax: [
+    { value: "tax_invoice", label: "Tax Invoice (GST)" },
+    { value: "bill_of_supply", label: "Bill of Supply" },
+  ],
 };
 
 type Provider = "invoicexpress" | "moloni";
@@ -202,60 +229,22 @@ export default function BillingIntegration() {
     }
   };
 
-  // Non-PT countries: their national fiscal provider adapter is not yet wired
-  // up. Show a country-aware "coming soon" panel and hide the InvoiceXpress/
-  // Moloni configuration UI entirely. PT keeps the current behaviour intact.
+  // Non-PT countries: render the same UX (Test / Save) but bound to the
+  // generic `billing-connect` edge function and the country's official
+  // provider slug. The country is locked (immutable after shop creation),
+  // so the provider is always the correct one — no dropdown.
   if (!isPT) {
     return (
-      <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <Link to="/settings"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Definições</Button></Link>
-          <div>
-            <h1 className="text-xl font-bold">Fiscal Billing</h1>
-            <p className="text-sm text-muted-foreground">
-              País da oficina: <strong>{countryCfg.name ?? countryCode}</strong> · Provider: <strong>{providerLabel}</strong>
-            </p>
-          </div>
-        </div>
-
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertTitle>Integração {providerLabel} em breve</AlertTitle>
-          <AlertDescription className="text-sm space-y-2">
-            <p>
-              O GarageFlow está preparado para emitir documentos fiscais certificados através do
-              provider oficial do teu país ({providerLabel}). A ligação nativa ainda não está
-              disponível — assim que estiver, aparece automaticamente aqui, sem migrações.
-            </p>
-            <p className="text-muted-foreground">
-              Enquanto isso, podes continuar a gerar orçamentos, ordens de serviço e faturas
-              internas (PDF) normalmente. Nenhuma outra funcionalidade fica bloqueada.
-            </p>
-          </AlertDescription>
-        </Alert>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              Configuração fiscal deste país
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Os identificadores fiscais e o formato de documentos seguem a legislação de {countryCfg.name ?? countryCode}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1.5">
-            {fiscal.fields.map((f) => (
-              <div key={f.key} className="flex items-center justify-between border-b border-border/40 py-1.5 last:border-0">
-                <span className="text-muted-foreground">{f.label}</span>
-                <span className="text-xs">{f.required ? "obrigatório" : "opcional"}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+      <IntlBillingForm
+        shopId={shopId}
+        countryCode={countryCode}
+        countryName={(countryCfg as { name?: string })?.name ?? countryCode}
+        providerSlug={fiscal.billingProvider}
+        providerLabel={providerLabel}
+      />
     );
   }
+
 
   return (
     <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">
@@ -430,6 +419,232 @@ export default function BillingIntegration() {
               <div>
                 <Label>Série (opcional)</Label>
                 <Input placeholder={provider === "moloni" ? "document_set_id (ex: 42)" : "ex: A"} value={serie} onChange={(e) => setSerie(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => invoke(true)} disabled={testing || saving}>
+                {testing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Testar ligação
+              </Button>
+              <Button onClick={() => invoke(false)} disabled={testing || saving}>
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Guardar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// International (non-PT) fiscal provider form.
+// Same UX as the PT form (Test / Save) but bound to the generic
+// `billing-connect` edge function and to the country's official provider.
+// ─────────────────────────────────────────────────────────────────────────
+function IntlBillingForm({
+  shopId,
+  countryCode,
+  countryName,
+  providerSlug,
+  providerLabel,
+}: {
+  shopId: string | null;
+  countryCode: string;
+  countryName: string;
+  providerSlug: string;
+  providerLabel: string;
+}) {
+  type IntlRow = {
+    id: string;
+    provider: string;
+    account_name: string;
+    serie_default: string | null;
+    documento_default: string;
+    ativo: boolean;
+    last_test_ok_at: string | null;
+    last_error: string | null;
+  };
+
+  const docTypes = PROVIDER_DOC_TYPES[providerSlug] ?? [{ value: "invoice", label: "Invoice" }];
+  const [row, setRow] = useState<IntlRow | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accountName, setAccountName] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [serie, setSerie] = useState("");
+  const [documento, setDocumento] = useState(docTypes[0].value);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    if (!shopId) return;
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("integracao_faturacao")
+        .select("id, provider, account_name, serie_default, documento_default, ativo, last_test_ok_at, last_error")
+        .eq("shop_id", shopId)
+        .maybeSingle();
+      if (data) {
+        const r = data as unknown as IntlRow;
+        setRow(r);
+        setAccountName(r.account_name || "");
+        setSerie(r.serie_default || "");
+        setDocumento(r.documento_default || docTypes[0].value);
+      }
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopId]);
+
+  const invoke = async (test_only: boolean) => {
+    if (!shopId) return;
+    const setter = test_only ? setTesting : setSaving;
+    setter(true);
+    try {
+      if (!accountName.trim()) {
+        toast.error("Nome/identificador da conta é obrigatório");
+        return;
+      }
+      if (!test_only && !apiKey.trim() && !row) {
+        toast.error("API key é obrigatória na primeira ligação");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("billing-connect", {
+        body: {
+          shop_id: shopId,
+          provider: providerSlug,
+          account_name: accountName.trim(),
+          api_key: apiKey.trim() || undefined,
+          serie_default: serie.trim() || null,
+          documento_default: documento,
+          test_only,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      toast.success(test_only ? "Ligação OK" : `Integração ${providerLabel} gravada`);
+      if (!test_only) {
+        setApiKey("");
+        const { data: fresh } = await supabase
+          .from("integracao_faturacao")
+          .select("id, provider, account_name, serie_default, documento_default, ativo, last_test_ok_at, last_error")
+          .eq("shop_id", shopId)
+          .maybeSingle();
+        if (fresh) setRow(fresh as unknown as IntlRow);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e), { duration: 8000 });
+    } finally {
+      setter(false);
+    }
+  };
+
+  const providerUrl = PROVIDER_URL[providerSlug];
+
+  return (
+    <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <Link to="/settings"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Definições</Button></Link>
+        <div>
+          <h1 className="text-xl font-bold">Fiscal Billing — {providerLabel}</h1>
+          <p className="text-sm text-muted-foreground">
+            País: <strong>{countryName}</strong> ({countryCode}) · Provider oficial:{" "}
+            <strong>{providerLabel}</strong>
+          </p>
+        </div>
+      </div>
+
+      <Alert>
+        <ShieldCheck className="h-4 w-4" />
+        <AlertTitle>Ligação ao {providerLabel}</AlertTitle>
+        <AlertDescription className="text-sm">
+          Liga a conta {providerLabel} da tua oficina. As credenciais são encriptadas (AES-GCM)
+          antes de serem gravadas e nunca são devolvidas ao browser. Os documentos fiscais são
+          emitidos sob a tua própria conta oficial no {providerLabel}, cumprindo a legislação de {countryName}.
+        </AlertDescription>
+      </Alert>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> A carregar…</div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  Ligação ao provider
+                  {row && (
+                    <Badge variant={row.last_test_ok_at ? "default" : "secondary"} className="ml-2">
+                      {row.last_test_ok_at ? <><CheckCircle2 className="w-3 h-3 mr-1" />Ativa</> : "Pendente"}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {row?.last_test_ok_at
+                    ? `Última verificação: ${new Date(row.last_test_ok_at).toLocaleString()}`
+                    : "Ainda não ligado"}
+                </CardDescription>
+              </div>
+              {providerUrl && (
+                <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs text-primary flex items-center gap-1">
+                  {providerLabel} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {row?.last_error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Último erro</AlertTitle>
+                <AlertDescription className="text-xs break-all">{row.last_error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div>
+              <Label>Identificador da conta</Label>
+              <Input
+                placeholder={providerSlug === "nuvem_fiscal" ? "CNPJ ou empresa_id" : "Nome / ID da conta"}
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Identificador que o {providerLabel} usa para a tua empresa (empresa_id, tenant, subdomínio ou email de conta).
+              </p>
+            </div>
+
+            <div>
+              <Label>API Key / Access Token</Label>
+              <Input
+                type="password"
+                placeholder={row ? "•••••••• (deixa em branco para manter)" : `Cola a tua API key do ${providerLabel}`}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                autoComplete="new-password"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                No painel do {providerLabel}: <strong>Definições → API / Integrations</strong>. A chave é encriptada.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo de documento por defeito</Label>
+                <Select value={documento} onValueChange={setDocumento}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {docTypes.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Série / Numeração (opcional)</Label>
+                <Input placeholder="ex: A / 001 / default" value={serie} onChange={(e) => setSerie(e.target.value)} />
               </div>
             </div>
 

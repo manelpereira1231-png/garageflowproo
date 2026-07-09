@@ -17,18 +17,27 @@ type DemoReq = { id: string; shop_name: string; name: string; phone: string; ema
 export default function CommercialMeetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [demos, setDemos] = useState<DemoReq[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", meeting_type: "meeting", scheduled_at: "", duration_minutes: "30" });
 
   const load = async () => {
-    const [m, t] = await Promise.all([
+    const [m, t, d] = await Promise.all([
       supabase.from("crm_meetings" as any).select("*").order("scheduled_at", { ascending: true }),
       supabase.from("crm_tasks" as any).select("*").eq("status", "open").order("due_at", { ascending: true }),
+      supabase.from("demo_requests" as any).select("*").in("status", ["new", "contacted", "scheduled"]).order("created_at", { ascending: false }),
     ]);
     setMeetings(((m.data as unknown) || []) as Meeting[]);
     setTasks(((t.data as unknown) || []) as Task[]);
+    setDemos(((d.data as unknown) || []) as DemoReq[]);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("commercial-meetings-demos")
+      .on("postgres_changes", { event: "*", schema: "public", table: "demo_requests" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const create = async () => {
     if (!form.title.trim() || !form.scheduled_at) { toast.error("Título e data obrigatórios"); return; }

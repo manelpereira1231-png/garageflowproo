@@ -3789,7 +3789,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.emailError': 'Error al enviar email.',
     'quotes.noClientEmail': 'El cliente no tiene email.',
     'quotes.limitReached': '¡Límite de presupuestos alcanzado!',
-    'quotes.limitMessage': 'El plan Free permite solo {limit} presupuestos por mes. Actualiza a Pro para presupuestos ilimitados.',
+    'quotes.limitMessage': 'El plan Start permite solo {limit} presupuestos por mes. Actualiza a Pro para presupuestos ilimitados.',
     'quotes.quotesUsed': '{used} de {limit} presupuestos este mes',
     'quotes.upgrade': 'Actualizar',
     'quotes.limitBlocked': 'Límite de {limit} presupuestos/mes alcanzado. Actualiza para continuar.',

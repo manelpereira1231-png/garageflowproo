@@ -249,35 +249,35 @@ export default function SettingsPage() {
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>NIF / VAT</Label>
-                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder="123456789" />
+                <Label>{getTaxIdLabel(countryCode)}</Label>
+                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={getCountryFiscalConfig(countryCode).fields.find(f => f.key === "taxId")?.placeholder || ""} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.country')}</Label>
-                <Select value={form.country} onValueChange={v => setForm({...form, country: v, vat_rate: String(VAT_RATES[v] || 23)})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
+                  <span>{form.country}</span>
+                  <Badge variant="outline" className="text-[10px]">{countryCode}</Badge>
+                  <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="País bloqueado" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  O país fica bloqueado após a criação da oficina por razões fiscais e legais. Para o alterar, contacte o suporte.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.vatRate')} (%)</Label>
                 <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.laborRate')} (€/h)</Label>
+                <Label>{t('settings.laborRate')} ({getCountryFiscalConfig(countryCode).code === "PT" ? "€" : ""}/h)</Label>
                 <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.currency')}</Label>
-                <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="BRL">BRL (R$)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
+                  <span>{form.currency}</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="Moeda bloqueada" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Definida pelo país da oficina.</p>
               </div>
             </div>
           </CardContent>

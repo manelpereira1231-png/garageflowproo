@@ -577,7 +577,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/auth?mode=signup">
+                <Link to={plan.ctaKey === 'landing.ctaGarage' ? '/demo' : '/auth?mode=signup'}>
                   <Button
                     className={`w-full ${plan.highlighted ? "gradient-primary text-primary-foreground" : ""}`}
                     variant={plan.highlighted ? "default" : "outline"}

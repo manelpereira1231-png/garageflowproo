@@ -7794,7 +7794,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.tryPro': 'प्रो 30 दिन निःशुल्क आज़माएँ',
     'billing.daysLeft': 'दिन शेष',
     'billing.renewsOn': 'इस तिथि पर नवीनीकृत होगा',
-    'billing.freePlanActive': 'निःशुल्क योजना सक्रिय है',
+    'billing.freePlanActive': 'Start योजना सक्रिय है',
     'billing.stripeComingSoon': 'Stripe इंटीग्रेशन जल्द आ रहा है!',
     'billing.limitsTitle': 'योजना उपयोग और सीमाएँ',
     'billing.limitsQuotes': 'इस महीने के कोट्स',

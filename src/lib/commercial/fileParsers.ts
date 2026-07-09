@@ -44,6 +44,10 @@ function norm(s: string) {
     .trim();
 }
 
+const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+const PHONE_RE = /(\+?\d[\d\s().-]{7,}\d)/;
+const URL_RE = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+
 function mapRow(row: Record<string, any>): ParsedLead {
   const out: ParsedLead = { raw: row };
   const keyMap: Record<string, string> = {};
@@ -59,6 +63,28 @@ function mapRow(row: Record<string, any>): ParsedLead {
       }
     }
   });
+
+  // Heuristic fallback: se nenhum alias bateu, procura em qualquer célula.
+  const values = Object.values(row).map((v) => (v == null ? "" : String(v).trim())).filter(Boolean);
+  if (!out.email) {
+    const hit = values.find((v) => EMAIL_RE.test(v));
+    if (hit) out.email = hit.match(EMAIL_RE)![0];
+  }
+  if (!out.phone) {
+    const hit = values.find((v) => PHONE_RE.test(v) && !EMAIL_RE.test(v));
+    if (hit) out.phone = hit.match(PHONE_RE)![0].replace(/\s+/g, " ").trim();
+  }
+  if (!out.website) {
+    const hit = values.find((v) => URL_RE.test(v));
+    if (hit) out.website = hit.match(URL_RE)![0];
+  }
+  if (!out.name) {
+    // Primeiro valor textual que não é email/telefone/url.
+    const hit = values.find(
+      (v) => v.length >= 2 && !EMAIL_RE.test(v) && !URL_RE.test(v) && !/^\+?\d[\d\s().-]{4,}$/.test(v),
+    );
+    if (hit) out.name = hit.slice(0, 160);
+  }
   return out;
 }
 
@@ -67,8 +93,23 @@ export async function parseSpreadsheet(file: File): Promise<ParsedLead[]> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
-  return rows.map(mapRow).filter((r) => r.name || r.email || r.phone);
+  if (!sheet) return [];
+
+  // Primeira tentativa: com cabeçalhos.
+  let rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
+  let mapped = rows.map(mapRow).filter((r) => r.name || r.email || r.phone);
+  if (mapped.length > 0) return mapped;
+
+  // Fallback: sem cabeçalhos — trata cada linha como valores brutos.
+  const raw = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: "" });
+  mapped = raw
+    .map((arr) => {
+      const obj: Record<string, any> = {};
+      arr.forEach((v, i) => (obj[`col_${i}`] = v));
+      return mapRow(obj);
+    })
+    .filter((r) => r.name || r.email || r.phone);
+  return mapped;
 }
 
 /** Extract raw text from a .docx via mammoth, then heuristic parse. */

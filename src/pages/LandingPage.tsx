@@ -191,7 +191,7 @@ export default function LandingPage() {
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('landing.login')}</Button>
             </Link>
-            <Link to="/auth?mode=signup">
+            <Link to="/demo">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-md">
                 {t('landing.ctaDemo')}
               </Button>

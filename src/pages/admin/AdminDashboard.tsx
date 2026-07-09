@@ -363,14 +363,14 @@ export default function AdminDashboard() {
     { label: t('admin.dashboard.pendingAlerts'), value: stats.pendingAlerts, icon: AlertTriangle, color: "text-warning", link: "/admin/alerts" },
   ];
   const planPieData = [
-    { name: "Free", value: stats.planBreakdown.free },
+    { name: "Start", value: stats.planBreakdown.free },
     { name: "Pro", value: stats.planBreakdown.pro },
     { name: "Garage", value: stats.planBreakdown.garage },
   ];
 
   const funnelData = [
     { stage: "Contas Criadas", count: stats.totalAccounts, color: "hsl(var(--muted-foreground))" },
-    { stage: "Free", count: stats.freeCount, color: "hsl(var(--muted-foreground))" },
+    { stage: "Start", count: stats.freeCount, color: "hsl(var(--muted-foreground))" },
     { stage: "Em Trial", count: stats.trialCount, color: "hsl(var(--warning))" },
     { stage: "Pagantes", count: stats.paidCount, color: "hsl(var(--success))" },
     { stage: "Cancelados", count: stats.canceledCount, color: "hsl(var(--destructive))" },

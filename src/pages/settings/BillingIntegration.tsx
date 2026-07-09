@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Human-readable provider names shown in the "coming soon" panel per country.
+// Human-readable provider names + external URLs per country.
 const PROVIDER_LABEL: Record<string, string> = {
   invoicexpress: "InvoiceXpress",
   nuvem_fiscal: "Nuvem Fiscal",
@@ -32,6 +32,33 @@ const PROVIDER_LABEL: Record<string, string> = {
   zoho_books: "Zoho Books",
   cleartax: "ClearTax",
   generic: "Fiscal Provider",
+};
+const PROVIDER_URL: Record<string, string> = {
+  nuvem_fiscal: "https://www.nuvemfiscal.com.br",
+  quickbooks: "https://quickbooks.intuit.com",
+  xero: "https://www.xero.com",
+  holded: "https://www.holded.com",
+  pennylane: "https://www.pennylane.com",
+  sevdesk: "https://sevdesk.com",
+  zoho_books: "https://www.zoho.com/books/",
+  cleartax: "https://cleartax.in",
+};
+const PROVIDER_DOC_TYPES: Record<string, { value: string; label: string }[]> = {
+  nuvem_fiscal: [
+    { value: "nfse", label: "NFS-e (Serviço)" },
+    { value: "nfe", label: "NF-e (Produto)" },
+    { value: "nfce", label: "NFC-e (Consumidor)" },
+  ],
+  quickbooks: [{ value: "invoice", label: "Invoice" }, { value: "sales_receipt", label: "Sales Receipt" }],
+  xero: [{ value: "ACCREC", label: "Invoice" }, { value: "ACCRECCREDIT", label: "Credit Note" }],
+  holded: [{ value: "invoice", label: "Factura" }, { value: "salesreceipt", label: "Ticket" }],
+  pennylane: [{ value: "invoice", label: "Facture" }, { value: "credit_note", label: "Avoir" }],
+  sevdesk: [{ value: "invoice", label: "Rechnung" }, { value: "credit_note", label: "Gutschrift" }],
+  zoho_books: [{ value: "invoice", label: "Invoice" }],
+  cleartax: [
+    { value: "tax_invoice", label: "Tax Invoice (GST)" },
+    { value: "bill_of_supply", label: "Bill of Supply" },
+  ],
 };
 
 type Provider = "invoicexpress" | "moloni";

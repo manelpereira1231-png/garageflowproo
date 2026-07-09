@@ -61,7 +61,10 @@ serve(async (req) => {
     let checked = 0;
     const now = new Date().toISOString();
 
-    for await (const sub of stripe.subscriptions.list({ status: "all", limit: 100 }).autoPagingIterable()) {
+    let _startingAfter: string | undefined = undefined;
+    while (true) {
+      const _page = await stripe.subscriptions.list({ status: "all", limit: 100, starting_after: _startingAfter });
+      for (const sub of _page.data) {
       checked += 1;
       try {
         const customer = typeof sub.customer === "string"

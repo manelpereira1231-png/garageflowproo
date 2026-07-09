@@ -174,7 +174,7 @@ class StripeMetricsService {
       if (bucket) bucket.newSubscriptions += 1;
     }
 
-    for await (const invoice of this.stripe.invoices.list({ status: "paid", limit: 100 }).autoPagingIterable()) {
+    for await (const invoice of paginate<Stripe.Invoice>((starting_after) => this.stripe.invoices.list({ status: "paid", limit: 100, starting_after }))) {
       const paidAt = invoice.status_transitions?.paid_at || invoice.created;
       const paidCents = invoice.amount_paid || 0;
       addMoney(totalInvoiceCents, invoice.currency, paidCents);

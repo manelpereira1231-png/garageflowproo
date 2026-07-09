@@ -54,6 +54,7 @@ export default function MarketDashboard() {
   const [recentListings, setRecentListings] = useState<any[]>(cached?.recentListings ?? []);
   const [activeInspections, setActiveInspections] = useState<any[]>(cached?.activeInspections ?? []);
   const [recentOffers, setRecentOffers] = useState<any[]>(cached?.recentOffers ?? []);
+  const [isShopOwner, setIsShopOwner] = useState(false);
 
   useEffect(() => {
     loadDashboard();

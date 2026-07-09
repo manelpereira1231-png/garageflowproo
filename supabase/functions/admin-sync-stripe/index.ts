@@ -105,7 +105,11 @@ serve(async (req) => {
         failed += 1;
         log("Failed to sync subscription", { subscriptionId: sub.id, error: error instanceof Error ? error.message : String(error) });
       }
+      }
+      if (!_page.has_more || _page.data.length === 0) break;
+      _startingAfter = _page.data[_page.data.length - 1].id;
     }
+
 
     return new Response(JSON.stringify({ synced, failed, checked, synced_at: now }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

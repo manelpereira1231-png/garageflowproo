@@ -133,7 +133,7 @@ class StripeMetricsService {
     const activeBillingCustomers = new Set<string>();
     const inactiveBillingCustomers = new Set<string>();
 
-    for await (const subscription of this.stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price.product"] }).autoPagingIterable()) {
+    for await (const subscription of paginate<Stripe.Subscription>((starting_after) => this.stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price.product"], starting_after }))) {
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
       if (customerId) subscriptionCustomers.add(customerId);
       const status = subscription.status;

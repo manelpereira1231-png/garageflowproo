@@ -58,6 +58,11 @@ type Compliance = {
 
 export default function BillingIntegration() {
   const shopId = useActiveShopId();
+  const { code: countryCode, config: countryCfg } = useShopCountry();
+  const fiscal = getCountryFiscalConfig(countryCode);
+  const isPT = countryCode === "PT";
+  const providerLabel = PROVIDER_LABEL[fiscal.billingProvider] ?? fiscal.billingProvider;
+
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [compliance, setCompliance] = useState<Compliance>({ certified: 0, draft: 0, cancelled: 0, clientsMissingNif: 0 });

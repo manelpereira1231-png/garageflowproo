@@ -166,12 +166,12 @@ export default function MarketLayout({ children, variant }: { children?: React.R
         {/* Top nav — premium glass */}
         <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
+            <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group shrink-0 min-w-0">
+              <div className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
                   {isWorkshopPanel ? <Wrench className="h-4 w-4 text-amber-400" /> : isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}
               </div>
-              <span className="text-lg font-bold tracking-tight">
-                GarageFlow <span className="text-amber-400">{isWorkshopPanel ? "Oficina Market" : isDealer ? "Stand" : "Market"}</span>
+              <span className="text-lg font-bold tracking-tight whitespace-nowrap">
+                GarageFlow <span className="text-amber-400">{isWorkshopPanel ? "Oficina" : isDealer ? "Stand" : "Market"}</span>
               </span>
               {isDealer && (
                 <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 ml-1 rounded text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 tracking-wider">

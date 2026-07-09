@@ -3699,7 +3699,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.recentServices': 'Servicios Recientes',
     'dashboard.noServices': 'Sin servicios este mes',
     'dashboard.vsLastMonth': 'vs mes anterior',
-    'dashboard.freeBanner': 'Está en el plan Free',
+    'dashboard.freeBanner': 'Está en el plan Start',
     'dashboard.trialBanner': 'Período de prueba activo',
     'dashboard.daysLeft': 'días restantes',
     'dashboard.upgradeBenefits': 'Desbloquee alertas, informes avanzados, marketing y más.',

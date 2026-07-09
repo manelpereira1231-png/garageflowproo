@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: approved } = await supabase
               .from("quotes")
-              .select("id, number, total, clients(name, email)")
+              .select("id, number, total, labor_hours, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "approved")
               .gte("created_at", oneDayAgo);
@@ -218,7 +218,9 @@ Deno.serve(async (req) => {
               details = { count: approved.length };
               emailSubject = `✅ ${approved.length} orçamento(s) aprovado(s)`;
               emailMessage = `Os seguintes orçamentos foram aprovados pelo cliente.`;
-              emailItems = approved.slice(0, 10).map(q => `${q.number} — ${(q.clients as any)?.name || ''}`);
+              emailItems = approved.slice(0, 10).map(q =>
+                `${q.number} — ${(q.clients as any)?.name || ''} · Total: ${money(Number(q.total) || 0)} · ${laborLine((q as any).labor_hours)}`
+              );
             }
             break;
           }
@@ -226,7 +228,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: completed } = await supabase
               .from("work_orders")
-              .select("id, number, total, clients(name, email), vehicles(make, model, plate)")
+              .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);

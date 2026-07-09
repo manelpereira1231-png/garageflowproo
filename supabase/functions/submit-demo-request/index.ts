@@ -7,8 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const NOTIFY_TO = (Deno.env.get("DEMO_NOTIFY_EMAILS") || "contact@garageflow.pt")
-  .split(",").map((s) => s.trim()).filter(Boolean);
+const DEFAULT_NOTIFY = [
+  "contact@garageflow.pt",
+  "manelpereira11@gmail.com",
+  "diogochenriques7@gmail.com",
+];
+const NOTIFY_TO = Array.from(new Set(
+  (Deno.env.get("DEMO_NOTIFY_EMAILS")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [])
+    .concat(DEFAULT_NOTIFY),
+));
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

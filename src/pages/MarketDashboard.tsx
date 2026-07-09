@@ -224,12 +224,22 @@ export default function MarketDashboard() {
   return (
     <MarketLayout>
       {/* Welcome header */}
+      {/* Welcome header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("dash.greeting", { name: sellerName })}</h1>
           <p className="text-sm text-muted-foreground">{t("dash.subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isShopOwner && (
+            <a
+              href="/dashboard?realm=erp"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-colors"
+              title="Voltar ao ERP da oficina"
+            >
+              <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
+            </a>
+          )}
           {verified ? (
             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
               <ShieldCheck className="h-3 w-3 mr-1" /> {t("dash.verified")}

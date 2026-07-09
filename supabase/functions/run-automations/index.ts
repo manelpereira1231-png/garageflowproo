@@ -84,11 +84,22 @@ Deno.serve(async (req) => {
         // Get shop info for emails
         const { data: shop } = await supabase
           .from("shops")
-          .select("name, email")
+          .select("name, email, labor_rate, currency")
           .eq("id", rule.shop_id)
           .single();
         const shopName = shop?.name || "GarageFlow";
         const shopEmail = shop?.email || "";
+        const laborRate = Number((shop as any)?.labor_rate) || 0;
+        const currency = ((shop as any)?.currency as string) || "EUR";
+        const money = (v: number) =>
+          new Intl.NumberFormat("pt-PT", { style: "currency", currency, minimumFractionDigits: 2 }).format(v || 0);
+        const laborLine = (hours: number | null | undefined) => {
+          const h = Number(hours) || 0;
+          if (h <= 0 || laborRate <= 0) return "Mão-de-obra: não aplicável";
+          return `Mão-de-obra: ${money(h * laborRate)} (${h.toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h × ${money(laborRate)}/h)`;
+        };
+        // Track per-recipient labor summary for client emails
+        const recipientLabor: Record<string, string> = {};
 
         switch (rule.trigger_type) {
           case "invoice_overdue": {

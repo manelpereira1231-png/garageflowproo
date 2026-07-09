@@ -14,6 +14,18 @@ const INACTIVE_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired", "
 const log = (message: string, data?: unknown) =>
   console.log(`[ADMIN-COMMERCIAL-STRIPE-METRICS] ${message}`, data ? JSON.stringify(data) : "");
 
+async function* paginate<T extends { id: string }>(
+  fetchPage: (startingAfter?: string) => Promise<{ data: T[]; has_more: boolean }>,
+): AsyncGenerator<T> {
+  let startingAfter: string | undefined = undefined;
+  while (true) {
+    const page = await fetchPage(startingAfter);
+    for (const item of page.data) yield item;
+    if (!page.has_more || page.data.length === 0) return;
+    startingAfter = page.data[page.data.length - 1].id;
+  }
+}
+
 function addMoney(target: MoneyCents, currency: string | null | undefined, cents: number | null | undefined) {
   const key = (currency || "eur").toUpperCase();
   target[key] = (target[key] || 0) + Math.round(Number(cents || 0));

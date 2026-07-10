@@ -410,6 +410,52 @@ export default function MarketProfile() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Dados da Oficina — apenas se o utilizador é dono de uma oficina no ERP */}
+          {shopInfo && (
+            <Card className="mt-4 border-amber-200/70 dark:border-amber-800/40 bg-amber-50/40 dark:bg-amber-950/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-amber-600" />
+                  Dados da Oficina
+                  {shopInfo.is_carity_partner && shopInfo.carity_active && (
+                    <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]">
+                      <ShieldCheck className="h-3 w-3 mr-1" /> Parceira ativa
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Nome da oficina</Label>
+                  <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-background/60 border">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{shopInfo.name || "—"}</span>
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">NIF / VAT</Label>
+                    <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-background/60 border">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{shopInfo.nif || "—"}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Morada</Label>
+                    <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-background/60 border">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm truncate">{shopInfo.address || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Estes dados são geridos no ERP da oficina. Para os alterar,{" "}
+                  <a href="/settings" className="text-amber-600 underline font-medium">acede às Definições</a>.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-4">

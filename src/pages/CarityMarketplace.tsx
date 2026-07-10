@@ -1123,6 +1123,7 @@ interface FiltersBodyProps {
 
 function FiltersBody(props: FiltersBodyProps) {
   const {
+    countryFilter, setCountryFilter, availableCountries,
     makeFilter, setMakeFilter, availableMakes,
     cityFilter, setCityFilter, availableCities,
     fuelFilter, setFuelFilter,

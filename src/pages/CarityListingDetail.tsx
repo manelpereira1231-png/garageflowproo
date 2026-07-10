@@ -66,6 +66,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const t = useMarketT();
+  const { language } = useLanguage();
+  const [fx, setFx] = useState<Awaited<ReturnType<typeof loadFxRates>>>(null);
+  const [translation, setTranslation] = useState<{ title: string; description: string } | null>(null);
+  const [translationOn, setTranslationOn] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);

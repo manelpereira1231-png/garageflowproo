@@ -647,7 +647,7 @@ export default function CarityMarketplace() {
                           )}
                           <div className="absolute bottom-3 right-3">
                             <span className="bg-white/95 backdrop-blur-md text-slate-900 font-bold text-lg px-3.5 py-1.5 rounded-lg shadow-lg tabular-nums">
-                              {formatPrice(listing.price)}
+                              {formatListingPrice(listing.price, listing.country_code, listing.currency)}
                             </span>
                           </div>
                         </div>

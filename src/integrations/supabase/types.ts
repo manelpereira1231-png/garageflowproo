@@ -1323,8 +1323,11 @@ export type Database = {
         Row: {
           boost_active: boolean
           boost_expires_at: string | null
+          city: string | null
           commission_rate: number
+          country_code: string
           created_at: string
+          currency: string
           description: string
           fuel: string
           id: string
@@ -1338,6 +1341,7 @@ export type Database = {
           plate: string
           price: number
           published_at: string | null
+          region: string | null
           requires_independent_inspection: boolean
           seller_id: string
           shop_id: string | null
@@ -1349,8 +1353,11 @@ export type Database = {
         Insert: {
           boost_active?: boolean
           boost_expires_at?: string | null
+          city?: string | null
           commission_rate?: number
+          country_code?: string
           created_at?: string
+          currency?: string
           description?: string
           fuel?: string
           id?: string
@@ -1364,6 +1371,7 @@ export type Database = {
           plate?: string
           price?: number
           published_at?: string | null
+          region?: string | null
           requires_independent_inspection?: boolean
           seller_id: string
           shop_id?: string | null
@@ -1375,8 +1383,11 @@ export type Database = {
         Update: {
           boost_active?: boolean
           boost_expires_at?: string | null
+          city?: string | null
           commission_rate?: number
+          country_code?: string
           created_at?: string
+          currency?: string
           description?: string
           fuel?: string
           id?: string
@@ -1390,6 +1401,7 @@ export type Database = {
           plate?: string
           price?: number
           published_at?: string | null
+          region?: string | null
           requires_independent_inspection?: boolean
           seller_id?: string
           shop_id?: string | null

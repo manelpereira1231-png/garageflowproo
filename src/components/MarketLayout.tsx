@@ -269,14 +269,14 @@ export default function MarketLayout({ children, variant }: { children?: React.R
             </div>
 
             {/* Mobile toggle */}
-            <button className="lg:hidden text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button className="xl:hidden text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
 
           {/* Mobile nav */}
           {mobileOpen && (
-            <div className="lg:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
+            <div className="xl:hidden mt-3 pb-2 border-t border-white/[0.08] pt-3 space-y-1 animate-fade-in">
               {/* Mobile search */}
               <form onSubmit={submitSearch} className="relative mb-2">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />

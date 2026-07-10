@@ -74,12 +74,15 @@ export default function DemoRequests({ title }: { title?: string }) {
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     return rows.filter((r) => {
+      const isArchived = !!r.archived_at;
+      if (!showArchived && isArchived) return false;
+      if (showArchived && !isArchived) return false;
       if (filter !== "all" && r.status !== filter) return false;
       if (!t) return true;
       return [r.name, r.shop_name, r.email, r.phone, r.city, r.current_software]
         .filter(Boolean).some((v) => String(v).toLowerCase().includes(t));
     });
-  }, [rows, q, filter]);
+  }, [rows, q, filter, showArchived]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     const patch: any = { status: newStatus };
@@ -88,6 +91,13 @@ export default function DemoRequests({ title }: { title?: string }) {
     const { error } = await supabase.from("demo_requests" as any).update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Estado atualizado");
+  };
+
+  const archiveOne = async (id: string, archive = true) => {
+    const { error } = await supabase.from("demo_requests" as any)
+      .update({ archived_at: archive ? new Date().toISOString() : null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(archive ? "Pedido arquivado" : "Pedido reactivado");
   };
 
   const saveDetail = async () => {

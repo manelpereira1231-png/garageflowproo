@@ -298,7 +298,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Role chooser — ERP vs Marketplace */}
+      {chooserEnabled && (
       <Reveal>
       <section aria-labelledby="role-chooser-title" className="py-14 sm:py-20 px-4 border-b border-border bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-5xl mx-auto">

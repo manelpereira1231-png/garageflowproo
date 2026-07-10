@@ -1088,18 +1088,6 @@ export default function CarityShopInspections() {
       </div>
     );
   }
-    return (
-      <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
-        <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground" />
-        <h2 className="text-xl font-bold">Painel disponível apenas para oficinas</h2>
-        <p className="text-sm text-muted-foreground">
-          Este painel destina-se a oficinas parceiras que realizam inspeções no GarageFlow Market.
-          Se és uma oficina, ativa a tua conta no ERP e volta a tentar.
-        </p>
-        <Button onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
-      </div>
-    );
-  }
 
   // --- NO ACTIVE SHOP STATE ---
   // (shopId is guaranteed non-null here, but keep the explicit guard for clarity.)

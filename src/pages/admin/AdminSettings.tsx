@@ -464,6 +464,14 @@ export default function AdminSettings() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+              <div>
+                <Label>Mostrar badge "NOVO" no cartão Marketplace</Label>
+                <p className="text-xs text-muted-foreground">Destaca visualmente o Marketplace como novidade nos primeiros meses.</p>
+              </div>
+              <Switch checked={landing.showNewBadgeOnMarket} onCheckedChange={v => setLanding(s => ({ ...s, showNewBadgeOnMarket: v }))} />
+            </div>
+
             {(["erp", "market"] as const).map((k) => (
               <div key={k} className="p-3 rounded-lg border border-border bg-muted/20 space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

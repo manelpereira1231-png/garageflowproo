@@ -55,6 +55,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
   const [isShopOwner, setIsShopOwner] = useState(false);
+  const [isInspectionPartner, setIsInspectionPartner] = useState(false);
+  const [ownedShopId, setOwnedShopId] = useState<string | null>(null);
   const [pendingOffersCount, setPendingOffersCount] = useState(0);
   const [hasErpSession, setHasErpSession] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -84,7 +86,10 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   // Em rotas de painel de oficina (ou para utilizadores que são dono de oficina)
   // adicionamos as entradas extra "Painel Oficina", "Carteira" e "Pagamentos"
   // SEM substituir o resto — assim o menu nunca desaparece.
-  const NAV_ITEMS = (isWorkshopPanel || isShopOwner) && !isDealer
+  // Só oficinas APROVADAS como parceiras de inspeção veem "Painel Oficina".
+  // Uma oficina que só usa o Market como comprador NUNCA vê este menu — evita
+  // confundir "oficina-compradora" com "oficina-parceira que faz inspeções".
+  const NAV_ITEMS = (isWorkshopPanel || isInspectionPartner) && !isDealer
     ? [...baseNav, ...workshopNav]
     : baseNav;
 
@@ -105,14 +110,18 @@ export default function MarketLayout({ children, variant }: { children?: React.R
       const [{ count: unread }, { count: favs }, { data: ownedShops }] = await Promise.all([
         supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
         supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("shops").select("id").eq("user_id", user.id).limit(1),
+        supabase.from("shops").select("id, is_carity_partner, carity_active").eq("user_id", user.id).limit(1),
       ]);
       if (cancelled) return;
       setUnreadCount(unread || 0);
       setFavCount(favs || 0);
-      const shopId = ownedShops?.[0]?.id;
+      const ownedShop = (ownedShops?.[0] ?? null) as any;
+      const shopId = ownedShop?.id ?? null;
       if (shopId) {
         setIsShopOwner(true);
+        setOwnedShopId(shopId);
+        const isPartner = ownedShop?.is_carity_partner === true && ownedShop?.carity_active !== false;
+        setIsInspectionPartner(isPartner);
         // Pending inspection offers waiting for this shop to accept/schedule
         const { count: pending } = await supabase
           .from("carity_inspection_offers")

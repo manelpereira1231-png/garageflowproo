@@ -22,7 +22,8 @@ import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
-import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
+import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit } from "@/lib/marketPrice";
+import { getCountryConfig } from "@/lib/regionConfig";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
 

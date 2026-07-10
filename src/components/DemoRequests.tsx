@@ -146,6 +146,13 @@ export default function DemoRequests({ title }: { title?: string }) {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant={showArchived ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowArchived((v) => !v)}
+        >
+          {showArchived ? "Ver activos" : "Ver arquivados"}
+        </Button>
       </div>
 
       {loading && <div className="text-sm text-muted-foreground">A carregar…</div>}

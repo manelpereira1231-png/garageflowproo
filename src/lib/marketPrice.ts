@@ -84,3 +84,73 @@ export function formatLocalDate(value: string | Date | null | undefined, withTim
 export function getTaxLabelLocal(): string {
   return getCountryConfig().taxLabel;
 }
+
+// ─── Listing-scoped formatters (multi-country marketplace) ───────────────
+// A listing has its own country/currency; viewer has their own locale.
+// Rule: preserve the listing's real price + currency; format numbers using
+// the viewer's locale so digit groups match their reading habits.
+
+const NO_DECIMALS = new Set(["INR", "JPY", "IDR", "HUF", "KRW", "VND", "CLP", "COP", "PYG"]);
+const IMPERIAL_COUNTRIES = new Set(["US", "UK", "LR", "MM"]); // miles-first
+
+export function formatListingPrice(
+  value: number | null | undefined,
+  listingCountry?: string | null,
+  listingCurrency?: string | null,
+): string {
+  const v = Number(value) || 0;
+  const viewer = getCountryConfig();
+  const target = listingCountry ? getCountryConfig(listingCountry) : viewer;
+  const currency = (listingCurrency || target.currency || viewer.currency).toUpperCase();
+  const decimals = NO_DECIMALS.has(currency) ? 0 : 0;
+  try {
+    return new Intl.NumberFormat(viewer.locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      currencyDisplay: "symbol",
+    }).format(v);
+  } catch {
+    return `${target.currencySymbol}${v.toLocaleString(viewer.locale)}`;
+  }
+}
+
+export function getDistanceUnit(countryCode?: string | null): "km" | "mi" {
+  const code = (countryCode || getCountryConfig().code || "").toUpperCase();
+  return IMPERIAL_COUNTRIES.has(code) ? "mi" : "km";
+}
+
+/**
+ * Formats odometer reading. Value is ALWAYS stored in km (SI); display
+ * converts to miles for US/UK/etc. based on the listing's country.
+ */
+export function formatMileage(
+  km: number | null | undefined,
+  listingCountry?: string | null,
+): string {
+  const value = Number(km) || 0;
+  const viewer = getCountryConfig();
+  const unit = getDistanceUnit(listingCountry);
+  const display = unit === "mi" ? Math.round(value * 0.621371) : value;
+  return `${display.toLocaleString(viewer.locale)} ${unit}`;
+}
+
+/** Localized date/time in a specific IANA timezone (falls back to viewer locale). */
+export function formatListingDateTime(
+  value: string | Date | null | undefined,
+  timezone?: string | null,
+): string {
+  if (!value) return "—";
+  try {
+    const d = typeof value === "string" ? new Date(value) : value;
+    return new Intl.DateTimeFormat(getMarketLocale(), {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: timezone || undefined,
+    }).format(d);
+  } catch {
+    return String(value);
+  }
+}
+

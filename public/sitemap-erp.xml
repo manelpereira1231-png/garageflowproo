@@ -20,6 +20,11 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://garageflow.pt/" />
   </url>
   <url>
+    <loc>https://garageflow.pt/erp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://garageflow.pt/auth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

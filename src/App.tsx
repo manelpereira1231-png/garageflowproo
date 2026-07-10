@@ -30,6 +30,7 @@ const SeoCityPage = lazy(() => import("@/pages/seo/SeoCityPage"));
 const SeoBlogIndex = lazy(() => import("@/pages/seo/SeoBlogIndex"));
 const SeoBlogPost = lazy(() => import("@/pages/seo/SeoBlogPost"));
 const GratisLanding = lazy(() => import("@/pages/GratisLanding"));
+const ErpLanding = lazy(() => import("@/pages/ErpLanding"));
 
 // Non-critical lazy-loaded with retry
 function lazyRetry(factory: () => Promise<any>) {
@@ -492,6 +493,7 @@ const publicRoutes = [
   { path: "/portal/:token", element: <ClientPortal /> },
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/", element: <LandingPage /> },
+  { path: "/erp", element: <Suspense fallback={<PageLoader />}><ErpLanding /></Suspense> },
   { path: "/status", element: <Suspense fallback={<PageLoader />}><StatusPage /></Suspense> },
   { path: "/afiliados", element: <Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense> },
   { path: "/afiliados/login", element: <Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense> },
@@ -943,6 +945,7 @@ function AppRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/erp" element={<Suspense fallback={<PageLoader />}><ErpLanding /></Suspense>} />
             <Route path="/gratis-3-meses" element={<Suspense fallback={<PageLoader />}><GratisLanding /></Suspense>} />
             <Route path="/oficinas-piloto" element={<Suspense fallback={<PageLoader />}><OficinasPiloto /></Suspense>} />
             <Route path="/piloto" element={<Navigate to="/oficinas-piloto" replace />} />

@@ -102,7 +102,6 @@ export function MarketActivationsBanner({ target = "/admin/market-activations" }
                 {r.shop?.nif && <span className="text-xs text-muted-foreground">NIF: {r.shop.nif}</span>}
               </div>
               <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                {r.shop?.owner_name && <span>{r.shop.owner_name}</span>}
                 {r.shop?.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{r.shop.email}</span>}
                 {r.shop?.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{r.shop.phone}</span>}
                 <span>· {new Date(r.requested_at).toLocaleString("pt-PT")}</span>

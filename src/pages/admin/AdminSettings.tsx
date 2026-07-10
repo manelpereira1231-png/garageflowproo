@@ -98,6 +98,7 @@ export default function AdminSettings() {
     inactiveClientDays: 90, reminderDaysBefore: 7,
   });
   const [pdf, setPdf] = useState<PdfSettings>({ watermarkOnFree: true });
+  const [landing, setLanding] = useState<{ chooserEnabled: boolean }>({ chooserEnabled: true });
   const [featureGates, setFeatureGates] = useState<FeatureGates>({
     freeFeatures: DEFAULT_FREE_FEATURES,
     proFeatures: DEFAULT_PRO_FEATURES,
@@ -115,6 +116,7 @@ export default function AdminSettings() {
           if (row.key === "notifications") setNotifications(prev => ({ ...prev, ...row.value }));
           if (row.key === "pdf") setPdf(row.value as PdfSettings);
           if (row.key === "feature_gates") setFeatureGates(prev => ({ ...prev, ...row.value }));
+          if (row.key === "landing") setLanding(prev => ({ ...prev, ...row.value }));
         });
       }
       // Pricing comes from country_settings (single source of truth) — display PT defaults.
@@ -144,6 +146,7 @@ export default function AdminSettings() {
       { key: "notifications", value: notifications },
       { key: "pdf", value: pdf },
       { key: "feature_gates", value: featureGates },
+      { key: "landing", value: landing },
     ];
     
     let hasError = false;
@@ -388,6 +391,20 @@ export default function AdminSettings() {
             <Input type="number" value={notifications.reminderDaysBefore}
               onChange={e => setNotifications(s => ({ ...s, reminderDaysBefore: Number(e.target.value) }))} />
           </div>
+        </div>
+      </div>
+
+      {/* Landing page */}
+      <div className="stat-card space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Zap className="w-5 h-5 text-primary" /> Landing Page (garageflow.pt)
+        </h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Seletor ERP vs Market na homepage</Label>
+            <p className="text-xs text-muted-foreground">Quando ativo, a homepage mostra o bloco "Como pretende utilizar o GarageFlow?" com as duas opções. Desligue para ocultar e voltar a uma landing focada apenas no ERP.</p>
+          </div>
+          <Switch checked={landing.chooserEnabled} onCheckedChange={v => setLanding(s => ({ ...s, chooserEnabled: v }))} />
         </div>
       </div>
 

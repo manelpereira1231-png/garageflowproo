@@ -262,6 +262,7 @@ export default function CarityMarketplace() {
     });
 
   const activeFilterCount = [
+    countryFilter !== "all",
     makeFilter !== "all",
     cityFilter !== "all",
     fuelFilter !== "all",

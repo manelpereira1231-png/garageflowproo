@@ -433,6 +433,21 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const listingPriceStr = formatListingPrice(listing.price, listing.country_code, listing.currency);
   const listingMileageStr = formatMileage(listing.mileage, listing.country_code);
   const locationLine = [listing.city, listing.region, listingCountryCfg.name].filter(Boolean).join(", ");
+
+  // Optional viewer-currency conversion (shown as "≈ ...")
+  const viewerCfg = getCountryConfig();
+  const viewerCurrency = viewerCfg.currency;
+  const listingCurrency = listing.currency || listingCountryCfg.currency;
+  let convertedStr: string | null = null;
+  if (fx && listingCurrency && viewerCurrency && listingCurrency.toUpperCase() !== viewerCurrency.toUpperCase()) {
+    const conv = convertAmount(Number(listing.price) || 0, listingCurrency, viewerCurrency, fx);
+    if (conv) convertedStr = `≈ ${formatConverted(conv, viewerCurrency, getMarketLocale())}`;
+  }
+
+  // Displayed title/description honour translation toggle
+  const displayTitle = translationOn && translation?.title ? translation.title : `${listing.make} ${listing.model} ${listing.year}`;
+  const displayDescription = translationOn && translation?.description ? translation.description : listing.description;
+  const translationAvailable = translation !== null;
   const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}${listing.city ? ` em ${listing.city}` : ""} | GarageFlow Market`;
   const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
   const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");

@@ -127,7 +127,7 @@ export default function CarityMarketplace() {
     if (freshness !== "any") params.set("fresh", freshness);
     if (sortBy !== "recent") params.set("sort", sortBy);
     setSearchParams(params, { replace: true });
-  }, [search, makeFilter, cityFilter, fuelFilter, priceRange, yearRange, kmRange, minScore, inspectionStatus, certifiedOnly, freshness, sortBy, setSearchParams]);
+  }, [search, countryFilter, makeFilter, cityFilter, fuelFilter, priceRange, yearRange, kmRange, minScore, inspectionStatus, certifiedOnly, freshness, sortBy, setSearchParams]);
 
   const [stats, setStats] = useState<RealStats>(cachedStats ?? { totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 

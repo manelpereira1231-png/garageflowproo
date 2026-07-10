@@ -146,6 +146,7 @@ export default function AdminSettings() {
       { key: "notifications", value: notifications },
       { key: "pdf", value: pdf },
       { key: "feature_gates", value: featureGates },
+      { key: "landing", value: landing },
     ];
     
     let hasError = false;

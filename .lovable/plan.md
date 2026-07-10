@@ -1,88 +1,95 @@
 
-# Auditoria completa de UI/UX e responsividade — GarageFlow
+# Correção Global do GarageFlow Market
 
-Esta auditoria toca ~120 páginas e dezenas de componentes. Para garantir qualidade real (não cosmética) e não gastar créditos em fixes ao lado, proponho um plano em **4 fases sequenciais**, cada fase entregável e verificável antes de avançar.
+Vou dividir o trabalho em 5 lotes independentes. Todos são **frontend/UI apenas** — não alteram ERP, autenticação, RLS, arquitetura da BD ou integrações existentes. A única alteração de schema é **adicional e opcional**: coluna `country` em `market_listings` (Lote 3).
 
-## Regras globais que vou aplicar em todas as fases
+---
 
-1. **Nunca só ícones**: cada botão de ação ganha texto (ou `aria-label` quando o ícone é secundário como fechar/menu). Regra confirmada.
-2. **Zero scroll horizontal em desktop**: `overflow-x-hidden` no `<main>` + tabelas grandes com wrapper `overflow-x-auto` (só em mobile).
-3. **Tokens semânticos apenas**: sem `text-white`, `bg-black`, `#hex` — tudo via `hsl(var(--...))`.
-4. **Tap targets ≥ 44px** em mobile; ícones-only ≥ 40×40.
-5. **Um `<main>` por rota** no Layout, não nas páginas.
-6. **Container padrão**: `max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8` — largura total inteligente sem "esticar" texto.
-7. **Tabelas responsivas**: padrão dual view `hidden sm:block` (tabela) + `sm:hidden` (cards) já existente, aplicado onde falta.
-8. **Modais**: `max-h-[90vh] overflow-y-auto`, `w-[95vw]` em mobile, botões sempre visíveis (footer sticky).
-9. **Tipografia consistente**: `text-xl lg:text-2xl` para h1 de página, `text-sm` corpo, `text-xs` metadados.
+## Lote 1 — Responsividade (Desktop + Mobile)
 
-## Fase 1 — Auditoria automática (1 turno)
+**Problema:** utilizador tem de fazer zoom 75% no desktop; mobile corta conteúdos; painel da Oficina (`/market/inspections`) fica em loading eterno.
 
-Executo Playwright em 3 viewports (375, 768, 1440) sobre ~25 páginas críticas:
-Landing, Auth, Dashboard, Clients, Vehicles, Services, Quotes, QuoteForm, Workshop, Invoices, InvoiceForm, Stock, ServiceCatalog, Agenda, Team, Reports, Settings, BillingIntegration, Market landing, MarketDashboard, MarketListingDetail, Admin Dashboard, Admin Shops, Admin Users, Admin Support.
+**Ações:**
+- `src/components/MarketLayout.tsx`: remover larguras fixas / `max-w-*` restritivos no container principal; usar `w-full` + `px-3 sm:px-4 lg:px-6` + `max-w-[1600px] mx-auto` no wrapper de conteúdo (não em cada card).
+- Garantir `overflow-x-hidden` no `<body>` do market e substituir tabelas por padrão `hidden sm:block / sm:hidden` dual-view onde faltar (Listings, Compras, Mensagens, Carteira, Pagamentos).
+- Corrigir a rota **"Painel Oficina"** (imagem 3, ecrã em loading infinito):
+  - Investigar `/market/inspections` (CarityShopInspections) — o botão do topbar leva para lá mas fica preso no spinner.
+  - Aplicar timeout ao carregamento + fallback de erro, e certificar que o guard não redireciona para `/market/auth` quando já existe sessão ERP (respeitar `authRealm`).
+- Meta viewport confirmado em `index.html` (sem `user-scalable=no`).
 
-Por cada página: screenshot + deteção de `document.documentElement.scrollWidth > clientWidth` (overflow horizontal) + inventário de botões só-ícone sem label. Resultado consolidado num relatório `docs/UI_AUDIT.md`.
+## Lote 2 — Internacionalização (chaves cruas visíveis)
 
-## Fase 2 — Fundações globais (1 turno)
+**Problema:** aparece `dash.empty.title` / `dash.empty.desc` no dashboard.
 
-Ficheiros afetados: `src/components/Layout.tsx`, `src/components/MarketLayout.tsx`, `src/components/AdminLayout.tsx`, `src/components/CommercialLayout.tsx`, `src/index.css`.
+**Ações:**
+- `src/i18n/marketTranslations.ts`: adicionar as chaves em falta (`dash.empty.title`, `dash.empty.desc`, e outras detectadas com `rg "dash\."` no market) em **todas as línguas** já suportadas pelo ERP (pt, pt-BR, en, es, hi).
+- Unificar Market com o sistema do ERP: em vez de manter `marketTranslations.ts` separado, fazer merge para o `LanguageContext` do ERP — o hook `useLanguage()` já cobre ambos e cai automaticamente para EN quando falta chave.
+- Fallback duplo: chave → EN → chave literal apenas em dev (em produção nunca mostrar a chave; mostrar string vazia ou o rótulo em EN).
 
-- Wrapper principal com container padrão + `overflow-x-hidden`.
-- `<main>` único por layout.
-- Ajuste do sidebar/topbar em breakpoints (drawer em mobile, colapsável em tablet, fixo em desktop).
-- Classe utilitária `.page-shell` e `.page-header` em `index.css` para uniformizar.
+## Lote 3 — Multi-moeda + País do Veículo
 
-## Fase 3 — Correções página a página (2–3 turnos)
+**Moeda (frontend-only):**
+- Novo helper `src/lib/marketCurrency.ts` que usa `Intl.NumberFormat` com moeda por país (EUR, USD, GBP, CHF, BRL, CAD, AUD, JPY, AED, NOK, SEK, DKK, PLN, CZK, HUF, INR…).
+- Todas as listagens do Market passam a formatar preço via este helper com base em `listing.country` (fallback: país do utilizador do `regionConfig`).
+- **Valor guardado em BD não muda** — só a apresentação.
 
-Em cada página do checklist do utilizador aplico:
-- Substituição de botões só-ícone por versões com texto (mantendo `size="icon"` só onde é universalmente reconhecido: menu ☰, fechar ✕, arrastar).
-- Tabelas → dual view mobile/desktop consistente.
-- Formulários → `grid grid-cols-1 sm:grid-cols-2` com labels sempre acima do input.
-- Cards KPI → `grid grid-cols-2 sm:grid-cols-4`.
-- Modais → tamanhos e scroll internos.
-- Remoção de duplicados de headers e ações.
+**País do veículo (mínima alteração de schema):**
+- Migration: `ALTER TABLE market_listings ADD COLUMN country text;` + backfill = país do vendedor. Sem alterar RLS.
+- Formulário de criação/edição de anúncio: selector obrigatório de país (lista dos países já ativos em `country_settings`).
+- Filtros na directory (`MarketStandsDirectory`, `CarityMarketplace`): filtro por país.
+- Página de detalhe: badge "Veículo em 🇵🇹 Portugal".
 
-Ordem de execução (prioridade por uso real):
-1. Dashboard, Clients, Vehicles, Quotes/QuoteForm, Services/ServiceForm, Workshop, Invoices/InvoiceForm
-2. Stock, ServiceCatalog, Agenda, Team, Reports, Settings, BillingIntegration
-3. Admin (Dashboard, Shops, Users, Support, restantes)
-4. Market (Dashboard, ListingDetail, Chat, Wallet)
-5. Landing pages (LandingPage, GratisLanding, Auth)
+## Lote 4 — Perfil da Oficina + Distinção de Papéis
 
-## Fase 4 — Verificação final (1 turno)
+**Problema:** No `/market/profile`, quando o utilizador é oficina, faltam NIF e Nome da oficina. E o marketplace confunde "oficina-compradora" (particular que também tem ERP) com "oficina-parceira" (que faz inspeções).
 
-Nova varredura Playwright nos mesmos 25 endpoints × 3 viewports. Confirmo:
-- Zero overflow horizontal em desktop.
-- Todos os botões críticos com texto visível.
-- Zero elementos cortados/sobrepostos nas screenshots.
+**Ações:**
+- `src/pages/MarketProfile.tsx`: se o utilizador tem `shop` associada, mostrar bloco extra **"Dados da Oficina"** (Nome da Oficina, NIF/VAT, Morada) em modo leitura + botão "Editar no ERP".
+- `useShopMarketStatus` já indica se é oficina; adicionar flag `isInspectionPartner` (oficina com `marketplace_status='approved'` E `inspection_partner=true`) vs `isBuyerOnly`.
+- UI diferencia:
+  - **Oficina Parceira (inspeções):** vê "Painel Oficina" no topbar + rota `/market/inspections`.
+  - **Oficina como comprador/vendedor normal:** NÃO vê "Painel Oficina".
+  - **Particular:** só vê Painel/Anúncios/Compras/Favoritos.
 
-Atualizo `docs/UI_AUDIT.md` com o "antes/depois".
+## Lote 5 — Comissões na Landing do Market
 
-## Detalhes técnicos
+- `src/pages/CarityMarketplace.tsx` (landing/hero): secção "Como funciona" com as percentagens exatas que a plataforma retém:
+  - **Vendedor Particular:** X% (ler de `platform_settings` / `country_settings`).
+  - **Stand / Profissional:** Y%.
+  - **Oficina Parceira (inspeção):** valor fixo por inspeção.
+- Valores lidos dinamicamente (nunca hard-coded).
 
-```text
-Container padrão:
-  <div class="max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+---
 
-Botão com texto (padrão):
-  <Button><Icon class="w-4 h-4" /><span>Ação</span></Button>
+## Ficheiros que vão ser tocados (estimativa)
 
-Ícone-only (raro, só menu/fechar):
-  <Button size="icon" aria-label="Fechar"><X /></Button>
-
-Tabela responsiva:
-  <div class="hidden sm:block"><Table>...</Table></div>
-  <div class="sm:hidden space-y-2">{items.map(Card)}</div>
-
-Modal responsivo:
-  <DialogContent class="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
+```
+src/components/MarketLayout.tsx
+src/pages/MarketDashboard.tsx
+src/pages/MarketProfile.tsx
+src/pages/MarketStandsDirectory.tsx
+src/pages/CarityMarketplace.tsx
+src/pages/CarityShopInspections.tsx          (fix loading)
+src/pages/market/*                            (dual-view responsivo)
+src/i18n/marketTranslations.ts                (chaves em falta)
+src/lib/marketCurrency.ts                     (NOVO)
+src/hooks/useShopMarketStatus.ts              (flag inspection_partner)
+supabase/migrations/*                         (ADD COLUMN country)
 ```
 
-## O que **não** faz parte deste plano
+## Fora de âmbito (não vou tocar)
+- ERP, dashboard, RLS, auth, edge functions existentes.
+- Estrutura de user_roles, shops, subscribers.
+- Fluxos de escrow / Stripe Connect.
 
-- Redesign visual (mudança de paleta, fontes, ilustrações) — mantém-se a identidade dark industrial + amber já definida em memória.
-- Novas features ou lógica de negócio.
-- Traduções (i18n) — só copy que já existe.
+---
 
-## Confirmação
+## Ordem de execução proposta
 
-Confirmas que avanço pela Fase 1 (auditoria automática + relatório) já a seguir? Se quiseres priorizar diferente (ex.: saltar Landing/Market e focar só no ERP), diz agora.
+1. **Lote 1 (responsividade + fix Painel Oficina em loading)** — bloqueia UX agora.
+2. **Lote 2 (chaves i18n cruas)** — visualmente crítico.
+3. **Lote 4 (perfil oficina + distinção de papéis)** — pedido explícito.
+4. **Lote 5 (percentagens na landing)** — rápido.
+5. **Lote 3 (multi-moeda + país do veículo)** — maior, requer migration.
+
+**Pergunta antes de avançar:** confirmas que posso adicionar a coluna `country` em `market_listings` (Lote 3)? Se preferires, faço os Lotes 1, 2, 4 e 5 primeiro sem tocar em BD, e o Lote 3 fica para depois da validação.

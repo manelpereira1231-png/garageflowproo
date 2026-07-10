@@ -116,6 +116,7 @@ export default function AdminSettings() {
           if (row.key === "notifications") setNotifications(prev => ({ ...prev, ...row.value }));
           if (row.key === "pdf") setPdf(row.value as PdfSettings);
           if (row.key === "feature_gates") setFeatureGates(prev => ({ ...prev, ...row.value }));
+          if (row.key === "landing") setLanding(prev => ({ ...prev, ...row.value }));
         });
       }
       // Pricing comes from country_settings (single source of truth) — display PT defaults.

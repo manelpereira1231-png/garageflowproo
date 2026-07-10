@@ -952,6 +952,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{listingPriceStr}</p>
+                  {convertedStr && (
+                    <p className="text-sm font-medium text-muted-foreground">{convertedStr}</p>
+                  )}
                   <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas · {listing.currency || listingCountryCfg.currency}</p>
                   {locationLine && (
                     <p className="text-[12px] text-muted-foreground flex items-center justify-center gap-1 pt-1">

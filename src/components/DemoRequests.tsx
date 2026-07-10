@@ -218,6 +218,15 @@ export default function DemoRequests({ title }: { title?: string }) {
                             <Button size="sm" variant="outline" onClick={() => setDetail(r)}>
                               <Calendar className="w-4 h-4 mr-1" /> Agendar
                             </Button>
+                            {r.archived_at ? (
+                              <Button size="sm" variant="ghost" onClick={() => archiveOne(r.id, false)} title="Reactivar">
+                                Reactivar
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="ghost" onClick={() => archiveOne(r.id, true)} title="Arquivar">
+                                Arquivar
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

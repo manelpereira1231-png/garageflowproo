@@ -47,22 +47,22 @@ export default function LandingPage() {
   };
   const DEFAULT_LANDING: LandingCfg = {
     chooserEnabled: true,
-    title: "GarageFlow é um único ecossistema",
-    subtitle: "Escolha como pretende utilizar a plataforma",
+    title: "Como pretende utilizar o GarageFlow?",
+    subtitle: "Um ecossistema, dois produtos. Escolha o que faz mais sentido para si.",
     featured: "erp",
     order: "erp_first",
     erp: {
       icon: "Wrench",
-      title: "Sou uma Oficina",
-      description: "Software de gestão para oficinas automóvel.",
-      ctaLabel: "Conhecer o ERP",
+      title: "ERP para Oficinas",
+      description: "Software completo de gestão para oficinas automóvel.",
+      ctaLabel: "Conhecer ERP",
       href: "/erp",
     },
     market: {
       icon: "Car",
-      title: "Quero Comprar ou Vender um Carro",
-      description: "Marketplace de veículos certificados.",
-      ctaLabel: "Explorar o Marketplace",
+      title: "GarageFlow Market",
+      description: "Comprar e vender carros certificados.",
+      ctaLabel: "Explorar Market",
       href: "/market",
     },
   };

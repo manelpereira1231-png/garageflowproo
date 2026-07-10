@@ -112,6 +112,66 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (id) loadData();
   }, [id, currentUserId]);
 
+  // Load FX rates once (cached 12h) so we can show ≈ viewer currency next to the listing price
+  useEffect(() => { loadFxRates("EUR").then(setFx); }, []);
+
+  // Fetch cached translation for current viewer language; only auto-load if cached
+  useEffect(() => {
+    if (!listing?.id || !language) return;
+    setTranslation(null);
+    // Only auto-fetch already-cached translations (avoid gateway credits on every view)
+    supabase
+      .from("carity_listing_translations")
+      .select("title, description")
+      .eq("listing_id", listing.id).eq("language", language).maybeSingle()
+      .then(({ data }) => {
+        if (data?.title || data?.description) {
+          setTranslation({ title: data.title || listing.title, description: data.description || listing.description });
+        }
+      });
+  }, [listing?.id, language]);
+
+  // Emit hreflang alternates so search engines can pick the right locale variant
+  useEffect(() => {
+    if (!listing?.id) return;
+    const langs: [string, string][] = [
+      ["pt", "pt-PT"], ["pt-BR", "pt-BR"], ["en", "en"], ["es", "es"], ["fr", "fr"], ["de", "de"], ["hi", "hi"],
+    ];
+    const base = `https://garageflow.pt/market/carros/${listing.id}`;
+    // Remove any previous ones we injected
+    document.querySelectorAll('link[data-gf-hreflang="1"]').forEach((n) => n.remove());
+    for (const [code, hreflang] of langs) {
+      const link = document.createElement("link");
+      link.rel = "alternate"; link.hreflang = hreflang;
+      link.href = `${base}?lang=${code}`;
+      link.setAttribute("data-gf-hreflang", "1");
+      document.head.appendChild(link);
+    }
+    const xdef = document.createElement("link");
+    xdef.rel = "alternate"; xdef.hreflang = "x-default"; xdef.href = base;
+    xdef.setAttribute("data-gf-hreflang", "1");
+    document.head.appendChild(xdef);
+    return () => { document.querySelectorAll('link[data-gf-hreflang="1"]').forEach((n) => n.remove()); };
+  }, [listing?.id]);
+
+  const requestTranslation = async () => {
+    if (!listing?.id || !language) return;
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("market-translate-listing", {
+        body: { listing_id: listing.id, target_language: language },
+      });
+      if (error) throw error;
+      if (data?.title || data?.description) {
+        setTranslation({ title: data.title || listing.title, description: data.description || listing.description });
+        setTranslationOn(true);
+        toast.success("Tradução aplicada");
+      }
+    } catch (e: any) {
+      toast.error("Falha ao traduzir: " + (e?.message || "erro"));
+    } finally { setTranslating(false); }
+  };
+
   const loadData = async () => {
     const { data: listingData } = await supabase
       .from("carity_listings")

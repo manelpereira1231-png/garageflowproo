@@ -658,7 +658,7 @@ export default function CarityMarketplace() {
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5">
                                 <span className="tabular-nums">{listing.year}</span>
                                 <span className="text-muted-foreground/40">·</span>
-                                <span className="tabular-nums">{listing.mileage.toLocaleString()} km</span>
+                                <span className="tabular-nums">{formatMileage(listing.mileage, listing.country_code)}</span>
                                 <span className="text-muted-foreground/40">·</span>
                                 <span>{listing.fuel}</span>
                               </div>

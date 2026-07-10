@@ -945,6 +945,7 @@ function AppRoutes() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/erp" element={<Suspense fallback={<PageLoader />}><ErpLanding /></Suspense>} />
             <Route path="/gratis-3-meses" element={<Suspense fallback={<PageLoader />}><GratisLanding /></Suspense>} />
             <Route path="/oficinas-piloto" element={<Suspense fallback={<PageLoader />}><OficinasPiloto /></Suspense>} />
             <Route path="/piloto" element={<Navigate to="/oficinas-piloto" replace />} />

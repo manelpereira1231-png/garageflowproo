@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Link } from "react-router-dom";
-import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle, ShieldCheck, ExternalLink } from "lucide-react";
+import { Wrench, BarChart3, Users, FileText, Shield, Zap, ArrowRight, CheckCircle, Menu, X, Check, Lock, MessageCircle, ShieldCheck, ExternalLink, Car, Store, Building2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -34,34 +34,69 @@ export default function LandingPage() {
   const [pricingRev, setPricingRev] = useState(0);
   const pricing = getRegionalPricing();
   const scrollTracked = useRef<Set<number>>(new Set());
-  const [chooserEnabled, setChooserEnabled] = useState(true);
+
+  type CardCfg = { icon: string; title: string; description: string; ctaLabel: string; href: string };
+  type LandingCfg = {
+    chooserEnabled: boolean;
+    title: string;
+    subtitle: string;
+    featured: "erp" | "market" | "both";
+    order: "erp_first" | "market_first";
+    erp: CardCfg;
+    market: CardCfg;
+  };
+  const DEFAULT_LANDING: LandingCfg = {
+    chooserEnabled: true,
+    title: "GarageFlow é um único ecossistema",
+    subtitle: "Escolha como pretende utilizar a plataforma",
+    featured: "erp",
+    order: "erp_first",
+    erp: {
+      icon: "Wrench",
+      title: "Sou uma Oficina",
+      description: "Software de gestão para oficinas automóvel.",
+      ctaLabel: "Conhecer o ERP",
+      href: "/erp",
+    },
+    market: {
+      icon: "Car",
+      title: "Quero Comprar ou Vender um Carro",
+      description: "Marketplace de veículos certificados.",
+      ctaLabel: "Explorar o Marketplace",
+      href: "/market",
+    },
+  };
+  const [landingCfg, setLandingCfg] = useState<LandingCfg>(DEFAULT_LANDING);
 
   useEffect(() => {
     let cancelled = false;
+    const apply = (value: any) => {
+      if (!value || typeof value !== "object") return;
+      setLandingCfg((prev) => ({
+        ...prev,
+        ...value,
+        erp: { ...prev.erp, ...(value.erp || {}) },
+        market: { ...prev.market, ...(value.market || {}) },
+      }));
+    };
     (async () => {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { data } = await supabase
-          .from("platform_settings")
-          .select("value")
-          .eq("key", "landing")
-          .maybeSingle();
-        if (!cancelled && data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
-          setChooserEnabled((data.value as any).chooserEnabled);
-        }
-      } catch { /* keep default */ }
+        const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
+        if (!cancelled) apply(data?.value);
+      } catch { /* keep defaults */ }
     })();
     const onUpdate = () => {
       import("@/integrations/supabase/client").then(async ({ supabase }) => {
         const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
-        if (data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
-          setChooserEnabled((data.value as any).chooserEnabled);
-        }
+        apply(data?.value);
       });
     };
     window.addEventListener("garageflow:platform-settings-updated", onUpdate);
     return () => { cancelled = true; window.removeEventListener("garageflow:platform-settings-updated", onUpdate); };
   }, []);
+
+  const chooserEnabled = landingCfg.chooserEnabled;
 
   // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {
@@ -259,8 +294,99 @@ export default function LandingPage() {
         )}
       </nav>
 
+      {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable) */}
+      {chooserEnabled && (() => {
+        const iconMap: Record<string, any> = { Wrench, ShieldCheck, Car, Store, Building2, Users, Sparkles };
+        const ErpIcon = iconMap[landingCfg.erp.icon] || Wrench;
+        const MarketIcon = iconMap[landingCfg.market.icon] || Car;
+        const featured = landingCfg.featured;
+        const cards = [
+          {
+            key: "erp" as const,
+            Icon: ErpIcon,
+            title: landingCfg.erp.title,
+            description: landingCfg.erp.description,
+            ctaLabel: landingCfg.erp.ctaLabel,
+            href: landingCfg.erp.href,
+            accent: "primary" as const,
+            highlighted: featured === "erp" || featured === "both",
+            track: "home_choose_erp",
+          },
+          {
+            key: "market" as const,
+            Icon: MarketIcon,
+            title: landingCfg.market.title,
+            description: landingCfg.market.description,
+            ctaLabel: landingCfg.market.ctaLabel,
+            href: landingCfg.market.href,
+            accent: "amber" as const,
+            highlighted: featured === "market" || featured === "both",
+            track: "home_choose_market",
+          },
+        ];
+        if (landingCfg.order === "market_first") cards.reverse();
+        return (
+          <aside
+            aria-label="GarageFlow ecosystem"
+            className="pt-16 sm:pt-20 pb-2 sm:pb-3 px-4"
+          >
+            <div className="max-w-5xl mx-auto">
+              <div className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-4 sm:py-5">
+                <div className="flex flex-col md:flex-row md:items-center md:gap-6">
+                  <div className="flex-shrink-0 md:max-w-[220px] mb-3 md:mb-0">
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary/80">
+                      <Sparkles className="w-3 h-3" /> Ecosistema
+                    </div>
+                    <div className="text-sm font-semibold text-foreground leading-tight mt-1">{landingCfg.title}</div>
+                    <div className="text-xs text-muted-foreground leading-snug">{landingCfg.subtitle}</div>
+                  </div>
+                  <div className="hidden md:block h-12 w-px bg-border/70" />
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                    {cards.map((c) => {
+                      const isPrimary = c.accent === "primary";
+                      const iconWrap = isPrimary
+                        ? "bg-primary/10 text-primary"
+                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400";
+                      const ctaCls = isPrimary
+                        ? "text-primary"
+                        : "text-amber-600 dark:text-amber-400";
+                      const ring = c.highlighted
+                        ? isPrimary
+                          ? "border-primary/40 hover:border-primary"
+                          : "border-amber-500/40 hover:border-amber-500"
+                        : "border-border/60 hover:border-foreground/20";
+                      return (
+                        <Link
+                          key={c.key}
+                          to={c.href}
+                          onClick={() => trackCtaClick(c.track)}
+                          className={`group flex items-center gap-3 rounded-xl border ${ring} bg-background/60 hover:bg-background transition-all px-3 py-2.5`}
+                        >
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconWrap}`}>
+                            <c.Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-foreground truncate">{c.title}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">{c.description}</div>
+                          </div>
+                          <div className={`hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold ${ctaCls} whitespace-nowrap group-hover:gap-2 transition-all`}>
+                            {c.ctaLabel}
+                            <ArrowRight className="w-3 h-3" />
+                          </div>
+                          <ArrowRight className={`sm:hidden w-4 h-4 ${ctaCls}`} />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        );
+      })()}
+
       {/* Hero */}
-      <header className="pt-28 sm:pt-32 pb-16 sm:pb-20 px-4 text-center relative overflow-hidden">
+      <header className={`${chooserEnabled ? "pt-8 sm:pt-12" : "pt-28 sm:pt-32"} pb-16 sm:pb-20 px-4 text-center relative overflow-hidden`}>
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
         <div className="relative max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-6">
@@ -298,80 +424,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {chooserEnabled && (
-      <Reveal>
-      <section aria-labelledby="role-chooser-title" className="py-14 sm:py-20 px-4 border-b border-border bg-gradient-to-b from-background to-muted/20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 id="role-chooser-title" className="text-2xl sm:text-4xl font-bold mb-3">Como pretende utilizar o GarageFlow?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Dois produtos, uma só conta. Escolha o que faz sentido para si.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Link
-              to="/erp"
-              onClick={() => trackCtaClick("home_choose_erp")}
-              className="group relative p-6 sm:p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-xl transition-all"
-            >
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Wrench className="w-7 h-7" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">Para oficinas</div>
-                  <h3 className="text-xl sm:text-2xl font-bold">Tenho uma Oficina</h3>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Gestão completa: clientes, veículos, orçamentos, ordens de serviço, faturação, agenda, stocks, equipas e relatórios.
-              </p>
-              <ul className="space-y-1.5 mb-6 text-sm">
-                {["Orçamentos & Faturas", "Ordens de Serviço", "Agenda & Stocks", "Multi-Oficina & Equipas"].map((k) => (
-                  <li key={k} className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" /> {k}
-                  </li>
-                ))}
-              </ul>
-              <div className="inline-flex items-center gap-2 text-primary font-semibold text-sm group-hover:gap-3 transition-all">
-                Conhecer o GarageFlow ERP <ArrowRight className="w-4 h-4" />
-              </div>
-            </Link>
-
-            <Link
-              to="/market"
-              onClick={() => trackCtaClick("home_choose_market")}
-              className="group relative p-6 sm:p-8 rounded-2xl border-2 border-border bg-card hover:border-amber-500 hover:shadow-xl transition-all"
-            >
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <ShieldCheck className="w-7 h-7" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1">Para compradores & vendedores</div>
-                  <h3 className="text-xl sm:text-2xl font-bold">Quero Comprar ou Vender um Carro</h3>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Marketplace com inspeções certificadas por oficinas parceiras, pagamento protegido em escrow e score técnico transparente.
-              </p>
-              <ul className="space-y-1.5 mb-6 text-sm">
-                {["Carros certificados", "Inspeção mecânica real", "Pagamento em escrow", "Score técnico transparente"].map((k) => (
-                  <li key={k} className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-amber-500 flex-shrink-0" /> {k}
-                  </li>
-                ))}
-              </ul>
-              <div className="inline-flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold text-sm group-hover:gap-3 transition-all">
-                Conhecer o GarageFlow Market <ArrowRight className="w-4 h-4" />
-              </div>
-            </Link>
-          </div>
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Ambos os produtos partilham a mesma conta — pode alternar entre eles a qualquer momento.
-          </p>
-        </div>
-      </section>
-      </Reveal>
-      )}
 
 
       {/* Ideal For section */}

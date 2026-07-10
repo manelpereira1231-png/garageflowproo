@@ -394,6 +394,20 @@ export default function AdminSettings() {
         </div>
       </div>
 
+      {/* Landing page */}
+      <div className="stat-card space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Zap className="w-5 h-5 text-primary" /> Landing Page (garageflow.pt)
+        </h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Seletor ERP vs Market na homepage</Label>
+            <p className="text-xs text-muted-foreground">Quando ativo, a homepage mostra o bloco "Como pretende utilizar o GarageFlow?" com as duas opções. Desligue para ocultar e voltar a uma landing focada apenas no ERP.</p>
+          </div>
+          <Switch checked={landing.chooserEnabled} onCheckedChange={v => setLanding(s => ({ ...s, chooserEnabled: v }))} />
+        </div>
+      </div>
+
       {/* PDF */}
       <div className="stat-card space-y-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">

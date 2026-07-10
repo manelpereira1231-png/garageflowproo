@@ -371,6 +371,7 @@ export default function LandingPage() {
         </div>
       </section>
       </Reveal>
+      )}
 
 
       {/* Ideal For section */}

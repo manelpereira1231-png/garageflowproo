@@ -119,7 +119,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     const titleText = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
     document.title = titleText;
     // Dynamic meta description with real data
-    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatMarketPrice(listingData.price)}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
+    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatListingPrice(listingData.price, listingData.country_code, listingData.currency)}, ${formatMileage(listingData.mileage, listingData.country_code)}, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
     const setMeta = (selector: string, attr: "name" | "property", key: string, content: string) => {
       let el = document.querySelector(selector) as HTMLMetaElement | null;
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }

@@ -590,8 +590,31 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 {listing.description && (
                   <>
                     <Separator className="my-4" />
-                    <h3 className="font-semibold mb-2">Descrição</h3>
-                    <p className="text-muted-foreground whitespace-pre-line">{listing.description}</p>
+                    <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                      <h3 className="font-semibold">Descrição</h3>
+                      {translationAvailable ? (
+                        <button
+                          type="button"
+                          onClick={() => setTranslationOn((v) => !v)}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          {translationOn ? "Ver original" : `Ver em ${language.toUpperCase()}`}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={requestTranslation}
+                          disabled={translating}
+                          className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                        >
+                          {translating ? "A traduzir…" : `Traduzir para ${language.toUpperCase()}`}
+                        </button>
+                      )}
+                    </div>
+                    {translationOn && translation ? (
+                      <div className="mb-2 text-[11px] text-muted-foreground italic">Traduzido automaticamente</div>
+                    ) : null}
+                    <p className="text-muted-foreground whitespace-pre-line">{displayDescription}</p>
                   </>
                 )}
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DemoRequestsBanner } from "@/components/DemoRequestsBanner";
+import { MarketActivationsBanner } from "@/components/MarketActivationsBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

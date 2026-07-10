@@ -34,7 +34,7 @@ export function MarketActivationsBanner({ target = "/admin/market-activations" }
     if (ids.length) {
       const { data: shops } = await supabase
         .from("shops")
-        .select("id,name,email,phone,nif,owner_name")
+        .select("id,name,email,phone,nif")
         .in("id", ids);
       (shops || []).forEach((s: any) => { shopMap[s.id] = s; });
     }

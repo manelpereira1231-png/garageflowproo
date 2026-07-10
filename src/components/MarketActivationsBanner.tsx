@@ -13,7 +13,7 @@ type Req = {
   user_id: string;
   status: string;
   requested_at: string;
-  shop?: { name: string | null; email: string | null; phone: string | null; nif: string | null; owner_name: string | null };
+  shop?: { name: string | null; email: string | null; phone: string | null; nif: string | null };
 };
 
 export function MarketActivationsBanner({ target = "/admin/market-activations" }: { target?: string }) {

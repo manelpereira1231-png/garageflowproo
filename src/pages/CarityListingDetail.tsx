@@ -22,9 +22,11 @@ import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
-import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit } from "@/lib/marketPrice";
+import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit, getMarketLocale } from "@/lib/marketPrice";
 import { getCountryConfig } from "@/lib/regionConfig";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { loadFxRates, convertAmount, formatConverted } from "@/lib/marketFx";
 import SEOHead from "@/components/SEOHead";
 
 const CHECKLIST_KEYS = [

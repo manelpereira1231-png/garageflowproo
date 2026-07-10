@@ -111,6 +111,7 @@ export default function CarityMarketplace() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
+    if (countryFilter !== "all") params.set("country", countryFilter);
     if (makeFilter !== "all") params.set("make", makeFilter);
     if (cityFilter !== "all") params.set("city", cityFilter);
     if (fuelFilter !== "all") params.set("fuel", fuelFilter);

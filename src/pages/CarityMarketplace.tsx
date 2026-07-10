@@ -664,10 +664,12 @@ export default function CarityMarketplace() {
                               </div>
                             </div>
                           </div>
-                          {(listing.location_label || listing.shop_location) && (
+                          {(listing.city || listing.location_label || listing.shop_location) && (
                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
                               <MapPin className="h-3 w-3 text-slate-400" />
-                              {(listing.location_label || listing.shop_location)?.split(",")[0]}
+                              {listing.country_code && <span aria-hidden>{getCountryConfig(listing.country_code).flag}</span>}
+                              {listing.city || (listing.location_label || listing.shop_location)?.split(",")[0]}
+                              {listing.country_code && <span className="text-muted-foreground/60">· {getCountryConfig(listing.country_code).name}</span>}
                             </p>
                           )}
                           {listing.shop_name && (

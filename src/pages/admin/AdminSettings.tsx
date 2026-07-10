@@ -413,16 +413,96 @@ export default function AdminSettings() {
       {/* Landing page */}
       <div className="stat-card space-y-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Zap className="w-5 h-5 text-primary" /> Landing Page (garageflow.pt)
+          <Zap className="w-5 h-5 text-primary" /> Homepage — Faixa ERP / Marketplace
         </h2>
         <div className="flex items-center justify-between">
           <div>
-            <Label>Seletor ERP vs Market na homepage</Label>
-            <p className="text-xs text-muted-foreground">Quando ativo, a homepage mostra o bloco "Como pretende utilizar o GarageFlow?" com as duas opções. Desligue para ocultar e voltar a uma landing focada apenas no ERP.</p>
+            <Label>Ativar faixa ERP vs Marketplace</Label>
+            <p className="text-xs text-muted-foreground">Quando ativa, a homepage mostra uma faixa premium compacta acima do Hero com dois cartões. Ao desligar, a homepage volta exatamente ao estado original (apenas ERP).</p>
           </div>
           <Switch checked={landing.chooserEnabled} onCheckedChange={v => setLanding(s => ({ ...s, chooserEnabled: v }))} />
         </div>
+
+        {landing.chooserEnabled && (
+          <div className="space-y-4 pt-2 border-t border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Título da faixa</Label>
+                <Input value={landing.title} onChange={e => setLanding(s => ({ ...s, title: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Subtítulo</Label>
+                <Input value={landing.subtitle} onChange={e => setLanding(s => ({ ...s, subtitle: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Produto em destaque</Label>
+                <select
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={landing.featured}
+                  onChange={e => setLanding(s => ({ ...s, featured: e.target.value as any }))}
+                >
+                  <option value="erp">ERP</option>
+                  <option value="market">Marketplace</option>
+                  <option value="both">Ambos</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Ordem dos cartões</Label>
+                <select
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={landing.order}
+                  onChange={e => setLanding(s => ({ ...s, order: e.target.value as any }))}
+                >
+                  <option value="erp_first">ERP primeiro</option>
+                  <option value="market_first">Marketplace primeiro</option>
+                </select>
+              </div>
+            </div>
+
+            {(["erp", "market"] as const).map((k) => (
+              <div key={k} className="p-3 rounded-lg border border-border bg-muted/20 space-y-2">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {k === "erp" ? "Cartão ERP" : "Cartão Marketplace"}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Ícone</Label>
+                    <select
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      value={landing[k].icon}
+                      onChange={e => setLanding(s => ({ ...s, [k]: { ...s[k], icon: e.target.value } }))}
+                    >
+                      {["Wrench", "ShieldCheck", "Car", "Store", "Building2", "Users", "Sparkles"].map(i => (
+                        <option key={i} value={i}>{i}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Link</Label>
+                    <Input value={landing[k].href} onChange={e => setLanding(s => ({ ...s, [k]: { ...s[k], href: e.target.value } }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Título</Label>
+                    <Input value={landing[k].title} onChange={e => setLanding(s => ({ ...s, [k]: { ...s[k], title: e.target.value } }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Texto do botão</Label>
+                    <Input value={landing[k].ctaLabel} onChange={e => setLanding(s => ({ ...s, [k]: { ...s[k], ctaLabel: e.target.value } }))} />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs text-muted-foreground">Descrição</Label>
+                    <Input value={landing[k].description} onChange={e => setLanding(s => ({ ...s, [k]: { ...s[k], description: e.target.value } }))} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
 
       {/* PDF */}
       <div className="stat-card space-y-4">

@@ -1103,6 +1103,7 @@ export default function CarityMarketplace() {
 
 // ───────────────────── Filters body (shared desktop sidebar + mobile sheet)
 interface FiltersBodyProps {
+  countryFilter: string; setCountryFilter: (v: string) => void; availableCountries: string[];
   makeFilter: string; setMakeFilter: (v: string) => void; availableMakes: string[];
   cityFilter: string; setCityFilter: (v: string) => void; availableCities: string[];
   fuelFilter: string; setFuelFilter: (v: string) => void;

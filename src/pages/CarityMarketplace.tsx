@@ -82,6 +82,7 @@ export default function CarityMarketplace() {
 
   // Filters — initialized from URL so links/back-button preserve state
   const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [countryFilter, setCountryFilter] = useState<string>(searchParams.get("country") || "all");
   const [makeFilter, setMakeFilter] = useState<string>(searchParams.get("make") || "all");
   const [cityFilter, setCityFilter] = useState<string>(searchParams.get("city") || "all");
   const [fuelFilter, setFuelFilter] = useState(searchParams.get("fuel") || "all");

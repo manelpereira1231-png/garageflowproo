@@ -98,6 +98,7 @@ export default function AdminSettings() {
     inactiveClientDays: 90, reminderDaysBefore: 7,
   });
   const [pdf, setPdf] = useState<PdfSettings>({ watermarkOnFree: true });
+  const [landing, setLanding] = useState<{ chooserEnabled: boolean }>({ chooserEnabled: true });
   const [featureGates, setFeatureGates] = useState<FeatureGates>({
     freeFeatures: DEFAULT_FREE_FEATURES,
     proFeatures: DEFAULT_PRO_FEATURES,

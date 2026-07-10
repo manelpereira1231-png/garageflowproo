@@ -98,13 +98,14 @@ export function DemoRequestsBanner({ target = "/commercial/demos" }: { target?: 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold truncate">{r.shop_name}</span>
-                <Badge variant={r.status === "new" ? "destructive" : "secondary"} className="text-[10px]">
-                  {r.status === "new" ? "NOVO" : "Contactado"}
+                <Badge variant={STATUS_LABEL[r.status]?.variant ?? "secondary"} className="text-[10px]">
+                  {STATUS_LABEL[r.status]?.label ?? r.status}
                 </Badge>
                 {r.city && <span className="text-xs text-muted-foreground">• {r.city}</span>}
               </div>
               <div className="text-xs text-muted-foreground truncate">
                 {r.name} — recebido {new Date(r.created_at).toLocaleString("pt-PT")}
+                {r.scheduled_at && <> · 📅 {new Date(r.scheduled_at).toLocaleString("pt-PT")}</>}
               </div>
             </div>
             <div className="flex items-center gap-3 text-xs">

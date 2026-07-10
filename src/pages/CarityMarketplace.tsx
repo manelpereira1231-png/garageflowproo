@@ -276,6 +276,7 @@ export default function CarityMarketplace() {
   ].filter(Boolean).length;
 
   const resetFilters = () => {
+    setCountryFilter("all");
     setMakeFilter("all");
     setCityFilter("all");
     setFuelFilter("all");

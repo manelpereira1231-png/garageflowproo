@@ -35,6 +35,7 @@ export default function DemoRequests({ title }: { title?: string }) {
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<Demo | null>(null);
+  const [scheduledInput, setScheduledInput] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [notesEdit, setNotesEdit] = useState("");
 

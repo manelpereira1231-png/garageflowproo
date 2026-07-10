@@ -51,21 +51,35 @@ export default function CarityShopInspections() {
   // usou o ERP nesta sessão), procura a loja do próprio user_id.
   const [fallbackShopId, setFallbackShopId] = useState<string | null>(null);
   const [fallbackResolved, setFallbackResolved] = useState(false);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
   useEffect(() => {
     if (activeShopId) { setFallbackResolved(true); return; }
     let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { if (!cancelled) setFallbackResolved(true); return; }
-      const { data } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
-      if (cancelled) return;
-      if (data?.id) {
-        setFallbackShopId(data.id);
-        try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+    // Hard timeout — nunca deixamos o utilizador preso num spinner infinito
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setFallbackError("timeout");
+        setFallbackResolved(true);
       }
-      setFallbackResolved(true);
+    }, 6000);
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { if (!cancelled) { clearTimeout(timeout); setFallbackResolved(true); } return; }
+        const { data, error } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+        if (cancelled) return;
+        if (error) setFallbackError(error.message);
+        if (data?.id) {
+          setFallbackShopId(data.id);
+          try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+        }
+        clearTimeout(timeout);
+        setFallbackResolved(true);
+      } catch (err: any) {
+        if (!cancelled) { setFallbackError(err?.message || "erro"); clearTimeout(timeout); setFallbackResolved(true); }
+      }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [activeShopId]);
   const shopId = activeShopId || fallbackShopId;
   const { pricing, formatPrice } = useCountryPricing();
@@ -1050,8 +1064,10 @@ export default function CarityShopInspections() {
   // isPartner=false until the realtime/DB read completes.
   if (!partnerChecked || !fallbackResolved) {
     return (
-      <div className="max-w-lg mx-auto text-center pt-16">
+      <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">A carregar o painel da oficina…</p>
+        <Button variant="outline" size="sm" onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
       </div>
     );
   }
@@ -1066,7 +1082,7 @@ export default function CarityShopInspections() {
         <h2 className="text-xl font-bold">Painel disponível apenas para oficinas</h2>
         <p className="text-sm text-muted-foreground">
           Este painel destina-se a oficinas parceiras que realizam inspeções no GarageFlow Market.
-          Se és uma oficina, ativa a tua conta no ERP e volta a tentar.
+          {fallbackError ? ` (${fallbackError})` : ""} Se és uma oficina, ativa a tua conta no ERP e volta a tentar.
         </p>
         <Button onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
       </div>

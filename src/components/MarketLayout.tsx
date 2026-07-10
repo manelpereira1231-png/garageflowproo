@@ -55,6 +55,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const [favCount, setFavCount] = useState(0);
   const [searchQ, setSearchQ] = useState("");
   const [isShopOwner, setIsShopOwner] = useState(false);
+  const [isInspectionPartner, setIsInspectionPartner] = useState(false);
+  const [ownedShopId, setOwnedShopId] = useState<string | null>(null);
   const [pendingOffersCount, setPendingOffersCount] = useState(0);
   const [hasErpSession, setHasErpSession] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -84,7 +86,10 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   // Em rotas de painel de oficina (ou para utilizadores que são dono de oficina)
   // adicionamos as entradas extra "Painel Oficina", "Carteira" e "Pagamentos"
   // SEM substituir o resto — assim o menu nunca desaparece.
-  const NAV_ITEMS = (isWorkshopPanel || isShopOwner) && !isDealer
+  // Só oficinas APROVADAS como parceiras de inspeção veem "Painel Oficina".
+  // Uma oficina que só usa o Market como comprador NUNCA vê este menu — evita
+  // confundir "oficina-compradora" com "oficina-parceira que faz inspeções".
+  const NAV_ITEMS = (isWorkshopPanel || isInspectionPartner) && !isDealer
     ? [...baseNav, ...workshopNav]
     : baseNav;
 
@@ -105,14 +110,18 @@ export default function MarketLayout({ children, variant }: { children?: React.R
       const [{ count: unread }, { count: favs }, { data: ownedShops }] = await Promise.all([
         supabase.from("carity_chat_messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("read", false),
         supabase.from("listing_favorites" as any).select("listing_id", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("shops").select("id").eq("user_id", user.id).limit(1),
+        supabase.from("shops").select("id, is_carity_partner, carity_active").eq("user_id", user.id).limit(1),
       ]);
       if (cancelled) return;
       setUnreadCount(unread || 0);
       setFavCount(favs || 0);
-      const shopId = ownedShops?.[0]?.id;
+      const ownedShop = (ownedShops?.[0] ?? null) as any;
+      const shopId = ownedShop?.id ?? null;
       if (shopId) {
         setIsShopOwner(true);
+        setOwnedShopId(shopId);
+        const isPartner = ownedShop?.is_carity_partner === true && ownedShop?.carity_active !== false;
+        setIsInspectionPartner(isPartner);
         // Pending inspection offers waiting for this shop to accept/schedule
         const { count: pending } = await supabase
           .from("carity_inspection_offers")
@@ -170,7 +179,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
         )}
         {/* Top nav — premium glass */}
         <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
             <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group shrink-0 min-w-0">
               <div className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${isDealer ? "bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300/40 shadow-md shadow-amber-500/30" : "bg-amber-400/15 border border-amber-400/30 group-hover:bg-amber-400/25"}`}>
                   {isWorkshopPanel ? <Wrench className="h-4 w-4 text-amber-400" /> : isDealer ? <Building2 className="h-4 w-4 text-zinc-900" /> : <ShieldCheck className="h-4 w-4 text-amber-400" />}
@@ -312,7 +321,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
           )}
         </nav>
 
-        <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 page-in overflow-x-hidden">
+        <main className="max-w-[1600px] mx-auto w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-6 page-in overflow-x-hidden">
           <Suspense fallback={<PageFallback />}>
             {children ?? <Outlet />}
           </Suspense>

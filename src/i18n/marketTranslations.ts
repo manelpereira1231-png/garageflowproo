@@ -98,6 +98,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "Ver todos",
     "dash.startSelling": "Comece a vender",
     "dash.startSellingDesc": "Publique o seu primeiro carro com inspeção certificada.",
+    "dash.empty.title": "Ainda não tens nenhum carro à venda",
+    "dash.empty.desc": "Publica o teu 1.º anúncio em menos de 2 minutos. Inspeção certificada incluída e pagamento garantido por escrow.",
     "trust.new": "Novo",
     "trust.bronze": "Bronze",
     "trust.silver": "Prata",
@@ -613,6 +615,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "Ver todos",
     "dash.startSelling": "Comece a vender",
     "dash.startSellingDesc": "Publique seu primeiro carro com inspeção certificada.",
+    "dash.empty.title": "Você ainda não tem nenhum carro à venda",
+    "dash.empty.desc": "Publique seu 1.º anúncio em menos de 2 minutos. Inspeção certificada incluída e pagamento garantido por escrow.",
     "trust.new": "Novo",
     "trust.bronze": "Bronze",
     "trust.silver": "Prata",
@@ -1122,6 +1126,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "View all",
     "dash.startSelling": "Start selling",
     "dash.startSellingDesc": "List your first car with a certified inspection.",
+    "dash.empty.title": "You haven't listed any car yet",
+    "dash.empty.desc": "Publish your 1st listing in under 2 minutes. Certified inspection included and payment secured by escrow.",
     "trust.new": "New",
     "trust.bronze": "Bronze",
     "trust.silver": "Silver",
@@ -1631,6 +1637,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "Ver todos",
     "dash.startSelling": "Empieza a vender",
     "dash.startSellingDesc": "Publica tu primer coche con inspección certificada.",
+    "dash.empty.title": "Aún no tienes ningún coche en venta",
+    "dash.empty.desc": "Publica tu 1.º anuncio en menos de 2 minutos. Inspección certificada incluida y pago garantizado por escrow.",
     "trust.new": "Nuevo",
     "trust.bronze": "Bronce",
     "trust.silver": "Plata",
@@ -2140,6 +2148,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "सभी देखें",
     "dash.startSelling": "बेचना शुरू करें",
     "dash.startSellingDesc": "प्रमाणित निरीक्षण के साथ अपनी पहली कार सूचीबद्ध करें।",
+    "dash.empty.title": "आपने अभी तक कोई कार सूचीबद्ध नहीं की है",
+    "dash.empty.desc": "2 मिनट से कम में अपनी पहली लिस्टिंग प्रकाशित करें। प्रमाणित निरीक्षण शामिल है और एस्क्रो द्वारा भुगतान सुरक्षित है।",
     "trust.new": "नया",
     "trust.bronze": "ब्रॉन्ज़",
     "trust.silver": "सिल्वर",
@@ -2570,12 +2580,15 @@ export const marketDict: Record<Language, Record<string, string>> = {
 export function useMarketT() {
   const { language } = useLanguage();
   return (key: string, vars?: Record<string, string | number>) => {
-    const raw =
+    const found =
       marketDict[language]?.[key] ??
       marketDict.en[key] ??
-      marketDict.pt[key] ??
-      key;
-    if (!vars) return raw;
+      marketDict.pt[key];
+    // If the key is missing everywhere, return "" so that
+    // `t("missing.key") || "fallback"` idiom works and no raw i18n
+    // key ever leaks to the UI in production.
+    const raw = found ?? (import.meta.env.DEV ? key : "");
+    if (!vars || !raw) return raw;
     return Object.keys(vars).reduce(
       (acc, k) => acc.split(`{${k}}`).join(String(vars[k])),
       raw,

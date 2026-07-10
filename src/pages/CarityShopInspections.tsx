@@ -46,7 +46,28 @@ const SEVERITY_IMPACT: Record<string, { label: string; weight: number; color: st
 };
 
 export default function CarityShopInspections() {
-  const shopId = useActiveShopId();
+  const activeShopId = useActiveShopId();
+  // Fallback: se não há loja "ativa" (utilizador entrou pelo Market e nunca
+  // usou o ERP nesta sessão), procura a loja do próprio user_id.
+  const [fallbackShopId, setFallbackShopId] = useState<string | null>(null);
+  const [fallbackResolved, setFallbackResolved] = useState(false);
+  useEffect(() => {
+    if (activeShopId) { setFallbackResolved(true); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (!cancelled) setFallbackResolved(true); return; }
+      const { data } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+      if (cancelled) return;
+      if (data?.id) {
+        setFallbackShopId(data.id);
+        try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+      }
+      setFallbackResolved(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeShopId]);
+  const shopId = activeShopId || fallbackShopId;
   const { pricing, formatPrice } = useCountryPricing();
   const [tab, setTab] = useState("offers");
   const [offers, setOffers] = useState<any[]>([]);
@@ -1027,10 +1048,27 @@ export default function CarityShopInspections() {
   // truth (useShopMarketStatus) has resolved. Otherwise active partners briefly
   // see "Ativar Market" on every navigation because the hook initialises
   // isPartner=false until the realtime/DB read completes.
-  if (!partnerChecked || !shopId) {
+  if (!partnerChecked || !fallbackResolved) {
     return (
       <div className="max-w-lg mx-auto text-center pt-16">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // --- SEM OFICINA ASSOCIADA ---
+  // Utilizador sem shop nenhuma associada à conta. Mostra mensagem clara em
+  // vez de spinner infinito.
+  if (!shopId) {
+    return (
+      <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
+        <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground" />
+        <h2 className="text-xl font-bold">Painel disponível apenas para oficinas</h2>
+        <p className="text-sm text-muted-foreground">
+          Este painel destina-se a oficinas parceiras que realizam inspeções no GarageFlow Market.
+          Se és uma oficina, ativa a tua conta no ERP e volta a tentar.
+        </p>
+        <Button onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
       </div>
     );
   }

@@ -98,7 +98,23 @@ export default function AdminSettings() {
     inactiveClientDays: 90, reminderDaysBefore: 7,
   });
   const [pdf, setPdf] = useState<PdfSettings>({ watermarkOnFree: true });
-  const [landing, setLanding] = useState<{ chooserEnabled: boolean }>({ chooserEnabled: true });
+  const [landing, setLanding] = useState<{
+    chooserEnabled: boolean;
+    title: string;
+    subtitle: string;
+    featured: "erp" | "market" | "both";
+    order: "erp_first" | "market_first";
+    erp: { icon: string; title: string; description: string; ctaLabel: string; href: string };
+    market: { icon: string; title: string; description: string; ctaLabel: string; href: string };
+  }>({
+    chooserEnabled: true,
+    title: "GarageFlow é um único ecossistema",
+    subtitle: "Escolha como pretende utilizar a plataforma",
+    featured: "erp",
+    order: "erp_first",
+    erp: { icon: "Wrench", title: "Sou uma Oficina", description: "Software de gestão para oficinas automóvel.", ctaLabel: "Conhecer o ERP", href: "/erp" },
+    market: { icon: "Car", title: "Quero Comprar ou Vender um Carro", description: "Marketplace de veículos certificados.", ctaLabel: "Explorar o Marketplace", href: "/market" },
+  });
   const [featureGates, setFeatureGates] = useState<FeatureGates>({
     freeFeatures: DEFAULT_FREE_FEATURES,
     proFeatures: DEFAULT_PRO_FEATURES,

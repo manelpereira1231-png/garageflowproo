@@ -913,7 +913,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {buying ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
                       ) : (
-                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — {formatMarketPrice(listing.price)}</>
+                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — {listingPriceStr}</>
                       )}
                     </Button>
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">

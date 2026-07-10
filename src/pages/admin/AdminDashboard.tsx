@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { DemoRequestsBanner } from "@/components/DemoRequestsBanner";
+import { MarketActivationsBanner } from "@/components/MarketActivationsBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap, CalendarDays, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";

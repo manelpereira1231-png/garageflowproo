@@ -1169,13 +1169,25 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         "offers": {
           "@type": "Offer",
           "price": listing.price,
-          "priceCurrency": getMarketCurrency(),
+          "priceCurrency": (listing.currency || listingCountryCfg.currency),
           "availability": "https://schema.org/InStock",
-          "url": `https://garageflow.pt/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          "url": `https://garageflow-pt.lovable.app/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          "areaServed": listingCountryCfg.code,
           ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },
+        ...(listing.city ? {
+          "availableAtOrFrom": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": listing.city,
+              ...(listing.region ? { "addressRegion": listing.region } : {}),
+              "addressCountry": listingCountryCfg.code,
+            }
+          }
+        } : {}),
         "image": listing.photos[0] || undefined,
-        "description": `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção certificada GarageFlow Market.`,
+        "description": `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção certificada GarageFlow Market.`,
         ...(shopInfo ? { "provider": { "@type": "AutoRepair", "name": shopInfo.name } } : {}),
         ...(report ? {
           "additionalProperty": [

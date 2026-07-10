@@ -54,6 +54,10 @@ interface Listing {
   boost_active?: boolean;
   shop_id: string | null;
   location_label?: string | null;
+  country_code?: string | null;
+  currency?: string | null;
+  city?: string | null;
+  region?: string | null;
   shop_name?: string;
   shop_location?: string;
   inspection_score?: number | null;

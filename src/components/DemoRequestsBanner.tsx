@@ -14,7 +14,16 @@ type DemoReq = {
   phone: string;
   city: string | null;
   status: string;
+  scheduled_at: string | null;
   created_at: string;
+};
+
+const STATUS_LABEL: Record<string, { label: string; variant: "destructive" | "secondary" | "default" | "outline" }> = {
+  new: { label: "NOVO", variant: "destructive" },
+  contacted: { label: "Em contacto", variant: "secondary" },
+  scheduled: { label: "Agendado", variant: "default" },
+  done: { label: "Realizado", variant: "outline" },
+  converted: { label: "Convertido", variant: "outline" },
 };
 
 export function DemoRequestsBanner({ target = "/commercial/demos" }: { target?: "/commercial/demos" | "/admin/demos" }) {
@@ -23,12 +32,13 @@ export function DemoRequestsBanner({ target = "/commercial/demos" }: { target?: 
 
   const load = async () => {
     const { data } = await supabase
-      .from("demo_requests")
-      .select("id,name,shop_name,email,phone,city,status,created_at")
-      .in("status", ["new", "contacted"])
+      .from("demo_requests" as any)
+      .select("id,name,shop_name,email,phone,city,status,scheduled_at,created_at,archived_at")
+      .is("archived_at", null)
+      .neq("status", "cancelled")
       .order("created_at", { ascending: false })
       .limit(5);
-    setItems((data as DemoReq[]) ?? []);
+    setItems(((data as any[]) ?? []) as DemoReq[]);
     setLoading(false);
   };
 

@@ -2357,6 +2357,7 @@ export type Database = {
       }
       demo_requests: {
         Row: {
+          archived_at: string | null
           assigned_to: string | null
           best_contact_time: string | null
           city: string | null
@@ -2379,6 +2380,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          archived_at?: string | null
           assigned_to?: string | null
           best_contact_time?: string | null
           city?: string | null
@@ -2401,6 +2403,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          archived_at?: string | null
           assigned_to?: string | null
           best_contact_time?: string | null
           city?: string | null
@@ -4148,7 +4151,9 @@ export type Database = {
       }
       notifications: {
         Row: {
+          archived_at: string | null
           created_at: string
+          data: Json | null
           id: string
           link: string | null
           message: string
@@ -4159,7 +4164,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
+          data?: Json | null
           id?: string
           link?: string | null
           message: string
@@ -4170,7 +4177,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
+          data?: Json | null
           id?: string
           link?: string | null
           message?: string

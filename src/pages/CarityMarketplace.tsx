@@ -135,7 +135,7 @@ export default function CarityMarketplace() {
     const [listingsRes, publishedRes, inspectionsRes, shopsRes] = await Promise.all([
       supabase
         .from("carity_listings")
-        .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id, location_label")
+        .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id, location_label, country_code, currency, city, region")
         .eq("status", "published")
         .order("published_at", { ascending: false }),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),

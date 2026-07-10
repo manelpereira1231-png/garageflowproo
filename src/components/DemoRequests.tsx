@@ -16,6 +16,7 @@ type Demo = {
   best_contact_time?: string; notes?: string;
   status: string; source?: string;
   contacted_at?: string; scheduled_at?: string; converted_at?: string;
+  archived_at?: string | null;
   created_at: string;
 };
 

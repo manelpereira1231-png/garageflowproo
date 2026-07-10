@@ -1154,6 +1154,25 @@ function FiltersBody(props: FiltersBodyProps) {
         </label>
       </div>
 
+      {/* País */}
+      {availableCountries.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            🌍 País
+          </label>
+          <Select value={countryFilter} onValueChange={(v) => { setCountryFilter(v); setCityFilter("all"); }}>
+            <SelectTrigger><SelectValue placeholder="Todos os países" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os países</SelectItem>
+              {availableCountries.map(code => {
+                const c = getCountryConfig(code);
+                return <SelectItem key={code} value={code}>{c.flag} {c.name}</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Marca */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Marca</label>

@@ -196,7 +196,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
 
             {/* Desktop search — only for particular */}
             {!isDealer && (
-              <form onSubmit={submitSearch} className="hidden lg:flex flex-1 max-w-md mx-6 relative">
+              <form onSubmit={submitSearch} className="hidden xl:flex flex-1 max-w-md mx-6 relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
                 <Input
                   value={searchQ}
@@ -208,7 +208,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
             )}
 
             {/* Desktop nav */}
-            <div className="hidden lg:flex items-center gap-0.5">
+            <div className="hidden xl:flex items-center gap-0.5">
               {NAV_ITEMS.map((item: any) => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);

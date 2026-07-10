@@ -34,34 +34,69 @@ export default function LandingPage() {
   const [pricingRev, setPricingRev] = useState(0);
   const pricing = getRegionalPricing();
   const scrollTracked = useRef<Set<number>>(new Set());
-  const [chooserEnabled, setChooserEnabled] = useState(true);
+
+  type CardCfg = { icon: string; title: string; description: string; ctaLabel: string; href: string };
+  type LandingCfg = {
+    chooserEnabled: boolean;
+    title: string;
+    subtitle: string;
+    featured: "erp" | "market" | "both";
+    order: "erp_first" | "market_first";
+    erp: CardCfg;
+    market: CardCfg;
+  };
+  const DEFAULT_LANDING: LandingCfg = {
+    chooserEnabled: true,
+    title: "GarageFlow é um único ecossistema",
+    subtitle: "Escolha como pretende utilizar a plataforma",
+    featured: "erp",
+    order: "erp_first",
+    erp: {
+      icon: "Wrench",
+      title: "Sou uma Oficina",
+      description: "Software de gestão para oficinas automóvel.",
+      ctaLabel: "Conhecer o ERP",
+      href: "/erp",
+    },
+    market: {
+      icon: "Car",
+      title: "Quero Comprar ou Vender um Carro",
+      description: "Marketplace de veículos certificados.",
+      ctaLabel: "Explorar o Marketplace",
+      href: "/market",
+    },
+  };
+  const [landingCfg, setLandingCfg] = useState<LandingCfg>(DEFAULT_LANDING);
 
   useEffect(() => {
     let cancelled = false;
+    const apply = (value: any) => {
+      if (!value || typeof value !== "object") return;
+      setLandingCfg((prev) => ({
+        ...prev,
+        ...value,
+        erp: { ...prev.erp, ...(value.erp || {}) },
+        market: { ...prev.market, ...(value.market || {}) },
+      }));
+    };
     (async () => {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { data } = await supabase
-          .from("platform_settings")
-          .select("value")
-          .eq("key", "landing")
-          .maybeSingle();
-        if (!cancelled && data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
-          setChooserEnabled((data.value as any).chooserEnabled);
-        }
-      } catch { /* keep default */ }
+        const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
+        if (!cancelled) apply(data?.value);
+      } catch { /* keep defaults */ }
     })();
     const onUpdate = () => {
       import("@/integrations/supabase/client").then(async ({ supabase }) => {
         const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
-        if (data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
-          setChooserEnabled((data.value as any).chooserEnabled);
-        }
+        apply(data?.value);
       });
     };
     window.addEventListener("garageflow:platform-settings-updated", onUpdate);
     return () => { cancelled = true; window.removeEventListener("garageflow:platform-settings-updated", onUpdate); };
   }, []);
+
+  const chooserEnabled = landingCfg.chooserEnabled;
 
   // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {

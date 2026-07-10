@@ -42,6 +42,7 @@ export default function LandingPage() {
     subtitle: string;
     featured: "erp" | "market" | "both";
     order: "erp_first" | "market_first";
+    showNewBadgeOnMarket?: boolean;
     erp: CardCfg;
     market: CardCfg;
   };

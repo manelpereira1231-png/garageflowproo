@@ -104,16 +104,18 @@ export default function AdminSettings() {
     subtitle: string;
     featured: "erp" | "market" | "both";
     order: "erp_first" | "market_first";
+    showNewBadgeOnMarket: boolean;
     erp: { icon: string; title: string; description: string; ctaLabel: string; href: string };
     market: { icon: string; title: string; description: string; ctaLabel: string; href: string };
   }>({
     chooserEnabled: true,
-    title: "GarageFlow é um único ecossistema",
-    subtitle: "Escolha como pretende utilizar a plataforma",
+    title: "Como pretende utilizar o GarageFlow?",
+    subtitle: "Um ecossistema, dois produtos. Escolha o que faz mais sentido para si.",
     featured: "erp",
     order: "erp_first",
-    erp: { icon: "Wrench", title: "Sou uma Oficina", description: "Software de gestão para oficinas automóvel.", ctaLabel: "Conhecer o ERP", href: "/erp" },
-    market: { icon: "Car", title: "Quero Comprar ou Vender um Carro", description: "Marketplace de veículos certificados.", ctaLabel: "Explorar o Marketplace", href: "/market" },
+    showNewBadgeOnMarket: true,
+    erp: { icon: "Wrench", title: "ERP para Oficinas", description: "Software completo de gestão para oficinas automóvel.", ctaLabel: "Conhecer ERP", href: "/erp" },
+    market: { icon: "Car", title: "GarageFlow Market", description: "Comprar e vender carros certificados.", ctaLabel: "Explorar Market", href: "/market" },
   });
   const [featureGates, setFeatureGates] = useState<FeatureGates>({
     freeFeatures: DEFAULT_FREE_FEATURES,

@@ -1064,8 +1064,10 @@ export default function CarityShopInspections() {
   // isPartner=false until the realtime/DB read completes.
   if (!partnerChecked || !fallbackResolved) {
     return (
-      <div className="max-w-lg mx-auto text-center pt-16">
+      <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">A carregar o painel da oficina…</p>
+        <Button variant="outline" size="sm" onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
       </div>
     );
   }
@@ -1074,6 +1076,18 @@ export default function CarityShopInspections() {
   // Utilizador sem shop nenhuma associada à conta. Mostra mensagem clara em
   // vez de spinner infinito.
   if (!shopId) {
+    return (
+      <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
+        <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground" />
+        <h2 className="text-xl font-bold">Painel disponível apenas para oficinas</h2>
+        <p className="text-sm text-muted-foreground">
+          Este painel destina-se a oficinas parceiras que realizam inspeções no GarageFlow Market.
+          {fallbackError ? ` (${fallbackError})` : ""} Se és uma oficina, ativa a tua conta no ERP e volta a tentar.
+        </p>
+        <Button onClick={() => (window.location.href = "/market/dashboard")}>Voltar ao Market</Button>
+      </div>
+    );
+  }
     return (
       <div className="max-w-lg mx-auto text-center pt-16 space-y-4">
         <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground" />

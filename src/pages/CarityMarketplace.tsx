@@ -18,6 +18,8 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
 import { pageCache } from "@/lib/pageCache";
+import { getCountryConfig } from "@/lib/regionConfig";
+import { formatListingPrice, formatMileage } from "@/lib/marketPrice";
 
 const MARKET_CACHE_KEY = "market:listings:v1";
 const MARKET_STATS_CACHE_KEY = "market:stats:v1";

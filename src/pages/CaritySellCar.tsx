@@ -72,6 +72,7 @@ export default function CaritySellCar() {
     if (!kycApproved) { toast.error(t("sell.toast.kycRequired")); return; }
     if (!connectReady) { toast.error(t("sell.toast.connectRequired")); return; }
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error(t("sell.toast.fillRequired")); return; }
+    if (!form.country_code || !form.city.trim()) { toast.error(t("sell.toast.fillLocation") || "Indique o país e a cidade onde o veículo se encontra."); return; }
     if (!areRequiredPhotosFilled(photoSlots)) { toast.error(t("sell.toast.fillPhotos")); return; }
     if (!sellerForm.name || !sellerForm.phone) { toast.error(t("sell.toast.fillContact")); return; }
 
@@ -88,7 +89,12 @@ export default function CaritySellCar() {
         seller_id: user.id, make: form.make, model: form.model, year: form.year, mileage: form.mileage,
         fuel: form.fuel, plate: form.plate.toUpperCase(), vin: form.vin || null, price: form.price,
         description: form.description, photos: photoUrls, status: 'pending_payment',
-      }).select().single();
+        country_code: form.country_code,
+        currency: currentCountry.currency,
+        city: form.city.trim(),
+        region: form.region.trim() || null,
+        location_label: [form.city.trim(), form.region.trim(), currentCountry.name].filter(Boolean).join(", "),
+      } as any).select().single();
 
       if (error) {
         if (error.message?.includes("VIN_DUPLICATE") || error.code === "23505") {

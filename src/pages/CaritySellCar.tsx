@@ -15,6 +15,8 @@ import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { listActiveCountries, getCountryCode, getCountryConfig } from "@/lib/regionConfig";
+import { getDistanceUnit } from "@/lib/marketPrice";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 
@@ -28,10 +30,17 @@ export default function CaritySellCar() {
   const [connectReady, setConnectReady] = useState(false);
   const [photoSlots, setPhotoSlots] = useState<PhotoSlot[]>(getDefaultPhotoSlots());
 
+  const activeCountries = listActiveCountries();
+  const defaultCountry = getCountryCode();
+
   const [form, setForm] = useState({
     make: '', model: '', year: new Date().getFullYear(), mileage: 0,
     fuel: 'Gasóleo', plate: '', vin: '', price: 0, description: '',
+    country_code: defaultCountry, city: '', region: '',
   });
+
+  const currentCountry = getCountryConfig(form.country_code);
+  const distanceUnit = getDistanceUnit(form.country_code);
 
   const [sellerForm, setSellerForm] = useState({
     name: '', phone: '', location: '',

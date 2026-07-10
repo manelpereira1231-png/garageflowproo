@@ -542,6 +542,7 @@ export default function CarityMarketplace() {
                 )}
               </div>
               <FiltersBody
+                countryFilter={countryFilter} setCountryFilter={setCountryFilter} availableCountries={availableCountries}
                 makeFilter={makeFilter} setMakeFilter={setMakeFilter} availableMakes={availableMakes}
                 cityFilter={cityFilter} setCityFilter={setCityFilter} availableCities={availableCities}
                 fuelFilter={fuelFilter} setFuelFilter={setFuelFilter}

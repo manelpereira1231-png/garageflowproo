@@ -18,6 +18,8 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
 import { pageCache } from "@/lib/pageCache";
+import { getCountryConfig } from "@/lib/regionConfig";
+import { formatListingPrice, formatMileage } from "@/lib/marketPrice";
 
 const MARKET_CACHE_KEY = "market:listings:v1";
 const MARKET_STATS_CACHE_KEY = "market:stats:v1";
@@ -54,6 +56,10 @@ interface Listing {
   boost_active?: boolean;
   shop_id: string | null;
   location_label?: string | null;
+  country_code?: string | null;
+  currency?: string | null;
+  city?: string | null;
+  region?: string | null;
   shop_name?: string;
   shop_location?: string;
   inspection_score?: number | null;
@@ -78,6 +84,7 @@ export default function CarityMarketplace() {
 
   // Filters — initialized from URL so links/back-button preserve state
   const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [countryFilter, setCountryFilter] = useState<string>(searchParams.get("country") || "all");
   const [makeFilter, setMakeFilter] = useState<string>(searchParams.get("make") || "all");
   const [cityFilter, setCityFilter] = useState<string>(searchParams.get("city") || "all");
   const [fuelFilter, setFuelFilter] = useState(searchParams.get("fuel") || "all");
@@ -106,6 +113,7 @@ export default function CarityMarketplace() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
+    if (countryFilter !== "all") params.set("country", countryFilter);
     if (makeFilter !== "all") params.set("make", makeFilter);
     if (cityFilter !== "all") params.set("city", cityFilter);
     if (fuelFilter !== "all") params.set("fuel", fuelFilter);
@@ -121,7 +129,7 @@ export default function CarityMarketplace() {
     if (freshness !== "any") params.set("fresh", freshness);
     if (sortBy !== "recent") params.set("sort", sortBy);
     setSearchParams(params, { replace: true });
-  }, [search, makeFilter, cityFilter, fuelFilter, priceRange, yearRange, kmRange, minScore, inspectionStatus, certifiedOnly, freshness, sortBy, setSearchParams]);
+  }, [search, countryFilter, makeFilter, cityFilter, fuelFilter, priceRange, yearRange, kmRange, minScore, inspectionStatus, certifiedOnly, freshness, sortBy, setSearchParams]);
 
   const [stats, setStats] = useState<RealStats>(cachedStats ?? { totalPublished: 0, totalInspections: 0, totalPartnerShops: 0 });
 
@@ -131,7 +139,7 @@ export default function CarityMarketplace() {
     const [listingsRes, publishedRes, inspectionsRes, shopsRes] = await Promise.all([
       supabase
         .from("carity_listings")
-        .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id, location_label")
+        .select("id, make, model, year, mileage, fuel, price, photos, description, status, created_at, published_at, boost_active, shop_id, location_label, country_code, currency, city, region")
         .eq("status", "published")
         .order("published_at", { ascending: false }),
       supabase.from("carity_listings").select("id", { count: "exact", head: true }).eq("status", "published"),
@@ -205,21 +213,29 @@ export default function CarityMarketplace() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [listings]);
 
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    listings.forEach(l => { if (l.country_code) set.add(l.country_code); });
+    return Array.from(set).sort();
+  }, [listings]);
+
   const availableCities = useMemo(() => {
     const set = new Set<string>();
     listings.forEach(l => {
-      const city = l.location_label || l.shop_location;
-      if (city) set.add(city.split(",")[0].trim());
+      if (countryFilter !== "all" && l.country_code !== countryFilter) return;
+      const city = l.city || (l.location_label || l.shop_location || "").split(",")[0].trim();
+      if (city) set.add(city);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [listings]);
+  }, [listings, countryFilter]);
 
   const filtered = listings
     .filter(l => {
       const q = search.toLowerCase();
-      const matchSearch = !q || `${l.make} ${l.model} ${l.year}`.toLowerCase().includes(q);
+      const matchSearch = !q || `${l.make} ${l.model} ${l.year} ${l.city || ""} ${l.region || ""}`.toLowerCase().includes(q);
+      const matchCountry = countryFilter === "all" || l.country_code === countryFilter;
       const matchMake = makeFilter === "all" || l.make === makeFilter;
-      const cityVal = (l.location_label || l.shop_location || "").split(",")[0].trim();
+      const cityVal = l.city || (l.location_label || l.shop_location || "").split(",")[0].trim();
       const matchCity = cityFilter === "all" || cityVal === cityFilter;
       const matchFuel = fuelFilter === "all" || l.fuel === fuelFilter;
       const matchPrice = l.price >= priceRange[0] && l.price <= priceRange[1];
@@ -233,7 +249,7 @@ export default function CarityMarketplace() {
       const matchCertified = !certifiedOnly || (!!l.inspection_score && !!l.inspection_recommendation && l.inspection_recommendation !== "not_recommended");
       const days = l.published_at ? Math.floor((Date.now() - new Date(l.published_at).getTime()) / 86400000) : 9999;
       const matchFreshness = freshness === "any" || (freshness === "7d" ? days <= 7 : days <= 30);
-      return matchSearch && matchMake && matchCity && matchFuel && matchPrice && matchYear && matchKm && matchScore && matchInspection && matchCertified && matchFreshness;
+      return matchSearch && matchCountry && matchMake && matchCity && matchFuel && matchPrice && matchYear && matchKm && matchScore && matchInspection && matchCertified && matchFreshness;
     })
     .sort((a, b) => {
       const aBoost = a.boost_active ? 1 : 0;
@@ -248,6 +264,7 @@ export default function CarityMarketplace() {
     });
 
   const activeFilterCount = [
+    countryFilter !== "all",
     makeFilter !== "all",
     cityFilter !== "all",
     fuelFilter !== "all",
@@ -261,6 +278,7 @@ export default function CarityMarketplace() {
   ].filter(Boolean).length;
 
   const resetFilters = () => {
+    setCountryFilter("all");
     setMakeFilter("all");
     setCityFilter("all");
     setFuelFilter("all");
@@ -487,6 +505,7 @@ export default function CarityMarketplace() {
                 </SheetTitle>
               </SheetHeader>
               <FiltersBody
+                countryFilter={countryFilter} setCountryFilter={setCountryFilter} availableCountries={availableCountries}
                 makeFilter={makeFilter} setMakeFilter={setMakeFilter} availableMakes={availableMakes}
                 cityFilter={cityFilter} setCityFilter={setCityFilter} availableCities={availableCities}
                 fuelFilter={fuelFilter} setFuelFilter={setFuelFilter}
@@ -525,6 +544,7 @@ export default function CarityMarketplace() {
                 )}
               </div>
               <FiltersBody
+                countryFilter={countryFilter} setCountryFilter={setCountryFilter} availableCountries={availableCountries}
                 makeFilter={makeFilter} setMakeFilter={setMakeFilter} availableMakes={availableMakes}
                 cityFilter={cityFilter} setCityFilter={setCityFilter} availableCities={availableCities}
                 fuelFilter={fuelFilter} setFuelFilter={setFuelFilter}
@@ -627,7 +647,7 @@ export default function CarityMarketplace() {
                           )}
                           <div className="absolute bottom-3 right-3">
                             <span className="bg-white/95 backdrop-blur-md text-slate-900 font-bold text-lg px-3.5 py-1.5 rounded-lg shadow-lg tabular-nums">
-                              {formatPrice(listing.price)}
+                              {formatListingPrice(listing.price, listing.country_code, listing.currency)}
                             </span>
                           </div>
                         </div>
@@ -638,16 +658,18 @@ export default function CarityMarketplace() {
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5">
                                 <span className="tabular-nums">{listing.year}</span>
                                 <span className="text-muted-foreground/40">·</span>
-                                <span className="tabular-nums">{listing.mileage.toLocaleString()} km</span>
+                                <span className="tabular-nums">{formatMileage(listing.mileage, listing.country_code)}</span>
                                 <span className="text-muted-foreground/40">·</span>
                                 <span>{listing.fuel}</span>
                               </div>
                             </div>
                           </div>
-                          {(listing.location_label || listing.shop_location) && (
+                          {(listing.city || listing.location_label || listing.shop_location) && (
                             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1.5">
                               <MapPin className="h-3 w-3 text-slate-400" />
-                              {(listing.location_label || listing.shop_location)?.split(",")[0]}
+                              {listing.country_code && <span aria-hidden>{getCountryConfig(listing.country_code).flag}</span>}
+                              {listing.city || (listing.location_label || listing.shop_location)?.split(",")[0]}
+                              {listing.country_code && <span className="text-muted-foreground/60">· {getCountryConfig(listing.country_code).name}</span>}
                             </p>
                           )}
                           {listing.shop_name && (
@@ -1085,6 +1107,7 @@ export default function CarityMarketplace() {
 
 // ───────────────────── Filters body (shared desktop sidebar + mobile sheet)
 interface FiltersBodyProps {
+  countryFilter: string; setCountryFilter: (v: string) => void; availableCountries: string[];
   makeFilter: string; setMakeFilter: (v: string) => void; availableMakes: string[];
   cityFilter: string; setCityFilter: (v: string) => void; availableCities: string[];
   fuelFilter: string; setFuelFilter: (v: string) => void;
@@ -1104,6 +1127,7 @@ interface FiltersBodyProps {
 
 function FiltersBody(props: FiltersBodyProps) {
   const {
+    countryFilter, setCountryFilter, availableCountries,
     makeFilter, setMakeFilter, availableMakes,
     cityFilter, setCityFilter, availableCities,
     fuelFilter, setFuelFilter,
@@ -1131,6 +1155,25 @@ function FiltersBody(props: FiltersBodyProps) {
           </div>
         </label>
       </div>
+
+      {/* País */}
+      {availableCountries.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            🌍 País
+          </label>
+          <Select value={countryFilter} onValueChange={(v) => { setCountryFilter(v); setCityFilter("all"); }}>
+            <SelectTrigger><SelectValue placeholder="Todos os países" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os países</SelectItem>
+              {availableCountries.map(code => {
+                const c = getCountryConfig(code);
+                return <SelectItem key={code} value={code}>{c.flag} {c.name}</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Marca */}
       <div className="space-y-1.5">

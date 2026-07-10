@@ -15,6 +15,8 @@ import ConnectOnboardingGate from "@/components/ConnectOnboardingGate";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import VehicleMakeModelSelector from "@/components/VehicleMakeModelSelector";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { listActiveCountries, getCountryCode, getCountryConfig } from "@/lib/regionConfig";
+import { getDistanceUnit } from "@/lib/marketPrice";
 
 const FUEL_OPTIONS = ['Gasóleo', 'Gasolina', 'Híbrido', 'Elétrico', 'GPL'];
 
@@ -28,10 +30,17 @@ export default function CaritySellCar() {
   const [connectReady, setConnectReady] = useState(false);
   const [photoSlots, setPhotoSlots] = useState<PhotoSlot[]>(getDefaultPhotoSlots());
 
+  const activeCountries = listActiveCountries();
+  const defaultCountry = getCountryCode();
+
   const [form, setForm] = useState({
     make: '', model: '', year: new Date().getFullYear(), mileage: 0,
     fuel: 'Gasóleo', plate: '', vin: '', price: 0, description: '',
+    country_code: defaultCountry, city: '', region: '',
   });
+
+  const currentCountry = getCountryConfig(form.country_code);
+  const distanceUnit = getDistanceUnit(form.country_code);
 
   const [sellerForm, setSellerForm] = useState({
     name: '', phone: '', location: '',
@@ -63,6 +72,7 @@ export default function CaritySellCar() {
     if (!kycApproved) { toast.error(t("sell.toast.kycRequired")); return; }
     if (!connectReady) { toast.error(t("sell.toast.connectRequired")); return; }
     if (!form.make || !form.model || !form.price || !form.plate) { toast.error(t("sell.toast.fillRequired")); return; }
+    if (!form.country_code || !form.city.trim()) { toast.error(t("sell.toast.fillLocation") || "Indique o país e a cidade onde o veículo se encontra."); return; }
     if (!areRequiredPhotosFilled(photoSlots)) { toast.error(t("sell.toast.fillPhotos")); return; }
     if (!sellerForm.name || !sellerForm.phone) { toast.error(t("sell.toast.fillContact")); return; }
 
@@ -79,7 +89,12 @@ export default function CaritySellCar() {
         seller_id: user.id, make: form.make, model: form.model, year: form.year, mileage: form.mileage,
         fuel: form.fuel, plate: form.plate.toUpperCase(), vin: form.vin || null, price: form.price,
         description: form.description, photos: photoUrls, status: 'pending_payment',
-      }).select().single();
+        country_code: form.country_code,
+        currency: currentCountry.currency,
+        city: form.city.trim(),
+        region: form.region.trim() || null,
+        location_label: [form.city.trim(), form.region.trim(), currentCountry.name].filter(Boolean).join(", "),
+      } as any).select().single();
 
       if (error) {
         if (error.message?.includes("VIN_DUPLICATE") || error.code === "23505") {
@@ -159,15 +174,48 @@ export default function CaritySellCar() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div><Label>{t("sell.field.year")} *</Label><Input type="number" value={form.year} onChange={e => setForm(p => ({ ...p, year: parseInt(e.target.value) || 2020 }))} /></div>
-                <div><Label>{t("sell.field.mileage")} *</Label><Input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))} /></div>
+                <div><Label>{t("sell.field.mileage")} ({distanceUnit}) *</Label><Input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))} /></div>
                 <div><Label>{t("sell.field.fuel")} *</Label>
                   <Select value={form.fuel} onValueChange={v => setForm(p => ({ ...p, fuel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FUEL_OPTIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent></Select>
                 </div>
                 <div className="col-span-2 md:col-span-3"><Label>{t("sell.field.plate")} *</Label><Input value={form.plate} onChange={e => setForm(p => ({ ...p, plate: e.target.value }))} placeholder="AA-00-BB" /></div>
               </div>
+
+              {/* Localização do veículo — obrigatória para SEO, filtros, moeda e distâncias */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>{t("sell.field.country") || "País onde o veículo se encontra"} *</Label>
+                  <Select
+                    value={form.country_code}
+                    onValueChange={v => setForm(p => ({ ...p, country_code: v }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {activeCountries.map(c => (
+                        <SelectItem key={c.code} value={c.code}>
+                          <span className="mr-2">{c.flag}</span>{c.name} ({c.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{t("sell.field.city") || "Cidade"} *</Label>
+                  <Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} placeholder="Lisboa, Madrid, Paris…" />
+                </div>
+                <div>
+                  <Label>{t("sell.field.region") || "Região / Estado"}</Label>
+                  <Input value={form.region} onChange={e => setForm(p => ({ ...p, region: e.target.value }))} placeholder={form.country_code === "US" ? "FL" : form.country_code === "BR" ? "SP" : "Distrito"} />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>{t("sell.field.vin")}</Label><Input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder={t("sell.field.vinPh")} /></div>
-                <div><Label>{t("sell.field.price", { sym: pricing.currency_symbol })} *</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
+                <div>
+                  <Label>{t("sell.field.price", { sym: currentCountry.currencySymbol })} *</Label>
+                  <Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Moeda: {currentCountry.currency} ({currentCountry.currencySymbol})</p>
+                </div>
               </div>
               <div><Label>{t("sell.field.description")}</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={t("sell.field.descriptionPh")} rows={4} /></div>
             </CardContent>

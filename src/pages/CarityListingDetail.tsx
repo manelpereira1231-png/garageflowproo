@@ -22,7 +22,8 @@ import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
-import { formatMarketPrice, getMarketCurrency, formatLocalDate } from "@/lib/marketPrice";
+import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit } from "@/lib/marketPrice";
+import { getCountryConfig } from "@/lib/regionConfig";
 import { useMarketT } from "@/i18n/marketTranslations";
 import SEOHead from "@/components/SEOHead";
 
@@ -118,7 +119,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     const titleText = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
     document.title = titleText;
     // Dynamic meta description with real data
-    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatMarketPrice(listingData.price)}, ${listingData.mileage?.toLocaleString()} km, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
+    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatListingPrice(listingData.price, listingData.country_code, listingData.currency)}, ${formatMileage(listingData.mileage, listingData.country_code)}, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
     const setMeta = (selector: string, attr: "name" | "property", key: string, content: string) => {
       let el = document.querySelector(selector) as HTMLMetaElement | null;
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
@@ -361,8 +362,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const allPhotos = [...listing.photos, ...(report?.exterior_photos || []), ...(report?.interior_photos || []), ...(report?.engine_photos || [])];
   const daysSincePublished = listing.published_at ? Math.floor((Date.now() - new Date(listing.published_at).getTime()) / 86400000) : 0;
 
-  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)} | GarageFlow Market`;
-  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
+  const listingCountryCfg = getCountryConfig(listing.country_code);
+  const listingPriceStr = formatListingPrice(listing.price, listing.country_code, listing.currency);
+  const listingMileageStr = formatMileage(listing.mileage, listing.country_code);
+  const locationLine = [listing.city, listing.region, listingCountryCfg.name].filter(Boolean).join(", ");
+  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}${listing.city ? ` em ${listing.city}` : ""} | GarageFlow Market`;
+  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
   const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
   const seoPath = `/market/carros/${seoSlug}-${listing.id}`;
 
@@ -472,7 +477,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <Calendar className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.year}</p><p className="text-xs text-muted-foreground">Ano</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
-                    <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.mileage.toLocaleString()} km</p><p className="text-xs text-muted-foreground">Quilometragem</p>
+                    <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listingMileageStr}</p><p className="text-xs text-muted-foreground">Quilometragem</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <Fuel className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.fuel}</p><p className="text-xs text-muted-foreground">Combustível</p>
@@ -841,8 +846,13 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center space-y-1">
-                  <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{formatMarketPrice(listing.price)}</p>
-                  <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas</p>
+                  <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{listingPriceStr}</p>
+                  <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas · {listing.currency || listingCountryCfg.currency}</p>
+                  {locationLine && (
+                    <p className="text-[12px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
+                      <span aria-hidden>{listingCountryCfg.flag}</span> {locationLine}
+                    </p>
+                  )}
                   {(viewStats.total > 0 || viewStats.today > 0) && (
                     <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
                       <Eye className="h-3 w-3" />
@@ -903,7 +913,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                       {buying ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> A processar...</>
                       ) : (
-                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — {formatMarketPrice(listing.price)}</>
+                      <><Shield className="h-5 w-5 mr-2" /> Reservar com Proteção — {listingPriceStr}</>
                       )}
                     </Button>
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
@@ -1159,13 +1169,25 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         "offers": {
           "@type": "Offer",
           "price": listing.price,
-          "priceCurrency": getMarketCurrency(),
+          "priceCurrency": (listing.currency || listingCountryCfg.currency),
           "availability": "https://schema.org/InStock",
-          "url": `https://garageflow.pt/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          "url": `https://garageflow-pt.lovable.app/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          "areaServed": listingCountryCfg.code,
           ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },
+        ...(listing.city ? {
+          "availableAtOrFrom": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": listing.city,
+              ...(listing.region ? { "addressRegion": listing.region } : {}),
+              "addressCountry": listingCountryCfg.code,
+            }
+          }
+        } : {}),
         "image": listing.photos[0] || undefined,
-        "description": `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção certificada GarageFlow Market.`,
+        "description": `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção certificada GarageFlow Market.`,
         ...(shopInfo ? { "provider": { "@type": "AutoRepair", "name": shopInfo.name } } : {}),
         ...(report ? {
           "additionalProperty": [

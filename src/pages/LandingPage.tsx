@@ -34,6 +34,34 @@ export default function LandingPage() {
   const [pricingRev, setPricingRev] = useState(0);
   const pricing = getRegionalPricing();
   const scrollTracked = useRef<Set<number>>(new Set());
+  const [chooserEnabled, setChooserEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase
+          .from("platform_settings")
+          .select("value")
+          .eq("key", "landing")
+          .maybeSingle();
+        if (!cancelled && data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
+          setChooserEnabled((data.value as any).chooserEnabled);
+        }
+      } catch { /* keep default */ }
+    })();
+    const onUpdate = () => {
+      import("@/integrations/supabase/client").then(async ({ supabase }) => {
+        const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
+        if (data?.value && typeof (data.value as any).chooserEnabled === "boolean") {
+          setChooserEnabled((data.value as any).chooserEnabled);
+        }
+      });
+    };
+    window.addEventListener("garageflow:platform-settings-updated", onUpdate);
+    return () => { cancelled = true; window.removeEventListener("garageflow:platform-settings-updated", onUpdate); };
+  }, []);
 
   // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {

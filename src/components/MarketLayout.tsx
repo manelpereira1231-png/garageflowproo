@@ -194,9 +194,9 @@ export default function MarketLayout({ children, variant }: { children?: React.R
               )}
             </Link>
 
-            {/* Desktop search — only for particular */}
+            {/* Desktop search — only for particular, apenas em ecrãs muito largos */}
             {!isDealer && (
-              <form onSubmit={submitSearch} className="hidden xl:flex flex-1 max-w-md mx-6 relative">
+              <form onSubmit={submitSearch} className="hidden 2xl:flex flex-1 max-w-md mx-6 relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
                 <Input
                   value={searchQ}
@@ -207,8 +207,8 @@ export default function MarketLayout({ children, variant }: { children?: React.R
               </form>
             )}
 
-            {/* Desktop nav */}
-            <div className="hidden xl:flex items-center gap-0.5">
+            {/* Desktop nav — compacto entre lg/xl (só ícones), completo em 2xl */}
+            <div className="hidden lg:flex items-center gap-0.5">
               {NAV_ITEMS.map((item: any) => {
                 const active = location.pathname === item.path;
                 const badge = badgeFor(item.path);
@@ -219,16 +219,17 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                     onMouseEnter={() => prefetchRoute(item.path)}
                     onFocus={() => prefetchRoute(item.path)}
                     onTouchStart={() => prefetchRoute(item.path)}
+                    title={item.label}
                   >
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`relative h-9 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? (isDealer ? "bg-amber-500/15 text-amber-300" : "bg-white/10 text-white") : ""}`}
+                      className={`relative h-9 px-2 2xl:px-3 text-white/65 hover:text-white hover:bg-white/[0.08] transition-all ${active ? (isDealer ? "bg-amber-500/15 text-amber-300" : "bg-white/10 text-white") : ""}`}
                     >
-                      <item.icon className="h-4 w-4 mr-1.5" />
-                      {item.label}
+                      <item.icon className="h-4 w-4 2xl:mr-1.5" />
+                      <span className="hidden 2xl:inline">{item.label}</span>
                       {badge > 0 && (
-                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-900 text-[10px] font-bold">
+                        <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-900 text-[10px] font-bold">
                           {badge > 99 ? "99+" : badge}
                         </span>
                       )}
@@ -238,15 +239,15 @@ export default function MarketLayout({ children, variant }: { children?: React.R
               })}
               {!isDealer && (
                 <Link to="/market/sell" onMouseEnter={() => prefetchRoute("/market/sell")} onFocus={() => prefetchRoute("/market/sell")}>
-                  <Button size="sm" className="h-9 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
-                    <Plus className="h-4 w-4 mr-1" /> {t("market.nav.newListing")}
+                  <Button size="sm" className="h-9 px-2.5 2xl:px-3 bg-amber-500 text-slate-900 hover:bg-amber-400 font-semibold ml-2 shadow-md shadow-amber-500/20 btn-interactive">
+                    <Plus className="h-4 w-4 2xl:mr-1" /> <span className="hidden 2xl:inline">{t("market.nav.newListing")}</span>
                   </Button>
                 </Link>
               )}
               {isDealer && (
                 <Link to="/market/dealer/bulk" onMouseEnter={() => prefetchRoute("/market/dealer/bulk")}>
-                  <Button size="sm" className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-900 hover:from-amber-400 hover:to-amber-500 font-semibold ml-2 shadow-md shadow-amber-500/30">
-                    <Sparkles className="h-4 w-4 mr-1" /> Publicar lote
+                  <Button size="sm" className="h-9 px-2.5 2xl:px-3 bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-900 hover:from-amber-400 hover:to-amber-500 font-semibold ml-2 shadow-md shadow-amber-500/30">
+                    <Sparkles className="h-4 w-4 2xl:mr-1" /> <span className="hidden 2xl:inline">Publicar lote</span>
                   </Button>
                 </Link>
               )}
@@ -254,10 +255,10 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                 <button
                   type="button"
                   onClick={handleReturnToErp}
-                  className="ml-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
+                  className="ml-2 inline-flex items-center gap-1.5 h-9 px-2 2xl:px-3 rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-white/85 text-xs font-semibold transition-colors"
                   title="Voltar para o ERP da oficina"
                 >
-                  <Wrench className="h-3.5 w-3.5" /> Voltar ao ERP
+                  <Wrench className="h-3.5 w-3.5" /> <span className="hidden 2xl:inline">Voltar ao ERP</span>
                 </button>
               )}
               <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">

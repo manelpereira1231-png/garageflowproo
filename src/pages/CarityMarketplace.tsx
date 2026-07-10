@@ -747,6 +747,77 @@ export default function CarityMarketplace() {
         </div>
       </section>
 
+      {/* Transparência das comissões — quanto a plataforma retém em cada tipo de conta */}
+      <section className="py-16 bg-background border-t">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-500 mb-2">Transparência total</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Quanto fica para a plataforma?</h2>
+            <p className="text-muted-foreground mt-3 text-sm md:text-base">
+              Sem taxas escondidas. Só cobramos quando vendes. As inspeções são pagas à parte e a maior fatia fica sempre para a oficina que faz o trabalho.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Particular */}
+            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vendedor Particular</p>
+              </div>
+              <p className="text-5xl font-bold tabular-nums text-foreground">3%<span className="text-lg text-muted-foreground font-normal"> / venda</span></p>
+              <p className="text-sm text-muted-foreground mt-3">
+                Comissão fixa de 3% sobre o valor final da venda. Cobrada apenas quando o negócio é fechado com sucesso via escrow.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Inspeção certificada incluída</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Escrow anti-fraude</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Sem custos de publicação</li>
+              </ul>
+            </div>
+
+            {/* Stand / Profissional */}
+            <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10 p-6 shadow-lg relative">
+              <span className="absolute -top-3 right-4 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-slate-900 rounded-full">Melhor valor</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Building2 className="h-5 w-5 text-amber-600" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Stand Profissional</p>
+              </div>
+              <p className="text-5xl font-bold tabular-nums text-amber-600">1%<span className="text-lg text-amber-700/60 font-normal"> / venda</span></p>
+              <p className="text-sm text-amber-900/80 dark:text-amber-200/80 mt-3">
+                Comissão reduzida para stands e profissionais. Mais volume, mais margem. Plano mensal a partir de 39€.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-xs text-amber-900/70 dark:text-amber-200/70">
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" /> Página pública SEO do stand</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" /> Bulk listing</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" /> Inspeção independente obrigatória</li>
+              </ul>
+            </div>
+
+            {/* Oficina Parceira */}
+            <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Oficina Parceira</p>
+              </div>
+              <p className="text-5xl font-bold tabular-nums text-foreground">~57%<span className="text-lg text-muted-foreground font-normal"> da inspeção</span></p>
+              <p className="text-sm text-muted-foreground mt-3">
+                A oficina que faz a inspeção física recebe a maior parte do valor pago pelo vendedor. A plataforma cobre Stripe, IVA, suporte e infraestrutura.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Pagamento por inspeção concluída</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Sem comissão sobre a venda</li>
+                <li className="flex gap-2"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" /> Fluxo constante de veículos</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-6 max-w-2xl mx-auto">
+            Valores aplicáveis a Portugal (€). Comissões e valores de inspeção adaptam-se automaticamente ao país e moeda de cada utilizador.
+          </p>
+        </div>
+      </section>
+
+
+
 
       {/* SEO Internal Linking: Marcas, Cidades, Faixas de preço */}
       <section className="py-12 bg-muted/20 border-t">

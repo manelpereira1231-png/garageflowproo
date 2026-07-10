@@ -16,6 +16,7 @@ type Demo = {
   best_contact_time?: string; notes?: string;
   status: string; source?: string;
   contacted_at?: string; scheduled_at?: string; converted_at?: string;
+  archived_at?: string | null;
   created_at: string;
 };
 
@@ -35,6 +36,7 @@ export default function DemoRequests({ title }: { title?: string }) {
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<Demo | null>(null);
   const [scheduledInput, setScheduledInput] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const [notesEdit, setNotesEdit] = useState("");
 
   const load = async () => {
@@ -72,12 +74,15 @@ export default function DemoRequests({ title }: { title?: string }) {
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     return rows.filter((r) => {
+      const isArchived = !!r.archived_at;
+      if (!showArchived && isArchived) return false;
+      if (showArchived && !isArchived) return false;
       if (filter !== "all" && r.status !== filter) return false;
       if (!t) return true;
       return [r.name, r.shop_name, r.email, r.phone, r.city, r.current_software]
         .filter(Boolean).some((v) => String(v).toLowerCase().includes(t));
     });
-  }, [rows, q, filter]);
+  }, [rows, q, filter, showArchived]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     const patch: any = { status: newStatus };
@@ -86,6 +91,13 @@ export default function DemoRequests({ title }: { title?: string }) {
     const { error } = await supabase.from("demo_requests" as any).update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Estado atualizado");
+  };
+
+  const archiveOne = async (id: string, archive = true) => {
+    const { error } = await supabase.from("demo_requests" as any)
+      .update({ archived_at: archive ? new Date().toISOString() : null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(archive ? "Pedido arquivado" : "Pedido reactivado");
   };
 
   const saveDetail = async () => {
@@ -134,6 +146,13 @@ export default function DemoRequests({ title }: { title?: string }) {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant={showArchived ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowArchived((v) => !v)}
+        >
+          {showArchived ? "Ver activos" : "Ver arquivados"}
+        </Button>
       </div>
 
       {loading && <div className="text-sm text-muted-foreground">A carregar…</div>}
@@ -199,6 +218,15 @@ export default function DemoRequests({ title }: { title?: string }) {
                             <Button size="sm" variant="outline" onClick={() => setDetail(r)}>
                               <Calendar className="w-4 h-4 mr-1" /> Agendar
                             </Button>
+                            {r.archived_at ? (
+                              <Button size="sm" variant="ghost" onClick={() => archiveOne(r.id, false)} title="Reactivar">
+                                Reactivar
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="ghost" onClick={() => archiveOne(r.id, true)} title="Arquivar">
+                                Arquivar
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

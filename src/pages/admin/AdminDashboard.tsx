@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { DemoRequestsBanner } from "@/components/DemoRequestsBanner";
+import { MarketActivationsBanner } from "@/components/MarketActivationsBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Users, Wrench, AlertTriangle, TrendingUp, DollarSign, Download, Car, FileText, Clock, ArrowRight, Zap, CalendarDays, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -396,6 +397,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <MarketActivationsBanner target="/admin/market-activations" />
       <DemoRequestsBanner target="/admin/demos" />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

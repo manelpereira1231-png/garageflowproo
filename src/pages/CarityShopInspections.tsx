@@ -51,21 +51,35 @@ export default function CarityShopInspections() {
   // usou o ERP nesta sessão), procura a loja do próprio user_id.
   const [fallbackShopId, setFallbackShopId] = useState<string | null>(null);
   const [fallbackResolved, setFallbackResolved] = useState(false);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
   useEffect(() => {
     if (activeShopId) { setFallbackResolved(true); return; }
     let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { if (!cancelled) setFallbackResolved(true); return; }
-      const { data } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
-      if (cancelled) return;
-      if (data?.id) {
-        setFallbackShopId(data.id);
-        try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+    // Hard timeout — nunca deixamos o utilizador preso num spinner infinito
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setFallbackError("timeout");
+        setFallbackResolved(true);
       }
-      setFallbackResolved(true);
+    }, 6000);
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { if (!cancelled) { clearTimeout(timeout); setFallbackResolved(true); } return; }
+        const { data, error } = await supabase.from("shops").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+        if (cancelled) return;
+        if (error) setFallbackError(error.message);
+        if (data?.id) {
+          setFallbackShopId(data.id);
+          try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+        }
+        clearTimeout(timeout);
+        setFallbackResolved(true);
+      } catch (err: any) {
+        if (!cancelled) { setFallbackError(err?.message || "erro"); clearTimeout(timeout); setFallbackResolved(true); }
+      }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [activeShopId]);
   const shopId = activeShopId || fallbackShopId;
   const { pricing, formatPrice } = useCountryPricing();

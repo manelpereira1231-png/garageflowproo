@@ -1319,6 +1319,47 @@ export type Database = {
           },
         ]
       }
+      carity_listing_translations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          language: string
+          listing_id: string
+          source_language: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          language: string
+          listing_id: string
+          source_language?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          language?: string
+          listing_id?: string
+          source_language?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_listing_translations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "carity_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carity_listings: {
         Row: {
           boost_active: boolean

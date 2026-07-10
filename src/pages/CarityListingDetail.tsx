@@ -22,9 +22,11 @@ import VehicleTrustBadge from "@/components/market/VehicleTrustBadge";
 import { generateInspectionPDF } from "@/lib/inspectionPdf";
 import { generateContractPDF } from "@/lib/contractPdf";
 import { trackListingView, getListingViewCount, isFavorite, toggleFavorite } from "@/lib/listingTracking";
-import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit } from "@/lib/marketPrice";
+import { formatMarketPrice, getMarketCurrency, formatLocalDate, formatListingPrice, formatMileage, getDistanceUnit, getMarketLocale } from "@/lib/marketPrice";
 import { getCountryConfig } from "@/lib/regionConfig";
 import { useMarketT } from "@/i18n/marketTranslations";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { loadFxRates, convertAmount, formatConverted } from "@/lib/marketFx";
 import SEOHead from "@/components/SEOHead";
 
 const CHECKLIST_KEYS = [
@@ -64,6 +66,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const t = useMarketT();
+  const { language } = useLanguage();
+  const [fx, setFx] = useState<Awaited<ReturnType<typeof loadFxRates>>>(null);
+  const [translation, setTranslation] = useState<{ title: string; description: string } | null>(null);
+  const [translationOn, setTranslationOn] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [listing, setListing] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
@@ -104,6 +111,66 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   useEffect(() => {
     if (id) loadData();
   }, [id, currentUserId]);
+
+  // Load FX rates once (cached 12h) so we can show ≈ viewer currency next to the listing price
+  useEffect(() => { loadFxRates("EUR").then(setFx); }, []);
+
+  // Fetch cached translation for current viewer language; only auto-load if cached
+  useEffect(() => {
+    if (!listing?.id || !language) return;
+    setTranslation(null);
+    // Only auto-fetch already-cached translations (avoid gateway credits on every view)
+    supabase
+      .from("carity_listing_translations")
+      .select("title, description")
+      .eq("listing_id", listing.id).eq("language", language).maybeSingle()
+      .then(({ data }) => {
+        if (data?.title || data?.description) {
+          setTranslation({ title: data.title || listing.title, description: data.description || listing.description });
+        }
+      });
+  }, [listing?.id, language]);
+
+  // Emit hreflang alternates so search engines can pick the right locale variant
+  useEffect(() => {
+    if (!listing?.id) return;
+    const langs: [string, string][] = [
+      ["pt", "pt-PT"], ["pt-BR", "pt-BR"], ["en", "en"], ["es", "es"], ["fr", "fr"], ["de", "de"], ["hi", "hi"],
+    ];
+    const base = `https://garageflow.pt/market/carros/${listing.id}`;
+    // Remove any previous ones we injected
+    document.querySelectorAll('link[data-gf-hreflang="1"]').forEach((n) => n.remove());
+    for (const [code, hreflang] of langs) {
+      const link = document.createElement("link");
+      link.rel = "alternate"; link.hreflang = hreflang;
+      link.href = `${base}?lang=${code}`;
+      link.setAttribute("data-gf-hreflang", "1");
+      document.head.appendChild(link);
+    }
+    const xdef = document.createElement("link");
+    xdef.rel = "alternate"; xdef.hreflang = "x-default"; xdef.href = base;
+    xdef.setAttribute("data-gf-hreflang", "1");
+    document.head.appendChild(xdef);
+    return () => { document.querySelectorAll('link[data-gf-hreflang="1"]').forEach((n) => n.remove()); };
+  }, [listing?.id]);
+
+  const requestTranslation = async () => {
+    if (!listing?.id || !language) return;
+    setTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("market-translate-listing", {
+        body: { listing_id: listing.id, target_language: language },
+      });
+      if (error) throw error;
+      if (data?.title || data?.description) {
+        setTranslation({ title: data.title || listing.title, description: data.description || listing.description });
+        setTranslationOn(true);
+        toast.success("Tradução aplicada");
+      }
+    } catch (e: any) {
+      toast.error("Falha ao traduzir: " + (e?.message || "erro"));
+    } finally { setTranslating(false); }
+  };
 
   const loadData = async () => {
     const { data: listingData } = await supabase
@@ -366,6 +433,21 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const listingPriceStr = formatListingPrice(listing.price, listing.country_code, listing.currency);
   const listingMileageStr = formatMileage(listing.mileage, listing.country_code);
   const locationLine = [listing.city, listing.region, listingCountryCfg.name].filter(Boolean).join(", ");
+
+  // Optional viewer-currency conversion (shown as "≈ ...")
+  const viewerCfg = getCountryConfig();
+  const viewerCurrency = viewerCfg.currency;
+  const listingCurrency = listing.currency || listingCountryCfg.currency;
+  let convertedStr: string | null = null;
+  if (fx && listingCurrency && viewerCurrency && listingCurrency.toUpperCase() !== viewerCurrency.toUpperCase()) {
+    const conv = convertAmount(Number(listing.price) || 0, listingCurrency, viewerCurrency, fx);
+    if (conv) convertedStr = `≈ ${formatConverted(conv, viewerCurrency, getMarketLocale())}`;
+  }
+
+  // Displayed title/description honour translation toggle
+  const displayTitle = translationOn && translation?.title ? translation.title : `${listing.make} ${listing.model} ${listing.year}`;
+  const displayDescription = translationOn && translation?.description ? translation.description : listing.description;
+  const translationAvailable = translation !== null;
   const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}${listing.city ? ` em ${listing.city}` : ""} | GarageFlow Market`;
   const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
   const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
@@ -508,8 +590,31 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                 {listing.description && (
                   <>
                     <Separator className="my-4" />
-                    <h3 className="font-semibold mb-2">Descrição</h3>
-                    <p className="text-muted-foreground whitespace-pre-line">{listing.description}</p>
+                    <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                      <h3 className="font-semibold">Descrição</h3>
+                      {translationAvailable ? (
+                        <button
+                          type="button"
+                          onClick={() => setTranslationOn((v) => !v)}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          {translationOn ? "Ver original" : `Ver em ${language.toUpperCase()}`}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={requestTranslation}
+                          disabled={translating}
+                          className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                        >
+                          {translating ? "A traduzir…" : `Traduzir para ${language.toUpperCase()}`}
+                        </button>
+                      )}
+                    </div>
+                    {translationOn && translation ? (
+                      <div className="mb-2 text-[11px] text-muted-foreground italic">Traduzido automaticamente</div>
+                    ) : null}
+                    <p className="text-muted-foreground whitespace-pre-line">{displayDescription}</p>
                   </>
                 )}
 
@@ -847,6 +952,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center space-y-1">
                   <p className="text-3xl font-bold text-slate-800 dark:text-amber-400">{listingPriceStr}</p>
+                  {convertedStr && (
+                    <p className="text-sm font-medium text-muted-foreground">{convertedStr}</p>
+                  )}
                   <p className="text-[11px] text-muted-foreground">Preço final · sem comissões ocultas · {listing.currency || listingCountryCfg.currency}</p>
                   {locationLine && (
                     <p className="text-[12px] text-muted-foreground flex items-center justify-center gap-1 pt-1">

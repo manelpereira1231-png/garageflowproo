@@ -477,7 +477,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
                     <Calendar className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.year}</p><p className="text-xs text-muted-foreground">Ano</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
-                    <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.mileage.toLocaleString()} km</p><p className="text-xs text-muted-foreground">Quilometragem</p>
+                    <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listingMileageStr}</p><p className="text-xs text-muted-foreground">Quilometragem</p>
                   </div>
                   <div className="text-center p-3 bg-muted rounded-lg">
                     <Fuel className="h-5 w-5 mx-auto mb-1 text-muted-foreground" /><p className="font-semibold">{listing.fuel}</p><p className="text-xs text-muted-foreground">Combustível</p>

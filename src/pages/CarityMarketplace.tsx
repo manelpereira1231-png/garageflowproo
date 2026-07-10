@@ -211,21 +211,29 @@ export default function CarityMarketplace() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [listings]);
 
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    listings.forEach(l => { if (l.country_code) set.add(l.country_code); });
+    return Array.from(set).sort();
+  }, [listings]);
+
   const availableCities = useMemo(() => {
     const set = new Set<string>();
     listings.forEach(l => {
-      const city = l.location_label || l.shop_location;
-      if (city) set.add(city.split(",")[0].trim());
+      if (countryFilter !== "all" && l.country_code !== countryFilter) return;
+      const city = l.city || (l.location_label || l.shop_location || "").split(",")[0].trim();
+      if (city) set.add(city);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [listings]);
+  }, [listings, countryFilter]);
 
   const filtered = listings
     .filter(l => {
       const q = search.toLowerCase();
-      const matchSearch = !q || `${l.make} ${l.model} ${l.year}`.toLowerCase().includes(q);
+      const matchSearch = !q || `${l.make} ${l.model} ${l.year} ${l.city || ""} ${l.region || ""}`.toLowerCase().includes(q);
+      const matchCountry = countryFilter === "all" || l.country_code === countryFilter;
       const matchMake = makeFilter === "all" || l.make === makeFilter;
-      const cityVal = (l.location_label || l.shop_location || "").split(",")[0].trim();
+      const cityVal = l.city || (l.location_label || l.shop_location || "").split(",")[0].trim();
       const matchCity = cityFilter === "all" || cityVal === cityFilter;
       const matchFuel = fuelFilter === "all" || l.fuel === fuelFilter;
       const matchPrice = l.price >= priceRange[0] && l.price <= priceRange[1];
@@ -239,7 +247,7 @@ export default function CarityMarketplace() {
       const matchCertified = !certifiedOnly || (!!l.inspection_score && !!l.inspection_recommendation && l.inspection_recommendation !== "not_recommended");
       const days = l.published_at ? Math.floor((Date.now() - new Date(l.published_at).getTime()) / 86400000) : 9999;
       const matchFreshness = freshness === "any" || (freshness === "7d" ? days <= 7 : days <= 30);
-      return matchSearch && matchMake && matchCity && matchFuel && matchPrice && matchYear && matchKm && matchScore && matchInspection && matchCertified && matchFreshness;
+      return matchSearch && matchCountry && matchMake && matchCity && matchFuel && matchPrice && matchYear && matchKm && matchScore && matchInspection && matchCertified && matchFreshness;
     })
     .sort((a, b) => {
       const aBoost = a.boost_active ? 1 : 0;

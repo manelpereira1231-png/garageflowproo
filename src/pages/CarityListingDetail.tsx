@@ -362,8 +362,12 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const allPhotos = [...listing.photos, ...(report?.exterior_photos || []), ...(report?.interior_photos || []), ...(report?.engine_photos || [])];
   const daysSincePublished = listing.published_at ? Math.floor((Date.now() - new Date(listing.published_at).getTime()) / 86400000) : 0;
 
-  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${formatMarketPrice(listing.price)} | GarageFlow Market`;
-  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listing.mileage?.toLocaleString()} km, ${listing.fuel}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
+  const listingCountryCfg = getCountryConfig(listing.country_code);
+  const listingPriceStr = formatListingPrice(listing.price, listing.country_code, listing.currency);
+  const listingMileageStr = formatMileage(listing.mileage, listing.country_code);
+  const locationLine = [listing.city, listing.region, listingCountryCfg.name].filter(Boolean).join(", ");
+  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}${listing.city ? ` em ${listing.city}` : ""} | GarageFlow Market`;
+  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
   const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
   const seoPath = `/market/carros/${seoSlug}-${listing.id}`;
 

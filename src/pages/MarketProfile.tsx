@@ -26,6 +26,10 @@ export default function MarketProfile() {
   const [verified, setVerified] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
   const [stats, setStats] = useState({ listings: 0, sold: 0, inspections: 0 });
+  // Se o utilizador (particular) tem também uma oficina no ERP, mostramos os
+  // dados da oficina (nome + NIF) num bloco separado para não confundir com
+  // os dados pessoais.
+  const [shopInfo, setShopInfo] = useState<{ id: string; name: string | null; nif: string | null; address: string | null; is_carity_partner: boolean; carity_active: boolean } | null>(null);
 
   // Dealer-specific
   const [isDealer, setIsDealer] = useState(false);
@@ -98,6 +102,24 @@ export default function MarketProfile() {
       sold: all.filter(l => l.status === "sold").length,
       inspections: inspCount,
     });
+
+    // Load associated shop (if any) for the "Dados da Oficina" block
+    const { data: shopRow } = await supabase
+      .from("shops")
+      .select("id, name, nif, address, is_carity_partner, carity_active")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+    if (shopRow) {
+      setShopInfo({
+        id: shopRow.id,
+        name: (shopRow as any).name ?? null,
+        nif: (shopRow as any).nif ?? null,
+        address: (shopRow as any).address ?? null,
+        is_carity_partner: (shopRow as any).is_carity_partner === true,
+        carity_active: (shopRow as any).carity_active !== false,
+      });
+    }
 
     setLoading(false);
   };

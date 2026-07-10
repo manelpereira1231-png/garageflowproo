@@ -98,6 +98,8 @@ export const marketDict: Record<Language, Record<string, string>> = {
     "dash.seeAll": "Ver todos",
     "dash.startSelling": "Comece a vender",
     "dash.startSellingDesc": "Publique o seu primeiro carro com inspeção certificada.",
+    "dash.empty.title": "Ainda não tens nenhum carro à venda",
+    "dash.empty.desc": "Publica o teu 1.º anúncio em menos de 2 minutos. Inspeção certificada incluída e pagamento garantido por escrow.",
     "trust.new": "Novo",
     "trust.bronze": "Bronze",
     "trust.silver": "Prata",

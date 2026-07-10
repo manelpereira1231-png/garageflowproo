@@ -2580,12 +2580,15 @@ export const marketDict: Record<Language, Record<string, string>> = {
 export function useMarketT() {
   const { language } = useLanguage();
   return (key: string, vars?: Record<string, string | number>) => {
-    const raw =
+    const found =
       marketDict[language]?.[key] ??
       marketDict.en[key] ??
-      marketDict.pt[key] ??
-      key;
-    if (!vars) return raw;
+      marketDict.pt[key];
+    // If the key is missing everywhere, return "" so that
+    // `t("missing.key") || "fallback"` idiom works and no raw i18n
+    // key ever leaks to the UI in production.
+    const raw = found ?? (import.meta.env.DEV ? key : "");
+    if (!vars || !raw) return raw;
     return Object.keys(vars).reduce(
       (acc, k) => acc.split(`{${k}}`).join(String(vars[k])),
       raw,

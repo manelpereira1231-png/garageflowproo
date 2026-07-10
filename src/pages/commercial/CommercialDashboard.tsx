@@ -181,6 +181,7 @@ export default function CommercialDashboard() {
 
   return (
     <div className="space-y-6">
+      <MarketActivationsBanner target="/admin/market-activations" />
       <DemoRequestsBanner target="/commercial/demos" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>

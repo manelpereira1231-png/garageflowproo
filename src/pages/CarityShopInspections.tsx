@@ -845,7 +845,7 @@ export default function CarityShopInspections() {
             </div>
             {startedAt && (
               <p className="text-xs text-muted-foreground">
-                ⏱️ Inspeção iniciada em {new Date(startedAt).toLocaleString("pt-PT")} (timestamp imutável)
+                ⏱️ Inspeção iniciada em {formatLocalDate(startedAt, true)} (timestamp imutável)
               </p>
             )}
           </CardContent>

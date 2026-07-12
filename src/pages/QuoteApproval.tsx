@@ -537,11 +537,14 @@ export default function QuoteApproval() {
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg mb-6">
           <div className="bg-foreground p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="flex items-start gap-4 min-w-0">
                 {shop?.logo_url && (
-                  <img src={shop.logo_url} alt={shop.name} className="max-h-12 mb-3 brightness-200 contrast-0 invert" />
+                  <div className="shrink-0 bg-white rounded-lg p-2 shadow-md">
+                    <img src={shop.logo_url} alt={shop.name} className="max-h-14 max-w-[120px] object-contain" />
+                  </div>
                 )}
-                <h1 className="text-xl sm:text-2xl font-bold text-background">{shop?.name}</h1>
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-background">{shop?.name}</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-background/60">
                   {shop?.nif && <span>NIF: {shop.nif}</span>}
                   {shop?.address && <span>{shop.address}</span>}

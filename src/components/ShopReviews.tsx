@@ -118,7 +118,7 @@ export default function ShopReviews({ shopId, shopName, inspectionId, currentUse
                     <Star key={n} className={`h-3 w-3 ${n <= r.rating ? "text-amber-500 fill-amber-500" : "text-muted-foreground/30"}`} />
                   ))}
                   <span className="text-[10px] text-muted-foreground ml-1">
-                    {new Date(r.created_at).toLocaleDateString("pt-PT")}
+                    {formatLocalDate(r.created_at)}
                   </span>
                   <span className="text-[10px] text-green-600 font-medium ml-1">· Compra verificada</span>
                 </div>

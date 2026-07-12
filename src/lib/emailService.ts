@@ -219,6 +219,10 @@ const emailLabels: Record<string, Record<string, string>> = {
     footer: '¡Gracias por su preferencia!',
     service: 'Servicio', part: 'Pieza',
     contact: 'Contacto',
+    alreadyApproved: 'Este presupuesto ya ha sido aprobado. Gracias — procederemos con la intervención.',
+    alreadyRejected: 'Este presupuesto ha sido rechazado. Contáctenos si desea revisarlo.',
+    alreadyConverted: 'Este presupuesto ya fue aprobado y convertido en orden de servicio.',
+    viewOnline: 'Ver presupuesto',
   },
 };
 

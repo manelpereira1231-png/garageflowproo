@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, XCircle, Loader2, Euro, Plus, X, Bell, ThumbsUp, ThumbsDown, MessageCircle, CalendarCheck, Phone, User, Lock, Hash, FileCheck } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { formatLocalDate, getMarketLocale } from "@/lib/marketPrice";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },
@@ -844,7 +845,7 @@ export default function CarityShopInspections() {
             </div>
             {startedAt && (
               <p className="text-xs text-muted-foreground">
-                ⏱️ Inspeção iniciada em {new Date(startedAt).toLocaleString("pt-PT")} (timestamp imutável)
+                ⏱️ Inspeção iniciada em {formatLocalDate(startedAt, true)} (timestamp imutável)
               </p>
             )}
           </CardContent>

@@ -168,6 +168,7 @@ export default function LandingPage() {
       lockedFeatureLabels: freeLists.locked,
       ctaKey: 'landing.ctaFree',
       highlighted: false,
+      ctaPrimary: true,
     },
     {
       slug: 'pro' as const,
@@ -179,6 +180,7 @@ export default function LandingPage() {
       lockedFeatureLabels: proLists.locked,
       ctaKey: 'landing.ctaPro',
       highlighted: true,
+      ctaPrimary: true,
     },
     {
       slug: 'garage' as const,
@@ -190,6 +192,7 @@ export default function LandingPage() {
       lockedFeatureLabels: garageLists.locked,
       ctaKey: 'landing.ctaGarage',
       highlighted: false,
+      ctaPrimary: false,
     },
   ];
 

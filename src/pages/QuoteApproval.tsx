@@ -349,25 +349,26 @@ export default function QuoteApproval() {
 
           const defaults: Record<string, { subject: string; body: string }> = {
             pt: {
-              subject: 'Recebemos a aprovação do orçamento {{numero_orcamento}}',
+              subject: '✅ O seu orçamento foi aprovado com sucesso',
               body:
-                'Olá {{cliente_nome}} 👋\n\nRecebemos a aprovação do seu orçamento.\n\n✅ O orçamento {{numero_orcamento}} foi aprovado com sucesso.\n\nA nossa equipa irá agora iniciar a preparação dos trabalhos e encomendar as peças necessárias (quando aplicável).\n\nEntraremos em contacto caso seja necessária alguma informação adicional. Assim que existirem novidades sobre o estado da reparação, será novamente informado.\n\nObrigado pela confiança.\n{{nome_oficina}}',
+                'Olá {{cliente_nome}},\n\nRecebemos a confirmação da aprovação do seu orçamento.\n\nO orçamento {{numero_orcamento}} foi aprovado com sucesso e a {{nome_oficina}} já foi notificada.\n\nA nossa equipa irá agora:\n• preparar a intervenção;\n• encomendar peças, quando necessário;\n• iniciar os trabalhos o mais rapidamente possível.\n\nCaso exista alguma alteração ou seja necessária informação adicional, entraremos em contacto.\n\nObrigado pela confiança.\nEquipa {{nome_oficina}}',
             },
             en: {
-              subject: 'We received the approval for quote {{numero_orcamento}}',
+              subject: '✅ Your quote has been approved successfully',
               body:
-                'Hello {{cliente_nome}} 👋\n\nWe have received the approval of your quote.\n\n✅ Quote {{numero_orcamento}} has been successfully approved.\n\nOur team will now start preparing the work and ordering any required parts.\n\nWe will contact you if we need any further information and will keep you updated on the repair progress.\n\nThank you for your trust.\n{{nome_oficina}}',
+                'Hello {{cliente_nome}},\n\nWe have received the approval of your quote.\n\nQuote {{numero_orcamento}} has been successfully approved and {{nome_oficina}} has already been notified.\n\nOur team will now:\n• prepare the intervention;\n• order parts when necessary;\n• start the work as soon as possible.\n\nIf there is any change or additional information needed, we will contact you.\n\nThank you for your trust.\n{{nome_oficina}} team',
             },
             es: {
-              subject: 'Recibimos la aprobación del presupuesto {{numero_orcamento}}',
+              subject: '✅ Su presupuesto ha sido aprobado con éxito',
               body:
-                'Hola {{cliente_nome}} 👋\n\nHemos recibido la aprobación de su presupuesto.\n\n✅ El presupuesto {{numero_orcamento}} ha sido aprobado con éxito.\n\nNuestro equipo iniciará ahora la preparación de los trabajos y pedirá las piezas necesarias (cuando corresponda).\n\nLe contactaremos si necesitamos más información y le mantendremos informado sobre el estado de la reparación.\n\nGracias por su confianza.\n{{nome_oficina}}',
+                'Hola {{cliente_nome}},\n\nHemos recibido la aprobación de su presupuesto.\n\nEl presupuesto {{numero_orcamento}} ha sido aprobado con éxito y {{nome_oficina}} ya ha sido notificado.\n\nNuestro equipo:\n• preparará la intervención;\n• pedirá las piezas necesarias;\n• iniciará los trabajos lo antes posible.\n\nSi hay algún cambio o necesitamos información adicional, le contactaremos.\n\nGracias por su confianza.\nEquipo {{nome_oficina}}',
             },
           };
           const def = defaults[lang] || defaults.pt;
           if (!subjectTpl) subjectTpl = def.subject;
           if (!bodyTpl) bodyTpl = def.body;
 
+          const nowStr = new Date().toLocaleString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT', { dateStyle: 'short', timeStyle: 'short' });
           const vars: Record<string, string> = {
             cliente_nome: clientName,
             nome_oficina: shop.name || '',
@@ -379,21 +380,50 @@ export default function QuoteApproval() {
             veiculo: vehicleLabel,
             valor_orcamento: `€${quote.total?.toFixed(2) ?? '0.00'}`,
             valor_total: `€${quote.total?.toFixed(2) ?? '0.00'}`,
+            data_hora: nowStr,
             telefone: shop.phone || '',
             email: shop.email || '',
           };
           const render = (s: string) => s.replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_, k) => vars[k.toLowerCase()] ?? '');
           const clientSubject = render(subjectTpl);
-          const bodyHtml = render(bodyTpl).split('\n').map((line) => line.trim() ? `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 10px;">${line}</p>` : '<br/>').join('');
+          const bodyHtml = render(bodyTpl).split('\n').map((line) => {
+            if (!line.trim()) return '<br/>';
+            if (line.trim().startsWith('•')) {
+              return `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 6px 16px;">${line.trim()}</p>`;
+            }
+            return `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 10px;">${line}</p>`;
+          }).join('');
+
+          const summaryLabels: Record<string, Record<string, string>> = {
+            pt: { title: 'Resumo', workshop: 'Oficina', quote: 'Orçamento', vehicle: 'Veículo', plate: 'Matrícula', amount: 'Valor aprovado', when: 'Data da aprovação', doubts: 'Caso tenha alguma dúvida, poderá contactar diretamente a oficina.' },
+            en: { title: 'Summary', workshop: 'Workshop', quote: 'Quote', vehicle: 'Vehicle', plate: 'Plate', amount: 'Approved amount', when: 'Approval date', doubts: 'If you have any questions, please contact the workshop directly.' },
+            es: { title: 'Resumen', workshop: 'Taller', quote: 'Presupuesto', vehicle: 'Vehículo', plate: 'Matrícula', amount: 'Importe aprobado', when: 'Fecha de aprobación', doubts: 'Si tiene alguna duda, puede contactar directamente con el taller.' },
+          };
+          const SL = summaryLabels[lang] || summaryLabels.pt;
+          const summaryHtml = `
+            <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin:20px 0;">
+              <p style="color:#111827;font-size:13px;font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px;">${SL.title}</p>
+              <table style="width:100%;font-size:13px;color:#374151;border-collapse:collapse;">
+                <tr><td style="padding:4px 0;color:#6b7280;width:45%;">${SL.workshop}</td><td style="padding:4px 0;font-weight:600;">${shop.name || ''}</td></tr>
+                <tr><td style="padding:4px 0;color:#6b7280;">${SL.quote}</td><td style="padding:4px 0;font-weight:600;font-family:monospace;">${quote.number || ''}</td></tr>
+                <tr><td style="padding:4px 0;color:#6b7280;">${SL.vehicle}</td><td style="padding:4px 0;font-weight:600;">${vehicleLabel || '—'}</td></tr>
+                ${plate ? `<tr><td style="padding:4px 0;color:#6b7280;">${SL.plate}</td><td style="padding:4px 0;font-weight:600;font-family:monospace;">${plate}</td></tr>` : ''}
+                <tr><td style="padding:4px 0;color:#6b7280;">${SL.amount}</td><td style="padding:4px 0;font-weight:700;color:#059669;">€${quote.total?.toFixed(2) ?? '0.00'}</td></tr>
+                <tr><td style="padding:4px 0;color:#6b7280;">${SL.when}</td><td style="padding:4px 0;font-weight:600;">${nowStr}</td></tr>
+              </table>
+            </div>
+            <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:16px 0 0;">${SL.doubts}</p>`;
 
           const clientHtml = `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;">
               <div style="background-color:#262626;padding:24px 32px;border-radius:12px 12px 0 0;">
+                ${shop.logo_url ? `<img src="${shop.logo_url}" alt="${shop.name}" style="max-height:40px;margin-bottom:10px;display:block;" />` : ''}
                 <span style="color:#ffb41e;font-size:20px;font-weight:700;">${shop.name}</span><br/>
                 <span style="color:#ffffff;font-size:16px;font-weight:600;">${clientSubject}</span>
               </div>
               <div style="padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
                 ${bodyHtml}
+                ${summaryHtml}
                 <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
                 <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
               </div>

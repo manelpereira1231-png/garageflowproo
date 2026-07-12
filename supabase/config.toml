@@ -142,3 +142,9 @@ verify_jwt = false
 
 [functions.submit-demo-request]
 verify_jwt = false
+
+[functions.market-fx-rates]
+verify_jwt = false
+
+[functions.market-translate-listing]
+verify_jwt = true

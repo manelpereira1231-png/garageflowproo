@@ -217,9 +217,10 @@ export default function Services() {
       }
     }
     const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
-    // Mensagens de acompanhamento por etapa são apenas notificações de texto —
-    // não anexamos PDF (evita abrir/descarregar PDF a cada avanço de etapa).
-    // O PDF continua disponível no botão "PDF" e no envio por email.
+    // Anexa o PDF: no mobile via Web Share (partilha nativa direta para o WhatsApp),
+    // no desktop faz download automático para arrastar para o WhatsApp Web.
+    // O URL já é wa.me (abre app / WhatsApp Web diretamente, sem página intermédia).
+    const pdf = await buildServicePdfBlob(s);
     openWhatsApp({
       phone,
       clientName: (s.clients as any)?.name,
@@ -230,6 +231,8 @@ export default function Services() {
       serviceStage: s.status as any,
       total: s.total,
       link,
+      pdfBlob: pdf?.blob ?? null,
+      pdfFilename: pdf?.filename,
     });
   };
 

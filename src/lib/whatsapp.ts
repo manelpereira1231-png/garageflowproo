@@ -12,7 +12,7 @@ export type ServiceStage =
 export interface WhatsAppMessageParams {
   phone?: string | null;
   clientName?: string;
-  type: 'quote' | 'invoice' | 'service';
+  type: 'quote' | 'invoice' | 'service' | 'client';
   number?: string;
   plate?: string;
   model?: string;

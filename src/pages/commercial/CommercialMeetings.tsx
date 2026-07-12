@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar as CalIcon, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatLocalDate } from "@/lib/marketPrice";
 
 type Meeting = { id: string; title: string; meeting_type: string; scheduled_at: string; status: string; notes?: string; lead_id?: string };
 type Task = { id: string; title: string; due_at?: string; status: string; priority?: string };

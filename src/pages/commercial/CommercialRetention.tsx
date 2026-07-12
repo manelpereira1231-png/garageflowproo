@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, XCircle, CreditCard } from "lucide-react";
+import { formatLocalDate } from "@/lib/marketPrice";
 
 type Row = { id: string; name: string; email: string; last_seen_at?: string; status?: string };
 
@@ -49,7 +50,7 @@ export default function CommercialRetention() {
           {rows.slice(0, 50).map((r: Row) => (
             <div key={r.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
               <span className="truncate font-medium">{r.name}</span>
-              <span className="text-xs text-muted-foreground ml-2 truncate">{r.last_seen_at ? new Date(r.last_seen_at).toLocaleDateString('pt-PT') : 'Nunca'}</span>
+              <span className="text-xs text-muted-foreground ml-2 truncate">{r.last_seen_at ? formatLocalDate(r.last_seen_at) : 'Nunca'}</span>
             </div>
           ))}
         </div>

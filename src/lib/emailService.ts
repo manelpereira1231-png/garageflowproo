@@ -202,6 +202,10 @@ const emailLabels: Record<string, Record<string, string>> = {
     footer: 'Thank you for your preference!',
     service: 'Service', part: 'Part',
     contact: 'Contact',
+    alreadyApproved: 'This quote has already been approved. Thank you — we will proceed with the work.',
+    alreadyRejected: 'This quote has been rejected. Contact us if you want to revisit it.',
+    alreadyConverted: 'This quote has already been approved and converted into a work order.',
+    viewOnline: 'View quote',
   },
   es: {
     subject: 'Presupuesto',

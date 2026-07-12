@@ -138,7 +138,7 @@ export default function CommercialMeetings() {
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 truncate">
                     {d.name} · {d.phone}
-                    {d.scheduled_at && <> · 📅 {new Date(d.scheduled_at).toLocaleString('pt-PT')}</>}
+                    {d.scheduled_at && <> · 📅 {formatLocalDate(d.scheduled_at, true)}</>}
                     {!d.scheduled_at && d.best_contact_time && <> · ⏰ {d.best_contact_time}</>}
                   </div>
                 </div>
@@ -165,7 +165,7 @@ export default function CommercialMeetings() {
                     <span className="font-medium text-sm">{m.title}</span>
                     <Badge variant="outline">{m.meeting_type}</Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">{new Date(m.scheduled_at).toLocaleString('pt-PT')}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{formatLocalDate(m.scheduled_at, true)}</div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => markDone(m.id)}><CheckCircle2 className="w-4 h-4 mr-1" /> Concluir</Button>
               </div>
@@ -182,7 +182,7 @@ export default function CommercialMeetings() {
             {tasks.map((t) => (
               <div key={t.id} className="flex items-center justify-between border rounded-lg p-3 text-sm">
                 <span>{t.title}</span>
-                <span className="text-xs text-muted-foreground">{t.due_at ? new Date(t.due_at).toLocaleDateString('pt-PT') : 'Sem prazo'}</span>
+                <span className="text-xs text-muted-foreground">{t.due_at ? formatLocalDate(t.due_at) : 'Sem prazo'}</span>
               </div>
             ))}
           </div>

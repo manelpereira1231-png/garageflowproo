@@ -81,6 +81,9 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
   const vehicleRef = p.plate || p.model ? ` referente ao veículo ${[p.plate, p.model].filter(Boolean).join(' - ')}` : '';
 
   switch (p.type) {
+    case 'client': {
+      return `${greeting}\n\nObrigado por ser nosso cliente. Estamos ao seu dispor para qualquer questão.`;
+    }
     case 'invoice': {
       const num = p.number ? ` ${p.number}` : '';
       let msg = `${greeting}\n\nSegue em anexo a fatura${num}${vehicleRef}.`;

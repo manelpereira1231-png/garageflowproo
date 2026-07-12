@@ -202,7 +202,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
         ...data.lines,
         {
           type: 'labor',
-          name: `${tl('laborType')} (${laborH}h × ${cur}${laborR.toFixed(2)}/h)`,
+          name: `${tl('laborType')} (${laborH}h × ${cur} ${laborR.toFixed(2)}/h)`,
           quantity: laborH,
           unit_price: laborR,
           unit_cost: 0,
@@ -221,9 +221,9 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     typeCell(l.type),
     l.name,
     String(l.quantity),
-    `${cur}${l.unit_price.toFixed(2)}`,
+    `${cur} ${l.unit_price.toFixed(2)}`,
     `${l.vat_rate}%`,
-    `${cur}${(l.quantity * l.unit_price).toFixed(2)}`,
+    `${cur} ${(l.quantity * l.unit_price).toFixed(2)}`,
   ]);
 
   autoTable(doc, {
@@ -271,20 +271,20 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.setFont("helvetica", "normal");
     for (const [label, val] of summaryLines) {
       sy += 5;
-      doc.text(`${label}: ${cur}${val.toFixed(2)}`, 14, sy);
+      doc.text(`${label}: ${cur} ${val.toFixed(2)}`, 14, sy);
     }
     finalY = Math.max(finalY, sy - 4);
   }
 
-  doc.text(`Subtotal: ${cur}${data.subtotal.toFixed(2)}`, totalsX, finalY, { align: "right" });
-  doc.text(`${tl('vat')}: ${cur}${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
+  doc.text(`Subtotal: ${cur} ${data.subtotal.toFixed(2)}`, totalsX, finalY, { align: "right" });
+  doc.text(`${tl('vat')}: ${cur} ${data.vatTotal.toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
 
   doc.setFillColor(38, 38, 38);
   doc.rect(pageW - 80, finalY + 9, 66, 10, 'F');
   doc.setTextColor(255, 180, 30);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(`TOTAL: ${cur}${data.total.toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
+  doc.text(`TOTAL: ${cur} ${data.total.toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
 
   // Diagnosis
   if (data.type === 'service' && data.diagnosis) {

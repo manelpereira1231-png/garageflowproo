@@ -108,14 +108,28 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
   }
 }
 
+function isMobileUA(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+/**
+ * Best URL to open the WhatsApp conversation with the message pre-filled.
+ * - Mobile: `whatsapp://` deep link → opens the installed app (or WhatsApp Business
+ *   if it's the default handler) straight in the client's conversation.
+ * - Desktop: `web.whatsapp.com/send` → skips the wa.me splash page and lands
+ *   directly in the conversation on WhatsApp Web.
+ */
 export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   if (!params.phone) return null;
   const phone = cleanPhone(params.phone);
   if (phone.length < 9) return null;
-  // Include the public link in the WhatsApp message — quotes need it to approve,
-  // and invoices need it as a PDF download fallback for desktop chats.
   const message = buildMessage(params, { includeLink: true });
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const text = encodeURIComponent(message);
+  if (isMobileUA()) {
+    return `whatsapp://send?phone=${phone}&text=${text}`;
+  }
+  return `https://web.whatsapp.com/send?phone=${phone}&text=${text}&type=phone_number&app_absent=0`;
 }
 
 function buildPdfFile(params: WhatsAppMessageParams): File | null {
@@ -131,7 +145,11 @@ function canSharePdfFile(file: File, message: string, title: string): boolean {
   return Boolean((navigator as any).canShare(shareData));
 }
 
-function openUrlInNewTab(url: string) {
+function openUrl(url: string, sameTab: boolean) {
+  if (sameTab) {
+    window.location.href = url;
+    return;
+  }
   const a = document.createElement('a');
   a.href = url;
   a.target = '_blank';
@@ -156,18 +174,28 @@ function downloadPdfBlob(blob: Blob, filename: string) {
   }
 }
 
+async function copyToClipboardSilent(text: string) {
+  try {
+    if (typeof navigator !== 'undefined' && (navigator as any).clipboard?.writeText) {
+      await (navigator as any).clipboard.writeText(text);
+    }
+  } catch {
+    /* clipboard is best-effort */
+  }
+}
+
 /**
  * Sends the document to WhatsApp as an actual PDF attachment whenever possible.
  *
  * - Mobile (Android/iOS): uses the Web Share API with `files` so WhatsApp
- *   receives the PDF + the pre-filled message in a single native share sheet.
- * - Desktop: opens WhatsApp Web with the message pre-filled and automatically
- *   downloads the PDF so the user just drops it into the chat. WhatsApp Web
- *   does not accept file attachments via URL, so this is the closest to a
- *   "one click send" experience the platform allows.
- *
- * The signed PDF link is intentionally NOT included in the message body —
- * the goal is a professional flow where the PDF itself is delivered.
+ *   receives the PDF + pre-filled message in a single native share sheet.
+ *   If Web Share with files isn't available, opens the WhatsApp app directly
+ *   via `whatsapp://send` and downloads the PDF so the user attaches it in
+ *   one tap from the same conversation.
+ * - Desktop: opens WhatsApp Web straight in the client's conversation with
+ *   the message pre-filled and auto-downloads the PDF (WhatsApp Web does not
+ *   accept file attachments via URL — this is the closest one-click flow the
+ *   platform allows).
  */
 export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boolean> {
   const url = buildWhatsAppUrl(params);
@@ -176,27 +204,31 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   const message = buildMessage(params, { includeLink: true });
   const filename = params.pdfFilename || `${params.number || 'documento'}.pdf`;
   const file = buildPdfFile(params);
+  const mobile = isMobileUA();
 
-  // 1) Preferred flow: native share with the PDF file attached + message text.
-  // This is the only browser-supported way to hand a Blob to WhatsApp as a real file.
+  // 1) Preferred flow (mobile mostly): native share with PDF + text in one sheet.
   if (file && canSharePdfFile(file, message, params.number || 'Documento')) {
     try {
-      const shareData: any = { files: [file], text: message, title: params.number || 'Documento' };
-      await (navigator as any).share(shareData);
+      await (navigator as any).share({ files: [file], text: message, title: params.number || 'Documento' });
       return true;
     } catch (err) {
       console.warn('[whatsapp] share failed, falling back', err);
     }
   }
 
-  // 2) Fallback: WhatsApp URLs cannot pre-attach files. We still never place the
-  // signed PDF link in the message; the PDF is downloaded locally to attach.
-  openUrlInNewTab(url);
+  // 2) Fallback: open WhatsApp (app on mobile, Web on desktop) directly in the
+  // conversation with the message pre-filled, and hand the PDF to the user
+  // as a local download so it's ready to attach in one click.
   if (params.pdfBlob) {
-    setTimeout(() => downloadPdfBlob(params.pdfBlob!, filename), 400);
+    downloadPdfBlob(params.pdfBlob, filename);
   }
+  // Also stash the message in the clipboard as a safety net if WhatsApp Web
+  // ever fails to pre-fill (rare, but avoids losing the personalised text).
+  await copyToClipboardSilent(message);
+  openUrl(url, mobile);
   return true;
 }
+
 
 // ============================================================
 // Email helper — mirrors WhatsApp so any doc can also be emailed.

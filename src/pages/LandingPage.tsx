@@ -168,6 +168,7 @@ export default function LandingPage() {
       lockedFeatureLabels: freeLists.locked,
       ctaKey: 'landing.ctaFree',
       highlighted: false,
+      ctaPrimary: true,
     },
     {
       slug: 'pro' as const,
@@ -179,6 +180,7 @@ export default function LandingPage() {
       lockedFeatureLabels: proLists.locked,
       ctaKey: 'landing.ctaPro',
       highlighted: true,
+      ctaPrimary: true,
     },
     {
       slug: 'garage' as const,
@@ -190,6 +192,7 @@ export default function LandingPage() {
       lockedFeatureLabels: garageLists.locked,
       ctaKey: 'landing.ctaGarage',
       highlighted: false,
+      ctaPrimary: false,
     },
   ];
 
@@ -740,8 +743,8 @@ export default function LandingPage() {
                 </ul>
                 <Link to={plan.ctaKey === 'landing.ctaGarage' ? '/demo' : '/auth?mode=signup'}>
                   <Button
-                    className={`w-full ${plan.highlighted ? "gradient-primary text-primary-foreground" : ""}`}
-                    variant={plan.highlighted ? "default" : "outline"}
+                    className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                    variant={plan.ctaPrimary ? "default" : "outline"}
                   >
                     {t(plan.ctaKey)}
                   </Button>

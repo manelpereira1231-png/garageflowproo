@@ -169,6 +169,7 @@ interface QuoteEmailData {
   notes?: string;
   approvalUrl?: string;
   lang?: string;
+  status?: string;
 }
 
 const emailLabels: Record<string, Record<string, string>> = {

@@ -206,11 +206,11 @@ export default function MarketVerifyCertificate() {
             </div>
             <div>
               <span className="text-slate-400 flex items-center gap-1"><Clock className="h-3 w-3" /> Início:</span>
-              <div className="mt-1">{report.started_at ? new Date(report.started_at).toLocaleString("pt-PT") : "—"}</div>
+              <div className="mt-1">{report.started_at ? formatLocalDate(report.started_at, true) : "—"}</div>
             </div>
             <div>
               <span className="text-slate-400 flex items-center gap-1"><Clock className="h-3 w-3" /> Conclusão:</span>
-              <div className="mt-1">{report.completed_at ? new Date(report.completed_at).toLocaleString("pt-PT") : "—"}</div>
+              <div className="mt-1">{report.completed_at ? formatLocalDate(report.completed_at, true) : "—"}</div>
             </div>
           </CardContent>
         </Card>

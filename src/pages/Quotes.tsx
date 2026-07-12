@@ -163,6 +163,7 @@ export default function Quotes() {
         quoteNumber: q.number, quoteDate: q.date || formatLocalDate(q.created_at),
         validityDate: q.validity_date, lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total,
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
+        status: q.status,
       });
       await sendEmail({ to: clientEmail, subject, html });
       // Log email send

@@ -169,6 +169,7 @@ interface QuoteEmailData {
   notes?: string;
   approvalUrl?: string;
   lang?: string;
+  status?: string;
 }
 
 const emailLabels: Record<string, Record<string, string>> = {
@@ -184,6 +185,10 @@ const emailLabels: Record<string, Record<string, string>> = {
     footer: 'Obrigado pela preferência!',
     service: 'Serviço', part: 'Peça',
     contact: 'Contacto',
+    alreadyApproved: 'Este orçamento já foi aprovado. Obrigado pela sua confirmação — iremos avançar com a intervenção.',
+    alreadyRejected: 'Este orçamento foi rejeitado. Se pretender rever, contacte-nos.',
+    alreadyConverted: 'Este orçamento já foi aprovado e convertido em ordem de serviço.',
+    viewOnline: 'Ver orçamento',
   },
   en: {
     subject: 'Quote',
@@ -197,6 +202,10 @@ const emailLabels: Record<string, Record<string, string>> = {
     footer: 'Thank you for your preference!',
     service: 'Service', part: 'Part',
     contact: 'Contact',
+    alreadyApproved: 'This quote has already been approved. Thank you — we will proceed with the work.',
+    alreadyRejected: 'This quote has been rejected. Contact us if you want to revisit it.',
+    alreadyConverted: 'This quote has already been approved and converted into a work order.',
+    viewOnline: 'View quote',
   },
   es: {
     subject: 'Presupuesto',
@@ -210,6 +219,10 @@ const emailLabels: Record<string, Record<string, string>> = {
     footer: '¡Gracias por su preferencia!',
     service: 'Servicio', part: 'Pieza',
     contact: 'Contacto',
+    alreadyApproved: 'Este presupuesto ya ha sido aprobado. Gracias — procederemos con la intervención.',
+    alreadyRejected: 'Este presupuesto ha sido rechazado. Contáctenos si desea revisarlo.',
+    alreadyConverted: 'Este presupuesto ya fue aprobado y convertido en orden de servicio.',
+    viewOnline: 'Ver presupuesto',
   },
 };
 
@@ -232,14 +245,29 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
     ? `<img src="${data.shopLogoUrl}" alt="${data.shopName}" style="max-height: 48px; max-width: 160px; margin-bottom: 8px;" /><br/>`
     : '';
 
-  const approvalHtml = data.approvalUrl ? `
+  const decided = data.status === 'approved' || data.status === 'converted' || data.status === 'rejected';
+  const decidedMsg = data.status === 'rejected'
+    ? l.alreadyRejected
+    : data.status === 'converted'
+      ? l.alreadyConverted
+      : l.alreadyApproved;
+  const decidedColor = data.status === 'rejected' ? '#991b1b' : '#166534';
+  const decidedBg = data.status === 'rejected' ? '#fef2f2' : '#f0fdf4';
+  const decidedBorder = data.status === 'rejected' ? '#fecaca' : '#bbf7d0';
+
+  const approvalHtml = decided ? `
+    <div style="background-color: ${decidedBg}; border: 1px solid ${decidedBorder}; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+      <p style="color: ${decidedColor}; font-size: 14px; margin: 0 0 ${data.approvalUrl ? '16px' : '0'}; font-weight: 600;">${decidedMsg}</p>
+      ${data.approvalUrl ? `<a href="${data.approvalUrl}" style="display: inline-block; background-color: #262626; color: #ffb41e; padding: 10px 24px; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 700;">${l.viewOnline}</a>` : ''}
+    </div>
+  ` : (data.approvalUrl ? `
     <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
       <p style="color: #166534; font-size: 14px; margin: 0 0 16px;">${l.approveOnline}</p>
       <a href="${data.approvalUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: 0.3px;">
         ✓ ${l.approve}
       </a>
     </div>
-  ` : '';
+  ` : '');
 
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 640px; margin: 0 auto; background-color: #ffffff;">

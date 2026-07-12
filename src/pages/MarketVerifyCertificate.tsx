@@ -144,8 +144,8 @@ export default function MarketVerifyCertificate() {
             <div><span className="text-slate-400">Ano:</span><div className="font-semibold">{listing.year}</div></div>
             <div><span className="text-slate-400">Matrícula:</span><div className="font-mono font-semibold">{listing.plate || "—"}</div></div>
             <div><span className="text-slate-400">VIN:</span><div className="font-mono text-xs break-all">{listing.vin || "n/d"}</div></div>
-            <div><span className="text-slate-400">Km no anúncio:</span><div className="font-semibold">{listing.mileage?.toLocaleString("pt-PT") || "—"}</div></div>
-            <div><span className="text-slate-400">Km na inspeção:</span><div className="font-semibold text-amber-400">{report.mileage_at_inspection?.toLocaleString("pt-PT") || "—"}</div></div>
+            <div><span className="text-slate-400">Km no anúncio:</span><div className="font-semibold">{listing.mileage?.toLocaleString(getMarketLocale()) || "—"}</div></div>
+            <div><span className="text-slate-400">Km na inspeção:</span><div className="font-semibold text-amber-400">{report.mileage_at_inspection?.toLocaleString(getMarketLocale()) || "—"}</div></div>
           </CardContent>
         </Card>
 

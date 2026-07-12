@@ -163,7 +163,7 @@ export default function LandingPage() {
       nameKey: 'landing.planFree',
       price: formatPrice(pricing.free[billingCycle]),
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
-      subtitleKey: '',
+      subtitleKey: 'landing.trial30',
       featureLabels: freeLists.enabled,
       lockedFeatureLabels: freeLists.locked,
       ctaKey: 'landing.ctaFree',

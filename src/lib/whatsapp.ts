@@ -206,8 +206,10 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   const file = buildPdfFile(params);
   const mobile = isMobileUA();
 
-  // 1) Preferred flow (mobile mostly): native share with PDF + text in one sheet.
-  if (file && canSharePdfFile(file, message, params.number || 'Documento')) {
+  // 1) Preferred flow (mobile only): native share with PDF + text in one sheet.
+  // On desktop we skip Web Share on purpose — Windows/macOS show a generic
+  // system share panel that is worse UX than opening WhatsApp Web directly.
+  if (mobile && file && canSharePdfFile(file, message, params.number || 'Documento')) {
     try {
       await (navigator as any).share({ files: [file], text: message, title: params.number || 'Documento' });
       return true;

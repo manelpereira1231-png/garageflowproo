@@ -24,7 +24,7 @@ const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   const ok = openWhatsApp({
     phone: client.phone,
     clientName: client.name,
-    type: "service",
+    type: "client",
   });
   if (!ok) toast.error("Não foi possível abrir o WhatsApp");
 };

@@ -153,10 +153,19 @@ export default function Quotes() {
     try {
       const lines = (Array.isArray(q.lines) ? q.lines : []) as any[];
       const vehicleInfo = `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model} — ${(q.vehicles as any)?.plate}`;
-      const approvalUrl = q.token && canUseFeature('quoteApproval') ? `${window.location.origin}/quote/${q.token}` : undefined;
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
-      const subject = `${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;
+      const isResolved = ['approved', 'converted', 'rejected', 'expired'].includes(q.status);
+      // Only include approval link when the quote is still actionable — never on resolved quotes.
+      const approvalUrl = !isResolved && q.token && canUseFeature('quoteApproval') ? `${window.location.origin}/quote/${q.token}` : undefined;
+      // Reflect the resolved state in the subject so the recipient sees it immediately.
+      const subjectPrefix: Record<string, Record<string, string>> = {
+        pt: { approved: '✅ Aprovado — ', converted: '✅ Aprovado — ', rejected: '❌ Rejeitado — ', expired: '⌛ Expirado — ' },
+        en: { approved: '✅ Approved — ', converted: '✅ Approved — ', rejected: '❌ Rejected — ', expired: '⌛ Expired — ' },
+        es: { approved: '✅ Aprobado — ', converted: '✅ Aprobado — ', rejected: '❌ Rechazado — ', expired: '⌛ Expirado — ' },
+      };
+      const prefix = (subjectPrefix[lang] || subjectPrefix.pt)[q.status] || '';
+      const subject = `${prefix}${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;
       const html = quoteEmailHtml({
         shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone, shopNif: shop.nif,
         shopAddress: shop.address, shopLogoUrl: shop.logo_url, clientName: (q.clients as any)?.name || '',

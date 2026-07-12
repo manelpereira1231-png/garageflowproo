@@ -96,6 +96,24 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
     }
     case 'quote': {
       const num = p.number ? ` ${p.number}` : '';
+      const status = p.quoteStatus;
+      if (status === 'approved' || status === 'converted') {
+        const total = formatEUR(p.total);
+        let msg = `${greeting}\n\nConfirmamos que o orçamento${num}${vehicleRef} foi aprovado.`;
+        if (total) msg += `\n\nValor aprovado: ${total}`;
+        msg += `\n\nA intervenção será iniciada em breve e iremos mantê-lo(a) informado(a).\n\nObrigado pela confiança.`;
+        return msg;
+      }
+      if (status === 'rejected') {
+        let msg = `${greeting}\n\nRegistámos a rejeição do orçamento${num}${vehicleRef}.`;
+        msg += `\n\nSe pretender rever alguma condição ou preparar uma nova proposta, estamos ao seu dispor.`;
+        return msg;
+      }
+      if (status === 'expired') {
+        let msg = `${greeting}\n\nO orçamento${num}${vehicleRef} encontra-se expirado.`;
+        msg += `\n\nCaso ainda tenha interesse, podemos preparar uma nova proposta atualizada.`;
+        return msg;
+      }
       let msg = `${greeting}\n\nSegue em anexo o orçamento${num}${vehicleRef} para aprovação.`;
       if (includeLink && p.link) msg += `\n\n📄 Consultar e aprovar:\n${p.link}`;
       return msg;

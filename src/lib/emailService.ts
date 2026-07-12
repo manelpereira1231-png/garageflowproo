@@ -245,20 +245,30 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
     ? `<img src="${data.shopLogoUrl}" alt="${data.shopName}" style="max-height: 48px; max-width: 160px; margin-bottom: 8px;" /><br/>`
     : '';
 
-  const decided = data.status === 'approved' || data.status === 'converted' || data.status === 'rejected';
-  const decidedMsg = data.status === 'rejected'
-    ? l.alreadyRejected
-    : data.status === 'converted'
-      ? l.alreadyConverted
-      : l.alreadyApproved;
-  const decidedColor = data.status === 'rejected' ? '#991b1b' : '#166534';
-  const decidedBg = data.status === 'rejected' ? '#fef2f2' : '#f0fdf4';
-  const decidedBorder = data.status === 'rejected' ? '#fecaca' : '#bbf7d0';
+  // A quote is "resolved" when the client already decided or it expired — in these
+  // cases we NEVER render the "Approve" call-to-action, only a status banner.
+  const isResolved =
+    data.status === 'approved' ||
+    data.status === 'converted' ||
+    data.status === 'rejected' ||
+    data.status === 'expired';
+  const expiredMsg: Record<string, string> = {
+    pt: 'Este orçamento encontra-se expirado. Contacte-nos para uma nova proposta.',
+    en: 'This quote has expired. Contact us for a new proposal.',
+    es: 'Este presupuesto ha expirado. Contáctenos para una nueva propuesta.',
+  };
+  const decidedMsg =
+    data.status === 'rejected' ? l.alreadyRejected
+    : data.status === 'converted' ? l.alreadyConverted
+    : data.status === 'expired' ? (expiredMsg[data.lang || 'pt'] || expiredMsg.pt)
+    : l.alreadyApproved;
+  const decidedColor = data.status === 'rejected' ? '#991b1b' : data.status === 'expired' ? '#92400e' : '#166534';
+  const decidedBg = data.status === 'rejected' ? '#fef2f2' : data.status === 'expired' ? '#fffbeb' : '#f0fdf4';
+  const decidedBorder = data.status === 'rejected' ? '#fecaca' : data.status === 'expired' ? '#fde68a' : '#bbf7d0';
 
-  const approvalHtml = decided ? `
+  const approvalHtml = isResolved ? `
     <div style="background-color: ${decidedBg}; border: 1px solid ${decidedBorder}; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
-      <p style="color: ${decidedColor}; font-size: 14px; margin: 0 0 ${data.approvalUrl ? '16px' : '0'}; font-weight: 600;">${decidedMsg}</p>
-      ${data.approvalUrl ? `<a href="${data.approvalUrl}" style="display: inline-block; background-color: #262626; color: #ffb41e; padding: 10px 24px; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 700;">${l.viewOnline}</a>` : ''}
+      <p style="color: ${decidedColor}; font-size: 14px; margin: 0; font-weight: 600;">${decidedMsg}</p>
     </div>
   ` : (data.approvalUrl ? `
     <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">

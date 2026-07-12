@@ -9,6 +9,7 @@ import {
   MapPin, Clock, Hash, Car, Building2, FileCheck, ExternalLink,
 } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
+import { formatLocalDate, getMarketLocale } from "@/lib/marketPrice";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string; Icon: any }> = {
   ok: { label: "Conforme", cls: "text-green-600", Icon: CheckCircle },

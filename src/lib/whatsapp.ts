@@ -206,17 +206,12 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   const file = buildPdfFile(params);
   const mobile = isMobileUA();
 
-  // 1) Preferred flow (mobile only): native share with PDF + text in one sheet.
-  // On desktop we skip Web Share on purpose — Windows/macOS show a generic
-  // system share panel that is worse UX than opening WhatsApp Web directly.
-  if (mobile && file && canSharePdfFile(file, message, params.number || 'Documento')) {
-    try {
-      await (navigator as any).share({ files: [file], text: message, title: params.number || 'Documento' });
-      return true;
-    } catch (err) {
-      console.warn('[whatsapp] share failed, falling back', err);
-    }
-  }
+  // Web Share API is skipped on purpose on every platform:
+  // - Desktop shows the Windows/macOS system share panel (not WhatsApp).
+  // - Mobile shows the OS share sheet with an extra tap to pick WhatsApp.
+  // The user wants to land straight in the WhatsApp conversation, so we
+  // always use the deep link (mobile) or WhatsApp Web (desktop) instead.
+  void file;
 
   // 2) Fallback: open WhatsApp (app on mobile, Web on desktop) directly in the
   // conversation with the message pre-filled, and hand the PDF to the user

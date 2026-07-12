@@ -112,7 +112,7 @@ export function buildWhatsAppUrl(params: WhatsAppMessageParams): string | null {
   // Include the public link in the WhatsApp message — quotes need it to approve,
   // and invoices need it as a PDF download fallback for desktop chats.
   const message = buildMessage(params, { includeLink: true });
-  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
 function buildPdfFile(params: WhatsAppMessageParams): File | null {

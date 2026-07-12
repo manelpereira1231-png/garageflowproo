@@ -550,6 +550,7 @@ export default function QuoteApproval() {
                   {shop?.address && <span>{shop.address}</span>}
                 </div>
               </div>
+              </div>
               <div className="text-right shrink-0">
                 <Badge variant="secondary" className="bg-primary/20 text-primary mb-2 text-xs">
                   <Clock className="w-3 h-3 mr-1" />

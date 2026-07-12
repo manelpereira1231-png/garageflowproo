@@ -801,25 +801,6 @@ export default function LandingPage() {
       </section>
       </Reveal>
 
-      {/* CTA Final */}
-      <Reveal>
-      <section className="py-16 sm:py-20 px-4 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h2>
-          <p className="text-muted-foreground text-base sm:text-lg mb-8 px-4">
-            {t('landing.ctaSubtitle')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link to="/demo" className="w-full sm:w-auto">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-lg text-base sm:text-lg px-8 sm:px-12 h-14 font-bold w-full sm:w-auto btn-interactive">
-                {t('landing.ctaDemo')} <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-          </div>
-          <p className="text-xs text-muted-foreground mt-4">{t('landing.noCreditCard')}</p>
-        </div>
-      </section>
-      </Reveal>
 
       {/* FAQ Section */}
       <Reveal>

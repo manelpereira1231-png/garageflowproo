@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User, Calendar, MessageSquare, FileText, PenTool } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User, Calendar, MessageSquare, FileText, PenTool, ArrowLeft } from "lucide-react";
 import { sendEmail } from "@/lib/emailService";
 import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote";
 import SignaturePad from "@/components/SignaturePad";

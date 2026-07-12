@@ -312,6 +312,72 @@ export default function QuoteApproval() {
     } catch (emailErr) {
       console.error("Failed to send notification email:", emailErr);
     }
+
+    // On approval: auto-create work order and notify client by email
+    if (action === 'approved') {
+      try {
+        const { workOrderId } = await autoCreateWorkOrderFromQuote(quote.id);
+        let woNumber: string | null = null;
+        if (workOrderId) {
+          const { data: wo } = await supabase.from("work_orders").select("number").eq("id", workOrderId).maybeSingle();
+          woNumber = wo?.number || null;
+        }
+
+        const clientEmail = (quote.clients as any)?.email as string | undefined;
+        const clientName = (quote.clients as any)?.name || "—";
+        const veh = quote.vehicles as any;
+        const vehicleLabel = `${veh?.make || ''} ${veh?.model || ''}`.trim();
+        const plate = veh?.plate || '';
+
+        if (clientEmail) {
+          const clientEmailLabels: Record<string, {
+            subject: (n: string) => string;
+            greeting: string;
+            body: (veh: string, plate: string) => string;
+            follow: string;
+          }> = {
+            pt: {
+              subject: (n) => `Ordem de Serviço ${n}`,
+              greeting: 'Olá',
+              body: (v, p) => `Informamos que os trabalhos no seu <strong>${v}${p ? ` (${p})` : ''}</strong> já se encontram em execução.`,
+              follow: 'A nossa equipa está a realizar a intervenção prevista e iremos notificá-lo(a) assim que esta estiver concluída.',
+            },
+            en: {
+              subject: (n) => `Work Order ${n}`,
+              greeting: 'Hello',
+              body: (v, p) => `We're pleased to inform you that work on your <strong>${v}${p ? ` (${p})` : ''}</strong> has now started.`,
+              follow: 'Our team is carrying out the planned service and will notify you as soon as it is complete.',
+            },
+            es: {
+              subject: (n) => `Orden de Servicio ${n}`,
+              greeting: 'Hola',
+              body: (v, p) => `Le informamos que los trabajos en su <strong>${v}${p ? ` (${p})` : ''}</strong> ya están en ejecución.`,
+              follow: 'Nuestro equipo está realizando la intervención prevista y le notificaremos en cuanto esté concluida.',
+            },
+          };
+          const cl = clientEmailLabels[lang] || clientEmailLabels.pt;
+          const displayNum = woNumber || quote.number;
+          const clientSubject = cl.subject(displayNum);
+          const clientHtml = `
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;">
+              <div style="background-color:#262626;padding:24px 32px;border-radius:12px 12px 0 0;">
+                <span style="color:#ffb41e;font-size:20px;font-weight:700;">${shop.name}</span><br/>
+                <span style="color:#ffffff;font-size:16px;font-weight:600;">${clientSubject}</span>
+              </div>
+              <div style="padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+                <p style="color:#1f2937;font-size:15px;margin:0 0 12px;">${cl.greeting}, <strong>${clientName}</strong>,</p>
+                <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 12px;">${cl.body(vehicleLabel, plate)}</p>
+                <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 12px;">${cl.follow}</p>
+                <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+                <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
+              </div>
+            </div>`;
+          await sendEmail({ to: clientEmail, subject: clientSubject, html: clientHtml });
+        }
+      } catch (woErr) {
+        console.error("Auto work order / client email failed:", woErr);
+      }
+    }
   };
 
   if (loading) {

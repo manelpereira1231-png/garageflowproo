@@ -242,7 +242,8 @@ export default function Quotes() {
   const sendQuoteWhatsApp = async (q: any) => {
     const phone = (q.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-    const approvalUrl = q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
+    const isResolved = ['approved', 'converted', 'rejected', 'expired'].includes(q.status);
+    const approvalUrl = !isResolved && q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
     const pdf = await buildQuotePdfBlob(q);
     openWhatsApp({
       phone,
@@ -253,6 +254,8 @@ export default function Quotes() {
       link: approvalUrl,
       pdfBlob: pdf?.blob ?? null,
       pdfFilename: pdf?.filename,
+      quoteStatus: q.status,
+      total: q.total,
     });
   };
 

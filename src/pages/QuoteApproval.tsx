@@ -313,7 +313,7 @@ export default function QuoteApproval() {
       console.error("Failed to send notification email:", emailErr);
     }
 
-    // On approval: auto-create work order and notify client by email
+    // On approval: auto-create work order and send approval-confirmation email to client
     if (action === 'approved') {
       try {
         const { workOrderId } = await autoCreateWorkOrderFromQuote(quote.id);
@@ -330,34 +330,62 @@ export default function QuoteApproval() {
         const plate = veh?.plate || '';
 
         if (clientEmail) {
-          const clientEmailLabels: Record<string, {
-            subject: (n: string) => string;
-            greeting: string;
-            body: (veh: string, plate: string) => string;
-            follow: string;
-          }> = {
+          // Try to load configured template for quote_approved / email
+          let subjectTpl = '';
+          let bodyTpl = '';
+          try {
+            const { data: tplRow } = await (supabase as any)
+              .from('message_templates')
+              .select('subject, body_text, active')
+              .eq('shop_id', shop.id)
+              .eq('event_slug', 'quote_approved')
+              .eq('channel', 'email')
+              .maybeSingle();
+            if (tplRow && tplRow.active !== false) {
+              subjectTpl = tplRow.subject || '';
+              bodyTpl = tplRow.body_text || '';
+            }
+          } catch {}
+
+          const defaults: Record<string, { subject: string; body: string }> = {
             pt: {
-              subject: (n) => `Ordem de Serviço ${n}`,
-              greeting: 'Olá',
-              body: (v, p) => `Informamos que os trabalhos no seu <strong>${v}${p ? ` (${p})` : ''}</strong> já se encontram em execução.`,
-              follow: 'A nossa equipa está a realizar a intervenção prevista e iremos notificá-lo(a) assim que esta estiver concluída.',
+              subject: 'Recebemos a aprovação do orçamento {{numero_orcamento}}',
+              body:
+                'Olá {{cliente_nome}} 👋\n\nRecebemos a aprovação do seu orçamento.\n\n✅ O orçamento {{numero_orcamento}} foi aprovado com sucesso.\n\nA nossa equipa irá agora iniciar a preparação dos trabalhos e encomendar as peças necessárias (quando aplicável).\n\nEntraremos em contacto caso seja necessária alguma informação adicional. Assim que existirem novidades sobre o estado da reparação, será novamente informado.\n\nObrigado pela confiança.\n{{nome_oficina}}',
             },
             en: {
-              subject: (n) => `Work Order ${n}`,
-              greeting: 'Hello',
-              body: (v, p) => `We're pleased to inform you that work on your <strong>${v}${p ? ` (${p})` : ''}</strong> has now started.`,
-              follow: 'Our team is carrying out the planned service and will notify you as soon as it is complete.',
+              subject: 'We received the approval for quote {{numero_orcamento}}',
+              body:
+                'Hello {{cliente_nome}} 👋\n\nWe have received the approval of your quote.\n\n✅ Quote {{numero_orcamento}} has been successfully approved.\n\nOur team will now start preparing the work and ordering any required parts.\n\nWe will contact you if we need any further information and will keep you updated on the repair progress.\n\nThank you for your trust.\n{{nome_oficina}}',
             },
             es: {
-              subject: (n) => `Orden de Servicio ${n}`,
-              greeting: 'Hola',
-              body: (v, p) => `Le informamos que los trabajos en su <strong>${v}${p ? ` (${p})` : ''}</strong> ya están en ejecución.`,
-              follow: 'Nuestro equipo está realizando la intervención prevista y le notificaremos en cuanto esté concluida.',
+              subject: 'Recibimos la aprobación del presupuesto {{numero_orcamento}}',
+              body:
+                'Hola {{cliente_nome}} 👋\n\nHemos recibido la aprobación de su presupuesto.\n\n✅ El presupuesto {{numero_orcamento}} ha sido aprobado con éxito.\n\nNuestro equipo iniciará ahora la preparación de los trabajos y pedirá las piezas necesarias (cuando corresponda).\n\nLe contactaremos si necesitamos más información y le mantendremos informado sobre el estado de la reparación.\n\nGracias por su confianza.\n{{nome_oficina}}',
             },
           };
-          const cl = clientEmailLabels[lang] || clientEmailLabels.pt;
-          const displayNum = woNumber || quote.number;
-          const clientSubject = cl.subject(displayNum);
+          const def = defaults[lang] || defaults.pt;
+          if (!subjectTpl) subjectTpl = def.subject;
+          if (!bodyTpl) bodyTpl = def.body;
+
+          const vars: Record<string, string> = {
+            cliente_nome: clientName,
+            nome_oficina: shop.name || '',
+            numero_orcamento: quote.number || '',
+            numero_ordem_servico: woNumber || '',
+            matricula: plate,
+            marca: veh?.make || '',
+            modelo: veh?.model || '',
+            veiculo: vehicleLabel,
+            valor_orcamento: `€${quote.total?.toFixed(2) ?? '0.00'}`,
+            valor_total: `€${quote.total?.toFixed(2) ?? '0.00'}`,
+            telefone: shop.phone || '',
+            email: shop.email || '',
+          };
+          const render = (s: string) => s.replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_, k) => vars[k.toLowerCase()] ?? '');
+          const clientSubject = render(subjectTpl);
+          const bodyHtml = render(bodyTpl).split('\n').map((line) => line.trim() ? `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 10px;">${line}</p>` : '<br/>').join('');
+
           const clientHtml = `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;">
               <div style="background-color:#262626;padding:24px 32px;border-radius:12px 12px 0 0;">
@@ -365,14 +393,22 @@ export default function QuoteApproval() {
                 <span style="color:#ffffff;font-size:16px;font-weight:600;">${clientSubject}</span>
               </div>
               <div style="padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-                <p style="color:#1f2937;font-size:15px;margin:0 0 12px;">${cl.greeting}, <strong>${clientName}</strong>,</p>
-                <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 12px;">${cl.body(vehicleLabel, plate)}</p>
-                <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 12px;">${cl.follow}</p>
+                ${bodyHtml}
                 <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
                 <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
               </div>
             </div>`;
           await sendEmail({ to: clientEmail, subject: clientSubject, html: clientHtml });
+
+          // Audit trail entry
+          try {
+            await supabase.from('audit_logs').insert({
+              action: 'quote_approval_confirmation_email_sent',
+              entity_type: 'quote',
+              entity_id: quote.id,
+              details: { quote_number: quote.number, to: clientEmail, wo_number: woNumber },
+            });
+          } catch {}
         }
       } catch (woErr) {
         console.error("Auto work order / client email failed:", woErr);

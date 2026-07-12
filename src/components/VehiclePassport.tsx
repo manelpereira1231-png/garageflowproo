@@ -107,15 +107,29 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       mileage: h.mileage,
       parts: h.parts_replaced,
     })),
-    ...workOrders.map(wo => ({
-      id: wo.id,
-      type: "service",
-      date: wo.created_at,
-      title: `${wo.number} — ${wo.status}`,
-      description: wo.diagnosis || null,
-      mileage: wo.entry_mileage || null,
-      parts: [],
-    })),
+    ...workOrders.map(wo => {
+      const statusLabels: Record<string, { pt: string; en: string }> = {
+        pending: { pt: "Pendente", en: "Pending" },
+        waiting_approval: { pt: "Aguarda aprovação", en: "Waiting approval" },
+        approved: { pt: "Aprovado", en: "Approved" },
+        in_progress: { pt: "Em curso", en: "In progress" },
+        awaiting_parts: { pt: "A aguardar peças", en: "Awaiting parts" },
+        completed: { pt: "Concluído", en: "Completed" },
+        delivered: { pt: "Entregue", en: "Delivered" },
+        cancelled: { pt: "Cancelado", en: "Cancelled" },
+        invoiced: { pt: "Faturado", en: "Invoiced" },
+      };
+      const label = statusLabels[wo.status]?.[isPt ? "pt" : "en"] ?? wo.status;
+      return {
+        id: wo.id,
+        type: "service",
+        date: wo.created_at,
+        title: `${wo.number} — ${label}`,
+        description: wo.diagnosis || null,
+        mileage: wo.entry_mileage || null,
+        parts: [],
+      };
+    }),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Deduplicate by id

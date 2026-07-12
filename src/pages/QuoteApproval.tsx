@@ -478,6 +478,22 @@ export default function QuoteApproval() {
                         <td className="p-3 text-right font-mono font-semibold">{cur}{(line.quantity * line.unit_price).toFixed(2)}</td>
                       </tr>
                     ))}
+                    {Number(quote.labor_hours) > 0 && Number(shop?.labor_rate) > 0 && (
+                      <tr className="border-t border-border/50 bg-primary/5">
+                        <td className="p-3">
+                          <span className="font-medium">Mão-de-obra</span>
+                          <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>
+                          <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
+                            {Number(quote.labor_hours).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {cur}{Number(shop.labor_rate).toFixed(2)}/h
+                          </div>
+                        </td>
+                        <td className="p-3 text-center font-mono text-muted-foreground">
+                          {Number(quote.labor_hours).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
+                        </td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{cur}{Number(shop.labor_rate).toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono font-semibold">{cur}{(Number(quote.labor_hours) * Number(shop.labor_rate)).toFixed(2)}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

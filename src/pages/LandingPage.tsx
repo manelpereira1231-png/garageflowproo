@@ -481,21 +481,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Honest launch banner — early adopter */}
-      <Reveal>
-      <section aria-label="Em lançamento" className="py-10 sm:py-12 px-4 border-b border-border bg-muted/20">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Zap className="w-3 h-3" /> Em lançamento · early adopters
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-3">Sê uma das primeiras oficinas a usar o GarageFlow</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Estamos a arrancar. Quem entrar agora ajuda a moldar o produto e fica com{" "}
-            <span className="font-semibold text-foreground">30 dias grátis no plano Pro</span>, sem cartão de crédito.
-          </p>
-        </div>
-      </section>
-      </Reveal>
 
       {/* Features */}
       <Reveal>

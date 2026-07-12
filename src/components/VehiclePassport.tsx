@@ -109,6 +109,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     })),
     ...workOrders.map(wo => {
       const statusLabels: Record<string, { pt: string; en: string }> = {
+        open: { pt: "Aberto", en: "Open" },
+        diagnosis: { pt: "Diagnóstico", en: "Diagnosis" },
         pending: { pt: "Pendente", en: "Pending" },
         waiting_approval: { pt: "Aguarda aprovação", en: "Waiting approval" },
         approved: { pt: "Aprovado", en: "Approved" },

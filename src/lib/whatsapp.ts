@@ -23,6 +23,9 @@ export interface WhatsAppMessageParams {
   serviceStage?: ServiceStage;
   /** Optional approved total (used in the "approved" stage message). */
   total?: number;
+  /** For type='quote' — current status. When 'approved'/'converted'/'rejected'/'expired',
+   *  the message no longer asks for approval and the approval link is omitted. */
+  quoteStatus?: 'draft' | 'sent' | 'approved' | 'converted' | 'rejected' | 'expired';
 }
 
 function vehicleLabel(p: WhatsAppMessageParams): string {

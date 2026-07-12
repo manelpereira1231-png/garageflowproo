@@ -440,24 +440,35 @@ export default function QuoteApproval() {
   }
 
   if (result) {
+    const decidedAt = result === 'approved' ? (quote?.signed_at || quote?.updated_at) : quote?.updated_at;
+    const decidedDate = decidedAt ? new Date(decidedAt) : new Date();
+    const fmtDate = decidedDate.toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT');
+    const fmtTime = decidedDate.toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT', { hour: '2-digit', minute: '2-digit' });
+    const veh = quote?.vehicles as any;
+    const cli = quote?.clients as any;
+    const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+
+    const labels = {
+      pt: { qNum: 'Orçamento', state: 'Estado', client: 'Cliente', vehicle: 'Veículo', plate: 'Matrícula', decidedOn: 'Data da aprovação', decidedOnRej: 'Data da rejeição', total: 'Valor', at: 'às', notified: 'A oficina foi notificada automaticamente e irá iniciar a preparação dos trabalhos.', rejectedInfo: 'Caso pretenda solicitar alterações, contacte diretamente a oficina.', back: 'Voltar ao GarageFlow', approved: 'Aprovado', rejected: 'Rejeitado' },
+      en: { qNum: 'Quote', state: 'Status', client: 'Client', vehicle: 'Vehicle', plate: 'Plate', decidedOn: 'Approval date', decidedOnRej: 'Rejection date', total: 'Amount', at: 'at', notified: 'The workshop has been automatically notified and will start preparing the work.', rejectedInfo: 'If you wish to request changes, please contact the workshop directly.', back: 'Back to GarageFlow', approved: 'Approved', rejected: 'Rejected' },
+      es: { qNum: 'Presupuesto', state: 'Estado', client: 'Cliente', vehicle: 'Vehículo', plate: 'Matrícula', decidedOn: 'Fecha de aprobación', decidedOnRej: 'Fecha de rechazo', total: 'Importe', at: 'a las', notified: 'El taller ha sido notificado automáticamente y comenzará la preparación de los trabajos.', rejectedInfo: 'Si desea solicitar cambios, contacte directamente con el taller.', back: 'Volver a GarageFlow', approved: 'Aprobado', rejected: 'Rechazado' },
+    } as const;
+    const L = (labels as any)[lang] || labels.pt;
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-        <div className="bg-card border border-border rounded-2xl p-10 text-center max-w-md w-full shadow-lg">
+        <div className="bg-card border border-border rounded-2xl p-8 sm:p-10 text-center max-w-lg w-full shadow-lg">
+          {shop?.logo_url && (
+            <img src={shop.logo_url} alt={shop.name} className="max-h-14 mx-auto mb-5 object-contain" />
+          )}
           {result === 'approved' ? (
             <>
               <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5">
                 <CheckCircle className="w-10 h-10 text-success" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">{t('approved')}</h1>
-              <p className="text-muted-foreground">{t('approvedDesc')}</p>
-              {quote?.signer_name && (
-                <div className="mt-4 p-3 bg-success/5 rounded-lg text-left space-y-1">
-                  <p className="text-sm"><span className="text-muted-foreground">{t('signedBy')}:</span> <strong>{quote.signer_name}</strong></p>
-                  {quote?.signature_hash && (
-                    <p className="text-xs text-muted-foreground font-mono break-all">{t('signatureHash')}: {quote.signature_hash.substring(0, 16)}...</p>
-                  )}
-                </div>
-              )}
+              <h1 className="text-2xl font-bold mb-2">✅ {t('approved')}</h1>
+              <p className="text-muted-foreground mb-2">{t('approvedDesc')}</p>
+              <p className="text-sm text-muted-foreground">{L.notified}</p>
             </>
           ) : result === 'expired' ? (
             <>
@@ -472,16 +483,44 @@ export default function QuoteApproval() {
               <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-5">
                 <XCircle className="w-10 h-10 text-destructive" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">{t('rejected')}</h1>
-              <p className="text-muted-foreground">{t('rejectedDesc')}</p>
+              <h1 className="text-2xl font-bold mb-2">❌ {t('rejected')}</h1>
+              <p className="text-muted-foreground mb-2">{t('rejectedDesc')}</p>
+              <p className="text-sm text-muted-foreground">{L.rejectedInfo}</p>
             </>
           )}
+
+          {result !== 'expired' && quote && (
+            <div className="mt-6 bg-muted/40 border border-border rounded-xl p-4 text-left space-y-2 text-sm">
+              <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.qNum}:</span><span className="font-mono font-semibold">{quote.number}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.state}:</span><span className="font-semibold">{result === 'approved' ? `✅ ${L.approved}` : `❌ ${L.rejected}`}</span></div>
+              {cli?.name && <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.client}:</span><span className="font-semibold">{cli.name}</span></div>}
+              {veh && (veh.make || veh.model) && (
+                <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.vehicle}:</span><span className="font-semibold">{veh.make} {veh.model}{veh.plate ? ` — ${veh.plate}` : ''}</span></div>
+              )}
+              {typeof quote.total === 'number' && (
+                <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.total}:</span><span className="font-mono font-semibold">{cur}{Number(quote.total).toFixed(2)}</span></div>
+              )}
+              <div className="flex justify-between gap-3"><span className="text-muted-foreground">{result === 'approved' ? L.decidedOn : L.decidedOnRej}:</span><span className="font-semibold">{fmtDate} {L.at} {fmtTime}</span></div>
+              {result === 'approved' && quote?.signer_name && (
+                <div className="flex justify-between gap-3"><span className="text-muted-foreground">{t('signedBy')}:</span><span className="font-semibold">{quote.signer_name}</span></div>
+              )}
+            </div>
+          )}
+
           <div className="mt-8 pt-5 border-t border-border">
-            {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="max-h-8 mx-auto mb-2" />}
             {shop?.name && <p className="font-semibold text-foreground">{shop.name}</p>}
             {shop?.email && <p className="text-sm text-muted-foreground">{shop.email}</p>}
             {shop?.phone && <p className="text-sm text-muted-foreground">{shop.phone}</p>}
           </div>
+
+          <Button
+            variant="outline"
+            className="mt-6"
+            onClick={() => { window.location.href = 'https://garageflow.pt'; }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {L.back}
+          </Button>
         </div>
       </div>
     );

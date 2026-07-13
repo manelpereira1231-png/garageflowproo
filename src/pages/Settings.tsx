@@ -50,6 +50,7 @@ export default function SettingsPage() {
     currency: "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
     nif: "", address: "", timezone: "Europe/Lisbon",
   });
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
   useEffect(() => {
     const load = async () => {

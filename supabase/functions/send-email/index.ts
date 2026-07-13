@@ -187,6 +187,7 @@ serve(async (req: Request) => {
     const useSandbox = !!SANDBOX_REDIRECT;
     const finalTo = useSandbox ? [SANDBOX_REDIRECT] : originalTo;
     const finalSubject = useSandbox ? `[Para: ${originalTo.join(", ")}] ${subject}` : subject;
+    const fallbackFrom = "GarageFlow <onboarding@resend.dev>";
     const finalFrom = useSandbox
       ? "GarageFlow <onboarding@resend.dev>"
       : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
@@ -227,7 +228,18 @@ serve(async (req: Request) => {
         content_type: a.content_type || "application/pdf",
       }));
     }
-    const { data, error } = await resend.emails.send(resendPayload);
+    let { data, error } = await resend.emails.send(resendPayload);
+
+    // Convites de equipa não devem falhar só porque o domínio de envio ainda
+    // não está verificado. Mantemos o envio funcional usando o remetente seguro
+    // do Resend apenas neste fluxo operacional.
+    const resendMessage = String((error as any)?.message || "");
+    if (invite && error && resendMessage.toLowerCase().includes("domain is not verified")) {
+      console.warn("Team invite sender domain not verified; retrying with fallback sender.");
+      const retry = await resend.emails.send({ ...resendPayload, from: fallbackFrom });
+      data = retry.data;
+      error = retry.error;
+    }
 
     const emailId = (data as any)?.id || emailIdEarly;
 

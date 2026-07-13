@@ -294,18 +294,28 @@ export default function Invoices() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
-        <Table>
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-[10%]" />
+            <col className="w-[22%]" />
+            <col className="w-[22%]" />
+            <col className="w-[10%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+          </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('invoices.number')}</TableHead>
-              <TableHead>{t('invoices.client')}</TableHead>
-              <TableHead className="hidden md:table-cell">{t('invoices.vehicle')}</TableHead>
-              <TableHead>{t('invoices.total')}</TableHead>
-              <TableHead className="hidden md:table-cell">{t('invoices.dueDate')}</TableHead>
-              <TableHead>Legal</TableHead>
-              <TableHead>{t('invoices.status')}</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="px-3">{t('invoices.number')}</TableHead>
+              <TableHead className="px-3">{t('invoices.client')}</TableHead>
+              <TableHead className="hidden md:table-cell px-3">{t('invoices.vehicle')}</TableHead>
+              <TableHead className="px-3">{t('invoices.total')}</TableHead>
+              <TableHead className="hidden md:table-cell px-3">{t('invoices.dueDate')}</TableHead>
+              <TableHead className="px-3">Legal</TableHead>
+              <TableHead className="px-3">{t('invoices.status')}</TableHead>
+              <TableHead className="px-2 text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -323,39 +333,38 @@ export default function Invoices() {
               </TableRow>
             ) : filtered.map(inv => (
               <TableRow key={inv.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium mono">{inv.number}</TableCell>
-                <TableCell>{(inv.clients as any)?.name}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {(inv.vehicles as any) ? `${(inv.vehicles as any)?.make} ${(inv.vehicles as any)?.model} — ${(inv.vehicles as any)?.plate}` : '—'}
+                <TableCell className="px-3 py-3 font-medium mono">{inv.number}</TableCell>
+                <TableCell className="px-3 py-3 whitespace-normal break-words">{(inv.clients as any)?.name}</TableCell>
+                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
+                  {(inv.vehicles as any) ? (
+                    <>
+                      <span className="break-words">{(inv.vehicles as any)?.make} {(inv.vehicles as any)?.model}</span>
+                      <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(inv.vehicles as any)?.plate})</span>
+                    </>
+                  ) : '—'}
                 </TableCell>
-                <TableCell className="font-semibold mono">{cur}{inv.total?.toFixed(2)}</TableCell>
-                <TableCell className="hidden md:table-cell">{inv.due_date || '—'}</TableCell>
-                <TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">{cur}{inv.total?.toFixed(2)}</TableCell>
+                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-nowrap">{inv.due_date || '—'}</TableCell>
+                <TableCell className="px-3 py-3">
                   <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[inv.status] || ''}>
                     {t(`invoices.status_${inv.status}`)}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
+                <TableCell className="px-2 py-3 text-right">
+                  <div className="flex items-center gap-0.5 justify-end flex-nowrap">
                     <Link to={`/invoices/${inv.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title={t('common.view') || 'Ver'} aria-label={t('common.view') || 'Ver'}>
+                        <Eye className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
-                    <Button variant="ghost" size="sm" className="text-xs" disabled={sendingInvoice === inv.id} onClick={(e) => {
-                      e.preventDefault();
-                      sendInvoiceByEmail(inv);
-                    }}>
-                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}Email
+                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceByEmail(inv); }} title="Email" aria-label="Email">
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => {
-                      e.preventDefault();
-                      sendInvoiceOnWhatsApp(inv);
-                    }}>
-                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 mr-1" />}WhatsApp
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceOnWhatsApp(inv); }} title="WhatsApp" aria-label="WhatsApp">
+                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
                     </Button>
                   </div>
                 </TableCell>

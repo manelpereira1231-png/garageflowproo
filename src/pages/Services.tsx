@@ -527,16 +527,39 @@ export default function Services() {
     toast.success(t('common.exported'));
   };
 
-  const filtered = services.filter(s =>
-    s.number?.toLowerCase().includes(search.toLowerCase()) ||
-    (s.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Client-side filtering (search + status + technician + client + date range)
+  const preFiltered = services.filter((s) => {
+    const q = filters.search.toLowerCase();
+    if (q) {
+      const hay = `${s.number ?? ""} ${(s.clients as any)?.name ?? ""} ${(s.vehicles as any)?.plate ?? ""} ${(s.vehicles as any)?.make ?? ""} ${(s.vehicles as any)?.model ?? ""} ${s.technician ?? ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (filters.status !== "all" && s.status !== filters.status) return false;
+    if (filters.technician && (s.technician || "").toLowerCase() !== filters.technician.toLowerCase()) return false;
+    if (filters.clientId && s.client_id !== filters.clientId) return false;
+    if (filters.dateFrom && new Date(s.created_at) < new Date(filters.dateFrom)) return false;
+    if (filters.dateTo && new Date(s.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
+    return true;
+  });
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const sortAccessors: Record<string, (s: any) => any> = {
+    number: (s) => s.number,
+    created_at: (s) => new Date(s.created_at).getTime(),
+    client: (s) => (s.clients as any)?.name || "",
+    vehicle: (s) => `${(s.vehicles as any)?.make || ""} ${(s.vehicles as any)?.model || ""}`,
+    total: (s) => Number(s.total) || 0,
+    status: (s) => s.status,
+  };
+  const view = apply(preFiltered, sortAccessors);
+  const totalCount = services.length;
+  const filtered = view.rows;
+  const totalFiltered = view.total;
 
-  // Status counts for tabs
-  const statusCounts: Record<string, number> = {};
-  services.forEach(s => { statusCounts[s.status] = (statusCounts[s.status] || 0) + 1; });
+  // Distinct technicians / clients for filter dropdowns
+  const technicianOptions = Array.from(new Set(services.map((s) => s.technician).filter(Boolean))) as string[];
+  const clientOptions = Array.from(
+    new Map(services.map((s) => [s.client_id, (s.clients as any)?.name]).filter(([id, n]) => id && n)).entries()
+  ) as [string, string][];
 
   return (
     <div className="w-full min-w-0">

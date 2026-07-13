@@ -278,46 +278,7 @@ export default function QuoteApproval() {
     setResult(action);
     setSubmitting(false);
 
-    // Send notification email
-    try {
-      const clientName = (quote.clients as any)?.name || "—";
-      const emailLabels: Record<string, { approved: string; rejected: string; statusText: (a: string) => string }> = {
-        pt: { approved: '✅ APROVADO', rejected: '❌ REJEITADO', statusText: (a) => a === 'approved' ? 'aprovado' : 'rejeitado' },
-        en: { approved: '✅ APPROVED', rejected: '❌ REJECTED', statusText: (a) => a === 'approved' ? 'approved' : 'rejected' },
-        es: { approved: '✅ APROBADO', rejected: '❌ RECHAZADO', statusText: (a) => a === 'approved' ? 'aprobado' : 'rechazado' },
-      };
-      const el = emailLabels[lang] || emailLabels.pt;
-      const actionLabel = action === 'approved' ? el.approved : el.rejected;
-      const vehicleLabels: Record<string, string> = { pt: 'Veículo', en: 'Vehicle', es: 'Vehículo' };
-      const vehicleLabel = vehicleLabels[lang] || vehicleLabels.pt;
-      const commentLabels: Record<string, string> = { pt: 'Comentário do cliente', en: 'Client comment', es: 'Comentario del cliente' };
-      const subject = `${actionLabel} — ${t('pending') === 'Pending' ? 'Quote' : lang === 'es' ? 'Presupuesto' : 'Orçamento'} ${quote.number} — ${clientName}`;
-      const commentHtml = clientComment.trim() ? `
-        <div style="background-color:#f8f9fa;border-left:3px solid #6366f1;padding:12px 16px;margin:16px 0;border-radius:4px;">
-          <p style="color:#6366f1;font-size:12px;margin:0 0 4px;font-weight:600;">${commentLabels[lang] || commentLabels.pt}</p>
-          <p style="color:#374151;font-size:14px;margin:0;">${clientComment.trim()}</p>
-        </div>` : '';
-      const html = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-          <div style="background-color:${action === 'approved' ? '#f0fdf4' : '#fef2f2'};border-left:4px solid ${action === 'approved' ? '#16a34a' : '#dc2626'};padding:16px;border-radius:4px;margin-bottom:20px;">
-            <h2 style="color:${action === 'approved' ? '#166534' : '#991b1b'};font-size:18px;margin:0 0 8px;">${actionLabel}</h2>
-            <p style="color:#374151;font-size:14px;margin:0;">${quote.number} — ${el.statusText(action)} — <strong>${clientName}</strong></p>
-          </div>
-          ${commentHtml}
-          <table style="width:100%;font-size:13px;color:#6b7280;">
-            <tr><td style="padding:4px 0;"><strong>${vehicleLabel}:</strong></td><td>${(quote.vehicles as any)?.make} ${(quote.vehicles as any)?.model} — ${(quote.vehicles as any)?.plate}</td></tr>
-            <tr><td style="padding:4px 0;"><strong>Total:</strong></td><td>€${quote.total?.toFixed(2)}</td></tr>
-          </table>
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-          <p style="color:#bbb;font-size:12px;text-align:center;">${shop.name} — GarageFlow</p>
-        </div>
-      `;
-      await sendEmail({ to: shop.email, subject, html });
-    } catch (emailErr) {
-      console.error("Failed to send notification email:", emailErr);
-    }
-
-    // On approval: auto-create work order and send approval-confirmation email to client
+    // On approval: auto-create work order and send the single approval-confirmation email to client
     if (action === 'approved') {
       try {
         const { workOrderId } = await autoCreateWorkOrderFromQuote(quote.id);

@@ -24,6 +24,7 @@ import ListSkeleton from "@/components/ListSkeleton";
 import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
+import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -116,8 +117,6 @@ export default function Services() {
     setSendingEmail(s.id);
     try {
       // Resolver token do orçamento associado (para o botão Aprovar).
-      // Igual à lógica do WhatsApp: usa o token direto se existir, senão
-      // procura o orçamento mais recente do mesmo cliente/veículo.
       let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
       let quoteRow: any = null;
       if (!quoteToken) {
@@ -137,40 +136,99 @@ export default function Services() {
         ? `${window.location.origin}/quote/${quoteToken}`
         : undefined;
 
-      const lines = (Array.isArray(s.lines) ? s.lines : (Array.isArray(quoteRow?.lines) ? quoteRow.lines : [])) as any[];
-      const vehicleInfo = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''} — ${(s.vehicles as any)?.plate || ''}`.trim();
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
-      // Assunto: quando estamos a pedir aprovação, tratamos como Orçamento
-      // (é isso que o cliente vê no link); caso contrário, mantemos "Ordem de serviço".
       const isApprovalStage = s.status === 'waiting_approval' && !!approvalUrl;
-      const subject = isApprovalStage
-        ? `${langLabels[lang] || langLabels.pt} ${s.number} — ${shop.name}`
-        : `Ordem de serviço ${s.number} — ${shop.name}`;
 
-      const html = quoteEmailHtml({
-        shopName: shop.name,
-        shopEmail: shop.email,
-        shopPhone: shop.phone,
-        shopNif: shop.nif,
-        shopAddress: shop.address,
-        shopLogoUrl: shop.logo_url,
-        clientName: (s.clients as any)?.name || '',
-        quoteNumber: s.number,
-        quoteDate: formatLocalDate(s.created_at),
-        validityDate: quoteRow?.validity_date || '',
-        lines,
-        subtotal: Number(s.subtotal || 0),
-        vatTotal: Number(s.vat_total || 0),
-        total: Number(s.total || 0),
-        currency: shop.currency || 'EUR',
-        vehicleInfo,
-        notes: s.notes || s.diagnosis || undefined,
-        approvalUrl,
-        lang,
-      });
+      // Mapa status da OS -> template curto (estilo WhatsApp).
+      // waiting_approval é o único que continua a enviar a tabela completa do orçamento
+      // porque precisa do CTA de aprovação online.
+      const statusToTemplateId: Record<string, string> = {
+        open: 'wo_received',
+        diagnosis: 'wo_diagnosis',
+        approved: 'wo_quote_approved',
+        in_progress: 'wo_in_progress',
+        completed: 'wo_completed',
+        delivered: 'wo_delivered',
+      };
+      const tplId = !isApprovalStage ? statusToTemplateId[s.status] : undefined;
+      const tpl = tplId ? messageTemplates.find((m) => m.id === tplId) : undefined;
+
+      const vehicleInfo = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''}`.trim();
+      const plate = (s.vehicles as any)?.plate || '';
+      const vehicleFull = `${vehicleInfo}${plate ? ` — ${plate}` : ''}`.trim();
+      const clientName = (s.clients as any)?.name || '';
+
+      let subject: string;
+      let html: string;
+
+      if (tpl) {
+        // === Email curto e profissional, alinhado com o WhatsApp ===
+        const subjectTpl = (lang === 'pt' ? tpl.subjectPt : tpl.subject) || tpl.subject;
+        const bodyTpl = (lang === 'pt' ? tpl.bodyPt : tpl.body) || tpl.body;
+        const vars: Record<string, string> = {
+          wo_number: s.number || '',
+          client_name: clientName,
+          shop_name: shop.name || '',
+          vehicle: vehicleInfo,
+          plate,
+          quote_total: Number(s.total || 0).toFixed(2),
+        };
+        const renderedSubject = renderTemplate(subjectTpl, vars);
+        const renderedBody = renderTemplate(bodyTpl, vars);
+        subject = `${renderedSubject} — ${s.number} — ${shop.name}`;
+
+        const bodyHtml = renderedBody
+          .split('\n')
+          .map((line) => line.trim() === ''
+            ? '<div style="height:8px;"></div>'
+            : `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 10px;">${line}</p>`)
+          .join('');
+
+        html = `
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;">
+            <div style="background-color:#262626;padding:22px 28px;border-radius:12px 12px 0 0;">
+              ${shop.logo_url ? `<img src="${shop.logo_url}" alt="${shop.name}" style="max-height:40px;margin-bottom:8px;display:block;" />` : ''}
+              <div style="color:#ffb41e;font-size:18px;font-weight:700;">${shop.name}</div>
+              <div style="color:#ffffff;font-size:14px;font-weight:600;margin-top:4px;">${renderedSubject}</div>
+            </div>
+            <div style="padding:26px 28px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+              ${bodyHtml}
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:22px 0 14px;" />
+              <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">
+                ${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}
+              </p>
+            </div>
+          </div>`;
+      } else {
+        // === Estágio de aprovação: mantém o email tabela completa com botão de aprovar ===
+        const lines = (Array.isArray(s.lines) ? s.lines : (Array.isArray(quoteRow?.lines) ? quoteRow.lines : [])) as any[];
+        subject = `${langLabels[lang] || langLabels.pt} ${s.number} — ${shop.name}`;
+        html = quoteEmailHtml({
+          shopName: shop.name,
+          shopEmail: shop.email,
+          shopPhone: shop.phone,
+          shopNif: shop.nif,
+          shopAddress: shop.address,
+          shopLogoUrl: shop.logo_url,
+          clientName,
+          quoteNumber: s.number,
+          quoteDate: formatLocalDate(s.created_at),
+          validityDate: quoteRow?.validity_date || '',
+          lines,
+          subtotal: Number(s.subtotal || 0),
+          vatTotal: Number(s.vat_total || 0),
+          total: Number(s.total || 0),
+          currency: shop.currency || 'EUR',
+          vehicleInfo: vehicleFull,
+          notes: s.notes || s.diagnosis || undefined,
+          approvalUrl,
+          lang,
+        });
+      }
 
       await sendEmail({ to: clientEmail, subject, html });
+
       const activeId = localStorage.getItem("garageflow_active_shop");
       if (activeId) {
         await supabase.from("email_logs").insert({

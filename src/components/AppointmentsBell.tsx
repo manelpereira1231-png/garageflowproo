@@ -49,7 +49,9 @@ export default function AppointmentsBell() {
 
   const load = useCallback(async () => {
     if (!ids.length) return;
-    const [appts, insp, listings] = await Promise.all([
+    const dismissed = getDismissed();
+    const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const [appts, insp, listings, quotes] = await Promise.all([
       supabase
         .from("appointments")
         .select("id,client_name,client_phone,service_type,date,time,source,notes")
@@ -63,6 +65,14 @@ export default function AppointmentsBell() {
         .in("shop_id", ids)
         .eq("status", "offered"),
       supabase.from("carity_listings").select("id").in("shop_id", ids),
+      supabase
+        .from("quotes")
+        .select("id, number, total, status, updated_at, clients(name)")
+        .in("shop_id", ids)
+        .in("status", ["approved", "converted"])
+        .gte("updated_at", since)
+        .order("updated_at", { ascending: false })
+        .limit(20),
     ]);
     setItems((appts.data as any) ?? []);
     setMarketInspections(insp.count || 0);
@@ -78,6 +88,33 @@ export default function AppointmentsBell() {
     } else {
       setMarketOffers(0);
     }
+
+    const quoteRows = (quotes.data as any[] | null) ?? [];
+    const filtered: ApprovedQuote[] = quoteRows
+      .filter((q) => !dismissed.has(q.id))
+      .map((q) => ({
+        id: q.id,
+        number: q.number,
+        total: Number(q.total || 0),
+        status: q.status,
+        client_name: q.clients?.name ?? null,
+        updated_at: q.updated_at,
+      }));
+
+    // Fire toast for freshly-approved quotes we hadn't seen yet in this session
+    const knownIds = seenApprovalsRef.current;
+    if (knownIds.size > 0) {
+      for (const q of filtered) {
+        if (!knownIds.has(q.id)) {
+          toast.success(`Orçamento ${q.number} aprovado por ${q.client_name || "cliente"}`, {
+            description: `Valor: €${q.total.toFixed(2)} · toque no sino para ver`,
+            duration: 8000,
+          });
+        }
+      }
+    }
+    seenApprovalsRef.current = new Set(filtered.map((q) => q.id));
+    setApprovedQuotes(filtered);
   }, [ids.join(",")]);
 
   useEffect(() => { load(); }, [load]);
@@ -89,6 +126,10 @@ export default function AppointmentsBell() {
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "carity_inspection_offers" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "carity_offers" }, () => load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "quotes" }, (payload: any) => {
+        const s = payload?.new?.status;
+        if (s === "approved" || s === "converted") load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ids.join(","), load]);
@@ -103,7 +144,13 @@ export default function AppointmentsBell() {
     setItems((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const count = items.length + marketInspections + marketOffers;
+  const dismissQuote = (id: string) => {
+    const s = getDismissed(); s.add(id); saveDismissed(s);
+    setApprovedQuotes((prev) => prev.filter((q) => q.id !== id));
+  };
+
+  const count = items.length + marketInspections + marketOffers + approvedQuotes.length;
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

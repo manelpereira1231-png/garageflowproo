@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2 } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -25,6 +25,9 @@ import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",

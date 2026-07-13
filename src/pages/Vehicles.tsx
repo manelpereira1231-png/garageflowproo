@@ -33,15 +33,12 @@ const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId
 export default function Vehicles() {
   const { t, language } = useLanguage();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _vCache = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(`vehicles:${_shopInit}:0`);
+  const _vCache = pageCache.get<{ rows: any[]; clients: any[] }>(`vehicles-all:${_shopInit}`);
   const [vehicles, setVehicles] = useState<any[]>(_vCache?.rows ?? []);
   const [clients, setClients] = useState<any[]>(_vCache?.clients ?? []);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(!_vCache);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_vCache?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [passportId, setPassportId] = useState<string | null>(null);
@@ -60,32 +57,35 @@ export default function Vehicles() {
   const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
   const plateExample = plateExampleFor(plateRegion);
 
+  const table = useTableState<VehiclesFilters>({
+    storageKey: "table:vehicles",
+    defaultFilters: defaultVehiclesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchData = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `vehicles:${activeShopId}:${page}`;
-    const cc = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(key);
-    if (cc) {
-      setVehicles(cc.rows); setClients(cc.clients); setTotalCount(cc.count); setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
+    const key = `vehicles-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; clients: any[] }>(key);
+    if (cc) { setVehicles(cc.rows); setClients(cc.clients); setDataLoading(false); }
+    else { setDataLoading(true); }
     try {
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
+      const { data: v } = await supabase.from("vehicles").select("*, clients(name)").eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(FETCH_LIMIT);
       if (v) setVehicles(v);
-      if (count !== null) setTotalCount(count);
       const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
       const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
       if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
-      pageCache.set(key, { rows: v ?? [], clients: c ?? [], count: count ?? 0 });
+      pageCache.set(key, { rows: v ?? [], clients: c ?? [] });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [page, activeShopId]);
+  useEffect(() => { fetchData(); }, [activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

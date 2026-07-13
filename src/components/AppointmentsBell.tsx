@@ -184,6 +184,38 @@ export default function AppointmentsBell() {
           </div>
         ) : (
           <div className="divide-y divide-border/60">
+            {approvedQuotes.length > 0 && (
+              <div className="p-3 bg-emerald-500/5">
+                <div className="text-xs font-semibold text-emerald-500 mb-2 flex items-center gap-1">
+                  <FileCheck2 className="w-3.5 h-3.5" /> Orçamentos aprovados pelo cliente
+                </div>
+                {approvedQuotes.map((q) => (
+                  <div key={q.id} className="flex items-center justify-between gap-2 py-1.5 px-2 -mx-2 rounded hover:bg-muted/40">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {q.number} · {q.client_name || "Cliente"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        €{q.total.toFixed(2)} · {new Date(q.updated_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button asChild size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setOpen(false); dismissQuote(q.id); }}>
+                        <Link to="/services">Ver</Link>
+                      </Button>
+                      <button
+                        aria-label="Dispensar"
+                        onClick={() => dismissQuote(q.id)}
+                        className="text-muted-foreground hover:text-foreground text-xs px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {(marketInspections > 0 || marketOffers > 0) && (
               <div className="p-3 bg-amber-500/5">
                 <div className="text-xs font-semibold text-amber-500 mb-2">GarageFlow Market</div>

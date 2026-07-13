@@ -393,7 +393,7 @@ export default function QuoteApproval() {
                 <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
               </div>
             </div>`;
-          await sendEmail({ to: clientEmail, subject: clientSubject, html: clientHtml });
+          await sendEmail({ to: clientEmail, subject: clientSubject, html: clientHtml, quote_token: token || undefined });
 
           // Audit trail entry
           try {

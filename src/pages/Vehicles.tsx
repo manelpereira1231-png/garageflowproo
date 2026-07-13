@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown, ScrollText } from "lucide-react";
+import { Plus, Search, Car, Pencil, Trash2, FileDown, ScrollText, X } from "lucide-react";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
@@ -18,10 +18,17 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type VehiclesFilters = { search: string; make: string; clientId: string; fuel: string };
+const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId: "", fuel: "" };
 
 export default function Vehicles() {
   const { t, language } = useLanguage();

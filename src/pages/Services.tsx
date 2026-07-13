@@ -104,20 +104,26 @@ export default function Services() {
   const { t } = useLanguage();
   const { limits, plan, canUseFeature } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _sCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`services:${_shopInit}:0:all`);
+  const _sCache = pageCache.get<{ rows: any[]; shop: any }>(`services-all:${_shopInit}`);
   const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [shop, setShop] = useState<any>(_sCache?.shop ?? null);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_sCache?.count ?? 0);
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dataLoading, setDataLoading] = useState(!_sCache);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  const table = useTableState<ServicesFilters>({
+    storageKey: "table:services",
+    defaultFilters: defaultServicesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+  const statusFilter = filters.status;
 
   /**
    * Envia email da OS reutilizando exatamente o mesmo template dos Orçamentos

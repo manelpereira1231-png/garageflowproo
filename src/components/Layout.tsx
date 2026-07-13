@@ -331,7 +331,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
-  const isServicesListRoute = location.pathname === "/services";
+  // Wide-layout routes: list pages with many columns and action buttons that
+  // need to breathe on 1920×1080 at 100% zoom. Keep this list tight — only
+  // pages where the max-width shell caused truncated columns.
+  const WIDE_LIST_ROUTES = ["/services", "/quotes", "/invoices"];
+  const isServicesListRoute = WIDE_LIST_ROUTES.includes(location.pathname);
   // Plan-based feature gating: hide items the current plan can't use.
   // Upgrade prompts remain available inside the destination page (PlanGate),
   // but the sidebar shows only what the user can actually open.

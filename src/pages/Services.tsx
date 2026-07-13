@@ -735,7 +735,7 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table className="table-fixed">
           <colgroup>
             <col className="w-[7%]" />
@@ -748,12 +748,12 @@ export default function Services() {
           </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-3">{t('quotes.number')}</TableHead>
-              <TableHead className="px-3">{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('quotes.vehicle')}</TableHead>
+              <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('quotes.number')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
-              <TableHead className="px-3">{t('quotes.total')}</TableHead>
-              <TableHead className="px-3">{t('quotes.status')}</TableHead>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>

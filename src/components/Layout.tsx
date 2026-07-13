@@ -58,6 +58,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
+import { useShopRole } from "@/hooks/useShopRole";
+import { PATH_REQUIRED_CAPABILITY, homeForRole } from "@/lib/rolePaths";
 
 type NavItem = {
   path: string;
@@ -415,9 +417,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Keep locked items visible so users discover what they would unlock
   // by upgrading. The click handler intercepts and redirects to /billing.
   const planVisibleItems = navItems;
+  const { role, can, loading: roleLoading } = useShopRole();
+  const roleFilteredItems = useMemo(
+    () => planVisibleItems.filter((item) => {
+      const cap = PATH_REQUIRED_CAPABILITY[item.path];
+      if (!cap) return true;
+      // While role is loading, show items (owner default) to avoid flicker.
+      if (roleLoading || !role) return true;
+      return can(cap);
+    }),
+    [planVisibleItems, role, roleLoading, can]
+  );
   const baseVisibleItems = isGuidedMode
-    ? planVisibleItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
-    : planVisibleItems.filter((item) => !sidebarPrefs.isHidden(item.path));
+    ? roleFilteredItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
+    : roleFilteredItems.filter((item) => !sidebarPrefs.isHidden(item.path));
+
+  // Role-based landing: on first mount, if user is at /dashboard but the role
+  // has a different home (technician → /workshop, reception → /agenda, ...),
+  // redirect. Only runs once per session to avoid fighting user navigation.
+  const roleRedirectedRef = useRef(false);
+  useEffect(() => {
+    if (roleRedirectedRef.current || roleLoading || !role) return;
+    if (role === "owner" || role === "admin" || role === "manager" || role === "super_admin") {
+      roleRedirectedRef.current = true;
+      return;
+    }
+    const home = homeForRole(role);
+    if (location.pathname === "/dashboard" || location.pathname === "/") {
+      roleRedirectedRef.current = true;
+      navigate(home, { replace: true });
+    } else {
+      roleRedirectedRef.current = true;
+    }
+  }, [role, roleLoading, location.pathname, navigate]);
 
   // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.
   const favoriteItems = isGuidedMode

@@ -177,7 +177,7 @@ export default function Agenda() {
     setLoading(true);
     const weekEnd = addDays(weekStart, 6);
 
-    const [apptRes, clientRes, vehicleRes, shopRes] = await Promise.all([
+    const [apptRes, clientRes, vehicleRes, shopRes, catalogRes, teamRes] = await Promise.all([
       supabase.from("appointments").select("*")
         .eq("shop_id", activeShopId)
         .gte("date", format(weekStart, "yyyy-MM-dd"))
@@ -185,18 +185,35 @@ export default function Agenda() {
         .order("time"),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name"),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null),
-      supabase.from("shops").select("slug").eq("id", activeShopId).single(),
+      supabase.from("shops").select("slug, opening_hours").eq("id", activeShopId).single(),
+      supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),
+      supabase.from("shop_users").select("id, user_id, role").eq("shop_id", activeShopId),
     ]);
 
     if (apptRes.data) setAppointments(apptRes.data as Appointment[]);
     if (clientRes.data) setClients(clientRes.data);
     if (vehicleRes.data) setVehicles(vehicleRes.data);
     if (shopRes.data?.slug) setShopSlug(shopRes.data.slug);
+    if ((shopRes.data as any)?.opening_hours) setOpeningHours((shopRes.data as any).opening_hours as OpeningHours);
+    if (catalogRes.data) setCatalog(catalogRes.data as CatalogItem[]);
+
+    if (teamRes.data && teamRes.data.length) {
+      const { data: emails } = await supabase.rpc("get_shop_member_emails", { _shop_id: activeShopId });
+      const emailMap = new Map((emails || []).map((e: any) => [e.user_id, e.email]));
+      setMechanics(
+        teamRes.data.map((m: any) => ({
+          id: m.user_id,
+          label: (emailMap.get(m.user_id) as string) || m.role,
+        }))
+      );
+    } else {
+      setMechanics([]);
+    }
     setLoading(false);
   };
 
   const resetForm = () => setForm({
-    client_id: "", vehicle_id: "", service_type: "",
+    client_id: "", vehicle_id: "", service_type: "", service_id: "", assigned_to: "",
     date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
     duration_minutes: 60, notes: "", status: "scheduled",
   });
@@ -207,19 +224,60 @@ export default function Agenda() {
       client_id: appt.client_id || "",
       vehicle_id: appt.vehicle_id || "",
       service_type: appt.service_type,
+      service_id: appt.service_id || "",
+      assigned_to: appt.assigned_to || "",
       date: appt.date,
       time: appt.time.slice(0, 5),
       duration_minutes: appt.duration_minutes,
       notes: appt.notes || "",
       status: appt.status,
     });
+    setSuggestions([]);
     setDialogOpen(true);
   };
 
   const openCreate = () => {
     setEditingAppt(null);
     resetForm();
+    setSuggestions([]);
     setDialogOpen(true);
+  };
+
+  const onServiceCatalogPick = (id: string) => {
+    const svc = catalog.find(c => c.id === id);
+    if (!svc) return;
+    setForm(f => ({
+      ...f,
+      service_id: id,
+      service_type: svc.name,
+      duration_minutes: svc.default_time || f.duration_minutes,
+    }));
+    setSuggestions([]);
+  };
+
+  const requestSuggestions = async () => {
+    if (!activeShopId) return;
+    setSuggesting(true);
+    try {
+      const slots = await suggestSlots({
+        shopId: activeShopId,
+        durationMinutes: form.duration_minutes,
+        openingHours,
+        preferredDate: form.date,
+        mechanicId: form.assigned_to || null,
+        mechanics,
+        limit: 3,
+      });
+      setSuggestions(slots);
+      if (!slots.length) toast({ title: t('agenda.noSlots') || 'Sem horários disponíveis nos próximos 14 dias', variant: "destructive" });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const applySuggestion = (s: SlotSuggestion) => {
+    setForm(f => ({ ...f, date: s.date, time: s.time, assigned_to: s.mechanicId || f.assigned_to }));
+    setSuggestions([]);
   };
 
   const handleSave = async () => {
@@ -228,11 +286,31 @@ export default function Agenda() {
       return;
     }
 
+    // Conflict detection
+    const conflict = await detectConflict({
+      shopId: activeShopId,
+      date: form.date,
+      time: form.time,
+      durationMinutes: form.duration_minutes,
+      mechanicId: form.assigned_to || null,
+      excludeId: editingAppt?.id,
+    });
+    if (conflict) {
+      toast({
+        title: t('agenda.conflict') || 'Conflito de horário',
+        description: t('agenda.conflictMsg') || 'Já existe uma marcação sobreposta. Usa "Sugerir horário" para encontrar um slot livre.',
+        variant: "destructive",
+      });
+      return;
+    }
+
     const payload = {
       shop_id: activeShopId,
       client_id: form.client_id || null,
       vehicle_id: form.vehicle_id || null,
       service_type: form.service_type,
+      service_id: form.service_id || null,
+      assigned_to: form.assigned_to || null,
       date: form.date,
       time: form.time,
       duration_minutes: form.duration_minutes,
@@ -253,6 +331,16 @@ export default function Agenda() {
         message: `${form.service_type} - ${form.date} ${form.time}`,
         priority: "low",
       } as any);
+      // Notify assigned mechanic
+      if (form.assigned_to) {
+        await supabase.from("notifications").insert({
+          shop_id: activeShopId,
+          user_id: form.assigned_to,
+          type: "appointment_assigned",
+          title: t('agenda.assignedTitle') || 'Nova marcação atribuída',
+          message: `${form.service_type} — ${form.date} ${form.time}`,
+        } as any);
+      }
       toast({ title: t('agenda.created') });
     }
 

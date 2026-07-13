@@ -115,6 +115,22 @@ serve(async (req: Request) => {
     // or clients of shops the caller belongs to. This prevents the function being abused
     // as an open relay for phishing.
     if (!isInternal && callerUser) {
+      // Team invite bypass: owner/admin of shop_id may invite arbitrary recipients.
+      if (invite && shop_id && typeof shop_id === "string") {
+        const [{ data: ownedShop }, { data: membership }] = await Promise.all([
+          admin.from("shops").select("id").eq("id", shop_id).eq("user_id", callerUser.id).maybeSingle(),
+          admin.from("shop_users").select("role").eq("shop_id", shop_id).eq("user_id", callerUser.id).maybeSingle(),
+        ]);
+        const role = (membership as any)?.role;
+        if (ownedShop || role === "owner" || role === "admin" || role === "manager") {
+          const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
+          if (recipients.length >= 1 && recipients.length <= 5) {
+            isInternal = true; // authorize this send
+          }
+        }
+      }
+    }
+    if (!isInternal && callerUser) {
       const recipients = (Array.isArray(to) ? to : [to])
         .map((e) => String(e).toLowerCase().trim())
         .filter(Boolean);

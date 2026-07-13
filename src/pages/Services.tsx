@@ -737,8 +737,9 @@ export default function Services() {
                     {t(`service.${s.status}`)}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-0.5 justify-end flex-wrap">
+                <TableCell className="text-right">
+                  <div className="flex items-center gap-0.5 justify-end flex-nowrap">
+
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
                         <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8" title={t('common.edit') || 'Editar'}>

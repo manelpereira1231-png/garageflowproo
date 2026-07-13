@@ -525,7 +525,7 @@ export default function Services() {
   services.forEach(s => { statusCounts[s.status] = (statusCounts[s.status] || 0) + 1; });
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('services.title')}</h1>
@@ -669,17 +669,26 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-x-auto">
-        <Table>
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-[7%]" />
+            <col className="w-[23%]" />
+            <col className="w-[17%]" />
+            <col className="w-[19%]" />
+            <col className="w-[8%]" />
+            <col className="w-[11%]" />
+            <col className="w-[15%]" />
+          </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('quotes.number')}</TableHead>
-              <TableHead>{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell">{t('quotes.vehicle')}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t('services.timeline')}</TableHead>
-              <TableHead>{t('quotes.total')}</TableHead>
-              <TableHead>{t('quotes.status')}</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="px-3">{t('quotes.number')}</TableHead>
+              <TableHead className="px-3">{t('quotes.client')}</TableHead>
+              <TableHead className="hidden md:table-cell px-3">{t('quotes.vehicle')}</TableHead>
+              <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
+              <TableHead className="px-3">{t('quotes.total')}</TableHead>
+              <TableHead className="px-3">{t('quotes.status')}</TableHead>
+              <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -712,37 +721,39 @@ export default function Services() {
               </TableRow>
             ) : filtered.map(s => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell>
-                  <div>
+                <TableCell className="px-3 py-3">
+                  <div className="min-w-0">
                     <span className="font-medium mono">{s.number}</span>
                     <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div>
-                    <span className="font-medium">{(s.clients as any)?.name}</span>
+                <TableCell className="px-3 py-3 whitespace-normal">
+                  <div className="min-w-0 leading-tight">
+                    <span className="font-medium break-words">{(s.clients as any)?.name}</span>
                     {s.technician && <p className="text-xs text-muted-foreground">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <span>{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
-                  <span className="mono text-xs text-muted-foreground ml-1">({(s.vehicles as any)?.plate})</span>
+                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
+                  <div className="min-w-0 leading-tight">
+                    <span className="break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
+                    <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
+                  </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                <TableCell className="hidden lg:table-cell px-2 py-3">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
-                <TableCell className="font-semibold mono">€{s.total?.toFixed(2)}</TableCell>
-                <TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">€{s.total?.toFixed(2)}</TableCell>
+                <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
                     {t(`service.${s.status}`)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="px-2 py-3 text-right">
                   <div className="flex items-center gap-0.5 justify-end flex-nowrap">
 
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
-                        <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8" title={t('common.edit') || 'Editar'}>
+                        <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8" title={t('common.edit') || 'Editar'}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
@@ -758,11 +769,17 @@ export default function Services() {
                     </Button>
                     {!['delivered', 'cancelled'].includes(s.status) && (
                       <>
-                        <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs gap-1 h-8 px-2">
+                        <Button
+                          variant="default"
+                          size="icon"
+                          onClick={() => advanceStatus(s)}
+                          className="h-8 w-8"
+                          aria-label={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                          title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                        >
                           <ChevronRightIcon className="w-3.5 h-3.5" />
-                          <span className="hidden xl:inline">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                           <XCircle className="w-3.5 h-3.5" />
                         </Button>
                       </>

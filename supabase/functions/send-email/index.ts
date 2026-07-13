@@ -68,11 +68,45 @@ serve(async (req: Request) => {
     }
 
     const body = await req.json() as SendEmailRequest;
-    const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments } = body;
+    const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments, quote_token } = body;
 
     if (!to || !subject || !html) {
       return new Response(JSON.stringify({ error: "Missing required fields: to, subject, html" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // Public token auth: unauthenticated quote-approval page sends via a signed quote token.
+    // We only allow sending to the quote's client email or the shop email, and only for
+    // quotes whose client has already decided (approved / rejected / converted).
+    if (!isInternal && !callerUser && quote_token && typeof quote_token === "string" && quote_token.length >= 8) {
+      const { data: q } = await admin
+        .from("quotes")
+        .select("id, status, client_id, shop_id")
+        .eq("token", quote_token)
+        .maybeSingle();
+      if (q && ["approved", "rejected", "converted"].includes(String(q.status))) {
+        const [{ data: client }, { data: shop }] = await Promise.all([
+          admin.from("clients").select("email").eq("id", q.client_id).maybeSingle(),
+          admin.from("shops").select("email").eq("id", q.shop_id).maybeSingle(),
+        ]);
+        const allowed = new Set<string>();
+        const ce = String((client as any)?.email ?? "").toLowerCase().trim();
+        const se = String((shop as any)?.email ?? "").toLowerCase().trim();
+        if (ce) allowed.add(ce);
+        if (se) allowed.add(se);
+        const recipients = (Array.isArray(to) ? to : [to])
+          .map((e) => String(e).toLowerCase().trim())
+          .filter(Boolean);
+        const blocked = recipients.filter((r) => !allowed.has(r));
+        if (recipients.length > 0 && recipients.length <= 5 && blocked.length === 0) {
+          isInternal = true; // treat as authorized send from this point
+        }
+      }
+    }
+
+    if (!isInternal && !callerUser) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
     // For user-JWT callers, restrict recipients to: caller's own email, shop members,

@@ -374,9 +374,32 @@ export default function Quotes() {
         </div>
       )}
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('quotes.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('quotes.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="all">Todos os estados</option>
+          <option value="draft">{t('status.draft')}</option>
+          <option value="sent">{t('status.sent')}</option>
+          <option value="approved">{t('status.approved')}</option>
+          <option value="rejected">{t('status.rejected')}</option>
+          <option value="expired">{t('status.expired')}</option>
+          <option value="converted">{t('status.converted')}</option>
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
+        <div className="flex gap-1">
+          <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state CTA */}

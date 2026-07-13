@@ -282,9 +282,32 @@ export default function Invoices() {
         </div>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('invoices.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('invoices.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="all">Todos os estados</option>
+          <option value="draft">{t('invoices.status_draft')}</option>
+          <option value="issued">{t('invoices.status_issued')}</option>
+          <option value="paid">{t('invoices.status_paid')}</option>
+          <option value="partial">{t('invoices.status_partial')}</option>
+          <option value="cancelled">{t('invoices.status_cancelled')}</option>
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
+        <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
+        <div className="flex gap-1">
+          <Input type="number" placeholder="Total min" value={filters.minTotal} onChange={e => updateFilter('minTotal', e.target.value)} />
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Mobile: Card view */}

@@ -18,6 +18,12 @@ import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
+import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
+
+const DAYS: { key: keyof OpeningHours; label: string }[] = [
+  { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
+  { key: "thu", label: "Qui" }, { key: "fri", label: "Sex" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
+];
 
 const countries = Object.keys(VAT_RATES);
 

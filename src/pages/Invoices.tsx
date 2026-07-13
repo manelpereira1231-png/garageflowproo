@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle, FileArchive, Loader2, Mail } from "lucide-react";
+import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -18,6 +18,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import ListSkeleton from "@/components/ListSkeleton";
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { pageCache } from "@/lib/pageCache";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -27,7 +30,11 @@ const statusColors: Record<string, string> = {
   partial: "bg-warning/10 text-warning",
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type InvoicesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string; minTotal: string; maxTotal: string };
+const defaultInvoicesFilters: InvoicesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "", minTotal: "", maxTotal: "" };
 
 export default function Invoices() {
   const { t } = useLanguage();

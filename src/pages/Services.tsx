@@ -184,6 +184,12 @@ export default function Services() {
             : `<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 10px;">${line}</p>`)
           .join('');
 
+        const ctaHtml = (s.status === 'waiting_approval' && approvalUrl)
+          ? `<div style="text-align:center;margin:20px 0 6px;">
+               <a href="${approvalUrl}" style="display:inline-block;background-color:#ffb41e;color:#262626;font-weight:700;font-size:15px;text-decoration:none;padding:12px 28px;border-radius:8px;">Ver e aprovar orçamento</a>
+             </div>`
+          : '';
+
         html = `
           <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;">
             <div style="background-color:#262626;padding:22px 28px;border-radius:12px 12px 0 0;">
@@ -193,6 +199,7 @@ export default function Services() {
             </div>
             <div style="padding:26px 28px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
               ${bodyHtml}
+              ${ctaHtml}
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:22px 0 14px;" />
               <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">
                 ${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}

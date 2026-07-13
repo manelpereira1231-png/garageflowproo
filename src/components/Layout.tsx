@@ -331,6 +331,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const currentNav = navItems.find((item) => isPathActive(location.pathname, item.path));
   const pageTitle = currentNav?.label || shopName || "GarageFlow";
+  const isServicesListRoute = location.pathname === "/services";
   // Plan-based feature gating: hide items the current plan can't use.
   // Upgrade prompts remain available inside the destination page (PlanGate),
   // but the sidebar shows only what the user can actually open.
@@ -690,8 +691,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Button>
         </header>
 
-        <div className="flex-1 p-3 sm:p-4 lg:p-6 page-in">
-          <div className="page-shell">
+        <div className={`flex-1 page-in ${isServicesListRoute ? "p-2 sm:p-3 lg:p-4" : "p-3 sm:p-4 lg:p-6"}`}>
+          <div className={isServicesListRoute ? "w-full min-w-0" : "page-shell"}>
             {/* No fallback — keeps the previous page visible until the next chunk
                 is ready. Combined with hover/idle prefetch, navigation feels instant. */}
             <Suspense fallback={null}>

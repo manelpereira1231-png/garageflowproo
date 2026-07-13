@@ -53,6 +53,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
 import AppointmentsBell from "@/components/AppointmentsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { pageCache } from "@/lib/pageCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
@@ -92,6 +93,7 @@ const isEssentialPath = (pathname: string) =>
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
+  const [pendingQuoteApprovalCount, setPendingQuoteApprovalCount] = useState(0);
   const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");
   const location = useLocation();
@@ -150,6 +152,77 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [activeShopId]);
+
+  // Global realtime: quote approvals from the public client link.
+  // The database creates the notification at approval time; this listener makes
+  // the workshop see it immediately without refreshing the ERP.
+  useEffect(() => {
+    if (!activeShopId) {
+      setPendingQuoteApprovalCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    const isQuoteApprovalNotification = (row: any) => row?.data?.event === "quote_approved";
+    const loadQuoteApprovalCount = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeShopId)
+        .eq("type", "success")
+        .eq("read", false)
+        .contains("data", { event: "quote_approved" });
+      if (!cancelled) setPendingQuoteApprovalCount(count || 0);
+    };
+
+    loadQuoteApprovalCount();
+
+    const channel = supabase
+      .channel(`global-quote-approvals-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `shop_id=eq.${activeShopId}` },
+        (payload: any) => {
+          const row = payload.new;
+          if (!isQuoteApprovalNotification(row)) return;
+          pageCache.clear(`quotes:${activeShopId}:`);
+          loadQuoteApprovalCount();
+
+          try {
+            const raw = localStorage.getItem(`garageflow_sidebar_prefs_${activeShopId}`);
+            if (raw && JSON.parse(raw)?.mutedNotif?.includes("/quotes")) return;
+          } catch { /* ignore */ }
+
+          const quoteNumber = row.data?.quote_number ? ` ${row.data.quote_number}` : "";
+          toast.success(`✅ Orçamento${quoteNumber} aprovado`, {
+            description: row.message || "O cliente aprovou o orçamento.",
+            action: { label: "Ver", onClick: () => navigate("/quotes") },
+            duration: 20000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [activeShopId, navigate]);
+
+  useEffect(() => {
+    if (!activeShopId || location.pathname !== "/quotes") return;
+    if (pendingQuoteApprovalCount === 0) return;
+
+    const markQuoteApprovalsRead = async () => {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("shop_id", activeShopId)
+        .eq("type", "success")
+        .eq("read", false)
+        .contains("data", { event: "quote_approved" });
+      setPendingQuoteApprovalCount(0);
+    };
+
+    markQuoteApprovalsRead();
+  }, [activeShopId, location.pathname, pendingQuoteApprovalCount]);
 
   // Global realtime listener for new inspection offers (Market) + pending count
   useEffect(() => {
@@ -238,7 +311,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // ── Operação Diária ──
     { path: "/clients", label: t("nav.clients"), icon: Users, featureSlug: "clients" },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car, featureSlug: "vehicles" },
-    { path: "/quotes", label: t("nav.quotes"), icon: FileText, featureSlug: "quotes" },
+    { path: "/quotes", label: t("nav.quotes"), icon: FileText, badge: pendingQuoteApprovalCount, featureSlug: "quotes" },
     { path: "/services", label: t("nav.services"), icon: Wrench, featureSlug: "services" },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat, featureSlug: "workshop_mode" },
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays, featureSlug: "agenda" },
@@ -292,7 +365,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
     { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
-  ], [pendingAlertCount, pendingMarketCount, t, marketStatusReady, isCarityPartner]);
+  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —

@@ -277,14 +277,14 @@ export default function Clients() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('clients.name')}</TableHead>
-              <TableHead>{t('clients.contact')}</TableHead>
-              <TableHead>{t('clients.company')}</TableHead>
-              <TableHead>{t('clients.nif')}</TableHead>
+              <SortableHeader sortKey="name" currentSort={sort} onToggle={toggleSort}>{t('clients.name')}</SortableHeader>
+              <SortableHeader sortKey="email" currentSort={sort} onToggle={toggleSort}>{t('clients.contact')}</SortableHeader>
+              <SortableHeader sortKey="company" currentSort={sort} onToggle={toggleSort}>{t('clients.company')}</SortableHeader>
+              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{t('clients.nif')}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

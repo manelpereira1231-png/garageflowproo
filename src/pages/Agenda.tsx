@@ -72,9 +72,14 @@ export default function Agenda() {
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; make: string; model: string; client_id: string }[]>([]);
   const [shopSlug, setShopSlug] = useState("");
   const [loading, setLoading] = useState(true);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
+  const [suggestions, setSuggestions] = useState<SlotSuggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
 
   const [form, setForm] = useState({
-    client_id: "", vehicle_id: "", service_type: "",
+    client_id: "", vehicle_id: "", service_type: "", service_id: "", assigned_to: "",
     date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
     duration_minutes: 60, notes: "", status: "scheduled",
   });

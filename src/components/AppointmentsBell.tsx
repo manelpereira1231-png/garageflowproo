@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { CalendarClock, Check, Clock } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { CalendarClock, Check, Clock, FileCheck2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "@/hooks/useShopContext";
@@ -18,13 +18,34 @@ type Appt = {
   notes: string | null;
 };
 
+type ApprovedQuote = {
+  id: string;
+  number: string;
+  total: number;
+  status: string;
+  client_name: string | null;
+  updated_at: string;
+  work_order_id?: string | null;
+};
+
+const DISMISS_KEY = "gf_dismissed_quote_approvals";
+const getDismissed = (): Set<string> => {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) || "[]")); } catch { return new Set(); }
+};
+const saveDismissed = (s: Set<string>) => {
+  try { localStorage.setItem(DISMISS_KEY, JSON.stringify([...s].slice(-200))); } catch {}
+};
+
 export default function AppointmentsBell() {
   const { activeShopId, shops } = useShopContext();
   const ids = activeShopId ? [activeShopId] : (shops || []).map((s) => s.id);
   const [items, setItems] = useState<Appt[]>([]);
   const [marketInspections, setMarketInspections] = useState<number>(0);
   const [marketOffers, setMarketOffers] = useState<number>(0);
+  const [approvedQuotes, setApprovedQuotes] = useState<ApprovedQuote[]>([]);
   const [open, setOpen] = useState(false);
+  const seenApprovalsRef = useRef<Set<string>>(new Set());
+
 
   const load = useCallback(async () => {
     if (!ids.length) return;

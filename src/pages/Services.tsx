@@ -138,20 +138,19 @@ export default function Services() {
 
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
-      const isApprovalStage = s.status === 'waiting_approval' && !!approvalUrl;
-
       // Mapa status da OS -> template curto (estilo WhatsApp).
-      // waiting_approval é o único que continua a enviar a tabela completa do orçamento
-      // porque precisa do CTA de aprovação online.
+      // Todos os estágios usam mensagens curtas — nunca reenviar a tabela do orçamento.
+      // O link de aprovação online é adicionado como CTA no estágio waiting_approval.
       const statusToTemplateId: Record<string, string> = {
         open: 'wo_received',
         diagnosis: 'wo_diagnosis',
+        waiting_approval: 'wo_awaiting_approval',
         approved: 'wo_quote_approved',
         in_progress: 'wo_in_progress',
         completed: 'wo_completed',
         delivered: 'wo_delivered',
       };
-      const tplId = !isApprovalStage ? statusToTemplateId[s.status] : undefined;
+      const tplId = statusToTemplateId[s.status];
       const tpl = tplId ? messageTemplates.find((m) => m.id === tplId) : undefined;
 
       const vehicleInfo = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''}`.trim();

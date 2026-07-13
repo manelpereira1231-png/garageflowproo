@@ -352,7 +352,7 @@ export default function Invoices() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table className="table-fixed">
           <colgroup>
             <col className="w-[10%]" />
@@ -366,13 +366,13 @@ export default function Invoices() {
           </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-3">{t('invoices.number')}</TableHead>
-              <TableHead className="px-3">{t('invoices.client')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('invoices.vehicle')}</TableHead>
-              <TableHead className="px-3">{t('invoices.total')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('invoices.dueDate')}</TableHead>
+              <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('invoices.number')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('invoices.client')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('invoices.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('invoices.total')}</SortableHeader>
+              <SortableHeader sortKey="due_date" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('invoices.dueDate')}</SortableHeader>
               <TableHead className="px-3">Legal</TableHead>
-              <TableHead className="px-3">{t('invoices.status')}</TableHead>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('invoices.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>

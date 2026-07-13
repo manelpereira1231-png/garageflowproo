@@ -557,9 +557,9 @@ export default function Services() {
 
   // Distinct technicians / clients for filter dropdowns
   const technicianOptions = Array.from(new Set(services.map((s) => s.technician).filter(Boolean))) as string[];
-  const clientOptions = Array.from(
-    new Map(services.map((s) => [s.client_id, (s.clients as any)?.name]).filter(([id, n]) => id && n)).entries()
-  ) as [string, string][];
+  const clientOptions: [string, string][] = Array.from(
+    new Map(services.map((s) => [s.client_id, (s.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
+  );
 
   return (
     <div className="w-full min-w-0">

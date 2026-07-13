@@ -37,6 +37,10 @@ interface SendEmailRequest {
   cta?: { label: string; url: string };
   footerNote?: string;
   attachments?: EmailAttachment[];
+  /** Public-token auth: allow sending from unauthenticated public quote approval page.
+   *  When present, we validate the token matches a decided quote and the recipient(s)
+   *  are limited to that quote's client email and the shop's email. */
+  quote_token?: string;
 }
 
 serve(async (req: Request) => {

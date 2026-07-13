@@ -45,26 +45,32 @@ export default function Quotes() {
   const navigate = useNavigate();
   const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _qCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`quotes:${_shopInit}:0`);
+  const _qCache = pageCache.get<{ rows: any[]; shop: any }>(`quotes-all:${_shopInit}`);
   const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [shop, setShop] = useState<any>(_qCache?.shop ?? null);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_qCache?.count ?? 0);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [dataLoading, setDataLoading] = useState(!_qCache);
 
   const activeShopId = useActiveShopId();
 
+  const table = useTableState<QuotesFilters>({
+    storageKey: "table:quotes",
+    defaultFilters: defaultQuotesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchQuotes = useCallback(async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `quotes:${activeShopId}:${page}`;
-    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    const key = `quotes-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
     if (cc) {
-      setQuotes(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+      setQuotes(cc.rows); setShop(cc.shop); setDataLoading(false);
     } else {
       setDataLoading(true);
     }
@@ -72,17 +78,14 @@ export default function Quotes() {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const { data } = await supabase
         .from("quotes")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
       if (data) setQuotes(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
+      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
 
       if (limits.maxQuotesPerMonth !== Infinity) {
         const now = new Date();
@@ -97,7 +100,7 @@ export default function Quotes() {
     } finally {
       setDataLoading(false);
     }
-  }, [activeShopId, page, limits.maxQuotesPerMonth]);
+  }, [activeShopId, limits.maxQuotesPerMonth]);
 
   useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 

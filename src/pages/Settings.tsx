@@ -79,6 +79,7 @@ export default function SettingsPage() {
           timezone: shopData.timezone || "Europe/Lisbon",
         });
         setLogoPreview(shopData.logo_url || null);
+        if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);
       }
     };
     load();

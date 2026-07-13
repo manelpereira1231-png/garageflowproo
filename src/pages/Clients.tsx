@@ -38,7 +38,10 @@ interface ClientRow {
   portal_token: string | null;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+type ClientsFilters = { search: string };
+const defaultClientsFilters: ClientsFilters = { search: "" };
 
 const copyPortalLink = (portalToken: string | null, successMsg: string) => {
   if (!portalToken) return;

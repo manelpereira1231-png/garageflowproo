@@ -371,7 +371,7 @@ export default function Services() {
     }
   };
 
-  useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
+  useEffect(() => { fetchServices(); }, [activeShopId]);
   useEffect(() => { if (activeShopId) fetchStats(activeShopId); }, [activeShopId]);
 
   const advanceStatus = async (service: any) => {

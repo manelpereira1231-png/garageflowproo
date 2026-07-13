@@ -195,8 +195,12 @@ export default function QuoteApproval() {
       setShop(s);
       setLoading(false);
 
-      if (['approved', 'rejected'].includes(q.status)) {
-        setResult(q.status as 'approved' | 'rejected');
+      if (['approved', 'rejected', 'converted'].includes(q.status)) {
+        setResult(q.status === 'rejected' ? 'rejected' : 'approved');
+        return;
+      }
+      if (q.status === 'expired') {
+        setResult('expired');
         return;
       }
 

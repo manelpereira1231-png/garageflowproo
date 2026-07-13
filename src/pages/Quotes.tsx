@@ -307,13 +307,36 @@ export default function Quotes() {
     toast.success(t('common.exported'));
   };
 
-  const filtered = quotes.filter(q =>
-    q.number?.toLowerCase().includes(search.toLowerCase()) ||
-    (q.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
+  const preFiltered = quotes.filter((q) => {
+    const s = filters.search.toLowerCase();
+    if (s) {
+      const hay = `${q.number ?? ""} ${(q.clients as any)?.name ?? ""} ${(q.vehicles as any)?.plate ?? ""} ${(q.vehicles as any)?.make ?? ""} ${(q.vehicles as any)?.model ?? ""}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (filters.status !== "all" && q.status !== filters.status) return false;
+    if (filters.clientId && q.client_id !== filters.clientId) return false;
+    if (filters.dateFrom && new Date(q.created_at) < new Date(filters.dateFrom)) return false;
+    if (filters.dateTo && new Date(q.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  const view = apply(preFiltered, {
+    number: (q) => q.number,
+    created_at: (q) => new Date(q.created_at).getTime(),
+    client: (q) => (q.clients as any)?.name || "",
+    vehicle: (q) => `${(q.vehicles as any)?.make || ""} ${(q.vehicles as any)?.model || ""}`,
+    total: (q) => Number(q.total) || 0,
+    profit: (q) => Number(q.profit) || 0,
+    status: (q) => q.status,
+  });
+  const filtered = view.rows;
+  const totalCount = quotes.length;
+
+  const clientOptions: [string, string][] = Array.from(
+    new Map(quotes.map((q) => [q.client_id, (q.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
 
   const getStatusLabel = (status: QuoteStatus) => t(`status.${status}`);
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <div>

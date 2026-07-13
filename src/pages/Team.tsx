@@ -160,8 +160,17 @@ export default function Team() {
                   <Select value={inviteRole} onValueChange={setInviteRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="admin">
+                        <div className="flex items-center gap-2"><Shield className="w-4 h-4" />Administrador</div>
+                      </SelectItem>
                       <SelectItem value="manager">
                         <div className="flex items-center gap-2"><Shield className="w-4 h-4" />{t('team.role.manager')}</div>
+                      </SelectItem>
+                      <SelectItem value="reception">
+                        <div className="flex items-center gap-2"><Users className="w-4 h-4" />Receção</div>
+                      </SelectItem>
+                      <SelectItem value="commercial">
+                        <div className="flex items-center gap-2"><Users className="w-4 h-4" />Comercial</div>
                       </SelectItem>
                       <SelectItem value="technician">
                         <div className="flex items-center gap-2"><Wrench className="w-4 h-4" />{t('team.role.technician')}</div>
@@ -169,7 +178,11 @@ export default function Team() {
                     </SelectContent>
                   </Select>
                   <p className="text-[11px] text-muted-foreground">
-                    {inviteRole === 'manager' ? t('team.roleDescManager') : t('team.roleDescTechnician')}
+                    {inviteRole === 'admin' && 'Acesso quase total — exceto transferir propriedade.'}
+                    {inviteRole === 'manager' && t('team.roleDescManager')}
+                    {inviteRole === 'reception' && 'Receção — clientes, veículos, orçamentos, ordens e agenda. Sem dados financeiros.'}
+                    {inviteRole === 'commercial' && 'Comercial — clientes, leads e orçamentos. Sem stock nem financeiro.'}
+                    {inviteRole === 'technician' && t('team.roleDescTechnician')}
                   </p>
                 </div>
                 {!canInvite && (

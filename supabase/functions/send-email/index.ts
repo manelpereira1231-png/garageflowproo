@@ -41,6 +41,9 @@ interface SendEmailRequest {
    *  When present, we validate the token matches a decided quote and the recipient(s)
    *  are limited to that quote's client email and the shop's email. */
   quote_token?: string;
+  /** Team invite path: authenticated owner/admin of shop_id may invite any recipient. */
+  invite?: boolean;
+  shop_id?: string;
 }
 
 serve(async (req: Request) => {

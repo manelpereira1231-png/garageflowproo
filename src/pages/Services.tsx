@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, ChevronLeft, ChevronRight, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2 } from "lucide-react";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -25,6 +25,9 @@ import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -49,7 +52,20 @@ const statusIcons: Record<ServiceStatus, any> = {
 };
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type ServicesFilters = {
+  search: string;
+  status: string;
+  technician: string;
+  clientId: string;
+  dateFrom: string;
+  dateTo: string;
+};
+const defaultServicesFilters: ServicesFilters = {
+  search: "", status: "all", technician: "", clientId: "", dateFrom: "", dateTo: "",
+};
 
 function RepairTimeline({ status }: { status: ServiceStatus }) {
   const currentIdx = statusFlow.indexOf(status);
@@ -88,20 +104,26 @@ export default function Services() {
   const { t } = useLanguage();
   const { limits, plan, canUseFeature } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _sCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`services:${_shopInit}:0:all`);
+  const _sCache = pageCache.get<{ rows: any[]; shop: any }>(`services-all:${_shopInit}`);
   const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [shop, setShop] = useState<any>(_sCache?.shop ?? null);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_sCache?.count ?? 0);
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dataLoading, setDataLoading] = useState(!_sCache);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  const table = useTableState<ServicesFilters>({
+    storageKey: "table:services",
+    defaultFilters: defaultServicesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+  const statusFilter = filters.status;
 
   /**
    * Envia email da OS reutilizando exatamente o mesmo template dos Orçamentos
@@ -324,10 +346,10 @@ export default function Services() {
 
   const fetchServices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `services:${activeShopId}:${page}:${statusFilter}`;
-    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    const key = `services-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
     if (cc) {
-      setServices(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+      setServices(cc.rows); setShop(cc.shop); setDataLoading(false);
     } else {
       setDataLoading(true);
     }
@@ -335,29 +357,21 @@ export default function Services() {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let query = supabase
+      const { data } = await supabase
         .from("work_orders")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)")
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-
-      const { data, count } = await query;
       if (data) setServices(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
+      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchServices(); }, [page, statusFilter, activeShopId]);
+  useEffect(() => { fetchServices(); }, [activeShopId]);
   useEffect(() => { if (activeShopId) fetchStats(activeShopId); }, [activeShopId]);
 
   const advanceStatus = async (service: any) => {
@@ -513,16 +527,39 @@ export default function Services() {
     toast.success(t('common.exported'));
   };
 
-  const filtered = services.filter(s =>
-    s.number?.toLowerCase().includes(search.toLowerCase()) ||
-    (s.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
+  // Client-side filtering (search + status + technician + client + date range)
+  const preFiltered = services.filter((s) => {
+    const q = filters.search.toLowerCase();
+    if (q) {
+      const hay = `${s.number ?? ""} ${(s.clients as any)?.name ?? ""} ${(s.vehicles as any)?.plate ?? ""} ${(s.vehicles as any)?.make ?? ""} ${(s.vehicles as any)?.model ?? ""} ${s.technician ?? ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (filters.status !== "all" && s.status !== filters.status) return false;
+    if (filters.technician && (s.technician || "").toLowerCase() !== filters.technician.toLowerCase()) return false;
+    if (filters.clientId && s.client_id !== filters.clientId) return false;
+    if (filters.dateFrom && new Date(s.created_at) < new Date(filters.dateFrom)) return false;
+    if (filters.dateTo && new Date(s.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  const sortAccessors: Record<string, (s: any) => any> = {
+    number: (s) => s.number,
+    created_at: (s) => new Date(s.created_at).getTime(),
+    client: (s) => (s.clients as any)?.name || "",
+    vehicle: (s) => `${(s.vehicles as any)?.make || ""} ${(s.vehicles as any)?.model || ""}`,
+    total: (s) => Number(s.total) || 0,
+    status: (s) => s.status,
+  };
+  const view = apply(preFiltered, sortAccessors);
+  const totalCount = services.length;
+  const filtered = view.rows;
+  const totalFiltered = view.total;
+
+  // Distinct technicians / clients for filter dropdowns
+  const technicianOptions = Array.from(new Set(services.map((s) => s.technician).filter(Boolean))) as string[];
+  const clientOptions: [string, string][] = Array.from(
+    new Map(services.map((s) => [s.client_id, (s.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  // Status counts for tabs
-  const statusCounts: Record<string, number> = {};
-  services.forEach(s => { statusCounts[s.status] = (statusCounts[s.status] || 0) + 1; });
 
   return (
     <div className="w-full min-w-0">
@@ -572,7 +609,7 @@ export default function Services() {
         <Button
           variant={statusFilter === "all" ? "default" : "outline"}
           size="sm"
-          onClick={() => { setStatusFilter("all"); setPage(0); }}
+          onClick={() => updateFilter("status", "all")}
           className="text-xs shrink-0"
         >
           {t('services.allStatuses') || 'Todos'} ({Object.values(statusCountsAll).reduce((a,b)=>a+b,0) || totalCount})
@@ -585,7 +622,7 @@ export default function Services() {
               key={s}
               variant={statusFilter === s ? "default" : "outline"}
               size="sm"
-              onClick={() => { setStatusFilter(s); setPage(0); }}
+              onClick={() => updateFilter("status", s)}
               className="text-xs shrink-0 gap-1"
             >
               <Icon className="w-3 h-3" />
@@ -596,10 +633,39 @@ export default function Services() {
         })}
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('services.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('services.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select
+          value={filters.clientId}
+          onChange={(e) => updateFilter('clientId', e.target.value)}
+          className="h-10 px-3 rounded-md bg-background border border-input text-sm"
+        >
+          <option value="">Todos os clientes</option>
+          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <select
+          value={filters.technician}
+          onChange={(e) => updateFilter('technician', e.target.value)}
+          className="h-10 px-3 rounded-md bg-background border border-input text-sm"
+        >
+          <option value="">Todos os técnicos</option>
+          {technicianOptions.map(tName => <option key={tName} value={tName}>{tName}</option>)}
+        </select>
+        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
+        <div className="flex gap-1">
+          <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
+
 
       {/* Mobile: Card view */}
       <div className="sm:hidden space-y-2">
@@ -669,7 +735,7 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table className="table-fixed">
           <colgroup>
             <col className="w-[7%]" />
@@ -682,12 +748,12 @@ export default function Services() {
           </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-3">{t('quotes.number')}</TableHead>
-              <TableHead className="px-3">{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('quotes.vehicle')}</TableHead>
+              <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('quotes.number')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
-              <TableHead className="px-3">{t('quotes.total')}</TableHead>
-              <TableHead className="px-3">{t('quotes.status')}</TableHead>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -792,21 +858,15 @@ export default function Services() {
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        page={view.page}
+        totalPages={view.totalPages}
+        total={view.total}
+        pageSize={view.pageSize}
+        start={view.start}
+        onPageChange={setPage}
+        labelOf={t('common.of') || 'de'}
+      />
 
       {/* Reminder Dialog */}
       <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && setReminderDialog(null)}>

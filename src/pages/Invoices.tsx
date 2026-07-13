@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, ChevronLeft, ChevronRight, Receipt, MessageCircle, FileArchive, Loader2, Mail } from "lucide-react";
+import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -18,6 +18,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import ListSkeleton from "@/components/ListSkeleton";
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { pageCache } from "@/lib/pageCache";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -27,28 +30,38 @@ const statusColors: Record<string, string> = {
   partial: "bg-warning/10 text-warning",
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type InvoicesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string; minTotal: string; maxTotal: string };
+const defaultInvoicesFilters: InvoicesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "", minTotal: "", maxTotal: "" };
 
 export default function Invoices() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _iCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`invoices:${_shopInit}:0`);
+  const _iCache = pageCache.get<{ rows: any[]; shop: any }>(`invoices-all:${_shopInit}`);
   const [invoices, setInvoices] = useState<any[]>(_iCache?.rows ?? []);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_iCache?.count ?? 0);
   const [shop, setShop] = useState<any>(_iCache?.shop ?? null);
   const [dataLoading, setDataLoading] = useState(!_iCache);
 
   const activeShopId = useActiveShopId();
 
+  const table = useTableState<InvoicesFilters>({
+    storageKey: "table:invoices",
+    defaultFilters: defaultInvoicesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchInvoices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `invoices:${activeShopId}:${page}`;
-    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    const key = `invoices-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
     if (cc) {
-      setInvoices(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+      setInvoices(cc.rows); setShop(cc.shop); setDataLoading(false);
     } else {
       setDataLoading(true);
     }
@@ -56,27 +69,49 @@ export default function Invoices() {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const { data } = await supabase
         .from("invoices")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
       if (data) setInvoices(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
+      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchInvoices(); }, [page, activeShopId]);
+  useEffect(() => { fetchInvoices(); }, [activeShopId]);
 
-  const filtered = invoices.filter(inv =>
-    inv.number?.toLowerCase().includes(search.toLowerCase()) ||
-    (inv.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
+  const preFiltered = invoices.filter((inv) => {
+    const s = filters.search.toLowerCase();
+    if (s) {
+      const hay = `${inv.number ?? ""} ${(inv.clients as any)?.name ?? ""} ${(inv.vehicles as any)?.plate ?? ""}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (filters.status !== "all" && inv.status !== filters.status) return false;
+    if (filters.clientId && inv.client_id !== filters.clientId) return false;
+    if (filters.dateFrom && new Date(inv.created_at) < new Date(filters.dateFrom)) return false;
+    if (filters.dateTo && new Date(inv.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
+    if (filters.minTotal && Number(inv.total) < Number(filters.minTotal)) return false;
+    if (filters.maxTotal && Number(inv.total) > Number(filters.maxTotal)) return false;
+    return true;
+  });
+  const view = apply(preFiltered, {
+    number: (i) => i.number,
+    created_at: (i) => new Date(i.created_at).getTime(),
+    client: (i) => (i.clients as any)?.name || "",
+    vehicle: (i) => `${(i.vehicles as any)?.make || ""} ${(i.vehicles as any)?.model || ""}`,
+    total: (i) => Number(i.total) || 0,
+    due_date: (i) => i.due_date || "",
+    status: (i) => i.status,
+  });
+  const filtered = view.rows;
+  const totalCount = invoices.length;
+
+  const clientOptions: [string, string][] = Array.from(
+    new Map(invoices.map((i) => [i.client_id, (i.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
 
   const handleExportCsv = () => {
@@ -247,9 +282,32 @@ export default function Invoices() {
         </div>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('invoices.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('invoices.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="all">Todos os estados</option>
+          <option value="draft">{t('invoices.status_draft')}</option>
+          <option value="issued">{t('invoices.status_issued')}</option>
+          <option value="paid">{t('invoices.status_paid')}</option>
+          <option value="partial">{t('invoices.status_partial')}</option>
+          <option value="cancelled">{t('invoices.status_cancelled')}</option>
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
+        <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
+        <div className="flex gap-1">
+          <Input type="number" placeholder="Total min" value={filters.minTotal} onChange={e => updateFilter('minTotal', e.target.value)} />
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Mobile: Card view */}
@@ -294,7 +352,7 @@ export default function Invoices() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table className="table-fixed">
           <colgroup>
             <col className="w-[10%]" />
@@ -308,13 +366,13 @@ export default function Invoices() {
           </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-3">{t('invoices.number')}</TableHead>
-              <TableHead className="px-3">{t('invoices.client')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('invoices.vehicle')}</TableHead>
-              <TableHead className="px-3">{t('invoices.total')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('invoices.dueDate')}</TableHead>
+              <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('invoices.number')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('invoices.client')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('invoices.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('invoices.total')}</SortableHeader>
+              <SortableHeader sortKey="due_date" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('invoices.dueDate')}</SortableHeader>
               <TableHead className="px-3">Legal</TableHead>
-              <TableHead className="px-3">{t('invoices.status')}</TableHead>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('invoices.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
@@ -374,21 +432,7 @@ export default function Invoices() {
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
     </div>
   );
 }

@@ -7,7 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, Building2, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, MessageCircle } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, Pencil, Trash2, Link2, MessageCircle, X } from "lucide-react";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -35,7 +38,10 @@ interface ClientRow {
   portal_token: string | null;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+type ClientsFilters = { search: string };
+const defaultClientsFilters: ClientsFilters = { search: "" };
 
 const copyPortalLink = (portalToken: string | null, successMsg: string) => {
   if (!portalToken) return;
@@ -47,15 +53,12 @@ const copyPortalLink = (portalToken: string | null, successMsg: string) => {
 export default function Clients() {
   const { t } = useLanguage();
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
-  const cacheKey = `clients:${activeShopIdInit}:0`;
-  const cached = pageCache.get<{ rows: ClientRow[]; count: number }>(cacheKey);
+  const cacheKey = `clients-all:${activeShopIdInit}`;
+  const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);
   const [clients, setClients] = useState<ClientRow[]>(cached?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(!cached);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(cached?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
@@ -66,37 +69,38 @@ export default function Clients() {
 
   const getActiveShopId = (): string | null => activeShopId;
 
+  const table = useTableState<ClientsFilters>({
+    storageKey: "table:clients",
+    defaultFilters: defaultClientsFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchClients = async () => {
     const shopId = getActiveShopId();
     if (!shopId) { setDataLoading(false); return; }
-    const key = `clients:${shopId}:${page}`;
-    const c = pageCache.get<{ rows: ClientRow[]; count: number }>(key);
-    if (c) {
-      setClients(c.rows);
-      setTotalCount(c.count);
-      setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
+    const key = `clients-all:${shopId}`;
+    const c = pageCache.get<{ rows: ClientRow[] }>(key);
+    if (c) { setClients(c.rows); setDataLoading(false); }
+    else { setDataLoading(true); }
     try {
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const { data } = await supabase
         .from("clients")
-        .select("*", { count: "exact" })
+        .select("*")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
       if (data) setClients(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0 });
+      pageCache.set(key, { rows: data ?? [] });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchClients(); }, [page, activeShopId]);
+  useEffect(() => { fetchClients(); }, [activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,13 +150,26 @@ export default function Clients() {
     setDeleteId(null);
   };
 
-  const filtered = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase()) ||
-    (c.nif && c.nif.includes(search))
-  );
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const preFiltered = clients.filter((c) => {
+    const s = filters.search.toLowerCase();
+    if (!s) return true;
+    return (
+      c.name.toLowerCase().includes(s) ||
+      (c.email || "").toLowerCase().includes(s) ||
+      (c.phone || "").toLowerCase().includes(s) ||
+      (c.nif || "").toLowerCase().includes(s) ||
+      (c.company || "").toLowerCase().includes(s)
+    );
+  });
+  const view = apply(preFiltered, {
+    name: (c) => c.name,
+    email: (c) => c.email || "",
+    company: (c) => c.company || "",
+    nif: (c) => c.nif || "",
+    created_at: (c) => new Date(c.created_at).getTime(),
+  });
+  const filtered = view.rows;
+  const totalCount = clients.length;
 
   return (
     <div>
@@ -202,9 +219,14 @@ export default function Clients() {
         </Dialog>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('clients.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      <div className="relative mb-4 flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('clients.search')} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+        )}
       </div>
 
       {/* Empty state CTA */}
@@ -255,14 +277,14 @@ export default function Clients() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('clients.name')}</TableHead>
-              <TableHead>{t('clients.contact')}</TableHead>
-              <TableHead>{t('clients.company')}</TableHead>
-              <TableHead>{t('clients.nif')}</TableHead>
+              <SortableHeader sortKey="name" currentSort={sort} onToggle={toggleSort}>{t('clients.name')}</SortableHeader>
+              <SortableHeader sortKey="email" currentSort={sort} onToggle={toggleSort}>{t('clients.contact')}</SortableHeader>
+              <SortableHeader sortKey="company" currentSort={sort} onToggle={toggleSort}>{t('clients.company')}</SortableHeader>
+              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{t('clients.nif')}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -311,22 +333,7 @@ export default function Clients() {
       </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Car, ChevronLeft, ChevronRight, Pencil, Trash2, FileDown, ScrollText } from "lucide-react";
+import { Plus, Search, Car, Pencil, Trash2, FileDown, ScrollText, X } from "lucide-react";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
@@ -18,23 +18,27 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type VehiclesFilters = { search: string; make: string; clientId: string; fuel: string };
+const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId: "", fuel: "" };
 
 export default function Vehicles() {
   const { t, language } = useLanguage();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _vCache = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(`vehicles:${_shopInit}:0`);
+  const _vCache = pageCache.get<{ rows: any[]; clients: any[] }>(`vehicles-all:${_shopInit}`);
   const [vehicles, setVehicles] = useState<any[]>(_vCache?.rows ?? []);
   const [clients, setClients] = useState<any[]>(_vCache?.clients ?? []);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(!_vCache);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_vCache?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [passportId, setPassportId] = useState<string | null>(null);
@@ -53,32 +57,35 @@ export default function Vehicles() {
   const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
   const plateExample = plateExampleFor(plateRegion);
 
+  const table = useTableState<VehiclesFilters>({
+    storageKey: "table:vehicles",
+    defaultFilters: defaultVehiclesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchData = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `vehicles:${activeShopId}:${page}`;
-    const cc = pageCache.get<{ rows: any[]; clients: any[]; count: number }>(key);
-    if (cc) {
-      setVehicles(cc.rows); setClients(cc.clients); setTotalCount(cc.count); setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
+    const key = `vehicles-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; clients: any[] }>(key);
+    if (cc) { setVehicles(cc.rows); setClients(cc.clients); setDataLoading(false); }
+    else { setDataLoading(true); }
     try {
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data: v, count } = await supabase.from("vehicles").select("*, clients(name)", { count: "exact" }).eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
+      const { data: v } = await supabase.from("vehicles").select("*, clients(name)").eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(FETCH_LIMIT);
       if (v) setVehicles(v);
-      if (count !== null) setTotalCount(count);
       const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
       const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
       if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
-      pageCache.set(key, { rows: v ?? [], clients: c ?? [], count: count ?? 0 });
+      pageCache.set(key, { rows: v ?? [], clients: c ?? [] });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [page, activeShopId]);
+  useEffect(() => { fetchData(); }, [activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,13 +157,30 @@ export default function Vehicles() {
     setDeleteId(null);
   };
 
-  const filtered = vehicles.filter(v =>
-    v.plate.toLowerCase().includes(search.toLowerCase()) ||
-    v.make.toLowerCase().includes(search.toLowerCase()) ||
-    v.model.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const preFiltered = vehicles.filter((v) => {
+    const s = filters.search.toLowerCase();
+    if (s) {
+      const hay = `${v.plate} ${v.make} ${v.model} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (filters.make && v.make !== filters.make) return false;
+    if (filters.fuel && v.fuel !== filters.fuel) return false;
+    if (filters.clientId && v.client_id !== filters.clientId) return false;
+    return true;
+  });
+  const view = apply(preFiltered, {
+    plate: (v) => v.plate,
+    make: (v) => v.make,
+    model: (v) => v.model,
+    year: (v) => Number(v.year),
+    client: (v) => (v.clients as any)?.name || "",
+    mileage: (v) => Number(v.mileage) || 0,
+    fuel: (v) => v.fuel,
+    created_at: (v) => new Date(v.created_at).getTime(),
+  });
+  const filtered = view.rows;
+  const totalCount = vehicles.length;
+  const makeOptions = Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort() as string[];
 
   const handleExportCsv = () => {
     const csvData = vehicles.map(v => ({
@@ -243,9 +267,29 @@ export default function Vehicles() {
         </div>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('vehicles.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('vehicles.search')} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.make} onChange={e => updateFilter('make', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todas as marcas</option>
+          {makeOptions.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <div className="flex gap-1">
+          <select value={filters.fuel} onChange={e => updateFilter('fuel', e.target.value)} className="flex-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
+            <option value="">Todos combustíveis</option>
+            {FUEL_VALUES.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state CTA */}
@@ -297,15 +341,15 @@ export default function Vehicles() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('vehicles.vehicle')}</TableHead>
-              <TableHead>{t('vehicles.plate')}</TableHead>
-              <TableHead>{t('vehicles.client')}</TableHead>
-              <TableHead>{t('vehicles.mileage')}</TableHead>
-              <TableHead>{t('vehicles.fuel')}</TableHead>
+              <SortableHeader sortKey="make" currentSort={sort} onToggle={toggleSort}>{t('vehicles.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="plate" currentSort={sort} onToggle={toggleSort}>{t('vehicles.plate')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('vehicles.client')}</SortableHeader>
+              <SortableHeader sortKey="mileage" currentSort={sort} onToggle={toggleSort}>{t('vehicles.mileage')}</SortableHeader>
+              <SortableHeader sortKey="fuel" currentSort={sort} onToggle={toggleSort}>{t('vehicles.fuel')}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -348,21 +392,7 @@ export default function Vehicles() {
       </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

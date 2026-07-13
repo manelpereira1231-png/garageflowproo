@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Copy, Receipt, MessageCircle } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, AlertTriangle, Copy, Receipt, MessageCircle, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -31,33 +34,43 @@ const statusColors: Record<QuoteStatus, string> = {
   converted: "bg-primary/10 text-primary",
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type QuotesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string };
+const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "" };
 
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _qCache = pageCache.get<{ rows: any[]; count: number; shop: any }>(`quotes:${_shopInit}:0`);
+  const _qCache = pageCache.get<{ rows: any[]; shop: any }>(`quotes-all:${_shopInit}`);
   const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [converting, setConverting] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [shop, setShop] = useState<any>(_qCache?.shop ?? null);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(_qCache?.count ?? 0);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [dataLoading, setDataLoading] = useState(!_qCache);
 
   const activeShopId = useActiveShopId();
 
+  const table = useTableState<QuotesFilters>({
+    storageKey: "table:quotes",
+    defaultFilters: defaultQuotesFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchQuotes = useCallback(async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `quotes:${activeShopId}:${page}`;
-    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    const key = `quotes-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
     if (cc) {
-      setQuotes(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+      setQuotes(cc.rows); setShop(cc.shop); setDataLoading(false);
     } else {
       setDataLoading(true);
     }
@@ -65,17 +78,14 @@ export default function Quotes() {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const { data } = await supabase
         .from("quotes")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
       if (data) setQuotes(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
+      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
 
       if (limits.maxQuotesPerMonth !== Infinity) {
         const now = new Date();
@@ -90,7 +100,7 @@ export default function Quotes() {
     } finally {
       setDataLoading(false);
     }
-  }, [activeShopId, page, limits.maxQuotesPerMonth]);
+  }, [activeShopId, limits.maxQuotesPerMonth]);
 
   useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 
@@ -103,7 +113,7 @@ export default function Quotes() {
         "postgres_changes",
         { event: "*", schema: "public", table: "quotes", filter: `shop_id=eq.${activeShopId}` },
         () => {
-          pageCache.clear(`quotes:${activeShopId}:`);
+          pageCache.clear(`quotes-all:${activeShopId}`);
           fetchQuotes();
         }
       )
@@ -297,13 +307,36 @@ export default function Quotes() {
     toast.success(t('common.exported'));
   };
 
-  const filtered = quotes.filter(q =>
-    q.number?.toLowerCase().includes(search.toLowerCase()) ||
-    (q.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
+  const preFiltered = quotes.filter((q) => {
+    const s = filters.search.toLowerCase();
+    if (s) {
+      const hay = `${q.number ?? ""} ${(q.clients as any)?.name ?? ""} ${(q.vehicles as any)?.plate ?? ""} ${(q.vehicles as any)?.make ?? ""} ${(q.vehicles as any)?.model ?? ""}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (filters.status !== "all" && q.status !== filters.status) return false;
+    if (filters.clientId && q.client_id !== filters.clientId) return false;
+    if (filters.dateFrom && new Date(q.created_at) < new Date(filters.dateFrom)) return false;
+    if (filters.dateTo && new Date(q.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  const view = apply(preFiltered, {
+    number: (q) => q.number,
+    created_at: (q) => new Date(q.created_at).getTime(),
+    client: (q) => (q.clients as any)?.name || "",
+    vehicle: (q) => `${(q.vehicles as any)?.make || ""} ${(q.vehicles as any)?.model || ""}`,
+    total: (q) => Number(q.total) || 0,
+    profit: (q) => Number(q.profit) || 0,
+    status: (q) => q.status,
+  });
+  const filtered = view.rows;
+  const totalCount = quotes.length;
+
+  const clientOptions: [string, string][] = Array.from(
+    new Map(quotes.map((q) => [q.client_id, (q.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
 
   const getStatusLabel = (status: QuoteStatus) => t(`status.${status}`);
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <div>
@@ -341,9 +374,32 @@ export default function Quotes() {
         </div>
       )}
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('quotes.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('quotes.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="all">Todos os estados</option>
+          <option value="draft">{t('status.draft')}</option>
+          <option value="sent">{t('status.sent')}</option>
+          <option value="approved">{t('status.approved')}</option>
+          <option value="rejected">{t('status.rejected')}</option>
+          <option value="expired">{t('status.expired')}</option>
+          <option value="converted">{t('status.converted')}</option>
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
+        <div className="flex gap-1">
+          <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state CTA */}
@@ -430,7 +486,7 @@ export default function Quotes() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table className="table-fixed">
           <colgroup>
             <col className="w-[9%]" />
@@ -443,12 +499,12 @@ export default function Quotes() {
           </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="px-3">{t('quotes.number')}</TableHead>
-              <TableHead className="px-3">{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell px-3">{t('quotes.vehicle')}</TableHead>
-              <TableHead className="px-3">{t('quotes.total')}</TableHead>
-              <TableHead className="hidden lg:table-cell px-3">{t('quotes.profit')}</TableHead>
-              <TableHead className="px-3">{t('quotes.status')}</TableHead>
+              <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('quotes.number')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('quotes.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
+              <SortableHeader sortKey="profit" currentSort={sort} onToggle={toggleSort} className="hidden lg:table-cell">{t('quotes.profit')}</SortableHeader>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
@@ -527,21 +583,7 @@ export default function Quotes() {
       </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       {/* Upgrade Modal */}
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

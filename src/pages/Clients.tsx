@@ -53,15 +53,12 @@ const copyPortalLink = (portalToken: string | null, successMsg: string) => {
 export default function Clients() {
   const { t } = useLanguage();
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
-  const cacheKey = `clients:${activeShopIdInit}:0`;
-  const cached = pageCache.get<{ rows: ClientRow[]; count: number }>(cacheKey);
+  const cacheKey = `clients-all:${activeShopIdInit}`;
+  const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);
   const [clients, setClients] = useState<ClientRow[]>(cached?.rows ?? []);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(!cached);
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(cached?.count ?? 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
@@ -72,37 +69,38 @@ export default function Clients() {
 
   const getActiveShopId = (): string | null => activeShopId;
 
+  const table = useTableState<ClientsFilters>({
+    storageKey: "table:clients",
+    defaultFilters: defaultClientsFilters,
+    defaultSort: { key: "created_at", dir: "desc" },
+    pageSize: PAGE_SIZE,
+  });
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const search = filters.search;
+
   const fetchClients = async () => {
     const shopId = getActiveShopId();
     if (!shopId) { setDataLoading(false); return; }
-    const key = `clients:${shopId}:${page}`;
-    const c = pageCache.get<{ rows: ClientRow[]; count: number }>(key);
-    if (c) {
-      setClients(c.rows);
-      setTotalCount(c.count);
-      setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
+    const key = `clients-all:${shopId}`;
+    const c = pageCache.get<{ rows: ClientRow[] }>(key);
+    if (c) { setClients(c.rows); setDataLoading(false); }
+    else { setDataLoading(true); }
     try {
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const { data } = await supabase
         .from("clients")
-        .select("*", { count: "exact" })
+        .select("*")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
       if (data) setClients(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0 });
+      pageCache.set(key, { rows: data ?? [] });
     } finally {
       setDataLoading(false);
     }
   };
 
-  useEffect(() => { fetchClients(); }, [page, activeShopId]);
+  useEffect(() => { fetchClients(); }, [activeShopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

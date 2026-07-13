@@ -512,6 +512,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          assigned_to: string | null
           client_email: string | null
           client_id: string | null
           client_name: string | null
@@ -521,6 +522,7 @@ export type Database = {
           duration_minutes: number
           id: string
           notes: string | null
+          service_id: string | null
           service_type: string
           shop_id: string
           source: string
@@ -529,6 +531,7 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -538,6 +541,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
+          service_id?: string | null
           service_type?: string
           shop_id: string
           source?: string
@@ -546,6 +550,7 @@ export type Database = {
           vehicle_id?: string | null
         }
         Update: {
+          assigned_to?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -555,6 +560,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
+          service_id?: string | null
           service_type?: string
           shop_id?: string
           source?: string
@@ -568,6 +574,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
             referencedColumns: ["id"]
           },
           {
@@ -5987,6 +6000,7 @@ export type Database = {
           longitude: number | null
           name: string
           nif: string | null
+          opening_hours: Json
           phone: string
           primary_color: string | null
           slug: string | null
@@ -6022,6 +6036,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           nif?: string | null
+          opening_hours?: Json
           phone?: string
           primary_color?: string | null
           slug?: string | null
@@ -6057,6 +6072,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           nif?: string | null
+          opening_hours?: Json
           phone?: string
           primary_color?: string | null
           slug?: string | null
@@ -6135,6 +6151,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      staff_absences: {
+        Row: {
+          created_at: string
+          end_at: string
+          id: string
+          reason: string | null
+          shop_id: string
+          start_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_at: string
+          id?: string
+          reason?: string | null
+          shop_id: string
+          start_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_at?: string
+          id?: string
+          reason?: string | null
+          shop_id?: string
+          start_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_absences_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {

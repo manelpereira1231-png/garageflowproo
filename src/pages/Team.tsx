@@ -268,7 +268,10 @@ export default function Team() {
                         <Select value={m.role} onValueChange={v => handleRoleChange(m.id, m.user_id, v)}>
                           <SelectTrigger className="w-[140px] h-8"><SelectValue /></SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="admin">Administrador</SelectItem>
                             <SelectItem value="manager">{t('team.role.manager')}</SelectItem>
+                            <SelectItem value="reception">Receção</SelectItem>
+                            <SelectItem value="commercial">Comercial</SelectItem>
                             <SelectItem value="technician">{t('team.role.technician')}</SelectItem>
                           </SelectContent>
                         </Select>

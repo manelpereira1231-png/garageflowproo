@@ -28,7 +28,16 @@ export async function sendEmail({ to, subject, html, from, attachments, quote_to
 
     if (error) {
       console.error("Failed to send email:", error);
-      throw new Error(error.message || "Email send failed");
+      let realMsg = error.message || "Email send failed";
+      try {
+        const ctx = (error as any).context;
+        const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
+        const body = resp ? await resp.clone().json().catch(() => null) : null;
+        if (body?.error) realMsg = body.error;
+      } catch {
+        // Keep the SDK message if the response body cannot be read.
+      }
+      throw new Error(realMsg);
     }
 
     // Check if the edge function returned an error in the response body

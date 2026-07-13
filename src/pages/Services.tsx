@@ -52,7 +52,20 @@ const statusIcons: Record<ServiceStatus, any> = {
 };
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type ServicesFilters = {
+  search: string;
+  status: string;
+  technician: string;
+  clientId: string;
+  dateFrom: string;
+  dateTo: string;
+};
+const defaultServicesFilters: ServicesFilters = {
+  search: "", status: "all", technician: "", clientId: "", dateFrom: "", dateTo: "",
+};
 
 function RepairTimeline({ status }: { status: ServiceStatus }) {
   const currentIdx = statusFlow.indexOf(status);

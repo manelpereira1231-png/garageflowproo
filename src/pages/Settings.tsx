@@ -118,6 +118,7 @@ export default function SettingsPage() {
       vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
       nif: form.nif, address: form.address, timezone: form.timezone,
+      opening_hours: openingHours,
     };
     if (logoUrl) payload.logo_url = logoUrl;
 

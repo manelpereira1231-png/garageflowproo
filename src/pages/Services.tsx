@@ -346,10 +346,10 @@ export default function Services() {
 
   const fetchServices = async () => {
     if (!activeShopId) { setDataLoading(false); return; }
-    const key = `services:${activeShopId}:${page}:${statusFilter}`;
-    const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
+    const key = `services-all:${activeShopId}`;
+    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
     if (cc) {
-      setServices(cc.rows); setTotalCount(cc.count); setShop(cc.shop); setDataLoading(false);
+      setServices(cc.rows); setShop(cc.shop); setDataLoading(false);
     } else {
       setDataLoading(true);
     }
@@ -357,23 +357,15 @@ export default function Services() {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
       if (shopData) setShop(shopData);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let query = supabase
+      const { data } = await supabase
         .from("work_orders")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)", { count: "exact" })
+        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)")
         .eq("shop_id", activeShopId)
         .order("created_at", { ascending: false })
-        .range(from, to);
+        .limit(FETCH_LIMIT);
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-
-      const { data, count } = await query;
       if (data) setServices(data);
-      if (count !== null) setTotalCount(count);
-      pageCache.set(key, { rows: data ?? [], count: count ?? 0, shop: shopData ?? null });
+      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
     } finally {
       setDataLoading(false);
     }

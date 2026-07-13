@@ -341,15 +341,15 @@ export default function Vehicles() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden sticky-thead">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('vehicles.vehicle')}</TableHead>
-              <TableHead>{t('vehicles.plate')}</TableHead>
-              <TableHead>{t('vehicles.client')}</TableHead>
-              <TableHead>{t('vehicles.mileage')}</TableHead>
-              <TableHead>{t('vehicles.fuel')}</TableHead>
+              <SortableHeader sortKey="make" currentSort={sort} onToggle={toggleSort}>{t('vehicles.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="plate" currentSort={sort} onToggle={toggleSort}>{t('vehicles.plate')}</SortableHeader>
+              <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('vehicles.client')}</SortableHeader>
+              <SortableHeader sortKey="mileage" currentSort={sort} onToggle={toggleSort}>{t('vehicles.mileage')}</SortableHeader>
+              <SortableHeader sortKey="fuel" currentSort={sort} onToggle={toggleSort}>{t('vehicles.fuel')}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

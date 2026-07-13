@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export default function Quotes() {
 
   const activeShopId = useActiveShopId();
 
-  const fetchQuotes = async () => {
+  const fetchQuotes = useCallback(async () => {
     if (!activeShopId) { setDataLoading(false); return; }
     const key = `quotes:${activeShopId}:${page}`;
     const cc = pageCache.get<{ rows: any[]; count: number; shop: any }>(key);
@@ -90,9 +90,27 @@ export default function Quotes() {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [activeShopId, page, limits.maxQuotesPerMonth]);
 
-  useEffect(() => { fetchQuotes(); }, [page, limits.maxQuotesPerMonth, activeShopId]);
+  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
+
+  useEffect(() => {
+    if (!activeShopId) return;
+
+    const channel = supabase
+      .channel(`quotes-list-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "quotes", filter: `shop_id=eq.${activeShopId}` },
+        () => {
+          pageCache.clear(`quotes:${activeShopId}:`);
+          fetchQuotes();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [activeShopId, fetchQuotes]);
 
   const isLimitReached = plan === 'free' && monthlyUsed >= limits.maxQuotesPerMonth;
 

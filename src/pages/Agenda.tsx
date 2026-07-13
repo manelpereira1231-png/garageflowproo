@@ -608,10 +608,23 @@ export default function Agenda() {
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) { setEditingAppt(null); resetForm(); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editingAppt ? t('agenda.editAppointment') : t('agenda.new')}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            {catalog.length > 0 && (
+              <div>
+                <Label>Serviço do catálogo</Label>
+                <Select value={form.service_id} onValueChange={onServiceCatalogPick}>
+                  <SelectTrigger><SelectValue placeholder="Escolher serviço (preenche duração)" /></SelectTrigger>
+                  <SelectContent>
+                    {catalog.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} · {c.default_time}min</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>{t('agenda.serviceType')} *</Label>
-              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value })} placeholder={t('agenda.serviceTypePlaceholder')} />
+              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value, service_id: "" })} placeholder={t('agenda.serviceTypePlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('agenda.date')}</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>

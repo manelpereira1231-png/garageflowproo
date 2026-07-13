@@ -267,9 +267,29 @@ export default function Vehicles() {
         </div>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder={t('vehicles.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Smart filters row */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
+        <div className="relative md:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('vehicles.search')} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
+        </div>
+        <select value={filters.make} onChange={e => updateFilter('make', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todas as marcas</option>
+          {makeOptions.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+          <option value="">Todos os clientes</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <div className="flex gap-1">
+          <select value={filters.fuel} onChange={e => updateFilter('fuel', e.target.value)} className="flex-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
+            <option value="">Todos combustíveis</option>
+            {FUEL_VALUES.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state CTA */}

@@ -669,7 +669,7 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

@@ -352,6 +352,45 @@ export default function SettingsPage() {
         {/* Marketplace — Lote A: aderir com a mesma conta */}
         <ActivateMarketplace shopId={shopId} />
 
+        {/* Horário de funcionamento — usado pela Agenda inteligente */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Horário de funcionamento
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">A Agenda usa este horário para sugerir marcações. Deixa vazio para dia fechado.</p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {DAYS.map(({ key, label }) => {
+              const d = openingHours[key] || { open: null, close: null, break: null };
+              return (
+                <div key={key} className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center">
+                  <span className="text-sm font-medium text-foreground">{label}</span>
+                  <Input
+                    type="time"
+                    value={d.open || ""}
+                    onChange={e => setOpeningHours({
+                      ...openingHours,
+                      [key]: { ...d, open: e.target.value || null },
+                    })}
+                    className="text-sm"
+                  />
+                  <Input
+                    type="time"
+                    value={d.close || ""}
+                    onChange={e => setOpeningHours({
+                      ...openingHours,
+                      [key]: { ...d, close: e.target.value || null },
+                    })}
+                    className="text-sm"
+                  />
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
         {/* Push Notifications */}
         <Card>
           <CardHeader className="pb-3">

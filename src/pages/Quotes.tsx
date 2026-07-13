@@ -583,21 +583,7 @@ export default function Quotes() {
       </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} {t('common.of')} {totalCount}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       {/* Upgrade Modal */}
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

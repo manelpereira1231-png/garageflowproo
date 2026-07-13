@@ -76,7 +76,7 @@ export function can(role: ShopRole, cap: Capability): boolean {
 const cache = new Map<string, ShopRole>();
 
 export function useShopRole() {
-  const shopId = useActiveShopId();
+  const { activeShopId: shopId } = useShopContext();
   const [role, setRole] = useState<ShopRole>(shopId ? cache.get(shopId) ?? null : null);
   const [loading, setLoading] = useState(!role);
 

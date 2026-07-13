@@ -5797,6 +5797,47 @@ export type Database = {
           },
         ]
       }
+      session_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          event: string
+          id: string
+          ip: string | null
+          shop_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          ip?: string | null
+          shop_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          ip?: string | null
+          shop_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_payouts: {
         Row: {
           amount: number
@@ -7782,6 +7823,10 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: Json
       }
+      admin_force_logout: {
+        Args: { _shop_id: string; _target_user_id: string }
+        Returns: boolean
+      }
       admin_list_country_settings: {
         Args: never
         Returns: {
@@ -7844,6 +7889,10 @@ export type Database = {
           shop_name: string
           technician_name: string
         }[]
+      }
+      admin_require_password_reset: {
+        Args: { _shop_id: string; _target_user_id: string }
+        Returns: boolean
       }
       admin_set_audit_status: {
         Args: { _new_status: string; _report_id: string }

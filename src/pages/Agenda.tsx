@@ -11,10 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2, Sparkles, User } from "lucide-react";
 import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "date-fns";
 import { pt, enUS, es } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
 
 interface Appointment {
   id: string;

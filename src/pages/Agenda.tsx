@@ -23,6 +23,8 @@ interface Appointment {
   client_id: string | null;
   vehicle_id: string | null;
   service_type: string;
+  service_id?: string | null;
+  assigned_to?: string | null;
   date: string;
   time: string;
   duration_minutes: number;
@@ -34,6 +36,9 @@ interface Appointment {
   created_at: string;
   source?: string | null;
 }
+
+interface CatalogItem { id: string; name: string; default_time: number; default_price: number }
+interface Mechanic { id: string; label: string }
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-700 border-amber-300 dark:text-amber-400",

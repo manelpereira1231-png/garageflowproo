@@ -18,6 +18,12 @@ import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
+import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
+
+const DAYS: { key: keyof OpeningHours; label: string }[] = [
+  { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
+  { key: "thu", label: "Qui" }, { key: "fri", label: "Sex" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
+];
 
 const countries = Object.keys(VAT_RATES);
 
@@ -44,6 +50,7 @@ export default function SettingsPage() {
     currency: "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
     nif: "", address: "", timezone: "Europe/Lisbon",
   });
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
   useEffect(() => {
     const load = async () => {
@@ -72,6 +79,7 @@ export default function SettingsPage() {
           timezone: shopData.timezone || "Europe/Lisbon",
         });
         setLogoPreview(shopData.logo_url || null);
+        if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);
       }
     };
     load();
@@ -110,6 +118,7 @@ export default function SettingsPage() {
       vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
       nif: form.nif, address: form.address, timezone: form.timezone,
+      opening_hours: openingHours,
     };
     if (logoUrl) payload.logo_url = logoUrl;
 
@@ -342,6 +351,45 @@ export default function SettingsPage() {
 
         {/* Marketplace — Lote A: aderir com a mesma conta */}
         <ActivateMarketplace shopId={shopId} />
+
+        {/* Horário de funcionamento — usado pela Agenda inteligente */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Horário de funcionamento
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">A Agenda usa este horário para sugerir marcações. Deixa vazio para dia fechado.</p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {DAYS.map(({ key, label }) => {
+              const d = openingHours[key] || { open: null, close: null, break: null };
+              return (
+                <div key={key} className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center">
+                  <span className="text-sm font-medium text-foreground">{label}</span>
+                  <Input
+                    type="time"
+                    value={d.open || ""}
+                    onChange={e => setOpeningHours({
+                      ...openingHours,
+                      [key]: { ...d, open: e.target.value || null },
+                    })}
+                    className="text-sm"
+                  />
+                  <Input
+                    type="time"
+                    value={d.close || ""}
+                    onChange={e => setOpeningHours({
+                      ...openingHours,
+                      [key]: { ...d, close: e.target.value || null },
+                    })}
+                    className="text-sm"
+                  />
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
 
         {/* Push Notifications */}
         <Card>

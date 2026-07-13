@@ -11,10 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2, Sparkles, User } from "lucide-react";
 import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "date-fns";
 import { pt, enUS, es } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
 
 interface Appointment {
   id: string;
@@ -22,6 +23,8 @@ interface Appointment {
   client_id: string | null;
   vehicle_id: string | null;
   service_type: string;
+  service_id?: string | null;
+  assigned_to?: string | null;
   date: string;
   time: string;
   duration_minutes: number;
@@ -33,6 +36,9 @@ interface Appointment {
   created_at: string;
   source?: string | null;
 }
+
+interface CatalogItem { id: string; name: string; default_time: number; default_price: number }
+interface Mechanic { id: string; label: string }
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-700 border-amber-300 dark:text-amber-400",
@@ -66,9 +72,14 @@ export default function Agenda() {
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; make: string; model: string; client_id: string }[]>([]);
   const [shopSlug, setShopSlug] = useState("");
   const [loading, setLoading] = useState(true);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
+  const [suggestions, setSuggestions] = useState<SlotSuggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
 
   const [form, setForm] = useState({
-    client_id: "", vehicle_id: "", service_type: "",
+    client_id: "", vehicle_id: "", service_type: "", service_id: "", assigned_to: "",
     date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
     duration_minutes: 60, notes: "", status: "scheduled",
   });
@@ -166,7 +177,7 @@ export default function Agenda() {
     setLoading(true);
     const weekEnd = addDays(weekStart, 6);
 
-    const [apptRes, clientRes, vehicleRes, shopRes] = await Promise.all([
+    const [apptRes, clientRes, vehicleRes, shopRes, catalogRes, teamRes] = await Promise.all([
       supabase.from("appointments").select("*")
         .eq("shop_id", activeShopId)
         .gte("date", format(weekStart, "yyyy-MM-dd"))
@@ -174,18 +185,35 @@ export default function Agenda() {
         .order("time"),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name"),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null),
-      supabase.from("shops").select("slug").eq("id", activeShopId).single(),
+      supabase.from("shops").select("slug, opening_hours").eq("id", activeShopId).single(),
+      supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),
+      supabase.from("shop_users").select("id, user_id, role").eq("shop_id", activeShopId),
     ]);
 
     if (apptRes.data) setAppointments(apptRes.data as Appointment[]);
     if (clientRes.data) setClients(clientRes.data);
     if (vehicleRes.data) setVehicles(vehicleRes.data);
     if (shopRes.data?.slug) setShopSlug(shopRes.data.slug);
+    if ((shopRes.data as any)?.opening_hours) setOpeningHours((shopRes.data as any).opening_hours as OpeningHours);
+    if (catalogRes.data) setCatalog(catalogRes.data as CatalogItem[]);
+
+    if (teamRes.data && teamRes.data.length) {
+      const { data: emails } = await supabase.rpc("get_shop_member_emails", { _shop_id: activeShopId });
+      const emailMap = new Map((emails || []).map((e: any) => [e.user_id, e.email]));
+      setMechanics(
+        teamRes.data.map((m: any) => ({
+          id: m.user_id,
+          label: (emailMap.get(m.user_id) as string) || m.role,
+        }))
+      );
+    } else {
+      setMechanics([]);
+    }
     setLoading(false);
   };
 
   const resetForm = () => setForm({
-    client_id: "", vehicle_id: "", service_type: "",
+    client_id: "", vehicle_id: "", service_type: "", service_id: "", assigned_to: "",
     date: format(new Date(), "yyyy-MM-dd"), time: "09:00",
     duration_minutes: 60, notes: "", status: "scheduled",
   });
@@ -196,19 +224,60 @@ export default function Agenda() {
       client_id: appt.client_id || "",
       vehicle_id: appt.vehicle_id || "",
       service_type: appt.service_type,
+      service_id: appt.service_id || "",
+      assigned_to: appt.assigned_to || "",
       date: appt.date,
       time: appt.time.slice(0, 5),
       duration_minutes: appt.duration_minutes,
       notes: appt.notes || "",
       status: appt.status,
     });
+    setSuggestions([]);
     setDialogOpen(true);
   };
 
   const openCreate = () => {
     setEditingAppt(null);
     resetForm();
+    setSuggestions([]);
     setDialogOpen(true);
+  };
+
+  const onServiceCatalogPick = (id: string) => {
+    const svc = catalog.find(c => c.id === id);
+    if (!svc) return;
+    setForm(f => ({
+      ...f,
+      service_id: id,
+      service_type: svc.name,
+      duration_minutes: svc.default_time || f.duration_minutes,
+    }));
+    setSuggestions([]);
+  };
+
+  const requestSuggestions = async () => {
+    if (!activeShopId) return;
+    setSuggesting(true);
+    try {
+      const slots = await suggestSlots({
+        shopId: activeShopId,
+        durationMinutes: form.duration_minutes,
+        openingHours,
+        preferredDate: form.date,
+        mechanicId: form.assigned_to || null,
+        mechanics,
+        limit: 3,
+      });
+      setSuggestions(slots);
+      if (!slots.length) toast({ title: t('agenda.noSlots') || 'Sem horários disponíveis nos próximos 14 dias', variant: "destructive" });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const applySuggestion = (s: SlotSuggestion) => {
+    setForm(f => ({ ...f, date: s.date, time: s.time, assigned_to: s.mechanicId || f.assigned_to }));
+    setSuggestions([]);
   };
 
   const handleSave = async () => {
@@ -217,11 +286,31 @@ export default function Agenda() {
       return;
     }
 
+    // Conflict detection
+    const conflict = await detectConflict({
+      shopId: activeShopId,
+      date: form.date,
+      time: form.time,
+      durationMinutes: form.duration_minutes,
+      mechanicId: form.assigned_to || null,
+      excludeId: editingAppt?.id,
+    });
+    if (conflict) {
+      toast({
+        title: t('agenda.conflict') || 'Conflito de horário',
+        description: t('agenda.conflictMsg') || 'Já existe uma marcação sobreposta. Usa "Sugerir horário" para encontrar um slot livre.',
+        variant: "destructive",
+      });
+      return;
+    }
+
     const payload = {
       shop_id: activeShopId,
       client_id: form.client_id || null,
       vehicle_id: form.vehicle_id || null,
       service_type: form.service_type,
+      service_id: form.service_id || null,
+      assigned_to: form.assigned_to || null,
       date: form.date,
       time: form.time,
       duration_minutes: form.duration_minutes,
@@ -242,6 +331,16 @@ export default function Agenda() {
         message: `${form.service_type} - ${form.date} ${form.time}`,
         priority: "low",
       } as any);
+      // Notify assigned mechanic
+      if (form.assigned_to) {
+        await supabase.from("notifications").insert({
+          shop_id: activeShopId,
+          user_id: form.assigned_to,
+          type: "appointment_assigned",
+          title: t('agenda.assignedTitle') || 'Nova marcação atribuída',
+          message: `${form.service_type} — ${form.date} ${form.time}`,
+        } as any);
+      }
       toast({ title: t('agenda.created') });
     }
 
@@ -509,10 +608,23 @@ export default function Agenda() {
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) { setEditingAppt(null); resetForm(); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editingAppt ? t('agenda.editAppointment') : t('agenda.new')}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            {catalog.length > 0 && (
+              <div>
+                <Label>Serviço do catálogo</Label>
+                <Select value={form.service_id} onValueChange={onServiceCatalogPick}>
+                  <SelectTrigger><SelectValue placeholder="Escolher serviço (preenche duração)" /></SelectTrigger>
+                  <SelectContent>
+                    {catalog.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} · {c.default_time}min</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>{t('agenda.serviceType')} *</Label>
-              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value })} placeholder={t('agenda.serviceTypePlaceholder')} />
+              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value, service_id: "" })} placeholder={t('agenda.serviceTypePlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('agenda.date')}</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
@@ -545,6 +657,38 @@ export default function Agenda() {
                       <SelectItem value="cancelled">{t('agenda.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+            </div>
+            {mechanics.length > 0 && (
+              <div>
+                <Label className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> Mecânico</Label>
+                <Select value={form.assigned_to || "__any__"} onValueChange={v => setForm({ ...form, assigned_to: v === "__any__" ? "" : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__any__">Qualquer mecânico disponível</SelectItem>
+                    {mechanics.map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-2 space-y-2">
+              <Button type="button" size="sm" variant="outline" className="w-full" onClick={requestSuggestions} disabled={suggesting || !form.service_type}>
+                <Sparkles className="w-4 h-4 mr-1" />
+                {suggesting ? 'A analisar...' : 'Sugerir melhor horário'}
+              </Button>
+              {suggestions.length > 0 && (
+                <div className="space-y-1">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => applySuggestion(s)}
+                      className="w-full text-left text-xs px-2 py-1.5 rounded bg-card border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

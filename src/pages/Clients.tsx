@@ -150,13 +150,26 @@ export default function Clients() {
     setDeleteId(null);
   };
 
-  const filtered = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase()) ||
-    (c.nif && c.nif.includes(search))
-  );
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const preFiltered = clients.filter((c) => {
+    const s = filters.search.toLowerCase();
+    if (!s) return true;
+    return (
+      c.name.toLowerCase().includes(s) ||
+      (c.email || "").toLowerCase().includes(s) ||
+      (c.phone || "").toLowerCase().includes(s) ||
+      (c.nif || "").toLowerCase().includes(s) ||
+      (c.company || "").toLowerCase().includes(s)
+    );
+  });
+  const view = apply(preFiltered, {
+    name: (c) => c.name,
+    email: (c) => c.email || "",
+    company: (c) => c.company || "",
+    nif: (c) => c.nif || "",
+    created_at: (c) => new Date(c.created_at).getTime(),
+  });
+  const filtered = view.rows;
+  const totalCount = clients.length;
 
   return (
     <div>

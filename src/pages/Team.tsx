@@ -228,8 +228,26 @@ export default function Team() {
         )}
       </div>
 
+      {!teamEnabled && (
+        <Card className="border-yellow-300/60 bg-yellow-50 dark:bg-yellow-900/10">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Gestão de equipa disponível nos planos Pro e Garage.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                No plano atual só o proprietário tem acesso. Faz upgrade para adicionar colaboradores (Administrador, Gestor, Receção, Comercial, Técnico).
+              </p>
+            </div>
+            <Button size="sm" variant="default" onClick={() => window.location.assign('/billing')}>
+              Ver planos
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Team summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
         {[
           { label: t('team.totalMembers'), value: members.length, icon: Users, color: "text-primary" },
           { label: t('team.role.owner'), value: ownerCount, icon: Crown, color: "text-primary" },

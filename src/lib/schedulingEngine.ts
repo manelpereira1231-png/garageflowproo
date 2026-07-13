@@ -98,10 +98,32 @@ export interface SlotSuggestion {
   label: string;
 }
 
+export interface MechanicCandidate {
+  id: string;
+  label: string;
+  skills?: string[];
+}
+
+/**
+ * Filters a list of mechanics keeping only those whose `skills` include the
+ * required skill. If `requiredSkill` is empty/null, returns the list unchanged.
+ */
+export function filterMechanicsBySkill(
+  mechanics: MechanicCandidate[],
+  requiredSkill?: string | null
+): MechanicCandidate[] {
+  if (!requiredSkill) return mechanics;
+  const needle = requiredSkill.trim().toLowerCase();
+  if (!needle) return mechanics;
+  return mechanics.filter((m) => (m.skills || []).some((s) => s.toLowerCase() === needle));
+}
+
 /**
  * Suggests up to `limit` slots starting from `preferredDate`, scanning
- * forward up to 14 days. Respects opening hours, service duration and
- * conflicts across appointments/absences.
+ * forward up to 14 days. Respects opening hours, service duration,
+ * conflicts across appointments/absences, and — when `requiredSkill` is
+ * provided — restricts candidates to mechanics with that skill. Among
+ * eligible mechanics, prefers the one with the lowest current load for the day.
  */
 export async function suggestSlots(params: {
   shopId: string;
@@ -109,11 +131,19 @@ export async function suggestSlots(params: {
   openingHours: OpeningHours;
   preferredDate: string; // yyyy-MM-dd
   mechanicId?: string | null;
-  mechanics?: { id: string; label: string }[];
+  mechanics?: MechanicCandidate[];
+  requiredSkill?: string | null;
   limit?: number;
 }): Promise<SlotSuggestion[]> {
-  const { shopId, durationMinutes, openingHours, preferredDate, mechanicId, mechanics = [], limit = 3 } = params;
+  const {
+    shopId, durationMinutes, openingHours, preferredDate,
+    mechanicId, mechanics = [], requiredSkill, limit = 3,
+  } = params;
   const results: SlotSuggestion[] = [];
+
+  const eligible = mechanicId
+    ? mechanics.filter((m) => m.id === mechanicId)
+    : filterMechanicsBySkill(mechanics, requiredSkill);
 
   for (let offset = 0; offset < 14 && results.length < limit; offset++) {
     const day = addDays(parseISO(preferredDate), offset);
@@ -124,17 +154,16 @@ export async function suggestSlots(params: {
 
     const dateStr = format(day, "yyyy-MM-dd");
 
-    // Pick mechanics to try: specific one, or each mechanic in turn, or "any"
+    // Order candidates by current load (asc) so we suggest the freest first.
     const candidates: (string | null)[] = mechanicId
       ? [mechanicId]
-      : mechanics.length
-      ? mechanics.map((m) => m.id)
+      : eligible.length
+      ? await orderByLoad(shopId, dateStr, eligible.map((m) => m.id))
       : [null];
 
     for (const mech of candidates) {
       const busy = await getBusyIntervals(shopId, dateStr, mech);
       for (const [wStart, wEnd] of windows) {
-        // step in 15-min increments
         for (let t = wStart; t + durationMinutes <= wEnd; t += 15) {
           const slot: Interval = { start: t, end: t + durationMinutes };
           if (busy.some((b) => overlap(b, slot))) continue;
@@ -148,13 +177,31 @@ export async function suggestSlots(params: {
             label: `${dateStr} · ${fromMin(t)}${mechLabel ? ` · ${mechLabel}` : ""}`,
           });
           if (results.length >= limit) return results;
-          break; // one slot per (day, mechanic, window)
+          break;
         }
         if (results.length >= limit) return results;
       }
     }
   }
   return results;
+}
+
+async function orderByLoad(shopId: string, date: string, ids: string[]): Promise<string[]> {
+  if (ids.length <= 1) return ids;
+  const { data } = await supabase
+    .from("appointments")
+    .select("assigned_to,duration_minutes,status")
+    .eq("shop_id", shopId)
+    .eq("date", date)
+    .neq("status", "cancelled")
+    .in("assigned_to", ids);
+  const load = new Map<string, number>(ids.map((id) => [id, 0]));
+  (data || []).forEach((a: any) => {
+    if (a.assigned_to && load.has(a.assigned_to)) {
+      load.set(a.assigned_to, (load.get(a.assigned_to) || 0) + (a.duration_minutes || 60));
+    }
+  });
+  return [...ids].sort((a, b) => (load.get(a) || 0) - (load.get(b) || 0));
 }
 
 export async function detectConflict(params: {

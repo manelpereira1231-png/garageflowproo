@@ -78,7 +78,8 @@ export default function Team() {
     init();
   }, [shopId]);
 
-  const canInvite = members.length < limits.maxUsers;
+  const teamEnabled = limits.teamManagement === true;
+  const canInvite = teamEnabled && members.length < limits.maxUsers;
   const isOwner = members.some(m => m.user_id === currentUserId && m.role === 'owner');
   const ownerCount = members.filter(m => m.role === 'owner').length;
   const managerCount = members.filter(m => m.role === 'manager').length;
@@ -86,6 +87,10 @@ export default function Team() {
 
   const handleInvite = async () => {
     if (!inviteEmail || !shopId || !isOwner) return;
+    if (!teamEnabled) {
+      toast.error("Gestão de equipa disponível apenas nos planos Pro e Garage.");
+      return;
+    }
     if (!canInvite) { toast.error(t('team.limitReached')); return; }
 
     setInviting(true);
@@ -100,10 +105,33 @@ export default function Team() {
       setInviteEmail("");
       setInviteOpen(false);
     } catch (err: any) {
-      toast.error(t('team.inviteError'));
+      // Mostrar a mensagem real (útil para diagnosticar edge function / domínio de email)
+      const msg = err?.message || t('team.inviteError');
+      toast.error(msg.length > 140 ? msg.slice(0, 140) + '…' : msg);
+      console.error("Team invite failed:", err);
     } finally {
       setInviting(false);
     }
+  };
+
+  const handleForceLogout = async (targetUserId: string) => {
+    if (!shopId) return;
+    const { error } = await supabase.rpc("admin_force_logout", {
+      _shop_id: shopId,
+      _target_user_id: targetUserId,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Sessão do colaborador terminada.");
+  };
+
+  const handleRequirePasswordReset = async (targetUserId: string) => {
+    if (!shopId) return;
+    const { error } = await supabase.rpc("admin_require_password_reset", {
+      _shop_id: shopId,
+      _target_user_id: targetUserId,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Colaborador terá que definir nova password.");
   };
 
   const handleRemove = async (memberId: string) => {

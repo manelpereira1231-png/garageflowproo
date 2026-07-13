@@ -5848,6 +5848,59 @@ export type Database = {
           },
         ]
       }
+      shop_user_profiles: {
+        Row: {
+          active: boolean
+          avatar_url: string | null
+          created_at: string
+          id: string
+          must_reset_password: boolean
+          name: string | null
+          phone: string | null
+          position: string | null
+          shop_user_id: string
+          skills: string[]
+          suspended_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          must_reset_password?: boolean
+          name?: string | null
+          phone?: string | null
+          position?: string | null
+          shop_user_id: string
+          skills?: string[]
+          suspended_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          must_reset_password?: boolean
+          name?: string | null
+          phone?: string | null
+          position?: string | null
+          shop_user_id?: string
+          skills?: string[]
+          suspended_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_user_profiles_shop_user_id_fkey"
+            columns: ["shop_user_id"]
+            isOneToOne: true
+            referencedRelation: "shop_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_users: {
         Row: {
           created_at: string
@@ -7566,6 +7619,7 @@ export type Database = {
       }
       compute_business_metrics_snapshot: { Args: never; Returns: Json }
       compute_customer_health: { Args: never; Returns: Json }
+      current_shop_role: { Args: { _shop_id: string }; Returns: string }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
       detect_anomaly: {
@@ -7683,6 +7737,10 @@ export type Database = {
         }[]
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_capability: {
+        Args: { _cap: string; _shop_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

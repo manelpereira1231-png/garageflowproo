@@ -70,7 +70,7 @@ serve(async (req: Request) => {
 
 
     const body = await req.json() as SendEmailRequest;
-    const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments, quote_token } = body;
+    const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments, quote_token, invite, shop_id } = body;
 
     if (!to || !subject || !html) {
       return new Response(JSON.stringify({ error: "Missing required fields: to, subject, html" }),

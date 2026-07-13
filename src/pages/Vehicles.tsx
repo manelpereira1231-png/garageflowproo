@@ -157,13 +157,30 @@ export default function Vehicles() {
     setDeleteId(null);
   };
 
-  const filtered = vehicles.filter(v =>
-    v.plate.toLowerCase().includes(search.toLowerCase()) ||
-    v.make.toLowerCase().includes(search.toLowerCase()) ||
-    v.model.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const preFiltered = vehicles.filter((v) => {
+    const s = filters.search.toLowerCase();
+    if (s) {
+      const hay = `${v.plate} ${v.make} ${v.model} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (filters.make && v.make !== filters.make) return false;
+    if (filters.fuel && v.fuel !== filters.fuel) return false;
+    if (filters.clientId && v.client_id !== filters.clientId) return false;
+    return true;
+  });
+  const view = apply(preFiltered, {
+    plate: (v) => v.plate,
+    make: (v) => v.make,
+    model: (v) => v.model,
+    year: (v) => Number(v.year),
+    client: (v) => (v.clients as any)?.name || "",
+    mileage: (v) => Number(v.mileage) || 0,
+    fuel: (v) => v.fuel,
+    created_at: (v) => new Date(v.created_at).getTime(),
+  });
+  const filtered = view.rows;
+  const totalCount = vehicles.length;
+  const makeOptions = Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort() as string[];
 
   const handleExportCsv = () => {
     const csvData = vehicles.map(v => ({

@@ -13,12 +13,14 @@ interface SendEmailParams {
   html: string;
   from?: string;
   attachments?: EmailAttachment[];
+  /** Optional quote token to authorize sending from the public quote approval page. */
+  quote_token?: string;
 }
 
-export async function sendEmail({ to, subject, html, from, attachments }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, from, attachments, quote_token }: SendEmailParams) {
   try {
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: { to, subject, html, from, attachments },
+      body: { to, subject, html, from, attachments, quote_token },
     });
 
     if (error) {

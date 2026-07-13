@@ -58,6 +58,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
+import { useShopRole } from "@/hooks/useShopRole";
+import { PATH_REQUIRED_CAPABILITY, homeForRole } from "@/lib/rolePaths";
 
 type NavItem = {
   path: string;

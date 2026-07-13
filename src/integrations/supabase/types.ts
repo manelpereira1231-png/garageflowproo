@@ -5675,6 +5675,7 @@ export type Database = {
           name: string
           recurrence_km: number | null
           recurrence_months: number | null
+          required_skill: string | null
           shop_id: string
           vat_rate: number
         }
@@ -5689,6 +5690,7 @@ export type Database = {
           name: string
           recurrence_km?: number | null
           recurrence_months?: number | null
+          required_skill?: string | null
           shop_id: string
           vat_rate?: number
         }
@@ -5703,6 +5705,7 @@ export type Database = {
           name?: string
           recurrence_km?: number | null
           recurrence_months?: number | null
+          required_skill?: string | null
           shop_id?: string
           vat_rate?: number
         }

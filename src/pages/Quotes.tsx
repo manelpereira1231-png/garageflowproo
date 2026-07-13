@@ -113,7 +113,7 @@ export default function Quotes() {
         "postgres_changes",
         { event: "*", schema: "public", table: "quotes", filter: `shop_id=eq.${activeShopId}` },
         () => {
-          pageCache.clear(`quotes:${activeShopId}:`);
+          pageCache.clear(`quotes-all:${activeShopId}`);
           fetchQuotes();
         }
       )

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useActiveShopId } from "./useShopContext";
+import { useShopContext } from "./useShopContext";
 
 export type ShopRole =
   | "owner"

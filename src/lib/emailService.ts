@@ -15,12 +15,15 @@ interface SendEmailParams {
   attachments?: EmailAttachment[];
   /** Optional quote token to authorize sending from the public quote approval page. */
   quote_token?: string;
+  /** Team invite path: authenticated owner/admin of shop_id may invite any recipient. */
+  invite?: boolean;
+  shop_id?: string;
 }
 
-export async function sendEmail({ to, subject, html, from, attachments, quote_token }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, from, attachments, quote_token, invite, shop_id }: SendEmailParams) {
   try {
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: { to, subject, html, from, attachments, quote_token },
+      body: { to, subject, html, from, attachments, quote_token, invite, shop_id },
     });
 
     if (error) {

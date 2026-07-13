@@ -100,6 +100,8 @@ export default function Team() {
         to: inviteEmail,
         subject: `${t('team.inviteSubject')} — ${shopName}`,
         html: inviteUserEmailHtml(signupUrl, shopName, t(`team.role.${inviteRole}`)),
+        invite: true,
+        shop_id: shopId,
       });
       toast.success(t('team.inviteSent'));
       setInviteEmail("");

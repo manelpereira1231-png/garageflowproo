@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Copy, Receipt, MessageCircle } from "lucide-react";
+import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, AlertTriangle, Copy, Receipt, MessageCircle, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { useTableState } from "@/hooks/useTableState";
+import { SortableHeader } from "@/components/table/SortableHeader";
+import { TablePagination } from "@/components/table/TablePagination";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -31,7 +34,11 @@ const statusColors: Record<QuoteStatus, string> = {
   converted: "bg-primary/10 text-primary",
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
+const FETCH_LIMIT = 2000;
+
+type QuotesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string };
+const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "" };
 
 export default function Quotes() {
   const { t } = useLanguage();

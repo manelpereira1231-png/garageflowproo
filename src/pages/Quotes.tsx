@@ -412,17 +412,26 @@ export default function Quotes() {
 
       {/* Desktop: Table view */}
       {totalCount > 0 && (
-      <div className="hidden sm:block bg-card border border-border rounded-xl overflow-x-auto">
-        <Table className="min-w-[900px]">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden">
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-[9%]" />
+            <col className="w-[20%]" />
+            <col className="w-[19%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
+            <col className="w-[11%]" />
+            <col className="w-[23%]" />
+          </colgroup>
           <TableHeader>
             <TableRow>
-              <TableHead className="whitespace-nowrap">{t('quotes.number')}</TableHead>
-              <TableHead className="whitespace-nowrap">{t('quotes.client')}</TableHead>
-              <TableHead className="hidden md:table-cell whitespace-nowrap">{t('quotes.vehicle')}</TableHead>
-              <TableHead className="whitespace-nowrap">{t('quotes.total')}</TableHead>
-              <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('quotes.profit')}</TableHead>
-              <TableHead className="whitespace-nowrap">{t('quotes.status')}</TableHead>
-              <TableHead className="whitespace-nowrap text-right">{t('common.actions') || 'Ações'}</TableHead>
+              <TableHead className="px-3">{t('quotes.number')}</TableHead>
+              <TableHead className="px-3">{t('quotes.client')}</TableHead>
+              <TableHead className="hidden md:table-cell px-3">{t('quotes.vehicle')}</TableHead>
+              <TableHead className="px-3">{t('quotes.total')}</TableHead>
+              <TableHead className="hidden lg:table-cell px-3">{t('quotes.profit')}</TableHead>
+              <TableHead className="px-3">{t('quotes.status')}</TableHead>
+              <TableHead className="px-2 text-right">{t('common.actions') || 'Ações'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -434,60 +443,63 @@ export default function Quotes() {
               </TableRow>
             ) : filtered.map(q => (
               <TableRow key={q.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium mono whitespace-nowrap">{q.number}</TableCell>
-                <TableCell className="whitespace-nowrap">{(q.clients as any)?.name}</TableCell>
-                <TableCell className="hidden md:table-cell whitespace-nowrap">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — <span className="mono">{(q.vehicles as any)?.plate}</span></TableCell>
-                <TableCell className="font-semibold mono whitespace-nowrap">€{q.total?.toFixed(2)}</TableCell>
-                <TableCell className="hidden lg:table-cell mono text-success whitespace-nowrap">€{q.profit?.toFixed(2)}</TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell className="px-3 py-3 font-medium mono">{q.number}</TableCell>
+                <TableCell className="px-3 py-3 whitespace-normal break-words">{(q.clients as any)?.name}</TableCell>
+                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
+                  <span className="break-words">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model}</span>
+                  <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(q.vehicles as any)?.plate})</span>
+                </TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">€{q.total?.toFixed(2)}</TableCell>
+                <TableCell className="hidden lg:table-cell px-3 py-3 mono text-success">€{q.profit?.toFixed(2)}</TableCell>
+                <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap justify-end gap-1 min-w-[280px]">
+                <TableCell className="px-2 py-3 text-right">
+                  <div className="flex items-center gap-0.5 justify-end flex-nowrap">
                     {!['converted'].includes(q.status) && (
                       <Link to={`/quotes/edit/${q.id}`}>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={t('common.edit') || 'Editar'} title={t('common.edit') || 'Editar'}>
+                          <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs">PDF</Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(q)} title="PDF" aria-label="PDF">
+                      <FileDown className="w-3.5 h-3.5" />
+                    </Button>
                     {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'expired'].includes(q.status) && (
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={async () => {
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Copiar link" aria-label="Copiar link" onClick={async () => {
                         const url = `${window.location.origin}/quote/${q.token}`;
                         try { await navigator.clipboard.writeText(url); toast.success('Link copiado'); }
                         catch { window.prompt('Copie o link:', url); }
                       }}>
-                        <Copy className="w-3.5 h-3.5 mr-1" />Link
+                        <Copy className="w-3.5 h-3.5" />
                       </Button>
                     )}
                     {!['converted', 'rejected', 'expired'].includes(q.status) && (
                       <>
-                        <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs">
-                          {sendingEmail === q.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}
-                          {sendingEmail === q.id ? t('quotes.sending') : t('quotes.sendEmail')}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} title={t('quotes.sendEmail') || 'Email'} aria-label="Email">
+                          {sendingEmail === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => sendQuoteWhatsApp(q)}>
-                          <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => sendQuoteWhatsApp(q)} title="WhatsApp" aria-label="WhatsApp">
+                          <MessageCircle className="w-3.5 h-3.5" />
                         </Button>
                       </>
                     )}
                     {['draft', 'sent', 'approved'].includes(q.status) && (
-                      <Button variant="ghost" size="sm" onClick={() => convertToService(q)} disabled={converting === q.id} className="text-xs">
-                        <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
-                        {converting === q.id ? t('quotes.converting') : t('quotes.convert')}
+                      <Button variant="default" size="icon" className="h-8 w-8" onClick={() => convertToService(q)} disabled={converting === q.id} title={t('quotes.convert') || 'Converter em serviço'} aria-label={t('quotes.convert') || 'Converter'}>
+                        {converting === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => duplicateQuote(q)} className="text-xs" title={t('quotes.duplicate')}>
-                      <Copy className="w-3.5 h-3.5 mr-1" />{t('quotes.duplicate')}
-                    </Button>
                     {['approved', 'converted'].includes(q.status) && (
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/invoices/new?from_quote=${q.id}`)} className="text-xs">
-                        <Receipt className="w-3.5 h-3.5 mr-1" />{t('invoices.convertToInvoice')}
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/invoices/new?from_quote=${q.id}`)} title={t('invoices.convertToInvoice') || 'Faturar'} aria-label="Faturar">
+                        <Receipt className="w-3.5 h-3.5" />
                       </Button>
                     )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateQuote(q)} title={t('quotes.duplicate') || 'Duplicar'} aria-label={t('quotes.duplicate') || 'Duplicar'}>
+                      <Copy className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

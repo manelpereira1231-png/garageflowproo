@@ -62,10 +62,9 @@ serve(async (req: Request) => {
         callerUser = { id: data.user.id, email: data.user.email ?? null };
       }
     }
-    if (!isInternal && !callerUser) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
-    }
+    // Note: unauthorized check is deferred until after we parse the body, so we can
+    // also accept a public quote_token for the unauthenticated approval page.
+
 
     const body = await req.json() as SendEmailRequest;
     const { to, subject, html, from, branded, brand, preheader, cta, footerNote, attachments, quote_token } = body;

@@ -24,6 +24,7 @@ import ListSkeleton from "@/components/ListSkeleton";
 import EmptyState from "@/components/EmptyState";
 import { pageCache } from "@/lib/pageCache";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
+import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",

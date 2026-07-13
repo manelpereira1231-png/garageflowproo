@@ -660,6 +660,38 @@ export default function Agenda() {
                 </div>
               )}
             </div>
+            {mechanics.length > 0 && (
+              <div>
+                <Label className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> Mecânico</Label>
+                <Select value={form.assigned_to || "__any__"} onValueChange={v => setForm({ ...form, assigned_to: v === "__any__" ? "" : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__any__">Qualquer mecânico disponível</SelectItem>
+                    {mechanics.map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-2 space-y-2">
+              <Button type="button" size="sm" variant="outline" className="w-full" onClick={requestSuggestions} disabled={suggesting || !form.service_type}>
+                <Sparkles className="w-4 h-4 mr-1" />
+                {suggesting ? 'A analisar...' : 'Sugerir melhor horário'}
+              </Button>
+              {suggestions.length > 0 && (
+                <div className="space-y-1">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => applySuggestion(s)}
+                      className="w-full text-left text-xs px-2 py-1.5 rounded bg-card border border-border hover:border-primary hover:bg-primary/10 transition-colors"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div>
               <Label>{t('clients.title')}</Label>
               <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v, vehicle_id: "" })}>

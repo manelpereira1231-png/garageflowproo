@@ -50,7 +50,7 @@ export default function AcceptInvite() {
   useEffect(() => {
     if (!token) { setError("Token em falta."); setLoading(false); return; }
     (async () => {
-      const { data, error: err } = await supabase.rpc("get_team_invitation_info", { _token: token });
+      const { data, error: err } = await erpSupabase.rpc("get_team_invitation_info", { _token: token });
       if (err) { setError(err.message); setLoading(false); return; }
       const row = Array.isArray(data) ? data[0] : (data as any);
       if (!row) { setError("Convite não encontrado."); setLoading(false); return; }

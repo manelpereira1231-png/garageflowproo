@@ -45,6 +45,7 @@ function lazyRetry(factory: () => Promise<any>) {
 }
 
 const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
+const AcceptInvite = lazyRetry(() => import("@/pages/AcceptInvite"));
 const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";

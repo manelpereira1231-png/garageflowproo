@@ -51,28 +51,22 @@ export default function TechnicianDashboard() {
       setLoading(true);
       const todayIso = new Date().toISOString().slice(0, 10);
 
-      const base = supabase
+      const base = () => supabase
         .from("work_orders")
         .select("id, number, status, scheduled_date, vehicles(plate,make,model), clients(name)")
         .eq("shop_id", shopId);
 
       const [todayRes, progressRes, overdueRes, doneRes] = await Promise.all([
-        base
+        (base() as any)
           .in("status", ["open", "diagnosis", "in_progress"])
           .eq("scheduled_date", todayIso)
           .order("scheduled_date", { ascending: true })
           .limit(20),
-        supabase
-          .from("work_orders")
-          .select("id, number, status, scheduled_date, vehicles(plate,make,model), clients(name)")
-          .eq("shop_id", shopId)
+        (base() as any)
           .eq("status", "in_progress")
           .order("scheduled_date", { ascending: true })
           .limit(20),
-        supabase
-          .from("work_orders")
-          .select("id, number, status, scheduled_date, vehicles(plate,make,model), clients(name)")
-          .eq("shop_id", shopId)
+        (base() as any)
           .in("status", ["open", "diagnosis", "in_progress"])
           .lt("scheduled_date", todayIso)
           .order("scheduled_date", { ascending: true })

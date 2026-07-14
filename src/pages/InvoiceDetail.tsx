@@ -17,6 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/marketPrice";
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

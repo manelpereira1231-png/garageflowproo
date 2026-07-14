@@ -224,12 +224,53 @@ export default function AcceptInvite() {
               : "Introduza a sua palavra-passe existente para aceitar o convite."}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+            autoComplete="off"
+            // Chaveia o formulário pelo email do convite: garante remount
+            // limpo por convite e impede qualquer carry-over de estado React.
+            key={info.email}
+          >
+            {/* Honeypots invisíveis: absorvem qualquer autofill agressivo
+                de credenciais guardadas (Chrome/Safari ignoram autocomplete=off
+                em formulários com password se não houver "isco"). */}
+            <input
+              type="text"
+              name="prevent-autofill-username"
+              autoComplete="username"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              readOnly
+              value=""
+            />
+            <input
+              type="password"
+              name="prevent-autofill-password"
+              autoComplete="current-password"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              readOnly
+              value=""
+            />
+
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-sm">
                 <Mail className="w-3.5 h-3.5" /> Email
               </Label>
-              <Input type="email" value={info.email} disabled />
+              {/* readOnly em vez de disabled: preserva o valor como "username"
+                  para o gestor de passwords associar a NOVA credencial ao
+                  email do convite (não ao email do owner que estivesse guardado). */}
+              <Input
+                type="email"
+                value={info.email}
+                readOnly
+                autoComplete="username"
+                name="invite-email"
+                className="bg-muted/50 cursor-not-allowed"
+              />
             </div>
 
             {mode === "signup" && (
@@ -238,13 +279,27 @@ export default function AcceptInvite() {
                   <Label className="flex items-center gap-1.5 text-sm">
                     <User className="w-3.5 h-3.5" /> Nome
                   </Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome completo" />
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nome completo"
+                    autoComplete="name"
+                    name="member-name"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-1.5 text-sm">
                     <Phone className="w-3.5 h-3.5" /> Telefone
                   </Label>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Opcional" />
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Opcional"
+                    autoComplete="tel"
+                    name="member-phone"
+                  />
                 </div>
               </>
             )}
@@ -262,6 +317,9 @@ export default function AcceptInvite() {
                   required
                   placeholder="••••••"
                   className="pr-10"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  name={mode === "signup" ? "new-password" : "current-password"}
+                  spellCheck={false}
                 />
                 <button
                   type="button"
@@ -285,6 +343,9 @@ export default function AcceptInvite() {
                   minLength={6}
                   required
                   placeholder="••••••"
+                  autoComplete="new-password"
+                  name="confirm-new-password"
+                  spellCheck={false}
                 />
               </div>
             )}

@@ -349,15 +349,18 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable) */}
-      {chooserEnabled && (() => {
+      {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable).
+          Cards are gated by system_feature_flags in real time. If both products
+          are disabled, or flags still loading, the entire section is hidden. */}
+      {chooserEnabled && (erpEnabled === true || marketEnabled === true) && (() => {
         const iconMap: Record<string, any> = { Wrench, ShieldCheck, Car, Store, Building2, Users, Sparkles };
         const ErpIcon = iconMap[landingCfg.erp.icon] || Wrench;
         const MarketIcon = iconMap[landingCfg.market.icon] || Car;
         const featured = landingCfg.featured;
-        const cards = [
+        const allCards = [
           {
             key: "erp" as const,
+            visible: erpEnabled === true,
             Icon: ErpIcon,
             title: landingCfg.erp.title,
             description: landingCfg.erp.description,
@@ -369,6 +372,7 @@ export default function LandingPage() {
           },
           {
             key: "market" as const,
+            visible: marketEnabled === true,
             Icon: MarketIcon,
             title: landingCfg.market.title,
             description: landingCfg.market.description,
@@ -379,6 +383,7 @@ export default function LandingPage() {
             track: "home_choose_market",
           },
         ];
+        const cards = allCards.filter((c) => c.visible);
         if (landingCfg.order === "market_first") cards.reverse();
         return (
           <aside

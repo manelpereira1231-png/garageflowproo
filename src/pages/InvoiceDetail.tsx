@@ -207,6 +207,31 @@ export default function InvoiceDetail() {
       toast.success(variant === 'paid'
         ? 'Confirmação de pagamento enviada ao cliente por email.'
         : 'Fatura enviada ao cliente por email.');
+
+      // Auto-envio via WhatsApp (mesmo PDF do email) quando o cliente tem telefone.
+      // Reutiliza openWhatsApp: no desktop abre o WhatsApp Web já na conversa com
+      // a mensagem preenchida e faz download do PDF para o utilizador anexar;
+      // no mobile abre a app diretamente com o mesmo comportamento.
+      const clientPhone = (invoice.clients as any)?.phone as string | undefined;
+      if (clientPhone) {
+        try {
+          await openWhatsApp({
+            phone: clientPhone,
+            clientName: (invoice.clients as any)?.name || '',
+            type: 'invoice',
+            number: invoice.number,
+            plate: (invoice.vehicles as any)?.plate,
+            model: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim() || undefined,
+            total: Number(invoice.total || 0),
+            invoiceStatus: variant === 'paid' ? 'paid' : 'issued',
+            shopName: shop.name,
+            pdfBlob,
+            pdfFilename: `${invoice.number}.pdf`,
+          });
+        } catch (waErr) {
+          console.warn('[invoice] auto WhatsApp failed', waErr);
+        }
+      }
     } catch (e: any) {
       console.warn('[invoice] auto email failed', e);
       toast.message(variant === 'paid'

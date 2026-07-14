@@ -54,7 +54,70 @@ function migrateLegacyErpSession() {
   }
 }
 
+/**
+ * Sanitize stored sessions BEFORE the Supabase SDK reads them.
+ *
+ * Root cause of "AuthApiError: Invalid Refresh Token: Refresh Token Not Found":
+ * a stored session blob whose refresh_token is missing/expired/revoked. The SDK
+ * would then POST /auth/v1/token?grant_type=refresh_token, get HTTP 400, and log
+ * the error to console — visible to anonymous visitors.
+ *
+ * We remove such blobs proactively so the SDK boots as "signed out" (the correct
+ * state) instead of trying to refresh a token that will never work.
+ */
+function sanitizeStoredSession(storageKey: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return;
+    // Supabase stores either an object or a JSON-stringified session.
+    const parsed = JSON.parse(raw);
+    const session = parsed?.currentSession ?? parsed;
+    const refreshToken: string | undefined = session?.refresh_token;
+    const expiresAt: number | undefined = session?.expires_at; // seconds
+    const nowSec = Math.floor(Date.now() / 1000);
+    // Missing refresh token → cannot recover. Access token expired and no refresh → same.
+    const invalid =
+      !refreshToken ||
+      typeof refreshToken !== "string" ||
+      refreshToken.length < 10 ||
+      (typeof expiresAt === "number" && expiresAt + 60 * 60 * 24 * 30 < nowSec); // >30d expired
+    if (invalid) window.localStorage.removeItem(storageKey);
+  } catch {
+    // Corrupted JSON blob — remove it, don't feed garbage to the SDK.
+    try { window.localStorage.removeItem(storageKey); } catch {}
+  }
+}
+
+/**
+ * Silence residual "Invalid Refresh Token" console noise from the Supabase SDK
+ * (e.g. token revoked mid-session from another tab). We ONLY filter that exact
+ * pattern; every other console.error passes through untouched. This is a display
+ * concern: functional signOut/refresh events still fire via onAuthStateChange.
+ */
+function installAuthNoiseFilter() {
+  if (typeof window === "undefined") return;
+  if ((window as any).__gfAuthNoiseFilterInstalled) return;
+  (window as any).__gfAuthNoiseFilterInstalled = true;
+  const origError = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    try {
+      const msg = args.map((a) => (typeof a === "string" ? a : (a as any)?.message || "")).join(" ");
+      if (/Invalid Refresh Token|Refresh Token Not Found|AuthApiError.*refresh/i.test(msg)) return;
+    } catch {}
+    origError(...args);
+  };
+  // Also swallow unhandled promise rejections from the SDK's background refresh.
+  window.addEventListener("unhandledrejection", (e) => {
+    const msg = (e.reason && ((e.reason as any).message || String(e.reason))) || "";
+    if (/Invalid Refresh Token|Refresh Token Not Found/i.test(msg)) e.preventDefault();
+  });
+}
+
 migrateLegacyErpSession();
+sanitizeStoredSession(ERP_STORAGE_KEY);
+sanitizeStoredSession(MARKET_STORAGE_KEY);
+installAuthNoiseFilter();
 
 const nonBlockingAuthLock = async <R,>(
   _name: string,

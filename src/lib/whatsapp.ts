@@ -26,6 +26,10 @@ export interface WhatsAppMessageParams {
   /** For type='quote' — current status. When 'approved'/'converted'/'rejected'/'expired',
    *  the message no longer asks for approval and the approval link is omitted. */
   quoteStatus?: 'draft' | 'sent' | 'approved' | 'converted' | 'rejected' | 'expired';
+  /** For type='invoice' — 'paid' triggers the payment confirmation message. */
+  invoiceStatus?: 'draft' | 'issued' | 'paid' | 'partial' | 'cancelled';
+  /** Optional shop name appended to the signature. */
+  shopName?: string;
 }
 
 function vehicleLabel(p: WhatsAppMessageParams): string {

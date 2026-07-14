@@ -85,7 +85,7 @@ export function can(role: ShopRole, cap: Capability): boolean {
 const cache = new Map<string, ShopRole>();
 
 export function useShopRole() {
-  const { activeShopId: shopId } = useShopContext();
+  const { activeShopId: shopId, loading: shopLoading } = useShopContext();
   const { isReady, user } = useAuthReady();
   const userId = user?.id ?? null;
   const cacheKey = userId && shopId ? `${userId}:${shopId}` : null;
@@ -93,7 +93,7 @@ export function useShopRole() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isReady) { setLoading(true); return; }
+    if (!isReady || shopLoading) { setLoading(true); return; }
     if (!userId || !shopId || !cacheKey) { setRole(null); setLoading(false); return; }
     const cached = cache.get(cacheKey);
     if (cached) { setRole(cached); setLoading(false); return; }
@@ -108,7 +108,7 @@ export function useShopRole() {
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, [cacheKey, isReady, shopId, userId]);
+  }, [cacheKey, isReady, shopId, shopLoading, userId]);
 
   return {
     role,

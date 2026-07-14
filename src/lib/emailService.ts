@@ -151,7 +151,7 @@ export function inviteUserEmailHtml(inviteUrl: string, shopName: string, role: s
       </p>
       <div style="text-align: center; margin: 32px 0;">
         <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-          Aceitar Convite
+          Ativar Conta
         </a>
       </div>
       <p style="color: #999; font-size: 13px;">

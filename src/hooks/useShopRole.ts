@@ -116,6 +116,37 @@ export function useShopRole() {
     return () => { alive = false; };
   }, [cacheKey, isReady, shopId, shopLoading, userId]);
 
+  // Realtime: quando o owner/admin altera a nossa role em shop_users,
+  // invalidamos o cache e refazemos fetch para aplicar imediatamente
+  // sidebar/rotas/capabilities sem exigir novo login.
+  useEffect(() => {
+    if (!userId || !shopId || !cacheKey) return;
+    const channel = supabase
+      .channel(`shop-users:${userId}:${shopId}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "shop_users", filter: `user_id=eq.${userId}` },
+        async (payload: any) => {
+          const row = payload?.new || payload?.old;
+          if (!row || row.shop_id !== shopId) return;
+          cache.delete(cacheKey);
+          const { data, error } = await supabase.rpc("current_shop_role", { _shop_id: shopId });
+          const r = error ? null : (data as ShopRole) ?? null;
+          if (r) cache.set(cacheKey, r);
+          setRole(r);
+          setRoleKey(cacheKey);
+          // Se a role foi removida ou alterada de forma que a rota atual deixa de ser válida,
+          // a próxima navegação através do RoleProtectedRoute já a redireciona automaticamente.
+          if (payload?.eventType === "DELETE") {
+            // Utilizador removido da oficina — reload garante limpeza total do estado
+            window.location.replace("/auth");
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [cacheKey, userId, shopId]);
+
   return {
     role: resolvedRole,
     loading: effectiveLoading,

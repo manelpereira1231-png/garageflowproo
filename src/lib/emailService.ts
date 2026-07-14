@@ -555,6 +555,8 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
           </table>
         </div>
 
+        ${itemsHtml}
+
         <!-- PDF note -->
         <div style="margin-top:16px;padding:12px 16px;background-color:#f9fafb;border-radius:8px;font-size:13px;color:#6b7280;">
           📎 PDF da fatura em anexo${isPaid ? ' para o seu arquivo.' : '.'}

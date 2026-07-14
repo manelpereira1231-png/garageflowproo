@@ -303,6 +303,8 @@ export default function InvoiceDetail() {
     if (!invoice) return;
     await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id);
     toast.success(t('invoices.issued'));
+    // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
+    await sendInvoiceEmailAuto('issued');
     loadData();
   };
 

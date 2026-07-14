@@ -196,7 +196,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
 
       {/* Back to home */}
       <Link to="/" className="absolute top-4 left-4 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline">
-        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+        <ArrowLeft className="w-3.5 h-3.5" /> {t('common.back')}
       </Link>
 
       <div className="w-full max-w-md">
@@ -328,7 +328,13 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
 
         {/* Footer — cross-link to Market */}
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Quer comprar ou vender carros? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite o GarageFlow Market →</Link>
+          {language === 'pt' || language === 'pt-BR'
+            ? <>Quer comprar ou vender carros? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite o GarageFlow Market →</Link></>
+            : language === 'es'
+              ? <>¿Quiere comprar o vender coches? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite GarageFlow Market →</Link></>
+              : language === 'hi'
+                ? <>कार खरीदना या बेचना चाहते हैं? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">GarageFlow Market देखें →</Link></>
+                : <>Want to buy or sell cars? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visit GarageFlow Market →</Link></>}
         </p>
 
         {/* Legal links */}

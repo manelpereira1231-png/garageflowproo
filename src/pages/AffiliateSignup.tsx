@@ -194,7 +194,9 @@ export default function AffiliateSignup() {
               <Sparkles className="w-4 h-4" /> {t('affiliate.programBadge') || "Affiliate Program"}
             </Badge>
             <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-5 leading-tight">
-              {t('affiliate.heroTitle') || "GarageFlow Affiliate Program"}
+              {[t('affiliate.heroTitle'), t('affiliate.heroTitleSuffix')]
+                .filter((s) => s && !s.includes('.'))
+                .join(' ') || "Become a partner and earn commissions"}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
               {t('affiliate.heroSubtitle') || `Earn money recommending workshop software in ${country.name}. Automatic commissions for every workshop that signs up.`}

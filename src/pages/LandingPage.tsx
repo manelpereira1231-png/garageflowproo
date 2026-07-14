@@ -395,12 +395,12 @@ export default function LandingPage() {
             <div className="relative max-w-6xl mx-auto">
               <div className="text-center mb-5 sm:mb-6">
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary/80 mb-2">
-                  <Sparkles className="w-3.5 h-3.5" /> Um ecossistema. Dois produtos.
+                  <Sparkles className="w-3.5 h-3.5" /> {t('landing.chooser.eyebrow') || 'One ecosystem. Two products.'}
                 </div>
                 <h2 className="text-xl sm:text-2xl md:text-[26px] font-bold text-foreground tracking-tight">
-                  {landingCfg.title}
+                  {(landingCfg.title && landingCfg.title !== DEFAULT_LANDING.title) ? landingCfg.title : (t('landing.chooser.title') || 'How would you like to use GarageFlow?')}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1.5">{landingCfg.subtitle}</p>
+                <p className="text-sm text-muted-foreground mt-1.5">{(landingCfg.subtitle && landingCfg.subtitle !== DEFAULT_LANDING.subtitle) ? landingCfg.subtitle : (t('landing.chooser.subtitle') || 'One ecosystem, two products. Pick the one that fits you.')}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {cards.map((c) => {
@@ -417,6 +417,12 @@ export default function LandingPage() {
                       : "border-amber-500/40 hover:border-amber-500 hover:shadow-md hover:shadow-amber-500/10"
                     : "border-border/60 hover:border-foreground/20 hover:shadow-md";
                   const isMarket = c.key === "market";
+                  // Fallback per-language when copy still equals PT defaults (not customized by admin).
+                  const usingErpDefault = c.key === 'erp' && c.title === DEFAULT_LANDING.erp.title;
+                  const usingMarketDefault = c.key === 'market' && c.title === DEFAULT_LANDING.market.title;
+                  const displayTitle = usingErpDefault ? (t('landing.chooser.erpTitle') || 'ERP for Workshops') : usingMarketDefault ? (t('landing.chooser.marketTitle') || 'GarageFlow Market') : c.title;
+                  const displayDesc = usingErpDefault ? (t('landing.chooser.erpDesc') || 'Complete management software for auto workshops.') : usingMarketDefault ? (t('landing.chooser.marketDesc') || 'Buy and sell certified cars.') : c.description;
+                  const displayCta = usingErpDefault ? (t('landing.chooser.erpCta') || 'Explore ERP') : usingMarketDefault ? (t('landing.chooser.marketCta') || 'Explore Market') : c.ctaLabel;
                   return (
                     <Link
                       key={c.key}
@@ -426,17 +432,17 @@ export default function LandingPage() {
                     >
                       {isMarket && landingCfg.showNewBadgeOnMarket !== false && (
                         <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md">
-                          Novo
+                          {t('landing.chooser.newBadge') || 'New'}
                         </span>
                       )}
                       <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${iconWrap}`}>
                         <c.Icon className="w-6 h-6 sm:w-7 sm:h-7" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-base sm:text-lg font-bold text-foreground leading-tight">{c.title}</div>
-                        <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-2">{c.description}</div>
+                        <div className="text-base sm:text-lg font-bold text-foreground leading-tight">{displayTitle}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-2">{displayDesc}</div>
                         <div className={`inline-flex items-center gap-1 text-xs sm:text-sm font-semibold ${ctaCls} mt-2 group-hover:gap-2 transition-all`}>
-                          {c.ctaLabel}
+                          {displayCta}
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
@@ -888,9 +894,12 @@ export default function LandingPage() {
             </div>
             <span className="text-sm font-semibold">GarageFlow</span>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
+            <Link to="/legal/privacy" className="hover:text-foreground transition-colors">{t('legal.privacy') || 'Privacy'}</Link>
+            <Link to="/legal/terms" className="hover:text-foreground transition-colors">{t('legal.terms') || 'Terms'}</Link>
+            <Link to="/legal/cookies" className="hover:text-foreground transition-colors">{t('legal.cookies') || 'Cookies'}</Link>
             <LanguageDropdown variant="ghost" size="sm" />
             <ThemeToggle />
           </div>

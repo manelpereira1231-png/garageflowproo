@@ -13,9 +13,9 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
       variant="ghost"
       size="icon"
       onClick={toggle}
-      aria-label={t("common.toggleTheme") || "Toggle theme"}
+      aria-label={(() => { const v = t("common.toggleTheme"); return v && !v.includes(".") ? v : "Toggle theme"; })()}
       className={`h-9 w-9 ${className}`}
-      title={isDark ? (t("common.lightMode") || "Light mode") : (t("common.darkMode") || "Dark mode")}
+      title={(() => { const v = t(isDark ? "common.lightMode" : "common.darkMode"); return v && !v.includes(".") ? v : (isDark ? "Light mode" : "Dark mode"); })()}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>

@@ -91,6 +91,10 @@ export function useShopRole() {
   const cacheKey = userId && shopId ? `${userId}:${shopId}` : null;
   const [role, setRole] = useState<ShopRole>(cacheKey ? cache.get(cacheKey) ?? null : null);
   const [loading, setLoading] = useState(true);
+  const hasCachedRole = Boolean(cacheKey && cache.has(cacheKey));
+  const resolvedRole = hasCachedRole ? cache.get(cacheKey!) ?? null : role;
+  const isRoleLookupPending = Boolean(isReady && !shopLoading && userId && shopId && !hasCachedRole && loading);
+  const effectiveLoading = loading || isRoleLookupPending;
 
   useEffect(() => {
     if (!isReady || shopLoading) { setLoading(true); return; }
@@ -111,11 +115,11 @@ export function useShopRole() {
   }, [cacheKey, isReady, shopId, shopLoading, userId]);
 
   return {
-    role,
-    loading,
+    role: resolvedRole,
+    loading: effectiveLoading,
     shopId,
-    can: (cap: Capability) => can(role, cap),
-    isOwner: role === "owner" || role === "super_admin",
-    isAdmin: role === "admin" || role === "owner" || role === "super_admin",
+    can: (cap: Capability) => can(resolvedRole, cap),
+    isOwner: resolvedRole === "owner" || resolvedRole === "super_admin",
+    isAdmin: resolvedRole === "admin" || resolvedRole === "owner" || resolvedRole === "super_admin",
   };
 }

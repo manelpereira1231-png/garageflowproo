@@ -148,30 +148,42 @@ serve(async (req: Request) => {
       // Allow caller's own email always.
       const ownEmail = (callerUser.email ?? "").toLowerCase();
 
-      // Collect shop ids the user owns or is a member of.
-      const [{ data: ownedShops }, { data: memberShops }] = await Promise.all([
-        admin.from("shops").select("id").eq("user_id", callerUser.id),
-        admin.from("shop_users").select("shop_id").eq("user_id", callerUser.id),
-      ]);
-      const shopIds = [
-        ...((ownedShops ?? []).map((r: any) => r.id)),
-        ...((memberShops ?? []).map((r: any) => r.shop_id)),
-      ];
+      // P5: if the caller supplies a shop_id, verify membership and restrict the
+      // allowlist to THAT shop's clients/owner email — not the union of every shop the
+      // user belongs to. Falls back to the multi-shop union only when no shop_id is provided
+      // (preserves backward compatibility for legacy callers).
+      let scopedShopIds: string[] = [];
+      if (shop_id && typeof shop_id === "string") {
+        const [{ data: ownedOne }, { data: memberOne }] = await Promise.all([
+          admin.from("shops").select("id").eq("id", shop_id).eq("user_id", callerUser.id).maybeSingle(),
+          admin.from("shop_users").select("shop_id").eq("shop_id", shop_id).eq("user_id", callerUser.id).maybeSingle(),
+        ]);
+        if (ownedOne || memberOne) {
+          scopedShopIds = [shop_id];
+        } else {
+          return new Response(JSON.stringify({ error: "Recipient not permitted" }),
+            { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+        }
+      } else {
+        const [{ data: ownedShops }, { data: memberShops }] = await Promise.all([
+          admin.from("shops").select("id").eq("user_id", callerUser.id),
+          admin.from("shop_users").select("shop_id").eq("user_id", callerUser.id),
+        ]);
+        scopedShopIds = [
+          ...((ownedShops ?? []).map((r: any) => r.id)),
+          ...((memberShops ?? []).map((r: any) => r.shop_id)),
+        ];
+      }
 
-      const allowed = new Set<string>();
-      if (ownEmail) allowed.add(ownEmail);
-
-      if (shopIds.length > 0) {
-        // Team member emails (shop owners + shop_users via auth.users via profile join).
-        // Clients of those shops.
+      if (scopedShopIds.length > 0) {
         const { data: clientRows } = await admin
-          .from("clients").select("email").in("shop_id", shopIds);
+          .from("clients").select("email").in("shop_id", scopedShopIds);
         for (const c of clientRows ?? []) {
           const e = String((c as any).email ?? "").toLowerCase().trim();
           if (e) allowed.add(e);
         }
         const { data: ownerShops } = await admin
-          .from("shops").select("email").in("id", shopIds);
+          .from("shops").select("email").in("id", scopedShopIds);
         for (const s of ownerShops ?? []) {
           const e = String((s as any).email ?? "").toLowerCase().trim();
           if (e) allowed.add(e);

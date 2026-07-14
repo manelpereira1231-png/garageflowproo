@@ -42,7 +42,11 @@ export default function LanguageDropdown({
           {showLabel && <span className="text-xs font-semibold uppercase">{current.code === "pt-BR" ? "BR" : current.code.toUpperCase()}</span>}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[180px]">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="min-w-[180px] !bg-popover !opacity-100 backdrop-blur-none shadow-xl border border-border z-[100]"
+      >
         {visibleLangs.map((l) => (
           <DropdownMenuItem
             key={l.code}

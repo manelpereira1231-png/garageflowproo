@@ -230,6 +230,12 @@ export default function Invoices() {
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
+      const { data: invItems } = await supabase
+        .from('invoice_items').select('description, quantity, unit_price, vat_rate, total')
+        .eq('invoice_id', inv.id).order('created_at', { ascending: true });
+      const itemsList = (invItems || []) as any[];
+      const subtotal = itemsList.reduce((s, it) => s + Number(it.quantity || 0) * Number(it.unit_price || 0), 0);
+      const taxTotal = Math.max(0, Number(inv.total || 0) - subtotal);
       const base64 = await blobToBase64(pdfBlob);
       const vehicle = `${(inv.vehicles as any)?.make || ''} ${(inv.vehicles as any)?.model || ''}`.trim();
       const isPaid = inv.status === 'paid';
@@ -269,6 +275,9 @@ export default function Invoices() {
         vehicleInfo: vehicle,
         plate: (inv.vehicles as any)?.plate,
         total: Number(inv.total || 0),
+        subtotal,
+        taxTotal,
+        items: itemsList,
         amountPaid,
         paymentDate,
         paymentMethod,

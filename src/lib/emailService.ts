@@ -374,6 +374,14 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
 // amber, cartões, badges) do quoteEmailHtml para manter consistência.
 // ────────────────────────────────────────────────────────────────────────
 
+export interface InvoiceEmailItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  vat_rate?: number;
+  total: number;
+}
+
 export interface InvoiceEmailData {
   variant: 'issued' | 'paid';
   shopName: string;
@@ -388,6 +396,9 @@ export interface InvoiceEmailData {
   vehicleInfo: string;
   plate?: string;
   total: number;
+  subtotal?: number;
+  taxTotal?: number;
+  items?: InvoiceEmailItem[];
   amountPaid?: number;
   paymentDate?: string;
   paymentMethod?: string;
@@ -443,6 +454,46 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
       <td style="padding:10px 14px;font-size:13px;color:#6b7280;width:45%;">${k}</td>
       <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600;text-align:right;">${v}</td>
     </tr>`).join('');
+
+  // Itens discriminados (linhas da fatura) — mesmo detalhe do orçamento
+  const itemsHtml = (data.items && data.items.length) ? `
+    <h3 style="color:#1f2937;font-size:14px;font-weight:700;margin:24px 0 10px;text-transform:uppercase;letter-spacing:0.4px;">Detalhe da Fatura</h3>
+    <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:8px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <thead>
+          <tr style="background-color:#262626;color:#ffb41e;">
+            <th align="left"  style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Descrição</th>
+            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:60px;">Qtd</th>
+            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:90px;">Unit.</th>
+            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:60px;">IVA</th>
+            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:100px;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map((it, i) => `
+            <tr style="background-color:${i % 2 === 0 ? '#ffffff' : '#f9fafb'};border-top:1px solid #e5e7eb;">
+              <td style="padding:10px 14px;font-size:13px;color:#111827;">${(it.description || '—').replace(/</g, '&lt;')}</td>
+              <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${Number(it.quantity || 0).toLocaleString('pt-PT', { maximumFractionDigits: 2 })}</td>
+              <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${fmt(Number(it.unit_price || 0))}</td>
+              <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${it.vat_rate != null ? `${Number(it.vat_rate).toFixed(0)}%` : '—'}</td>
+              <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600;text-align:right;">${fmt(Number(it.total || 0))}</td>
+            </tr>`).join('')}
+          ${(typeof data.subtotal === 'number' || typeof data.taxTotal === 'number') ? `
+            <tr style="background-color:#f9fafb;border-top:1px solid #e5e7eb;">
+              <td colspan="4" style="padding:8px 14px;font-size:12px;color:#6b7280;text-align:right;">Subtotal</td>
+              <td style="padding:8px 14px;font-size:12px;color:#111827;text-align:right;">${fmt(data.subtotal ?? (data.total - (data.taxTotal || 0)))}</td>
+            </tr>
+            <tr style="background-color:#f9fafb;">
+              <td colspan="4" style="padding:8px 14px;font-size:12px;color:#6b7280;text-align:right;">IVA</td>
+              <td style="padding:8px 14px;font-size:12px;color:#111827;text-align:right;">${fmt(data.taxTotal ?? 0)}</td>
+            </tr>` : ''}
+          <tr style="background-color:#262626;color:#ffb41e;">
+            <td colspan="4" style="padding:12px 14px;font-size:13px;font-weight:700;text-align:right;">TOTAL</td>
+            <td style="padding:12px 14px;font-size:14px;font-weight:800;text-align:right;">${fmt(data.total)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : '';
 
   const ctaHtml = data.viewUrl ? `
     <div style="text-align:center;margin:24px 0 8px;">
@@ -503,6 +554,8 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
             ${summary}
           </table>
         </div>
+
+        ${itemsHtml}
 
         <!-- PDF note -->
         <div style="margin-top:16px;padding:12px 16px;background-color:#f9fafb;border-radius:8px;font-size:13px;color:#6b7280;">

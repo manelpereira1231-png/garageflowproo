@@ -61,8 +61,37 @@ export default function AcceptInvite() {
     })();
   }, [token]);
 
+  const waitForSession = async (maxMs = 4000): Promise<boolean> => {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      const { data } = await erpSupabase.auth.getSession();
+      if (data.session) return true;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return false;
+  };
+
+  const trySignIn = async (attempts = 4): Promise<string | null> => {
+    let lastMsg: string | null = null;
+    for (let i = 0; i < attempts; i++) {
+      const { error: sErr } = await erpSupabase.auth.signInWithPassword({
+        email: info!.email,
+        password,
+      });
+      if (!sErr) return null;
+      lastMsg = sErr.message;
+      // Propagação do auto-confirm pode demorar ~500ms
+      await new Promise((r) => setTimeout(r, 400 + i * 300));
+    }
+    return lastMsg;
+  };
+
   const acceptAndRedirect = async () => {
-    const { data, error: err } = await supabase.rpc("accept_team_invitation", { _token: token });
+    // Garantir sessão viva antes da RPC
+    const has = await waitForSession(4000);
+    if (!has) throw new Error("Sessão não estabelecida. Tente novamente.");
+
+    const { data, error: err } = await erpSupabase.rpc("accept_team_invitation", { _token: token });
     if (err) throw new Error(err.message);
     const row = Array.isArray(data) ? data[0] : (data as any);
     const role = row?.role || info?.role || null;
@@ -91,32 +120,29 @@ export default function AcceptInvite() {
         if (signUpErr) {
           const msg = signUpErr.message.toLowerCase();
           if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-            // Cai para login
-            setMode("login");
-            toast.message("Já tem conta — introduza a sua palavra-passe para aceitar o convite.");
-            setSubmitting(false);
-            return;
+            // Utilizador já existe — tentar login imediato com a password que introduziu
+            const err = await trySignIn(4);
+            if (err) {
+              setMode("login");
+              toast.message("Já tem conta. Introduza a palavra-passe existente para aceitar o convite.");
+              setSubmitting(false);
+              return;
+            }
+            // login bem sucedido
+          } else {
+            throw signUpErr;
           }
-          throw signUpErr;
-        }
-
-        // Se não há sessão (email confirmation pendente) tentamos signIn imediato
-        if (!signUpData.session) {
-          const { error: sErr } = await erpSupabase.auth.signInWithPassword({
-            email: info.email, password,
-          });
-          if (sErr) {
-            toast.message("Conta criada. Confirme o email através da mensagem que recebeu e volte a abrir este link para entrar.");
-            setSubmitting(false);
-            return;
+        } else if (!signUpData.session) {
+          // Auto-confirm ativo mas sessão ainda não foi entregue — pequeno retry
+          const err = await trySignIn(5);
+          if (err) {
+            throw new Error("Conta criada mas o login falhou. Tente novamente em alguns segundos.");
           }
         }
         setOnboardingStatus("guided");
       } else {
-        const { error: sErr } = await erpSupabase.auth.signInWithPassword({
-          email: info.email, password,
-        });
-        if (sErr) throw sErr;
+        const err = await trySignIn(3);
+        if (err) throw new Error(err);
       }
 
       await acceptAndRedirect();

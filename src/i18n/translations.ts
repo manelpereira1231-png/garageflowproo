@@ -3621,6 +3621,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.faq4Q': 'Do I need sales experience?',
     'affiliate.faq4A': 'No. Just share your link with workshops you know. GarageFlow does the rest.',
     'affiliate.readyToStart': 'Ready to start earning?',
+    'landing.chooser.eyebrow': 'One ecosystem. Two products.',
+    'landing.chooser.title': 'How would you like to use GarageFlow?',
+    'landing.chooser.subtitle': 'One ecosystem, two products. Pick the one that fits you.',
+    'landing.chooser.erpTitle': 'ERP for Workshops',
+    'landing.chooser.erpDesc': 'Complete management software for auto workshops.',
+    'landing.chooser.erpCta': 'Explore ERP',
+    'landing.chooser.marketTitle': 'GarageFlow Market',
+    'landing.chooser.marketDesc': 'Buy and sell certified cars.',
+    'landing.chooser.marketCta': 'Explore Market',
+    'landing.chooser.newBadge': 'New',
   },
 
   es: {

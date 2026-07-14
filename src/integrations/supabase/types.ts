@@ -6817,6 +6817,62 @@ export type Database = {
         }
         Relationships: []
       }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          name: string | null
+          phone: string | null
+          revoked_at: string | null
+          role: string
+          shop_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          name?: string | null
+          phone?: string | null
+          revoked_at?: string | null
+          role: string
+          shop_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          name?: string | null
+          phone?: string | null
+          revoked_at?: string | null
+          role?: string
+          shop_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trial_records: {
         Row: {
           created_at: string
@@ -7819,6 +7875,13 @@ export type Database = {
       }
     }
     Functions: {
+      accept_team_invitation: {
+        Args: { _token: string }
+        Returns: {
+          role: string
+          shop_id: string
+        }[]
+      }
       activate_marketplace_for_shop: {
         Args: { _shop_id: string }
         Returns: Json
@@ -7973,6 +8036,19 @@ export type Database = {
       }
       compute_business_metrics_snapshot: { Args: never; Returns: Json }
       compute_customer_health: { Args: never; Returns: Json }
+      create_team_invitation: {
+        Args: {
+          _email: string
+          _name?: string
+          _phone?: string
+          _role: string
+          _shop_id: string
+        }
+        Returns: {
+          invitation_id: string
+          token: string
+        }[]
+      }
       current_shop_role: { Args: { _shop_id: string }; Returns: string }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
@@ -8081,6 +8157,21 @@ export type Database = {
         Returns: {
           email: string
           user_id: string
+        }[]
+      }
+      get_team_invitation_info: {
+        Args: { _token: string }
+        Returns: {
+          accepted_at: string
+          email: string
+          expires_at: string
+          name: string
+          phone: string
+          revoked_at: string
+          role: string
+          shop_id: string
+          shop_name: string
+          valid: boolean
         }[]
       }
       get_user_emails_for_admin: {

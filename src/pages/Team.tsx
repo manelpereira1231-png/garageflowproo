@@ -95,11 +95,24 @@ export default function Team() {
 
     setInviting(true);
     try {
-      const signupUrl = `${window.location.origin}`;
+      // 1) Criar convite na BD e obter token único
+      const { data: invData, error: invErr } = await supabase.rpc("create_team_invitation", {
+        _shop_id: shopId,
+        _email: inviteEmail,
+        _role: inviteRole,
+        _name: null,
+        _phone: null,
+      });
+      if (invErr) throw invErr;
+      const token = Array.isArray(invData) ? (invData[0] as any)?.token : (invData as any)?.token;
+      if (!token) throw new Error("Não foi possível gerar o token do convite.");
+
+      // 2) Enviar email com link de aceitação
+      const inviteUrl = `${window.location.origin}/accept-invite?token=${token}`;
       await sendEmail({
         to: inviteEmail,
         subject: `${t('team.inviteSubject')} — ${shopName}`,
-        html: inviteUserEmailHtml(signupUrl, shopName, t(`team.role.${inviteRole}`)),
+        html: inviteUserEmailHtml(inviteUrl, shopName, t(`team.role.${inviteRole}`)),
         invite: true,
         shop_id: shopId,
       });
@@ -107,7 +120,6 @@ export default function Team() {
       setInviteEmail("");
       setInviteOpen(false);
     } catch (err: any) {
-      // Mostrar a mensagem real (útil para diagnosticar edge function / domínio de email)
       const msg = err?.message || t('team.inviteError');
       toast.error(msg.length > 140 ? msg.slice(0, 140) + '…' : msg);
       console.error("Team invite failed:", err);

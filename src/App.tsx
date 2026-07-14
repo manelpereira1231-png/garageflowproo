@@ -45,6 +45,7 @@ function lazyRetry(factory: () => Promise<any>) {
 }
 
 const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
+const AcceptInvite = lazyRetry(() => import("@/pages/AcceptInvite"));
 const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
@@ -492,6 +493,7 @@ const publicRoutes = [
   { path: "/quote/:token", element: <QuoteApproval /> },
   { path: "/portal/:token", element: <ClientPortal /> },
   { path: "/book/:slug", element: <PublicBooking /> },
+  { path: "/accept-invite", element: <Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense> },
   { path: "/", element: <LandingPage /> },
   { path: "/erp", element: <Suspense fallback={<PageLoader />}><ErpLanding /></Suspense> },
   { path: "/status", element: <Suspense fallback={<PageLoader />}><StatusPage /></Suspense> },
@@ -955,6 +957,7 @@ function AppRoutes() {
             <Route path="/quote/:token" element={<QuoteApproval />} />
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/marketing" element={<Auth defaultRedirect="/marketing" />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />

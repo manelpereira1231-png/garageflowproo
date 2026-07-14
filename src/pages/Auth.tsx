@@ -196,7 +196,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
 
       {/* Back to home */}
       <Link to="/" className="absolute top-4 left-4 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline">
-        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+        <ArrowLeft className="w-3.5 h-3.5" /> {t('common.back')}
       </Link>
 
       <div className="w-full max-w-md">

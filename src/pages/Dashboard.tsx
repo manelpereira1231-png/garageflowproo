@@ -48,20 +48,22 @@ const MONTH_NAMES: Record<string, string[]> = {
 };
 
 export default function Dashboard() {
-  const { t, language } = useLanguage();
-  const { isReady, user } = useAuthReady();
-  const { plan, isTrialing, trialDaysLeft } = useSubscription();
-  const { isGuidedMode } = useOnboardingStatus();
-  const activeShopId = useActiveShopId();
   const { role, loading: roleLoading } = useShopRole();
-
   // Role-specific dashboards: technician / reception / commercial get focused
   // screens; owner/admin/manager/super_admin keep the full KPI dashboard.
   if (roleLoading) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
   if (role === "technician") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><TechnicianDashboard /></Suspense>;
   if (role === "reception") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><ReceptionDashboard /></Suspense>;
   if (role === "commercial") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><CommercialDashboard /></Suspense>;
+  return <OwnerDashboard />;
+}
 
+function OwnerDashboard() {
+  const { t, language } = useLanguage();
+  const { isReady, user } = useAuthReady();
+  const { plan, isTrialing, trialDaysLeft } = useSubscription();
+  const { isGuidedMode } = useOnboardingStatus();
+  const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");

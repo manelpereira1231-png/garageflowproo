@@ -133,6 +133,8 @@ const Support = lazyRetry(() => import("@/pages/Support"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SupportFab from "@/components/SupportFab";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
+import { useShopRole } from "@/hooks/useShopRole";
+import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -348,6 +350,19 @@ function AuthRouteRedirect({
   }
 
   return <Navigate to={fallback} replace />;
+}
+
+function RoleProtectedRoute({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const { role, loading, shopId, can } = useShopRole();
+
+  if (loading) return <PageLoader />;
+  if (!shopId) return <>{children}</>;
+  if (!role) return <Navigate to="/onboarding" replace />;
+
+  return canOpenPath(location.pathname, role, can)
+    ? <>{children}</>
+    : <Navigate to={homeForRole(role)} replace />;
 }
 
 const adminRoutes = [
@@ -895,7 +910,15 @@ function AuthenticatedRoutes() {
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+              <Route
+                key={route.path}
+                path={route.path}
+                element={(
+                  <RoleProtectedRoute>
+                    <Suspense fallback={<PageLoader />}>{route.element}</Suspense>
+                  </RoleProtectedRoute>
+                )}
+              />
             ))}
           </Route>
           <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />

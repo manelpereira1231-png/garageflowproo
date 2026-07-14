@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
+import { useShopRole } from "@/hooks/useShopRole";
+import { canOpenPath } from "@/lib/rolePaths";
 import {
   CommandDialog,
   CommandEmpty,
@@ -33,7 +35,12 @@ export default function CommandPalette() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { activeShopId } = useShopContext();
+  const { role, can, loading: roleLoading } = useShopRole();
   const isPt = language === "pt";
+  const canAccess = useCallback(
+    (path: string) => !roleLoading && canOpenPath(path, role, can),
+    [can, role, roleLoading],
+  );
 
   // Listen for CMD+K / Ctrl+K and a global "open-command-palette" event
   useEffect(() => {
@@ -55,65 +62,67 @@ export default function CommandPalette() {
   // Search across tables
   const doSearch = useCallback(
     async (q: string) => {
-      if (!q || q.length < 2 || !activeShopId) {
+      if (!q || q.length < 2 || !activeShopId || roleLoading || !role) {
         setResults([]);
         return;
       }
       setSearching(true);
       const searchTerm = `%${q}%`;
 
+      const empty = Promise.resolve({ data: [] as any[] });
+
       const [clientsRes, vehiclesRes, quotesRes, invoicesRes, partsRes, servicesRes, catalogRes, apptsRes] =
         await Promise.all([
-          supabase
+          can("clients.view") ? supabase
             .from("clients")
             .select("id, name, phone, email")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
             .or(`name.ilike.${searchTerm},phone.ilike.${searchTerm},email.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("vehicles.view") ? supabase
             .from("vehicles")
             .select("id, make, model, plate, clients(name)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
             .or(`plate.ilike.${searchTerm},make.ilike.${searchTerm},model.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("quotes.view") ? supabase
             .from("quotes")
             .select("id, number, total, status, clients(name)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("invoices.view") ? supabase
             .from("invoices")
             .select("id, number, total, status, clients(name)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("stock.view") ? supabase
             .from("parts")
             .select("id, name, reference, stock_quantity")
             .eq("shop_id", activeShopId)
             .or(`name.ilike.${searchTerm},reference.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("work_orders.view") ? supabase
             .from("work_orders")
             .select("id, number, total, status, technician, clients(name), vehicles(plate,make,model)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm},technician.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("stock.view") ? supabase
             .from("service_catalog")
             .select("id, name, description, default_price, default_time")
             .eq("shop_id", activeShopId)
             .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
-            .limit(5),
-          supabase
+            .limit(5) : empty,
+          can("agenda.view") ? supabase
             .from("appointments")
             .select("id, scheduled_at, status, notes, clients(name), vehicles(plate)")
             .eq("shop_id", activeShopId)
             .or(`notes.ilike.${searchTerm}`)
-            .limit(5),
+            .limit(5) : empty,
         ]);
 
       const all: SearchResult[] = [
@@ -170,7 +179,7 @@ export default function CommandPalette() {
       setResults(all);
       setSearching(false);
     },
-    [activeShopId, isPt]
+    [activeShopId, can, isPt, role, roleLoading]
   );
 
   useEffect(() => {
@@ -182,19 +191,20 @@ export default function CommandPalette() {
     setOpen(false);
     setQuery("");
     switch (type) {
-      case "client": navigate("/clients"); break;
-      case "vehicle": navigate("/vehicles"); break;
-      case "quote": navigate(`/quotes/edit/${id}`); break;
-      case "invoice": navigate(`/invoices/${id}`); break;
-      case "part": navigate("/stock"); break;
-      case "service": navigate(`/services/edit/${id}`); break;
-      case "catalog": navigate("/catalog"); break;
-      case "appointment": navigate("/agenda"); break;
+      case "client": if (canAccess("/clients")) navigate("/clients"); break;
+      case "vehicle": if (canAccess("/vehicles")) navigate("/vehicles"); break;
+      case "quote": if (canAccess(`/quotes/edit/${id}`)) navigate(`/quotes/edit/${id}`); break;
+      case "invoice": if (canAccess(`/invoices/${id}`)) navigate(`/invoices/${id}`); break;
+      case "part": if (canAccess("/stock")) navigate("/stock"); break;
+      case "service": if (canAccess(`/services/edit/${id}`)) navigate(`/services/edit/${id}`); break;
+      case "catalog": if (canAccess("/catalog")) navigate("/catalog"); break;
+      case "appointment": if (canAccess("/agenda")) navigate("/agenda"); break;
       default: break;
     }
   };
 
   const handleNav = (path: string) => {
+    if (!canAccess(path)) return;
     setOpen(false);
     setQuery("");
     navigate(path);
@@ -238,14 +248,14 @@ export default function CommandPalette() {
     { label: isPt ? "Equipa" : "Team", icon: UserPlus, path: "/team" },
     { label: isPt ? "Definições" : "Settings", icon: Settings, path: "/settings" },
     { label: isPt ? "Faturação" : "Billing", icon: CreditCard, path: "/billing" },
-  ];
+  ].filter((page) => canAccess(page.path));
 
   const quickActions = [
     { label: isPt ? "Novo Cliente" : "New Client", icon: Plus, path: "/clients" },
     { label: isPt ? "Novo Orçamento" : "New Quote", icon: Plus, path: "/quotes/new" },
     { label: isPt ? "Novo Serviço" : "New Service", icon: Plus, path: "/services/new" },
     { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new" },
-  ];
+  ].filter((action) => canAccess(action.path));
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>

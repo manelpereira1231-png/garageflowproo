@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,7 +11,16 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import { useShopRole } from "@/hooks/useShopRole";
 import MarketActivityCard from "@/components/MarketActivityCard";
+
+// Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
+// the full dashboard below; the other roles get lean, focused screens.
+const TechnicianDashboard = lazy(() => import("@/pages/dashboards/TechnicianDashboard"));
+const ReceptionDashboard = lazy(() => import("@/pages/dashboards/ReceptionDashboard"));
+const CommercialDashboard = lazy(() => import("@/pages/dashboards/CommercialDashboard"));
+
+
 
 interface KPIData {
   revenue: number;
@@ -39,6 +48,17 @@ const MONTH_NAMES: Record<string, string[]> = {
 };
 
 export default function Dashboard() {
+  const { role, loading: roleLoading } = useShopRole();
+  // Role-specific dashboards: technician / reception / commercial get focused
+  // screens; owner/admin/manager/super_admin keep the full KPI dashboard.
+  if (roleLoading) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
+  if (role === "technician") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><TechnicianDashboard /></Suspense>;
+  if (role === "reception") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><ReceptionDashboard /></Suspense>;
+  if (role === "commercial") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><CommercialDashboard /></Suspense>;
+  return <OwnerDashboard />;
+}
+
+function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
   const { plan, isTrialing, trialDaysLeft } = useSubscription();

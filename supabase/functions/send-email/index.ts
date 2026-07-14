@@ -50,13 +50,19 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Require service-role internal token OR an authenticated user limited to safe recipients.
+    // P4: Prefer a dedicated INTERNAL_EMAIL_TOKEN. Keep SUPABASE_SERVICE_ROLE_KEY as a
+    // temporary fallback so in-flight calls keep working during rotation; remove after rollout.
     const authHeader = req.headers.get("Authorization") || "";
     const internalToken = req.headers.get("x-internal-token") || "";
-    const serviceSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const dedicatedInternal = Deno.env.get("INTERNAL_EMAIL_TOKEN") || "";
+    const serviceSecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     let isInternal = false;
     let callerUser: { id: string; email: string | null } | null = null;
-    if (internalToken && internalToken === serviceSecret) {
+    if (
+      internalToken &&
+      ((dedicatedInternal && internalToken === dedicatedInternal) ||
+       (serviceSecret && internalToken === serviceSecret))
+    ) {
       isInternal = true;
     } else if (authHeader.startsWith("Bearer ")) {
       const token = authHeader.replace("Bearer ", "");

@@ -67,11 +67,11 @@ export default function AppointmentsBell() {
       supabase.from("carity_listings").select("id").in("shop_id", ids),
       supabase
         .from("quotes")
-        .select("id, number, total, status, updated_at, clients(name)")
+        .select("id, number, total, status, created_at, clients(name)")
         .in("shop_id", ids)
         .in("status", ["approved", "converted"])
-        .gte("updated_at", since)
-        .order("updated_at", { ascending: false })
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
         .limit(20),
     ]);
     setItems((appts.data as any) ?? []);

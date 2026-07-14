@@ -582,8 +582,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
               { icon: Zap, title: "Rápido a usar", desc: "Criar um orçamento demora menos de 1 minuto. Tudo a 2 cliques." },
-              { icon: Shield, title: "Os teus dados são teus", desc: "RGPD, encriptação ponta-a-ponta, exporta tudo quando quiseres." },
-              { icon: CheckCircle, title: "Honesto", desc: "Sem letras pequenas. Cancela quando quiseres. 30 dias Pro grátis sem cartão." },
+              { icon: Shield, title: "Os seus dados são seus", desc: "RGPD, encriptação ponta-a-ponta, exporte tudo quando quiser." },
+              { icon: CheckCircle, title: "Honesto", desc: "Sem letras pequenas. Cancele quando quiser. 30 dias Pro grátis sem cartão." },
             ].map(({ icon: Icon, title, desc }) => (
               <article key={title} className="bg-card border border-border rounded-xl p-5 sm:p-6">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">

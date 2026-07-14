@@ -15,11 +15,14 @@ export type ShopRole =
 
 export type Capability =
   | "dashboard.view"
-  | "clients.view" | "clients.create" | "clients.edit" | "clients.delete"
-  | "vehicles.view" | "vehicles.create" | "vehicles.edit" | "vehicles.delete"
-  | "quotes.view" | "quotes.create" | "quotes.edit" | "quotes.approve"
+  | "clients.view" | "clients.create" | "clients.edit" | "clients.delete" | "clients.export"
+  | "vehicles.view" | "vehicles.create" | "vehicles.edit" | "vehicles.delete" | "vehicles.export"
+  | "quotes.view" | "quotes.create" | "quotes.edit" | "quotes.approve" | "quotes.delete"
+  | "quotes.send_email" | "quotes.send_whatsapp" | "quotes.print" | "quotes.export"
   | "work_orders.view" | "work_orders.create" | "work_orders.edit" | "work_orders.complete"
+  | "work_orders.delete" | "work_orders.export" | "work_orders.print"
   | "invoices.view" | "invoices.create" | "invoices.cancel"
+  | "invoices.send_email" | "invoices.print" | "invoices.export"
   | "finance.view_costs" | "finance.view_profits" | "finance.view_salaries"
   | "stock.view" | "stock.manage"
   | "purchases.view" | "purchases.manage"
@@ -42,32 +45,42 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
   admin: "*", // exceto transfer_ownership / remove_owner (tratados abaixo)
   manager: new Set([
     "dashboard.view",
-    "clients.view","clients.create","clients.edit","clients.delete",
-    "vehicles.view","vehicles.create","vehicles.edit","vehicles.delete",
-    "quotes.view","quotes.create","quotes.edit","quotes.approve",
+    "clients.view","clients.create","clients.edit","clients.delete","clients.export",
+    "vehicles.view","vehicles.create","vehicles.edit","vehicles.delete","vehicles.export",
+    "quotes.view","quotes.create","quotes.edit","quotes.approve","quotes.delete",
+    "quotes.send_email","quotes.send_whatsapp","quotes.print","quotes.export",
     "work_orders.view","work_orders.create","work_orders.edit","work_orders.complete",
+    "work_orders.delete","work_orders.export","work_orders.print",
     "invoices.view","invoices.create","invoices.cancel",
+    "invoices.send_email","invoices.print","invoices.export",
     "finance.view_costs","finance.view_profits",
     "stock.view","stock.manage","purchases.view","purchases.manage",
     "agenda.view","agenda.manage","alerts.view","chat.view","automations.view","loyalty.view","marketplace.view",
     "team.view","audit.view",
   ]),
   reception: new Set([
+    "dashboard.view",
     "clients.view","clients.create","clients.edit",
     "vehicles.view","vehicles.create","vehicles.edit",
     "quotes.view","quotes.create","quotes.edit",
+    "quotes.send_email","quotes.send_whatsapp","quotes.print",
     "work_orders.view","work_orders.create",
     "agenda.view","agenda.manage",
-    "invoices.view","alerts.view","chat.view",
+    "invoices.view","invoices.print",
+    "alerts.view","chat.view",
   ]),
   commercial: new Set([
-    "clients.view","clients.create","clients.edit",
+    "dashboard.view",
+    "clients.view","clients.create","clients.edit","clients.export",
     "vehicles.view","vehicles.create",
     "quotes.view","quotes.create","quotes.edit",
+    "quotes.send_email","quotes.send_whatsapp","quotes.print",
     "agenda.view","chat.view","loyalty.view",
   ]),
   technician: new Set([
+    "dashboard.view",
     "work_orders.view","work_orders.edit","work_orders.complete",
+    "vehicles.view",
     "agenda.view",
   ]),
 };

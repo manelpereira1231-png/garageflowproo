@@ -2,8 +2,11 @@ import type { Capability, ShopRole } from "@/hooks/useShopRole";
 
 /**
  * Maps each ERP sidebar path to the minimum capability required to open it.
- * Used by Layout to filter sidebar items per role.
- * Missing entries default to "always allowed" (public/shared pages).
+ * Used by Layout to filter sidebar items per role, by RoleProtectedRoute to
+ * gate direct URL access, and by the CommandPalette to filter suggestions.
+ *
+ * IMPORTANT: fail-closed. Paths not present here AND not in ALWAYS_ALLOWED
+ * are denied by default. Add new routes explicitly.
  */
 export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/dashboard": "dashboard.view",
@@ -16,6 +19,7 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/services/edit": "work_orders.edit",
   "/services": "work_orders.view",
   "/workshop": "work_orders.view",
+  "/inspections": "work_orders.view",
   "/agenda": "agenda.view",
   "/alerts": "alerts.view",
   "/chat": "chat.view",
@@ -36,6 +40,7 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/automations": "automations.view",
   "/loyalty": "loyalty.view",
   "/referrals": "referrals.view",
+  "/partners": "referrals.view",
   "/market/opportunities": "marketplace.manage",
   "/market/inspections": "marketplace.manage",
   "/market/offers": "marketplace.manage",
@@ -44,6 +49,22 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/market/stats": "marketplace.manage",
   "/market": "marketplace.view",
 };
+
+/**
+ * Paths shared por todos os papéis autenticados (perfil, notificações, etc.).
+ * Devem ser explícitos — nunca use este mecanismo para funcionalidades sensíveis.
+ */
+const ALWAYS_ALLOWED: readonly string[] = [
+  "/profile",
+  "/notifications",
+  "/onboarding",
+  "/support",
+  "/accept-invite",
+];
+
+function isAlwaysAllowed(pathname: string): boolean {
+  return ALWAYS_ALLOWED.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
 
 export function capabilityForPath(pathname: string): Capability | null {
   const match = Object.keys(PATH_REQUIRED_CAPABILITY)
@@ -58,8 +79,10 @@ export function canOpenPath(
   role: ShopRole,
   canCapability: (capability: Capability) => boolean,
 ): boolean {
+  if (isAlwaysAllowed(pathname)) return Boolean(role);
   const capability = capabilityForPath(pathname);
-  if (!capability) return true;
+  // Fail-closed: rotas não mapeadas exigem correspondência explícita.
+  if (!capability) return false;
   return Boolean(role && canCapability(capability));
 }
 

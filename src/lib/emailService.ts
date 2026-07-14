@@ -374,6 +374,14 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
 // amber, cartões, badges) do quoteEmailHtml para manter consistência.
 // ────────────────────────────────────────────────────────────────────────
 
+export interface InvoiceEmailItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  vat_rate?: number;
+  total: number;
+}
+
 export interface InvoiceEmailData {
   variant: 'issued' | 'paid';
   shopName: string;
@@ -388,6 +396,9 @@ export interface InvoiceEmailData {
   vehicleInfo: string;
   plate?: string;
   total: number;
+  subtotal?: number;
+  taxTotal?: number;
+  items?: InvoiceEmailItem[];
   amountPaid?: number;
   paymentDate?: string;
   paymentMethod?: string;

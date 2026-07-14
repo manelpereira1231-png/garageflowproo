@@ -5350,6 +5350,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.faq4Q': '¿Necesito experiencia en ventas?',
     'affiliate.faq4A': 'No. Solo comparte tu enlace con talleres que conozcas. GarageFlow hace el resto.',
     'affiliate.readyToStart': '¿Listo para empezar a ganar?',
+    'landing.chooser.eyebrow': 'Un ecosistema. Dos productos.',
+    'landing.chooser.title': '¿Cómo quiere usar GarageFlow?',
+    'landing.chooser.subtitle': 'Un ecosistema, dos productos. Elija el que tenga más sentido para usted.',
+    'landing.chooser.erpTitle': 'ERP para Talleres',
+    'landing.chooser.erpDesc': 'Software completo de gestión para talleres de automóvil.',
+    'landing.chooser.erpCta': 'Conocer el ERP',
+    'landing.chooser.marketTitle': 'GarageFlow Market',
+    'landing.chooser.marketDesc': 'Comprar y vender coches certificados.',
+    'landing.chooser.marketCta': 'Explorar Market',
+    'landing.chooser.newBadge': 'Nuevo',
   },
 
   'pt-BR': {

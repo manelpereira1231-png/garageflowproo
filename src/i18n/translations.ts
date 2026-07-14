@@ -7193,6 +7193,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'affiliate.faq4Q': 'Preciso ter experiência em vendas?',
     'affiliate.faq4A': 'Não. Apenas compartilhe seu link com oficinas que conhece. O GarageFlow faz o resto.',
     'affiliate.readyToStart': 'Pronto para começar a ganhar?',
+    'landing.chooser.eyebrow': 'Um ecossistema. Dois produtos.',
+    'landing.chooser.title': 'Como pretende utilizar o GarageFlow?',
+    'landing.chooser.subtitle': 'Um ecossistema, dois produtos. Escolha o que faz mais sentido para você.',
+    'landing.chooser.erpTitle': 'ERP para Oficinas',
+    'landing.chooser.erpDesc': 'Software completo de gestão para oficinas automotivas.',
+    'landing.chooser.erpCta': 'Conhecer o ERP',
+    'landing.chooser.marketTitle': 'GarageFlow Market',
+    'landing.chooser.marketDesc': 'Comprar e vender carros certificados.',
+    'landing.chooser.marketCta': 'Explorar Market',
+    'landing.chooser.newBadge': 'Novo',
   },
   // ─── Hindi (हिन्दी) — India primary language ────────────────
   // Only the most user-visible keys are translated. Anything missing falls

@@ -365,3 +365,161 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
     </div>
   `;
 }
+
+// ────────────────────────────────────────────────────────────────────────
+// Invoice emails — two distinct templates:
+//   • variant='issued' → "Nova Fatura Disponível" (pagamento pendente)
+//   • variant='paid'   → "Pagamento Confirmado"  (fatura liquidada)
+// Both templates reutilizam a mesma identidade visual (header charcoal +
+// amber, cartões, badges) do quoteEmailHtml para manter consistência.
+// ────────────────────────────────────────────────────────────────────────
+
+export interface InvoiceEmailData {
+  variant: 'issued' | 'paid';
+  shopName: string;
+  shopEmail?: string;
+  shopPhone?: string;
+  shopNif?: string;
+  shopAddress?: string;
+  shopLogoUrl?: string;
+  clientName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  vehicleInfo: string;
+  plate?: string;
+  total: number;
+  amountPaid?: number;
+  paymentDate?: string;
+  paymentMethod?: string;
+  currency?: string;
+  viewUrl?: string;
+}
+
+export function invoiceEmailHtml(data: InvoiceEmailData): string {
+  const cur = (data.currency || 'EUR') === 'EUR' ? '€' : (data.currency || '');
+  const isPaid = data.variant === 'paid';
+  const fmt = (v?: number) => (typeof v === 'number' ? `${cur} ${v.toFixed(2)}` : '—');
+
+  const logoHtml = data.shopLogoUrl
+    ? `<img src="${data.shopLogoUrl}" alt="${data.shopName}" style="max-height: 48px; max-width: 160px; margin-bottom: 8px;" /><br/>`
+    : '';
+
+  const headerTitle = isPaid ? 'Pagamento Confirmado' : 'Nova Fatura';
+  const badgeBg = isPaid ? '#f0fdf4' : '#fff7ed';
+  const badgeBorder = isPaid ? '#bbf7d0' : '#fed7aa';
+  const badgeColor = isPaid ? '#166534' : '#9a3412';
+  const badgeIcon = isPaid ? '🟢' : '🟠';
+  const badgeText = isPaid ? 'Pago' : 'Pendente de Pagamento';
+
+  const hero = isPaid
+    ? `<h2 style="color:#166534;font-size:22px;margin:0 0 8px;">✅ Pagamento Confirmado</h2>
+       <p style="color:#374151;font-size:14px;margin:0 0 20px;line-height:1.6;">
+         Olá <strong>${data.clientName}</strong>,<br/><br/>
+         Confirmamos que recebemos com sucesso o pagamento da sua fatura.
+         Muito obrigado pela confiança depositada na <strong>${data.shopName}</strong>.
+         Foi um prazer realizar o serviço na sua viatura — esperamos voltar a recebê-lo sempre que precisar.
+       </p>`
+    : `<h2 style="color:#1f2937;font-size:22px;margin:0 0 8px;">A sua fatura está disponível</h2>
+       <p style="color:#374151;font-size:14px;margin:0 0 20px;line-height:1.6;">
+         Olá <strong>${data.clientName}</strong>,<br/><br/>
+         Foi emitida uma nova fatura referente ao serviço realizado na sua viatura.
+         Segue abaixo um resumo, com o PDF em anexo.
+       </p>`;
+
+  const rows: [string, string][] = [
+    ['Nº Fatura', data.invoiceNumber],
+    ['Cliente', data.clientName],
+    ['Veículo', data.vehicleInfo || '—'],
+    ...(data.plate ? ([['Matrícula', data.plate]] as [string, string][]) : []),
+    ['Data', data.invoiceDate],
+    ['Total', fmt(data.total)],
+    ...(isPaid && typeof data.amountPaid === 'number' ? ([['Valor Pago', fmt(data.amountPaid)]] as [string, string][]) : []),
+    ...(isPaid && data.paymentDate ? ([['Data do Pagamento', data.paymentDate]] as [string, string][]) : []),
+    ...(isPaid && data.paymentMethod ? ([['Método de Pagamento', data.paymentMethod]] as [string, string][]) : []),
+  ];
+
+  const summary = rows.map(([k, v], i) => `
+    <tr style="background-color:${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
+      <td style="padding:10px 14px;font-size:13px;color:#6b7280;width:45%;">${k}</td>
+      <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600;text-align:right;">${v}</td>
+    </tr>`).join('');
+
+  const ctaHtml = data.viewUrl ? `
+    <div style="text-align:center;margin:24px 0 8px;">
+      <a href="${data.viewUrl}" style="display:inline-block;background-color:#262626;color:#ffb41e;padding:12px 28px;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.3px;">
+        Ver Fatura
+      </a>
+    </div>` : '';
+
+  const closing = isPaid
+    ? `<p style="color:#374151;font-size:14px;line-height:1.6;margin:20px 0 0;">
+         A sua fatura encontra-se totalmente liquidada. Guarde este documento para o seu arquivo pessoal ou fiscal.
+         Caso necessite de qualquer esclarecimento estaremos sempre disponíveis.<br/><br/>
+         Mais uma vez, muito obrigado por escolher a <strong>${data.shopName}</strong>.<br/>
+         Esperamos voltar a recebê-lo em breve. 🚗
+       </p>`
+    : `<p style="color:#374151;font-size:14px;line-height:1.6;margin:20px 0 0;">
+         Caso tenha alguma dúvida relativamente à faturação, estaremos totalmente disponíveis para ajudar.<br/><br/>
+         Obrigado pela confiança.<br/>
+         <strong>${data.shopName}</strong>
+       </p>`;
+
+  const preheader = isPaid
+    ? `Confirmamos o pagamento da fatura ${data.invoiceNumber}. Obrigado pela confiança.`
+    : `A sua fatura ${data.invoiceNumber} está disponível. PDF em anexo.`;
+
+  return `
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:0 auto;background-color:#ffffff;">
+      <!-- Header -->
+      <div style="background-color:#262626;padding:24px 32px;border-radius:12px 12px 0 0;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;">
+            ${logoHtml}
+            <span style="color:#ffb41e;font-size:20px;font-weight:700;">${data.shopName}</span>
+            ${data.shopNif ? `<br/><span style="color:#9ca3af;font-size:11px;">NIF: ${data.shopNif}</span>` : ''}
+            ${data.shopAddress ? `<br/><span style="color:#9ca3af;font-size:11px;">${data.shopAddress}</span>` : ''}
+          </td>
+          <td style="text-align:right;vertical-align:middle;">
+            <span style="color:#ffffff;font-size:20px;font-weight:700;">${headerTitle}</span><br/>
+            <span style="color:#ffb41e;font-size:16px;font-weight:600;">${data.invoiceNumber}</span><br/>
+            <span style="color:#9ca3af;font-size:12px;">${data.invoiceDate}</span>
+          </td>
+        </tr></table>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+        <!-- Status badge -->
+        <div style="display:inline-block;background-color:${badgeBg};border:1px solid ${badgeBorder};color:${badgeColor};padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:20px;">
+          ${badgeIcon} ${badgeText}
+        </div>
+
+        ${hero}
+
+        <!-- Summary card -->
+        <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin:8px 0 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+            ${summary}
+          </table>
+        </div>
+
+        <!-- PDF note -->
+        <div style="margin-top:16px;padding:12px 16px;background-color:#f9fafb;border-radius:8px;font-size:13px;color:#6b7280;">
+          📎 PDF da fatura em anexo${isPaid ? ' para o seu arquivo.' : '.'}
+        </div>
+
+        ${ctaHtml}
+
+        ${closing}
+
+        <!-- Footer -->
+        <div style="margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">
+            ${data.shopName}${data.shopEmail ? ` · ${data.shopEmail}` : ''}${data.shopPhone ? ` · ${data.shopPhone}` : ''}
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}

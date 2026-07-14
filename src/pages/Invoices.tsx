@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
-import { sendEmail } from "@/lib/emailService";
+import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -210,6 +210,10 @@ export default function Invoices() {
         type: 'invoice',
         number: inv.number,
         plate: (inv.vehicles as any)?.plate,
+        model: `${(inv.vehicles as any)?.make || ''} ${(inv.vehicles as any)?.model || ''}`.trim() || undefined,
+        total: Number(inv.total || 0),
+        invoiceStatus: inv.status,
+        shopName: shop?.name,
         pdfBlob,
         pdfFilename: `${inv.number}.pdf`,
       });
@@ -227,17 +231,49 @@ export default function Invoices() {
       const pdfBlob = await buildInvoicePdfBlob(inv);
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
       const base64 = await blobToBase64(pdfBlob);
-      const vehicle = `${(inv.vehicles as any)?.make || ''} ${(inv.vehicles as any)?.model || ''} — ${(inv.vehicles as any)?.plate || ''}`.trim();
-      const subject = `Fatura ${inv.number} — ${shop.name}`;
-      const html = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#111">
-          <h2 style="margin:0 0 12px">Fatura ${inv.number}</h2>
-          <p>Olá ${(inv.clients as any)?.name || ''},</p>
-          <p>Segue em anexo a sua fatura${vehicle ? ` referente a <strong>${vehicle}</strong>` : ''}.</p>
-          <p><strong>Total:</strong> €${Number(inv.total || 0).toFixed(2)}</p>
-          <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
-          <p style="color:#666;font-size:12px">${shop.name}${shop.phone ? ` · ${shop.phone}` : ''}${shop.email ? ` · ${shop.email}` : ''}</p>
-        </div>`;
+      const vehicle = `${(inv.vehicles as any)?.make || ''} ${(inv.vehicles as any)?.model || ''}`.trim();
+      const isPaid = inv.status === 'paid';
+      const subject = isPaid
+        ? `Pagamento Confirmado — ${inv.number}`
+        : `Nova Fatura Disponível — ${inv.number}`;
+      let paymentDate: string | undefined;
+      let paymentMethod: string | undefined;
+      let amountPaid: number | undefined;
+      if (isPaid) {
+        try {
+          const { data: pays } = await supabase
+            .from('payments')
+            .select('amount, method, paid_at')
+            .eq('invoice_id', inv.id)
+            .order('paid_at', { ascending: false });
+          if (pays && pays.length) {
+            amountPaid = pays.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+            paymentDate = new Date(pays[0].paid_at).toLocaleDateString('pt-PT');
+            paymentMethod = String(pays[0].method || '').toUpperCase();
+          } else {
+            amountPaid = Number(inv.total || 0);
+          }
+        } catch { /* ignore */ }
+      }
+      const html = invoiceEmailHtml({
+        variant: isPaid ? 'paid' : 'issued',
+        shopName: shop.name,
+        shopEmail: shop.email,
+        shopPhone: shop.phone,
+        shopNif: shop.nif,
+        shopAddress: shop.address,
+        shopLogoUrl: shop.logo_url,
+        clientName: (inv.clients as any)?.name || '',
+        invoiceNumber: inv.number,
+        invoiceDate: new Date(inv.created_at || Date.now()).toLocaleDateString('pt-PT'),
+        vehicleInfo: vehicle,
+        plate: (inv.vehicles as any)?.plate,
+        total: Number(inv.total || 0),
+        amountPaid,
+        paymentDate,
+        paymentMethod,
+        currency: shop.currency || 'EUR',
+      });
       await sendEmail({
         to: email,
         subject,
@@ -250,7 +286,7 @@ export default function Invoices() {
           entity_type: 'invoice', entity_id: inv.id,
         });
       }
-      toast.success('Email enviado com o PDF em anexo.');
+      toast.success(isPaid ? 'Confirmação de pagamento enviada.' : 'Fatura enviada por email.');
     } catch (err: any) {
       console.error('[invoices] email error', err);
       toast.error('Erro ao enviar email: ' + (err?.message || 'desconhecido'));

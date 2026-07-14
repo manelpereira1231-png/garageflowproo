@@ -26,6 +26,10 @@ export interface WhatsAppMessageParams {
   /** For type='quote' — current status. When 'approved'/'converted'/'rejected'/'expired',
    *  the message no longer asks for approval and the approval link is omitted. */
   quoteStatus?: 'draft' | 'sent' | 'approved' | 'converted' | 'rejected' | 'expired';
+  /** For type='invoice' — 'paid' triggers the payment confirmation message. */
+  invoiceStatus?: 'draft' | 'issued' | 'paid' | 'partial' | 'cancelled';
+  /** Optional shop name appended to the signature. */
+  shopName?: string;
 }
 
 function vehicleLabel(p: WhatsAppMessageParams): string {
@@ -89,9 +93,20 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
     }
     case 'invoice': {
       const num = p.number ? ` ${p.number}` : '';
-      let msg = `${greeting}\n\nSegue em anexo a fatura${num}${vehicleRef}.`;
-      if (includeLink && p.link) msg += `\n\n📄 Consultar/descarregar PDF:\n${p.link}`;
-      msg += `\n\nObrigado pela preferência.`;
+      const veh = vehicleLabel(p);
+      const totalStr = formatEUR(p.total);
+      const signature = p.shopName ? `\n\n${p.shopName}` : '';
+      if (p.invoiceStatus === 'paid') {
+        let msg = `${greeting} 👋\n\nConfirmamos a receção do pagamento da sua fatura${num}.\n\n✅ Pagamento recebido com sucesso.`;
+        if (p.shopName) msg += `\n\nMuito obrigado pela confiança na ${p.shopName}.`;
+        msg += `\n\nSegue novamente a fatura em PDF para o seu arquivo.\n\nEsperamos voltar a recebê-lo em breve.\nTenha uma excelente condução! 🚗${signature}`;
+        return msg;
+      }
+      let msg = `${greeting} 👋\n\nA sua fatura já se encontra disponível.`;
+      msg += `\n\n🧾 Fatura:${num || ' —'}`;
+      msg += `\n🚗 Veículo: ${veh}`;
+      if (totalStr) msg += `\n💶 Total: ${totalStr}`;
+      msg += `\n\nSegue em anexo o PDF da fatura.\n\nCaso tenha alguma dúvida estaremos totalmente disponíveis.\n\nObrigado pela confiança.${signature}`;
       return msg;
     }
     case 'quote': {

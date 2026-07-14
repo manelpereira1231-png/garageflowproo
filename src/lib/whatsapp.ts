@@ -97,9 +97,9 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
       const totalStr = formatEUR(p.total);
       const signature = p.shopName ? `\n\n${p.shopName}` : '';
       if (p.invoiceStatus === 'paid') {
-        let msg = `${greeting} 👋\n\nConfirmamos a receção do pagamento da sua fatura${num}.\n\n✅ Pagamento recebido com sucesso.`;
-        if (p.shopName) msg += `\n\nMuito obrigado pela confiança na ${p.shopName}.`;
-        msg += `\n\nSegue novamente a fatura em PDF para o seu arquivo.\n\nEsperamos voltar a recebê-lo em breve.\nTenha uma excelente condução! 🚗${signature}`;
+        let msg = `${greeting} 👋\n\nConfirmamos a receção do pagamento da sua fatura${num}.\n\n✅ O pagamento foi recebido com sucesso.\n\nSegue novamente a sua fatura em PDF para o seu arquivo.`;
+        if (p.shopName) msg += `\n\nMuito obrigado por ter escolhido a ${p.shopName}.`;
+        msg += `\n\nEsperamos voltar a recebê-lo sempre que precisar.\n\nTenha uma excelente condução! 🚗`;
         return msg;
       }
       let msg = `${greeting} 👋\n\nA sua fatura já se encontra disponível.`;

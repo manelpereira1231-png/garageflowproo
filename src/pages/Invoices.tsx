@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
-import { sendEmail } from "@/lib/emailService";
+import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";

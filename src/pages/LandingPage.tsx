@@ -69,6 +69,14 @@ export default function LandingPage() {
   };
   const [landingCfg, setLandingCfg] = useState<LandingCfg>(DEFAULT_LANDING);
 
+  // Feature flags controlled by Super Admin in /admin/system-control.
+  // Source of truth = `system_feature_flags` in the database.
+  // `null` = still loading (do NOT render either card yet — no fallback-to-visible).
+  // `true` = flag row missing OR flag row enabled=true.
+  // `false` = flag row exists AND enabled=false → card MUST be hidden.
+  const [erpEnabled, setErpEnabled] = useState<boolean | null>(null);
+  const [marketEnabled, setMarketEnabled] = useState<boolean | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     const apply = (value: any) => {
@@ -80,21 +88,64 @@ export default function LandingPage() {
         market: { ...prev.market, ...(value.market || {}) },
       }));
     };
+    const loadFlags = async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase
+          .from("system_feature_flags")
+          .select("key, enabled")
+          .in("key", ["erp_enabled", "market_enabled"]);
+        if (cancelled) return;
+        const rows = (data || []) as Array<{ key: string; enabled: boolean }>;
+        const erpRow = rows.find((r) => r.key === "erp_enabled");
+        const marketRow = rows.find((r) => r.key === "market_enabled");
+        // Missing flag row → visible (nothing in DB says it's off).
+        // Present + enabled=false → hidden. No hardcoded overrides, no cache.
+        setErpEnabled(erpRow ? !!erpRow.enabled : true);
+        setMarketEnabled(marketRow ? !!marketRow.enabled : true);
+      } catch {
+        // On a hard failure keep null → cards stay hidden until we can confirm state.
+        if (!cancelled) { setErpEnabled(false); setMarketEnabled(false); }
+      }
+    };
     (async () => {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
         const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
         if (!cancelled) apply(data?.value);
       } catch { /* keep defaults */ }
+      await loadFlags();
     })();
+
     const onUpdate = () => {
       import("@/integrations/supabase/client").then(async ({ supabase }) => {
         const { data } = await supabase.from("platform_settings").select("value").eq("key", "landing").maybeSingle();
         apply(data?.value);
       });
+      loadFlags();
     };
     window.addEventListener("garageflow:platform-settings-updated", onUpdate);
-    return () => { cancelled = true; window.removeEventListener("garageflow:platform-settings-updated", onUpdate); };
+
+    // Realtime: react instantly when the Super Admin toggles a flag,
+    // no refresh/logout needed.
+    let channel: any = null;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      if (cancelled) return;
+      channel = supabase
+        .channel("landing-feature-flags")
+        .on("postgres_changes", { event: "*", schema: "public", table: "system_feature_flags" }, () => {
+          loadFlags();
+        })
+        .subscribe();
+    });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("garageflow:platform-settings-updated", onUpdate);
+      if (channel) {
+        import("@/integrations/supabase/client").then(({ supabase }) => supabase.removeChannel(channel));
+      }
+    };
   }, []);
 
   const chooserEnabled = landingCfg.chooserEnabled;
@@ -298,15 +349,18 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable) */}
-      {chooserEnabled && (() => {
+      {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable).
+          Cards are gated by system_feature_flags in real time. If both products
+          are disabled, or flags still loading, the entire section is hidden. */}
+      {chooserEnabled && (erpEnabled === true || marketEnabled === true) && (() => {
         const iconMap: Record<string, any> = { Wrench, ShieldCheck, Car, Store, Building2, Users, Sparkles };
         const ErpIcon = iconMap[landingCfg.erp.icon] || Wrench;
         const MarketIcon = iconMap[landingCfg.market.icon] || Car;
         const featured = landingCfg.featured;
-        const cards = [
+        const allCards = [
           {
             key: "erp" as const,
+            visible: erpEnabled === true,
             Icon: ErpIcon,
             title: landingCfg.erp.title,
             description: landingCfg.erp.description,
@@ -318,6 +372,7 @@ export default function LandingPage() {
           },
           {
             key: "market" as const,
+            visible: marketEnabled === true,
             Icon: MarketIcon,
             title: landingCfg.market.title,
             description: landingCfg.market.description,
@@ -328,6 +383,7 @@ export default function LandingPage() {
             track: "home_choose_market",
           },
         ];
+        const cards = allCards.filter((c) => c.visible);
         if (landingCfg.order === "market_first") cards.reverse();
         return (
           <aside

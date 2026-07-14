@@ -90,17 +90,18 @@ export function useShopRole() {
   const userId = user?.id ?? null;
   const cacheKey = userId && shopId ? `${userId}:${shopId}` : null;
   const [role, setRole] = useState<ShopRole>(cacheKey ? cache.get(cacheKey) ?? null : null);
+  const [roleKey, setRoleKey] = useState<string | null>(cacheKey ?? null);
   const [loading, setLoading] = useState(true);
   const hasCachedRole = Boolean(cacheKey && cache.has(cacheKey));
-  const resolvedRole = hasCachedRole ? cache.get(cacheKey!) ?? null : role;
-  const isRoleLookupPending = Boolean(isReady && !shopLoading && userId && shopId && !hasCachedRole && loading);
+  const resolvedRole = hasCachedRole ? cache.get(cacheKey!) ?? null : roleKey === cacheKey ? role : null;
+  const isRoleLookupPending = Boolean(isReady && !shopLoading && userId && shopId && (!hasCachedRole && (loading || roleKey !== cacheKey)));
   const effectiveLoading = loading || isRoleLookupPending;
 
   useEffect(() => {
     if (!isReady || shopLoading) { setLoading(true); return; }
-    if (!userId || !shopId || !cacheKey) { setRole(null); setLoading(false); return; }
+    if (!userId || !shopId || !cacheKey) { setRoleKey(null); setRole(null); setLoading(false); return; }
     const cached = cache.get(cacheKey);
-    if (cached) { setRole(cached); setLoading(false); return; }
+    if (cached) { setRoleKey(cacheKey); setRole(cached); setLoading(false); return; }
     let alive = true;
     setLoading(true);
     (async () => {
@@ -108,6 +109,7 @@ export function useShopRole() {
       if (!alive) return;
       const r = error ? null : (data as ShopRole) ?? null;
       cache.set(cacheKey, r);
+      setRoleKey(cacheKey);
       setRole(r);
       setLoading(false);
     })();

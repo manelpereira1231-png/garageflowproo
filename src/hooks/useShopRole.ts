@@ -108,7 +108,7 @@ export function useShopRole() {
       const { data, error } = await supabase.rpc("current_shop_role", { _shop_id: shopId });
       if (!alive) return;
       const r = error ? null : (data as ShopRole) ?? null;
-      cache.set(cacheKey, r);
+      if (r) cache.set(cacheKey, r);
       setRoleKey(cacheKey);
       setRole(r);
       setLoading(false);

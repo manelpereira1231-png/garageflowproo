@@ -894,9 +894,12 @@ export default function LandingPage() {
             </div>
             <span className="text-sm font-semibold">GarageFlow</span>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">{t('landing.navFeatures')}</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">{t('landing.navPricing')}</a>
+            <Link to="/legal/privacy" className="hover:text-foreground transition-colors">{t('legal.privacy') || 'Privacy'}</Link>
+            <Link to="/legal/terms" className="hover:text-foreground transition-colors">{t('legal.terms') || 'Terms'}</Link>
+            <Link to="/legal/cookies" className="hover:text-foreground transition-colors">{t('legal.cookies') || 'Cookies'}</Link>
             <LanguageDropdown variant="ghost" size="sm" />
             <ThemeToggle />
           </div>

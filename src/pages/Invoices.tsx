@@ -255,7 +255,6 @@ export default function Invoices() {
           }
         } catch { /* ignore */ }
       }
-      const { invoiceEmailHtml } = await import('@/lib/emailService');
       const html = invoiceEmailHtml({
         variant: isPaid ? 'paid' : 'issued',
         shopName: shop.name,

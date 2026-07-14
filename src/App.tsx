@@ -493,6 +493,7 @@ const publicRoutes = [
   { path: "/quote/:token", element: <QuoteApproval /> },
   { path: "/portal/:token", element: <ClientPortal /> },
   { path: "/book/:slug", element: <PublicBooking /> },
+  { path: "/accept-invite", element: <Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense> },
   { path: "/", element: <LandingPage /> },
   { path: "/erp", element: <Suspense fallback={<PageLoader />}><ErpLanding /></Suspense> },
   { path: "/status", element: <Suspense fallback={<PageLoader />}><StatusPage /></Suspense> },

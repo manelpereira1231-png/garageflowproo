@@ -1,113 +1,105 @@
-## Auditoria — o que já existe (a reutilizar, nunca duplicar)
 
-**Autenticação**
-- `src/pages/Auth.tsx` — login/signup único. `useAuthReady` + `useAuthUser` (hot session cache, sem chamadas extra a `/auth/user`).
-- Realms isolados (ERP vs Market) em `src/integrations/supabase/realmClients.ts`. Manter.
-- Super-admin em `useSuperAdmin` — não tocar.
+# Plano: Sistema de Equipa, Perfis, Permissões e Email de Fatura
 
-**Utilizadores da oficina**
-- Tabela `shop_users(shop_id, user_id, role text)` — já em uso; roles atuais: `owner`, `manager`, `technician`.
-- Página `src/pages/Team.tsx` — convite via email + change role + remove. **Fonte única da equipa.**
-- RPC `get_shop_member_emails`, `get_user_shop_ids` — já existem.
-- `useShopContext` + `useActiveShopId` — contexto multi-oficina reactivo.
+Antes de tocar em código, preciso confirmar o âmbito. Este é um bloco grande e prefiro alinhar contigo para não fazer trabalho a mais nem partir o que já funciona.
 
-**RLS existente**
-- Quase todas as tabelas (`clients, vehicles, quotes, work_orders, invoices, appointments, service_catalog, parts, alerts, notifications, staff_absences`…) já filtram por `shop_id IN (SELECT id FROM shops WHERE user_id = auth.uid())` **ou** `shop_id IN (SELECT shop_id FROM shop_users WHERE user_id = auth.uid())`. Ou seja: proprietários e membros da equipa já vêem os dados. O que falta é **restringir por perfil (role) dentro da mesma oficina**.
+## 1. Auditoria (sem alterações)
 
-**Layout / sidebar**
-- `src/components/Layout.tsx` — navegação única. `useSidebarPrefs` permite personalização.
-- `src/pages/Workshop.tsx` — já é um painel operacional para mecânicos (existe mas subutilizado).
+Vou primeiro ler e mapear:
+- `useShopRole.ts`, `rolePaths.ts`, `RoleProtectedRoute` (App.tsx), `Layout.tsx`, `CommandPalette.tsx`
+- `AcceptInvite.tsx` + Edge Function do convite + tabela `team_invitations`
+- Função `has_capability` na BD + RLS de tabelas críticas (invoices, payments, suppliers, shops, user_roles)
+- Fluxo atual de emissão/pagamento de fatura em `Invoices.tsx` + `invoiceEmailHtml`
 
-## Lacunas identificadas
-1. Roles limitados a 3 (`owner/manager/technician`). Faltam **`reception`** e **`commercial`**.
-2. Não há **capabilities** granulares por role → toda a UI mostra tudo aos membros.
-3. RLS de tabelas financeiras (`invoices`, `quotes.cost_total/profit`, `work_orders.cost_total/profit`, `parts.internal_cost`, `payments`, `shop_wallets`) não distingue role — receção/mecânico vêem custos/lucros.
-4. Sem página inicial diferente por role — todos caem em `/dashboard`.
-5. Sem audit log de acessos (last_login, IP, device, force_logout).
+Entrego um relatório curto do que está OK vs. em falta antes de mexer.
 
-## Plano (5 fases, incremental, zero regressões)
+## 2. Convite — corrigir "Invalid login credentials"
 
-### Fase 1 — Base de roles e capabilities (server + client, uma única fonte)
-**Migração DB:**
-- `shop_users`: passar `role` para enum `shop_role` = `owner | admin | manager | reception | technician | commercial`. Manter valores existentes.
-- Nova tabela `shop_user_profiles(shop_user_id, name, phone, position, avatar_url, active, created_at, updated_at)` — dados adicionais do colaborador (nome/foto/cargo) sem tocar em `auth.users`.
-- Nova função SECURITY DEFINER `public.current_shop_role(_shop_id uuid) returns shop_role` — devolve o role do utilizador na oficina; usada por RLS e frontend.
-- Nova função `public.has_capability(_shop_id uuid, _cap text) returns boolean` — consulta um mapa role→capabilities canónico (dentro da própria função, imutável) para evitar tabela extra manipulável.
+Causa provável: mesmo com `auto_confirm_email=true`, o `signInWithPassword` corre antes do user ser materializado, ou o `signUp` está a devolver "user already exists" (convite reenviado) e cai no fallback.
 
-**Capabilities canónicas (uma única definição, server-side):**
+Correção:
+- `AcceptInvite.tsx`: após `signUp` bem sucedido, usar a `session` devolvida diretamente (não voltar a chamar `signInWithPassword`). Se `session` for null, aí sim tentar login.
+- Se `signUp` devolver "already registered", chamar `signInWithPassword` com a password nova só se o convite ainda estiver `pending` (senão pedir reset).
+- Só depois de haver sessão válida: consumir o convite via RPC `accept_team_invitation` (SECURITY DEFINER) que insere em `shop_users` + `user_roles` atomicamente e marca convite como `accepted`.
+- Redirect final via `rolePaths` conforme role.
+
+## 3. Matriz de permissões — congelar definição
+
+Perfis: `owner`, `admin`, `manager`, `reception`, `technician`, `sales`.
+
+Capabilities (exemplo — vou apresentar tabela final na implementação):
+
+```text
+                owner admin manager reception technician sales
+dashboard.full    x     x      -        -          -       -
+dashboard.ops     x     x      x        -          -       -
+dashboard.desk    x     x      x        x          -       -
+dashboard.tech    x     x      x        -          x       -
+dashboard.sales   x     x      x        -          -       x
+clients.rw        x     x      x        x          -       x
+clients.read      x     x      x        x          x(own)  x
+vehicles.rw       x     x      x        x          -       x
+workorders.rw     x     x      x        x          x(own)  -
+workorders.exec   -     -      -        -          x       -
+quotes.rw         x     x      x        x          -       x
+invoices.rw       x     x      -        -          -       -
+payments.rw       x     x      -        x(cash)    -       -
+stock.rw          x     x      x        -          -       -
+purchases.rw      x     x      x        -          -       -
+suppliers.rw      x     x      x        -          -       -
+finance.view      x     x      -        -          -       -
+marketplace.mng   x     x      -        -          -       x
+team.rw           x     x(-owner) -     -          -       -
+settings.rw       x     x(-critical) -   -          -       -
+shop.delete       x     -      -        -          -       -
 ```
-clients.view/create/edit/delete
-vehicles.view/create/edit/delete
-quotes.view/create/edit/approve
-work_orders.view/create/edit/complete
-invoices.view/create/cancel
-finance.view_costs/view_profits/view_salaries
-stock.view/manage
-purchases.view/manage
-agenda.view/manage
-marketplace.view/manage
-team.view/manage
-settings.manage
-audit.view
-```
-Matriz role→capabilities: owner=tudo; admin=tudo exceto `settings.transfer_ownership` + `team.remove_owner`; manager=operacional + finance limitada; reception=clients/vehicles/quotes/work_orders/agenda (sem finance/marketplace/settings); commercial=clients/vehicles/quotes + leads (sem stock/finance/settings); technician=**nenhuma capability web tradicional** — usa o painel Workshop.
 
-**Frontend:**
-- Novo hook `src/hooks/useShopRole.ts` — devolve `{ role, can(cap) }` alimentado por `current_shop_role` (uma query por sessão, cached).
-- Componente `<Can cap="finance.view_costs">…</Can>` para condicionar botões/campos. **Não substitui RLS — é UX.**
+Aplicada em três camadas:
+1. **Frontend**: `useCapability(cap)` → sidebar, botões, rotas (`RoleProtectedRoute`).
+2. **RPC `has_capability(uid, cap)`** SECURITY DEFINER na BD.
+3. **RLS**: policies das tabelas sensíveis chamam `has_capability`.
 
-### Fase 2 — RLS por role (backend enforcement real)
-**Views seguras (nunca esconder colunas apenas no client):**
-- `public.quotes_public` (sem `cost_total`, `profit`, linhas de custo interno) + policy na base a negar SELECT para roles sem `finance.view_costs`.
-- `public.work_orders_public` idem.
-- `public.parts_public` sem `internal_cost`.
-- `payments`, `shop_wallets`, `invoices.total`/`vat_total` continuam completos, mas com policy: apenas roles com `finance.view_costs` conseguem SELECT.
+## 4. Sidebar e Dashboard por perfil
 
-Padrão SQL (aplicado a cada tabela financeira):
-```sql
-CREATE POLICY "financial_role_read" ON public.<t>
-FOR SELECT USING (
-  public.has_capability(shop_id, 'finance.view_costs')
-);
-```
-Escrita continua a exigir role adequado (`quotes.approve`, `invoices.create`, etc.).
+- Sidebar construída a partir da matriz (nunca só `hidden`).
+- Rotas de dashboard: `/dashboard` faz redirect interno para `/dashboard/owner|ops|desk|tech|sales` conforme role.
+- Cada dashboard já existe em partes — vou reutilizar componentes, não criar novos widgets.
 
-Frontend passa a ler as `_public` views para os roles não financeiros; a query cai naturalmente para a view/tabela conforme o role — sem `if` no client.
+## 5. Segurança de URLs
 
-### Fase 3 — Fluxo e experiência por role
-- `/` (após login) redireciona conforme role:
-  - `technician` → `/workshop` (painel operacional já existente, melhorado)
-  - `reception` → `/agenda`
-  - `commercial` → `/clients?tab=leads`
-  - `owner/admin/manager` → `/dashboard` (atual)
-- `Layout.tsx` filtra items da sidebar através de `can()` — nada duplicado, só se esconde.
-- `Team.tsx` ganha:
-  - dropdown de roles com as 6 opções + descrição;
-  - form completo (nome, telefone, cargo, foto) gravado em `shop_user_profiles`;
-  - ações: desativar/reativar/suspender/forçar logout/obrigar reset password/transferir propriedade.
-- `Workshop.tsx` (painel do mecânico) já existe — completar com: iniciar/pausar/retomar/concluir (usa `work_order_times` já existente), fotos/vídeos (`work_order_attachments` já existe), checklist (`inspection_checklists`), pedido de aprovação/ajuda (linha em `notifications`).
+- `RoleProtectedRoute` já existe → reforçar para redirecionar em vez de mostrar 404.
+- RLS complementa: mesmo com URL manual, queries devolvem vazio/erro.
 
-### Fase 4 — Agenda inteligente com competências
-Extensão do motor `src/lib/schedulingEngine.ts` já criado:
-- Ler `shop_user_profiles.skills text[]` (nova coluna) e `service_catalog.required_skill text` (nova coluna, opcional).
-- `suggestSlots` filtra mecânicos com skill compatível e escolhe o de menor carga no dia (aprendizagem simples via `work_order_times` histórico → média por serviço, se `service_catalog.default_time` estiver a zero).
+## 6. Painel de Equipa (owner/admin)
 
-### Fase 5 — Auditoria e sessões
-- Tabela `audit_logs` já existe. Adicionar `session_events(user_id, shop_id, event, ip, user_agent, created_at)` para login/logout/force_logout.
-- RPC `admin_force_logout(_user_id, _shop_id)` — invalida refresh tokens via revoke em `auth.sessions` (via SECURITY DEFINER limitado a `owner/admin`).
-- Página Team ganha aba "Auditoria" filtrada por colaborador.
+Em `Team.tsx` (existente), garantir:
+- convidar / reenviar / cancelar convite
+- mudar role
+- desativar / reativar / remover
+- último login (via `auth.users.last_sign_in_at` exposto por view)
+- estado do convite
 
-## O que NÃO será feito
-- Não criar segunda página de login, novo dashboard, novo ERP, nem duplicar Market.
-- Não substituir `shop_users` por `user_roles` global — o projeto é multi-tenant por oficina, o role vive por oficina.
-- Não tocar em Super Admin, Market realm, edge functions existentes, Stripe, PDFs, WhatsApp, email templates. Só **restringem-se** por role no fim (Fase 2 RLS já garante).
-- Não introduzir libs novas.
+## 7. Email automático de fatura paga
 
-## Ordem de execução (aprovação incremental)
-1. **Fase 1** — migração enum + tabela profiles + funções `current_shop_role`/`has_capability` + hook `useShopRole` + `<Can>`. Testar Team com 5 roles.
-2. **Fase 2** — views `_public` + policies financeiras. Ajustar leituras nas páginas afectadas.
-3. **Fase 3** — redirect por role + Layout filtrado + form completo em Team + Workshop completo.
-4. **Fase 4** — skills + scheduling engine v2.
-5. **Fase 5** — auditoria + force logout.
+Verificar se já existe trigger. Se sim, garantir que envia o template `paid` com **todas as linhas discriminadas** (não só total). Se não existe:
+- Ao marcar fatura como `paid` em `Invoices.tsx` → chamar `sendInvoiceByEmail` com `status='paid'` já automaticamente (já implementado parcialmente na sessão anterior).
+- Melhorar `invoiceEmailHtml` para incluir tabela de itens (descrição, qtd, preço unit., IVA, total linha) igual ao orçamento — reutilizando o mesmo componente de tabela.
 
-Confirmo que cada fase é uma migração + um lote pequeno de UI, sem regressões, sem duplicação. Aprovas para começar pela **Fase 1**?
+## 8. Testes finais
+
+Playwright headless para cada role: aceitar convite → login → dashboard correto → tentar aceder URL proibido → verificar bloqueio.
+
+---
+
+## Estimativa
+
+Isto são **múltiplas migrations + ~10 ficheiros frontend + template email + testes**. Provavelmente 2–3 turnos grandes.
+
+## Perguntas antes de avançar
+
+1. Confirmas a matriz de capabilities acima? Alguma célula errada?
+2. **Manager** — confirmas que NÃO vê faturação/finance? (é comum managers verem)
+3. **Reception** pode registar pagamentos em dinheiro? (assumi que sim)
+4. Queres que faça isto num só turno grande (mais lento, mais risco) ou fase a fase (convite+segurança → matriz+sidebar → dashboards → email)?
+
+Assim que respondas avanço com a auditoria concreta ao código atual e a implementação.

@@ -142,6 +142,82 @@ export default function InvoiceDetail() {
     setPayAmount(0);
     setPayRef("");
 
+    // Auto-envio do email de confirmação de pagamento quando fica totalmente pago
+    if (isFullyPaid) {
+      const clientEmail = (invoice.clients as any)?.email as string | undefined;
+      if (clientEmail && shop) {
+        try {
+          const pdfDoc = await generateInvoicePdf({
+            invoice: { ...invoice, status: 'paid' },
+            items,
+            shop,
+            clientName: (invoice.clients as any)?.name || '',
+            clientEmail,
+            clientPhone: (invoice.clients as any)?.phone,
+            clientNif: (invoice.clients as any)?.nif,
+            vehicleMake: (invoice.vehicles as any)?.make,
+            vehicleModel: (invoice.vehicles as any)?.model,
+            vehiclePlate: (invoice.vehicles as any)?.plate,
+            totalPaid: newTotalPaid,
+            plan,
+          });
+          const pdfBlob = pdfDoc.output('blob') as Blob;
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onerror = () => reject(r.error);
+            r.onload = () => {
+              const s = String(r.result || '');
+              resolve(s.includes(',') ? s.split(',')[1] : s);
+            };
+            r.readAsDataURL(pdfBlob);
+          });
+          const subtotal = items.reduce((s: number, it: any) => s + Number(it.quantity || 0) * Number(it.unit_price || 0), 0);
+          const taxTotal = Math.max(0, Number(invoice.total || 0) - subtotal);
+          const html = invoiceEmailHtml({
+            variant: 'paid',
+            shopName: shop.name,
+            shopEmail: shop.email,
+            shopPhone: shop.phone,
+            shopNif: shop.nif,
+            shopAddress: shop.address,
+            shopLogoUrl: shop.logo_url,
+            clientName: (invoice.clients as any)?.name || '',
+            invoiceNumber: invoice.number,
+            invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString('pt-PT'),
+            vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
+            plate: (invoice.vehicles as any)?.plate,
+            total: Number(invoice.total || 0),
+            subtotal,
+            taxTotal,
+            items: items.map((it: any) => ({
+              description: it.description, quantity: Number(it.quantity || 0),
+              unit_price: Number(it.unit_price || 0), vat_rate: it.vat_rate != null ? Number(it.vat_rate) : undefined,
+              total: Number(it.total || 0),
+            })),
+            amountPaid: newTotalPaid,
+            paymentDate: new Date(payDate).toLocaleDateString('pt-PT'),
+            paymentMethod: String(payMethod || '').toUpperCase(),
+            currency: shop.currency || 'EUR',
+          });
+          await sendEmail({
+            to: clientEmail,
+            subject: `Pagamento Confirmado — ${invoice.number}`,
+            html,
+            attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+          });
+          await supabase.from('email_logs').insert({
+            shop_id: shop.id, to_email: clientEmail,
+            subject: `Pagamento Confirmado — ${invoice.number}`,
+            status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
+          });
+          toast.success('Confirmação de pagamento enviada ao cliente por email.');
+        } catch (e: any) {
+          console.warn('[invoice] auto paid email failed', e);
+          toast.message('Pagamento registado. O envio automático do email falhou — pode reenviar manualmente.');
+        }
+      }
+    }
+
     // Auto-emitir Fatura-Recibo no InvoiceExpress quando o pagamento fica completo
     if (isFullyPaid && !invoice.provider_invoice_id && billingProvider === 'invoicexpress') {
       try {

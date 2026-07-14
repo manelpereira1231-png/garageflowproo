@@ -147,6 +147,9 @@ serve(async (req: Request) => {
 
       // Allow caller's own email always.
       const ownEmail = (callerUser.email ?? "").toLowerCase();
+      const allowed = new Set<string>();
+      if (ownEmail) allowed.add(ownEmail);
+
 
       // P5: if the caller supplies a shop_id, verify membership and restrict the
       // allowlist to THAT shop's clients/owner email — not the union of every shop the

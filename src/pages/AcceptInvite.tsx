@@ -106,7 +106,7 @@ export default function AcceptInvite() {
             email: info.email, password,
           });
           if (sErr) {
-            toast.success("Conta criada. Confirme o email e depois volte a abrir este link para entrar.");
+            toast.message("Conta criada. Confirme o email através da mensagem que recebeu e volte a abrir este link para entrar.");
             setSubmitting(false);
             return;
           }

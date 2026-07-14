@@ -328,7 +328,13 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
 
         {/* Footer — cross-link to Market */}
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Quer comprar ou vender carros? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite o GarageFlow Market →</Link>
+          {language === 'pt' || language === 'pt-BR'
+            ? <>Quer comprar ou vender carros? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite o GarageFlow Market →</Link></>
+            : language === 'es'
+              ? <>¿Quiere comprar o vender coches? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visite GarageFlow Market →</Link></>
+              : language === 'hi'
+                ? <>कार खरीदना या बेचना चाहते हैं? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">GarageFlow Market देखें →</Link></>
+                : <>Want to buy or sell cars? <Link to="/market/auth?mode=signup" className="text-primary hover:underline">Visit GarageFlow Market →</Link></>}
         </p>
 
         {/* Legal links */}

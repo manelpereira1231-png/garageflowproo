@@ -59,7 +59,7 @@ import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
 import { useShopRole } from "@/hooks/useShopRole";
-import { PATH_REQUIRED_CAPABILITY, homeForRole } from "@/lib/rolePaths";
+import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 
 type NavItem = {
   path: string;
@@ -420,11 +420,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { role, can, loading: roleLoading } = useShopRole();
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {
-      const cap = PATH_REQUIRED_CAPABILITY[item.path];
-      if (!cap) return true;
-      // While role is loading, show items (owner default) to avoid flicker.
-      if (roleLoading || !role) return true;
-      return can(cap);
+      if (roleLoading || !role) return false;
+      return canOpenPath(item.path, role, can);
     }),
     [planVisibleItems, role, roleLoading, can]
   );
@@ -672,7 +669,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="px-2.5 pt-1 border-t border-sidebar-border">
             <SidebarCustomizer
               shopId={activeShopId}
-              items={navItems.map((i) => ({ path: i.path, label: i.label }))}
+              items={roleFilteredItems.map((i) => ({ path: i.path, label: i.label }))}
             />
           </div>
         )}

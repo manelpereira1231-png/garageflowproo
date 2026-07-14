@@ -956,6 +956,7 @@ function AppRoutes() {
             <Route path="/quote/:token" element={<QuoteApproval />} />
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/marketing" element={<Auth defaultRedirect="/marketing" />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />

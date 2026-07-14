@@ -43,7 +43,31 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid API key" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Rate limiting check (simple: per minute)
+    // Rate limit temporal (janela deslizante de 60s, 100 pedidos/min por chave)
+    const { data: rl } = await supabase.rpc("check_and_bump_rate_limit", {
+      _identifier: `api_key:${apiKeyRecord.id}`,
+      _action: "garageflow_api",
+      _max: 100,
+      _window_seconds: 60,
+    });
+    if (rl && (rl as any).allowed === false) {
+      return new Response(
+        JSON.stringify({
+          error: "Rate limit exceeded",
+          retry_after_seconds: (rl as any).retry_after_seconds ?? 60,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String((rl as any).retry_after_seconds ?? 60),
+          },
+        }
+      );
+    }
+
+    // Contador cumulativo (mantido para dashboard/estatísticas)
     await supabase.from("api_keys").update({
       request_count: (apiKeyRecord.request_count || 0) + 1,
       last_used_at: new Date().toISOString(),

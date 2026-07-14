@@ -1,8 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const ADMIN_EMAIL = "manelpereira11@gmail.com";
+
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  { auth: { persistSession: false } },
+);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +38,40 @@ serve(async (req: Request) => {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // Rate limit anti-spam: 5 tickets/hora por IP e 5/hora por email.
+    // Protege o inbox admin e o quota Resend contra abuse de um endpoint público.
+    const ip =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+    for (const [id, action] of [
+      [`ip:${ip}`, "support_ticket"],
+      [`email:${p.contact_email.toLowerCase()}`, "support_ticket"],
+    ] as const) {
+      const { data: rl } = await admin.rpc("check_and_bump_rate_limit", {
+        _identifier: id,
+        _action: action,
+        _max: 5,
+        _window_seconds: 3600,
+      });
+      if (rl && (rl as any).allowed === false) {
+        return new Response(
+          JSON.stringify({
+            error: "Too many requests",
+            retry_after_seconds: (rl as any).retry_after_seconds ?? 3600,
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              "Retry-After": String((rl as any).retry_after_seconds ?? 3600),
+              ...corsHeaders,
+            },
+          },
+        );
+      }
     }
 
     const platform = p.context === "market" ? "GarageFlow Market" : "GarageFlow ERP";

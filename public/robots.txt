@@ -51,18 +51,61 @@ Allow: /
 User-agent: TelegramBot
 Allow: /
 
-# Block AI scrapers (optional — keeps content for humans/search engines)
+# AI Search readiness — permitir indexação por assistentes IA
+# (OpenAI ChatGPT Search, Anthropic Claude, Perplexity, Google Gemini, Apple Intelligence, Common Crawl)
 User-agent: GPTBot
-Disallow: /
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /portal/
+Disallow: /reset-password
 
-User-agent: CCBot
-Disallow: /
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
 
-User-agent: anthropic-ai
-Disallow: /
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
 
 User-agent: ClaudeBot
-Disallow: /
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin/
 
 # Default — allow all, block private areas
 User-agent: *

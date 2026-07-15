@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ArrowLeft, LifeBuoy, Clock, ShieldCheck } from "lucide-react";
 import { useSupportI18n } from "@/i18n/supportI18n";
 import LanguageDropdown from "@/components/LanguageDropdown";
+import SEOHead from "@/components/SEOHead";
 
 export default function Support() {
   const navigate = useNavigate();
@@ -103,6 +104,12 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        realm="erp"
+        title="Suporte GarageFlow | Ajuda e Contacto"
+        description="Central de suporte GarageFlow: abra um pedido de ajuda para o ERP ou para o Marketplace. Resposta rápida por email em horário útil."
+        path="/support"
+      />
       <div className="border-b bg-card/50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>

@@ -49,8 +49,8 @@ export default function CarityByMake() {
     setLoading(false);
   }, [decodedMake]);
 
-  const seoTitle = `${capitalMake} Usados com Inspeção Certificada — GarageFlow Market`;
-  const seoDesc = `Compre ${capitalMake} usados com inspeção mecânica real por oficinas certificadas. Relatório técnico completo, classificação de 0 a 10 e pagamento protegido. GarageFlow Market.`;
+  const seoTitle = `${capitalMake} usados com inspeção certificada`.slice(0, 60);
+  const seoDesc = `${capitalMake} usados com inspeção mecânica real, relatório técnico e pagamento protegido em escrow.`.slice(0, 160);
 
   useEffect(() => {
     loadData();

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText, Mail, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export default function InvoiceDetail() {
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | null>(null);
+  const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
 
   const handleEmitCertified = async () => {
     if (!can("invoices.create")) return;
@@ -337,6 +338,120 @@ export default function InvoiceDetail() {
     loadData();
   };
 
+  // Helper — gera o PDF da fatura como Blob (partilhado por Email/WhatsApp manuais)
+  const buildInvoiceBlob = async (): Promise<Blob | null> => {
+    if (!invoice || !shop) return null;
+    const doc = await generateInvoicePdf({
+      invoice, items, shop,
+      clientName: (invoice.clients as any)?.name || '',
+      clientEmail: (invoice.clients as any)?.email,
+      clientPhone: (invoice.clients as any)?.phone,
+      clientNif: (invoice.clients as any)?.nif,
+      vehicleMake: (invoice.vehicles as any)?.make,
+      vehicleModel: (invoice.vehicles as any)?.model,
+      vehiclePlate: (invoice.vehicles as any)?.plate,
+      totalPaid,
+      plan,
+    });
+    return doc.output('blob') as Blob;
+  };
+
+  const handleSendEmail = async () => {
+    if (!invoice || !shop) return;
+    const clientEmail = (invoice.clients as any)?.email as string | undefined;
+    if (!clientEmail) { toast.error('Cliente sem email'); return; }
+    setSending("email");
+    try {
+      const pdfBlob = await buildInvoiceBlob();
+      if (!pdfBlob) { toast.error('Não foi possível gerar o PDF.'); return; }
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onerror = () => reject(r.error);
+        r.onload = () => {
+          const s = String(r.result || '');
+          resolve(s.includes(',') ? s.split(',')[1] : s);
+        };
+        r.readAsDataURL(pdfBlob);
+      });
+      const subtotal = items.reduce((s: number, it: any) => s + Number(it.quantity || 0) * Number(it.unit_price || 0), 0);
+      const taxTotal = Math.max(0, Number(invoice.total || 0) - subtotal);
+      const isPaid = invoice.status === 'paid';
+      const subject = isPaid
+        ? `Pagamento Confirmado — ${invoice.number}`
+        : `Nova Fatura Disponível — ${invoice.number}`;
+      const html = invoiceEmailHtml({
+        variant: isPaid ? 'paid' : 'issued',
+        shopName: shop.name,
+        shopEmail: shop.email,
+        shopPhone: shop.phone,
+        shopNif: shop.nif,
+        shopAddress: shop.address,
+        shopLogoUrl: shop.logo_url,
+        clientName: (invoice.clients as any)?.name || '',
+        invoiceNumber: invoice.number,
+        invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString('pt-PT'),
+        vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
+        plate: (invoice.vehicles as any)?.plate,
+        total: Number(invoice.total || 0),
+        subtotal,
+        taxTotal,
+        items: items.map((it: any) => ({
+          description: it.description,
+          quantity: Number(it.quantity || 0),
+          unit_price: Number(it.unit_price || 0),
+          vat_rate: it.vat_rate != null ? Number(it.vat_rate) : undefined,
+          total: Number(it.total || 0),
+        })),
+        currency: shop.currency || 'EUR',
+      });
+      await sendEmail({
+        to: clientEmail,
+        subject,
+        html,
+        attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+      });
+      await supabase.from('email_logs').insert({
+        shop_id: shop.id, to_email: clientEmail,
+        subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
+      });
+      toast.success('Fatura enviada por email.');
+    } catch (e: any) {
+      console.error('[invoice] manual email error', e);
+      toast.error('Erro ao enviar email: ' + (e?.message || 'desconhecido'));
+    } finally {
+      setSending(null);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!invoice || !shop) return;
+    const phone = (invoice.clients as any)?.phone as string | undefined;
+    if (!phone) { toast.error('Cliente sem telefone'); return; }
+    setSending("whatsapp");
+    try {
+      const pdfBlob = await buildInvoiceBlob();
+      if (!pdfBlob) { toast.error('Não foi possível gerar o PDF.'); return; }
+      await openWhatsApp({
+        phone,
+        clientName: (invoice.clients as any)?.name || '',
+        type: 'invoice',
+        number: invoice.number,
+        plate: (invoice.vehicles as any)?.plate,
+        model: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim() || undefined,
+        total: Number(invoice.total || 0),
+        invoiceStatus: invoice.status,
+        shopName: shop.name,
+        pdfBlob,
+        pdfFilename: `${invoice.number}.pdf`,
+      });
+    } catch (e: any) {
+      console.error('[invoice] manual whatsapp error', e);
+      toast.error('Erro ao abrir WhatsApp: ' + (e?.message || 'desconhecido'));
+    } finally {
+      setSending(null);
+    }
+  };
+
   const handleDownloadPdf = async () => {
     if (!invoice || !shop) {
       toast.error("Dados não carregados. Recarregue a página.");
@@ -384,6 +499,18 @@ export default function InvoiceDetail() {
           {can("invoices.print") && (
             <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
               <Printer className="w-4 h-4 mr-1" />PDF
+            </Button>
+          )}
+          {can("invoices.send_email") && (invoice.clients as any)?.email && (
+            <Button variant="outline" size="sm" onClick={handleSendEmail} disabled={sending !== null}>
+              {sending === "email" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
+              Email
+            </Button>
+          )}
+          {can("invoices.send_whatsapp") && (invoice.clients as any)?.phone && (
+            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={sending !== null}>
+              {sending === "whatsapp" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-1" />}
+              WhatsApp
             </Button>
           )}
           {invoice.provider_invoice_id ? (

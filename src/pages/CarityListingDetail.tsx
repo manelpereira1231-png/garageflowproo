@@ -1260,7 +1260,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
           "price": listing.price,
           "priceCurrency": (listing.currency || listingCountryCfg.currency),
           "availability": "https://schema.org/InStock",
-          "url": `https://garageflow-pt.lovable.app/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
+          "url": `https://garageflow.pt/market/carros/${listing.make.toLowerCase()}-${listing.model.toLowerCase().replace(/\s+/g, "-")}-${listing.id}`,
           "areaServed": listingCountryCfg.code,
           ...(seller ? { "seller": { "@type": "Person", "name": seller.name } } : {}),
         },

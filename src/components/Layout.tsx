@@ -658,9 +658,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
-          <AppModeToggle className="w-full justify-between" />
-        </div>
+        {/* Toggle Lite/Pro só faz sentido para papéis com menu extenso.
+            Técnico/Receção/Comercial já têm sidebar naturalmente reduzida pelo RBAC,
+            portanto o toggle seria confuso e sem efeito prático. */}
+        {(role === "owner" || role === "admin" || role === "manager" || role === "super_admin") && (
+          <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
+            <AppModeToggle className="w-full justify-between" />
+          </div>
+        )}
 
         {isSuperAdmin && (
           <div className="px-2.5 pb-1">

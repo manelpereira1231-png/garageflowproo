@@ -21,6 +21,7 @@ import { pageCache } from "@/lib/pageCache";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
+import { useShopRole } from "@/hooks/useShopRole";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -39,6 +40,7 @@ const defaultInvoicesFilters: InvoicesFilters = { search: "", status: "all", cli
 export default function Invoices() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { can } = useShopRole();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _iCache = pageCache.get<{ rows: any[]; shop: any }>(`invoices-all:${_shopInit}`);
   const [invoices, setInvoices] = useState<any[]>(_iCache?.rows ?? []);
@@ -115,6 +117,7 @@ export default function Invoices() {
   );
 
   const handleExportCsv = () => {
+    if (!can("invoices.export")) return;
     const csvData = invoices.map(inv => ({
       Número: inv.number, Cliente: (inv.clients as any)?.name,
       Status: inv.status, Subtotal: inv.subtotal, [getTaxLabelLocal()]: inv.vat_total,
@@ -126,6 +129,7 @@ export default function Invoices() {
 
   const [saftLoading, setSaftLoading] = useState(false);
   const handleExportSaft = async () => {
+    if (!can("invoices.export")) return;
     if (!activeShopId) return;
     if (!confirm("Exportar SAF-T PT do ano atual?\n\nAviso: se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente do InvoiceXpress — este ficheiro é apenas informativo e não substitui o SAF-T do provider certificado.")) return;
     setSaftLoading(true);
@@ -314,16 +318,22 @@ export default function Invoices() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCsv}>
-            <FileDown className="w-4 h-4 mr-1" />CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
-            {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
-            SAF-T
-          </Button>
-          <Button onClick={() => navigate("/invoices/new")}>
-            <Plus className="w-4 h-4 mr-2" />{t('invoices.new')}
-          </Button>
+          {can("invoices.export") && (
+            <Button variant="outline" size="sm" onClick={handleExportCsv}>
+              <FileDown className="w-4 h-4 mr-1" />CSV
+            </Button>
+          )}
+          {can("invoices.export") && (
+            <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
+              {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
+              SAF-T
+            </Button>
+          )}
+          {can("invoices.create") && (
+            <Button onClick={() => navigate("/invoices/new")}>
+              <Plus className="w-4 h-4 mr-2" />{t('invoices.new')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -385,12 +395,16 @@ export default function Invoices() {
               <Link to={`/invoices/${inv.id}`} className="flex-1">
                 <Button variant="ghost" size="sm" className="w-full text-xs h-7"><Eye className="w-3 h-3 mr-1" />{t('common.view')}</Button>
               </Link>
-              <Button variant="ghost" size="sm" className="text-xs h-7" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceByEmail(inv)}>
-                {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}Email
-              </Button>
-              <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceOnWhatsApp(inv)}>
-                {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <MessageCircle className="w-3 h-3 mr-1" />}WhatsApp
-              </Button>
+              {can("invoices.send_email") && (
+                <Button variant="ghost" size="sm" className="text-xs h-7" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceByEmail(inv)}>
+                  {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}Email
+                </Button>
+              )}
+              {can("invoices.send_whatsapp") && (
+                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" disabled={sendingInvoice === inv.id} onClick={() => sendInvoiceOnWhatsApp(inv)}>
+                  {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <MessageCircle className="w-3 h-3 mr-1" />}WhatsApp
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -463,12 +477,16 @@ export default function Invoices() {
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceByEmail(inv); }} title="Email" aria-label="Email">
-                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceOnWhatsApp(inv); }} title="WhatsApp" aria-label="WhatsApp">
-                      {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
-                    </Button>
+                    {can("invoices.send_email") && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceByEmail(inv); }} title="Email" aria-label="Email">
+                        {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                      </Button>
+                    )}
+                    {can("invoices.send_whatsapp") && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" disabled={sendingInvoice === inv.id} onClick={(e) => { e.preventDefault(); sendInvoiceOnWhatsApp(inv); }} title="WhatsApp" aria-label="WhatsApp">
+                        {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

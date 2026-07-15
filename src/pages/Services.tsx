@@ -28,6 +28,7 @@ import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
+import { useShopRole } from "@/hooks/useShopRole";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -103,6 +104,7 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
 export default function Services() {
   const { t } = useLanguage();
   const { limits, plan, canUseFeature } = useSubscription();
+  const { can } = useShopRole();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _sCache = pageCache.get<{ rows: any[]; shop: any }>(`services-all:${_shopInit}`);
   const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
@@ -133,6 +135,7 @@ export default function Services() {
    * pontos de entrada (Orçamentos e Ordens de Serviço).
    */
   const sendServiceEmail = async (s: any) => {
+    if (!can("work_orders.send_email")) return;
     const clientEmail = (s.clients as any)?.email;
     if (!clientEmail) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
     if (!shop) { toast.error('Dados da oficina não carregados'); return; }
@@ -288,6 +291,7 @@ export default function Services() {
    * stage — matching the behaviour of the Quotes page.
    */
   const sendServiceWhatsApp = async (s: any) => {
+    if (!can("work_orders.send_whatsapp")) return;
     const phone = (s.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
     let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
@@ -467,6 +471,7 @@ export default function Services() {
   };
 
   const cancelService = async (id: string) => {
+    if (!can("work_orders.delete")) return;
     const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id);
     if (error) toastError(error, "Não foi possível cancelar o serviço");
     else { toast.success(t('service.cancelled')); fetchServices(); }
@@ -494,6 +499,7 @@ export default function Services() {
   };
 
   const downloadPdf = async (s: any) => {
+    if (!can("work_orders.print")) return;
     if (!shop) return;
     try {
       const doc = await buildServicePdfDoc(s);
@@ -516,6 +522,7 @@ export default function Services() {
   };
 
   const handleExportCsv = () => {
+    if (!can("work_orders.export")) return;
     const csvData = services.map(s => ({
       Número: s.number, Cliente: (s.clients as any)?.name,
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
@@ -598,10 +605,12 @@ export default function Services() {
           <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.open')}</p>
           <p className="text-2xl font-bold mt-1 text-info">{statusCountsAll.open || 0}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Este mês</p>
-          <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
-        </div>
+        {can("finance.view_profits") && (
+          <div className="bg-card border border-border rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Este mês</p>
+            <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
+          </div>
+        )}
       </div>
 
       {/* Status Filter Tabs */}
@@ -710,19 +719,23 @@ export default function Services() {
             <div className="flex items-center justify-between pt-1 border-t border-border">
               <span className="text-sm font-semibold mono">€{s.total?.toFixed(2)}</span>
               <div className="flex gap-1">
-                {!['delivered', 'cancelled'].includes(s.status) && (
+                {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Link to={`/services/edit/${s.id}`}>
                     <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>
                   </Link>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>
-                <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
-                  {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
-                </Button>
-                <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
-                  <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
-                </Button>
-                {!['delivered', 'cancelled'].includes(s.status) && (
+                {can("work_orders.print") && <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>}
+                {can("work_orders.send_email") && (
+                  <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
+                    {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
+                  </Button>
+                )}
+                {can("work_orders.send_whatsapp") && (
+                  <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
+                    <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+                  </Button>
+                )}
+                {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
                     <ChevronRightIcon className="w-3 h-3" />
                     {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
@@ -817,37 +830,47 @@ export default function Services() {
                 <TableCell className="px-2 py-3 text-right">
                   <div className="flex items-center gap-0.5 justify-end flex-nowrap">
 
-                    {!['delivered', 'cancelled'].includes(s.status) && (
+                    {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
                         <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8" title={t('common.edit') || 'Editar'}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
                     )}
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(s)} title="PDF">
-                      <FileDown className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
-                      {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
-                      <MessageCircle className="w-3.5 h-3.5" />
-                    </Button>
-                    {!['delivered', 'cancelled'].includes(s.status) && (
+                    {can("work_orders.print") && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(s)} title="PDF">
+                        <FileDown className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    {can("work_orders.send_email") && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
+                        {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                      </Button>
+                    )}
+                    {can("work_orders.send_whatsapp") && (
+                      <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    {(can("work_orders.complete") || can("work_orders.delete")) && !['delivered', 'cancelled'].includes(s.status) && (
                       <>
-                        <Button
-                          variant="default"
-                          size="icon"
-                          onClick={() => advanceStatus(s)}
-                          className="h-8 w-8"
-                          aria-label={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
-                          title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
-                        >
-                          <ChevronRightIcon className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
-                          <XCircle className="w-3.5 h-3.5" />
-                        </Button>
+                        {can("work_orders.complete") && (
+                          <Button
+                            variant="default"
+                            size="icon"
+                            onClick={() => advanceStatus(s)}
+                            className="h-8 w-8"
+                            aria-label={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                            title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                          >
+                            <ChevronRightIcon className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        {can("work_orders.delete") && (
+                          <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                            <XCircle className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "./useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
@@ -21,8 +21,9 @@ export type Capability =
   | "quotes.send_email" | "quotes.send_whatsapp" | "quotes.print" | "quotes.export"
   | "work_orders.view" | "work_orders.create" | "work_orders.edit" | "work_orders.complete"
   | "work_orders.delete" | "work_orders.export" | "work_orders.print"
+  | "work_orders.send_email" | "work_orders.send_whatsapp"
   | "invoices.view" | "invoices.create" | "invoices.cancel"
-  | "invoices.send_email" | "invoices.print" | "invoices.export"
+  | "invoices.send_email" | "invoices.send_whatsapp" | "invoices.print" | "invoices.export"
   | "finance.view_costs" | "finance.view_profits" | "finance.view_salaries"
   | "stock.view" | "stock.manage"
   | "purchases.view" | "purchases.manage"
@@ -50,10 +51,9 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "quotes.view","quotes.create","quotes.edit","quotes.approve","quotes.delete",
     "quotes.send_email","quotes.send_whatsapp","quotes.print","quotes.export",
     "work_orders.view","work_orders.create","work_orders.edit","work_orders.complete",
-    "work_orders.delete","work_orders.export","work_orders.print",
+    "work_orders.delete","work_orders.export","work_orders.print","work_orders.send_email","work_orders.send_whatsapp",
     "invoices.view","invoices.create","invoices.cancel",
-    "invoices.send_email","invoices.print","invoices.export",
-    "finance.view_costs","finance.view_profits",
+    "invoices.send_email","invoices.send_whatsapp","invoices.print","invoices.export",
     "stock.view","stock.manage","purchases.view","purchases.manage",
     "agenda.view","agenda.manage","alerts.view","chat.view","automations.view","loyalty.view","marketplace.view",
     "team.view","audit.view",
@@ -64,9 +64,9 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "vehicles.view","vehicles.create","vehicles.edit",
     "quotes.view","quotes.create","quotes.edit",
     "quotes.send_email","quotes.send_whatsapp","quotes.print",
-    "work_orders.view","work_orders.create",
+    "work_orders.view","work_orders.create","work_orders.edit","work_orders.print","work_orders.send_email","work_orders.send_whatsapp",
     "agenda.view","agenda.manage",
-    "invoices.view","invoices.print",
+    "invoices.view","invoices.print","invoices.send_email","invoices.send_whatsapp",
     "alerts.view","chat.view",
   ]),
   commercial: new Set([
@@ -75,11 +75,11 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "vehicles.view","vehicles.create",
     "quotes.view","quotes.create","quotes.edit",
     "quotes.send_email","quotes.send_whatsapp","quotes.print",
-    "agenda.view","chat.view","loyalty.view",
+    "agenda.view","chat.view","loyalty.view","marketplace.view",
   ]),
   technician: new Set([
     "dashboard.view",
-    "work_orders.view","work_orders.edit","work_orders.complete",
+    "work_orders.view","work_orders.edit","work_orders.complete","work_orders.print",
     "vehicles.view",
     "agenda.view",
   ]),
@@ -160,11 +160,13 @@ export function useShopRole() {
     return () => { supabase.removeChannel(channel); };
   }, [cacheKey, userId, shopId]);
 
+  const canCapability = useCallback((cap: Capability) => can(resolvedRole, cap), [resolvedRole]);
+
   return {
     role: resolvedRole,
     loading: effectiveLoading,
     shopId,
-    can: (cap: Capability) => can(resolvedRole, cap),
+    can: canCapability,
     isOwner: resolvedRole === "owner" || resolvedRole === "super_admin",
     isAdmin: resolvedRole === "admin" || resolvedRole === "owner" || resolvedRole === "super_admin",
   };

@@ -12,7 +12,8 @@ import { CalendarDays, Users, Car, FileText, LogIn, LogOut, PhoneCall } from "lu
 
 interface Appointment {
   id: string;
-  scheduled_at: string;
+  date: string;
+  time: string | null;
   status: string | null;
   clients: { name: string | null } | null;
   vehicles: { plate: string | null } | null;
@@ -32,25 +33,22 @@ export default function ReceptionDashboard() {
     if (!isReady || !user || !shopId) return;
     (async () => {
       setLoading(true);
-      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+      const todayIso = new Date().toISOString().slice(0, 10);
       const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
 
       const [apptRes, checkinRes, checkoutRes, clientsRes] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, scheduled_at, status, clients(name), vehicles(plate)")
+          .select("id, date, time, status, clients(name), vehicles(plate)")
           .eq("shop_id", shopId)
-          .gte("scheduled_at", startOfDay.toISOString())
-          .lte("scheduled_at", endOfDay.toISOString())
-          .order("scheduled_at", { ascending: true }),
+          .eq("date", todayIso)
+          .order("time", { ascending: true }),
         supabase
           .from("appointments")
           .select("id", { count: "exact", head: true })
           .eq("shop_id", shopId)
           .in("status", ["scheduled", "confirmed"])
-          .gte("scheduled_at", startOfDay.toISOString())
-          .lte("scheduled_at", endOfDay.toISOString()),
+          .eq("date", todayIso),
         supabase
           .from("work_orders")
           .select("id", { count: "exact", head: true })
@@ -114,7 +112,7 @@ export default function ReceptionDashboard() {
               <li key={a.id} className="py-2 flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <span className="font-mono text-xs text-muted-foreground mr-2">
-                    {new Date(a.scheduled_at).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
+                    {a.time ? String(a.time).slice(0, 5) : "—"}
                   </span>
                   <span className="truncate">
                     {a.clients?.name || "Sem cliente"} · {a.vehicles?.plate || "—"}

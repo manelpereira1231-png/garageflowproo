@@ -24,13 +24,19 @@ interface TeamMember {
 
 const roleIcons: Record<string, React.ElementType> = {
   owner: Crown,
+  admin: Shield,
   manager: Shield,
+  reception: Users,
+  commercial: UserCheck,
   technician: Wrench,
 };
 
 const roleBadgeStyles: Record<string, string> = {
   owner: "bg-primary/10 text-primary border-primary/30",
+  admin: "bg-purple-500/10 text-purple-700 border-purple-300 dark:text-purple-400",
   manager: "bg-yellow-500/10 text-yellow-700 border-yellow-300 dark:text-yellow-400",
+  reception: "bg-cyan-500/10 text-cyan-700 border-cyan-300 dark:text-cyan-400",
+  commercial: "bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:text-emerald-400",
   technician: "bg-blue-500/10 text-blue-700 border-blue-300 dark:text-blue-400",
   super_admin: "bg-destructive/10 text-destructive border-destructive/30",
 };
@@ -82,7 +88,10 @@ export default function Team() {
   const canInvite = teamEnabled && members.length < limits.maxUsers;
   const isOwner = members.some(m => m.user_id === currentUserId && m.role === 'owner');
   const ownerCount = members.filter(m => m.role === 'owner').length;
+  const adminCount = members.filter(m => m.role === 'admin').length;
   const managerCount = members.filter(m => m.role === 'manager').length;
+  const receptionCount = members.filter(m => m.role === 'reception').length;
+  const commercialCount = members.filter(m => m.role === 'commercial').length;
   const techCount = members.filter(m => m.role === 'technician').length;
 
   const handleInvite = async () => {
@@ -260,12 +269,15 @@ export default function Team() {
       )}
 
       {/* Team summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
 
         {[
           { label: t('team.totalMembers'), value: members.length, icon: Users, color: "text-primary" },
           { label: t('team.role.owner'), value: ownerCount, icon: Crown, color: "text-primary" },
+          { label: "Admin", value: adminCount, icon: Shield, color: "text-purple-500" },
           { label: t('team.role.manager'), value: managerCount, icon: Shield, color: "text-yellow-500" },
+          { label: "Receção", value: receptionCount, icon: Users, color: "text-cyan-500" },
+          { label: "Comercial", value: commercialCount, icon: UserCheck, color: "text-emerald-500" },
           { label: t('team.role.technician'), value: techCount, icon: Wrench, color: "text-blue-500" },
         ].map((kpi, i) => (
           <Card key={i}>

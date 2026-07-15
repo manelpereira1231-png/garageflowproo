@@ -6,6 +6,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useShopRole } from "@/hooks/useShopRole";
 
 type Appt = {
   id: string;
@@ -24,7 +25,7 @@ type ApprovedQuote = {
   total: number;
   status: string;
   client_name: string | null;
-  updated_at: string;
+  created_at: string;
   work_order_id?: string | null;
 };
 
@@ -38,6 +39,7 @@ const saveDismissed = (s: Set<string>) => {
 
 export default function AppointmentsBell() {
   const { activeShopId, shops } = useShopContext();
+  const { role, can, loading: roleLoading } = useShopRole();
   const ids = activeShopId ? [activeShopId] : (shops || []).map((s) => s.id);
   const [items, setItems] = useState<Appt[]>([]);
   const [marketInspections, setMarketInspections] = useState<number>(0);
@@ -48,31 +50,35 @@ export default function AppointmentsBell() {
 
 
   const load = useCallback(async () => {
-    if (!ids.length) return;
+    if (!ids.length || roleLoading || !role) return;
     const dismissed = getDismissed();
     const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const canAgenda = can("agenda.view");
+    const canQuotes = can("quotes.view");
+    const canMarketSales = can("marketplace.view");
+    const canMarketOps = can("marketplace.manage");
     const [appts, insp, listings, quotes] = await Promise.all([
-      supabase
+      canAgenda ? supabase
         .from("appointments")
         .select("id,client_name,client_phone,service_type,date,time,source,notes")
         .in("shop_id", ids)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
-        .limit(20),
-      supabase
+        .limit(20) : Promise.resolve({ data: [] as any[] }),
+      canMarketOps ? supabase
         .from("carity_inspection_offers")
         .select("id", { count: "exact", head: true })
         .in("shop_id", ids)
-        .eq("status", "offered"),
-      supabase.from("carity_listings").select("id").in("shop_id", ids),
-      supabase
+        .eq("status", "offered") : Promise.resolve({ count: 0 }),
+      canMarketSales ? supabase.from("carity_listings").select("id").in("shop_id", ids) : Promise.resolve({ data: [] as any[] }),
+      canQuotes ? supabase
         .from("quotes")
         .select("id, number, total, status, created_at, clients(name)")
         .in("shop_id", ids)
         .in("status", ["approved", "converted"])
         .gte("created_at", since)
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(20) : Promise.resolve({ data: [] as any[] }),
     ]);
     setItems((appts.data as any) ?? []);
     setMarketInspections(insp.count || 0);
@@ -91,14 +97,14 @@ export default function AppointmentsBell() {
 
     const quoteRows = (quotes.data as any[] | null) ?? [];
     const filtered: ApprovedQuote[] = quoteRows
-      .filter((q) => !dismissed.has(q.id))
+      .filter((q) => canQuotes && !dismissed.has(q.id))
       .map((q) => ({
         id: q.id,
         number: q.number,
         total: Number(q.total || 0),
         status: q.status,
         client_name: q.clients?.name ?? null,
-        updated_at: q.updated_at,
+        created_at: q.created_at,
       }));
 
     // Fire toast for freshly-approved quotes we hadn't seen yet in this session
@@ -115,7 +121,7 @@ export default function AppointmentsBell() {
     }
     seenApprovalsRef.current = new Set(filtered.map((q) => q.id));
     setApprovedQuotes(filtered);
-  }, [ids.join(",")]);
+  }, [ids.join(","), role, roleLoading, can]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -151,6 +157,10 @@ export default function AppointmentsBell() {
 
   const count = items.length + marketInspections + marketOffers + approvedQuotes.length;
 
+  if (roleLoading || !role || count === 0 && !can("agenda.view") && !can("quotes.view") && !can("marketplace.view") && !can("marketplace.manage")) {
+    return null;
+  }
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -169,14 +179,16 @@ export default function AppointmentsBell() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 p-0 max-h-[70vh] overflow-y-auto">
-        <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
+              <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
           <div>
             <div className="font-semibold text-sm">Marcações pendentes</div>
             <div className="text-xs text-muted-foreground">A aguardar aceitação</div>
           </div>
-          <Link to="/agenda" className="text-xs text-amber-500 hover:underline" onClick={() => setOpen(false)}>
-            Ver agenda
-          </Link>
+          {can("agenda.view") && (
+            <Link to="/agenda" className="text-xs text-amber-500 hover:underline" onClick={() => setOpen(false)}>
+              Ver agenda
+            </Link>
+          )}
         </div>
         {count === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
@@ -196,7 +208,7 @@ export default function AppointmentsBell() {
                         {q.number} · {q.client_name || "Cliente"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        €{q.total.toFixed(2)} · {new Date(q.updated_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
+                        €{q.total.toFixed(2)} · {new Date(q.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -253,18 +265,22 @@ export default function AppointmentsBell() {
                 </div>
                 {a.notes && <div className="text-xs text-muted-foreground mb-2 line-clamp-2">{a.notes}</div>}
                 <div className="flex gap-2 mt-2">
-                  <Button size="sm" className="h-8 flex-1" onClick={() => accept(a.id)}>
-                    <Check className="w-3.5 h-3.5 mr-1" /> Aceitar
-                  </Button>
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    className="h-8 flex-1"
-                    onClick={() => setOpen(false)}
-                  >
-                    <Link to="/agenda"><Clock className="w-3.5 h-3.5 mr-1" /> Reagendar</Link>
-                  </Button>
+                  {can("agenda.manage") && (
+                    <Button size="sm" className="h-8 flex-1" onClick={() => accept(a.id)}>
+                      <Check className="w-3.5 h-3.5 mr-1" /> Aceitar
+                    </Button>
+                  )}
+                  {can("agenda.view") && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-8 flex-1"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Link to="/agenda"><Clock className="w-3.5 h-3.5 mr-1" /> Reagendar</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

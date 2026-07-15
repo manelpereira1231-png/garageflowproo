@@ -58,6 +58,14 @@ Deno.serve(async (req) => {
       return json({ error: "Sem permissão nesta fatura" }, 403);
     }
 
+    const { data: canEmit, error: capErr } = await supa.rpc("has_capability", {
+      _shop_id: inv.shop_id,
+      _cap: "invoices.create",
+    });
+    if (capErr || canEmit !== true) {
+      return json({ error: "Sem permissão para emitir faturas" }, 403);
+    }
+
     // Idempotência
     if (inv.provider_invoice_id) {
       return json({

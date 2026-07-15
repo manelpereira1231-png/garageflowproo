@@ -119,7 +119,7 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("agenda.view") ? supabase
             .from("appointments")
-            .select("id, scheduled_at, status, notes, clients(name), vehicles(plate)")
+            .select("id, date, time, status, notes, clients(name), vehicles(plate)")
             .eq("shop_id", activeShopId)
             .or(`notes.ilike.${searchTerm}`)
             .limit(5) : empty,
@@ -172,7 +172,7 @@ export default function CommandPalette() {
           id: a.id,
           type: "appointment" as const,
           title: (a.clients as any)?.name || (isPt ? "Marcação" : "Appointment"),
-          subtitle: `${new Date(a.scheduled_at).toLocaleString(isPt ? "pt-PT" : "en-US")} · ${(a.vehicles as any)?.plate || ""}`,
+          subtitle: `${a.date || ""} ${a.time ? String(a.time).slice(0, 5) : ""} · ${(a.vehicles as any)?.plate || ""}`,
         })),
       ];
 
@@ -257,10 +257,20 @@ export default function CommandPalette() {
     { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new" },
   ].filter((action) => canAccess(action.path));
 
+  const searchableEntities = [
+    can("clients.view") && (isPt ? "clientes" : "clients"),
+    can("vehicles.view") && (isPt ? "veículos" : "vehicles"),
+    can("quotes.view") && (isPt ? "orçamentos" : "quotes"),
+    can("work_orders.view") && (isPt ? "serviços" : "services"),
+    can("stock.view") && "stock",
+    can("invoices.view") && (isPt ? "faturas" : "invoices"),
+    can("agenda.view") && (isPt ? "marcações" : "appointments"),
+  ].filter(Boolean).join(", ");
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder={isPt ? "Pesquisar clientes, veículos, orçamentos, serviços, catálogo, faturas, peças, marcações…" : "Search clients, vehicles, quotes, services, catalog, invoices, parts, appointments…"}
+        placeholder={searchableEntities ? (isPt ? `Pesquisar ${searchableEntities}…` : `Search ${searchableEntities}…`) : (isPt ? "Pesquisa indisponível" : "Search unavailable")}
         value={query}
         onValueChange={setQuery}
       />

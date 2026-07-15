@@ -85,6 +85,14 @@ Deno.serve(async (req) => {
     const shopIds = Array.isArray(ids) ? ids.map((r: any) => r.get_user_shop_ids ?? r) : [];
     if (!shopIds.includes(inv.shop_id)) return json({ error: "Sem permissão nesta oficina" }, 403);
 
+    const { data: canEmit, error: capErr } = await supa.rpc("has_capability", {
+      _shop_id: inv.shop_id,
+      _cap: "invoices.create",
+    });
+    if (capErr || canEmit !== true) {
+      return json({ error: "Sem permissão para emitir faturas" }, 403);
+    }
+
     if (inv.provider_invoice_id) {
       return json({ ok: true, provider_invoice_id: inv.provider_invoice_id, provider_pdf_url: inv.provider_pdf_url, number: inv.number, cached: true });
     }

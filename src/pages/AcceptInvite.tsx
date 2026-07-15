@@ -112,7 +112,14 @@ export default function AcceptInvite() {
           email: info.email,
           password,
           options: {
-            data: { owner_name: name || info.name || undefined, account_type: "garage_member" },
+            // skip_shop_creation impede o trigger handle_new_user de criar uma
+            // oficina fantasma para membros convidados — de outro modo o membro
+            // torna-se owner de uma oficina vazia e o RBAC dá-lhe acesso total.
+            data: {
+              owner_name: name || info.name || undefined,
+              account_type: "garage_member",
+              skip_shop_creation: "true",
+            },
             emailRedirectTo: `${window.location.origin}/accept-invite?token=${token}`,
           },
         });

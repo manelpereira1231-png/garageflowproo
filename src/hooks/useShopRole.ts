@@ -54,7 +54,6 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "work_orders.delete","work_orders.export","work_orders.print","work_orders.send_email","work_orders.send_whatsapp",
     "invoices.view","invoices.create","invoices.cancel",
     "invoices.send_email","invoices.send_whatsapp","invoices.print","invoices.export",
-    "finance.view_costs","finance.view_profits",
     "stock.view","stock.manage","purchases.view","purchases.manage",
     "agenda.view","agenda.manage","alerts.view","chat.view","automations.view","loyalty.view","marketplace.view",
     "team.view","audit.view",

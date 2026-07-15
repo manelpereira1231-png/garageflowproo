@@ -37,7 +37,11 @@ export function useShopContext() {
     }
 
     try {
-      // Get shops where user is owner
+      // Get shops where user is owner (select `name` so we can detect empty
+      // ghost shops auto-created by the handle_new_user trigger for invited
+      // team members — those must NOT become the active shop, otherwise
+      // the invited user becomes "owner" of an empty phantom and the RBAC
+      // grants them full access.)
       const { data: ownedShops } = await Promise.race([
         supabase
           .from("shops")
@@ -71,7 +75,19 @@ export function useShopContext() {
         memberShops = data || [];
       }
 
-      const allShops = [...(ownedShops || []), ...memberShops];
+      // Filter out ghost owned shops (empty name) when the user already
+      // belongs to at least one real member shop. This preserves the
+      // classic "one-owner, one-shop" flow while blocking privilege escalation
+      // for invited members whose signup trigger created an empty shop.
+      const realOwnedShops = memberShops.length > 0
+        ? (ownedShops || []).filter((s) => (s.name || "").trim().length > 0)
+        : (ownedShops || []);
+
+      // Prefer member shops first: for an invited technician/reception, their
+      // "real" workplace should be the default active shop.
+      const allShops = memberShops.length > 0
+        ? [...memberShops, ...realOwnedShops]
+        : [...realOwnedShops, ...memberShops];
       setShops(allShops);
 
       // Restore or pick default

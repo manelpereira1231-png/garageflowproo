@@ -52,8 +52,8 @@ export default function CarityByCity() {
     setLoading(false);
   }, [decodedCity]);
 
-  const seoTitle = `Carros Usados em ${capitalCity} com Inspeção — GarageFlow Market`;
-  const seoDesc = `Carros usados certificados em ${capitalCity}. Inspeção mecânica presencial, relatório técnico completo e pagamento protegido. GarageFlow Market.`;
+  const seoTitle = `Carros usados em ${capitalCity} com inspeção`.slice(0, 60);
+  const seoDesc = `Carros usados certificados em ${capitalCity}. Inspeção mecânica presencial, relatório técnico e pagamento protegido.`.slice(0, 160);
 
   useEffect(() => {
     loadData();

@@ -104,6 +104,12 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        realm="erp"
+        title="Suporte GarageFlow | Ajuda e Contacto"
+        description="Central de suporte GarageFlow: abra um pedido de ajuda para o ERP ou para o Marketplace. Resposta rápida por email em horário útil."
+        path="/support"
+      />
       <div className="border-b bg-card/50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>

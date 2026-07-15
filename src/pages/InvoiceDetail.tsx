@@ -501,6 +501,18 @@ export default function InvoiceDetail() {
               <Printer className="w-4 h-4 mr-1" />PDF
             </Button>
           )}
+          {can("invoices.send_email") && (invoice.clients as any)?.email && (
+            <Button variant="outline" size="sm" onClick={handleSendEmail} disabled={sending !== null}>
+              {sending === "email" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
+              Email
+            </Button>
+          )}
+          {can("invoices.send_whatsapp") && (invoice.clients as any)?.phone && (
+            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={sending !== null}>
+              {sending === "whatsapp" ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-1" />}
+              WhatsApp
+            </Button>
+          )}
           {invoice.provider_invoice_id ? (
             <Button variant="secondary" size="sm" asChild>
               <a href={invoice.provider_pdf_url || invoice.provider_permalink || "#"} target="_blank" rel="noreferrer">

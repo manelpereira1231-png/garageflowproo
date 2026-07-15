@@ -14,9 +14,9 @@ interface TechService {
   id: string;
   number: string | null;
   status: string;
-  scheduled_date: string | null;
+  created_at: string;
+  completed_at: string | null;
   vehicles: { plate: string | null; make: string | null; model: string | null } | null;
-  clients: { name: string | null } | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -49,34 +49,36 @@ export default function TechnicianDashboard() {
     if (!isReady || !user || !shopId) return;
     (async () => {
       setLoading(true);
-      const todayIso = new Date().toISOString().slice(0, 10);
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
 
       const base = () => supabase
         .from("work_orders")
-        .select("id, number, status, scheduled_date, vehicles(plate,make,model), clients(name)")
+        .select("id, number, status, created_at, completed_at, vehicles(plate,make,model)")
         .eq("shop_id", shopId);
 
       const [todayRes, progressRes, overdueRes, doneRes] = await Promise.all([
         (base() as any)
           .in("status", ["open", "diagnosis", "in_progress"])
-          .eq("scheduled_date", todayIso)
-          .order("scheduled_date", { ascending: true })
+          .gte("created_at", startOfDay.toISOString())
+          .lte("created_at", endOfDay.toISOString())
+          .order("created_at", { ascending: true })
           .limit(20),
         (base() as any)
           .eq("status", "in_progress")
-          .order("scheduled_date", { ascending: true })
+          .order("created_at", { ascending: true })
           .limit(20),
         (base() as any)
           .in("status", ["open", "diagnosis", "in_progress"])
-          .lt("scheduled_date", todayIso)
-          .order("scheduled_date", { ascending: true })
+          .lt("created_at", startOfDay.toISOString())
+          .order("created_at", { ascending: true })
           .limit(20),
         supabase
           .from("work_orders")
           .select("id", { count: "exact", head: true })
           .eq("shop_id", shopId)
           .eq("status", "completed")
-          .gte("updated_at", `${todayIso}T00:00:00Z`),
+          .gte("completed_at", startOfDay.toISOString()),
       ]);
 
       setToday((todayRes.data as any) || []);

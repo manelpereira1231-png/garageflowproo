@@ -357,7 +357,7 @@ function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const { role, loading, shopId, can } = useShopRole();
 
   if (loading) return <PageLoader />;
-  if (!shopId) return <>{children}</>;
+  if (!shopId) return <Navigate to="/onboarding" replace />;
   if (!role) return <Navigate to="/onboarding" replace />;
 
   return canOpenPath(location.pathname, role, can)

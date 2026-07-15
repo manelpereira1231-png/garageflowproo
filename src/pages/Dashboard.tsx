@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import MarketActivityCard from "@/components/MarketActivityCard";
 const TechnicianDashboard = lazy(() => import("@/pages/dashboards/TechnicianDashboard"));
 const ReceptionDashboard = lazy(() => import("@/pages/dashboards/ReceptionDashboard"));
 const CommercialDashboard = lazy(() => import("@/pages/dashboards/CommercialDashboard"));
+const ManagerDashboard = lazy(() => import("@/pages/dashboards/ManagerDashboard"));
 
 
 
@@ -49,13 +50,14 @@ const MONTH_NAMES: Record<string, string[]> = {
 
 export default function Dashboard() {
   const { role, loading: roleLoading } = useShopRole();
-  // Role-specific dashboards: technician / reception / commercial get focused
-  // screens; owner/admin/manager/super_admin keep the full KPI dashboard.
+  // Role-specific dashboards: never fall back to the most privileged view.
   if (roleLoading) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
   if (role === "technician") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><TechnicianDashboard /></Suspense>;
   if (role === "reception") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><ReceptionDashboard /></Suspense>;
   if (role === "commercial") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><CommercialDashboard /></Suspense>;
-  return <OwnerDashboard />;
+  if (role === "manager") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><ManagerDashboard /></Suspense>;
+  if (role === "owner" || role === "admin" || role === "super_admin") return <OwnerDashboard />;
+  return <Navigate to="/onboarding" replace />;
 }
 
 function OwnerDashboard() {

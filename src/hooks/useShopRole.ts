@@ -34,7 +34,7 @@ export type Capability =
   | "loyalty.view"
   | "referrals.view"
   | "api.view"
-  | "marketplace.view" | "marketplace.manage"
+  | "marketplace.view" | "marketplace.sales" | "marketplace.manage"
   | "team.view" | "team.manage" | "team.remove_owner"
   | "settings.manage" | "settings.transfer_ownership"
   | "audit.view";
@@ -55,8 +55,7 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "invoices.view","invoices.create","invoices.cancel",
     "invoices.send_email","invoices.send_whatsapp","invoices.print","invoices.export",
     "stock.view","stock.manage","purchases.view","purchases.manage",
-    "agenda.view","agenda.manage","alerts.view","chat.view","automations.view","loyalty.view","marketplace.view",
-    "team.view","audit.view",
+    "agenda.view","agenda.manage","alerts.view","chat.view","audit.view",
   ]),
   reception: new Set([
     "dashboard.view",
@@ -75,7 +74,7 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "vehicles.view","vehicles.create",
     "quotes.view","quotes.create","quotes.edit",
     "quotes.send_email","quotes.send_whatsapp","quotes.print",
-    "agenda.view","chat.view","loyalty.view","marketplace.view",
+    "agenda.view","chat.view","marketplace.view","marketplace.sales",
   ]),
   technician: new Set([
     "dashboard.view",

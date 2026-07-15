@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "./useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
@@ -161,11 +161,13 @@ export function useShopRole() {
     return () => { supabase.removeChannel(channel); };
   }, [cacheKey, userId, shopId]);
 
+  const canCapability = useCallback((cap: Capability) => can(resolvedRole, cap), [resolvedRole]);
+
   return {
     role: resolvedRole,
     loading: effectiveLoading,
     shopId,
-    can: (cap: Capability) => can(resolvedRole, cap),
+    can: canCapability,
     isOwner: resolvedRole === "owner" || resolvedRole === "super_admin",
     isAdmin: resolvedRole === "admin" || resolvedRole === "owner" || resolvedRole === "super_admin",
   };

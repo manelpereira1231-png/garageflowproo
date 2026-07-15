@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -37,9 +37,10 @@ export default function CommandPalette() {
   const { activeShopId } = useShopContext();
   const { role, can, loading: roleLoading } = useShopRole();
   const isPt = language === "pt";
+  const permissionsReady = !roleLoading && Boolean(role);
   const canAccess = useCallback(
-    (path: string) => !roleLoading && canOpenPath(path, role, can),
-    [can, role, roleLoading],
+    (path: string) => permissionsReady && canOpenPath(path, role, can),
+    [can, permissionsReady, role],
   );
 
   // Listen for CMD+K / Ctrl+K and a global "open-command-palette" event
@@ -62,7 +63,7 @@ export default function CommandPalette() {
   // Search across tables
   const doSearch = useCallback(
     async (q: string) => {
-      if (!q || q.length < 2 || !activeShopId || roleLoading || !role) {
+      if (!q || q.length < 2 || !activeShopId || !permissionsReady) {
         setResults([]);
         return;
       }
@@ -179,7 +180,7 @@ export default function CommandPalette() {
       setResults(all);
       setSearching(false);
     },
-    [activeShopId, can, isPt, role, roleLoading]
+    [activeShopId, can, isPt, permissionsReady]
   );
 
   useEffect(() => {
@@ -232,7 +233,7 @@ export default function CommandPalette() {
     appointment: isPt ? "Marcação" : "Appointment",
   };
 
-  const pages = [
+  const pages = useMemo(() => [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { label: isPt ? "Clientes" : "Clients", icon: Users, path: "/clients" },
     { label: isPt ? "Veículos" : "Vehicles", icon: Car, path: "/vehicles" },
@@ -248,24 +249,27 @@ export default function CommandPalette() {
     { label: isPt ? "Equipa" : "Team", icon: UserPlus, path: "/team" },
     { label: isPt ? "Definições" : "Settings", icon: Settings, path: "/settings" },
     { label: isPt ? "Faturação" : "Billing", icon: CreditCard, path: "/billing" },
-  ].filter((page) => canAccess(page.path));
+  ].filter((page) => canAccess(page.path)), [canAccess, isPt, language]);
 
-  const quickActions = [
-    { label: isPt ? "Novo Cliente" : "New Client", icon: Plus, path: "/clients" },
-    { label: isPt ? "Novo Orçamento" : "New Quote", icon: Plus, path: "/quotes/new" },
-    { label: isPt ? "Novo Serviço" : "New Service", icon: Plus, path: "/services/new" },
-    { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new" },
-  ].filter((action) => canAccess(action.path));
+  const quickActions = useMemo(() => [
+    { label: isPt ? "Novo Cliente" : "New Client", icon: Plus, path: "/clients", capability: "clients.create" as const },
+    { label: isPt ? "Novo Orçamento" : "New Quote", icon: Plus, path: "/quotes/new", capability: "quotes.create" as const },
+    { label: isPt ? "Novo Serviço" : "New Service", icon: Plus, path: "/services/new", capability: "work_orders.create" as const },
+    { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new", capability: "invoices.create" as const },
+  ].filter((action) => canAccess(action.path) && can(action.capability)), [can, canAccess, isPt]);
 
-  const searchableEntities = [
-    can("clients.view") && (isPt ? "clientes" : "clients"),
-    can("vehicles.view") && (isPt ? "veículos" : "vehicles"),
-    can("quotes.view") && (isPt ? "orçamentos" : "quotes"),
-    can("work_orders.view") && (isPt ? "serviços" : "services"),
-    can("stock.view") && "stock",
-    can("invoices.view") && (isPt ? "faturas" : "invoices"),
-    can("agenda.view") && (isPt ? "marcações" : "appointments"),
-  ].filter(Boolean).join(", ");
+  const searchableEntities = useMemo(() => {
+    if (!permissionsReady) return "";
+    return [
+      can("clients.view") && (isPt ? "clientes" : "clients"),
+      can("vehicles.view") && (isPt ? "veículos" : "vehicles"),
+      can("quotes.view") && (isPt ? "orçamentos" : "quotes"),
+      can("work_orders.view") && (isPt ? "serviços" : "services"),
+      can("stock.view") && "stock",
+      can("invoices.view") && (isPt ? "faturas" : "invoices"),
+      can("agenda.view") && (isPt ? "marcações" : "appointments"),
+    ].filter(Boolean).join(", ");
+  }, [can, isPt, permissionsReady]);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>

@@ -698,7 +698,7 @@ function AuthenticatedRoutes() {
     const checkUserState = async () => {
       const accessProfile = await Promise.race([
         getUserAccessProfile(user),
-        timeoutResult({ isAffiliate: false, isGarageUser: true, isMarketUser: false, hasGarageRole: true, hasMarketRole: false, hasShopAccess: true }),
+        timeoutResult({ isAffiliate: false, isGarageUser: false, isMarketUser: false, hasGarageRole: false, hasMarketRole: false, hasShopAccess: false }),
       ]);
 
       if (cancelled) return;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garageflow-v2';
+const CACHE_NAME = 'garageflow-v3-rbac';
 const STATIC_ASSETS = [
   '/favicon.ico',
   '/manifest.json',
@@ -17,7 +17,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    ).then(() => self.clients.matchAll({ type: 'window' })).then((clients) => {
+      clients.forEach((client) => client.navigate(client.url));
+    })
   );
   self.clients.claim();
 });
@@ -33,16 +35,13 @@ self.addEventListener('fetch', (event) => {
 
   // Never serve stale application code. A cached JS/CSS chunk can leave the
   // app permanently blank after a hotfix, so code assets are always network-first.
-  if (request.destination === 'script' || request.destination === 'style' || url.pathname.startsWith('/assets/')) {
-    event.respondWith(fetch(request));
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request, { cache: 'no-store' }).catch(() => new Response('Offline', { status: 503 })));
     return;
   }
 
-  // Navigation requests - network first, fallback to cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => new Response('Offline', { status: 503 }))
-    );
+  if (request.destination === 'script' || request.destination === 'style' || url.pathname.startsWith('/assets/')) {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
   }
 

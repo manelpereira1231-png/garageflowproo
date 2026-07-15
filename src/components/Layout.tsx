@@ -58,8 +58,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
-import { useShopRole } from "@/hooks/useShopRole";
-import { canOpenPath, homeForRole } from "@/lib/rolePaths";
+import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
+import { canOpenPath } from "@/lib/rolePaths";
 
 type NavItem = {
   path: string;
@@ -79,9 +79,9 @@ type FinancialNavItem = {
   locked?: boolean;
 };
 
-// Lite Mode: only the 5 essentials a workshop needs daily.
-// Clientes, Veículos, Orçamentos, Serviços, Definições.
-const ESSENTIAL_NAV_PATHS = ["/clients", "/vehicles", "/quotes", "/services", "/billing", "/settings"];
+// Lite Mode: only daily essentials. RBAC is applied before this list, so a
+// role never sees an item here unless canOpenPath() also allows it.
+const ESSENTIAL_NAV_PATHS = ["/dashboard", "/clients", "/vehicles", "/quotes", "/services", "/workshop", "/agenda"];
 
 const isFinancialRoute = (pathname: string) =>
   pathname.startsWith("/invoices") || pathname.startsWith("/financial");
@@ -345,7 +345,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       ? [] // Wait for the single source of truth before deciding which Market items to show — prevents "Ativar Market" flashing for already-enrolled shops.
       : isCarityPartner
       ? [
-          { path: "/market/opportunities", label: "Oportunidades", icon: Search, badge: pendingMarketCount } as NavItem,
+          { path: "/market/opportunities", label: "Vendas Market", icon: Search, badge: pendingMarketCount } as NavItem,
           { path: "/market/inspections", label: "Inspeções", icon: ClipboardCheck } as NavItem,
           { path: "/market/offers", label: "Propostas", icon: FileText } as NavItem,
           { path: "/market/wallet", label: "Carteira", icon: Wallet } as NavItem,
@@ -396,6 +396,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
+    clearShopRoleCache();
     // Sign out ONLY of the ERP realm — Market session (if any) stays intact.
     await signOutRealm("erp");
   };
@@ -429,24 +430,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ? roleFilteredItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
     : roleFilteredItems.filter((item) => !sidebarPrefs.isHidden(item.path));
 
-  // Role-based landing: on first mount, if user is at /dashboard but the role
-  // has a different home (technician → /workshop, reception → /agenda, ...),
-  // redirect. Only runs once per session to avoid fighting user navigation.
-  const roleRedirectedRef = useRef(false);
-  useEffect(() => {
-    if (roleRedirectedRef.current || roleLoading || !role) return;
-    if (role === "owner" || role === "admin" || role === "manager" || role === "super_admin") {
-      roleRedirectedRef.current = true;
-      return;
-    }
-    const home = homeForRole(role);
-    if (location.pathname === "/dashboard" || location.pathname === "/") {
-      roleRedirectedRef.current = true;
-      navigate(home, { replace: true });
-    } else {
-      roleRedirectedRef.current = true;
-    }
-  }, [role, roleLoading, location.pathname, navigate]);
+  // Role-specific dashboard content is rendered at /dashboard for every role.
 
   // Split: favorites (user-ordered) + the rest. Disabled in guided mode for simplicity.
   const favoriteItems = isGuidedMode

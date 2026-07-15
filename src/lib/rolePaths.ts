@@ -41,9 +41,9 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/loyalty": "loyalty.view",
   "/referrals": "referrals.view",
   "/partners": "referrals.view",
-  "/market/opportunities": "marketplace.view",
+  "/market/opportunities": "marketplace.sales",
   "/market/inspections": "marketplace.manage",
-  "/market/offers": "marketplace.view",
+  "/market/offers": "marketplace.sales",
   "/market/wallet": "finance.view_costs",
   "/market/payouts": "finance.view_costs",
   "/market/history": "marketplace.manage",
@@ -90,9 +90,11 @@ export function canOpenPath(
 /** Where each role should land after login. */
 export function homeForRole(role: string | null): string {
   switch (role) {
-    case "technician": return "/workshop";
-    case "reception": return "/agenda";
-    case "commercial": return "/clients";
+    case "technician":
+    case "reception":
+    case "commercial":
+    case "manager":
+      return "/dashboard";
     default: return "/dashboard";
   }
 }

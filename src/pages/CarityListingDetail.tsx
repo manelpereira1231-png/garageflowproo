@@ -183,29 +183,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
 
-    const titleText = `${listingData.make} ${listingData.model} ${listingData.year} usado com inspeção certificada — GarageFlow Market`;
-    document.title = titleText;
-    // Dynamic meta description with real data
-    const descText = `${listingData.make} ${listingData.model} ${listingData.year} — ${formatListingPrice(listingData.price, listingData.country_code, listingData.currency)}, ${formatMileage(listingData.mileage, listingData.country_code)}, ${listingData.fuel}. Inspeção certificada por oficina GarageFlow.`;
-    const setMeta = (selector: string, attr: "name" | "property", key: string, content: string) => {
-      let el = document.querySelector(selector) as HTMLMetaElement | null;
-      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
-      el.setAttribute("content", content);
-    };
-    setMeta('meta[name="description"]', "name", "description", descText);
-    // Open Graph + Twitter (WhatsApp/Facebook/X preview)
-    const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
-    const ogUrl = `https://${projectId}.supabase.co/functions/v1/market-og-image?listing_id=${listingData.id}`;
-    const pageUrl = `https://garageflow.pt/market/car/${listingData.id}`;
-    setMeta('meta[property="og:title"]', "property", "og:title", titleText);
-    setMeta('meta[property="og:description"]', "property", "og:description", descText);
-    setMeta('meta[property="og:image"]', "property", "og:image", ogUrl);
-    setMeta('meta[property="og:url"]', "property", "og:url", pageUrl);
-    setMeta('meta[property="og:type"]', "property", "og:type", "product");
-    setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
-    setMeta('meta[name="twitter:title"]', "name", "twitter:title", titleText);
-    setMeta('meta[name="twitter:description"]', "name", "twitter:description", descText);
-    setMeta('meta[name="twitter:image"]', "name", "twitter:image", ogUrl);
+    // NOTE: <title>, description, canonical, hreflang, OG e Twitter são geridos pelo
+    // componente <SEOHead /> abaixo (react-helmet-async). Bloco manual removido para
+    // evitar duplicação/override, garantir title < 60 chars e description < 160 chars.
 
     const [reportRes, sellerRes, countRes] = await Promise.all([
       supabase.from("carity_inspection_reports_public" as any).select("id, listing_id, shop_id, inspection_id, overall_score, recommendation, defects, exterior_photos, interior_photos, engine_photos, tire_photos, brakes_photos, suspension_photos, damage_photos, inspector_notes, technician_name, mileage_at_inspection, is_locked, engine_status, transmission_status, brakes_status, suspension_status, steering_status, tires_status, electrical_status, inspection_city, inspection_country, inspection_lat, inspection_lng, completed_at, created_at").eq("listing_id", id).maybeSingle(),

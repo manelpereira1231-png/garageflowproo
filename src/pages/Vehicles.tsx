@@ -247,7 +247,7 @@ export default function Vehicles() {
                   <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
                 </div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
-                <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="number" value={form.mileage} onChange={e => setForm({...form, mileage: e.target.value})} /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="text" inputMode="numeric" value={form.mileage ? Number(form.mileage.replace(/\D/g, "")).toLocaleString("pt-PT") : ""} onChange={e => setForm({...form, mileage: e.target.value.replace(/\D/g, "")})} placeholder="0" /></div>
                 <div className="space-y-1.5">
                   <Label>{t('vehicles.fuel')}</Label>
                   <Select value={form.fuel} onValueChange={v => setForm({...form, fuel: v})}>

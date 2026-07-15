@@ -46,6 +46,7 @@ export default function InvoiceDetail() {
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | null>(null);
+  const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
 
   const handleEmitCertified = async () => {
     if (!can("invoices.create")) return;

@@ -1,0 +1,32 @@
+# GarageFlow
+
+> Software de gestão para oficinas automóvel (ERP) e marketplace de carros usados com inspeção mecânica certificada. Portugal, Brasil, Espanha e mais.
+
+GarageFlow é composto por dois produtos:
+- **GarageFlow ERP** — gestão para oficinas: orçamentos, ordens de serviço, faturação, clientes, veículos, stock, agenda e portal do cliente.
+- **GarageFlow Market** — marketplace de carros usados com inspeção mecânica presencial feita por oficinas parceiras e pagamento protegido em escrow.
+
+## Páginas principais
+
+- [Início ERP](/): Software de gestão para oficinas automóvel.
+- [Preços](/pricing): Planos e preços do ERP.
+- [Funcionalidades](/features): Funcionalidades do ERP.
+- [GarageFlow Market](/market): Marketplace de carros usados com inspeção certificada.
+- [Sobre](/about): Sobre a empresa GarageFlow.
+- [Contacto](/contact): Contactos e suporte.
+- [Blog](/blog): Artigos sobre gestão de oficinas e mercado automóvel.
+- [Termos ERP](/terms): Termos de utilização do ERP.
+- [Termos Market](/market-terms): Termos do marketplace.
+- [Privacidade](/privacy): Política de privacidade (RGPD).
+- [Suporte](/support): Central de suporte.
+
+## Marketplace
+
+- [Todos os carros](/market/cars): Listagens públicas de carros com inspeção certificada.
+- [Como funciona](/market/how-it-works): Escrow, inspeção presencial e garantias.
+- [Vender o meu carro](/market/sell): Publicar veículo no marketplace.
+
+## Opcional
+
+- [Central de ajuda](/help): FAQs.
+- [Estado do sistema](/status): Uptime e incidentes.

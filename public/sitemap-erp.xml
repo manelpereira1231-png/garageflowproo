@@ -45,6 +45,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://garageflow.pt/support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://garageflow.pt/legal/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

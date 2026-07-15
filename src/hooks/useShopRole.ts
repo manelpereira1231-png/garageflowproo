@@ -96,6 +96,10 @@ export function can(role: ShopRole, cap: Capability): boolean {
 
 const cache = new Map<string, ShopRole>();
 
+export function clearShopRoleCache() {
+  cache.clear();
+}
+
 export function useShopRole() {
   const { activeShopId: shopId, loading: shopLoading } = useShopContext();
   const { isReady, user } = useAuthReady();

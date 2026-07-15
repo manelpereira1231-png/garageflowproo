@@ -25,7 +25,7 @@ type ApprovedQuote = {
   total: number;
   status: string;
   client_name: string | null;
-  updated_at: string;
+  created_at: string;
   work_order_id?: string | null;
 };
 
@@ -104,7 +104,7 @@ export default function AppointmentsBell() {
         total: Number(q.total || 0),
         status: q.status,
         client_name: q.clients?.name ?? null,
-        updated_at: q.updated_at,
+        created_at: q.created_at,
       }));
 
     // Fire toast for freshly-approved quotes we hadn't seen yet in this session
@@ -208,7 +208,7 @@ export default function AppointmentsBell() {
                         {q.number} · {q.client_name || "Cliente"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        €{q.total.toFixed(2)} · {new Date(q.updated_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
+                        €{q.total.toFixed(2)} · {new Date(q.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

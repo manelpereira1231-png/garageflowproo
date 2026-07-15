@@ -25,9 +25,9 @@ export type SeoLang = "pt" | "pt-BR" | "en" | "es" | "fr" | "de" | "it" | "hi";
 // Per-language meta content (ERP landing)
 export const ERP_META: Record<SeoLang, { title: string; description: string; keywords: string }> = {
   pt: {
-    title: "Software Gestão Oficina Automóvel | GarageFlow",
-    description: "GarageFlow: software de gestão para oficinas automóvel. Orçamentos, ordens de serviço, faturação, clientes e alertas inteligentes. Teste grátis 30 dias.",
-    keywords: "software oficina, gestão oficina automóvel, ERP oficina mecânica, ordens de serviço, faturação oficina",
+    title: "GarageFlow | Software Gestão Oficinas Automóvel e Mecânicos",
+    description: "Software completo para oficinas: orçamentos, ordens de serviço, faturação, stock, agenda, CRM, WhatsApp, IA e Marketplace. Teste grátis 30 dias.",
+    keywords: "software oficina, software gestão oficina automóvel, software mecânicos, centros auto, ERP oficina mecânica, ordens de serviço, faturação oficina",
   },
   "pt-BR": {
     title: "Software de Gestão para Oficina Mecânica | GarageFlow",

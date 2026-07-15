@@ -58,7 +58,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
-import { useShopRole } from "@/hooks/useShopRole";
+import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 
 type NavItem = {
@@ -396,6 +396,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");
+    clearShopRoleCache();
     // Sign out ONLY of the ERP realm — Market session (if any) stays intact.
     await signOutRealm("erp");
   };

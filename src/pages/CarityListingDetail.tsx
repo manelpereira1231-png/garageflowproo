@@ -428,8 +428,9 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
   const displayTitle = translationOn && translation?.title ? translation.title : `${listing.make} ${listing.model} ${listing.year}`;
   const displayDescription = translationOn && translation?.description ? translation.description : listing.description;
   const translationAvailable = translation !== null;
-  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}${listing.city ? ` em ${listing.city}` : ""} | GarageFlow Market`;
-  const seoDesc = `${listing.make} ${listing.model} ${listing.year}, ${listingMileageStr}, ${listing.fuel}${locationLine ? `. ${locationLine}` : ""}. Inspeção mecânica certificada por oficina, pagamento protegido em escrow. GarageFlow Market.`;
+  // SEO: titles < 60 chars, descriptions < 160 chars (brand appended por SEOHead via og:site_name)
+  const seoTitle = `${listing.make} ${listing.model} ${listing.year} — ${listingPriceStr}`.slice(0, 60);
+  const seoDesc = `${listing.make} ${listing.model} ${listing.year} · ${listingMileageStr} · ${listing.fuel}${listing.city ? ` · ${listing.city}` : ""}. Inspeção certificada, pagamento em escrow.`.slice(0, 160);
   const seoSlug = `${listing.make}-${listing.model}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
   const seoPath = `/market/carros/${seoSlug}-${listing.id}`;
 

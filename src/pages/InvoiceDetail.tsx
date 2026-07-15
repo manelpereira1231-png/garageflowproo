@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useShopRole } from "@/hooks/useShopRole";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ const statusColors: Record<string, string> = {
 export default function InvoiceDetail() {
   const { t } = useLanguage();
   const { plan } = useSubscription();
+  const { can } = useShopRole();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<any>(null);
@@ -46,6 +48,7 @@ export default function InvoiceDetail() {
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | null>(null);
 
   const handleEmitCertified = async () => {
+    if (!can("invoices.create")) return;
     if (!invoice) return;
     if (invoice.provider_invoice_id) {
       if (invoice.provider_pdf_url) window.open(invoice.provider_pdf_url, "_blank");
@@ -378,9 +381,11 @@ export default function InvoiceDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-            <Printer className="w-4 h-4 mr-1" />PDF
-          </Button>
+          {can("invoices.print") && (
+            <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+              <Printer className="w-4 h-4 mr-1" />PDF
+            </Button>
+          )}
           {invoice.provider_invoice_id ? (
             <Button variant="secondary" size="sm" asChild>
               <a href={invoice.provider_pdf_url || invoice.provider_permalink || "#"} target="_blank" rel="noreferrer">
@@ -389,7 +394,7 @@ export default function InvoiceDetail() {
               </a>
             </Button>
           ) : (
-            invoice.status !== "cancelled" && (
+            can("invoices.create") && invoice.status !== "cancelled" && (
               billingProvider ? (
                 <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
                   {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
@@ -403,10 +408,10 @@ export default function InvoiceDetail() {
               )
             )
           )}
-          {invoice.status === 'draft' && (
+          {can("invoices.create") && invoice.status === 'draft' && (
             <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>
           )}
-          {['issued', 'partial'].includes(invoice.status) && (
+          {can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
             <Button size="sm" onClick={() => { setPayAmount(remaining); setShowPayment(true); }}>
               <CreditCard className="w-4 h-4 mr-1" />{t('invoices.registerPayment')}
             </Button>
@@ -419,7 +424,7 @@ export default function InvoiceDetail() {
               </a>
             </Button>
           )}
-          {['draft', 'issued'].includes(invoice.status) && (
+          {can("invoices.cancel") && ['draft', 'issued'].includes(invoice.status) && (
             <Button variant="destructive" size="sm" onClick={handleCancel}>
               <Ban className="w-4 h-4 mr-1" />
               {invoice.provider_invoice_id ? "Anular (Nota de Crédito)" : t('invoices.cancel')}

@@ -54,7 +54,6 @@ export default function AppointmentsBell() {
     const dismissed = getDismissed();
     const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     const canAgenda = can("agenda.view");
-    const canManageAgenda = can("agenda.manage");
     const canQuotes = can("quotes.view");
     const canMarketSales = can("marketplace.view");
     const canMarketOps = can("marketplace.manage");
@@ -180,14 +179,16 @@ export default function AppointmentsBell() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 p-0 max-h-[70vh] overflow-y-auto">
-        <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
+              <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
           <div>
             <div className="font-semibold text-sm">Marcações pendentes</div>
             <div className="text-xs text-muted-foreground">A aguardar aceitação</div>
           </div>
-          <Link to="/agenda" className="text-xs text-amber-500 hover:underline" onClick={() => setOpen(false)}>
-            Ver agenda
-          </Link>
+          {can("agenda.view") && (
+            <Link to="/agenda" className="text-xs text-amber-500 hover:underline" onClick={() => setOpen(false)}>
+              Ver agenda
+            </Link>
+          )}
         </div>
         {count === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
@@ -269,15 +270,17 @@ export default function AppointmentsBell() {
                       <Check className="w-3.5 h-3.5 mr-1" /> Aceitar
                     </Button>
                   )}
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    className="h-8 flex-1"
-                    onClick={() => setOpen(false)}
-                  >
-                    <Link to="/agenda"><Clock className="w-3.5 h-3.5 mr-1" /> Reagendar</Link>
-                  </Button>
+                  {can("agenda.view") && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-8 flex-1"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Link to="/agenda"><Clock className="w-3.5 h-3.5 mr-1" /> Reagendar</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

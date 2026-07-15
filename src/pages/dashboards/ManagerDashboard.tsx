@@ -57,17 +57,16 @@ export default function ManagerDashboard() {
           .is("deleted_at", null),
         supabase
           .from("parts")
-          .select("id", { count: "exact", head: true })
+          .select("id, stock_quantity, min_stock")
           .eq("shop_id", shopId)
-          .eq("active", true)
-          .filter("stock_quantity", "lte", "min_stock"),
+          .eq("active", true),
       ]);
 
       setActiveOrders((ordersRes.data as any) || []);
       setTodayAppointments(apptsRes.count || 0);
       setOpenQuotes(quotesRes.count || 0);
       setActiveClients(clientsRes.count || 0);
-      setLowStock(partsRes.count || 0);
+      setLowStock(((partsRes.data as any[]) || []).filter((p) => Number(p.stock_quantity || 0) <= Number(p.min_stock || 0)).length);
       setLoading(false);
     })();
   }, [isReady, user, shopId]);

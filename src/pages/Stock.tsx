@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { formatMoney } from "@/lib/money";
+import { useShopRole } from "@/hooks/useShopRole";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
@@ -49,6 +50,7 @@ const emptyForm = {
 
 export default function Stock() {
   const { t, language } = useLanguage();
+  const { can } = useShopRole();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _stCache = pageCache.get<{ parts: Part[]; movements: StockMovement[]; orders: PartsOrder[] }>(`stock:${_shopInit}`);
   const [parts, setParts] = useState<Part[]>(_stCache?.parts ?? []);
@@ -124,6 +126,7 @@ export default function Stock() {
   const totalMargin = totalStockValue - totalStockCost;
 
   const handleSave = async () => {
+    if (!can("stock.manage")) return;
     if (!activeShopId || !form.name.trim()) { toast.error(t('stock.fillName')); return; }
     const payload = { shop_id: activeShopId, ...form, reference: form.reference || null, supplier: form.supplier || null };
     let error;
@@ -282,6 +285,7 @@ export default function Stock() {
 
   // Exporta a lista de peças para CSV
   const exportCsv = () => {
+    if (!can("stock.manage")) return;
     const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço","IVA","Ativo"];
     const rows = filtered.map(p => [
       p.name,
@@ -324,14 +328,16 @@ export default function Stock() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditId(null); setForm(emptyForm); } }}>
           <div className="flex gap-2">
-            {parts.length === 0 && (
+            {can("stock.manage") && parts.length === 0 && (
               <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
                 <Sparkles className="w-4 h-4" /> Pack inicial
               </Button>
             )}
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="w-4 h-4 mr-1" />{t('stock.newPart')}</Button>
-            </DialogTrigger>
+            {can("stock.manage") && (
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="w-4 h-4 mr-1" />{t('stock.newPart')}</Button>
+              </DialogTrigger>
+            )}
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>{editId ? t('stock.editPart') : t('stock.newPart')}</DialogTitle></DialogHeader>
@@ -394,10 +400,12 @@ export default function Stock() {
                 <AlertTriangle className="w-4 h-4" />
                 {t('stock.lowStockAlert')} ({lowStock.length})
               </div>
-              <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={generateReorders}>
-                <ShoppingCart className="w-3.5 h-3.5" />
-                Encomendar em falta
-              </Button>
+              {can("stock.manage") && (
+                <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={generateReorders}>
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  Encomendar em falta
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {lowStock.map(p => (
@@ -450,9 +458,11 @@ export default function Stock() {
                 <SelectItem value="ok">{t('stock.okOnly')}</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="gap-1" onClick={exportCsv} disabled={filtered.length === 0} title="Exportar CSV">
-              <ArrowUpDown className="w-3.5 h-3.5" /> CSV
-            </Button>
+            {can("stock.manage") && (
+              <Button variant="outline" size="sm" className="gap-1" onClick={exportCsv} disabled={filtered.length === 0} title="Exportar CSV">
+                <ArrowUpDown className="w-3.5 h-3.5" /> CSV
+              </Button>
+            )}
           </div>
           {/* Mobile: Card view */}
           <div className="sm:hidden space-y-2">
@@ -461,8 +471,8 @@ export default function Stock() {
             ) : filtered.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm bg-card border border-border rounded-xl p-5 space-y-3">
                 <p>{t('stock.empty')}</p>
-                {parts.length === 0 && (
-                  <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
+                {can("stock.manage") && parts.length === 0 && (
+                    <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
                     <Sparkles className="w-3.5 h-3.5" /> Criar pack inicial (12 peças comuns)
                   </Button>
                 )}
@@ -478,16 +488,16 @@ export default function Stock() {
                     {p.reference && <p className="text-xs text-muted-foreground">{p.reference}</p>}
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}><ArrowUpDown className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}><ArrowUpDown className="w-3.5 h-3.5" /></Button>}
+                    {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                    {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0}><Minus className="w-3 h-3" /></Button>
+                    {can("stock.manage") && <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, -1)} disabled={p.stock_quantity <= 0}><Minus className="w-3 h-3" /></Button>}
                     <Badge variant={p.stock_quantity <= p.min_stock ? "destructive" : "secondary"} className="min-w-8 justify-center">{p.stock_quantity}</Badge>
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)}><Plus className="w-3 h-3" /></Button>
+                    {can("stock.manage") && <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => quickAdjust(p, 1)}><Plus className="w-3 h-3" /></Button>}
                     {p.min_stock > 0 && <span className="text-muted-foreground">/ min {p.min_stock}</span>}
                   </div>
                   <span className="font-semibold text-sm">{formatMoney(p.sale_price)}</span>
@@ -583,15 +593,21 @@ export default function Stock() {
                       <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}>
-                            <ArrowUpDown className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          {can("stock.manage") && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}>
+                              <ArrowUpDown className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {can("stock.manage") && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {can("stock.manage") && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

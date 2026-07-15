@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ArrowLeft, LifeBuoy, Clock, ShieldCheck } from "lucide-react";
 import { useSupportI18n } from "@/i18n/supportI18n";
 import LanguageDropdown from "@/components/LanguageDropdown";
+import SEOHead from "@/components/SEOHead";
 
 export default function Support() {
   const navigate = useNavigate();

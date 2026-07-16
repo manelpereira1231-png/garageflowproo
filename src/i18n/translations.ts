@@ -389,8 +389,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.feature.api': 'API & Integrações',
 
     'billing.manage': 'Gerir Subscrição',
-    'billing.trial30': 'Trial de 30 dias incluído',
-    'billing.trial15': 'Trial de 15 dias incluído',
+    'billing.trial30': '30 dias grátis',
+    'billing.trial15': '15 dias grátis',
     'billing.paymentSuccess': 'Pagamento confirmado! O seu plano foi atualizado.',
     'billing.paymentCanceled': 'Pagamento cancelado.',
     'billing.errorCheckout': 'Erro ao criar checkout. Tente novamente.',

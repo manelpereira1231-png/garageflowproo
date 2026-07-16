@@ -807,18 +807,34 @@ function OwnerDashboard() {
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
           </div>
         ) : recentServices.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center py-4">{t('dashboard.noServices')}</p>
+          <p className="text-muted-foreground text-sm text-center py-4">
+            {t('dashboard.noServices')} — os últimos serviços criados aparecerão aqui automaticamente.
+          </p>
         ) : (
-          <div className="space-y-3">
-            {recentServices.map(s => (
-              <div key={s.number} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="min-w-0">
-                  <span className="mono text-sm font-medium">{s.number}</span>
-                  <span className="text-muted-foreground text-sm ml-2 truncate">{(s.clients as any)?.name}</span>
+          <div className="space-y-2.5">
+            {recentServices.map(s => {
+              const v = (s.vehicles as any) || {};
+              const plate = v.plate || '';
+              const makeModel = [v.make, v.model].filter(Boolean).join(' ');
+              const time = s.created_at ? new Date(s.created_at).toLocaleTimeString(language === 'pt' ? 'pt-PT' : undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+              return (
+                <div key={s.number} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="mono text-sm font-medium">{s.number}</span>
+                      {plate && <span className="mono text-[11px] px-1.5 py-0.5 rounded bg-muted/70 border border-border/60">{plate}</span>}
+                      <span className="text-xs text-muted-foreground truncate">{makeModel}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                      <span className="truncate">{(s.clients as any)?.name || '—'}</span>
+                      {s.status && <><span>·</span><span>{t(`service.${s.status}`)}</span></>}
+                      {time && <><span>·</span><span>{time}</span></>}
+                    </div>
+                  </div>
+                  <span className="mono font-semibold shrink-0 text-sm">{currency}{(s.total || 0).toFixed(2)}</span>
                 </div>
-                <span className="mono font-semibold shrink-0">{currency}{(s.total || 0).toFixed(2)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

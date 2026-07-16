@@ -762,16 +762,17 @@ export default function LandingPage() {
                   <div className="mb-5 sm:mb-6" />
                 )}
                 <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                  {plan.featureLabels.map(label => (
-                    <li key={label} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                      {label}
-                    </li>
-                  ))}
-                  {plan.lockedFeatureLabels.map(label => (
-                    <li key={`locked-${label}`} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      {label}
+                  {plan.items.map(item => (
+                    <li
+                      key={item.slug}
+                      className={`flex items-center gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
+                    >
+                      {item.enabled ? (
+                        <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      )}
+                      {item.name}
                     </li>
                   ))}
                 </ul>

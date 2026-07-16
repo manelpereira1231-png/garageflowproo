@@ -632,6 +632,19 @@ function OwnerDashboard() {
                 </div>
               </div>
               <div className="relative text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">{stat.value}</div>
+              {stat.delta && (
+                <div
+                  className={`relative mt-1 text-[10px] sm:text-[11px] font-medium tabular-nums ${
+                    stat.delta.tone === 'up'
+                      ? 'text-emerald-500'
+                      : stat.delta.tone === 'down'
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {stat.delta.text}
+                </div>
+              )}
             </div>
           ))
         )}

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
-import { useFeatureMatrix } from "@/lib/features";
+import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
 import SEOHead from "@/components/SEOHead";
@@ -188,23 +188,13 @@ export default function LandingPage() {
   }, []);
   void pricingRev; // referenced to force re-render on pricing event
 
-  // Live features matrix from admin panel (realtime via /admin/features)
+  // Live features matrix from admin panel (realtime via /admin/features).
+  // Single source of truth: same ordered list rendered in every plan card;
+  // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
-  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
-    const enabled: string[] = [];
-    const locked: string[] = [];
-    // Only surface non-core features; sort alphabetically by name for stability
-    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
-    for (const f of nonCore) {
-      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
-      if (row?.enabled) enabled.push(f.name);
-      else locked.push(f.name);
-    }
-    return { enabled, locked };
-  };
-  const freeLists = buildFeatureLists("free");
-  const proLists = buildFeatureLists("pro");
-  const garageLists = buildFeatureLists("garage");
+  const freeItems = buildPlanFeatureItems("free", fxFeatures, fxMatrix);
+  const proItems = buildPlanFeatureItems("pro", fxFeatures, fxMatrix);
+  const garageItems = buildPlanFeatureItems("garage", fxFeatures, fxMatrix);
 
   const { getName: getPlanName } = usePlanNames();
 
@@ -215,8 +205,7 @@ export default function LandingPage() {
       price: formatPrice(pricing.free[billingCycle]),
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
       subtitleKey: 'landing.trial30',
-      featureLabels: freeLists.enabled,
-      lockedFeatureLabels: freeLists.locked,
+      items: freeItems,
       ctaKey: 'landing.ctaFree',
       highlighted: false,
       ctaPrimary: true,
@@ -227,8 +216,7 @@ export default function LandingPage() {
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: 'landing.trial30',
-      featureLabels: proLists.enabled,
-      lockedFeatureLabels: proLists.locked,
+      items: proItems,
       ctaKey: 'landing.ctaPro',
       highlighted: true,
       ctaPrimary: true,
@@ -239,8 +227,7 @@ export default function LandingPage() {
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: 'landing.trial30',
-      featureLabels: garageLists.enabled,
-      lockedFeatureLabels: garageLists.locked,
+      items: garageItems,
       ctaKey: 'landing.ctaGarage',
       highlighted: false,
       ctaPrimary: false,
@@ -775,16 +762,17 @@ export default function LandingPage() {
                   <div className="mb-5 sm:mb-6" />
                 )}
                 <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                  {plan.featureLabels.map(label => (
-                    <li key={label} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                      {label}
-                    </li>
-                  ))}
-                  {plan.lockedFeatureLabels.map(label => (
-                    <li key={`locked-${label}`} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      {label}
+                  {plan.items.map(item => (
+                    <li
+                      key={item.slug}
+                      className={`flex items-center gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
+                    >
+                      {item.enabled ? (
+                        <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      )}
+                      {item.name}
                     </li>
                   ))}
                 </ul>

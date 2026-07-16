@@ -19,7 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePlanNames } from "@/hooks/usePlanNames";
-import { useFeatureMatrix } from "@/lib/features";
+import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();
@@ -81,17 +81,6 @@ export default function Billing() {
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId, mustSubscribe } = useSubscription();
   const { getName: getPlanName } = usePlanNames();
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
-  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
-    const enabled: string[] = [];
-    const locked: string[] = [];
-    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
-    for (const f of nonCore) {
-      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
-      if (row?.enabled) enabled.push(f.name);
-      else locked.push(f.name);
-    }
-    return { enabled, locked };
-  };
   const [pricingTick, setPricingTick] = useState(0);
   const [freeQuoteLimit, setFreeQuoteLimit] = useState<number>(getCachedPlatformSettings().planLimits.freeQuoteLimit);
   useEffect(() => {
@@ -172,20 +161,19 @@ export default function Billing() {
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
 
-  // Single source of truth: features/lockedFeatures come from the admin
-  // feature matrix (tables `features` + `plan_features`, edited in
-  // /admin/features). Landing, Billing, upgrade modals, etc. all consume
-  // the same buildFeatureLists() output so a change in Admin propagates
-  // everywhere without touching code.
+  // Single source of truth: the ordered feature list comes from the admin
+  // feature matrix (`features` + `plan_features`, edited in /admin/features).
+  // Every plan card renders the SAME list in the SAME order — only the
+  // icon (✓ vs 🔒) changes per plan. See `buildPlanFeatureItems`.
   const planMeta: { key: Plan; icon: React.ElementType; color: string }[] = [
     { key: 'free',   icon: Gift,       color: 'text-muted-foreground' },
     { key: 'pro',    icon: Crown,      color: 'text-primary' },
     { key: 'garage', icon: Building2,  color: 'text-success' },
   ];
-  const plans = planMeta.map((p) => {
-    const lists = buildFeatureLists(p.key as "free" | "pro" | "garage");
-    return { ...p, features: lists.enabled, lockedFeatures: lists.locked };
-  });
+  const plans = planMeta.map((p) => ({
+    ...p,
+    items: buildPlanFeatureItems(p.key as "free" | "pro" | "garage", fxFeatures, fxMatrix),
+  }));
 
 
   const isEmbeddedRuntime = () => {
@@ -576,7 +564,7 @@ export default function Billing() {
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
+        {plans.map(({ key, icon: Icon, color, items }) => {
           const price = prices[key][billingCycle];
           // Centralised button state — never derive Upgrade/Downgrade/Plano Atual
           // with local ifs. See src/lib/planHierarchy.ts.
@@ -619,16 +607,17 @@ export default function Billing() {
               </div>
 
               <ul className="space-y-3 mb-6">
-                {features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-                {lockedFeatures?.map((feature, i) => (
-                  <li key={`locked-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                    <span>{feature}</span>
+                {items.map((item) => (
+                  <li
+                    key={item.slug}
+                    className={`flex items-start gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
+                  >
+                    {item.enabled ? (
+                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
+                    ) : (
+                      <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                    )}
+                    <span>{item.name}</span>
                   </li>
                 ))}
               </ul>

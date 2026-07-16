@@ -70,6 +70,10 @@ export default function LandingPage() {
   };
   const [landingCfg, setLandingCfg] = useState<LandingCfg>(DEFAULT_LANDING);
 
+  // Detect authenticated users so public landing copy (e.g. "30 days free")
+  // is not shown to someone who already has an account / used a trial.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   // Feature flags controlled by Super Admin in /admin/system-control.
   // Source of truth = `system_feature_flags` in the database.
   // `null` = still loading (do NOT render either card yet — no fallback-to-visible).

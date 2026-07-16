@@ -683,7 +683,7 @@ function OwnerDashboard() {
           <div className="card-premium p-3 sm:p-5">
             <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <Wrench className="w-4 h-4 text-primary" />
-              {t('dashboard.statusChart')}
+              {language === 'pt' || language === 'pt-BR' ? 'Estado dos Serviços' : t('dashboard.statusChart')}
             </h2>
             {!dataLoaded ? (
               <Skeleton className="h-[160px] w-full rounded-xl" />

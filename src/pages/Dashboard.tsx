@@ -394,12 +394,12 @@ function OwnerDashboard() {
   };
 
   const stats = [
-    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue) },
-    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit) },
-    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500', delta: pctDelta(kpis.serviceCount, prevKpis.serviceCount) },
-    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket) },
-    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500', delta: null },
-    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500', delta: null },
+    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue), href: '/financial/reports' },
+    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit), href: '/financial/reports?view=profit' },
+    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500', delta: pctDelta(kpis.serviceCount, prevKpis.serviceCount), href: '/services' },
+    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket), href: '/financial/reports?view=ticket' },
+    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500', delta: null, href: '/quotes?status=open' },
+    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500', delta: null, href: '/clients?filter=active' },
   ];
 
   return (
@@ -622,7 +622,12 @@ function OwnerDashboard() {
           ))
         ) : (
           stats.map((stat) => (
-            <div key={stat.label} className="stat-card group relative overflow-hidden">
+            <Link
+              key={stat.label}
+              to={stat.href}
+              aria-label={stat.label}
+              className="stat-card group relative overflow-hidden cursor-pointer hover:border-primary/40 hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl"
+            >
               {/* Subtle gradient accent on hover */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               <div className="relative flex items-center justify-between mb-3">
@@ -645,7 +650,7 @@ function OwnerDashboard() {
                   {stat.delta.text}
                 </div>
               )}
-            </div>
+            </Link>
           ))
         )}
       </div>

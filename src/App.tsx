@@ -67,6 +67,7 @@ const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
+const TrialExpired = lazyRetry(() => import("@/pages/TrialExpired"));
 const Alerts = lazyRetry(() => import("@/pages/Alerts"));
 const Team = lazyRetry(() => import("@/pages/Team"));
 const Chat = lazyRetry(() => import("@/pages/Chat"));
@@ -425,6 +426,7 @@ const shopRoutes = [
   { path: "/settings/messages", element: <MessageTemplates /> },
   { path: "/settings/billing-integration", element: <BillingIntegration /> },
   { path: "/billing", element: <Billing /> },
+  { path: "/trial-expired", element: <TrialExpired /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },
   { path: "/chat", element: <PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate> },

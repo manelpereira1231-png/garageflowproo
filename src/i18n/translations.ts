@@ -7986,7 +7986,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailSubject': 'कार्यशाला से नया संदेश',
     'chat.emailGreeting': 'नमस्ते {name}',
     'chat.emailFooter': 'जवाब देने के लिए, सीधे कार्यशाला से संपर्क करें।',
-    'billing.trial15': '15-दिन का निःशुल्क परीक्षण शामिल है',
+    'billing.trial15': '15 दिन मुफ़्त',
     'referrals.title': 'रेफरल कार्यक्रम',
     'referrals.subtitle': 'प्रत्येक कार्यशाला के लिए 1 मुफ्त महीना कमाएँ जो भुगतान करने वाला ग्राहक बन जाता है',
     'referrals.freeMonths': 'उपलब्ध मुफ्त महीने',

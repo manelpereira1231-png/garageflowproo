@@ -622,7 +622,12 @@ function OwnerDashboard() {
           ))
         ) : (
           stats.map((stat) => (
-            <div key={stat.label} className="stat-card group relative overflow-hidden">
+            <Link
+              key={stat.label}
+              to={stat.href}
+              aria-label={stat.label}
+              className="stat-card group relative overflow-hidden cursor-pointer hover:border-primary/40 hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl"
+            >
               {/* Subtle gradient accent on hover */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               <div className="relative flex items-center justify-between mb-3">
@@ -645,7 +650,7 @@ function OwnerDashboard() {
                   {stat.delta.text}
                 </div>
               )}
-            </div>
+            </Link>
           ))
         )}
       </div>

@@ -199,6 +199,23 @@ function OwnerDashboard() {
           activeClients: totalClients,
         });
 
+        // Previous month KPIs (reuses allOrdersRes — no extra queries)
+        const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+        const prevOrdersAll = (allOrdersRes.data || []).filter((o: any) => {
+          const d = new Date(o.created_at);
+          return d >= prevStart && d < prevEnd;
+        });
+        const prevDelivered = prevOrdersAll; // allOrdersRes already filters to completed/delivered
+        const prevRevenue = prevDelivered.reduce((s: number, o: any) => s + Number(o.total || 0), 0);
+        const prevProfit = prevDelivered.reduce((s: number, o: any) => s + Number(o.profit || 0), 0);
+        setPrevKpis({
+          revenue: prevRevenue,
+          profit: prevProfit,
+          serviceCount: prevDelivered.length,
+          avgTicket: prevDelivered.length > 0 ? prevRevenue / prevDelivered.length : 0,
+        });
+
         setRecentServices(orders.slice(0, 5));
 
       // Auto-generated alerts

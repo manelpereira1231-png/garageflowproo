@@ -67,6 +67,7 @@ function OwnerDashboard() {
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
+  const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
   const [shopName, setShopName] = useState("");
@@ -116,7 +117,7 @@ function OwnerDashboard() {
 
         const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
-            .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
+            .select("total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
             .eq("shop_id", shop.id)
             .gte("created_at", monthStart)
             .order("created_at", { ascending: false }),
@@ -196,6 +197,23 @@ function OwnerDashboard() {
           avgTicket: delivered.length > 0 ? woRevenue / delivered.length : (monthInvoices.length > 0 ? invRevenue / monthInvoices.length : 0),
           openQuotes: quotesRes.count || 0,
           activeClients: totalClients,
+        });
+
+        // Previous month KPIs (reuses allOrdersRes — no extra queries)
+        const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+        const prevOrdersAll = (allOrdersRes.data || []).filter((o: any) => {
+          const d = new Date(o.created_at);
+          return d >= prevStart && d < prevEnd;
+        });
+        const prevDelivered = prevOrdersAll; // allOrdersRes already filters to completed/delivered
+        const prevRevenue = prevDelivered.reduce((s: number, o: any) => s + Number(o.total || 0), 0);
+        const prevProfit = prevDelivered.reduce((s: number, o: any) => s + Number(o.profit || 0), 0);
+        setPrevKpis({
+          revenue: prevRevenue,
+          profit: prevProfit,
+          serviceCount: prevDelivered.length,
+          avgTicket: prevDelivered.length > 0 ? prevRevenue / prevDelivered.length : 0,
         });
 
         setRecentServices(orders.slice(0, 5));
@@ -362,13 +380,26 @@ function OwnerDashboard() {
     stock_low: "text-warning",
   };
 
+  const pctDelta = (curr: number, prev: number): { text: string; tone: 'up' | 'down' | 'flat' } | null => {
+    if (!prev && !curr) return null;
+    if (!prev) return { text: '— vs mês anterior', tone: 'flat' };
+    const pct = ((curr - prev) / prev) * 100;
+    if (!isFinite(pct)) return null;
+    const rounded = Math.round(pct);
+    if (rounded === 0) return { text: '0% vs mês anterior', tone: 'flat' };
+    return {
+      text: `${rounded > 0 ? '+' : ''}${rounded}% vs mês anterior`,
+      tone: rounded > 0 ? 'up' : 'down',
+    };
+  };
+
   const stats = [
-    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
-    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
-    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500' },
-    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500' },
-    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500' },
-    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500' },
+    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue) },
+    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit) },
+    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500', delta: pctDelta(kpis.serviceCount, prevKpis.serviceCount) },
+    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket) },
+    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500', delta: null },
+    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500', delta: null },
   ];
 
   return (
@@ -601,6 +632,19 @@ function OwnerDashboard() {
                 </div>
               </div>
               <div className="relative text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">{stat.value}</div>
+              {stat.delta && (
+                <div
+                  className={`relative mt-1 text-[10px] sm:text-[11px] font-medium tabular-nums ${
+                    stat.delta.tone === 'up'
+                      ? 'text-emerald-500'
+                      : stat.delta.tone === 'down'
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {stat.delta.text}
+                </div>
+              )}
             </div>
           ))
         )}
@@ -639,7 +683,7 @@ function OwnerDashboard() {
           <div className="card-premium p-3 sm:p-5">
             <h2 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <Wrench className="w-4 h-4 text-primary" />
-              {t('dashboard.statusChart')}
+              {language === 'pt' || language === 'pt-BR' ? 'Estado dos Serviços' : t('dashboard.statusChart')}
             </h2>
             {!dataLoaded ? (
               <Skeleton className="h-[160px] w-full rounded-xl" />
@@ -703,7 +747,9 @@ function OwnerDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{t('dashboard.noData')}</p>
+              <p className="text-sm text-muted-foreground">
+                As peças mais utilizadas aparecerão automaticamente após o registo dos primeiros serviços.
+              </p>
             )}
           </div>
         </div>
@@ -761,18 +807,34 @@ function OwnerDashboard() {
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
           </div>
         ) : recentServices.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center py-4">{t('dashboard.noServices')}</p>
+          <p className="text-muted-foreground text-sm text-center py-4">
+            {t('dashboard.noServices')} — os últimos serviços criados aparecerão aqui automaticamente.
+          </p>
         ) : (
-          <div className="space-y-3">
-            {recentServices.map(s => (
-              <div key={s.number} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="min-w-0">
-                  <span className="mono text-sm font-medium">{s.number}</span>
-                  <span className="text-muted-foreground text-sm ml-2 truncate">{(s.clients as any)?.name}</span>
+          <div className="space-y-2.5">
+            {recentServices.map(s => {
+              const v = (s.vehicles as any) || {};
+              const plate = v.plate || '';
+              const makeModel = [v.make, v.model].filter(Boolean).join(' ');
+              const time = s.created_at ? new Date(s.created_at).toLocaleTimeString(language === 'pt' ? 'pt-PT' : undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+              return (
+                <div key={s.number} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="mono text-sm font-medium">{s.number}</span>
+                      {plate && <span className="mono text-[11px] px-1.5 py-0.5 rounded bg-muted/70 border border-border/60">{plate}</span>}
+                      <span className="text-xs text-muted-foreground truncate">{makeModel}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                      <span className="truncate">{(s.clients as any)?.name || '—'}</span>
+                      {s.status && <><span>·</span><span>{t(`service.${s.status}`)}</span></>}
+                      {time && <><span>·</span><span>{time}</span></>}
+                    </div>
+                  </div>
+                  <span className="mono font-semibold shrink-0 text-sm">{currency}{(s.total || 0).toFixed(2)}</span>
                 </div>
-                <span className="mono font-semibold shrink-0">{currency}{(s.total || 0).toFixed(2)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

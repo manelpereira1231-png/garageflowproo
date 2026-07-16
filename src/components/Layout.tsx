@@ -60,6 +60,15 @@ import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
+import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+
+// Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"
+// (primary shop). Even the account owner does NOT see these when the active
+// shop is a child. Keep in sync with PRIMARY_ONLY_PATHS in src/App.tsx.
+const PRIMARY_SHOP_ONLY_PATHS = new Set<string>([
+  "/billing",
+  "/settings/billing-integration",
+]);
 
 type NavItem = {
   path: string;

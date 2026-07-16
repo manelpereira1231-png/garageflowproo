@@ -426,6 +426,7 @@ const shopRoutes = [
   { path: "/settings/messages", element: <MessageTemplates /> },
   { path: "/settings/billing-integration", element: <BillingIntegration /> },
   { path: "/billing", element: <Billing /> },
+  { path: "/trial-expired", element: <TrialExpired /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },
   { path: "/chat", element: <PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate> },

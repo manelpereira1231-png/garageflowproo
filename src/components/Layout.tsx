@@ -706,7 +706,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               switchShop(id);
               navigate(location.pathname, { replace: true });
             }}
-            showCreate={canUseFeature("multiShop")}
+            showCreate={canUseFeature("multiShop") && isPrimaryShopActive}
           />
         )}
 

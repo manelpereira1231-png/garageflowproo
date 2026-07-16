@@ -34,6 +34,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [planLabel, setPlanLabel] = useState<string>("Start");
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: "", email: "", phone: "",

@@ -747,7 +747,9 @@ function OwnerDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{t('dashboard.noData')}</p>
+              <p className="text-sm text-muted-foreground">
+                As peças mais utilizadas aparecerão automaticamente após o registo dos primeiros serviços.
+              </p>
             )}
           </div>
         </div>

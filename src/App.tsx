@@ -135,6 +135,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SupportFab from "@/components/SupportFab";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
+import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 
 // Admin pages

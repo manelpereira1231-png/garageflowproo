@@ -322,6 +322,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/agenda", label: t("nav.agenda"), icon: CalendarDays, featureSlug: "agenda" },
     // Inspeções ERP removidas — só as do Marketplace fazem sentido neste contexto (/market/inspections).
 
+    // ── Inventário ──
+    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
+    { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
+    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
+
     // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },
     { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, featureSlug: "financial_reports_basic" },
@@ -365,11 +370,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-
-    // ── Inventário ──
-    { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
-    { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
-    { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
   ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner]);
 
   // Show every item, but mark the ones the current plan can't use as
@@ -386,15 +386,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   );
 
   // Linear/Notion-style grouping. Order = workshop daily priority.
-  // Inventário fica no fim — é dado de referência, não tarefa diária.
+  // Inventário fica imediatamente acima da Faturação.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
     { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
+    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
-    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
 
   const handleLogout = async () => {

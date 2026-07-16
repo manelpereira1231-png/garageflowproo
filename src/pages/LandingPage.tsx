@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
-import { useFeatureMatrix } from "@/lib/features";
+import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
 import SEOHead from "@/components/SEOHead";

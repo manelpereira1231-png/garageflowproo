@@ -80,6 +80,18 @@ export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId, mustSubscribe } = useSubscription();
   const { getName: getPlanName } = usePlanNames();
+  const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
+  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
+    const enabled: string[] = [];
+    const locked: string[] = [];
+    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
+    for (const f of nonCore) {
+      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
+      if (row?.enabled) enabled.push(f.name);
+      else locked.push(f.name);
+    }
+    return { enabled, locked };
+  };
   const [pricingTick, setPricingTick] = useState(0);
   const [freeQuoteLimit, setFreeQuoteLimit] = useState<number>(getCachedPlatformSettings().planLimits.freeQuoteLimit);
   useEffect(() => {

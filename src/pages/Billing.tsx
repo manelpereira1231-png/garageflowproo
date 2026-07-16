@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePlanNames } from "@/hooks/usePlanNames";
+import { useFeatureMatrix } from "@/lib/features";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();
@@ -79,6 +80,18 @@ export default function Billing() {
   const { t } = useLanguage();
   const { subscription, plan, limits, isTrialing, trialDaysLeft, loading, syncWithStripe, shopId, mustSubscribe } = useSubscription();
   const { getName: getPlanName } = usePlanNames();
+  const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
+  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
+    const enabled: string[] = [];
+    const locked: string[] = [];
+    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
+    for (const f of nonCore) {
+      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
+      if (row?.enabled) enabled.push(f.name);
+      else locked.push(f.name);
+    }
+    return { enabled, locked };
+  };
   const [pricingTick, setPricingTick] = useState(0);
   const [freeQuoteLimit, setFreeQuoteLimit] = useState<number>(getCachedPlatformSettings().planLimits.freeQuoteLimit);
   useEffect(() => {
@@ -159,67 +172,20 @@ export default function Billing() {
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
 
-  const plans: { key: Plan; icon: React.ElementType; color: string; features: string[]; lockedFeatures?: string[] }[] = [
-    {
-      key: 'free',
-      icon: Gift,
-      color: 'text-muted-foreground',
-      features: [
-        `${freeQuoteLimit} ${t('billing.feature.quotes10').replace(/^\d+\s*/, '')}`,
-        t('billing.feature.1user'),
-        t('billing.feature.basicDashboard'),
-        t('billing.feature.watermarkPdf'),
-      ],
-      lockedFeatures: [
-        t('billing.feature.unlimitedQuotes'),
-        t('billing.feature.emailAuto'),
-        t('billing.feature.export'),
-        t('billing.feature.automations'),
-        t('billing.feature.advancedReports'),
-        t('billing.feature.multiShop'),
-        t('billing.feature.chatbot'),
-        t('billing.feature.api'),
-      ],
-    },
-    {
-      key: 'pro',
-      icon: Crown,
-      color: 'text-primary',
-      features: [
-        t('billing.feature.unlimitedQuotes'),
-        t('billing.feature.5users'),
-        t('billing.feature.fullDashboard'),
-        t('billing.feature.proPdf'),
-        t('billing.feature.basicAlerts'),
-        t('billing.feature.emailAuto'),
-        t('billing.feature.export'),
-      ],
-      lockedFeatures: [
-        t('billing.feature.automations'),
-        t('billing.feature.advancedReports'),
-        t('billing.feature.multiShop'),
-        t('billing.feature.api'),
-      ],
-    },
-    {
-      key: 'garage',
-      icon: Building2,
-      color: 'text-success',
-      features: [
-        t('billing.feature.unlimitedQuotes'),
-        t('billing.feature.unlimitedUsers'),
-        t('billing.feature.advancedDashboard'),
-        t('billing.feature.proPdf'),
-        t('billing.feature.advancedAlerts'),
-        t('billing.feature.automations'),
-        t('billing.feature.advancedReports'),
-        t('billing.feature.multiShop'),
-        t('billing.feature.chatbot'),
-        t('billing.feature.api'),
-      ],
-      lockedFeatures: [],
-    },
+  // Single source of truth: features/lockedFeatures come from the admin
+  // feature matrix (tables `features` + `plan_features`, edited in
+  // /admin/features). Landing, Billing, upgrade modals, etc. all consume
+  // the same buildFeatureLists() output so a change in Admin propagates
+  // everywhere without touching code.
+  const planMeta: { key: Plan; icon: React.ElementType; color: string }[] = [
+    { key: 'free',   icon: Gift,       color: 'text-muted-foreground' },
+    { key: 'pro',    icon: Crown,      color: 'text-primary' },
+    { key: 'garage', icon: Building2,  color: 'text-success' },
   ];
+  const plans = planMeta.map((p) => {
+    const lists = buildFeatureLists(p.key as "free" | "pro" | "garage");
+    return { ...p, features: lists.enabled, lockedFeatures: lists.locked };
+  });
 
 
   const isEmbeddedRuntime = () => {

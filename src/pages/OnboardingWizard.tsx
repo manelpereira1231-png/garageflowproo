@@ -65,6 +65,21 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           timezone: shop.timezone || prev.timezone,
         }));
         if (shop.logo_url) setLogoPreview(shop.logo_url);
+
+        // Load real plan for the confirmation step (never show FREE)
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("plan,status,trial_end")
+          .eq("shop_id", shop.id)
+          .maybeSingle();
+        const planMap: Record<string, string> = { start: "Start", pro: "Pro", garage: "Garage" };
+        const rawPlan = (sub?.plan as string | undefined)?.toLowerCase();
+        const label = rawPlan && planMap[rawPlan] ? planMap[rawPlan] : "Start";
+        const isTrial = sub?.status === "trialing";
+        const daysLeft = sub?.trial_end
+          ? Math.max(0, Math.ceil((new Date(sub.trial_end).getTime() - Date.now()) / 86400000))
+          : 0;
+        setPlanLabel(isTrial && daysLeft > 0 ? `${label} (${daysLeft} ${t('onboarding.trialDays') || 'dias de avaliação'})` : label);
       }
     };
     prefill();

@@ -117,7 +117,7 @@ function OwnerDashboard() {
 
         const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
-            .select("total, profit, status, number, created_at, clients(name), vehicles(make, model)")
+            .select("total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
             .eq("shop_id", shop.id)
             .gte("created_at", monthStart)
             .order("created_at", { ascending: false }),

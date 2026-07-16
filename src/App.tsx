@@ -353,13 +353,31 @@ function AuthRouteRedirect({
   return <Navigate to={fallback} replace />;
 }
 
+// Paths that only the Oficina Mãe (primary shop of the account owner) may open.
+// Keep in sync with PRIMARY_SHOP_ONLY_PATHS in src/components/Layout.tsx.
+const PRIMARY_ONLY_PATHS = new Set<string>([
+  "/billing",
+  "/settings/billing-integration",
+]);
+
 function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { role, loading, shopId, can } = useShopRole();
+  const { primaryShopId, loading: primaryLoading } = usePrimaryShopId();
 
-  if (loading) return <PageLoader />;
+  if (loading || primaryLoading) return <PageLoader />;
   if (!shopId) return <Navigate to="/onboarding" replace />;
   if (!role) return <Navigate to="/onboarding" replace />;
+
+  // Group-admin surfaces (Billing, Stripe integration, …) are reserved for the
+  // Oficina Mãe. Even if the current user has role=owner/admin inside a child
+  // shop, they cannot reach these routes from that context.
+  const isPrimaryOnlyPath = Array.from(PRIMARY_ONLY_PATHS).some(
+    (p) => location.pathname === p || location.pathname.startsWith(`${p}/`)
+  );
+  if (isPrimaryOnlyPath && (!primaryShopId || primaryShopId !== shopId)) {
+    return <Navigate to={homeForRole(role)} replace />;
+  }
 
   return canOpenPath(location.pathname, role, can)
     ? <>{children}</>

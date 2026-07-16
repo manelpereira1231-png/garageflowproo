@@ -607,16 +607,17 @@ export default function Billing() {
               </div>
 
               <ul className="space-y-3 mb-6">
-                {features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-                {lockedFeatures?.map((feature, i) => (
-                  <li key={`locked-${i}`} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                    <span>{feature}</span>
+                {items.map((item) => (
+                  <li
+                    key={item.slug}
+                    className={`flex items-start gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
+                  >
+                    {item.enabled ? (
+                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
+                    ) : (
+                      <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                    )}
+                    <span>{item.name}</span>
                   </li>
                 ))}
               </ul>

@@ -116,23 +116,38 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
           Abrir painel <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {items.map((it) => (
+      {allZero ? (
+        <div className="rounded-lg border border-dashed border-border/70 bg-card/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="text-sm">
+            <p className="font-medium">Ainda não existem anúncios publicados.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Publica o teu primeiro anúncio e começa a receber ofertas com pagamento protegido por escrow.</p>
+          </div>
           <Link
-            key={it.label}
-            to={it.link}
-            className="relative rounded-lg border border-border/60 bg-card/60 hover:bg-muted/40 transition-colors p-3"
+            to="/market/sell"
+            className="text-xs font-semibold inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-500 hover:bg-amber-500/25 transition-colors"
           >
-            <it.icon className={`w-5 h-5 mb-2 ${it.color}`} />
-            <div className="text-xl font-bold tabular-nums">{it.value}</div>
-            <div className="text-[11px] text-muted-foreground">{it.label}</div>
-            {it.sub && <div className="text-[10px] text-muted-foreground mt-0.5">{it.sub}</div>}
-            {it.badge && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-            )}
+            Criar anúncio <ChevronRight className="w-3.5 h-3.5" />
           </Link>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {items.map((it) => (
+            <Link
+              key={it.label}
+              to={it.link}
+              className="relative rounded-lg border border-border/60 bg-card/60 hover:bg-muted/40 transition-colors p-3"
+            >
+              <it.icon className={`w-5 h-5 mb-2 ${it.color}`} />
+              <div className="text-xl font-bold tabular-nums">{it.value}</div>
+              <div className="text-[11px] text-muted-foreground">{it.label}</div>
+              {it.sub && <div className="text-[10px] text-muted-foreground mt-0.5">{it.sub}</div>}
+              {it.badge && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

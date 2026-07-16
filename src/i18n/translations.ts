@@ -2505,7 +2505,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.perMonth': '/mo',
     'landing.perYear': '/yr',
     'landing.trial15': '15-day free trial included',
-    'billing.trial15': '15-day free trial included',
+    'billing.trial15': '15 days free',
     'landing.noCreditCard': 'No credit card required · Setup in 2 minutes',
     'landing.testimonial1Name': 'João Silva',
     'landing.testimonial1Role': 'Owner, AutoRepair Lisboa',

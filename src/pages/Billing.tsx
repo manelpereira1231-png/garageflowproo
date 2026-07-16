@@ -601,9 +601,6 @@ export default function Billing() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('billing.trial30')}
-                </p>
               </div>
 
               <ul className="space-y-3 mb-6">

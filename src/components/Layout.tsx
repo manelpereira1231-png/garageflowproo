@@ -386,15 +386,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   );
 
   // Linear/Notion-style grouping. Order = workshop daily priority.
-  // Inventário fica no fim — é dado de referência, não tarefa diária.
+  // Inventário fica imediatamente acima da Faturação.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
     { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
+    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
-    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
   ], []);
 
   const handleLogout = async () => {

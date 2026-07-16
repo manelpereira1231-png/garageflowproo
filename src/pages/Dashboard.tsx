@@ -380,13 +380,26 @@ function OwnerDashboard() {
     stock_low: "text-warning",
   };
 
+  const pctDelta = (curr: number, prev: number): { text: string; tone: 'up' | 'down' | 'flat' } | null => {
+    if (!prev && !curr) return null;
+    if (!prev) return { text: '— vs mês anterior', tone: 'flat' };
+    const pct = ((curr - prev) / prev) * 100;
+    if (!isFinite(pct)) return null;
+    const rounded = Math.round(pct);
+    if (rounded === 0) return { text: '0% vs mês anterior', tone: 'flat' };
+    return {
+      text: `${rounded > 0 ? '+' : ''}${rounded}% vs mês anterior`,
+      tone: rounded > 0 ? 'up' : 'down',
+    };
+  };
+
   const stats = [
-    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
-    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
-    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500' },
-    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500' },
-    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500' },
-    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500' },
+    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue) },
+    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit) },
+    { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500', delta: pctDelta(kpis.serviceCount, prevKpis.serviceCount) },
+    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket) },
+    { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500', delta: null },
+    { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500', delta: null },
   ];
 
   return (

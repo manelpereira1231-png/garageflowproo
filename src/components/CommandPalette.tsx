@@ -274,7 +274,7 @@ export default function CommandPalette() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder={searchableEntities ? (isPt ? `Pesquisar ${searchableEntities}…` : `Search ${searchableEntities}…`) : (isPt ? "Pesquisa indisponível" : "Search unavailable")}
+        placeholder={searchableEntities ? (isPt ? "Pesquisar cliente, matrícula, VIN, orçamento, serviço ou fatura…" : `Search ${searchableEntities}…`) : (isPt ? "Pesquisa indisponível" : "Search unavailable")}
         value={query}
         onValueChange={setQuery}
       />

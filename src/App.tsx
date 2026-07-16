@@ -67,6 +67,7 @@ const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
+const TrialExpired = lazyRetry(() => import("@/pages/TrialExpired"));
 const Alerts = lazyRetry(() => import("@/pages/Alerts"));
 const Team = lazyRetry(() => import("@/pages/Team"));
 const Chat = lazyRetry(() => import("@/pages/Chat"));

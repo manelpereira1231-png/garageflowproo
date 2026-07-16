@@ -155,6 +155,21 @@ export default function LandingPage() {
 
   const chooserEnabled = landingCfg.chooserEnabled;
 
+  // Check auth state: hide trial-oriented copy for logged-in users.
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+    checkAuth();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
   // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {
     captureAdsParams();

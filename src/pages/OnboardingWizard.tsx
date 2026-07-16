@@ -114,63 +114,92 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     return data.publicUrl;
   };
 
+  const friendlyError = (raw: string | undefined): string => {
+    const msg = (raw || "").toLowerCase();
+    if (msg.includes("shop_country_immutable") || msg.includes("immutable after creation")) {
+      return t('error.countryLocked') || 'O país da oficina não pode ser alterado depois da criação. Para alterar, contacte o suporte.';
+    }
+    if (msg.includes("network") || msg.includes("fetch")) {
+      return t('error.network') || 'Erro ao comunicar com o servidor. Verifique a ligação e tente novamente.';
+    }
+    return t('error.onboardingGeneric') || 'Não foi possível concluir a criação da oficina. Tente novamente.';
+  };
+
   const handleFinish = async () => {
     if (!form.name.trim()) {
       toast.error(t('common.required'));
       return;
     }
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-
-    // Get shop id - retry up to 5 times to handle trigger race condition
-    let shop: { id: string } | null = null;
-    for (let i = 0; i < 5; i++) {
-      const { data, error } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
-      if (data) { shop = data; break; }
-      console.log(`Shop lookup attempt ${i + 1}: data=${JSON.stringify(data)}, error=${JSON.stringify(error)}`);
-      await new Promise(r => setTimeout(r, 1500));
-    }
-
-    // If shop still not found, create it as fallback
-    if (!shop) {
-      console.log("Shop not found after retries, creating fallback shop");
-      const { data: newShop, error: createError } = await supabase
-        .from("shops")
-        .insert({ user_id: user.id, name: form.name, email: form.email || user.email || '' })
-        .select("id")
-        .single();
-      if (createError || !newShop) {
-        console.error("Failed to create fallback shop:", createError);
-        toast.error(t('error.shopNotFound'));
-        setLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t('common.sessionExpired'));
         return;
       }
-      shop = newShop;
-    }
 
-    // Upload logo if provided
-    const logoUrl = await uploadLogo(shop.id);
+      // Get shop id - retry up to 5 times to handle trigger race condition
+      let shop: { id: string; country: string | null; currency: string | null } | null = null;
+      for (let i = 0; i < 5; i++) {
+        const { data } = await supabase
+          .from("shops")
+          .select("id,country,currency")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (data) { shop = data as any; break; }
+        await new Promise(r => setTimeout(r, 1000));
+      }
 
-    const updatePayload: any = {
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      country: form.country,
-      currency: form.currency,
-      vat_rate: parseFloat(form.vat_rate),
-      labor_rate: parseFloat(form.labor_rate),
-      language: form.language,
-      nif: form.nif,
-      address: form.address,
-      timezone: form.timezone,
-    };
-    if (logoUrl) updatePayload.logo_url = logoUrl;
+      // If shop still not found, create it as fallback (include country/currency)
+      if (!shop) {
+        const { data: newShop, error: createError } = await supabase
+          .from("shops")
+          .insert({
+            user_id: user.id,
+            name: form.name,
+            email: form.email || user.email || '',
+            country: form.country,
+            currency: form.currency,
+          })
+          .select("id,country,currency")
+          .single();
+        if (createError || !newShop) {
+          console.error("[onboarding] fallback shop insert failed:", createError);
+          toast.error(friendlyError(createError?.message));
+          return;
+        }
+        shop = newShop as any;
+      }
 
-    const { error } = await supabase.from("shops").update(updatePayload).eq("user_id", user.id);
+      // Upload logo if provided
+      const logoUrl = await uploadLogo(shop!.id);
 
-    if (error) { toast.error(error.message); }
-    else {
+      // Build update payload. Only include country/currency when they haven't
+      // been set yet on the shop row — the DB trigger blocks changes after
+      // first assignment. This keeps onboarding smooth AND respects the
+      // immutability rule for existing shops.
+      const updatePayload: any = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        vat_rate: parseFloat(form.vat_rate),
+        labor_rate: parseFloat(form.labor_rate),
+        language: form.language,
+        nif: form.nif,
+        address: form.address,
+        timezone: form.timezone,
+      };
+      if (!shop!.country) updatePayload.country = form.country;
+      if (!shop!.currency) updatePayload.currency = form.currency;
+      if (logoUrl) updatePayload.logo_url = logoUrl;
+
+      const { error } = await supabase.from("shops").update(updatePayload).eq("id", shop!.id);
+      if (error) {
+        console.error("[onboarding] shop update failed:", error);
+        toast.error(friendlyError(error.message));
+        return;
+      }
+
       // Create default alerts
       const alertTypes = [];
       if (alerts.pending_quotes) alertTypes.push({ title: "Orçamentos Pendentes", type: "quote_pending", message: "Existem orçamentos aguardando resposta do cliente." });
@@ -179,19 +208,21 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
 
       if (alertTypes.length > 0) {
         await supabase.from("alerts").insert(
-          alertTypes.map(a => ({ ...a, shop_id: shop.id, status: "pending" }))
+          alertTypes.map(a => ({ ...a, shop_id: shop!.id, status: "pending" }))
         );
       }
 
-      // Set active shop in localStorage so Dashboard loads data immediately
-      localStorage.setItem("garageflow_active_shop", shop.id);
-
+      localStorage.setItem("garageflow_active_shop", shop!.id);
       setLanguage(form.language as Language);
       toast.success(t('settings.configured'));
       onComplete();
       navigate('/dashboard');
+    } catch (err: any) {
+      console.error("[onboarding] unexpected error:", err);
+      toast.error(friendlyError(err?.message));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const progress = ((step + 1) / STEPS) * 100;

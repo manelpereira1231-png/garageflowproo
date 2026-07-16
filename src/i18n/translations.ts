@@ -4234,7 +4234,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.perMonth': '/mes',
     'landing.perYear': '/año',
     'landing.trial15': 'Prueba gratuita de 15 días incluida',
-    'billing.trial15': 'Prueba gratuita de 15 días incluida',
+    'billing.trial15': '15 días gratis',
     'landing.noCreditCard': 'Sin tarjeta de crédito · Configuración en 2 minutos',
     'landing.testimonial1Name': 'João Silva',
     'landing.testimonial1Role': 'Propietario, AutoRepair Lisboa',

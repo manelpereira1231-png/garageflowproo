@@ -431,12 +431,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // by upgrading. The click handler intercepts and redirects to /billing.
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
+  const { primaryShopId } = usePrimaryShopId();
+  // A child shop = any shop that is NOT the primary. This holds true both
+  // for team-members (primaryShopId === null → every shop is a child) and
+  // for account owners who switched context to a secondary shop.
+  const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {
       if (roleLoading || !role) return false;
+      if (PRIMARY_SHOP_ONLY_PATHS.has(item.path) && !isPrimaryShopActive) return false;
       return canOpenPath(item.path, role, can);
     }),
-    [planVisibleItems, role, roleLoading, can]
+    [planVisibleItems, role, roleLoading, can, isPrimaryShopActive]
   );
   const baseVisibleItems = isGuidedMode
     ? roleFilteredItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")

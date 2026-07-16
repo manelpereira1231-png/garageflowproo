@@ -19,6 +19,7 @@ import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
 import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 import { SITE_URL } from "@/lib/seoConfig";
 import { usePlanNames } from "@/hooks/usePlanNames";
+import { supabase } from "@/integrations/supabase/client";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -68,6 +69,10 @@ export default function LandingPage() {
     },
   };
   const [landingCfg, setLandingCfg] = useState<LandingCfg>(DEFAULT_LANDING);
+
+  // Detect authenticated users so public landing copy (e.g. "30 days free")
+  // is not shown to someone who already has an account / used a trial.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Feature flags controlled by Super Admin in /admin/system-control.
   // Source of truth = `system_feature_flags` in the database.
@@ -150,6 +155,21 @@ export default function LandingPage() {
 
   const chooserEnabled = landingCfg.chooserEnabled;
 
+  // Check auth state: hide trial-oriented copy for logged-in users.
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+    checkAuth();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
   // Capture gclid/UTM params + scroll depth tracking + live pricing updates
   useEffect(() => {
     captureAdsParams();
@@ -204,7 +224,7 @@ export default function LandingPage() {
       nameKey: 'landing.planFree',
       price: formatPrice(pricing.free[billingCycle]),
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
-      subtitleKey: 'landing.trial30',
+      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: freeItems,
       ctaKey: 'landing.ctaFree',
       highlighted: false,
@@ -215,7 +235,7 @@ export default function LandingPage() {
       nameKey: 'landing.planPro',
       price: formatPrice(pricing.pro[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: 'landing.trial30',
+      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: proItems,
       ctaKey: 'landing.ctaPro',
       highlighted: true,
@@ -226,7 +246,7 @@ export default function LandingPage() {
       nameKey: 'landing.planGarage',
       price: formatPrice(pricing.garage[billingCycle]),
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: 'landing.trial30',
+      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: garageItems,
       ctaKey: 'landing.ctaGarage',
       highlighted: false,

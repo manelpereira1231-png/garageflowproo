@@ -188,23 +188,13 @@ export default function LandingPage() {
   }, []);
   void pricingRev; // referenced to force re-render on pricing event
 
-  // Live features matrix from admin panel (realtime via /admin/features)
+  // Live features matrix from admin panel (realtime via /admin/features).
+  // Single source of truth: same ordered list rendered in every plan card;
+  // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
-  const buildFeatureLists = (planSlug: "free" | "pro" | "garage") => {
-    const enabled: string[] = [];
-    const locked: string[] = [];
-    // Only surface non-core features; sort alphabetically by name for stability
-    const nonCore = [...fxFeatures].filter((f) => !f.is_core).sort((a, b) => a.name.localeCompare(b.name));
-    for (const f of nonCore) {
-      const row = fxMatrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
-      if (row?.enabled) enabled.push(f.name);
-      else locked.push(f.name);
-    }
-    return { enabled, locked };
-  };
-  const freeLists = buildFeatureLists("free");
-  const proLists = buildFeatureLists("pro");
-  const garageLists = buildFeatureLists("garage");
+  const freeItems = buildPlanFeatureItems("free", fxFeatures, fxMatrix);
+  const proItems = buildPlanFeatureItems("pro", fxFeatures, fxMatrix);
+  const garageItems = buildPlanFeatureItems("garage", fxFeatures, fxMatrix);
 
   const { getName: getPlanName } = usePlanNames();
 

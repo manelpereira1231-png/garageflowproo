@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePlanNames } from "@/hooks/usePlanNames";
+import { useFeatureMatrix } from "@/lib/features";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();

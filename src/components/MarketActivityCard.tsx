@@ -85,6 +85,13 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
   }
 
   const s = stats!;
+  const allZero =
+    s.activeListings === 0 &&
+    s.soldListings === 0 &&
+    s.pendingOffers === 0 &&
+    s.activeEscrows === 0 &&
+    s.escrowVolume === 0 &&
+    s.pendingInspections === 0;
   const items = [
     { icon: Tag, label: "Anúncios ativos", value: s.activeListings, link: "/market/my-listings", color: "text-amber-500" },
     { icon: Store, label: "Vendidos", value: s.soldListings, link: "/market/my-listings", color: "text-emerald-500" },

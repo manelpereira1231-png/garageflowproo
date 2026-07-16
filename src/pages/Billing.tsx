@@ -161,20 +161,19 @@ export default function Billing() {
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
 
-  // Single source of truth: features/lockedFeatures come from the admin
-  // feature matrix (tables `features` + `plan_features`, edited in
-  // /admin/features). Landing, Billing, upgrade modals, etc. all consume
-  // the same buildFeatureLists() output so a change in Admin propagates
-  // everywhere without touching code.
+  // Single source of truth: the ordered feature list comes from the admin
+  // feature matrix (`features` + `plan_features`, edited in /admin/features).
+  // Every plan card renders the SAME list in the SAME order — only the
+  // icon (✓ vs 🔒) changes per plan. See `buildPlanFeatureItems`.
   const planMeta: { key: Plan; icon: React.ElementType; color: string }[] = [
     { key: 'free',   icon: Gift,       color: 'text-muted-foreground' },
     { key: 'pro',    icon: Crown,      color: 'text-primary' },
     { key: 'garage', icon: Building2,  color: 'text-success' },
   ];
-  const plans = planMeta.map((p) => {
-    const lists = buildFeatureLists(p.key as "free" | "pro" | "garage");
-    return { ...p, features: lists.enabled, lockedFeatures: lists.locked };
-  });
+  const plans = planMeta.map((p) => ({
+    ...p,
+    items: buildPlanFeatureItems(p.key as "free" | "pro" | "garage", fxFeatures, fxMatrix),
+  }));
 
 
   const isEmbeddedRuntime = () => {

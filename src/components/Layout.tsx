@@ -60,6 +60,15 @@ import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
+import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+
+// Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"
+// (primary shop). Even the account owner does NOT see these when the active
+// shop is a child. Keep in sync with PRIMARY_ONLY_PATHS in src/App.tsx.
+const PRIMARY_SHOP_ONLY_PATHS = new Set<string>([
+  "/billing",
+  "/settings/billing-integration",
+]);
 
 type NavItem = {
   path: string;
@@ -422,12 +431,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // by upgrading. The click handler intercepts and redirects to /billing.
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
+  const { primaryShopId } = usePrimaryShopId();
+  // A child shop = any shop that is NOT the primary. This holds true both
+  // for team-members (primaryShopId === null → every shop is a child) and
+  // for account owners who switched context to a secondary shop.
+  const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {
       if (roleLoading || !role) return false;
+      if (PRIMARY_SHOP_ONLY_PATHS.has(item.path) && !isPrimaryShopActive) return false;
       return canOpenPath(item.path, role, can);
     }),
-    [planVisibleItems, role, roleLoading, can]
+    [planVisibleItems, role, roleLoading, can, isPrimaryShopActive]
   );
   const baseVisibleItems = isGuidedMode
     ? roleFilteredItems.filter((item) => ESSENTIAL_NAV_PATHS.includes(item.path) || item.path === "/market/inspections")
@@ -691,7 +706,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               switchShop(id);
               navigate(location.pathname, { replace: true });
             }}
-            showCreate={canUseFeature("multiShop")}
+            showCreate={canUseFeature("multiShop") && isPrimaryShopActive}
           />
         )}
 

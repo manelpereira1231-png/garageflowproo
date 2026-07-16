@@ -7860,7 +7860,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'billing.feature.chatbot': 'चैटबॉट',
     'billing.feature.api': 'API और एकीकरण',
     'billing.manage': 'सदस्यता प्रबंधित करें',
-    'billing.trial30': '30-दिवसीय निःशुल्क परीक्षण शामिल',
+    'billing.trial30': '30 दिन मुफ़्त',
     'billing.paymentSuccess': 'भुगतान की पुष्टि हो गई है! आपकी योजना अपडेट कर दी गई है।',
     'billing.paymentCanceled': 'भुगतान रद्द कर दिया गया।',
     'billing.errorCheckout': 'चेकआउट बनाने में त्रुटि। कृपया पुनः प्रयास करें।',

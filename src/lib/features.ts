@@ -28,6 +28,39 @@ export interface PlanFeatureRow {
   limits: Record<string, any>;
 }
 
+/**
+ * Ordered plan-feature item used by ALL pricing UIs (Landing, Billing,
+ * Upgrade Modal, Checkout). Every plan card must render the SAME list in
+ * the SAME order — only `enabled` changes. Never split into separate
+ * "included" and "locked" arrays at the render site.
+ */
+export interface PlanFeatureItem {
+  slug: string;
+  name: string;
+  enabled: boolean;
+}
+
+/**
+ * Single source of truth for the ordered feature list shown on a plan
+ * card. Order is derived from the admin-managed `features` table
+ * (non-core, active) sorted alphabetically by display name — the same
+ * order for every plan. Consumers just map over `items` and pick the
+ * icon based on `enabled`.
+ */
+export function buildPlanFeatureItems(
+  planSlug: "free" | "pro" | "garage",
+  features: FeatureRow[],
+  matrix: PlanFeatureRow[],
+): PlanFeatureItem[] {
+  const nonCore = [...features]
+    .filter((f) => !f.is_core)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return nonCore.map((f) => {
+    const row = matrix.find((r) => r.plan_slug === planSlug && r.feature_slug === f.slug);
+    return { slug: f.slug, name: f.name, enabled: !!row?.enabled };
+  });
+}
+
 type State = {
   features: FeatureRow[];
   matrix: PlanFeatureRow[];

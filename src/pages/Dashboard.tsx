@@ -67,6 +67,7 @@ function OwnerDashboard() {
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
+  const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
   const [currency, setCurrency] = useState("€");
   const [shopName, setShopName] = useState("");

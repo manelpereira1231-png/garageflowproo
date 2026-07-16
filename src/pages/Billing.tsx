@@ -564,7 +564,7 @@ export default function Billing() {
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(({ key, icon: Icon, color, features, lockedFeatures }) => {
+        {plans.map(({ key, icon: Icon, color, items }) => {
           const price = prices[key][billingCycle];
           // Centralised button state — never derive Upgrade/Downgrade/Plano Atual
           // with local ifs. See src/lib/planHierarchy.ts.

@@ -303,6 +303,47 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_ledger: {
+        Row: {
+          created_at: string
+          credits: number
+          function_name: string
+          id: string
+          metadata: Json
+          plan_slug: string | null
+          shop_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          function_name: string
+          id?: string
+          metadata?: Json
+          plan_slug?: string | null
+          shop_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          function_name?: string
+          id?: string
+          metadata?: Json
+          plan_slug?: string | null
+          shop_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_ledger_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alerts: {
         Row: {
           client_id: string | null
@@ -8258,6 +8299,15 @@ export type Database = {
       }
       compute_business_metrics_snapshot: { Args: never; Returns: Json }
       compute_customer_health: { Args: never; Returns: Json }
+      consume_ai_credit: {
+        Args: {
+          _cost?: number
+          _function_name: string
+          _metadata?: Json
+          _shop_id: string
+        }
+        Returns: Json
+      }
       create_team_invitation: {
         Args: {
           _email: string
@@ -8324,6 +8374,7 @@ export type Database = {
         }[]
       }
       get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
+      get_ai_usage: { Args: { _shop_id: string }; Returns: Json }
       get_client_portal_data: { Args: { _token: string }; Returns: Json }
       get_country_config: {
         Args: { _code: string }

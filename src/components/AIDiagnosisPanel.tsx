@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, AlertTriangle, Wrench, Package, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAiQuota } from "@/hooks/useAiQuota";
 
 interface AIDiagnosisPanelProps {
   vehicle?: { make: string; model: string; year: number; fuel: string; mileage: number };
@@ -50,6 +51,11 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
   const [symptoms, setSymptoms] = useState(clientDescription || "");
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [loading, setLoading] = useState(false);
+  const quota = useAiQuota(shopId);
+
+  const noAi = !quota.loading && quota.limit === 0 && !quota.unlimited;
+  const exhausted = !quota.loading && !quota.unlimited && quota.remaining <= 0 && quota.limit > 0;
+  const disabled = loading || noAi || exhausted;
 
   const generateDiagnosis = async () => {
     if (!symptoms.trim()) {
@@ -71,16 +77,24 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
           vehicle,
           services_catalog: catalogRes.data || [],
           parts_catalog: partsRes.data || [],
+          shop_id: shopId,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Edge function returns 402/403 with { error: "quota_exceeded" | "plan_no_ai" }
+        const raw = (error as any)?.context?.body ?? (error as any)?.message ?? "";
+        const msg = String(raw);
+        if (msg.includes("plan_no_ai")) throw new Error(isPt ? "O seu plano não inclui IA. Faça upgrade para desbloquear." : "Your plan does not include AI. Upgrade to unlock.");
+        if (msg.includes("quota_exceeded")) throw new Error(isPt ? "Atingiu o limite mensal de créditos IA do seu plano." : "You've reached your plan's monthly AI credits limit.");
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       setDiagnosis(data as Diagnosis);
     } catch (e: any) {
       console.error("AI diagnosis error:", e);
-      toast.error(isPt ? "Erro ao gerar diagnóstico IA." : "Error generating AI diagnosis.");
+      toast.error(e?.message || (isPt ? "Erro ao gerar diagnóstico IA." : "Error generating AI diagnosis."));
     }
     setLoading(false);
   };
@@ -93,7 +107,29 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
         <Badge variant="outline" className="text-[10px] ml-auto">
           <Sparkles className="w-3 h-3 mr-0.5" /> AI
         </Badge>
+        {!quota.loading && (
+          <Badge variant={exhausted || noAi ? "destructive" : "secondary"} className="text-[10px]">
+            {quota.unlimited
+              ? (isPt ? "Ilimitado" : "Unlimited")
+              : `${quota.used}/${quota.limit} ${isPt ? "créditos" : "credits"}`}
+          </Badge>
+        )}
       </div>
+
+      {noAi && (
+        <div className="text-xs bg-destructive/10 border border-destructive/30 rounded-md p-2 text-destructive">
+          {isPt
+            ? "O seu plano não inclui créditos IA. Faça upgrade para desbloquear o diagnóstico automático."
+            : "Your plan does not include AI credits. Upgrade to unlock automatic diagnosis."}
+        </div>
+      )}
+      {exhausted && (
+        <div className="text-xs bg-warning/10 border border-warning/30 rounded-md p-2 text-warning">
+          {isPt
+            ? "Atingiu o limite mensal de créditos IA. Renova no próximo mês ou muda de plano."
+            : "You've hit your monthly AI credit limit. Renews next month or upgrade your plan."}
+        </div>
+      )}
 
       {/* Input */}
       <Textarea
@@ -102,9 +138,10 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
         placeholder={isPt ? "Descreva os sintomas (ex: barulho nos travões, vibração no volante, luz de motor acesa...)" : "Describe symptoms (e.g., brake noise, steering vibration, engine light on...)"}
         rows={2}
         className="text-sm"
+        disabled={noAi}
       />
 
-      <Button onClick={generateDiagnosis} disabled={loading} size="sm" className="w-full">
+      <Button onClick={generateDiagnosis} disabled={disabled} size="sm" className="w-full">
         {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Brain className="w-4 h-4 mr-1" />}
         {loading ? (isPt ? "A analisar..." : "Analyzing...") : (isPt ? "Gerar Diagnóstico IA" : "Generate AI Diagnosis")}
       </Button>

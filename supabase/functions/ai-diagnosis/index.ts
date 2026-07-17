@@ -27,9 +27,28 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { symptoms, vehicle, services_catalog, parts_catalog } = await req.json();
+    const { symptoms, vehicle, services_catalog, parts_catalog, shop_id } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Consume AI credit (blocks based on plan limit)
+    if (!shop_id) {
+      return new Response(JSON.stringify({ error: "Missing shop_id" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: creditRes, error: creditErr } = await supa.rpc("consume_ai_credit", {
+      _shop_id: shop_id,
+      _function_name: "ai-diagnosis",
+      _cost: 1,
+      _metadata: { vehicle: vehicle?.model ?? null },
+    });
+    if (creditErr) throw creditErr;
+    if (!(creditRes as any)?.allowed) {
+      const reason = (creditRes as any)?.reason || "quota_exceeded";
+      const status = reason === "plan_no_ai" ? 403 : 402;
+      return new Response(JSON.stringify({ error: reason, quota: creditRes }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const vehicleInfo = vehicle
       ? `Vehicle: ${vehicle.make} ${vehicle.model} (${vehicle.year}), ${vehicle.fuel}, ${vehicle.mileage?.toLocaleString() || '?'} km`

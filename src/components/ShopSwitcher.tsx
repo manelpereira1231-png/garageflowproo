@@ -247,16 +247,27 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
                     )}
                   </div>
                   {!isPrimary && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      disabled={deletingId === s.id}
-                      onClick={() => setConfirmDelete(s)}
-                      title="Eliminar oficina"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleResendInvite(s)}
+                        title="Reenviar convite de acesso"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        disabled={deletingId === s.id}
+                        onClick={() => setConfirmDelete(s)}
+                        title="Eliminar oficina"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               );

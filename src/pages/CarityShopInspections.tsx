@@ -73,8 +73,10 @@ export default function CarityShopInspections() {
         if (error) setFallbackError(error.message);
         if (data?.id) {
           setFallbackShopId(data.id);
-          try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+          // Official primitive: localStorage + broadcast in one ordered op.
+          void setActiveShopAndSync(data.id, { reason: "fallback" });
         }
+
         clearTimeout(timeout);
         setFallbackResolved(true);
       } catch (err: any) {

@@ -25,7 +25,7 @@ export default function QuoteForm() {
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const { t } = useLanguage();
-  const { plan, limits, checkQuoteLimit } = useSubscription();
+  const { plan, limits, checkQuoteLimit, isEntryPlan } = useSubscription();
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!editId);

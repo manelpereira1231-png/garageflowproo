@@ -43,7 +43,7 @@ const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientI
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
+  const { limits, plan, shopId, checkQuoteLimit, canUseFeature, isEntryPlan } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _qCache = pageCache.get<{ rows: any[]; shop: any }>(`quotes-all:${_shopInit}`);
   const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);

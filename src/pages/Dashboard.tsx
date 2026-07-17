@@ -66,7 +66,7 @@ export default function Dashboard() {
 function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
-  const { plan, isTrialing, trialDaysLeft } = useSubscription();
+  const { plan, isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();

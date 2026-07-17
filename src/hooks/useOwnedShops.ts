@@ -34,7 +34,7 @@ export function useOwnedShops() {
     (async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id, name, city, currency, logo_url, created_at")
+        .select("id, name, address, currency, logo_url, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true });
       if (!alive) return;

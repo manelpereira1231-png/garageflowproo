@@ -6,7 +6,15 @@ import { setRegion } from "@/lib/regionConfig";
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  /**
+   * Traduzir uma chave i18n.
+   *
+   * - Se a chave existir na língua atual (ou fallback EN/PT), devolve o texto.
+   * - Se não existir e `defaultValue` for fornecido, devolve `defaultValue`.
+   * - Caso contrário, devolve uma versão "humanizada" do último segmento
+   *   (`cta.tryPlan` → "Try Plan"). **Nunca** devolve a chave crua.
+   */
+  t: (key: string, defaultValue?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -120,14 +128,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }
 
 
-  const t = useCallback((key: string): string => {
-    // Universal fallback: current lang → EN (global default) → humanized key.
+  const t = useCallback((key: string, defaultValue?: string): string => {
+    // Universal fallback: current lang → EN (global default) → defaultValue → humanized key.
     // PT-BR also falls back to PT (close languages). PT users only see EN as fallback.
     const v = translations[language]?.[key];
     if (v) return v;
-    if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || humanizeKey(key);
-    // EN/ES/HI/PT all fall back to EN — never to PT (avoids leaking Portuguese).
-    return translations['en']?.[key] || humanizeKey(key);
+    if (language === 'pt-BR') {
+      const alt = translations['pt']?.[key] || translations['en']?.[key];
+      if (alt) return alt;
+    } else {
+      const alt = translations['en']?.[key];
+      if (alt) return alt;
+    }
+    if (defaultValue !== undefined) return defaultValue;
+    return humanizeKey(key);
   }, [language]);
 
   return (

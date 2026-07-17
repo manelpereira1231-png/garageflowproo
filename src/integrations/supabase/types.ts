@@ -2852,8 +2852,10 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          icon: string | null
           is_core: boolean
           name: string
+          order_index: number
           slug: string
           updated_at: string
         }
@@ -2862,8 +2864,10 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          icon?: string | null
           is_core?: boolean
           name: string
+          order_index?: number
           slug: string
           updated_at?: string
         }
@@ -2872,8 +2876,10 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          icon?: string | null
           is_core?: boolean
           name?: string
+          order_index?: number
           slug?: string
           updated_at?: string
         }
@@ -4914,6 +4920,63 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_country_prices: {
+        Row: {
+          active: boolean
+          amount: number
+          country_code: string
+          created_at: string
+          currency: string
+          cycle: string
+          id: string
+          plan_slug: string
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          country_code: string
+          created_at?: string
+          currency: string
+          cycle: string
+          id?: string
+          plan_slug: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          country_code?: string
+          created_at?: string
+          currency?: string
+          cycle?: string
+          id?: string
+          plan_slug?: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_country_prices_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "plan_country_prices_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       plan_features: {
         Row: {
           enabled: boolean
@@ -5054,30 +5117,54 @@ export type Database = {
       plans: {
         Row: {
           active: boolean
+          archived_at: string | null
+          color: string | null
           created_at: string
           description: string | null
+          icon: string | null
+          label: string | null
           name: string
           slug: string
           sort_order: number
           updated_at: string
+          visible_on_billing: boolean
+          visible_on_checkout: boolean
+          visible_on_compare: boolean
+          visible_on_landing: boolean
         }
         Insert: {
           active?: boolean
+          archived_at?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
+          icon?: string | null
+          label?: string | null
           name: string
           slug: string
           sort_order?: number
           updated_at?: string
+          visible_on_billing?: boolean
+          visible_on_checkout?: boolean
+          visible_on_compare?: boolean
+          visible_on_landing?: boolean
         }
         Update: {
           active?: boolean
+          archived_at?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
+          icon?: string | null
+          label?: string | null
           name?: string
           slug?: string
           sort_order?: number
           updated_at?: string
+          visible_on_billing?: boolean
+          visible_on_checkout?: boolean
+          visible_on_compare?: boolean
+          visible_on_landing?: boolean
         }
         Relationships: []
       }
@@ -8201,6 +8288,24 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_effective_plan_price: {
+        Args: { p_country_code: string; p_cycle: string; p_plan_slug: string }
+        Returns: {
+          base_amount: number
+          base_stripe_price_id: string
+          base_stripe_product_id: string
+          country_code: string
+          currency: string
+          cycle: string
+          discount_percent: number
+          effective_amount: number
+          effective_stripe_price_id: string
+          plan_slug: string
+          promo_active: boolean
+          promo_ends_at: string
+          promo_starts_at: string
+        }[]
       }
       get_inspection_verification_token: {
         Args: { _report_id: string }

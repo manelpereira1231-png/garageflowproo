@@ -8253,6 +8253,7 @@ export type Database = {
       current_shop_role: { Args: { _shop_id: string }; Returns: string }
       dealer_can_publish: { Args: { _user_id: string }; Returns: Json }
       dealer_nif_available: { Args: { _nif: string }; Returns: boolean }
+      delete_child_shop: { Args: { _shop_id: string }; Returns: Json }
       detect_anomaly: {
         Args: {
           _anomaly_type: string
@@ -8519,6 +8520,10 @@ export type Database = {
           _shop_id?: string
         }
         Returns: string
+      }
+      transfer_shop_user: {
+        Args: { _from_shop_id: string; _to_shop_id: string; _user_id: string }
+        Returns: Json
       }
       update_landing_visit_engagement: {
         Args: { _scroll: number; _session_id: string; _time: number }

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { registerPlanRanks } from "@/lib/planHierarchy";
 
 /**
  * Catálogo de planos 100% dinâmico — fonte única de verdade para toda a app.

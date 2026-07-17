@@ -95,19 +95,24 @@ export default function AdminPlans() {
   const [newPlan, setNewPlan] = useState({ slug: "", name: "", description: "" });
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const [limitsCatalog, setLimitsCatalog] = useState<LimitCatalogRow[]>([]);
+
   const load = async () => {
     setLoading(true);
-    const [plansRes, pricesRes, countriesRes] = await Promise.all([
+    const [plansRes, pricesRes, countriesRes, catalogRes] = await Promise.all([
       supabase.from("plans").select("*").order("sort_order", { ascending: true }),
       supabase.from("plan_country_prices" as any).select("*"),
       supabase.from("country_settings").select("code,name,currency,currency_symbol").eq("active", true).order("name"),
+      supabase.from("plan_limits_catalog" as any).select("*").order("sort_order", { ascending: true }),
     ]);
     if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
     setPlans((plansRes.data as any) ?? []);
     setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
     setCountries((countriesRes.data as any) ?? []);
+    setLimitsCatalog(((catalogRes.data as unknown) as LimitCatalogRow[]) ?? []);
     setLoading(false);
   };
+
 
   useEffect(() => {
     void load();

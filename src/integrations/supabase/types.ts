@@ -5018,6 +5018,42 @@ export type Database = {
           },
         ]
       }
+      plan_limits_catalog: {
+        Row: {
+          allow_unlimited: boolean
+          category: string
+          created_at: string
+          description: string | null
+          key: string
+          label: string
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          allow_unlimited?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          key: string
+          label: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_unlimited?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          key?: string
+          label?: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plan_price_history: {
         Row: {
           changed_at: string

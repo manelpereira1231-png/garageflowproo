@@ -206,10 +206,10 @@ async function generateExpiredQuoteAlerts(shop: ShopWithSub): Promise<number> {
     const title = tr(shop.language, "expired_quote_title");
     const message = tr(shop.language, "expired_quote_msg", { number: q.number, client: clientName });
     const created = await createAlertIfNotExists(shop.id, "quote_expired", title, message, q.validity_date, q.client_id, null, "high");
-    if (created) {
-      count++;
-      if (shop.plan !== "free") await sendAlertEmail(shop.email, title, message, shop.name);
-    }
+      if (created) {
+        count++;
+        if (await hasFeature(shop.plan, "alerts_basic")) await sendAlertEmail(shop.email, title, message, shop.name);
+      }
   }
   return count;
 }

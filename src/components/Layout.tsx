@@ -117,6 +117,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { shops, activeShopId, switchShop } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
+  const { primaryShopId, loading: primaryShopLoading } = usePrimaryShopId();
+  const { shops: ownedShops } = useOwnedShops();
+  // The active shop is a "Oficina Filha" (child) when the account owns other
+  // shops and the one currently selected is NOT the oldest (primary). Child
+  // shops NEVER see Billing/Stripe surfaces and NEVER trigger the paywall
+  // — the mother shop owns the subscription for the entire group.
+  const isChildShopContext = Boolean(
+    !primaryShopLoading && primaryShopId && activeShopId && activeShopId !== primaryShopId,
+  );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 

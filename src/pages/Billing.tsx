@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePlanNames } from "@/hooks/usePlanNames";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
+import { usePlansCatalog, publicPlans, planLimit } from "@/hooks/usePlansCatalog";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();

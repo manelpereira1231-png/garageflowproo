@@ -11,7 +11,12 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 
-export type PlanSlug = "free" | "pro" | "garage";
+/**
+ * Plan slug. Legacy slugs are `'free' | 'pro' | 'garage'`, but any string
+ * created by Super Admin via `AdminPlans` is accepted — promotions look
+ * up by (country, plan_slug, cycle) with no hardcoded whitelist.
+ */
+export type PlanSlug = 'free' | 'pro' | 'garage' | (string & {});
 export type CycleSlug = "monthly" | "yearly";
 
 export interface PromoRow {

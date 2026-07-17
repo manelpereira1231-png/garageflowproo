@@ -147,6 +147,7 @@ export default function AdminPlans() {
         visible_on_checkout: p.visible_on_checkout,
         visible_on_compare: p.visible_on_compare,
         limits: p.limits ?? {},
+        cta_mode: p.cta_mode,
       } as any)
 
       .eq("slug", p.slug);

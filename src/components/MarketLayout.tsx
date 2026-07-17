@@ -1,4 +1,5 @@
-import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
+import { Link, useLocation, useNavigate, Outlet, Navigate } from "react-router-dom";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart, Search, Building2, Sparkles, Crown, FileCheck, Settings, Wrench, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

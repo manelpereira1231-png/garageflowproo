@@ -17,6 +17,7 @@ import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, X
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { formatLocalDate, getMarketLocale } from "@/lib/marketPrice";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },
@@ -72,8 +73,10 @@ export default function CarityShopInspections() {
         if (error) setFallbackError(error.message);
         if (data?.id) {
           setFallbackShopId(data.id);
-          try { localStorage.setItem("garageflow_active_shop", data.id); } catch {}
+          // Official primitive: localStorage + broadcast in one ordered op.
+          void setActiveShopAndSync(data.id, { reason: "fallback" });
         }
+
         clearTimeout(timeout);
         setFallbackResolved(true);
       } catch (err: any) {

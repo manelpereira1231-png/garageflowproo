@@ -150,10 +150,14 @@ export default function AdminShops() {
     }
   };
 
-  const impersonateShop = (shop: ShopRow) => {
-    localStorage.setItem("garageflow_active_shop", shop.id);
+  const impersonateShop = async (shop: ShopRow) => {
+    // Route through the official primitive even though we do a hard nav;
+    // keeps every "active-shop mutation" going through a single choke point.
+    const { setActiveShopAndSync } = await import("@/lib/shopContextSync");
+    await setActiveShopAndSync(shop.id, { reason: "impersonate" });
     window.location.href = "/dashboard";
   };
+
 
   const changePlan = async () => {
     if (!planDialog) return;

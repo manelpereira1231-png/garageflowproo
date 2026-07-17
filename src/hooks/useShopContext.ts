@@ -3,6 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import {
+  ACTIVE_SHOP_STORAGE_KEY,
+  SHOP_CONTEXT_EVENT,
+  broadcastShopContextChange as sharedBroadcast,
+  setActiveShopAndSync,
+  type ShopContextChangeDetail,
+} from "@/lib/shopContextSync";
 
 interface Shop {
   id: string;
@@ -12,29 +19,21 @@ interface Shop {
   language: string;
 }
 
-const STORAGE_KEY = "garageflow_active_shop";
+const STORAGE_KEY = ACTIVE_SHOP_STORAGE_KEY;
 const SHOP_CONTEXT_TIMEOUT_MS = 3000;
 
 /**
- * Cross-hook-instance broadcast: `useShopContext` is invoked in many
- * components. When a shop is created/deleted or the active shop changes we
- * dispatch a window event so every live instance refreshes without a page
- * refresh. This avoids the "Shop Not Found / 404 until F5" bug.
+ * Cross-hook-instance broadcast is implemented in `@/lib/shopContextSync`.
+ * We re-export the primitive here to keep existing imports working while the
+ * codebase migrates to the centralized helper.
  */
-const SHOP_EVT = "garageflow:shop-context-changed";
-export function broadcastShopContextChange(
-  detail?: { deletedShopId?: string; reason?: string },
-) {
-  try {
-    window.dispatchEvent(new CustomEvent(SHOP_EVT, { detail }));
-  } catch {
-    /* SSR / no window */
-  }
-}
+const SHOP_EVT = SHOP_CONTEXT_EVENT;
+export const broadcastShopContextChange = sharedBroadcast;
 
 function timeoutResult<T>(value: T, ms = SHOP_CONTEXT_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
+
 
 export function useShopContext() {
   const { isReady, user } = useAuthReady();
@@ -224,11 +223,13 @@ export function useShopContext() {
   }, [user, loadShops, queryClient, navigate]);
 
   const switchShop = useCallback((shopId: string) => {
+    // Optimistic local update — this instance flips immediately.
     setActiveShopId(shopId);
-    localStorage.setItem(STORAGE_KEY, shopId);
-    // Let every other useShopContext instance re-render on the active shop.
-    broadcastShopContextChange({ reason: "switch" });
+    // Delegate persistence + cross-instance broadcast to the single official
+    // primitive so we never diverge from create/delete/onboarding flows.
+    void setActiveShopAndSync(shopId, { reason: "switch" });
   }, []);
+
 
   const activeShop = shops.find(s => s.id === activeShopId) || null;
 

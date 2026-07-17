@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { broadcastShopContextChange } from "@/hooks/useShopContext";
+import { setActiveShopAndSync, clearActiveShopAndSync } from "@/lib/shopContextSync";
 import { toast } from "sonner";
 
 interface Shop {
@@ -104,11 +104,11 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
 
       if (shop) {
         onSwitch(shop.id);
-        localStorage.setItem("garageflow_active_shop", shop.id);
+        // Official primitive: single ordered write + broadcast.
+        await setActiveShopAndSync(shop.id, { reason: "created" });
       }
-      // Sync every hook instance immediately (no refresh).
-      broadcastShopContextChange({ reason: "created" });
       onShopCreated?.();
+
     } finally {
       setCreating(false);
     }
@@ -129,11 +129,11 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         return;
       }
       toast.success(`Oficina "${shop.name || 'sem nome'}" eliminada. Vaga libertada.`);
-      // Immediately notify every useShopContext instance to drop this shop,
-      // switch active shop if it was the deleted one, and purge caches.
-      // The Realtime DELETE listener will also fire — the broadcast just
+      // Official primitive: broadcasts deletion to every live useShopContext
+      // instance. The Realtime DELETE listener fires too — the broadcast just
       // makes the UI feel instantaneous on the same tab.
-      broadcastShopContextChange({ deletedShopId: shop.id, reason: "deleted" });
+      await clearActiveShopAndSync({ deletedShopId: shop.id, reason: "deleted" });
+
       setConfirmDelete(null);
       onShopCreated?.(); // reuses the same reload path
       await refreshStatus();

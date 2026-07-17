@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
-import { useShopContext, broadcastShopContextChange } from "@/hooks/useShopContext";
+import { useShopContext } from "@/hooks/useShopContext";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 const countries = Object.keys(VAT_RATES);
 const CURRENCIES = [
@@ -214,22 +215,21 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         );
       }
 
-      localStorage.setItem("garageflow_active_shop", shop!.id);
+      // Official primitive: writes localStorage + broadcasts to every live
+      // useShopContext instance in a single, ordered operation.
+      await setActiveShopAndSync(shop!.id, { reason: "onboarding-complete" });
       setLanguage(form.language as Language);
 
-      // CRITICAL: rehydrate the shop context BEFORE navigating.
-      // Otherwise `useShopContext` still holds `activeShopId=null` from when
-      // the user landed on /onboarding (no shop yet), and `RoleProtectedRoute`
-      // immediately bounces the user back to /onboarding on the next render.
-      // Awaiting reload() guarantees activeShopId is populated from the
-      // freshly-written localStorage, and the broadcast keeps every other
-      // live useShopContext instance in sync — no refresh, no setTimeout.
+      // Rehydrate THIS instance too (the wizard's own hook copy), so any
+      // downstream code that reads activeShopId synchronously already sees it.
+      // Fresh route mounts (Dashboard/RoleProtectedRoute) will re-hydrate
+      // independently from localStorage on mount — no race possible.
       try {
         await reloadShopContext();
       } catch {
-        /* non-fatal: Realtime + broadcast below will still sync */
+        /* non-fatal: Realtime + broadcast above will still sync */
       }
-      broadcastShopContextChange({ reason: "onboarding-complete" });
+
 
       toast.success(t('settings.configured'));
       onComplete();

@@ -15,6 +15,7 @@ import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useShopRole } from "@/hooks/useShopRole";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
 import MarketActivityCard from "@/components/MarketActivityCard";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.
@@ -85,12 +86,14 @@ function OwnerDashboard() {
     setSelectedFilterRaw(v);
     try { localStorage.setItem('garageflow_dashboard_filter', v); } catch { /* noop */ }
     // Ao escolher uma oficina específica, sincroniza o activeShopId global
-    // (via useSyncExternalStore) para que os cartões, navegação e destinos
-    // filtrem já pela oficina selecionada, sem refresh.
+    // via o helper oficial (localStorage + broadcast + microtask flush) para
+    // que os cartões, navegação e destinos filtrem já pela oficina
+    // selecionada, sem refresh.
     if (v !== 'all' && v !== activeShopId) {
-      try { localStorage.setItem('garageflow_active_shop', v); } catch { /* noop */ }
+      void setActiveShopAndSync(v, { reason: "switch" });
     }
   };
+
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
 
 
@@ -130,11 +133,15 @@ function OwnerDashboard() {
           const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
           if (shop) {
             shopId = shop.id;
-            localStorage.setItem("garageflow_active_shop", shop.id);
+            // Fallback path: user has a shop but activeShopId was null (fresh
+            // session, cache miss). Route through the official primitive so
+            // every live useShopContext instance picks it up.
+            void setActiveShopAndSync(shop.id, { reason: "fallback" });
           } else {
             return;
           }
         }
+
         const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
         if (!shop) {
           return;

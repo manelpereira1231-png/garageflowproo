@@ -121,7 +121,7 @@ function defaultHref(plan: PlanRow, ctx: PlanCtaContext, surface: PlanCtaSurface
  */
 export function resolvePlanCta(
   plan: PlanRow,
-  opts: { surface: PlanCtaSurface; context?: PlanCtaContext; t?: (k: string) => string } = { surface: "landing" },
+  opts: { surface: PlanCtaSurface; context?: PlanCtaContext; t?: (k: string, defaultValue?: string) => string } = { surface: "landing" },
 ): ResolvedPlanCta {
   const ctx: PlanCtaContext = opts.context ?? "anon";
 

@@ -108,13 +108,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: string): string => {
-    // Universal fallback: current lang → EN (global default) → key.
+    // Universal fallback: current lang → EN (global default) → humanized key.
     // PT-BR also falls back to PT (close languages). PT users only see EN as fallback.
     const v = translations[language]?.[key];
     if (v) return v;
-    if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || key;
+    if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || humanizeKey(key);
     // EN/ES/HI/PT all fall back to EN — never to PT (avoids leaking Portuguese).
-    return translations['en']?.[key] || key;
+    return translations['en']?.[key] || humanizeKey(key);
   }, [language]);
 
   return (

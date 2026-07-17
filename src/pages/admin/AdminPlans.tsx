@@ -145,7 +145,9 @@ export default function AdminPlans() {
         visible_on_billing: p.visible_on_billing,
         visible_on_checkout: p.visible_on_checkout,
         visible_on_compare: p.visible_on_compare,
+        limits: p.limits ?? {},
       } as any)
+
       .eq("slug", p.slug);
     setSaving(null);
     if (error) return toast.error("Erro ao guardar: " + error.message);

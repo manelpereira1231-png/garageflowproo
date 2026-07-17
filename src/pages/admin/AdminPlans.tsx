@@ -372,7 +372,27 @@ export default function AdminPlans() {
                         <div className="md:col-span-2">
                           <Label className="text-xs">Etiqueta (ex: "Mais Popular")</Label>
                           <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
+                        <div className="md:col-span-2">
+                          <Label className="text-xs">Etiqueta (ex: "Mais Popular")</Label>
+                          <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
                         </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Comportamento do Botão (Landing/Billing)</Label>
+                        <select
+                          className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                          value={p.cta_mode}
+                          onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, cta_mode: e.target.value as PlanRow["cta_mode"] } : x))}
+                        >
+                          <option value="trial">Testar Plano (Trial)</option>
+                          <option value="checkout">Subscrever (Stripe Checkout)</option>
+                          <option value="demo">Pedir Demonstração</option>
+                          <option value="contact">Contactar Comercial</option>
+                          <option value="unavailable">Indisponível (botão desativado)</option>
+                        </select>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Controla dinamicamente o CTA de cada plano em toda a plataforma (Landing, Billing, Checkout).
+                        </p>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-md border bg-muted/30">
                         {[

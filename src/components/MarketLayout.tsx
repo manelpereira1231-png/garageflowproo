@@ -51,6 +51,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const alreadyWrapped = useContext(MarketLayoutContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const { enabled: globalMarketEnabled, ready: globalMarketReady } = useGlobalMarketEnabled();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);

@@ -1,105 +1,109 @@
+# Planos & Features 100% dinâmicos — plano de execução faseado
 
-# Plano: Sistema de Equipa, Perfis, Permissões e Email de Fatura
+## Estado atual (auditoria)
 
-Antes de tocar em código, preciso confirmar o âmbito. Este é um bloco grande e prefiro alinhar contigo para não fazer trabalho a mais nem partir o que já funciona.
+Já existe muita da arquitetura pedida — **não vou reconstruir, apenas generalizar**:
 
-## 1. Auditoria (sem alterações)
+- `plans` (slug, name, description, category, active) — já dinâmica.
+- `features` (slug, name, description, category, active) — já dinâmica.
+- `plan_features` (plan_slug, feature_slug, enabled, limits jsonb) — já dinâmica, os limites já vivem em jsonb.
+- `plan_promotions` (country_code, plan, cycle, promo_price, stripe_price_id, starts_at, ends_at, active) — já dinâmica.
+- `plan_price_history` — auditoria já dinâmica.
+- Edge functions `admin-set-promotion`, `admin-update-plan-price`, `create-checkout` — leem preços da BD em runtime.
+- Landing, Billing, PriceWithPromo — já leem tudo da BD com realtime.
+- RLS + `is_super_admin` — só Super Admin escreve; oficinas só leem.
 
-Vou primeiro ler e mapear:
-- `useShopRole.ts`, `rolePaths.ts`, `RoleProtectedRoute` (App.tsx), `Layout.tsx`, `CommandPalette.tsx`
-- `AcceptInvite.tsx` + Edge Function do convite + tabela `team_invitations`
-- Função `has_capability` na BD + RLS de tabelas críticas (invoices, payments, suppliers, shops, user_roles)
-- Fluxo atual de emissão/pagamento de fatura em `Invoices.tsx` + `invoiceEmailHtml`
+## Único ponto de acoplamento a nomes fixos
 
-Entrego um relatório curto do que está OK vs. em falta antes de mexer.
+`country_settings` tem colunas **hardcoded por slug**:
+`saas_free_monthly/yearly`, `saas_pro_monthly/yearly`, `saas_garage_monthly/yearly`,
+`stripe_free_*`, `stripe_pro_*`, `stripe_garage_*`, `stripe_*_product_id`.
 
-## 2. Convite — corrigir "Invalid login credentials"
+Isto significa que criar um plano novo (`business`, `enterprise`) hoje exige código.
+**É este o único bloqueio real** — o resto da arquitetura já é dinâmica.
 
-Causa provável: mesmo com `auto_confirm_email=true`, o `signInWithPassword` corre antes do user ser materializado, ou o `signUp` está a devolver "user already exists" (convite reenviado) e cai no fallback.
+## Estratégia (retrocompatível, sem regressões)
 
-Correção:
-- `AcceptInvite.tsx`: após `signUp` bem sucedido, usar a `session` devolvida diretamente (não voltar a chamar `signInWithPassword`). Se `session` for null, aí sim tentar login.
-- Se `signUp` devolver "already registered", chamar `signInWithPassword` com a password nova só se o convite ainda estiver `pending` (senão pedir reset).
-- Só depois de haver sessão válida: consumir o convite via RPC `accept_team_invitation` (SECURITY DEFINER) que insere em `shop_users` + `user_roles` atomicamente e marca convite como `accepted`.
-- Redirect final via `rolePaths` conforme role.
+Substituir as colunas fixas de `country_settings` por uma **nova tabela `plan_country_prices`** que armazena preços/Stripe IDs por `(plan_slug, country_code, cycle)` — e manter as colunas antigas como **views/gerados** durante uma janela de migração para código legacy que ainda as leia.
 
-## 3. Matriz de permissões — congelar definição
-
-Perfis: `owner`, `admin`, `manager`, `reception`, `technician`, `sales`.
-
-Capabilities (exemplo — vou apresentar tabela final na implementação):
-
-```text
-                owner admin manager reception technician sales
-dashboard.full    x     x      -        -          -       -
-dashboard.ops     x     x      x        -          -       -
-dashboard.desk    x     x      x        x          -       -
-dashboard.tech    x     x      x        -          x       -
-dashboard.sales   x     x      x        -          -       x
-clients.rw        x     x      x        x          -       x
-clients.read      x     x      x        x          x(own)  x
-vehicles.rw       x     x      x        x          -       x
-workorders.rw     x     x      x        x          x(own)  -
-workorders.exec   -     -      -        -          x       -
-quotes.rw         x     x      x        x          -       x
-invoices.rw       x     x      -        -          -       -
-payments.rw       x     x      -        x(cash)    -       -
-stock.rw          x     x      x        -          -       -
-purchases.rw      x     x      x        -          -       -
-suppliers.rw      x     x      x        -          -       -
-finance.view      x     x      -        -          -       -
-marketplace.mng   x     x      -        -          -       x
-team.rw           x     x(-owner) -     -          -       -
-settings.rw       x     x(-critical) -   -          -       -
-shop.delete       x     -      -        -          -       -
-```
-
-Aplicada em três camadas:
-1. **Frontend**: `useCapability(cap)` → sidebar, botões, rotas (`RoleProtectedRoute`).
-2. **RPC `has_capability(uid, cap)`** SECURITY DEFINER na BD.
-3. **RLS**: policies das tabelas sensíveis chamam `has_capability`.
-
-## 4. Sidebar e Dashboard por perfil
-
-- Sidebar construída a partir da matriz (nunca só `hidden`).
-- Rotas de dashboard: `/dashboard` faz redirect interno para `/dashboard/owner|ops|desk|tech|sales` conforme role.
-- Cada dashboard já existe em partes — vou reutilizar componentes, não criar novos widgets.
-
-## 5. Segurança de URLs
-
-- `RoleProtectedRoute` já existe → reforçar para redirecionar em vez de mostrar 404.
-- RLS complementa: mesmo com URL manual, queries devolvem vazio/erro.
-
-## 6. Painel de Equipa (owner/admin)
-
-Em `Team.tsx` (existente), garantir:
-- convidar / reenviar / cancelar convite
-- mudar role
-- desativar / reativar / remover
-- último login (via `auth.users.last_sign_in_at` exposto por view)
-- estado do convite
-
-## 7. Email automático de fatura paga
-
-Verificar se já existe trigger. Se sim, garantir que envia o template `paid` com **todas as linhas discriminadas** (não só total). Se não existe:
-- Ao marcar fatura como `paid` em `Invoices.tsx` → chamar `sendInvoiceByEmail` com `status='paid'` já automaticamente (já implementado parcialmente na sessão anterior).
-- Melhorar `invoiceEmailHtml` para incluir tabela de itens (descrição, qtd, preço unit., IVA, total linha) igual ao orçamento — reutilizando o mesmo componente de tabela.
-
-## 8. Testes finais
-
-Playwright headless para cada role: aceitar convite → login → dashboard correto → tentar aceder URL proibido → verificar bloqueio.
+Nada muda visualmente. Nada muda no Stripe. Toda a lógica atual de checkout/billing passa a resolver preços via `plan_country_prices` em vez de colunas fixas — API idêntica.
 
 ---
 
-## Estimativa
+## Fase 1 — Schema dinâmico (migração 1)
 
-Isto são **múltiplas migrations + ~10 ficheiros frontend + template email + testes**. Provavelmente 2–3 turnos grandes.
+Nova tabela `plan_country_prices`:
+```
+plan_slug text (FK → plans.slug, cascade)
+country_code text (FK → country_settings.code)
+cycle text CHECK (monthly | yearly | quarterly | semestral | lifetime)
+currency text
+amount numeric NOT NULL
+stripe_product_id text
+stripe_price_id text
+active bool default true
+UNIQUE (plan_slug, country_code, cycle)
+```
++ GRANT + RLS (SELECT público, ALL só super admin) + trigger updated_at.
 
-## Perguntas antes de avançar
+Backfill: copiar `saas_free_*/pro_*/garage_*` e `stripe_*` de `country_settings` para linhas de `plan_country_prices`. Uma única migração idempotente.
 
-1. Confirmas a matriz de capabilities acima? Alguma célula errada?
-2. **Manager** — confirmas que NÃO vê faturação/finance? (é comum managers verem)
-3. **Reception** pode registar pagamentos em dinheiro? (assumi que sim)
-4. Queres que faça isto num só turno grande (mais lento, mais risco) ou fase a fase (convite+segurança → matriz+sidebar → dashboards → email)?
+Extensão a `plans`:
+- `color text`, `icon text`, `order_index int`, `label text` (etiqueta tipo "Mais Popular"), `visible_on_landing bool`, `visible_on_billing bool`, `visible_on_checkout bool`, `visible_on_compare bool`, `archived_at timestamptz`.
 
-Assim que respondas avanço com a auditoria concreta ao código atual e a implementação.
+Extensão a `features`:
+- `icon text`, `order_index int` (categoria já existe).
+
+Extensão a `plan_features` (limits já é jsonb — sem alterações estruturais; documentar as chaves suportadas: `max_shops`, `max_users`, `max_clients`, `max_vehicles`, `max_work_orders`, `max_listings`, `max_uploads`, `storage_mb`, `api_calls`, `emails_per_month`, `sms_per_month`, `pdfs_per_month`, `backups`).
+
+Nada é apagado. Colunas antigas de `country_settings` **ficam em `country_settings`** com um trigger que espelha alterações para `plan_country_prices` — retrocompatibilidade total durante todo o processo.
+
+## Fase 2 — Camada de leitura unificada
+
+Novo RPC `get_effective_plan_price(plan_slug, country_code, cycle)` → devolve `{base_amount, effective_amount, stripe_price_id, promo_active, promo_ends_at, currency}`. Junta `plan_country_prices` + `plan_promotions` numa única chamada — já existe `get_active_promotion`, alarga-o.
+
+Front-end: `usePlanPricing()` hook novo que centraliza fetches (Landing, Billing, PriceWithPromo, UpgradeModal) — substitui as leituras diretas a `country_settings.saas_*_*` sem alterar UI.
+
+Edge functions `create-checkout` e `admin-update-plan-price`: passam a resolver via RPC. Comportamento externo idêntico.
+
+## Fase 3 — Painel Admin unificado
+
+Nova página `/admin/plans-manager` (ou expandir a atual `AdminPlans`) — mesma estética shadcn:
+- Lista de planos: criar, duplicar, arquivar, restaurar, reordenar, ativar/desativar, ocultar por superfície.
+- Editor de plano: nome, slug (imutável após criação para preservar Stripe), descrições, cor, ícone, etiqueta, ordem, visibilidade.
+- Grelha de preços por país × ciclo (usa `plan_country_prices`).
+- Grelha de features × plano (usa `plan_features`, edita `enabled` + `limits` jsonb com editor tipado por chave).
+- Grelha de limites (mesma tabela `plan_features` com `feature_slug='limits'` ou coluna `limits` a nível do plano — a decidir na Fase 3).
+- Botão "Criar Stripe Product & Prices" chama edge function existente `admin-update-plan-price` já preparada para criar produtos.
+- Delete só permitido se `subscriptions` não referenciar o plano; senão sugere "Arquivar".
+
+Gestor de features:
+- CRUD completo. Delete só se não estiver em `plan_features` ativo.
+
+## Fase 4 — Landing / Billing / Checkout / SEO
+
+Sem alterações visuais. `LandingPage.tsx` já itera sobre `plans` da BD; passa a filtrar por `visible_on_landing` e a ordenar por `order_index`. Etiquetas ("Mais Popular") passam a vir de `plans.label`. JSON-LD `SoftwareApplication` Offers passa a ser gerado por loop sobre planos visíveis + preços efetivos + `priceValidUntil` quando há promoção — ficheiro `LandingPage.tsx` já tem o esqueleto, só troca de fonte.
+
+## Fase 5 — Limpeza deferida (opcional, fora deste ciclo)
+
+Só depois de confirmar em produção que nada lê as colunas antigas:
+- Marcar `country_settings.saas_*_*` / `stripe_*_*` como deprecated.
+- Manter triggers de espelho por 1-2 ciclos e só então remover.
+
+Nunca vou remover colunas neste ciclo — retrocompatibilidade é regra.
+
+---
+
+## Escopo desta iteração
+
+Isto é trabalho para **múltiplas iterações**. Proponho começar por **Fase 1 + Fase 2** nesta ronda (fundação retrocompatível, zero UI alterada, zero regressões) e passar Painel Admin (Fase 3) para a próxima. Assim garantimos que:
+
+1. Criar um plano novo na BD passa a alimentar Landing/Billing/Checkout automaticamente.
+2. UI de administração vem por cima da fundação já testada.
+
+## Confirmações necessárias antes de escrever migração
+
+1. Confirmas **Fase 1 + Fase 2 primeiro** (schema + RPC + hook), Fase 3 (UI Admin) depois?
+2. `plan_country_prices.cycle`: confirmo suporte a `monthly | yearly | quarterly | semestral | lifetime` desde já, ok?
+3. O slug do plano deve ser **imutável após criação** (para não invalidar Stripe subscriptions existentes). Ok?
+4. Delete de plano/feature com clientes ativos → **bloqueado**, sugere Arquivar. Ok?

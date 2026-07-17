@@ -107,6 +107,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Nunca mostrar a chave técnica ao utilizador. Se uma tradução falha em
+   * todas as línguas de fallback, transformamos `foo.barBaz` em `Bar Baz`.
+   * Assim, mesmo com traduções em falta, o utilizador vê texto legível em
+   * vez de `cta.tryPlan` ou `common.save`.
+   */
+  function humanizeKey(key: string): string {
+    const last = key.split(".").pop() || key;
+    const spaced = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }
+
+
   const t = useCallback((key: string): string => {
     // Universal fallback: current lang → EN (global default) → humanized key.
     // PT-BR also falls back to PT (close languages). PT users only see EN as fallback.
@@ -142,6 +155,12 @@ export function useLanguage(): LanguageContextType {
         try { localStorage.setItem("garageflow_language", lang); } catch {}
       }
     },
-    t: (key: string) => translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key] || key,
+    t: (key: string) => {
+      const v = translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key];
+      if (v) return v;
+      const last = key.split(".").pop() || key;
+      const spaced = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+      return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+    },
   };
 }

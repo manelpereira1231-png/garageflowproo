@@ -162,11 +162,15 @@ export function useFeatureMatrix() {
   return cache;
 }
 
-/** Returns the active plan slug for the current user (free|pro|garage). */
-export function useCurrentPlan(): "free" | "pro" | "garage" {
+/**
+ * Returns the active plan slug for the current user. May be a legacy slug
+ * (`free|pro|garage`) OR any custom slug created dynamically by Super
+ * Admin via `AdminPlans` — feature gating always goes through the
+ * `plan_features` matrix, so no code change is needed for new plans.
+ */
+export function useCurrentPlan(): string {
   const { plan } = useSubscription();
-  if (plan === "garage" || plan === "pro" || plan === "free") return plan;
-  return "free";
+  return plan || "free";
 }
 
 /** Hook: can the current user use a given feature slug? */

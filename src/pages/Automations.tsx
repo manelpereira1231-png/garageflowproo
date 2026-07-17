@@ -322,8 +322,9 @@ export default function Automations() {
             <DialogTitle>{editingRule ? t('automations.edit') : t('automations.new')}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="config" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="config">{t('automations.config') || 'Configuração'}</TabsTrigger>
+              <TabsTrigger value="flow">Fluxo</TabsTrigger>
               <TabsTrigger value="template">{t('automations.template') || 'Template'}</TabsTrigger>
             </TabsList>
             <TabsContent value="config" className="space-y-3 mt-3">

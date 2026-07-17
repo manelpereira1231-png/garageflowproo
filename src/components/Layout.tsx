@@ -58,6 +58,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";

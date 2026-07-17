@@ -419,7 +419,27 @@ export default function AdminPlans() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Ativo</Label>
-                        <Switch checked={p.active} onCheckedChange={(v) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, active: v } : x))} />
+                        <Switch
+                          checked={p.active}
+                          disabled={saving === p.slug}
+                          onCheckedChange={async (v) => {
+                            // Persistência IMEDIATA — o toggle é a fonte de verdade
+                            // do estado ativo do plano. Todos os consumidores
+                            // (Landing, Billing, Checkout, Upgrade) reagem via
+                            // realtime na tabela `plans`. Sem "Guardar" separado.
+                            setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, active: v } : x));
+                            setSaving(p.slug);
+                            const { error } = await supabase.from("plans").update({ active: v } as any).eq("slug", p.slug);
+                            setSaving(null);
+                            if (error) {
+                              toast.error("Erro ao alterar estado: " + error.message);
+                              // reverter UI se falhou
+                              setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, active: !v } : x));
+                              return;
+                            }
+                            toast.success(`Plano ${p.name} ${v ? "ativado" : "desativado"} em todo o sistema`);
+                          }}
+                        />
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => setExpanded(isOpen ? null : p.slug)}>
                         {isOpen ? "Fechar" : "Configurar"}

@@ -4,6 +4,7 @@ import { Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useFeature } from "@/lib/features";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 
 interface FeatureGateProps {
   feature: string;

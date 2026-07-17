@@ -20,6 +20,29 @@ const log = (step: string, details?: any) => {
   console.log(`[GENERATE-ALERTS] ${step}`, details ? JSON.stringify(details) : "");
 };
 
+// ─── Capabilities dinâmicas (plan_features) ───
+// Fonte única de verdade: a matriz gerida no Super Admin.
+// Nada hardcoded — qualquer plano novo criado no painel é tratado
+// automaticamente com base nas features que o admin lhe atribuir.
+let _featureCache: Record<string, Set<string>> | null = null;
+async function loadFeatureMatrix(): Promise<Record<string, Set<string>>> {
+  if (_featureCache) return _featureCache;
+  const { data } = await supabaseAdmin
+    .from("plan_features")
+    .select("plan_slug, feature_slug, enabled");
+  const map: Record<string, Set<string>> = {};
+  for (const row of data || []) {
+    if (!row.enabled) continue;
+    (map[row.plan_slug] ??= new Set()).add(row.feature_slug);
+  }
+  _featureCache = map;
+  return map;
+}
+async function hasFeature(planSlug: string, featureSlug: string): Promise<boolean> {
+  const m = await loadFeatureMatrix();
+  return m[planSlug]?.has(featureSlug) === true;
+}
+
 interface ShopWithSub {
   id: string;
   name: string;

@@ -169,7 +169,10 @@ export function useLanguage(): LanguageContextType {
         try { localStorage.setItem("garageflow_language", lang); } catch {}
       }
     },
-    t: (key: string) => {
+    t: (key: string, defaultValue?: string) => {
+      const v = translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key];
+      if (v) return v;
+      if (defaultValue !== undefined) return defaultValue;
       const v = translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key];
       if (v) return v;
       const last = key.split(".").pop() || key;

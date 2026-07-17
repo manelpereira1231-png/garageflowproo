@@ -570,12 +570,16 @@ export default function Billing() {
         </button>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(({ key, icon: Icon, color, items }) => {
-          const price = prices[key][billingCycle];
-          // Centralised button state — never derive Upgrade/Downgrade/Plano Atual
-          // with local ifs. See src/lib/planHierarchy.ts.
+      {/* Pricing Cards — grelha responsiva com nº de colunas dinâmico */}
+      <div className={`grid grid-cols-1 gap-6 ${
+        plans.length >= 4 ? 'md:grid-cols-2 lg:grid-cols-4'
+          : plans.length === 3 ? 'md:grid-cols-3'
+          : plans.length === 2 ? 'md:grid-cols-2' : ''
+      }`}>
+        {plans.map(({ key, row, icon: Icon, color, items, isFeatured }) => {
+          // Preço: usa fallback do país configurado se legacy price map o tiver;
+          // planos novos leem-no do plan_country_prices via PriceWithPromo/create-checkout.
+          const price = (prices as any)[key]?.[billingCycle] ?? 0;
           const btnState = getPlanButtonState({
             displayedPlan: key,
             activePlan: plan,
@@ -590,7 +594,7 @@ export default function Billing() {
                 isCurrentPlan ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
               }`}
             >
-              {key === 'pro' && (
+              {isFeatured && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="gradient-primary text-primary-foreground px-3 py-1">
                     {t('billing.popular')}
@@ -600,7 +604,7 @@ export default function Billing() {
 
               <div className="text-center mb-6">
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
-                <h3 className="text-xl font-bold">{getPlanName(key, t(`billing.plan.${key}`))}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(key, row?.label || row?.name || key)}</h3>
                 <div className="mt-3">
                   <PriceWithPromo
                     basePrice={price}
@@ -634,7 +638,7 @@ export default function Billing() {
                 className={`w-full ${
                   isCurrentPlan
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
-                    : key === 'pro'
+                    : isFeatured
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}

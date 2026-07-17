@@ -78,6 +78,18 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
     if (!newShopName.trim() || !newShopEmail.trim()) return;
     setCreating(true);
     try {
+      const { data: latestStatus } = await supabase.rpc('get_shop_creation_status', { _user_id: (await supabase.auth.getUser()).data.user?.id });
+      if (latestStatus) {
+        const nextStatus = latestStatus as any;
+        setStatus(nextStatus);
+        if (!nextStatus.allowed) {
+          toast.error(nextStatus.max > 0
+            ? `Já atingiu o limite máximo de ${nextStatus.max} oficinas permitido pelo seu plano. Para adicionar mais será necessário um plano superior.`
+            : t('shops.limitReached'));
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("invite-child-shop", {
         body: { name: newShopName.trim(), email: newShopEmail.trim() },
       });

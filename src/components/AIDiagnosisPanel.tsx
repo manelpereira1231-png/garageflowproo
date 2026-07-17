@@ -77,16 +77,24 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
           vehicle,
           services_catalog: catalogRes.data || [],
           parts_catalog: partsRes.data || [],
+          shop_id: shopId,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Edge function returns 402/403 with { error: "quota_exceeded" | "plan_no_ai" }
+        const raw = (error as any)?.context?.body ?? (error as any)?.message ?? "";
+        const msg = String(raw);
+        if (msg.includes("plan_no_ai")) throw new Error(isPt ? "O seu plano não inclui IA. Faça upgrade para desbloquear." : "Your plan does not include AI. Upgrade to unlock.");
+        if (msg.includes("quota_exceeded")) throw new Error(isPt ? "Atingiu o limite mensal de créditos IA do seu plano." : "You've reached your plan's monthly AI credits limit.");
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       setDiagnosis(data as Diagnosis);
     } catch (e: any) {
       console.error("AI diagnosis error:", e);
-      toast.error(isPt ? "Erro ao gerar diagnóstico IA." : "Error generating AI diagnosis.");
+      toast.error(e?.message || (isPt ? "Erro ao gerar diagnóstico IA." : "Error generating AI diagnosis."));
     }
     setLoading(false);
   };

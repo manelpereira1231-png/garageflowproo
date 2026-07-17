@@ -437,9 +437,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
   const { primaryShopId } = usePrimaryShopId();
-  // A child shop = any shop that is NOT the primary. This holds true both
-  // for team-members (primaryShopId === null → every shop is a child) and
-  // for account owners who switched context to a secondary shop.
+  const { shops: ownedShops } = useOwnedShops();
+  // "Oficina Mãe" account = user owns 2+ shops (i.e. has actually created a group).
+  // Only this account can see/use the shop switcher and Multi-Oficina surfaces.
+  // A child-only user (team member of a single child shop) or a single-shop owner
+  // must NEVER see that other shops exist.
+  const isGroupOwner = ownedShops.length > 1;
   const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {

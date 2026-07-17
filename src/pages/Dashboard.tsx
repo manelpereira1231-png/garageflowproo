@@ -15,6 +15,7 @@ import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useShopRole } from "@/hooks/useShopRole";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
 import MarketActivityCard from "@/components/MarketActivityCard";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.

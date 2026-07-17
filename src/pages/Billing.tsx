@@ -22,6 +22,7 @@ import {
 import { usePlanNames } from "@/hooks/usePlanNames";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { usePlansCatalog, publicPlans, planLimit } from "@/hooks/usePlansCatalog";
+import { resolvePlanCta } from "@/lib/planCta";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();

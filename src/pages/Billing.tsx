@@ -511,11 +511,17 @@ export default function Billing() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('billing.limitsShops')}</span>
               <span className="font-medium mono">
-                {shopCount}/{limits.multiShop ? 5 : 1}
+                {shopCount}/{(() => {
+                  const max = planLimit(catalog?.plans.find(p => p.slug === plan), 'max_shops', 1);
+                  return max < 0 ? '∞' : max;
+                })()}
               </span>
             </div>
             <Progress
-              value={(shopCount / (limits.multiShop ? 5 : 1)) * 100}
+              value={(() => {
+                const max = planLimit(catalog?.plans.find(p => p.slug === plan), 'max_shops', 1);
+                return max <= 0 ? 0 : Math.min(100, (shopCount / max) * 100);
+              })()}
               className="h-2"
             />
           </div>

@@ -137,6 +137,7 @@ import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));
@@ -329,6 +330,8 @@ function MarketLoginRouteRedirect() {
 // auto-redirect an ERP-logged-in workshop into the shop panel. Workshops
 // reach `/market/inspections` only by clicking it explicitly.
 function GarageMarketEntryRedirect() {
+  const { enabled, ready } = useGlobalMarketEnabled();
+  if (ready && !enabled) return <Navigate to="/" replace />;
   return <Suspense fallback={<PageLoader />}><CarityMarketplace /></Suspense>;
 }
 

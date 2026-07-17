@@ -1,4 +1,5 @@
-import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
+import { Link, useLocation, useNavigate, Outlet, Navigate } from "react-router-dom";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { ShieldCheck, LayoutDashboard, Car, MessageCircle, User, Plus, LogOut, Menu, X, CreditCard, Heart, Search, Building2, Sparkles, Crown, FileCheck, Settings, Wrench, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
   const alreadyWrapped = useContext(MarketLayoutContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const { enabled: globalMarketEnabled, ready: globalMarketReady } = useGlobalMarketEnabled();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
@@ -166,6 +168,14 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     sessionStorage.removeItem("garageflow_user_type_cache");
     window.location.assign("/dashboard?realm=erp");
   };
+
+  // Global kill-switch: when Super Admin disables `market_enabled`, every
+  // Market route becomes inaccessible — redirect to the root (which routes
+  // logged-in workshops to `/dashboard` and logged-out visitors to the
+  // landing page).
+  if (globalMarketReady && !globalMarketEnabled) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <MarketLayoutContext.Provider value={true}>

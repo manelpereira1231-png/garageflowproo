@@ -58,6 +58,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language } from "@/i18n/translations";
 import { useEnabledFeatureSet } from "@/lib/features";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
@@ -123,6 +124,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // full Market navigation the instant `enroll_shop_in_market` runs — and
   // never re-shows "Ativar Market" while the shop is an active partner.
   const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
+  const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
@@ -358,7 +360,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     // ── Market (módulo interno do ERP — partilha sessão, sidebar, dashboard) ──
     // Sempre visíveis para oficinas parceiras. "Explorar carros" liga ao Market público.
-    ...(!marketStatusReady
+    ...(!globalMarketEnabled
+      ? [] // Global kill-switch: hide every Market entry from the ERP sidebar when Super Admin disables `market_enabled`.
+      : !marketStatusReady
       ? [] // Wait for the single source of truth before deciding which Market items to show — prevents "Ativar Market" flashing for already-enrolled shops.
       : isCarityPartner
       ? [
@@ -379,7 +383,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner]);
+  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —

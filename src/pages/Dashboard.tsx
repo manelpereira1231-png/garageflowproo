@@ -66,7 +66,7 @@ export default function Dashboard() {
 function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
-  const { plan, isTrialing, trialDaysLeft } = useSubscription();
+  const { plan, isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();
@@ -359,7 +359,7 @@ function OwnerDashboard() {
           setPaidReferrals(refCode.paid_referrals_count || 0);
         }
         // Monthly quote count for usage nudge
-        if (plan === 'free') {
+        if (isEntryPlan) {
           const monthStart2 = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
           const { count: qCount } = await supabase
             .from("quotes")
@@ -667,9 +667,9 @@ function OwnerDashboard() {
       )}
 
       {/* Plan Banner — celebrates the auto-Pro trial, becomes urgent near the end */}
-      {(plan === 'free' || isTrialing) && (() => {
+      {(isEntryPlan || isTrialing) && (() => {
         const ending = isTrialing && trialDaysLeft <= 5;
-        const expired = plan === 'free' && !isTrialing;
+        const expired = isEntryPlan && !isTrialing;
         const tone = ending
           ? "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/50"
           : expired
@@ -712,7 +712,7 @@ function OwnerDashboard() {
       })()}
 
       {/* Usage Nudge for Free users */}
-      {plan === 'free' && monthlyQuoteCount > 0 && (
+      {isEntryPlan && monthlyQuoteCount > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
@@ -874,7 +874,7 @@ function OwnerDashboard() {
       })()}
 
       {/* Charts Row */}
-      {plan !== 'free' && (
+      {!isEntryPlan && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Monthly Revenue Chart */}
           <div className="lg:col-span-2 card-premium p-3 sm:p-5">
@@ -939,7 +939,7 @@ function OwnerDashboard() {
       )}
 
       {/* Conversion Rate + Top Parts */}
-      {plan !== 'free' && (
+      {!isEntryPlan && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="card-premium p-5">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">

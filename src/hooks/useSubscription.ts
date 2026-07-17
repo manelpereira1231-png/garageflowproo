@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 import {
   loadPlatformSettings,
   getCachedPlatformSettings,
@@ -174,6 +175,20 @@ export function useSubscription() {
   const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(getCachedPlatformSettings());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const { data: plansCatalog } = usePlansCatalog();
+
+  // Entry plan slug — resolvido dinamicamente do catálogo (plano com preço 0
+  // ou primeiro por sort_order). Fallback defensivo: "free".
+  const entryPlanSlug = useMemo(() => {
+    const plans = plansCatalog?.plans ?? [];
+    const prices = plansCatalog?.prices ?? [];
+    if (plans.length === 0) return "free";
+    const zeroPriced = plans.find(p => {
+      const anyPaid = prices.some(pr => pr.plan_slug === p.slug && Number(pr.amount) > 0);
+      return !anyPaid;
+    });
+    return zeroPriced?.slug ?? plans[0]?.slug ?? "free";
+  }, [plansCatalog]);
 
   // Load admin-managed plan limits / feature gates (single source of truth)
   useEffect(() => {
@@ -464,6 +479,8 @@ export function useSubscription() {
   return {
     subscription,
     plan: effectivePlan,
+    entryPlanSlug,
+    isEntryPlan: effectivePlan === entryPlanSlug,
     limits,
     loading,
     shopId,

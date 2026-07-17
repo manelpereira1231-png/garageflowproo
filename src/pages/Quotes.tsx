@@ -43,7 +43,7 @@ const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientI
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { limits, plan, shopId, checkQuoteLimit, canUseFeature } = useSubscription();
+  const { limits, plan, shopId, checkQuoteLimit, canUseFeature, isEntryPlan } = useSubscription();
   const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _qCache = pageCache.get<{ rows: any[]; shop: any }>(`quotes-all:${_shopInit}`);
   const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);
@@ -122,10 +122,10 @@ export default function Quotes() {
     return () => { supabase.removeChannel(channel); };
   }, [activeShopId, fetchQuotes]);
 
-  const isLimitReached = plan === 'free' && monthlyUsed >= limits.maxQuotesPerMonth;
+  const isLimitReached = isEntryPlan && monthlyUsed >= limits.maxQuotesPerMonth;
 
   const handleNewQuote = async () => {
-    if (plan === 'free') {
+    if (isEntryPlan) {
       const canCreate = await checkQuoteLimit();
       if (!canCreate) {
         setShowLimitModal(true);
@@ -136,7 +136,7 @@ export default function Quotes() {
   };
 
   const duplicateQuote = async (q: any) => {
-    if (plan === 'free') {
+    if (isEntryPlan) {
       const canCreate = await checkQuoteLimit();
       if (!canCreate) { setShowLimitModal(true); return; }
     }
@@ -346,7 +346,7 @@ export default function Quotes() {
           <p className="text-muted-foreground text-sm mt-1">{totalCount} {t('quotes.title').toLowerCase()}</p>
         </div>
         <div className="flex items-center gap-2">
-          {plan === 'free' && limits.maxQuotesPerMonth !== Infinity && (
+          {isEntryPlan && limits.maxQuotesPerMonth !== Infinity && (
             <Badge variant="outline" className={isLimitReached ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-muted text-muted-foreground"}>
               {t('quotes.quotesUsed').replace('{used}', String(monthlyUsed)).replace('{limit}', String(limits.maxQuotesPerMonth))}
             </Badge>

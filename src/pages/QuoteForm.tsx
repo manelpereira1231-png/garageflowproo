@@ -25,7 +25,7 @@ export default function QuoteForm() {
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const { t } = useLanguage();
-  const { plan, limits, checkQuoteLimit } = useSubscription();
+  const { plan, limits, checkQuoteLimit, isEntryPlan } = useSubscription();
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!editId);
@@ -142,7 +142,7 @@ export default function QuoteForm() {
     const shopId = activeShopId;
 
     // Check quote limit for new quotes on Free plan
-    if (!editId && plan === 'free') {
+    if (!editId && isEntryPlan) {
       const canCreate = await checkQuoteLimit();
       if (!canCreate) {
         setShowLimitModal(true);

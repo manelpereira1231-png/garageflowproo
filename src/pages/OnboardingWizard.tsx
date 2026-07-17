@@ -29,6 +29,27 @@ const TIMEZONES = [
 ];
 const STEPS = 5;
 
+const COUNTRY_CODES: Record<string, string> = {
+  Portugal: "PT",
+  Espanha: "ES",
+  França: "FR",
+};
+
+const getCountryCode = (country: string) => COUNTRY_CODES[country] || "PT";
+
+const logOnboardingError = (label: string, error: unknown, payload?: unknown) => {
+  const details = error && typeof error === "object" ? error as Record<string, unknown> : null;
+  console.error(`[onboarding] ${label}`, {
+    error,
+    payload,
+    message: details?.message,
+    details: details?.details,
+    hint: details?.hint,
+    code: details?.code,
+    status: details?.status,
+  });
+};
+
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const navigate = useNavigate();
   const { t, setLanguage, language } = useLanguage();
@@ -153,21 +174,32 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         await new Promise(r => setTimeout(r, 1000));
       }
 
-      // If shop still not found, create it as fallback (include country/currency)
+      // If shop still not found, create it as fallback (include every required
+      // registration field explicitly so the browser payload matches the DB schema).
       if (!shop) {
+        const createPayload = {
+          user_id: user.id,
+          name: form.name.trim(),
+          email: form.email || user.email || '',
+          phone: form.phone || '',
+          country: form.country,
+          country_code: getCountryCode(form.country),
+          currency: form.currency,
+          vat_rate: parseFloat(form.vat_rate) || VAT_RATES[form.country] || 23,
+          labor_rate: parseFloat(form.labor_rate) || 35,
+          language: form.language,
+          nif: form.nif || '',
+          address: form.address || '',
+          timezone: form.timezone || 'Europe/Lisbon',
+        };
+        console.info("[onboarding] fallback shop insert payload", createPayload);
         const { data: newShop, error: createError } = await supabase
           .from("shops")
-          .insert({
-            user_id: user.id,
-            name: form.name,
-            email: form.email || user.email || '',
-            country: form.country,
-            currency: form.currency,
-          })
+          .insert(createPayload as any)
           .select("id,country,currency")
           .single();
         if (createError || !newShop) {
-          console.error("[onboarding] fallback shop insert failed:", createError);
+          logOnboardingError("fallback shop insert failed", createError, createPayload);
           toast.error(friendlyError(createError?.message));
           return;
         }
@@ -196,9 +228,10 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       if (!shop!.currency) updatePayload.currency = form.currency;
       if (logoUrl) updatePayload.logo_url = logoUrl;
 
+      console.info("[onboarding] shop update payload", { shopId: shop!.id, updatePayload });
       const { error } = await supabase.from("shops").update(updatePayload).eq("id", shop!.id);
       if (error) {
-        console.error("[onboarding] shop update failed:", error);
+        logOnboardingError("shop update failed", error, { shopId: shop!.id, updatePayload });
         toast.error(friendlyError(error.message));
         return;
       }
@@ -235,7 +268,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       onComplete();
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      console.error("[onboarding] unexpected error:", err);
+      logOnboardingError("unexpected error", err);
       toast.error(friendlyError(err?.message));
     } finally {
       setLoading(false);

@@ -220,8 +220,21 @@ serve(async (req: Request) => {
     const clickBase = `${supaUrl}/functions/v1/email-click-redirect`;
     let trackedHtml = finalHtml.replace(
       /<a\s+([^>]*?)href=["']((?:https?:)\/\/[^"']+)["']([^>]*)>/gi,
-      (_m, pre, href, post) =>
-        `<a ${pre}href="${clickBase}?id=${emailIdEarly}&url=${encodeURIComponent(href)}"${post}>`,
+      (m, pre, href, post) => {
+        try {
+          const target = new URL(href);
+          const host = target.hostname.toLowerCase();
+          // Auth action links must stay untouched. Rewriting them through the
+          // click tracker can invalidate/strip the recovery/invite flow or hit
+          // the tracker allow-list instead of the auth endpoint.
+          if (host.endsWith(".supabase.co") || target.pathname.includes("/auth/v1/verify")) {
+            return m;
+          }
+        } catch (_e) {
+          return m;
+        }
+        return `<a ${pre}href="${clickBase}?id=${emailIdEarly}&url=${encodeURIComponent(href)}"${post}>`;
+      },
     );
     if (!/<\/body>/i.test(trackedHtml)) {
       trackedHtml = trackedHtml + `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none" />`;

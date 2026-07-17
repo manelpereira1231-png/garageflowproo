@@ -59,6 +59,21 @@ export default function CarityFavorites() {
 
   useEffect(() => { load(); }, []);
 
+  // Realtime: react to the user's own favorite changes across the app.
+  useEffect(() => {
+    let channel: any;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel(`favorites-${user.id}`)
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "listing_favorites", filter: `user_id=eq.${user.id}` }, () => load())
+        .subscribe();
+    })();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, []);
+
+
   const remove = async (listingId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;

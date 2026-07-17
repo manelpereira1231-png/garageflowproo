@@ -46,6 +46,23 @@ export default function CaritySellerDashboard() {
 
   useEffect(() => { loadData(); }, []);
 
+  // Realtime: seller's own listings, offers, boosts, inspections, transactions.
+  useEffect(() => {
+    let channel: any;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel(`seller-live-${user.id}`)
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_listings", filter: `seller_id=eq.${user.id}` }, () => loadData())
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_offers", filter: `seller_id=eq.${user.id}` }, () => loadData())
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_boosts", filter: `seller_id=eq.${user.id}` }, () => loadData())
+        
+        .subscribe();
+    })();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, []);
+
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/market/auth"); return; }

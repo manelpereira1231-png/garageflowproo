@@ -167,6 +167,17 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
             </DialogContent>
           </Dialog>
         )}
+        {showCreate && atLimit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0 opacity-40 cursor-not-allowed"
+            title={limitMsg}
+            onClick={() => toast.error(limitMsg)}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -532,31 +532,34 @@ function OwnerDashboard() {
             </p>
           </div>
         </div>
-        {/* Toggle "Modo Grupo" — visível apenas para a Oficina Mãe no plano Garage com >1 oficina */}
-        {isGroupEligible && (
-          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode('shop')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                !isGroupMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={!isGroupMode}
-            >
-              <Building2 className="w-3.5 h-3.5" /> Esta oficina
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('group')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                isGroupMode ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={isGroupMode}
-            >
-              <Layers className="w-3.5 h-3.5" /> Grupo ({ownedShops.length})
-            </button>
+        {/* Seletor de contexto — visível apenas para a Oficina Mãe (dono) no plano Garage com >1 oficina */}
+        {isOwnerOfGroup && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground hidden sm:inline">Contexto</span>
+            <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+              <SelectTrigger className="h-9 min-w-[180px] text-xs sm:text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 text-primary" />
+                    Todas as oficinas ({ownedShops.length})
+                  </span>
+                </SelectItem>
+                {ownedShops.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                      {s.name || '—'}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
+
       </div>
 
 

@@ -22,6 +22,7 @@ import {
 import { usePlanNames } from "@/hooks/usePlanNames";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { usePlansCatalog, publicPlans, planLimit } from "@/hooks/usePlansCatalog";
+import { resolvePlanCta } from "@/lib/planCta";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();
@@ -598,6 +599,17 @@ export default function Billing() {
             hasActiveSubscription: !noActivePlan,
           });
           const isCurrentPlan = btnState.action === 'current';
+          // CTA resolvido a partir do próprio plano (plans.cta_label / cta_mode).
+          // Contexto vem do estado da subscrição do utilizador — nunca de ifs por slug.
+          const ctaCtx = isCurrentPlan
+            ? 'current'
+            : btnState.action === 'upgrade'
+              ? 'upgrade'
+              : btnState.action === 'downgrade'
+                ? 'downgrade'
+                : 'anon';
+          const cta = resolvePlanCta(row, { surface: "billing", context: ctaCtx, t });
+          const showBadge = row.show_badge !== false && (row.badge_label || isFeatured);
 
           return (
             <div
@@ -606,10 +618,10 @@ export default function Billing() {
                 isCurrentPlan ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
               }`}
             >
-              {isFeatured && (
+              {showBadge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="gradient-primary text-primary-foreground px-3 py-1">
-                    {t('billing.popular')}
+                    {row.badge_label || t('billing.popular')}
                   </Badge>
                 </div>
               )}
@@ -617,17 +629,19 @@ export default function Billing() {
               <div className="text-center mb-6">
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
                 <h3 className="text-xl font-bold">{getPlanName(key, row?.label || row?.name || key)}</h3>
-                <div className="mt-3">
-                  <PriceWithPromo
-                    basePrice={price}
-                    country={getCountryCode()}
-                    plan={key}
-                    cycle={billingCycle}
-                    periodLabel={price > 0 ? `/${billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}` : undefined}
-                    size="lg"
-                    className="text-center"
-                  />
-                </div>
+                {row.show_price !== false && (
+                  <div className="mt-3">
+                    <PriceWithPromo
+                      basePrice={price}
+                      country={getCountryCode()}
+                      plan={key}
+                      cycle={billingCycle}
+                      periodLabel={price > 0 ? `/${billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}` : undefined}
+                      size="lg"
+                      className="text-center"
+                    />
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -646,19 +660,47 @@ export default function Billing() {
                 ))}
               </ul>
 
-              <Button
-                className={`w-full ${
+              {cta.visible && (() => {
+                // Modos que abrem checkout Stripe / trial → handler local
+                // Modos demo/contact/custom_url → navegação
+                const mode = cta.mode;
+                const useHandler = !isCurrentPlan && (mode === "checkout" || mode === "trial");
+                const btnClass = `w-full ${
                   isCurrentPlan
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
-                    : isFeatured
-                    ? 'gradient-primary text-primary-foreground'
-                    : ''
-                }`}
-                disabled={btnState.disabled || upgrading}
-                onClick={() => handleUpgrade(key)}
-              >
-                {upgrading && !isCurrentPlan ? t('common.loading') : t(btnState.labelKey)}
-              </Button>
+                    : isFeatured ? 'gradient-primary text-primary-foreground' : ''
+                }`;
+                if (cta.disabled) {
+                  return (
+                    <Button className={btnClass} disabled>
+                      {upgrading && !isCurrentPlan ? t('common.loading') : cta.label}
+                    </Button>
+                  );
+                }
+                if (useHandler) {
+                  return (
+                    <Button
+                      className={btnClass}
+                      disabled={upgrading}
+                      onClick={() => handleUpgrade(key)}
+                    >
+                      {upgrading ? t('common.loading') : cta.label}
+                    </Button>
+                  );
+                }
+                if (cta.external) {
+                  return (
+                    <a href={cta.href} target="_blank" rel="noopener noreferrer">
+                      <Button className={btnClass}>{cta.label}</Button>
+                    </a>
+                  );
+                }
+                return (
+                  <Link to={cta.href}>
+                    <Button className={btnClass}>{cta.label}</Button>
+                  </Link>
+                );
+              })()}
             </div>
           );
         })}

@@ -23,6 +23,7 @@ import PriceWithPromo from "@/components/PriceWithPromo";
 import { getEffectivePrice } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlansCatalog, publicPlans } from "@/hooks/usePlansCatalog";
+import { resolvePlanCta, resolvePlanBadge } from "@/lib/planCta";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -235,28 +236,24 @@ export default function LandingPage() {
       );
       base = row?.amount ?? 0;
     }
-    // CTA driven by Super Admin (`plans.cta_mode`): checkout | trial | demo | contact | unavailable.
-    const ctaMode = p.cta_mode || "trial";
-    const ctaKey =
-      ctaMode === "demo" || ctaMode === "contact"
-        ? "landing.ctaGarage"                 // "Pedir Demonstração"
-        : ctaMode === "unavailable"
-          ? "landing.ctaGarage"               // (disabled anyway; text irrelevant)
-          : "landing.ctaPro";                 // trial / checkout → "Testar Plano"
+    // CTA 100% dinâmico — vem de `plans.cta_label`/`cta_mode`/`cta_url`.
+    // Zero texto hardcoded. Ver src/lib/planCta.ts.
+    const cta = resolvePlanCta(p, { surface: "landing", context: "anon", t });
+    const badgeLabel = resolvePlanBadge(p, t);
     return {
       slug: p.slug,
-      nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
       displayName: p.label || p.name,
       basePrice: base as number,
       periodKey: (base as number) > 0
         ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')
         : '',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
+      subtitleKey: (isAuthenticated || p.show_trial === false) ? undefined : 'landing.trial30',
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
-      ctaKey,
-      ctaMode,
+      cta,
+      badgeLabel,
       highlighted: p.sort_order === 2, // plano do meio destacado
       ctaPrimary: p.sort_order <= 2,
+      showPrice: p.show_price !== false,
     };
   });
 
@@ -778,27 +775,31 @@ export default function LandingPage() {
           }`}>
             {planConfigs.map(plan => (
               <div
-                key={plan.nameKey}
+                key={plan.slug}
                 className={`bg-card rounded-xl p-5 sm:p-6 border-2 transition-all ${
                   plan.highlighted
                     ? "border-primary shadow-lg shadow-primary/10 md:scale-[1.02]"
                     : "border-border hover:border-primary/30"
                 }`}
               >
-                {plan.highlighted && (
+                {plan.badgeLabel ? (
+                  <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{plan.badgeLabel}</div>
+                ) : plan.highlighted ? (
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
-                )}
-                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey) || plan.displayName)}</h3>
-                <div className="mt-2 mb-2">
-                  <PriceWithPromo
-                    basePrice={plan.basePrice}
-                    country={countryCode}
-                    plan={plan.slug}
-                    cycle={billingCycle}
-                    periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
-                    size="lg"
-                  />
-                </div>
+                ) : null}
+                <h3 className="text-xl font-bold">{getPlanName(plan.slug, plan.displayName)}</h3>
+                {plan.showPrice ? (
+                  <div className="mt-2 mb-2">
+                    <PriceWithPromo
+                      basePrice={plan.basePrice}
+                      country={countryCode}
+                      plan={plan.slug}
+                      cycle={billingCycle}
+                      periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
+                      size="lg"
+                    />
+                  </div>
+                ) : <div className="mt-2 mb-2" />}
                 {plan.subtitleKey ? (
                   <p className="text-xs text-muted-foreground mb-5 sm:mb-6">{t(plan.subtitleKey)}</p>
                 ) : (
@@ -819,19 +820,30 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                {plan.ctaMode === "unavailable" ? (
-                  <Button className="w-full" variant="outline" disabled>
-                    {t(plan.ctaKey)}
-                  </Button>
-                ) : (
-                  <Link to={plan.ctaMode === "demo" || plan.ctaMode === "contact" ? "/demo" : "/auth?mode=signup"}>
-                    <Button
-                      className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                      variant={plan.ctaPrimary ? "default" : "outline"}
-                    >
-                      {t(plan.ctaKey)}
+                {plan.cta.visible && (
+                  plan.cta.disabled ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      {plan.cta.label}
                     </Button>
-                  </Link>
+                  ) : plan.cta.external ? (
+                    <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                        variant={plan.ctaPrimary ? "default" : "outline"}
+                      >
+                        {plan.cta.label}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Link to={plan.cta.href}>
+                      <Button
+                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                        variant={plan.ctaPrimary ? "default" : "outline"}
+                      >
+                        {plan.cta.label}
+                      </Button>
+                    </Link>
+                  )
                 )}
               </div>
             ))}

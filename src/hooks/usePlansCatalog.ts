@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
  * em Billing / Landing / Upgrade / Checkout / SEO sem alterar código.
  */
 
-export type PlanCtaMode = "checkout" | "trial" | "demo" | "contact" | "unavailable";
+export type PlanCtaMode = "checkout" | "trial" | "demo" | "contact" | "unavailable" | "custom_url";
 
 export interface PlanRow {
   slug: string;
@@ -36,6 +36,13 @@ export interface PlanRow {
   stripe_product_id: string | null;
   archived_at: string | null;
   cta_mode: PlanCtaMode;
+  cta_label: string | null;
+  cta_url: string | null;
+  badge_label: string | null;
+  show_button: boolean;
+  show_price: boolean;
+  show_trial: boolean;
+  show_badge: boolean;
 }
 
 export interface PlanFeatureRow {
@@ -75,6 +82,13 @@ async function fetchCatalog(): Promise<PlansCatalog> {
     ...p,
     limits: (p.limits ?? {}) as Record<string, number | boolean>,
     cta_mode: (p.cta_mode ?? "trial") as PlanCtaMode,
+    cta_label: p.cta_label ?? null,
+    cta_url: p.cta_url ?? null,
+    badge_label: p.badge_label ?? null,
+    show_button: p.show_button ?? true,
+    show_price: p.show_price ?? true,
+    show_trial: p.show_trial ?? true,
+    show_badge: p.show_badge ?? true,
   })) as PlanRow[];
 
   const featuresByPlan: Record<string, PlanFeatureRow[]> = {};

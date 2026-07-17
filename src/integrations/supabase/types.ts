@@ -5160,15 +5160,22 @@ export type Database = {
         Row: {
           active: boolean
           archived_at: string | null
+          badge_label: string | null
           color: string | null
           created_at: string
+          cta_label: string | null
           cta_mode: string
+          cta_url: string | null
           description: string | null
           icon: string | null
           included_shops: number
           label: string | null
           limits: Json
           name: string
+          show_badge: boolean
+          show_button: boolean
+          show_price: boolean
+          show_trial: boolean
           slug: string
           sort_order: number
           stripe_product_id: string | null
@@ -5183,15 +5190,22 @@ export type Database = {
         Insert: {
           active?: boolean
           archived_at?: string | null
+          badge_label?: string | null
           color?: string | null
           created_at?: string
+          cta_label?: string | null
           cta_mode?: string
+          cta_url?: string | null
           description?: string | null
           icon?: string | null
           included_shops?: number
           label?: string | null
           limits?: Json
           name: string
+          show_badge?: boolean
+          show_button?: boolean
+          show_price?: boolean
+          show_trial?: boolean
           slug: string
           sort_order?: number
           stripe_product_id?: string | null
@@ -5206,15 +5220,22 @@ export type Database = {
         Update: {
           active?: boolean
           archived_at?: string | null
+          badge_label?: string | null
           color?: string | null
           created_at?: string
+          cta_label?: string | null
           cta_mode?: string
+          cta_url?: string | null
           description?: string | null
           icon?: string | null
           included_shops?: number
           label?: string | null
           limits?: Json
           name?: string
+          show_badge?: boolean
+          show_button?: boolean
+          show_price?: boolean
+          show_trial?: boolean
           slug?: string
           sort_order?: number
           stripe_product_id?: string | null

@@ -132,8 +132,13 @@ function OwnerDashboard() {
           return;
         }
         setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
-        setShopName(shop.name || '');
-        setShopLogoUrl(shop.logo_url || null);
+        setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
+        setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
+
+        // Grupo Mode → agregar todas as oficinas do dono (RLS já garante que
+        // `shops.user_id = auth.uid()`; groupShopIds nunca cruza contas).
+        // Modo Oficina → apenas a shop ativa.
+        const shopIds: string[] = isGroupMode && groupShopIds.length > 0 ? groupShopIds : [shop.id];
 
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -141,76 +146,77 @@ function OwnerDashboard() {
 
         const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
-            .select("total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart)
             .order("created_at", { ascending: false }),
           supabase.from("quotes")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .in("status", ['draft', 'sent']),
           supabase.from("work_orders")
             .select("client_id")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart),
           supabase.from("alerts")
             .select("id, title, type, status, due_date, created_at")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("status", "pending")
             .order("created_at", { ascending: false })
             .limit(5),
           supabase.from("work_orders")
-            .select("total, profit, status, created_at")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, profit, status, created_at")
+            .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo)
             .in("status", ['completed', 'delivered']),
           supabase.from("parts")
             .select("id, name, stock_quantity, min_stock")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("active", true),
           supabase.from("invoices")
             .select("id, number, total, due_date, clients(name)")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .in("status", ['issued', 'partial'])
             .lt("due_date", new Date().toISOString().slice(0, 10)),
           supabase.from("quotes")
             .select("id, status")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo),
           supabase.from("stock_movements")
             .select("quantity, parts(name)")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("type", "out")
             .order("created_at", { ascending: false })
             .limit(100),
           // Faturas do mês para KPI de faturação real
           supabase.from("invoices")
-            .select("total, subtotal, vat_total, status")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, subtotal, vat_total, status")
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart),
-          // Todos os clientes ativos (não apagados)
+          // Total de clientes ativos (não apagados) — em modo grupo: soma
+          // de todas as oficinas; em modo oficina: só a shop atual.
           supabase.from("clients")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .is("deleted_at", null),
         ]);
 
         const orders = ordersRes.data || [];
         const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-        
+
         // Faturação: combinar work_orders completadas + faturas emitidas/pagas do mês
         const woRevenue = delivered.reduce((s, o) => s + Number(o.total || 0), 0);
         const woProfit = delivered.reduce((s, o) => s + Number(o.profit || 0), 0);
-        
+
         const monthInvoices = (invoicesMonthRes.data || []).filter(
           (i: any) => ['issued', 'paid', 'partial'].includes(i.status)
         );
         const invRevenue = monthInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-        
+
         // Usar o maior dos dois (evitar duplicação se fatura vem de work_order)
         const revenue = Math.max(woRevenue, invRevenue);
         const profit = woRevenue > 0 ? woProfit : (invRevenue * 0.3); // estimativa se só há faturas
-        
+
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
 
@@ -245,7 +251,7 @@ function OwnerDashboard() {
       // Auto-generated alerts
         const dbAlerts = alertsRes.data || [];
         const autoAlerts: any[] = [];
-      
+
         const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
         if (lowStockParts.length > 0) {
           autoAlerts.push({
@@ -282,7 +288,7 @@ function OwnerDashboard() {
           monthMap.set(key, { revenue: 0, profit: 0 });
         }
 
-        allOrders.forEach(o => {
+        allOrders.forEach((o: any) => {
           const d = new Date(o.created_at);
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
           const entry = monthMap.get(key);
@@ -343,16 +349,76 @@ function OwnerDashboard() {
           const { count: qCount } = await supabase
             .from("quotes")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart2);
           setMonthlyQuoteCount(qCount || 0);
+        }
+
+        // === Per-shop breakdown (apenas em Modo Grupo) ===
+        // Query única extra por métrica (2 queries agregadas totais para clientes
+        // e veículos), calculando o resto em JS a partir dos dados já obtidos.
+        if (isGroupMode && groupShopIds.length > 0) {
+          const [clientsPerShopRes, vehiclesPerShopRes] = await Promise.all([
+            supabase.from("clients")
+              .select("shop_id")
+              .in("shop_id", groupShopIds)
+              .is("deleted_at", null),
+            supabase.from("vehicles")
+              .select("shop_id")
+              .in("shop_id", groupShopIds),
+          ]);
+          const cliCount = new Map<string, number>();
+          (clientsPerShopRes.data || []).forEach((r: any) => cliCount.set(r.shop_id, (cliCount.get(r.shop_id) || 0) + 1));
+          const vehCount = new Map<string, number>();
+          (vehiclesPerShopRes.data || []).forEach((r: any) => vehCount.set(r.shop_id, (vehCount.get(r.shop_id) || 0) + 1));
+
+          // Faturação/lucro/serviços do mês corrente por oficina
+          const currRev = new Map<string, number>();
+          const currProfit = new Map<string, number>();
+          const currServices = new Map<string, number>();
+          delivered.forEach((o: any) => {
+            currRev.set(o.shop_id, (currRev.get(o.shop_id) || 0) + Number(o.total || 0));
+            currProfit.set(o.shop_id, (currProfit.get(o.shop_id) || 0) + Number(o.profit || 0));
+          });
+          orders.forEach((o: any) => {
+            currServices.set(o.shop_id, (currServices.get(o.shop_id) || 0) + 1);
+          });
+
+          // Faturação mês anterior por oficina para calcular crescimento
+          const prevRevByShop = new Map<string, number>();
+          (allOrdersRes.data || []).forEach((o: any) => {
+            const d = new Date(o.created_at);
+            if (d >= prevStart && d < prevEnd) {
+              prevRevByShop.set(o.shop_id, (prevRevByShop.get(o.shop_id) || 0) + Number(o.total || 0));
+            }
+          });
+
+          const breakdown = ownedShops.map((s) => {
+            const rev = currRev.get(s.id) || 0;
+            const pv = prevRevByShop.get(s.id) || 0;
+            const growth = pv > 0 ? ((rev - pv) / pv) * 100 : (rev > 0 ? 100 : 0);
+            return {
+              id: s.id,
+              name: s.name || '—',
+              address: s.address,
+              revenue: rev,
+              profit: currProfit.get(s.id) || 0,
+              services: currServices.get(s.id) || 0,
+              clients: cliCount.get(s.id) || 0,
+              vehicles: vehCount.get(s.id) || 0,
+              growth: Math.round(growth),
+            };
+          });
+          setPerShopBreakdown(breakdown);
+        } else {
+          setPerShopBreakdown([]);
         }
       } catch (error) {
         console.error("Dashboard load error:", error);
       } finally {
         setDataLoaded(true);
       }
-  }, [language, activeShopId, isReady, user, plan]);
+  }, [language, activeShopId, isReady, user, plan, isGroupMode, groupShopIds, ownedShops, t]);
 
   useEffect(() => {
     loadData();

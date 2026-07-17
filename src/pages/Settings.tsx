@@ -220,12 +220,14 @@ export default function SettingsPage() {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <Badge variant="outline" className="capitalize">{plan}</Badge>
-              <span className="text-xs text-muted-foreground">
-                {isEntryPlan ? t('settings.watermarkInfo') : t('settings.noWatermark')}
-              </span>
-            </div>
+            {!isChildShop && (
+              <div className="mt-4 flex items-center gap-2">
+                <Badge variant="outline" className="capitalize">{plan}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {isEntryPlan ? t('settings.watermarkInfo') : t('settings.noWatermark')}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
 

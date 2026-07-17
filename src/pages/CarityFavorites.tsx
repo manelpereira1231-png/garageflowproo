@@ -9,6 +9,7 @@ import { Heart, Car, ShieldCheck, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketListingGridSkeleton } from "@/components/MarketListingCardSkeleton";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useMarketT } from "@/i18n/marketTranslations";
 
 export default function CarityFavorites() {

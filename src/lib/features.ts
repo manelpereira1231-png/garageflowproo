@@ -226,10 +226,12 @@ export function useEnabledFeatureSet(): Set<string> {
     if (!loaded || matrix.length === 0) return fallbackFeatureSetFor(plan);
     const out = new Set<string>();
     for (const f of features) {
-      if (f.is_core && (plan === "garage" || !GARAGE_ONLY_FEATURES.has(f.slug))) out.add(f.slug);
+      // Legacy hardcoded exclusion only kicks in for legacy non-garage
+      // plans; custom plans rely entirely on plan_features matrix.
+      if (f.is_core && (!isLegacy || plan === "garage" || !GARAGE_ONLY_FEATURES.has(f.slug))) out.add(f.slug);
     }
     for (const r of matrix) if (r.plan_slug === plan && r.enabled) out.add(r.feature_slug);
-    if (plan !== "garage") {
+    if (isLegacy && plan !== "garage") {
       for (const slug of GARAGE_ONLY_FEATURES) out.delete(slug);
     }
     return out;

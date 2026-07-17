@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight, Building2, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, Navigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useShopRole } from "@/hooks/useShopRole";
+import { useOwnedShops } from "@/hooks/useOwnedShops";
 import MarketActivityCard from "@/components/MarketActivityCard";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
@@ -66,6 +67,25 @@ function OwnerDashboard() {
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
+  const { shops: ownedShops, primaryShopId } = useOwnedShops();
+
+  // "Modo Grupo" — visão consolidada da Oficina Mãe (Plano Garage).
+  // Só é oferecido quando: (1) o plano permite multi-oficina, (2) o utilizador
+  // é dono de pelo menos 2 oficinas, (3) está posicionado na Oficina Mãe.
+  // Uma Oficina Filha nunca vê o toggle porque a shop ativa não coincide com
+  // a primaryShopId, e porque só listamos shops onde `shops.user_id = auth.uid()`.
+  const isGroupEligible =
+    plan === 'garage' && ownedShops.length > 1 && !!activeShopId && activeShopId === primaryShopId;
+  const [viewModeRaw, setViewModeRaw] = useState<'shop' | 'group'>(() =>
+    (typeof window !== 'undefined' && localStorage.getItem('garageflow_view_mode') === 'group') ? 'group' : 'shop'
+  );
+  const isGroupMode = isGroupEligible && viewModeRaw === 'group';
+  const setViewMode = (v: 'shop' | 'group') => {
+    setViewModeRaw(v);
+    try { localStorage.setItem('garageflow_view_mode', v); } catch { /* noop */ }
+  };
+  const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
+
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -81,6 +101,10 @@ function OwnerDashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [perShopBreakdown, setPerShopBreakdown] = useState<Array<{
+    id: string; name: string; address: string | null; revenue: number; profit: number;
+    services: number; clients: number; vehicles: number; growth: number;
+  }>>([]);
 
   const loadData = useCallback(async () => {
       if (!isReady) return;
@@ -108,8 +132,13 @@ function OwnerDashboard() {
           return;
         }
         setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
-        setShopName(shop.name || '');
-        setShopLogoUrl(shop.logo_url || null);
+        setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
+        setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
+
+        // Grupo Mode → agregar todas as oficinas do dono (RLS já garante que
+        // `shops.user_id = auth.uid()`; groupShopIds nunca cruza contas).
+        // Modo Oficina → apenas a shop ativa.
+        const shopIds: string[] = isGroupMode && groupShopIds.length > 0 ? groupShopIds : [shop.id];
 
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -117,76 +146,77 @@ function OwnerDashboard() {
 
         const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
-            .select("total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart)
             .order("created_at", { ascending: false }),
           supabase.from("quotes")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .in("status", ['draft', 'sent']),
           supabase.from("work_orders")
             .select("client_id")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart),
           supabase.from("alerts")
             .select("id, title, type, status, due_date, created_at")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("status", "pending")
             .order("created_at", { ascending: false })
             .limit(5),
           supabase.from("work_orders")
-            .select("total, profit, status, created_at")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, profit, status, created_at")
+            .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo)
             .in("status", ['completed', 'delivered']),
           supabase.from("parts")
             .select("id, name, stock_quantity, min_stock")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("active", true),
           supabase.from("invoices")
             .select("id, number, total, due_date, clients(name)")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .in("status", ['issued', 'partial'])
             .lt("due_date", new Date().toISOString().slice(0, 10)),
           supabase.from("quotes")
             .select("id, status")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo),
           supabase.from("stock_movements")
             .select("quantity, parts(name)")
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .eq("type", "out")
             .order("created_at", { ascending: false })
             .limit(100),
           // Faturas do mês para KPI de faturação real
           supabase.from("invoices")
-            .select("total, subtotal, vat_total, status")
-            .eq("shop_id", shop.id)
+            .select("shop_id, total, subtotal, vat_total, status")
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart),
-          // Todos os clientes ativos (não apagados)
+          // Total de clientes ativos (não apagados) — em modo grupo: soma
+          // de todas as oficinas; em modo oficina: só a shop atual.
           supabase.from("clients")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .is("deleted_at", null),
         ]);
 
         const orders = ordersRes.data || [];
         const delivered = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-        
+
         // Faturação: combinar work_orders completadas + faturas emitidas/pagas do mês
         const woRevenue = delivered.reduce((s, o) => s + Number(o.total || 0), 0);
         const woProfit = delivered.reduce((s, o) => s + Number(o.profit || 0), 0);
-        
+
         const monthInvoices = (invoicesMonthRes.data || []).filter(
           (i: any) => ['issued', 'paid', 'partial'].includes(i.status)
         );
         const invRevenue = monthInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-        
+
         // Usar o maior dos dois (evitar duplicação se fatura vem de work_order)
         const revenue = Math.max(woRevenue, invRevenue);
         const profit = woRevenue > 0 ? woProfit : (invRevenue * 0.3); // estimativa se só há faturas
-        
+
         // Clientes ativos: total de clientes não apagados
         const totalClients = allClientsRes.count || 0;
 
@@ -221,7 +251,7 @@ function OwnerDashboard() {
       // Auto-generated alerts
         const dbAlerts = alertsRes.data || [];
         const autoAlerts: any[] = [];
-      
+
         const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
         if (lowStockParts.length > 0) {
           autoAlerts.push({
@@ -258,7 +288,7 @@ function OwnerDashboard() {
           monthMap.set(key, { revenue: 0, profit: 0 });
         }
 
-        allOrders.forEach(o => {
+        allOrders.forEach((o: any) => {
           const d = new Date(o.created_at);
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
           const entry = monthMap.get(key);
@@ -319,16 +349,76 @@ function OwnerDashboard() {
           const { count: qCount } = await supabase
             .from("quotes")
             .select("id", { count: "exact", head: true })
-            .eq("shop_id", shop.id)
+            .in("shop_id", shopIds)
             .gte("created_at", monthStart2);
           setMonthlyQuoteCount(qCount || 0);
+        }
+
+        // === Per-shop breakdown (apenas em Modo Grupo) ===
+        // Query única extra por métrica (2 queries agregadas totais para clientes
+        // e veículos), calculando o resto em JS a partir dos dados já obtidos.
+        if (isGroupMode && groupShopIds.length > 0) {
+          const [clientsPerShopRes, vehiclesPerShopRes] = await Promise.all([
+            supabase.from("clients")
+              .select("shop_id")
+              .in("shop_id", groupShopIds)
+              .is("deleted_at", null),
+            supabase.from("vehicles")
+              .select("shop_id")
+              .in("shop_id", groupShopIds),
+          ]);
+          const cliCount = new Map<string, number>();
+          (clientsPerShopRes.data || []).forEach((r: any) => cliCount.set(r.shop_id, (cliCount.get(r.shop_id) || 0) + 1));
+          const vehCount = new Map<string, number>();
+          (vehiclesPerShopRes.data || []).forEach((r: any) => vehCount.set(r.shop_id, (vehCount.get(r.shop_id) || 0) + 1));
+
+          // Faturação/lucro/serviços do mês corrente por oficina
+          const currRev = new Map<string, number>();
+          const currProfit = new Map<string, number>();
+          const currServices = new Map<string, number>();
+          delivered.forEach((o: any) => {
+            currRev.set(o.shop_id, (currRev.get(o.shop_id) || 0) + Number(o.total || 0));
+            currProfit.set(o.shop_id, (currProfit.get(o.shop_id) || 0) + Number(o.profit || 0));
+          });
+          orders.forEach((o: any) => {
+            currServices.set(o.shop_id, (currServices.get(o.shop_id) || 0) + 1);
+          });
+
+          // Faturação mês anterior por oficina para calcular crescimento
+          const prevRevByShop = new Map<string, number>();
+          (allOrdersRes.data || []).forEach((o: any) => {
+            const d = new Date(o.created_at);
+            if (d >= prevStart && d < prevEnd) {
+              prevRevByShop.set(o.shop_id, (prevRevByShop.get(o.shop_id) || 0) + Number(o.total || 0));
+            }
+          });
+
+          const breakdown = ownedShops.map((s) => {
+            const rev = currRev.get(s.id) || 0;
+            const pv = prevRevByShop.get(s.id) || 0;
+            const growth = pv > 0 ? ((rev - pv) / pv) * 100 : (rev > 0 ? 100 : 0);
+            return {
+              id: s.id,
+              name: s.name || '—',
+              address: s.address,
+              revenue: rev,
+              profit: currProfit.get(s.id) || 0,
+              services: currServices.get(s.id) || 0,
+              clients: cliCount.get(s.id) || 0,
+              vehicles: vehCount.get(s.id) || 0,
+              growth: Math.round(growth),
+            };
+          });
+          setPerShopBreakdown(breakdown);
+        } else {
+          setPerShopBreakdown([]);
         }
       } catch (error) {
         console.error("Dashboard load error:", error);
       } finally {
         setDataLoaded(true);
       }
-  }, [language, activeShopId, isReady, user, plan]);
+  }, [language, activeShopId, isReady, user, plan, isGroupMode, groupShopIds, ownedShops, t]);
 
   useEffect(() => {
     loadData();
@@ -407,7 +497,11 @@ function OwnerDashboard() {
       {/* Header */}
       <div className="page-header">
         <div className="flex items-center gap-4">
-          {shopLogoUrl ? (
+          {isGroupMode ? (
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+              <Layers className="w-6 h-6 text-primary-foreground" />
+            </div>
+          ) : shopLogoUrl ? (
             <img src={shopLogoUrl} alt={shopName} className="w-12 h-12 rounded-xl object-contain border border-border bg-background" />
           ) : (
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
@@ -415,12 +509,48 @@ function OwnerDashboard() {
             </div>
           )}
           <div>
-            <h1 className="page-title">{shopName || t('dashboard.title')}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">{t('dashboard.subtitle')}</p>
+            <h1 className="page-title flex items-center gap-2">
+              {shopName || t('dashboard.title')}
+              {isGroupMode && (
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary uppercase tracking-wider">
+                  {ownedShops.length} oficinas
+                </Badge>
+              )}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {isGroupMode
+                ? `Visão consolidada de todas as oficinas do grupo · ${t('dashboard.subtitle')}`
+                : t('dashboard.subtitle')}
+            </p>
           </div>
         </div>
-        {/* Search now lives permanently in the topbar — no duplicate pill here. */}
+        {/* Toggle "Modo Grupo" — visível apenas para a Oficina Mãe no plano Garage com >1 oficina */}
+        {isGroupEligible && (
+          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('shop')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                !isGroupMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={!isGroupMode}
+            >
+              <Building2 className="w-3.5 h-3.5" /> Esta oficina
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('group')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                isGroupMode ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={isGroupMode}
+            >
+              <Layers className="w-3.5 h-3.5" /> Grupo ({ownedShops.length})
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* Lite Mode = simplified guided dashboard. The Lite/Pro toggle lives in the topbar. */}
 
@@ -654,6 +784,76 @@ function OwnerDashboard() {
           ))
         )}
       </div>
+
+      {/* === Modo Grupo: Rankings + Breakdown por oficina === */}
+      {isGroupMode && dataLoaded && perShopBreakdown.length > 0 && (() => {
+        const byRevenue = [...perShopBreakdown].sort((a, b) => b.revenue - a.revenue);
+        const byProfit = [...perShopBreakdown].sort((a, b) => b.profit - a.profit);
+        const byServices = [...perShopBreakdown].sort((a, b) => b.services - a.services);
+        const byGrowth = [...perShopBreakdown].sort((a, b) => b.growth - a.growth);
+        const rankings = [
+          { label: 'Maior faturação', shop: byRevenue[0], value: `${currency}${byRevenue[0].revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
+          { label: 'Maior lucro', shop: byProfit[0], value: `${currency}${byProfit[0].profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
+          { label: 'Mais serviços', shop: byServices[0], value: `${byServices[0].services}`, icon: Wrench, color: 'text-blue-500' },
+          { label: 'Maior crescimento', shop: byGrowth[0], value: `${byGrowth[0].growth >= 0 ? '+' : ''}${byGrowth[0].growth}%`, icon: BarChart3, color: byGrowth[0].growth >= 0 ? 'text-emerald-500' : 'text-destructive' },
+        ];
+        return (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {rankings.map((r) => (
+                <div key={r.label} className="card-premium p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{r.label}</span>
+                    <r.icon className={`w-4 h-4 ${r.color}`} />
+                  </div>
+                  <div className="text-lg font-bold tabular-nums truncate">{r.value}</div>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">{r.shop.name}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card-premium p-3 sm:p-5">
+              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-primary" />
+                Resumo por oficina
+              </h2>
+              <div className="overflow-x-auto -mx-3 sm:mx-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                      <th className="py-2 px-3 font-semibold">Oficina</th>
+                      <th className="py-2 px-3 font-semibold text-right">Faturação</th>
+                      <th className="py-2 px-3 font-semibold text-right">Lucro</th>
+                      <th className="py-2 px-3 font-semibold text-right">Serviços</th>
+                      <th className="py-2 px-3 font-semibold text-right hidden sm:table-cell">Clientes</th>
+                      <th className="py-2 px-3 font-semibold text-right hidden sm:table-cell">Veículos</th>
+                      <th className="py-2 px-3 font-semibold text-right">Δ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byRevenue.map((s) => (
+                      <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="font-medium truncate max-w-[220px]">{s.name}</div>
+                          {s.address && <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">{s.address}</div>}
+                        </td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{currency}{s.revenue.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{currency}{s.profit.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{s.services}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.clients}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.vehicles}</td>
+                        <td className={`py-2.5 px-3 text-right mono tabular-nums text-xs ${s.growth > 0 ? 'text-emerald-500' : s.growth < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {s.growth > 0 ? '+' : ''}{s.growth}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Charts Row */}
       {plan !== 'free' && (

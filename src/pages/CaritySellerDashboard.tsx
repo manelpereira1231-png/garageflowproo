@@ -57,7 +57,7 @@ export default function CaritySellerDashboard() {
         .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_listings", filter: `seller_id=eq.${user.id}` }, () => loadData())
         .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_offers", filter: `seller_id=eq.${user.id}` }, () => loadData())
         .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_boosts", filter: `seller_id=eq.${user.id}` }, () => loadData())
-        .on("postgres_changes" as any, { event: "*", schema: "public", table: "carity_transactions", filter: `seller_id=eq.${user.id}` }, () => loadData())
+        
         .subscribe();
     })();
     return () => { if (channel) supabase.removeChannel(channel); };

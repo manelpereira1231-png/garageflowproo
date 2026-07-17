@@ -62,6 +62,7 @@ import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useOwnedShops } from "@/hooks/useOwnedShops";
 
 // Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"
 // (primary shop). Even the account owner does NOT see these when the active

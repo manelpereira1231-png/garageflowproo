@@ -827,7 +827,8 @@ export default function LandingPage() {
       </section>
       </Reveal>
 
-      {/* GarageFlow Market Section */}
+      {/* GarageFlow Market Section — hidden globally via `market_enabled` kill-switch */}
+      {marketEnabled === true && (
       <Reveal>
       <section className="py-16 sm:py-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -874,6 +875,7 @@ export default function LandingPage() {
         </div>
       </section>
       </Reveal>
+      )}
 
 
       {/* FAQ Section */}

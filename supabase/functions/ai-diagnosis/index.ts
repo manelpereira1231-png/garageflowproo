@@ -152,6 +152,7 @@ ${partsInfo}`;
     if (!toolCall) throw new Error("No diagnosis generated");
 
     const diagnosis = JSON.parse(toolCall.function.arguments);
+    await guard.saveCache(diagnosis);
     return new Response(JSON.stringify(diagnosis), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

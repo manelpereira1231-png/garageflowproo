@@ -169,6 +169,14 @@ export default function MarketLayout({ children, variant }: { children?: React.R
     window.location.assign("/dashboard?realm=erp");
   };
 
+  // Global kill-switch: when Super Admin disables `market_enabled`, every
+  // Market route becomes inaccessible — redirect to the root (which routes
+  // logged-in workshops to `/dashboard` and logged-out visitors to the
+  // landing page).
+  if (globalMarketReady && !globalMarketEnabled) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <MarketLayoutContext.Provider value={true}>
       <div className={`market-root ${isLight ? "market-light" : "market-dark"} min-h-screen ${isDealer ? "bg-zinc-950" : "bg-background"}`}>

@@ -395,8 +395,15 @@ export function useSubscription() {
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive
   // every feature gate across the app in real time.
-  const overrides = limitOverridesFor(effectivePlan, platformSettings);
-  const baseLimits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
+  // For unknown plan slugs (created by Super Admin via AdminPlans), start
+  // from the most permissive legacy baseline (garage); real per-feature
+  // gating is driven by the `plan_features` matrix via useFeature().
+  const legacyKey: LegacyPlan =
+    effectivePlan === 'free' || effectivePlan === 'pro' || effectivePlan === 'garage'
+      ? effectivePlan
+      : 'garage';
+  const overrides = limitOverridesFor(legacyKey, platformSettings);
+  const baseLimits: PlanLimits = { ...PLAN_LIMITS[legacyKey], ...(overrides as Partial<PlanLimits>) };
   // When mustSubscribe is true, lock EVERY feature (no free access at all).
   const LOCKED_LIMITS: PlanLimits = {
     maxQuotesPerMonth: 0,

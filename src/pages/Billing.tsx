@@ -163,18 +163,18 @@ export default function Billing() {
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
 
-  // Single source of truth: the ordered feature list comes from the admin
-  // feature matrix (`features` + `plan_features`, edited in /admin/features).
-  // Every plan card renders the SAME list in the SAME order — only the
-  // icon (✓ vs 🔒) changes per plan. See `buildPlanFeatureItems`.
-  const planMeta: { key: Plan; icon: React.ElementType; color: string }[] = [
-    { key: 'free',   icon: Gift,       color: 'text-muted-foreground' },
-    { key: 'pro',    icon: Crown,      color: 'text-primary' },
-    { key: 'garage', icon: Building2,  color: 'text-success' },
-  ];
-  const plans = planMeta.map((p) => ({
-    ...p,
-    items: buildPlanFeatureItems(p.key as "free" | "pro" | "garage", fxFeatures, fxMatrix),
+  // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
+  // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin
+  // faz aparecer automaticamente um cartão aqui — sem alterar código.
+  const { data: catalog } = usePlansCatalog();
+  const ICONS: Record<string, React.ElementType> = { crown: Crown, building: Building2, gift: Gift, shield: Shield, gauge: Gauge };
+  const plans = publicPlans(catalog, "billing").map((p) => ({
+    key: p.slug as Plan,
+    row: p,
+    icon: (p.icon && ICONS[p.icon]) || (p.sort_order >= 3 ? Building2 : p.sort_order === 2 ? Crown : Gift),
+    color: p.color || (p.sort_order >= 3 ? 'text-success' : p.sort_order === 2 ? 'text-primary' : 'text-muted-foreground'),
+    items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
+    isFeatured: p.sort_order === 2,
   }));
 
 

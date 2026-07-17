@@ -16,6 +16,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { VisualFlowBuilder, type FlowConditions } from "@/components/automations/VisualFlowBuilder";
 
 const TRIGGER_KEYS = [
   { value: "quote_created", label: "automations.trigger.quoteCreated" },

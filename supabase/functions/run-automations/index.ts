@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: completedRaw } = await supabase
               .from("work_orders")
-              .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
+              .select("id, number, total, labor_hours, clients(name, email, phone), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);

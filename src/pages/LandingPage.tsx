@@ -235,6 +235,14 @@ export default function LandingPage() {
       );
       base = row?.amount ?? 0;
     }
+    // CTA driven by Super Admin (`plans.cta_mode`): checkout | trial | demo | contact | unavailable.
+    const ctaMode = p.cta_mode || "trial";
+    const ctaKey =
+      ctaMode === "demo" || ctaMode === "contact"
+        ? "landing.ctaGarage"                 // "Pedir Demonstração"
+        : ctaMode === "unavailable"
+          ? "landing.ctaGarage"               // (disabled anyway; text irrelevant)
+          : "landing.ctaPro";                 // trial / checkout → "Testar Plano"
     return {
       slug: p.slug,
       nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
@@ -245,7 +253,8 @@ export default function LandingPage() {
         : '',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
-      ctaKey: `landing.ctaPro`, // CTA genérico; per-plan override via translation com fallback
+      ctaKey,
+      ctaMode,
       highlighted: p.sort_order === 2, // plano do meio destacado
       ctaPrimary: p.sort_order <= 2,
     };
@@ -810,14 +819,20 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to={plan.ctaKey === 'landing.ctaGarage' ? '/demo' : '/auth?mode=signup'}>
-                  <Button
-                    className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                    variant={plan.ctaPrimary ? "default" : "outline"}
-                  >
+                {plan.ctaMode === "unavailable" ? (
+                  <Button className="w-full" variant="outline" disabled>
                     {t(plan.ctaKey)}
                   </Button>
-                </Link>
+                ) : (
+                  <Link to={plan.ctaMode === "demo" || plan.ctaMode === "contact" ? "/demo" : "/auth?mode=signup"}>
+                    <Button
+                      className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                      variant={plan.ctaPrimary ? "default" : "outline"}
+                    >
+                      {t(plan.ctaKey)}
+                    </Button>
+                  </Link>
+                )}
               </div>
             ))}
           </div>

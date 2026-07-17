@@ -117,6 +117,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { shops, activeShopId, switchShop } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
+  const { primaryShopId, loading: primaryShopLoading } = usePrimaryShopId();
+  const { shops: ownedShops } = useOwnedShops();
+  // The active shop is a "Oficina Filha" (child) when the account owns other
+  // shops and the one currently selected is NOT the oldest (primary). Child
+  // shops NEVER see Billing/Stripe surfaces and NEVER trigger the paywall
+  // — the mother shop owns the subscription for the entire group.
+  const isChildShopContext = Boolean(
+    !primaryShopLoading && primaryShopId && activeShopId && activeShopId !== primaryShopId,
+  );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
@@ -134,15 +143,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Hard paywall: there is NO free tier. When the trial/subscription expires
   // (canceled, past_due, trial_expired, admin-managed expired), the user is
   // forced to /trial-expired and can only reach billing/support/logout.
+  //
+  // BUT: child shops (Oficinas Filhas) NEVER trigger the paywall. Billing is a
+  // group-level responsibility that lives on the primary shop (Oficina Mãe).
+  // If the child shop's `subscriptions` row is stale/expired for any reason,
+  // sending the child user to /trial-expired → /billing creates an infinite
+  // redirect loop (RoleProtectedRoute in App.tsx bounces /billing back out
+  // because it is a PRIMARY_ONLY path). Skip the paywall entirely here and
+  // let the mother account handle billing.
+  //
   // Super admins bypass this lock entirely.
   useEffect(() => {
     if (!mustSubscribe) return;
     if (isSuperAdmin) return;
+    if (isChildShopContext) return;
     const allowed = ["/trial-expired", "/billing", "/support", "/auth"];
     if (!allowed.some((p) => location.pathname.startsWith(p))) {
       navigate("/trial-expired", { replace: true });
     }
-  }, [mustSubscribe, isSuperAdmin, location.pathname, navigate]);
+  }, [mustSubscribe, isSuperAdmin, isChildShopContext, location.pathname, navigate]);
 
 
   useEffect(() => {
@@ -436,8 +455,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // by upgrading. The click handler intercepts and redirects to /billing.
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
-  const { primaryShopId } = usePrimaryShopId();
-  const { shops: ownedShops } = useOwnedShops();
   // "Oficina Mãe" account = user owns 2+ shops (i.e. has actually created a group).
   // Only this account can see/use the shop switcher and Multi-Oficina surfaces.
   // A child-only user (team member of a single child shop) or a single-shop owner

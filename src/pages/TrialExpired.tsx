@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, CreditCard, Crown, LifeBuoy, LogOut, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "@/hooks/use-toast";
+import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 /**
  * Hard paywall landing page.
@@ -17,12 +19,30 @@ import { toast } from "@/hooks/use-toast";
  * contact support, or sign out. All ERP surfaces (dashboard, clients,
  * vehicles, invoicing, market, APIs) remain gated at the RLS + hook
  * layer — this page is just the honest exit door.
+ *
+ * Child shops (Oficinas Filhas) NEVER manage billing — the mother account
+ * owns the group subscription. If a child shop lands here (stale sub row,
+ * direct URL, etc.) we redirect them straight to /dashboard instead of
+ * showing "Choose Plan" buttons that would loop through /billing.
  */
 export default function TrialExpired() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { subscription } = useSubscription();
+  const { primaryShopId, loading: primaryLoading } = usePrimaryShopId();
+  const activeShopId = useActiveShopId();
   const [portalLoading, setPortalLoading] = useState(false);
+
+  // Child-shop guard: if the active shop is not the mother, bounce to the
+  // dashboard. Billing belongs to the Oficina Mãe only.
+  useEffect(() => {
+    if (primaryLoading) return;
+    if (!primaryShopId || !activeShopId) return;
+    if (activeShopId !== primaryShopId) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [primaryLoading, primaryShopId, activeShopId, navigate]);
+
 
   const handlePortal = async () => {
     setPortalLoading(true);

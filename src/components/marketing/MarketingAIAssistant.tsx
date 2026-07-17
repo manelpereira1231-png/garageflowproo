@@ -42,16 +42,25 @@ export default function MarketingAIAssistant({ shopId, onCreateCampaign }: Props
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<AIInsight[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const quota = useAiQuota(shopId);
+  const noAi = !quota.loading && quota.limit === 0 && !quota.unlimited;
+  const exhausted = !quota.loading && !quota.unlimited && quota.remaining <= 0 && quota.limit > 0;
+  const blocked = noAi || exhausted;
 
   const analyze = useCallback(async () => {
-    if (!shopId) return;
+    if (!shopId || blocked) return;
     setLoading(true);
     setError(null);
     try {
       const { data, error } = await supabase.functions.invoke("marketing-ai-insights", {
         body: { shop_id: shopId },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = String((error as any)?.message ?? "");
+        if (msg.includes("plan_no_ai")) throw new Error("O seu plano não inclui IA.");
+        if (msg.includes("quota_exceeded")) throw new Error("Atingiu o limite mensal de créditos IA.");
+        throw error;
+      }
       if ((data as any)?.error) {
         const msg = (data as any)?.message || (data as any)?.error;
         setError(msg);
@@ -62,17 +71,17 @@ export default function MarketingAIAssistant({ shopId, onCreateCampaign }: Props
     } catch (e: any) {
       console.error(e);
       setError(e?.message ?? "Erro ao gerar sugestões");
-      toast.error("Não foi possível gerar sugestões IA");
+      toast.error(e?.message ?? "Não foi possível gerar sugestões IA");
     } finally {
       setLoading(false);
     }
-  }, [shopId]);
+  }, [shopId, blocked]);
 
   useEffect(() => {
-    if (shopId && insights === null) {
+    if (shopId && insights === null && !blocked && !quota.loading) {
       analyze();
     }
-  }, [shopId, insights, analyze]);
+  }, [shopId, insights, analyze, blocked, quota.loading]);
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card">

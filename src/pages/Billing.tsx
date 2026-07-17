@@ -171,7 +171,7 @@ export default function Billing() {
   // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
   // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin
   // faz aparecer automaticamente um cartão aqui — sem alterar código.
-  const { data: catalog } = usePlansCatalog();
+  // (catalog already fetched above via usePlansCatalog before the early return)
   const ICONS: Record<string, React.ElementType> = { crown: Crown, building: Building2, gift: Gift, shield: Shield, gauge: Gauge };
   const plans = publicPlans(catalog, "billing").map((p) => ({
     key: p.slug as Plan,

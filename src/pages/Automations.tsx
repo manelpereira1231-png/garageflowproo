@@ -16,6 +16,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { VisualFlowBuilder, type FlowConditions } from "@/components/automations/VisualFlowBuilder";
 
 const TRIGGER_KEYS = [
   { value: "quote_created", label: "automations.trigger.quoteCreated" },
@@ -321,8 +322,9 @@ export default function Automations() {
             <DialogTitle>{editingRule ? t('automations.edit') : t('automations.new')}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="config" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="config">{t('automations.config') || 'Configuração'}</TabsTrigger>
+              <TabsTrigger value="flow">Fluxo</TabsTrigger>
               <TabsTrigger value="template">{t('automations.template') || 'Template'}</TabsTrigger>
             </TabsList>
             <TabsContent value="config" className="space-y-3 mt-3">
@@ -361,6 +363,15 @@ export default function Automations() {
                   </SelectContent>
                 </Select>
               </div>
+            </TabsContent>
+            <TabsContent value="flow" className="mt-3">
+              <VisualFlowBuilder
+                triggerLabel={t(TRIGGER_KEYS.find(tk => tk.value === form.trigger_type)?.label || form.trigger_type)}
+                actionLabel={t(ACTION_KEYS.find(ak => ak.value === form.action_type)?.label || form.action_type)}
+                actionIcon={ACTION_KEYS.find(ak => ak.value === form.action_type)?.icon}
+                conditions={form.conditions as FlowConditions}
+                onChange={(next) => setForm({ ...form, conditions: next })}
+              />
             </TabsContent>
             <TabsContent value="template" className="space-y-3 mt-3">
               <div>

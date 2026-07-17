@@ -101,14 +101,31 @@ Deno.serve(async (req) => {
         // Track per-recipient labor summary for client emails
         const recipientLabor: Record<string, string> = {};
 
+        // Visual-flow conditions (persisted from the UI builder)
+        const cond = (rule.conditions || {}) as {
+          min_total?: number | null;
+          vip_only?: boolean;
+          client_tag?: string;
+          delay_minutes?: number | null;
+        };
+        const minTotal = Number(cond.min_total) || 0;
+        const delayMs = (Number(cond.delay_minutes) || 0) * 60 * 1000;
+        // Respect user-defined delay between runs of the same rule
+        if (delayMs > 0 && rule.last_run_at) {
+          const since = Date.now() - new Date(rule.last_run_at).getTime();
+          if (since < delayMs) continue;
+        }
+
+
         switch (rule.trigger_type) {
           case "invoice_overdue": {
-            const { data: overdue } = await supabase
+            const { data: overdueRaw } = await supabase
               .from("invoices")
               .select("id, number, client_id, total, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "issued")
               .lt("due_date", new Date().toISOString().split("T")[0]);
+            const overdue = (overdueRaw || []).filter(i => (Number((i as any).total) || 0) >= minTotal);
             if (overdue && overdue.length > 0) {
               triggered = true;
               details = { count: overdue.length, invoices: overdue.map(i => i.number) };
@@ -207,12 +224,13 @@ Deno.serve(async (req) => {
           }
           case "quote_approved": {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
-            const { data: approved } = await supabase
+            const { data: approvedRaw } = await supabase
               .from("quotes")
               .select("id, number, total, labor_hours, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "approved")
               .gte("created_at", oneDayAgo);
+            const approved = (approvedRaw || []).filter(q => (Number((q as any).total) || 0) >= minTotal);
             if (approved && approved.length > 0) {
               triggered = true;
               details = { count: approved.length };
@@ -226,12 +244,13 @@ Deno.serve(async (req) => {
           }
           case "service_completed": {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
-            const { data: completed } = await supabase
+            const { data: completedRaw } = await supabase
               .from("work_orders")
               .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);
+            const completed = (completedRaw || []).filter(wo => (Number((wo as any).total) || 0) >= minTotal);
             if (completed && completed.length > 0) {
               triggered = true;
               details = { count: completed.length };

@@ -145,6 +145,20 @@ Deno.serve(async (req) => {
     const { data: isSuper } = await supa.rpc("is_super_admin", { _user_id: user.id });
     if (!isSuper) return json({ error: "Forbidden" }, 403);
 
+    // Cost control: global budget (image gen costs more)
+    const userSupa = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: budget } = await userSupa.rpc("consume_platform_ai_credit", {
+      _function_name: "marketing-creative", _cost: 5, _metadata: {},
+    });
+    if (!(budget as any)?.allowed) {
+      const reason = (budget as any)?.reason || "blocked";
+      const status = reason === "rate_limited" ? 429 : reason === "forbidden" ? 403 : 402;
+      return json({ error: reason, quota: budget }, status);
+    }
+
+
     const body = await req.json();
     const creativeType: string = body?.creativeType ?? "modern_shop";
     const campaignId: string | null = body?.campaignId ?? null;

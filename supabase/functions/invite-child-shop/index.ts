@@ -63,22 +63,30 @@ Deno.serve(async (req) => {
       return json({ error: "INVALID_EMAIL" }, 400);
     }
 
-    // Plan quota
+    // Only the real group owner / Oficina Mãe can create child shops.
+    // A child account may own its own auth user, but must never create/manage
+    // sibling shops or inherit the mother's quota through a direct function call.
+    const { data: mother } = await admin
+      .from("shops")
+      .select("id, country, currency, country_code, timezone, language, vat_rate, labor_rate")
+      .eq("group_owner_id", caller.id)
+      .eq("user_id", caller.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!mother) {
+      return json({ error: "NOT_GROUP_OWNER" }, 403);
+    }
+
+    // Plan quota — source of truth lives in the backend RPC and uses the
+    // dynamic plan catalogue / max_shops limit for this group.
     const { data: status } = await admin.rpc("get_shop_creation_status", {
       _user_id: caller.id,
     });
     if (!status?.allowed) {
       return json({ error: "SHOP_LIMIT_REACHED", status }, 403);
     }
-
-    // Inherit defaults from the mother shop so the new row satisfies NOT NULLs.
-    const { data: mother } = await admin
-      .from("shops")
-      .select("country, currency, country_code, timezone, language, vat_rate, labor_rate")
-      .eq("group_owner_id", caller.id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
 
     // 1) Create the auth account for the child shop.
     //    inviteUserByEmail is idempotent per address on Supabase — if the user

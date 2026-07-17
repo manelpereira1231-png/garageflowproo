@@ -82,6 +82,13 @@ async function fetchCatalog(): Promise<PlansCatalog> {
     ...p,
     limits: (p.limits ?? {}) as Record<string, number | boolean>,
     cta_mode: (p.cta_mode ?? "trial") as PlanCtaMode,
+    cta_label: p.cta_label ?? null,
+    cta_url: p.cta_url ?? null,
+    badge_label: p.badge_label ?? null,
+    show_button: p.show_button ?? true,
+    show_price: p.show_price ?? true,
+    show_trial: p.show_trial ?? true,
+    show_badge: p.show_badge ?? true,
   })) as PlanRow[];
 
   const featuresByPlan: Record<string, PlanFeatureRow[]> = {};

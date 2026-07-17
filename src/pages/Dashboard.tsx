@@ -7,6 +7,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useAuthReady } from "@/hooks/useAuthReady";
@@ -67,24 +68,31 @@ function OwnerDashboard() {
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
-  const { shops: ownedShops, primaryShopId } = useOwnedShops();
+  const { shops: ownedShops } = useOwnedShops();
 
-  // "Modo Grupo" — visão consolidada da Oficina Mãe (Plano Garage).
-  // Só é oferecido quando: (1) o plano permite multi-oficina, (2) o utilizador
-  // é dono de pelo menos 2 oficinas, (3) está posicionado na Oficina Mãe.
-  // Uma Oficina Filha nunca vê o toggle porque a shop ativa não coincide com
-  // a primaryShopId, e porque só listamos shops onde `shops.user_id = auth.uid()`.
-  const isGroupEligible =
-    plan === 'garage' && ownedShops.length > 1 && !!activeShopId && activeShopId === primaryShopId;
-  const [viewModeRaw, setViewModeRaw] = useState<'shop' | 'group'>(() =>
-    (typeof window !== 'undefined' && localStorage.getItem('garageflow_view_mode') === 'group') ? 'group' : 'shop'
-  );
-  const isGroupMode = isGroupEligible && viewModeRaw === 'group';
-  const setViewMode = (v: 'shop' | 'group') => {
-    setViewModeRaw(v);
-    try { localStorage.setItem('garageflow_view_mode', v); } catch { /* noop */ }
+  // Seletor de contexto — Oficina Mãe (dono do grupo) no plano Garage com >1 oficina.
+  // Só quem é `shops.user_id = auth.uid()` de várias oficinas vê o seletor:
+  // membros de equipa de uma oficina filha nunca aparecem em `ownedShops` (RLS +
+  // filtro explícito no hook), portanto nunca acedem à opção "Todas as oficinas"
+  // nem aos dados agregados. Isolamento por shop_id permanece intacto.
+  const isOwnerOfGroup = plan === 'garage' && ownedShops.length > 1;
+  const [selectedFilter, setSelectedFilterRaw] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'all';
+    return localStorage.getItem('garageflow_dashboard_filter') || 'all';
+  });
+  const isGroupMode = isOwnerOfGroup && selectedFilter === 'all';
+  const setSelectedFilter = (v: string) => {
+    setSelectedFilterRaw(v);
+    try { localStorage.setItem('garageflow_dashboard_filter', v); } catch { /* noop */ }
+    // Ao escolher uma oficina específica, sincroniza o activeShopId global
+    // (via useSyncExternalStore) para que os cartões, navegação e destinos
+    // filtrem já pela oficina selecionada, sem refresh.
+    if (v !== 'all' && v !== activeShopId) {
+      try { localStorage.setItem('garageflow_active_shop', v); } catch { /* noop */ }
+    }
   };
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
+
 
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
@@ -524,31 +532,34 @@ function OwnerDashboard() {
             </p>
           </div>
         </div>
-        {/* Toggle "Modo Grupo" — visível apenas para a Oficina Mãe no plano Garage com >1 oficina */}
-        {isGroupEligible && (
-          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode('shop')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                !isGroupMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={!isGroupMode}
-            >
-              <Building2 className="w-3.5 h-3.5" /> Esta oficina
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('group')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                isGroupMode ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={isGroupMode}
-            >
-              <Layers className="w-3.5 h-3.5" /> Grupo ({ownedShops.length})
-            </button>
+        {/* Seletor de contexto — visível apenas para a Oficina Mãe (dono) no plano Garage com >1 oficina */}
+        {isOwnerOfGroup && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground hidden sm:inline">Contexto</span>
+            <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+              <SelectTrigger className="h-9 min-w-[180px] text-xs sm:text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 text-primary" />
+                    Todas as oficinas ({ownedShops.length})
+                  </span>
+                </SelectItem>
+                {ownedShops.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                      {s.name || '—'}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
+
       </div>
 
 
@@ -1022,6 +1033,7 @@ function OwnerDashboard() {
               const plate = v.plate || '';
               const makeModel = [v.make, v.model].filter(Boolean).join(' ');
               const time = s.created_at ? new Date(s.created_at).toLocaleTimeString(language === 'pt' ? 'pt-PT' : undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+              const shopBadge = isGroupMode ? (ownedShops.find(o => o.id === s.shop_id)?.name || null) : null;
               return (
                 <div key={s.number} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
                   <div className="min-w-0 flex-1">
@@ -1029,6 +1041,7 @@ function OwnerDashboard() {
                       <span className="mono text-sm font-medium">{s.number}</span>
                       {plate && <span className="mono text-[11px] px-1.5 py-0.5 rounded bg-muted/70 border border-border/60">{plate}</span>}
                       <span className="text-xs text-muted-foreground truncate">{makeModel}</span>
+                      {shopBadge && <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">{shopBadge}</span>}
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
                       <span className="truncate">{(s.clients as any)?.name || '—'}</span>

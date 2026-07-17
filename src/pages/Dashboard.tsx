@@ -14,6 +14,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useShopRole } from "@/hooks/useShopRole";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 import MarketActivityCard from "@/components/MarketActivityCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
 

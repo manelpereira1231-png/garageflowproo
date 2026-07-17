@@ -1,177 +1,79 @@
+# Acesso Independente para Oficinas Filhas
 
-# Auditoria Enterprise ao Painel de Administração
+Hoje, uma oficina filha é criada com `shops.user_id = <id da oficina mãe>`, ou seja, é apenas mais uma oficina do mesmo utilizador. Não existe login próprio. Vamos passar a criar uma **conta Auth dedicada** para cada oficina filha, mantendo a mãe com poder total de gestão mas **sem partilhar credenciais**.
 
-## 1. Inventário atual (41 páginas de admin)
+## Novo modelo de propriedade
 
-Agrupadas por assunto real, para expor sobreposições:
+- Cada oficina passa a ter um **owner auth próprio** (`shops.user_id` = utilizador dessa oficina).
+- A ligação ao grupo passa por uma **nova coluna** `shops.group_owner_id` (uuid, references `auth.users`) — sempre igual ao `user_id` da Oficina Mãe.
+- Oficina Mãe: `group_owner_id = user_id = <auth do fundador>`.
+- Oficina Filha: `group_owner_id = <auth do fundador>`, `user_id = <auth dedicado da filha>`.
 
-**Dashboards / visões gerais (6 páginas — 4 sobrepostas)**
-- `AdminDashboard` (Centro de Controlo)
-- `AdminBusinessMetrics` (métricas de negócio)
-- `AdminSystemHealth` (saúde sistema)
-- `AdminSystemControl` (funcionalidades + avisos + kill switches)
-- `AdminMarketDashboard` (dashboard marketplace)
-- `AdminCarity` (inspeções — herdou nome legacy)
+Backfill: para todas as shops existentes, `group_owner_id := user_id` (comportamento atual preservado).
 
-**Planos / preços / funcionalidades (4 páginas — dispersas)**
-- `AdminPlans` — nome, estado, ordem, limites, CTAs, IA
-- `AdminFeatureMatrix` — matriz de features por plano
-- `AdminCountries` — preços Stripe por país
-- `AdminAIControl` — limites de IA por plano/global
+## Fluxo de criação (novo)
 
-**Billing / Finance / Reports / Accounting (5 páginas — 3 sobrepostas)**
-- `AdminBilling` (planos + subscrições listagem)
-- `AdminFinance` (receita/MRR)
-- `AdminReports` (relatórios gerais, KPIs)
-- `AdminAccounting` (contabilidade)
-- `AdminBusinessMetrics` (também mostra MRR/ARR)
+1. Mãe abre "Criar Oficina" → preenche **nome** + **email do responsável da filha**.
+2. Frontend chama edge function `invite-child-shop` (service role) que:
+   a. Valida que o chamador é dono do grupo e que o limite do plano permite.
+   b. Cria `shops` com `user_id = temp placeholder` — na verdade, faz tudo numa transação server-side (SQL RPC ou dentro da edge function): chama `supabase.auth.admin.inviteUserByEmail(email, { redirectTo: "https://www.garageflow.pt/auth/set-password" })`.
+   c. Recebe o `user.id` do convite.
+   d. Insere `shops` com `user_id = <novo user>`, `group_owner_id = auth.uid() do chamador`, `name = ...`, herda plano/subscrição (trigger `handle_new_shop_subscription` já preparado).
+   e. Insere `shop_users(shop_id, user_id=<novo>, role='owner')`.
+3. Supabase envia o email de convite (template `invite`) com o link assinado.
+4. Utilizador da filha clica → página `/auth/set-password` (nova) → define password → sessão válida → entra direto na sua oficina.
 
-**Marketplace (7 páginas)**
-- `AdminMarketDashboard`, `AdminMarketListings`, `AdminCarity` (inspeções), `AdminMarketEscrows`, `AdminMarketKYC`, `AdminMarketActivations`, `AdminRiskEngine`
+## Isolamento (RLS)
 
-**Marketing / Growth (6 páginas — 4 sobrepostas)**
-- `AdminMarketing`, `AdminMarketingAutopilot`, `AdminGrowth`, `AdminGrowthOpportunities`, `AdminTraffic`, `AdminFeatureAdoption`, `AdminSeo`, `AdminSeoBlog`, `AdminCoupons`
+Ajustes mínimos — a maioria já está protegida por `user_id`/membership:
+- `shops` policies mantêm `user_id = auth.uid()` para o dono direto. Mãe deixa de "ver" a filha por posse; passa a ver por **`group_owner_id = auth.uid()`** (nova policy adicional só para leitura/gestão de grupo).
+- Nova função `is_group_owner(_shop_id)` SECURITY DEFINER para triggers/policies de gestão.
+- Todas as tabelas operacionais (clients, vehicles, quotes, invoices, etc.) continuam scoped por `shop_id` via `shop_users` → automaticamente isoladas. A mãe **não** recebe membership nas filhas.
+- Frontend: `usePrimaryShopId` passa a devolver a shop cujo `id = user_id = auth.uid()` (ou seja, a filha só vê a sua). `useShopContext` já filtra por owned+member; para a filha só existirá 1 shop → `ShopSwitcher` continua oculto (regra `shops.length <= 1` já implementada).
 
-**Utilizadores / Suporte (5 páginas — parcialmente sobrepostas)**
-- `AdminUsers`, `AdminShops`, `AdminShopDetail`, `AdminDemoRequests`, `AdminSupport`, `AdminComplaints`, `AdminActionQueue`, `AdminPartners`
+## Gestão pela Mãe
 
-**Sistema (7 páginas — dispersas)**
-- `AdminSettings`, `AdminSystemControl`, `AdminSystemHealth`, `AdminLogs`, `AdminAlerts`, `AdminEmailLogs`, `AdminRateLimits`
+Continua a funcionar via `useOwnedShops`, mas passa a consultar por `group_owner_id = auth.uid()` em vez de `user_id`. Ações permitidas:
+- Criar filha (fluxo acima).
+- Eliminar filha (`delete_child_shop` RPC — ajustar check para `group_owner_id`).
+- **Reenviar convite**: novo botão no diálogo "Gerir Oficinas" → chama edge function `resend-child-invite` que faz `auth.admin.generateLink({ type: 'invite' | 'recovery' })` e reenvia email.
+- Suspender: flag `shops.suspended_at` (nova) — quando marcada, `shop_users` policies negam acesso ao dono da filha. Mãe pode reativar.
 
-## 2. Duplicações confirmadas (evidência)
+Mãe **nunca** vê/define a password — apenas dispara convites/recovery.
 
-| # | Duplicação | Onde | Deve viver em |
-|---|---|---|---|
-| D1 | **Estado/nome do plano** editável | `AdminPlans` **e** `AdminBilling` (edição inline de subscrições altera plano) | `AdminPlans` (fonte única) |
-| D2 | **Preço do plano** | `AdminPlans` (default) **e** `AdminCountries` (por país) — ambos gravam | `AdminCountries` (por país é a verdade) + `AdminPlans` lê |
-| D3 | **Features por plano** | `AdminPlans` (limits + `has_features`) **e** `AdminFeatureMatrix` | `AdminFeatureMatrix` (fonte única) |
-| D4 | **Limites (utilizadores, oficinas, IA)** | `AdminPlans.limits_json` **e** `AdminAIControl` (limites IA) | `AdminPlans.limits_json` — `AdminAIControl` só orçamento global |
-| D5 | **Trial (dias)** | `AdminPlans` **e** `AdminSystemControl` (platform_settings) | `AdminPlans` |
-| D6 | **Kill switches / feature flags** | `AdminSystemControl` **e** `AdminSettings` | `AdminSystemControl` |
-| D7 | **MRR/ARR/receita** exibida | `AdminFinance`, `AdminReports`, `AdminBusinessMetrics`, `AdminDashboard` | `AdminFinance` (canónico) + Dashboard só mostra widget |
-| D8 | **Marketing** | `AdminMarketing` + `AdminMarketingAutopilot` + `AdminGrowth` + `AdminGrowthOpportunities` | Unificar rota `/admin/marketing` com tabs |
-| D9 | **Tráfego/adoção** | `AdminTraffic` + `AdminFeatureAdoption` | Sub-tabs de `AdminMarketing` (Aquisição/Adoção) |
-| D10 | **Marketplace overview** | `AdminMarketDashboard` **e** `AdminCarity` (mistura inspeções + overview) | Split: dashboard vs inspeções |
-| D11 | **Comissões marketplace** | `country_settings.market_commission_rate` **e** `carity_listings.commission_rate` (por anúncio) | `country_settings` (defaults) + listing só override justificado |
-| D12 | **Alertas / notificações admin** | `AdminAlerts` + `AdminEmailLogs` + `AdminComplaints` + `AdminActionQueue` | Unificar `AdminActionQueue` como inbox operacional |
-| D13 | **Utilizadores vs Oficinas** | `AdminUsers` e `AdminShops` cruzam dados de utilizadores/donos | Manter separadas mas com link canónico shop→users |
+## Página de definição de password
 
-## 3. Hardcodes detetados (`if (plan === 'free'|'pro'|'garage')`)
+Nova rota pública `/auth/set-password`:
+- Lê `type=invite` ou `type=recovery` do hash Supabase.
+- Formulário simples: nova password + confirmação → `supabase.auth.updateUser({ password })`.
+- Após sucesso → redireciona para `/dashboard`.
 
-Ocorrências em produção:
-- `src/lib/features.ts` (linhas 98, 189, 218, 231) — fallback legacy
-- `src/lib/platformSettings.ts` (145–171) — mapeia gates a nomes fixos
-- `src/pages/Dashboard.tsx` (79, 362, 670, 715)
-- `src/pages/Quotes.tsx`, `src/pages/QuoteForm.tsx`
-- `src/pages/Settings.tsx` (217)
-- `src/lib/pdfGenerator.ts` (65), `src/lib/invoicePdfGenerator.ts` (76)
-- `src/pages/MarketDealerDashboard.tsx` (112)
-- `src/pages/admin/AdminReports.tsx` (129–179)
-- `src/pages/admin/AdminDashboard.tsx` (88)
+## Emails
 
-Estes são o núcleo do problema "editar plano no admin não reflete em todo o lado" — cada um destes ficheiros ignora o catálogo dinâmico.
+Usar o template **invite** oficial do Supabase Auth. Se o projeto já tem `auth-email-hook` scaffolded, personalizar o `.tsx` `invite` com o copy pedido (assunto: "Foi convidado para aceder ao GarageFlow", link "Definir Palavra-passe", nota "Se não reconhece este convite, ignore este email"). Nunca enviar passwords em texto.
 
-## 4. Configurações mortas / redundantes
+## Migração de dados existentes
 
-- `AdminSettings` sobrepõe-se totalmente a `AdminSystemControl` — candidato a arquivar.
-- `AdminGrowth` e `AdminGrowthOpportunities` — duas páginas com o mesmo objetivo.
-- `AdminMarketingAutopilot` — sub-área de Marketing.
-- `AdminAlerts` — hoje é apenas um feed que já existe em `AdminActionQueue`.
+- Backfill `group_owner_id = user_id` em todas as shops.
+- Shops filhas atuais (mesmo `user_id` da mãe) permanecem como estão — o fundador continua a ser dono técnico. Para lhes dar acesso independente **pode-se, opcionalmente**, correr no Admin "Emancipar oficina" → dispara `invite-child-shop-existing` que cria conta separada e transfere `user_id`.
 
-## 5. Nova arquitetura proposta (menus)
+## Ficheiros afetados (resumo técnico)
 
-7 grupos, cada opção existe uma única vez:
+- **SQL migration**: coluna `shops.group_owner_id` + backfill + índice; função `is_group_owner`; ajuste `delete_child_shop`, `check_shop_creation_limit`, `get_shop_creation_status` para usar `group_owner_id`; nova policy `shops_group_owner_read` (SELECT) para a mãe ver shops do grupo; coluna `shops.suspended_at` (nullable).
+- **Edge functions**: `supabase/functions/invite-child-shop/index.ts`, `supabase/functions/resend-child-invite/index.ts` (service role).
+- **Frontend**:
+  - `src/components/ShopSwitcher.tsx` — troca `insert shops` por `functions.invoke('invite-child-shop')`; adiciona ação "Reenviar convite".
+  - `src/hooks/useOwnedShops.ts` / `usePrimaryShopId.ts` — query por `group_owner_id`.
+  - `src/pages/AuthSetPassword.tsx` (novo) + rota em `App.tsx`.
+  - Ajuste do template invite em `supabase/functions/_shared/email-templates/invite.tsx` (se existir; caso contrário scaffold).
 
-```
-Plataforma
-  Centro de Controlo        /admin
-  Saúde do Sistema          /admin/system-health
-  Kill Switches & Flags     /admin/system              (ex-SystemControl)
-  Idiomas & Moedas          /admin/settings?tab=locale (canónico aqui)
-  Auditoria                 /admin/logs
-  Emails                    /admin/emails
-  Rate Limits               /admin/rate-limits
+## Testes (checklist)
 
-Planos
-  Planos                    /admin/plans               (fonte única: nome/estado/ordem/trial/limits/IA)
-  Funcionalidades           /admin/features            (fonte única de features)
-  Preços por País           /admin/countries           (fonte única de preços)
-  Cupões & Promoções        /admin/coupons
-  IA (Custos & Orçamento)   /admin/ai-control          (só orçamento global — limites por plano vivem em Planos)
+Criação → email chega → set-password → login → só vê a sua oficina → mãe vê ambas → mãe reenvia convite → mãe elimina → link expirado pede novo convite.
 
-Clientes
-  Oficinas                  /admin/shops
-  Utilizadores              /admin/users
-  Subscrições & Faturas     /admin/billing             (só leitura de estado Stripe — não edita planos)
-  Receita                   /admin/finance             (canónico MRR/ARR)
-  Contabilidade             /admin/accounting
-  Relatórios                /admin/reports             (compostos, lê de finance)
+---
 
-Marketplace
-  Marketplace (Overview)    /admin/market-dashboard
-  Anúncios                  /admin/market-listings
-  Inspeções                 /admin/market
-  Escrow & Disputas         /admin/market-escrows
-  KYC                       /admin/market-kyc
-  Adesões                   /admin/market-activations
-  Risk Engine               /admin/risk-engine
-  Comissões                 (sub-tab em Países — não duplicar)
-
-Marketing
-  Campanhas                 /admin/marketing?tab=campaigns
-  Autopiloto                /admin/marketing?tab=autopilot   (ex-MarketingAutopilot)
-  Oportunidades             /admin/marketing?tab=growth      (ex-Growth + GrowthOpportunities)
-  Aquisição (Tráfego)       /admin/marketing?tab=traffic     (ex-Traffic)
-  Adoção                    /admin/marketing?tab=adoption    (ex-FeatureAdoption)
-  SEO                       /admin/seo
-  Blog                      /admin/seo-blog
-
-Suporte
-  Action Queue (Inbox)      /admin/action-queue        (agrega alertas + reclamações)
-  Reclamações               /admin/complaints
-  Suporte                   /admin/support
-  Demonstrações             /admin/demos
-  Parceiros                 /admin/partners
-
-Operações
-  Veículos (Global)         /admin/vehicles
-```
-
-Páginas fundidas em tabs, **sem eliminar código** — ficheiros existentes montam-se como tabs da mesma rota, garantindo zero regressões. `AdminSettings` e `AdminAlerts` continuam acessíveis por URL para links antigos, mas saem do menu.
-
-## 6. Refactor de fonte única — o que muda no backend
-
-Zero alterações a schema, RLS, Stripe, Edge Functions ou RBAC.
-
-Alterações apenas em `src/lib/features.ts`, `platformSettings.ts` e páginas com `plan === 'x'` para lerem sempre do catálogo (`usePlansCatalog`, `plan_limits_catalog`, `plan_country_prices`). Cada consumidor passa a resolver via helpers já existentes (`hasFeature`, `getLimit`, `getPlanPrice`).
-
-## 7. Plano de execução seguro (por lotes)
-
-**Lote 1 — Reorganização do menu** (`src/components/AdminLayout.tsx`)
-- Reescrever `navSections` com os 7 grupos acima.
-- Manter todas as rotas existentes (sem apagar páginas).
-- Zero risco funcional.
-
-**Lote 2 — Fusão em tabs** (Marketing e Sistema)
-- `AdminMarketing.tsx` passa a expor tabs internas que fazem `lazy import` de `AdminMarketingAutopilot`, `AdminGrowth`, `AdminGrowthOpportunities`, `AdminTraffic`, `AdminFeatureAdoption`.
-- `AdminSystemControl.tsx` absorve os toggles de `AdminSettings` (mantendo `/admin/settings` como redirect para a tab correta).
-
-**Lote 3 — Remover duplicação de edição**
-- `AdminBilling`: remover controlos que editam o plano; passar a mostrar só o estado Stripe e link "Editar plano em /admin/plans".
-- `AdminAIControl`: remover campos de limite por plano; passar a ler `plan_limits_catalog` e editar apenas orçamento global.
-
-**Lote 4 — Erradicar hardcodes**
-- Substituir `plan === 'free'|'pro'|'garage'` por leitura de features/limites no catálogo, ficheiro a ficheiro (lista da secção 3).
-
-**Lote 5 — Relatório final** com diff de duplicações eliminadas, hardcodes removidos e mapa de propagação (create/edit plan → landing/checkout/billing/erp).
-
-## 8. Aprovação necessária
-
-Preciso de confirmar antes de tocar em código:
-
-1. Confirmas os **7 grupos de menu** e as fusões em tabs propostas (secção 5)?
-2. Confirmas que `AdminSettings` e `AdminAlerts` saem do menu (mas rotas continuam vivas para não partir bookmarks)?
-3. Executo os **5 lotes em sequência** com commit por lote, ou preferes ver só o Lote 1 primeiro para validar?
-4. Alguma página desta lista que **não pode** ser tocada nesta ronda?
-
-Assim que confirmares, arranco pelo Lote 1 (só sidebar, zero risco) e sigo até ao 5.
+**Confirmar antes de avançar:**
+1. OK adicionar `group_owner_id` (nova coluna, backfill seguro)?
+2. Mãe passa a **não ter** acesso operacional aos dados da filha (só gestão). Correto? Ou queres que mãe também consiga entrar na oficina filha como super-owner?
+3. Oficinas filhas existentes: deixar como estão (posse do fundador) ou migrar todas para contas independentes agora?

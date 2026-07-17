@@ -435,9 +435,16 @@ export default function Billing() {
                 {t('billing.cancelSubscription')}
               </Button>
             )}
-            {/* Subscribe — shown when the user has no active plan */}
+            {/* Subscribe — usa o plano "destaque" (isFeatured) do catálogo, ou o primeiro plano público */}
             {noActivePlan && (
-              <Button onClick={() => handleUpgrade('pro')} disabled={upgrading} className="gradient-primary text-primary-foreground">
+              <Button
+                onClick={() => {
+                  const featured = plans.find(p => p.isFeatured) || plans[0];
+                  if (featured) handleUpgrade(featured.key);
+                }}
+                disabled={upgrading || plans.length === 0}
+                className="gradient-primary text-primary-foreground"
+              >
                 <Crown className="w-4 h-4 mr-2" />
                 {t('billing.subscribe') || 'Subscrever'}
               </Button>

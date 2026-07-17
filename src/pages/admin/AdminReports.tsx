@@ -31,13 +31,6 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: "hsl(var(--destructive))",
   expired: "hsl(var(--muted-foreground))",
 };
-const STATUS_COLORS: Record<string, string> = {
-  active: "hsl(var(--chart-3))",
-  trialing: "hsl(var(--primary))",
-  cancelled: "hsl(var(--destructive))",
-  canceled: "hsl(var(--destructive))",
-  expired: "hsl(var(--muted-foreground))",
-};
 
 interface ReportData {
   // Revenue

@@ -9,7 +9,16 @@ import {
   type PlatformSettings,
 } from "@/lib/platformSettings";
 
-export type Plan = 'free' | 'pro' | 'garage';
+/**
+ * Plan slug. `'free' | 'pro' | 'garage'` are the historical/legacy slugs
+ * with hardcoded fallbacks in this file. Any other string is a plan
+ * created dynamically by Super Admin via `AdminPlans` — its limits are
+ * resolved from `plan_features` matrix (loaded by `src/lib/features.ts`)
+ * and Admin overrides in `platform_settings`. No code change is needed
+ * to add a new plan.
+ */
+export type Plan = 'free' | 'pro' | 'garage' | (string & {});
+export type LegacyPlan = 'free' | 'pro' | 'garage';
 
 export interface Subscription {
   id: string;
@@ -386,8 +395,15 @@ export function useSubscription() {
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive
   // every feature gate across the app in real time.
-  const overrides = limitOverridesFor(effectivePlan, platformSettings);
-  const baseLimits: PlanLimits = { ...PLAN_LIMITS[effectivePlan], ...(overrides as Partial<PlanLimits>) };
+  // For unknown plan slugs (created by Super Admin via AdminPlans), start
+  // from the most permissive legacy baseline (garage); real per-feature
+  // gating is driven by the `plan_features` matrix via useFeature().
+  const legacyKey: LegacyPlan =
+    (effectivePlan === 'free' || effectivePlan === 'pro' || effectivePlan === 'garage')
+      ? (effectivePlan as LegacyPlan)
+      : 'garage';
+  const overrides = limitOverridesFor(legacyKey, platformSettings);
+  const baseLimits: PlanLimits = { ...PLAN_LIMITS[legacyKey], ...(overrides as Partial<PlanLimits>) };
   // When mustSubscribe is true, lock EVERY feature (no free access at all).
   const LOCKED_LIMITS: PlanLimits = {
     maxQuotesPerMonth: 0,

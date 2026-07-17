@@ -22,7 +22,7 @@ export interface FeatureRow {
 }
 
 export interface PlanFeatureRow {
-  plan_slug: "free" | "pro" | "garage";
+  plan_slug: string;
   feature_slug: string;
   enabled: boolean;
   limits: Record<string, any>;
@@ -82,6 +82,11 @@ const FALLBACK_PLAN_FEATURES: Record<Plan, string[]> = {
   ],
 };
 
+/**
+ * Legacy hardcoded restriction — only used as a fallback when the DB
+ * matrix hasn't loaded yet. Custom plans skip this and rely purely on
+ * the `plan_features` matrix.
+ */
 const GARAGE_ONLY_FEATURES = new Set(["marketing", "loyalty"]);
 const FEATURE_LOAD_TIMEOUT_MS = 3000;
 
@@ -89,7 +94,10 @@ function timeoutResult<T>(value: T, ms = FEATURE_LOAD_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
 
-const fallbackFeatureSetFor = (plan: Plan) => new Set(FALLBACK_PLAN_FEATURES[plan] ?? FALLBACK_PLAN_FEATURES.free);
+const fallbackFeatureSetFor = (plan: string) => {
+  const legacy = (plan === "free" || plan === "pro" || plan === "garage") ? plan : "garage";
+  return new Set(FALLBACK_PLAN_FEATURES[legacy as keyof typeof FALLBACK_PLAN_FEATURES] ?? FALLBACK_PLAN_FEATURES.free);
+};
 
 const listeners = new Set<() => void>();
 let cache: State = { features: [], matrix: [], loaded: false };
@@ -162,23 +170,30 @@ export function useFeatureMatrix() {
   return cache;
 }
 
-/** Returns the active plan slug for the current user (free|pro|garage). */
-export function useCurrentPlan(): "free" | "pro" | "garage" {
+/**
+ * Returns the active plan slug for the current user. May be a legacy slug
+ * (`free|pro|garage`) OR any custom slug created dynamically by Super
+ * Admin via `AdminPlans` — feature gating always goes through the
+ * `plan_features` matrix, so no code change is needed for new plans.
+ */
+export function useCurrentPlan(): string {
   const { plan } = useSubscription();
-  if (plan === "garage" || plan === "pro" || plan === "free") return plan;
-  return "free";
+  return plan || "free";
 }
 
 /** Hook: can the current user use a given feature slug? */
 export function useFeature(slug: string): { allowed: boolean; loaded: boolean; limits: Record<string, any> } {
   const { matrix, features, loaded } = useFeatureMatrix();
   const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
-  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const plan: string = currentPlan || "free";
+  const isLegacy = plan === "free" || plan === "pro" || plan === "garage";
   const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
     if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };
     if (mustSubscribe) return { allowed: false, loaded: true, limits: {} };
-    if (GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage") {
+    // Legacy hardcoded restriction — only applies to legacy plans while
+    // the DB matrix hasn't loaded yet. Custom plans go straight to matrix.
+    if (isLegacy && GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage" && (!loaded || matrix.length === 0)) {
       return { allowed: false, loaded: true, limits: {} };
     }
     if (!loaded || matrix.length === 0) {
@@ -199,7 +214,8 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
 export function useEnabledFeatureSet(): Set<string> {
   const { matrix, features, loaded } = useFeatureMatrix();
   const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
-  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const plan: string = currentPlan || "free";
+  const isLegacy = plan === "free" || plan === "pro" || plan === "garage";
   const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
     // While the subscription is still resolving, do not falsely mark Garage
@@ -210,10 +226,12 @@ export function useEnabledFeatureSet(): Set<string> {
     if (!loaded || matrix.length === 0) return fallbackFeatureSetFor(plan);
     const out = new Set<string>();
     for (const f of features) {
-      if (f.is_core && (plan === "garage" || !GARAGE_ONLY_FEATURES.has(f.slug))) out.add(f.slug);
+      // Legacy hardcoded exclusion only kicks in for legacy non-garage
+      // plans; custom plans rely entirely on plan_features matrix.
+      if (f.is_core && (!isLegacy || plan === "garage" || !GARAGE_ONLY_FEATURES.has(f.slug))) out.add(f.slug);
     }
     for (const r of matrix) if (r.plan_slug === plan && r.enabled) out.add(r.feature_slug);
-    if (plan !== "garage") {
+    if (isLegacy && plan !== "garage") {
       for (const slug of GARAGE_ONLY_FEATURES) out.delete(slug);
     }
     return out;

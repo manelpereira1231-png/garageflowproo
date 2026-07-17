@@ -1,109 +1,96 @@
-# Planos & Features 100% dinâmicos — plano de execução faseado
+# Arquitetura de Planos 100% Dinâmica — Plano de Execução
 
-## Estado atual (auditoria)
+## Ponto de partida (já feito nos ciclos anteriores)
 
-Já existe muita da arquitetura pedida — **não vou reconstruir, apenas generalizar**:
+- `plans`, `features`, `plan_features`, `plan_promotions`, `plan_country_prices`, `plan_price_history` — **schema dinâmico** ✅
+- Landing, Billing, PriceWithPromo — **lêem da BD com realtime** ✅
+- Edge functions (`create-checkout`, `admin-update-plan-price`, `admin-set-promotion`) — **resolvem preços via RPC** ✅
+- RPC `get_effective_plan_price` + hook `usePlanPricing` — ✅
+- Painel `AdminPlans` — CRUD dinâmico ✅
+- Kill switch `market_enabled` — validado ✅
+- Modo Grupo Garage (Dashboard) — ✅
 
-- `plans` (slug, name, description, category, active) — já dinâmica.
-- `features` (slug, name, description, category, active) — já dinâmica.
-- `plan_features` (plan_slug, feature_slug, enabled, limits jsonb) — já dinâmica, os limites já vivem em jsonb.
-- `plan_promotions` (country_code, plan, cycle, promo_price, stripe_price_id, starts_at, ends_at, active) — já dinâmica.
-- `plan_price_history` — auditoria já dinâmica.
-- Edge functions `admin-set-promotion`, `admin-update-plan-price`, `create-checkout` — leem preços da BD em runtime.
-- Landing, Billing, PriceWithPromo — já leem tudo da BD com realtime.
-- RLS + `is_super_admin` — só Super Admin escreve; oficinas só leem.
+## O que ainda está acoplado a `free|pro|garage` (auditoria)
 
-## Único ponto de acoplamento a nomes fixos
+**Tipos/gating (crítico):**
+1. `src/hooks/useSubscription.ts` — `type Plan = 'free'|'pro'|'garage'`, `PLAN_LIMITS` hardcoded como fallback, `LOCKED_LIMITS`.
+2. `src/lib/features.ts` — `useCurrentPlan()` restringe retorno, `GARAGE_ONLY_FEATURES` fixo.
+3. `src/components/PlanGate.tsx` + `FeatureGate.tsx` — prop `requiredPlan: 'pro'|'garage'`.
+4. `src/App.tsx` — ~25 rotas com `requiredPlan="pro"` ou `"garage"`.
+5. `src/lib/planPromotions.ts` — `PlanSlug = 'free'|'pro'|'garage'`.
+6. `src/lib/platformSettings.ts` — `planFeatureKeysFor`, `limitOverridesFor` com ramos por slug.
 
-`country_settings` tem colunas **hardcoded por slug**:
-`saas_free_monthly/yearly`, `saas_pro_monthly/yearly`, `saas_garage_monthly/yearly`,
-`stripe_free_*`, `stripe_pro_*`, `stripe_garage_*`, `stripe_*_product_id`.
+**UI que ramifica por slug:**
+7. `Dashboard.tsx` (5 checks), `Quotes.tsx` (4 checks), `PartnersPortal.tsx` (comissão 20% se garage).
+8. `AdminBilling.tsx` (downgrade → `'free'`), `AdminDashboard.tsx` (contadores/receita por slug).
 
-Isto significa que criar um plano novo (`business`, `enterprise`) hoje exige código.
-**É este o único bloqueio real** — o resto da arquitetura já é dinâmica.
+**PDFs:**
+9. `pdfGenerator.ts` / `invoicePdfGenerator.ts` — watermark se `plan === 'free'`.
 
-## Estratégia (retrocompatível, sem regressões)
+**SEO/Landing JSON-LD:** já dinâmico ✅ (filtra por `visible_on_landing`).
 
-Substituir as colunas fixas de `country_settings` por uma **nova tabela `plan_country_prices`** que armazena preços/Stripe IDs por `(plan_slug, country_code, cycle)` — e manter as colunas antigas como **views/gerados** durante uma janela de migração para código legacy que ainda as leia.
+## Estratégia — 4 fases, retrocompatível, zero UI change
 
-Nada muda visualmente. Nada muda no Stripe. Toda a lógica atual de checkout/billing passa a resolver preços via `plan_country_prices` em vez de colunas fixas — API idêntica.
+### Fase A — Fundação de tipos + leitura de limites (baixo risco)
 
----
+- Alargar `Plan` para `string` mantendo alias `'free' | 'pro' | 'garage'` como valores conhecidos.
+- Novo helper `resolvePlanLimits(planSlug)` em `useSubscription`:
+  1. Tenta `plan_features` (BD) → agrega `limits` jsonb + `enabled` de cada feature.
+  2. Fallback para `PLAN_LIMITS` hardcoded apenas para os 3 slugs legacy.
+  3. Para planos novos sem entrada em `plan_features`: deriva limites do plano de `order_index` inferior (defensivo).
+- Novo helper derivado: `isEntryPlan` (plano com menor `order_index` ativo) — substitui checks `=== 'free'`.
+- `LOCKED_LIMITS` → derivado de `isEntryPlan` do plano ativo.
 
-## Fase 1 — Schema dinâmico (migração 1)
+### Fase B — Gating por feature (não por slug)
 
-Nova tabela `plan_country_prices`:
-```
-plan_slug text (FK → plans.slug, cascade)
-country_code text (FK → country_settings.code)
-cycle text CHECK (monthly | yearly | quarterly | semestral | lifetime)
-currency text
-amount numeric NOT NULL
-stripe_product_id text
-stripe_price_id text
-active bool default true
-UNIQUE (plan_slug, country_code, cycle)
-```
-+ GRANT + RLS (SELECT público, ALL só super admin) + trigger updated_at.
+- `PlanGate` / `FeatureGate` passam a aceitar `requiredFeature: string` (slug de feature). Prop antiga `requiredPlan` mantida com deprecation shim: converte `'pro'` → primeira feature Pro-only, `'garage'` → primeira Garage-only, via lookup em `plan_features`.
+- Rotas em `App.tsx` migram progressivamente para `requiredFeature="reports_advanced"` etc. **Sem alterar UI/mensagem** — o modal de upgrade continua a mostrar "necessita Plano X" onde X = plano mínimo que habilita a feature (calculado dinamicamente).
 
-Backfill: copiar `saas_free_*/pro_*/garage_*` e `stripe_*` de `country_settings` para linhas de `plan_country_prices`. Uma única migração idempotente.
+### Fase C — Remover ramos hardcoded na UI
 
-Extensão a `plans`:
-- `color text`, `icon text`, `order_index int`, `label text` (etiqueta tipo "Mais Popular"), `visible_on_landing bool`, `visible_on_billing bool`, `visible_on_checkout bool`, `visible_on_compare bool`, `archived_at timestamptz`.
+- `Dashboard.tsx`, `Quotes.tsx`, `PartnersPortal.tsx`: `plan === 'free'` → `!limits.<feature>` ou `isEntryPlan`. Comissão do PartnersPortal passa a ler `plans.partner_commission_pct` (nova coluna nullable com fallback 10%/20%).
+- `pdfGenerator.ts`: watermark passa a olhar `limits.pdfWatermark` (já existe em `platformSettings`).
+- `AdminBilling.tsx` downgrade: escolhe plano com menor `order_index` ativo (não `'free'`).
+- `AdminDashboard.tsx`: breakdown por slug torna-se `for (plan of plans) { count[plan.slug] = ... }`.
 
-Extensão a `features`:
-- `icon text`, `order_index int` (categoria já existe).
+### Fase D — Limpar tipos legacy
 
-Extensão a `plan_features` (limits já é jsonb — sem alterações estruturais; documentar as chaves suportadas: `max_shops`, `max_users`, `max_clients`, `max_vehicles`, `max_work_orders`, `max_listings`, `max_uploads`, `storage_mb`, `api_calls`, `emails_per_month`, `sms_per_month`, `pdfs_per_month`, `backups`).
+- `planPromotions.ts`: `PlanSlug = string`.
+- `platformSettings.ts`: `planFeatureKeysFor`/`limitOverridesFor` recebem plano como objeto e lêem features da BD (mantendo defaults para os 3 slugs enquanto BD estiver vazia).
 
-Nada é apagado. Colunas antigas de `country_settings` **ficam em `country_settings`** com um trigger que espelha alterações para `plan_country_prices` — retrocompatibilidade total durante todo o processo.
+## Retrocompatibilidade garantida
 
-## Fase 2 — Camada de leitura unificada
+- Nenhuma coluna removida. Nenhum enum apagado. Fallbacks para os 3 slugs mantidos em todo o lado.
+- Clientes atuais (assinaturas Stripe ativas em `free`/`pro`/`garage`) continuam a resolver limites exatamente como hoje.
+- Nenhuma migração destrutiva. Apenas leitura adicional de `plan_features`.
 
-Novo RPC `get_effective_plan_price(plan_slug, country_code, cycle)` → devolve `{base_amount, effective_amount, stripe_price_id, promo_active, promo_ends_at, currency}`. Junta `plan_country_prices` + `plan_promotions` numa única chamada — já existe `get_active_promotion`, alarga-o.
+## Fora de escopo (respeitando a instrução "não alterar")
 
-Front-end: `usePlanPricing()` hook novo que centraliza fetches (Landing, Billing, PriceWithPromo, UpgradeModal) — substitui as leituras diretas a `country_settings.saas_*_*` sem alterar UI.
-
-Edge functions `create-checkout` e `admin-update-plan-price`: passam a resolver via RPC. Comportamento externo idêntico.
-
-## Fase 3 — Painel Admin unificado
-
-Nova página `/admin/plans-manager` (ou expandir a atual `AdminPlans`) — mesma estética shadcn:
-- Lista de planos: criar, duplicar, arquivar, restaurar, reordenar, ativar/desativar, ocultar por superfície.
-- Editor de plano: nome, slug (imutável após criação para preservar Stripe), descrições, cor, ícone, etiqueta, ordem, visibilidade.
-- Grelha de preços por país × ciclo (usa `plan_country_prices`).
-- Grelha de features × plano (usa `plan_features`, edita `enabled` + `limits` jsonb com editor tipado por chave).
-- Grelha de limites (mesma tabela `plan_features` com `feature_slug='limits'` ou coluna `limits` a nível do plano — a decidir na Fase 3).
-- Botão "Criar Stripe Product & Prices" chama edge function existente `admin-update-plan-price` já preparada para criar produtos.
-- Delete só permitido se `subscriptions` não referenciar o plano; senão sugere "Arquivar".
-
-Gestor de features:
-- CRUD completo. Delete só se não estiver em `plan_features` ativo.
-
-## Fase 4 — Landing / Billing / Checkout / SEO
-
-Sem alterações visuais. `LandingPage.tsx` já itera sobre `plans` da BD; passa a filtrar por `visible_on_landing` e a ordenar por `order_index`. Etiquetas ("Mais Popular") passam a vir de `plans.label`. JSON-LD `SoftwareApplication` Offers passa a ser gerado por loop sobre planos visíveis + preços efetivos + `priceValidUntil` quando há promoção — ficheiro `LandingPage.tsx` já tem o esqueleto, só troca de fonte.
-
-## Fase 5 — Limpeza deferida (opcional, fora deste ciclo)
-
-Só depois de confirmar em produção que nada lê as colunas antigas:
-- Marcar `country_settings.saas_*_*` / `stripe_*_*` como deprecated.
-- Manter triggers de espelho por 1-2 ciclos e só então remover.
-
-Nunca vou remover colunas neste ciclo — retrocompatibilidade é regra.
-
----
+- Design, layout, textos, cores, componentes visuais.
+- Fluxo Stripe existente (produtos/prices/webhooks).
+- RLS, RBAC, Marketplace, SEO estrutural.
+- Market plans (`dealer_plan`: `starter|pro|unlimited`) — sistema separado, não faz parte deste refactor.
 
 ## Escopo desta iteração
 
-Isto é trabalho para **múltiplas iterações**. Proponho começar por **Fase 1 + Fase 2** nesta ronda (fundação retrocompatível, zero UI alterada, zero regressões) e passar Painel Admin (Fase 3) para a próxima. Assim garantimos que:
+**Fases A + B** (fundação + gating por feature) — 6 ficheiros editados, zero UI change, zero regressão esperada.
+**Fases C + D** ficam para iteração seguinte após validação em produção.
 
-1. Criar um plano novo na BD passa a alimentar Landing/Billing/Checkout automaticamente.
-2. UI de administração vem por cima da fundação já testada.
+## Validação (será executada)
 
-## Confirmações necessárias antes de escrever migração
+1. Build TypeScript passa.
+2. Utilizador `free` atual continua bloqueado exatamente nas mesmas rotas.
+3. Utilizador `garage` atual continua com acesso total.
+4. Criar plano fictício `enterprise` na BD com `plan_features` habilitando tudo → utilizador com esse plano passa por todas as rotas sem tocar em código.
+5. Painel `AdminPlans` continua a criar/editar/arquivar sem erros.
 
-1. Confirmas **Fase 1 + Fase 2 primeiro** (schema + RPC + hook), Fase 3 (UI Admin) depois?
-2. `plan_country_prices.cycle`: confirmo suporte a `monthly | yearly | quarterly | semestral | lifetime` desde já, ok?
-3. O slug do plano deve ser **imutável após criação** (para não invalidar Stripe subscriptions existentes). Ok?
-4. Delete de plano/feature com clientes ativos → **bloqueado**, sugere Arquivar. Ok?
+## Relatório final entregue no fim
+
+- Lista exata de hardcodes removidos (ficheiro:linha).
+- Lista de fallbacks mantidos e porquê.
+- Prova (screenshots/queries) de que plano novo funciona end-to-end.
+- Confirmação de zero regressões nos 3 slugs existentes.
+
+---
+
+**Confirmas que avanço com Fases A + B nesta iteração?** (Fase C+D fica para o próximo ciclo, para manter cada passo pequeno e verificável — respeita a tua regra "sem asneiras".)

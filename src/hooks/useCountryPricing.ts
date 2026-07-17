@@ -53,7 +53,7 @@ async function detectAndLoadCountry(): Promise<CountryPricing> {
         if (!countryCode) {
           const shopRes: any = await (supabase as any)
             .from("shops").select("country_code")
-            .eq("owner_id", user.id).maybeSingle();
+            .eq("user_id", user.id).maybeSingle();
           if (shopRes?.data?.country_code) countryCode = shopRes.data.country_code;
         }
       }

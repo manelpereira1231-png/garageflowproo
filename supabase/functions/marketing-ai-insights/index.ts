@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
         .from("shops")
         .select("id")
         .eq("id", shop_id)
-        .eq("owner_id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (!ownedShop) return json({ error: "Forbidden" }, 403);
     }

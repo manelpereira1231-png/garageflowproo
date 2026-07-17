@@ -74,6 +74,7 @@ async function fetchCatalog(): Promise<PlansCatalog> {
   const plans = (plansRes.data ?? []).map((p: any) => ({
     ...p,
     limits: (p.limits ?? {}) as Record<string, number | boolean>,
+    cta_mode: (p.cta_mode ?? "trial") as PlanCtaMode,
   })) as PlanRow[];
 
   const featuresByPlan: Record<string, PlanFeatureRow[]> = {};

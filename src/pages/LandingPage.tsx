@@ -236,28 +236,24 @@ export default function LandingPage() {
       );
       base = row?.amount ?? 0;
     }
-    // CTA driven by Super Admin (`plans.cta_mode`): checkout | trial | demo | contact | unavailable.
-    const ctaMode = p.cta_mode || "trial";
-    const ctaKey =
-      ctaMode === "demo" || ctaMode === "contact"
-        ? "landing.ctaGarage"                 // "Pedir Demonstração"
-        : ctaMode === "unavailable"
-          ? "landing.ctaGarage"               // (disabled anyway; text irrelevant)
-          : "landing.ctaPro";                 // trial / checkout → "Testar Plano"
+    // CTA 100% dinâmico — vem de `plans.cta_label`/`cta_mode`/`cta_url`.
+    // Zero texto hardcoded. Ver src/lib/planCta.ts.
+    const cta = resolvePlanCta(p, { surface: "landing", context: "anon", t });
+    const badgeLabel = resolvePlanBadge(p, t);
     return {
       slug: p.slug,
-      nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
       displayName: p.label || p.name,
       basePrice: base as number,
       periodKey: (base as number) > 0
         ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')
         : '',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
+      subtitleKey: (isAuthenticated || p.show_trial === false) ? undefined : 'landing.trial30',
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
-      ctaKey,
-      ctaMode,
+      cta,
+      badgeLabel,
       highlighted: p.sort_order === 2, // plano do meio destacado
       ctaPrimary: p.sort_order <= 2,
+      showPrice: p.show_price !== false,
     };
   });
 

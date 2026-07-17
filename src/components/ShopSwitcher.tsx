@@ -75,43 +75,43 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
   };
 
   const handleCreateShop = async () => {
-    if (!newShopName.trim()) return;
+    if (!newShopName.trim() || !newShopEmail.trim()) return;
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error(t('common.sessionExpired')); return; }
-
-      const { data: canCreate, error: limitError } = await supabase.rpc('check_shop_creation_limit', { _user_id: user.id });
-      if (limitError) { toast.error(limitError.message); return; }
-      if (!canCreate) { toast.error(limitMsg); return; }
-
-      const { data: shop, error } = await supabase.from("shops").insert({
-        user_id: user.id,
-        name: newShopName.trim(),
-        email: newShopEmail.trim() || user.email || "",
-      }).select().single();
-
-      if (error) {
-        if (error.message?.includes('SHOP_LIMIT_REACHED')) toast.error(limitMsg);
-        else toast.error(error.message);
+      const { data, error } = await supabase.functions.invoke("invite-child-shop", {
+        body: { name: newShopName.trim(), email: newShopEmail.trim() },
+      });
+      if (error || (data && (data as any).error)) {
+        const code = (data as any)?.error || error?.message || "";
+        if (code === "SHOP_LIMIT_REACHED") toast.error(limitMsg);
+        else if (code === "INVALID_EMAIL") toast.error("Email inválido.");
+        else if (code === "INVITE_FAILED") toast.error("Não foi possível enviar o convite. Tente novamente.");
+        else toast.error("Não foi possível criar a oficina. " + (code || ""));
         return;
       }
 
-      toast.success(`${newShopName.trim()} criada com sucesso!`);
+      toast.success(
+        `Oficina "${newShopName.trim()}" criada. Enviámos um email para ${newShopEmail.trim()} com o link para definir a palavra-passe.`,
+      );
       setNewShopName("");
       setNewShopEmail("");
       setOpen(false);
-
-      if (shop) {
-        onSwitch(shop.id);
-        // Official primitive: single ordered write + broadcast.
-        await setActiveShopAndSync(shop.id, { reason: "created" });
-      }
       onShopCreated?.();
-
+      await refreshStatus();
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleResendInvite = async (shop: Shop) => {
+    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
+      body: { shop_id: shop.id },
+    });
+    if (error || (data && (data as any).error)) {
+      toast.error("Não foi possível reenviar o convite.");
+      return;
+    }
+    toast.success(`Convite reenviado para "${shop.name || 'sem nome'}".`);
   };
 
   const handleDeleteShop = async (shop: Shop) => {

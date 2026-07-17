@@ -114,7 +114,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
   const { canUseFeature, mustSubscribe } = useSubscription();
-  const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
+  const { shops, activeShopId, switchShop } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
   const sidebarPrefs = useSidebarPrefs(activeShopId);

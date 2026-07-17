@@ -147,6 +147,11 @@ export default function Billing() {
     loadUsage();
   }, [shopId]);
 
+  // Dynamic plans catalog — MUST be called BEFORE any early return so the hook
+  // order stays stable across renders (fixes "Rendered more hooks than during
+  // the previous render" crash when `loading` flips from true to false).
+  const { data: catalog } = usePlansCatalog();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">

@@ -337,7 +337,7 @@ export default function AdminShops() {
           <SelectTrigger className="w-[130px]"><SelectValue placeholder={t('admin.shops.plan')} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('admin.shops.all')}</SelectItem>
-            <SelectItem value="free">Free</SelectItem>
+            <SelectItem value="free">Start</SelectItem>
             <SelectItem value="pro">Pro</SelectItem>
             <SelectItem value="garage">Garage</SelectItem>
           </SelectContent>
@@ -479,7 +479,7 @@ export default function AdminShops() {
               <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="free">Start</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
                   <SelectItem value="garage">Garage</SelectItem>
                 </SelectContent>

@@ -246,7 +246,7 @@ export default function AdminBilling() {
           <SelectTrigger className="w-[130px]"><SelectValue placeholder={t('admin.billing.plan')} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('admin.billing.all')}</SelectItem>
-            <SelectItem value="free">Free</SelectItem>
+            <SelectItem value="free">Start</SelectItem>
             <SelectItem value="pro">Pro</SelectItem>
             <SelectItem value="garage">Garage</SelectItem>
           </SelectContent>
@@ -329,7 +329,7 @@ export default function AdminBilling() {
               <Select value={planDialog?.newPlan || "free"} onValueChange={v => planDialog && setPlanDialog({ ...planDialog, newPlan: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="free">Start</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
                   <SelectItem value="garage">Garage</SelectItem>
                 </SelectContent>

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 
 interface PlanGateProps {
   feature: keyof PlanLimits;
@@ -21,6 +22,7 @@ const PlanGate = React.forwardRef<HTMLDivElement, PlanGateProps>(
   ({ feature, requiredPlan = 'garage', children }, ref) => {
     const { canUseFeature, loading, subscriptionLoaded } = useSubscription();
     const { t } = useLanguage();
+    const { isChildShop } = useIsChildShop();
 
     if (loading || !subscriptionLoaded) {
       return (

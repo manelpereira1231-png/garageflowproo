@@ -37,38 +37,51 @@ function displayName(plan: PlanRow): string {
 }
 
 /**
+ * Wrapper que:
+ *   1. Passa `defaultValue` ao `t()` para que traduções em falta usem o
+ *      fallback humano em vez do humanizador genérico (`Try Plan` etc.).
+ *   2. Faz interpolação de variáveis `{name}` (o `t()` não suporta nativamente).
+ */
+function tr(
+  t: ((k: string, defaultValue?: string) => string) | undefined,
+  key: string,
+  fallback: string,
+  vars?: Record<string, string>,
+): string {
+  const raw = t ? t(key, fallback) : fallback;
+  if (!vars) return raw;
+  return raw.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+}
+
+/**
  * Texto por defeito quando o admin não configurou `cta_label`.
  * Deriva SEMPRE do nome do plano + modo. Zero referências a slugs.
- * Traduções ficam em `t()` opcional; se ausente usa fallback PT-PT.
  */
-function defaultLabel(plan: PlanRow, ctx: PlanCtaContext, t?: (k: string, vars?: Record<string, string>) => string): string {
+function defaultLabel(plan: PlanRow, ctx: PlanCtaContext, t?: (k: string, defaultValue?: string) => string): string {
   const name = displayName(plan);
   const mode = plan.cta_mode;
 
-  // Contexto tem prioridade sobre o modo — "plano atual" e "downgrade" são
-  // etiquetas de estado, não de intenção comercial.
-  if (ctx === "current") return t?.("cta.currentPlan") || "Plano Atual";
-  if (ctx === "downgrade") return t?.("cta.downgrade", { name }) || `Mudar para ${name}`;
+  if (ctx === "current") return tr(t, "cta.currentPlan", "Plano Atual");
+  if (ctx === "downgrade") return tr(t, "cta.downgrade", `Mudar para ${name}`, { name });
 
   switch (mode) {
     case "demo":
-      return t?.("cta.demo") || "Marcar Demonstração";
+      return tr(t, "cta.demo", "Marcar Demonstração");
     case "contact":
-      return t?.("cta.contact") || "Contactar Comercial";
+      return tr(t, "cta.contact", "Contactar Comercial");
     case "unavailable":
-      return t?.("cta.unavailable") || "Indisponível";
+      return tr(t, "cta.unavailable", "Indisponível");
     case "custom_url":
-      // Sem cta_label definido → usa nome do plano como fallback neutro.
-      return t?.("cta.openPlan", { name }) || name;
+      return tr(t, "cta.openPlan", name, { name });
     case "checkout":
       return ctx === "upgrade"
-        ? (t?.("cta.upgrade", { name }) || `Passar para ${name}`)
-        : (t?.("cta.subscribe", { name }) || `Subscrever ${name}`);
+        ? tr(t, "cta.upgrade", `Passar para ${name}`, { name })
+        : tr(t, "cta.subscribe", `Subscrever ${name}`, { name });
     case "trial":
     default:
       return ctx === "upgrade"
-        ? (t?.("cta.upgrade", { name }) || `Passar para ${name}`)
-        : (t?.("cta.tryPlan", { name }) || `Testar Plano ${name}`);
+        ? tr(t, "cta.upgrade", `Passar para ${name}`, { name })
+        : tr(t, "cta.tryPlan", `Testar Plano ${name}`, { name });
   }
 }
 
@@ -108,7 +121,7 @@ function defaultHref(plan: PlanRow, ctx: PlanCtaContext, surface: PlanCtaSurface
  */
 export function resolvePlanCta(
   plan: PlanRow,
-  opts: { surface: PlanCtaSurface; context?: PlanCtaContext; t?: (k: string, vars?: Record<string, string>) => string } = { surface: "landing" },
+  opts: { surface: PlanCtaSurface; context?: PlanCtaContext; t?: (k: string, defaultValue?: string) => string } = { surface: "landing" },
 ): ResolvedPlanCta {
   const ctx: PlanCtaContext = opts.context ?? "anon";
 

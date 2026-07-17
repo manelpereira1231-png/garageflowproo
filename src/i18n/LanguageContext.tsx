@@ -6,7 +6,15 @@ import { setRegion } from "@/lib/regionConfig";
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  /**
+   * Traduzir uma chave i18n.
+   *
+   * - Se a chave existir na língua atual (ou fallback EN/PT), devolve o texto.
+   * - Se não existir e `defaultValue` for fornecido, devolve `defaultValue`.
+   * - Caso contrário, devolve uma versão "humanizada" do último segmento
+   *   (`cta.tryPlan` → "Try Plan"). **Nunca** devolve a chave crua.
+   */
+  t: (key: string, defaultValue?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -107,14 +115,33 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const t = useCallback((key: string): string => {
-    // Universal fallback: current lang → EN (global default) → key.
+  /**
+   * Nunca mostrar a chave técnica ao utilizador. Se uma tradução falha em
+   * todas as línguas de fallback, transformamos `foo.barBaz` em `Bar Baz`.
+   * Assim, mesmo com traduções em falta, o utilizador vê texto legível em
+   * vez de `cta.tryPlan` ou `common.save`.
+   */
+  function humanizeKey(key: string): string {
+    const last = key.split(".").pop() || key;
+    const spaced = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }
+
+
+  const t = useCallback((key: string, defaultValue?: string): string => {
+    // Universal fallback: current lang → EN (global default) → defaultValue → humanized key.
     // PT-BR also falls back to PT (close languages). PT users only see EN as fallback.
     const v = translations[language]?.[key];
     if (v) return v;
-    if (language === 'pt-BR') return translations['pt']?.[key] || translations['en']?.[key] || key;
-    // EN/ES/HI/PT all fall back to EN — never to PT (avoids leaking Portuguese).
-    return translations['en']?.[key] || key;
+    if (language === 'pt-BR') {
+      const alt = translations['pt']?.[key] || translations['en']?.[key];
+      if (alt) return alt;
+    } else {
+      const alt = translations['en']?.[key];
+      if (alt) return alt;
+    }
+    if (defaultValue !== undefined) return defaultValue;
+    return humanizeKey(key);
   }, [language]);
 
   return (
@@ -142,6 +169,13 @@ export function useLanguage(): LanguageContextType {
         try { localStorage.setItem("garageflow_language", lang); } catch {}
       }
     },
-    t: (key: string) => translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key] || key,
+    t: (key: string, defaultValue?: string) => {
+      const v = translations[fallbackLang]?.[key] || translations["en"]?.[key] || translations["pt"]?.[key];
+      if (v) return v;
+      if (defaultValue !== undefined) return defaultValue;
+      const last = key.split(".").pop() || key;
+      const spaced = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+      return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+    },
   };
 }

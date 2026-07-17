@@ -349,6 +349,9 @@ export default function Marketing() {
         </div>
       </div>
 
+      {/* AI Assistant */}
+      <MarketingAIAssistant shopId={activeShopId} onCreateCampaign={applyAIInsight} />
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[

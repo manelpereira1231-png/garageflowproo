@@ -104,11 +104,11 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
 
       if (shop) {
         onSwitch(shop.id);
-        localStorage.setItem("garageflow_active_shop", shop.id);
+        // Official primitive: single ordered write + broadcast.
+        await setActiveShopAndSync(shop.id, { reason: "created" });
       }
-      // Sync every hook instance immediately (no refresh).
-      broadcastShopContextChange({ reason: "created" });
       onShopCreated?.();
+
     } finally {
       setCreating(false);
     }

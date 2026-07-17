@@ -497,7 +497,11 @@ function OwnerDashboard() {
       {/* Header */}
       <div className="page-header">
         <div className="flex items-center gap-4">
-          {shopLogoUrl ? (
+          {isGroupMode ? (
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+              <Layers className="w-6 h-6 text-primary-foreground" />
+            </div>
+          ) : shopLogoUrl ? (
             <img src={shopLogoUrl} alt={shopName} className="w-12 h-12 rounded-xl object-contain border border-border bg-background" />
           ) : (
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
@@ -505,12 +509,48 @@ function OwnerDashboard() {
             </div>
           )}
           <div>
-            <h1 className="page-title">{shopName || t('dashboard.title')}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">{t('dashboard.subtitle')}</p>
+            <h1 className="page-title flex items-center gap-2">
+              {shopName || t('dashboard.title')}
+              {isGroupMode && (
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary uppercase tracking-wider">
+                  {ownedShops.length} oficinas
+                </Badge>
+              )}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {isGroupMode
+                ? `Visão consolidada de todas as oficinas do grupo · ${t('dashboard.subtitle')}`
+                : t('dashboard.subtitle')}
+            </p>
           </div>
         </div>
-        {/* Search now lives permanently in the topbar — no duplicate pill here. */}
+        {/* Toggle "Modo Grupo" — visível apenas para a Oficina Mãe no plano Garage com >1 oficina */}
+        {isGroupEligible && (
+          <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('shop')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                !isGroupMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={!isGroupMode}
+            >
+              <Building2 className="w-3.5 h-3.5" /> Esta oficina
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('group')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                isGroupMode ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={isGroupMode}
+            >
+              <Layers className="w-3.5 h-3.5" /> Grupo ({ownedShops.length})
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* Lite Mode = simplified guided dashboard. The Lite/Pro toggle lives in the topbar. */}
 

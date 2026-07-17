@@ -13,6 +13,40 @@ import { toast } from "sonner";
 import { reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
 import { clearPromotionsCache, ensurePromotionsLoaded } from "@/lib/planPromotions";
+import { usePlansCatalog, priceFor } from "@/hooks/usePlansCatalog";
+
+/**
+ * Resumo dinâmico dos preços de todos os planos ativos para um país.
+ * Iterar a tabela `plans` × `plan_country_prices` — sem hardcodes.
+ * Fallback: legacy colunas `saas_pro_monthly` / `saas_garage_monthly` em
+ * `country_settings` para dados antigos ainda não migrados.
+ */
+function CountryPlanSummary({ country }: { country: any }) {
+  const { data: catalog } = usePlansCatalog();
+  const plans = (catalog?.plans ?? []).filter((p) => p.active && !p.archived_at);
+  if (plans.length === 0) return null;
+  const rows = plans.map((p) => {
+    const modern = priceFor(catalog, p.slug, country.code, "monthly");
+    let amount = modern?.amount ?? 0;
+    if (!amount) {
+      // legacy fallback
+      const legacyKey = `saas_${p.slug}_monthly`;
+      const legacyVal = country?.[legacyKey];
+      if (typeof legacyVal === "number") amount = legacyVal;
+    }
+    return { slug: p.slug, label: p.label ?? p.name ?? p.slug, amount };
+  });
+  return (
+    <div className="text-xs space-y-1 border-t pt-3">
+      {rows.map((r) => (
+        <div key={r.slug} className="flex justify-between">
+          <span className="text-muted-foreground truncate">{r.label} mensal</span>
+          <span className="font-medium">{country.currency_symbol}{r.amount || 0}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type PlanSlug = "free" | "pro" | "garage";
 type CycleSlug = "monthly" | "yearly";
@@ -444,9 +478,8 @@ export default function AdminCountries() {
                       {c.active ? "Ativo" : "Inativo"}
                     </Badge>
                   </div>
+                  <CountryPlanSummary country={c} />
                   <div className="text-xs space-y-1 border-t pt-3">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Pro mensal</span><span className="font-medium">{c.currency_symbol}{c.saas_pro_monthly}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Garage mensal</span><span className="font-medium">{c.currency_symbol}{c.saas_garage_monthly}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Inspeção</span><span className="font-medium">{c.currency_symbol}{c.inspection_price}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">→ Oficina</span><span className="font-medium text-emerald-600">{c.currency_symbol}{c.inspection_shop_share}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">→ Plataforma</span><span className="font-medium">{c.currency_symbol}{c.inspection_platform_share}</span></div>

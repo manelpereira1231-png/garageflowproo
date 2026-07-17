@@ -31,6 +31,7 @@ const STEPS = 5;
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const navigate = useNavigate();
   const { t, setLanguage, language } = useLanguage();
+  const { reload: reloadShopContext } = useShopContext();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);

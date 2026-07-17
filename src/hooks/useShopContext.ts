@@ -72,7 +72,8 @@ export function useShopContext() {
         supabase
           .from("shops")
           .select("id, name, logo_url, currency, language")
-          .eq("group_owner_id", user.id),
+          .eq("group_owner_id", user.id)
+          .order("created_at", { ascending: true }),
         timeoutResult({ data: [] }),
       ]);
 
@@ -82,7 +83,8 @@ export function useShopContext() {
         supabase
           .from("shops")
           .select("id, name, logo_url, currency, language")
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true }),
         timeoutResult({ data: [] }),
       ]);
 

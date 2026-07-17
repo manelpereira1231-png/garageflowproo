@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
         let emailMessage = "";
         let emailItems: string[] = [];
         let recipientEmails: string[] = [];
+        let recipientPhones: string[] = [];
 
         // Get shop info for emails
         const { data: shop } = await supabase

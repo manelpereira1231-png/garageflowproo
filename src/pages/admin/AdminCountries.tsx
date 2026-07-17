@@ -8,10 +8,221 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Globe, Save, Plus, Edit, Power, Loader2, Zap } from "lucide-react";
+import { Globe, Save, Plus, Edit, Power, Loader2, Zap, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
+import { clearPromotionsCache, ensurePromotionsLoaded } from "@/lib/planPromotions";
+
+type PlanSlug = "free" | "pro" | "garage";
+type CycleSlug = "monthly" | "yearly";
+
+interface PromoState {
+  promo_price: number;
+  active: boolean;
+  starts_at: string; // datetime-local value
+  ends_at: string;
+  stripe_price_id: string | null;
+  loaded: boolean;
+}
+
+interface PlanPromoBlockProps {
+  countryCode: string;
+  plan: PlanSlug;
+  cycle: CycleSlug;
+  baseAmount: number;
+  currencySymbol: string;
+}
+
+/** Converts an ISO date (or null) into the value expected by <input type="datetime-local"> */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function toIso(local: string): string | null {
+  if (!local) return null;
+  const d = new Date(local);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function PlanPromoBlock({ countryCode, plan, cycle, baseAmount, currencySymbol }: PlanPromoBlockProps) {
+  const [state, setState] = useState<PromoState>({
+    promo_price: 0, active: true, starts_at: "", ends_at: "", stripe_price_id: null, loaded: false,
+  });
+  const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [existed, setExisted] = useState(false);
+
+  const load = async () => {
+    if (!countryCode) return;
+    const { data } = await supabase
+      .from("plan_promotions")
+      .select("promo_price, active, starts_at, ends_at, stripe_price_id")
+      .eq("country_code", countryCode)
+      .eq("plan", plan)
+      .eq("cycle", cycle)
+      .maybeSingle();
+    if (data) {
+      setState({
+        promo_price: Number(data.promo_price || 0),
+        active: !!data.active,
+        starts_at: toLocalInput(data.starts_at as any),
+        ends_at: toLocalInput(data.ends_at as any),
+        stripe_price_id: data.stripe_price_id ?? null,
+        loaded: true,
+      });
+      setExisted(true);
+      setExpanded(true);
+    } else {
+      setState((s) => ({ ...s, loaded: true }));
+      setExisted(false);
+    }
+  };
+
+  useEffect(() => { void load(); }, [countryCode, plan, cycle]);
+
+  const discountPct = baseAmount > 0 && state.promo_price > 0 && state.promo_price < baseAmount
+    ? Math.round(((baseAmount - state.promo_price) / baseAmount) * 100)
+    : 0;
+
+  const isLive = (() => {
+    if (!existed || !state.active) return false;
+    const now = new Date();
+    if (state.starts_at && new Date(state.starts_at) > now) return false;
+    if (state.ends_at && new Date(state.ends_at) <= now) return false;
+    return true;
+  })();
+
+  const save = async (action: "upsert" | "deactivate" | "delete") => {
+    if (!countryCode) return toast.error("Guarda primeiro o país");
+    if (action === "upsert") {
+      if (!(state.promo_price > 0)) return toast.error("Preço promocional inválido");
+      if (baseAmount > 0 && state.promo_price >= baseAmount) return toast.error("Promo deve ser menor que o preço normal");
+      if (state.starts_at && state.ends_at && new Date(state.starts_at) >= new Date(state.ends_at)) {
+        return toast.error("Data de início deve ser anterior à data de fim");
+      }
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-set-promotion", {
+        body: {
+          country_code: countryCode,
+          plan,
+          cycle,
+          promo_price: state.promo_price,
+          active: state.active,
+          starts_at: toIso(state.starts_at),
+          ends_at: toIso(state.ends_at),
+          action,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      if (action === "delete") {
+        toast.success("Promoção removida");
+        setExisted(false);
+        setExpanded(false);
+        setState({ promo_price: 0, active: true, starts_at: "", ends_at: "", stripe_price_id: null, loaded: true });
+      } else if (action === "deactivate") {
+        toast.success("Promoção desativada");
+        setState((s) => ({ ...s, active: false }));
+      } else {
+        toast.success(`Promoção aplicada (−${discountPct}%)`);
+        setExisted(true);
+        await load();
+      }
+      clearPromotionsCache();
+      await ensurePromotionsLoaded();
+      try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch { /* ignore */ }
+    } catch (e: any) {
+      toast.error(`Erro na promoção: ${e?.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1"
+      >
+        <Tag className="w-3 h-3" /> {existed ? "Editar promoção" : "Adicionar promoção"}
+        {isLive && <Badge variant="secondary" className="ml-2 bg-success/15 text-success text-[10px]">ATIVA −{discountPct}%</Badge>}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 p-3 rounded-md border border-dashed bg-background/50 space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs flex items-center gap-1.5">
+          <Tag className="w-3 h-3 text-primary" /> Promoção
+          {isLive && <Badge variant="secondary" className="bg-success/15 text-success text-[10px]">ATIVA</Badge>}
+          {existed && !isLive && <Badge variant="outline" className="text-[10px]">agendada / expirada / inativa</Badge>}
+        </Label>
+        <div className="flex items-center gap-2">
+          <Label className="text-[10px] text-muted-foreground">Ativa</Label>
+          <Switch checked={state.active} onCheckedChange={(v) => setState((s) => ({ ...s, active: v }))} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[10px]">Preço promocional ({currencySymbol})</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={state.promo_price}
+            onChange={(e) => setState((s) => ({ ...s, promo_price: Number(e.target.value) }))}
+          />
+        </div>
+        <div>
+          <Label className="text-[10px]">Desconto calculado</Label>
+          <div className="h-10 px-3 rounded-md border border-input bg-muted/40 flex items-center text-sm font-semibold">
+            {discountPct > 0 ? `−${discountPct}%` : "—"}
+          </div>
+        </div>
+        <div>
+          <Label className="text-[10px]">Início (opcional)</Label>
+          <Input type="datetime-local" value={state.starts_at} onChange={(e) => setState((s) => ({ ...s, starts_at: e.target.value }))} />
+        </div>
+        <div>
+          <Label className="text-[10px]">Fim (opcional)</Label>
+          <Input type="datetime-local" value={state.ends_at} onChange={(e) => setState((s) => ({ ...s, ends_at: e.target.value }))} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Button type="button" size="sm" onClick={() => save("upsert")} disabled={busy} className="h-8">
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 mr-1" />}
+          Aplicar promoção
+        </Button>
+        {existed && state.active && (
+          <Button type="button" size="sm" variant="outline" onClick={() => save("deactivate")} disabled={busy} className="h-8">
+            Desativar
+          </Button>
+        )}
+        {existed && (
+          <Button type="button" size="sm" variant="ghost" onClick={() => save("delete")} disabled={busy} className="h-8 text-destructive">
+            <Trash2 className="w-3 h-3 mr-1" /> Remover
+          </Button>
+        )}
+        {state.stripe_price_id && (
+          <span className="text-[10px] text-muted-foreground font-mono ml-auto truncate max-w-[150px]" title={state.stripe_price_id}>
+            {state.stripe_price_id}
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        Quando a data de fim passa, a plataforma volta automaticamente ao preço normal — sem intervenção.
+      </p>
+    </div>
+  );
+}
+
 
 interface PlanPriceRowProps {
   label: string;

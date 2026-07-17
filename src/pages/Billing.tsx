@@ -4,7 +4,8 @@ import { getPlanButtonState } from "@/lib/planHierarchy";
 import { loadPlatformSettings, getCachedPlatformSettings } from "@/lib/platformSettings";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getRegionalPricing, formatPrice, isBrazil, getCountryCode } from "@/lib/regionConfig";
+import { getRegionalPricing, isBrazil, getCountryCode } from "@/lib/regionConfig";
+import PriceWithPromo from "@/components/PriceWithPromo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -594,12 +595,15 @@ export default function Billing() {
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
                 <h3 className="text-xl font-bold">{getPlanName(key, t(`billing.plan.${key}`))}</h3>
                 <div className="mt-3">
-                  <span className="text-4xl font-bold mono">{formatPrice(price)}</span>
-                  {price > 0 && (
-                    <span className="text-muted-foreground text-sm">
-                      /{billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}
-                    </span>
-                  )}
+                  <PriceWithPromo
+                    basePrice={price}
+                    country={getCountryCode()}
+                    plan={key}
+                    cycle={billingCycle}
+                    periodLabel={price > 0 ? `/${billingCycle === 'monthly' ? t('billing.mo') : t('billing.yr')}` : undefined}
+                    size="lg"
+                    className="text-center"
+                  />
                 </div>
               </div>
 

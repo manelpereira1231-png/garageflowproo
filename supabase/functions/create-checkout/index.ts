@@ -126,7 +126,28 @@ serve(async (req) => {
       garage_yearly: countryConfig?.stripe_garage_yearly,
     };
     const key = `${plan}_${cycle}`;
-    const priceId = priceMap[key] || (FALLBACK_EUR as any)[key];
+    let priceId = priceMap[key] || (FALLBACK_EUR as any)[key];
+
+    // ─── PROMOTION OVERRIDE ───
+    // If there is an active promotion for this country/plan/cycle at now(),
+    // swap the Stripe price to the promo one. The RPC already enforces
+    // active + start/end window. If the promo has no Stripe price yet
+    // (e.g. admin defined it without applying), fall back to the base price
+    // so checkout never breaks.
+    try {
+      const { data: promoRows } = await supabaseClient.rpc("get_active_promotion", {
+        _country_code: resolvedCountry,
+        _plan: plan,
+        _cycle: cycle,
+      });
+      const promo = Array.isArray(promoRows) ? promoRows[0] : promoRows;
+      if (promo?.stripe_price_id) {
+        priceId = promo.stripe_price_id;
+      }
+    } catch (e) {
+      console.warn("[create-checkout] promo lookup failed, using base price", e);
+    }
+
     if (!priceId) throw new Error(`No Stripe price configured for ${plan}/${cycle} in ${resolvedCountry}`);
 
     const trialDays = countryConfig?.saas_trial_days ?? 30;

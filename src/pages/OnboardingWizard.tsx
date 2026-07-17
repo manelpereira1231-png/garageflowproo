@@ -216,9 +216,24 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
 
       localStorage.setItem("garageflow_active_shop", shop!.id);
       setLanguage(form.language as Language);
+
+      // CRITICAL: rehydrate the shop context BEFORE navigating.
+      // Otherwise `useShopContext` still holds `activeShopId=null` from when
+      // the user landed on /onboarding (no shop yet), and `RoleProtectedRoute`
+      // immediately bounces the user back to /onboarding on the next render.
+      // Awaiting reload() guarantees activeShopId is populated from the
+      // freshly-written localStorage, and the broadcast keeps every other
+      // live useShopContext instance in sync — no refresh, no setTimeout.
+      try {
+        await reloadShopContext();
+      } catch {
+        /* non-fatal: Realtime + broadcast below will still sync */
+      }
+      broadcastShopContextChange({ reason: "onboarding-complete" });
+
       toast.success(t('settings.configured'));
       onComplete();
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error("[onboarding] unexpected error:", err);
       toast.error(friendlyError(err?.message));

@@ -282,11 +282,14 @@ export default function AdminShopDetail() {
     );
   };
 
-  const impersonateShop = () => {
+  const impersonateShop = async () => {
     if (!id) return;
-    localStorage.setItem("garageflow_active_shop", id);
+    // Single official primitive for every active-shop mutation.
+    const { setActiveShopAndSync } = await import("@/lib/shopContextSync");
+    await setActiveShopAndSync(id, { reason: "impersonate" });
     window.location.href = "/dashboard";
   };
+
 
   // --- Discount System ---
   const openDiscountDialog = () => {

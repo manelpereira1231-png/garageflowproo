@@ -50,7 +50,14 @@ interface PlanRow {
   visible_on_compare: boolean;
   archived_at: string | null;
   limits: Record<string, number | boolean> | null;
-  cta_mode: "checkout" | "trial" | "demo" | "contact" | "unavailable";
+  cta_mode: "checkout" | "trial" | "demo" | "contact" | "unavailable" | "custom_url";
+  cta_label: string | null;
+  cta_url: string | null;
+  badge_label: string | null;
+  show_button: boolean;
+  show_price: boolean;
+  show_trial: boolean;
+  show_badge: boolean;
 }
 
 interface LimitCatalogRow {

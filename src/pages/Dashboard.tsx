@@ -720,7 +720,7 @@ function OwnerDashboard() {
       })()}
 
       {/* Usage Nudge for Free users */}
-      {isEntryPlan && monthlyQuoteCount > 0 && (
+      {canSeeCommercial && isEntryPlan && monthlyQuoteCount > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">

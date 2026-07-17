@@ -819,14 +819,20 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to={plan.ctaKey === 'landing.ctaGarage' ? '/demo' : '/auth?mode=signup'}>
-                  <Button
-                    className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                    variant={plan.ctaPrimary ? "default" : "outline"}
-                  >
+                {plan.ctaMode === "unavailable" ? (
+                  <Button className="w-full" variant="outline" disabled>
                     {t(plan.ctaKey)}
                   </Button>
-                </Link>
+                ) : (
+                  <Link to={plan.ctaMode === "demo" || plan.ctaMode === "contact" ? "/demo" : "/auth?mode=signup"}>
+                    <Button
+                      className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                      variant={plan.ctaPrimary ? "default" : "outline"}
+                    >
+                      {t(plan.ctaKey)}
+                    </Button>
+                  </Link>
+                )}
               </div>
             ))}
           </div>

@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
  * em Billing / Landing / Upgrade / Checkout / SEO sem alterar código.
  */
 
-export type PlanCtaMode = "checkout" | "trial" | "demo" | "contact" | "unavailable";
+export type PlanCtaMode = "checkout" | "trial" | "demo" | "contact" | "unavailable" | "custom_url";
 
 export interface PlanRow {
   slug: string;
@@ -36,6 +36,13 @@ export interface PlanRow {
   stripe_product_id: string | null;
   archived_at: string | null;
   cta_mode: PlanCtaMode;
+  cta_label: string | null;
+  cta_url: string | null;
+  badge_label: string | null;
+  show_button: boolean;
+  show_price: boolean;
+  show_trial: boolean;
+  show_badge: boolean;
 }
 
 export interface PlanFeatureRow {

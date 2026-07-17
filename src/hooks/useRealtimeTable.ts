@@ -55,7 +55,7 @@ export function useRealtimeTable(table: string, opts: Options) {
     const channel = supabase
       .channel(channelName)
       .on(
-        // @ts-expect-error postgres_changes typing
+
         "postgres_changes",
         { event, schema: "public", table, ...(effectiveFilter ? { filter: effectiveFilter } : {}) },
         trigger,
@@ -92,7 +92,7 @@ export function useRealtimeTables(tables: string[], opts: Omit<Options, "onChang
     const channel = supabase.channel(`rt-multi-${effectiveFilter}-${Math.random().toString(36).slice(2, 8)}`);
     for (const t of tables) {
       channel.on(
-        // @ts-expect-error postgres_changes typing
+
         "postgres_changes",
         { event: opts.event ?? "*", schema: "public", table: t, filter: effectiveFilter },
         trigger,

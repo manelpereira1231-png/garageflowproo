@@ -399,8 +399,8 @@ export function useSubscription() {
   // from the most permissive legacy baseline (garage); real per-feature
   // gating is driven by the `plan_features` matrix via useFeature().
   const legacyKey: LegacyPlan =
-    effectivePlan === 'free' || effectivePlan === 'pro' || effectivePlan === 'garage'
-      ? effectivePlan
+    (effectivePlan === 'free' || effectivePlan === 'pro' || effectivePlan === 'garage')
+      ? (effectivePlan as LegacyPlan)
       : 'garage';
   const overrides = limitOverridesFor(legacyKey, platformSettings);
   const baseLimits: PlanLimits = { ...PLAN_LIMITS[legacyKey], ...(overrides as Partial<PlanLimits>) };

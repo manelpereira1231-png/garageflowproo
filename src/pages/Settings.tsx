@@ -14,6 +14,7 @@ import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";

@@ -37,38 +37,59 @@ function displayName(plan: PlanRow): string {
 }
 
 /**
+ * Wrapper defensivo em torno de `t()`.
+ *
+ * O `t()` do `LanguageContext` devolve a **própria key** quando a tradução
+ * não existe (`return … || key`). Isso quebra qualquer padrão
+ * `t(key) || "fallback"` — a key crua é sempre truthy e o utilizador vê
+ * `cta.tryPlan` na UI. Aqui detetamos esse caso e devolvemos `undefined`
+ * para que o fallback humano tome o seu lugar. Também aplicamos
+ * interpolação de variáveis `{name}` que o `t()` não suporta nativamente.
+ */
+function tr(
+  t: ((k: string) => string) | undefined,
+  key: string,
+  vars?: Record<string, string>,
+): string | undefined {
+  if (!t) return undefined;
+  const raw = t(key);
+  if (!raw || raw === key) return undefined; // tradução em falta
+  if (!vars) return raw;
+  return raw.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+}
+
+/**
  * Texto por defeito quando o admin não configurou `cta_label`.
  * Deriva SEMPRE do nome do plano + modo. Zero referências a slugs.
- * Traduções ficam em `t()` opcional; se ausente usa fallback PT-PT.
+ * Traduções ficam em `tr()` opcional; se ausente usa fallback PT-PT.
  */
-function defaultLabel(plan: PlanRow, ctx: PlanCtaContext, t?: (k: string, vars?: Record<string, string>) => string): string {
+function defaultLabel(plan: PlanRow, ctx: PlanCtaContext, t?: (k: string) => string): string {
   const name = displayName(plan);
   const mode = plan.cta_mode;
 
   // Contexto tem prioridade sobre o modo — "plano atual" e "downgrade" são
   // etiquetas de estado, não de intenção comercial.
-  if (ctx === "current") return t?.("cta.currentPlan") || "Plano Atual";
-  if (ctx === "downgrade") return t?.("cta.downgrade", { name }) || `Mudar para ${name}`;
+  if (ctx === "current") return tr(t, "cta.currentPlan") ?? "Plano Atual";
+  if (ctx === "downgrade") return tr(t, "cta.downgrade", { name }) ?? `Mudar para ${name}`;
 
   switch (mode) {
     case "demo":
-      return t?.("cta.demo") || "Marcar Demonstração";
+      return tr(t, "cta.demo") ?? "Marcar Demonstração";
     case "contact":
-      return t?.("cta.contact") || "Contactar Comercial";
+      return tr(t, "cta.contact") ?? "Contactar Comercial";
     case "unavailable":
-      return t?.("cta.unavailable") || "Indisponível";
+      return tr(t, "cta.unavailable") ?? "Indisponível";
     case "custom_url":
-      // Sem cta_label definido → usa nome do plano como fallback neutro.
-      return t?.("cta.openPlan", { name }) || name;
+      return tr(t, "cta.openPlan", { name }) ?? name;
     case "checkout":
       return ctx === "upgrade"
-        ? (t?.("cta.upgrade", { name }) || `Passar para ${name}`)
-        : (t?.("cta.subscribe", { name }) || `Subscrever ${name}`);
+        ? (tr(t, "cta.upgrade", { name }) ?? `Passar para ${name}`)
+        : (tr(t, "cta.subscribe", { name }) ?? `Subscrever ${name}`);
     case "trial":
     default:
       return ctx === "upgrade"
-        ? (t?.("cta.upgrade", { name }) || `Passar para ${name}`)
-        : (t?.("cta.tryPlan", { name }) || `Testar Plano ${name}`);
+        ? (tr(t, "cta.upgrade", { name }) ?? `Passar para ${name}`)
+        : (tr(t, "cta.tryPlan", { name }) ?? `Testar Plano ${name}`);
   }
 }
 

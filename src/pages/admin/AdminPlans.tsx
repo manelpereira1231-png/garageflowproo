@@ -9,7 +9,7 @@
  *   - `plan_country_prices` (preço + Stripe IDs por país × ciclo)
  *   - `plan_features` (funcionalidades por plano — gerido em /admin/features)
  *
- * Retrocompatível: as colunas antigas de `country_settings.saas_*/stripe_*`
+ * Retrocompatível: as colunas antigas de country_settings.saas_ / stripe_
  * continuam a existir e são mantidas em sincronia por um trigger DB.
  */
 import { useEffect, useMemo, useState } from "react";

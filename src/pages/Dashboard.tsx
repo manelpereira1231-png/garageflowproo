@@ -70,6 +70,10 @@ function OwnerDashboard() {
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();
+  // Oficinas Filhas nunca vêem informação comercial (planos, trial, upgrade,
+  // billing). A subscrição pertence à Empresa e é gerida pela Oficina Mãe.
+  const { isChildShop } = useIsChildShop();
+  const canSeeCommercial = !isChildShop;
 
   // Seletor de contexto — apenas a Oficina Mãe vê o grupo. O hook lê a
   // hierarquia real (`group_owner_id`) e filhas independentes não entram aqui.

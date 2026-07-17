@@ -706,11 +706,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {(hasMultipleShops || canUseFeature("multiShop")) && (
+        {isGroupOwner && (
           <ShopSwitcher
-            shops={shops}
+            shops={ownedShops.map((s) => ({ id: s.id, name: s.name ?? "", logo_url: s.logo_url ?? null }))}
             activeShopId={activeShopId}
             onSwitch={(id) => {
+              // Extra safety: only allow switching to shops this account actually owns.
+              if (!ownedShops.some((s) => s.id === id)) return;
               switchShop(id);
               navigate(location.pathname, { replace: true });
             }}

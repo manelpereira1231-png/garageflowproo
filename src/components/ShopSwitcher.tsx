@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { setActiveShopAndSync, clearActiveShopAndSync } from "@/lib/shopContextSync";
+import { clearActiveShopAndSync } from "@/lib/shopContextSync";
 import { toast } from "sonner";
 
 interface Shop {

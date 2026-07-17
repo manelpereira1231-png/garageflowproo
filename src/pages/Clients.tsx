@@ -17,6 +17,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
@@ -101,6 +102,9 @@ export default function Clients() {
   };
 
   useEffect(() => { fetchClients(); }, [activeShopId]);
+
+  // Realtime: any INSERT/UPDATE/DELETE on this shop's clients → refetch.
+  useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchClients });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatMoney } from "@/lib/money";
 import { useShopRole } from "@/hooks/useShopRole";
 
@@ -108,6 +109,11 @@ export default function Stock() {
   };
 
   useEffect(() => { load(); }, [activeShopId]);
+
+  // Realtime: parts, stock movements, and parts orders → refetch on change.
+  useRealtimeTable("parts", { shopId: activeShopId, onChange: load });
+  useRealtimeTable("stock_movements", { shopId: activeShopId, onChange: load });
+  useRealtimeTable("parts_orders", { shopId: activeShopId, onChange: load });
 
   const suppliers = [...new Set(parts.map(p => p.supplier).filter(Boolean))] as string[];
 

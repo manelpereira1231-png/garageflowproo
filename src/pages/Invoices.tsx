@@ -18,6 +18,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import ListSkeleton from "@/components/ListSkeleton";
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { pageCache } from "@/lib/pageCache";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
@@ -85,6 +86,10 @@ export default function Invoices() {
   };
 
   useEffect(() => { fetchInvoices(); }, [activeShopId]);
+
+  // Realtime: invoices + payments changes (issued, paid, refunded) reflect immediately.
+  useRealtimeTable("invoices", { shopId: activeShopId, onChange: fetchInvoices });
+  useRealtimeTable("payments", { shopId: activeShopId, onChange: fetchInvoices });
 
   const preFiltered = invoices.filter((inv) => {
     const s = filters.search.toLowerCase();

@@ -17,6 +17,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
@@ -86,6 +87,10 @@ export default function Vehicles() {
   };
 
   useEffect(() => { fetchData(); }, [activeShopId]);
+
+  // Realtime: keep the list in sync when vehicles change from anywhere.
+  useRealtimeTable("vehicles", { shopId: activeShopId, onChange: fetchData });
+  useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchData });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

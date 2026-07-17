@@ -479,6 +479,8 @@ export function useSubscription() {
   return {
     subscription,
     plan: effectivePlan,
+    entryPlanSlug,
+    isEntryPlan: effectivePlan === entryPlanSlug,
     limits,
     loading,
     shopId,

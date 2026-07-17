@@ -106,11 +106,33 @@ export default function AdminPlans() {
   const [limitsCatalog, setLimitsCatalog] = useState<LimitCatalogRow[]>([]);
 
   // ── Dirty-tracking so realtime reloads don't wipe unsaved edits ──
-  // Any local mutation of `plans` marks the slug dirty; realtime reloads
-  // then merge server rows in only for non-dirty plans. Cleared on save.
+  // `serverSnapshotRef` holds the last known server rows keyed by slug. A slug
+  // is considered dirty when the local row differs from the snapshot. Any
+  // reload merges the incoming server rows in only for non-dirty slugs. Save
+  // handlers refresh the snapshot for their slug so subsequent reloads adopt
+  // the persisted server value.
+  const serverSnapshotRef = useRef<Map<string, PlanRow>>(new Map());
   const dirtyRef = useRef<Set<string>>(new Set());
-  const markDirty = (slug: string) => { dirtyRef.current.add(slug); };
   const clearDirty = (slug: string) => { dirtyRef.current.delete(slug); };
+  const isDirty = (local: PlanRow | undefined, server: PlanRow | undefined) => {
+    if (!local || !server) return false;
+    // Compare only the fields the editor mutates (avoid noisy timestamps).
+    const keys: (keyof PlanRow)[] = [
+      "name","description","active","sort_order","color","icon","label",
+      "visible_on_landing","visible_on_billing","visible_on_checkout","visible_on_compare",
+      "cta_mode","cta_label","cta_url","badge_label",
+      "show_button","show_price","show_trial","show_badge",
+    ];
+    for (const k of keys) {
+      if ((local as any)[k] !== (server as any)[k]) return true;
+    }
+    // Deep-compare limits jsonb
+    try {
+      if (JSON.stringify(local.limits ?? {}) !== JSON.stringify(server.limits ?? {})) return true;
+    } catch { /* noop */ }
+    return false;
+  };
+
 
   const load = async () => {
     setLoading(true);

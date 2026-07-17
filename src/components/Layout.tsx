@@ -360,7 +360,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     // ── Market (módulo interno do ERP — partilha sessão, sidebar, dashboard) ──
     // Sempre visíveis para oficinas parceiras. "Explorar carros" liga ao Market público.
-    ...(!marketStatusReady
+    ...(!globalMarketEnabled
+      ? [] // Global kill-switch: hide every Market entry from the ERP sidebar when Super Admin disables `market_enabled`.
+      : !marketStatusReady
       ? [] // Wait for the single source of truth before deciding which Market items to show — prevents "Ativar Market" flashing for already-enrolled shops.
       : isCarityPartner
       ? [
@@ -381,7 +383,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner]);
+  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —

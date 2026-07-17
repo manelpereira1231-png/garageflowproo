@@ -5162,6 +5162,7 @@ export type Database = {
           archived_at: string | null
           color: string | null
           created_at: string
+          cta_mode: string
           description: string | null
           icon: string | null
           included_shops: number
@@ -5184,6 +5185,7 @@ export type Database = {
           archived_at?: string | null
           color?: string | null
           created_at?: string
+          cta_mode?: string
           description?: string | null
           icon?: string | null
           included_shops?: number
@@ -5206,6 +5208,7 @@ export type Database = {
           archived_at?: string | null
           color?: string | null
           created_at?: string
+          cta_mode?: string
           description?: string | null
           icon?: string | null
           included_shops?: number

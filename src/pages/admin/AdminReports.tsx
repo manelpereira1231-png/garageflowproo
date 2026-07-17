@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,9 +12,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 
-const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
-const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--chart-3))"];
+// Fonte única de verdade: preços, planos e ordem lidos do catálogo dinâmico.
+// Nunca hardcoded — se o admin criar/renomear um plano em /admin/plans,
+// este relatório reflete a alteração automaticamente.
+const CHART_PALETTE = [
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--primary))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
+const STATUS_COLORS: Record<string, string> = {
+  active: "hsl(var(--chart-3))",
+  trialing: "hsl(var(--primary))",
+  cancelled: "hsl(var(--destructive))",
+  canceled: "hsl(var(--destructive))",
+  expired: "hsl(var(--muted-foreground))",
+};
 const STATUS_COLORS: Record<string, string> = {
   active: "hsl(var(--chart-3))",
   trialing: "hsl(var(--primary))",

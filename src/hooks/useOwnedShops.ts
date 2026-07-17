@@ -35,7 +35,7 @@ export function useOwnedShops() {
       const { data } = await supabase
         .from("shops")
         .select("id, name, address, currency, logo_url, created_at")
-        .eq("user_id", user.id)
+        .eq("group_owner_id", user.id)
         .order("created_at", { ascending: true });
       if (!alive) return;
       setShops((data as OwnedShop[]) ?? []);

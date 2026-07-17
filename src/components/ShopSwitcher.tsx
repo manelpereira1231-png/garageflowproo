@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Plus, Trash2 } from "lucide-react";
+import { Building2, Plus, Trash2, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { setActiveShopAndSync, clearActiveShopAndSync } from "@/lib/shopContextSync";
+import { clearActiveShopAndSync } from "@/lib/shopContextSync";
 import { toast } from "sonner";
 
 interface Shop {
@@ -75,43 +75,43 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
   };
 
   const handleCreateShop = async () => {
-    if (!newShopName.trim()) return;
+    if (!newShopName.trim() || !newShopEmail.trim()) return;
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error(t('common.sessionExpired')); return; }
-
-      const { data: canCreate, error: limitError } = await supabase.rpc('check_shop_creation_limit', { _user_id: user.id });
-      if (limitError) { toast.error(limitError.message); return; }
-      if (!canCreate) { toast.error(limitMsg); return; }
-
-      const { data: shop, error } = await supabase.from("shops").insert({
-        user_id: user.id,
-        name: newShopName.trim(),
-        email: newShopEmail.trim() || user.email || "",
-      }).select().single();
-
-      if (error) {
-        if (error.message?.includes('SHOP_LIMIT_REACHED')) toast.error(limitMsg);
-        else toast.error(error.message);
+      const { data, error } = await supabase.functions.invoke("invite-child-shop", {
+        body: { name: newShopName.trim(), email: newShopEmail.trim() },
+      });
+      if (error || (data && (data as any).error)) {
+        const code = (data as any)?.error || error?.message || "";
+        if (code === "SHOP_LIMIT_REACHED") toast.error(limitMsg);
+        else if (code === "INVALID_EMAIL") toast.error("Email inválido.");
+        else if (code === "INVITE_FAILED") toast.error("Não foi possível enviar o convite. Tente novamente.");
+        else toast.error("Não foi possível criar a oficina. " + (code || ""));
         return;
       }
 
-      toast.success(`${newShopName.trim()} criada com sucesso!`);
+      toast.success(
+        `Oficina "${newShopName.trim()}" criada. Enviámos um email para ${newShopEmail.trim()} com o link para definir a palavra-passe.`,
+      );
       setNewShopName("");
       setNewShopEmail("");
       setOpen(false);
-
-      if (shop) {
-        onSwitch(shop.id);
-        // Official primitive: single ordered write + broadcast.
-        await setActiveShopAndSync(shop.id, { reason: "created" });
-      }
       onShopCreated?.();
-
+      await refreshStatus();
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleResendInvite = async (shop: Shop) => {
+    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
+      body: { shop_id: shop.id },
+    });
+    if (error || (data && (data as any).error)) {
+      toast.error("Não foi possível reenviar o convite.");
+      return;
+    }
+    toast.success(`Convite reenviado para "${shop.name || 'sem nome'}".`);
   };
 
   const handleDeleteShop = async (shop: Shop) => {
@@ -190,16 +190,19 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
                 <DialogTitle>{t('shop.createNew')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Vamos criar uma conta independente para a nova oficina. O responsável vai receber um email com um link seguro para definir a palavra-passe.
+                </p>
                 <div className="space-y-1.5">
                   <Label>{t('settings.shopName')} *</Label>
                   <Input value={newShopName} onChange={e => setNewShopName(e.target.value)} placeholder="Ex: Oficina Norte" autoFocus />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t('settings.email')}</Label>
-                  <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="oficina@exemplo.com" />
+                  <Label>Email do responsável *</Label>
+                  <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="responsavel@oficina.pt" />
                 </div>
-                <Button onClick={handleCreateShop} disabled={!newShopName.trim() || creating} className="w-full">
-                  {creating ? t('common.loading') : t('shop.createNew')}
+                <Button onClick={handleCreateShop} disabled={!newShopName.trim() || !newShopEmail.trim() || creating} className="w-full">
+                  {creating ? "A criar e a enviar convite..." : "Criar oficina e enviar convite"}
                 </Button>
               </div>
             </DialogContent>
@@ -244,16 +247,27 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
                     )}
                   </div>
                   {!isPrimary && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      disabled={deletingId === s.id}
-                      onClick={() => setConfirmDelete(s)}
-                      title="Eliminar oficina"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleResendInvite(s)}
+                        title="Reenviar convite de acesso"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        disabled={deletingId === s.id}
+                        onClick={() => setConfirmDelete(s)}
+                        title="Eliminar oficina"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               );

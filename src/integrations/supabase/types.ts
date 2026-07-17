@@ -6441,6 +6441,7 @@ export type Database = {
           created_at: string
           currency: string
           email: string
+          group_owner_id: string
           health_score: number | null
           id: string
           is_carity_partner: boolean
@@ -6461,6 +6462,7 @@ export type Database = {
           stripe_connect_charges_enabled: boolean
           stripe_connect_onboarded: boolean
           stripe_connect_payouts_enabled: boolean
+          suspended_at: string | null
           timezone: string
           user_id: string
           vat_rate: number
@@ -6477,6 +6479,7 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string
+          group_owner_id: string
           health_score?: number | null
           id?: string
           is_carity_partner?: boolean
@@ -6497,6 +6500,7 @@ export type Database = {
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean
           stripe_connect_payouts_enabled?: boolean
+          suspended_at?: string | null
           timezone?: string
           user_id: string
           vat_rate?: number
@@ -6513,6 +6517,7 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string
+          group_owner_id?: string
           health_score?: number | null
           id?: string
           is_carity_partner?: boolean
@@ -6533,6 +6538,7 @@ export type Database = {
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean
           stripe_connect_payouts_enabled?: boolean
+          suspended_at?: string | null
           timezone?: string
           user_id?: string
           vat_rate?: number
@@ -8583,6 +8589,7 @@ export type Database = {
         Returns: boolean
       }
       is_commercial_admin: { Args: { _user_id?: string }; Returns: boolean }
+      is_group_owner: { Args: { _shop_id: string }; Returns: boolean }
       is_regional_admin_for: {
         Args: { _country_code: string; _user_id: string }
         Returns: boolean

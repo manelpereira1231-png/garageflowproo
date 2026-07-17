@@ -445,8 +445,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // by upgrading. The click handler intercepts and redirects to /billing.
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
-  const { primaryShopId } = usePrimaryShopId();
-  const { shops: ownedShops } = useOwnedShops();
   // "Oficina Mãe" account = user owns 2+ shops (i.e. has actually created a group).
   // Only this account can see/use the shop switcher and Multi-Oficina surfaces.
   // A child-only user (team member of a single child shop) or a single-shop owner

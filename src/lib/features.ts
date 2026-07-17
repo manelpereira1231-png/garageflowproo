@@ -82,6 +82,11 @@ const FALLBACK_PLAN_FEATURES: Record<Plan, string[]> = {
   ],
 };
 
+/**
+ * Legacy hardcoded restriction — only used as a fallback when the DB
+ * matrix hasn't loaded yet. Custom plans skip this and rely purely on
+ * the `plan_features` matrix.
+ */
 const GARAGE_ONLY_FEATURES = new Set(["marketing", "loyalty"]);
 const FEATURE_LOAD_TIMEOUT_MS = 3000;
 
@@ -89,7 +94,10 @@ function timeoutResult<T>(value: T, ms = FEATURE_LOAD_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
 
-const fallbackFeatureSetFor = (plan: Plan) => new Set(FALLBACK_PLAN_FEATURES[plan] ?? FALLBACK_PLAN_FEATURES.free);
+const fallbackFeatureSetFor = (plan: string) => {
+  const legacy = (plan === "free" || plan === "pro" || plan === "garage") ? plan : "garage";
+  return new Set(FALLBACK_PLAN_FEATURES[legacy as keyof typeof FALLBACK_PLAN_FEATURES] ?? FALLBACK_PLAN_FEATURES.free);
+};
 
 const listeners = new Set<() => void>();
 let cache: State = { features: [], matrix: [], loaded: false };

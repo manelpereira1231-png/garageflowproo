@@ -531,27 +531,34 @@ export default function AdminCountries() {
                     { key: "saas_garage_monthly", plan: "garage" as const, cycle: "monthly" as const, label: "Garage mensal",  priceCol: "stripe_garage_monthly" },
                     { key: "saas_garage_yearly",  plan: "garage" as const, cycle: "yearly" as const,  label: "Garage anual",   priceCol: "stripe_garage_yearly" },
                   ]).map((row) => (
-                    <PlanPriceRow
-                      key={row.key}
-                      label={row.label}
-                      plan={row.plan}
-                      cycle={row.cycle}
-                      countryCode={editing.code || ""}
-                      amount={Number((editing as any)[row.key] || 0)}
-                      currentPriceId={(editing as any)[row.priceCol] || null}
-                      onAmountChange={(v) => setEditing({ ...editing, [row.key]: v } as any)}
-                      onApplied={async (res) => {
-                        // Reflect new Stripe Price ID locally without losing form state.
-                        setEditing({
-                          ...editing,
-                          [row.key]: res.amount,
-                          [row.priceCol]: res.new_stripe_price_id,
-                        } as any);
-                        clearPricingCache();
-                        await reloadCountriesFromDB();
-                        load();
-                      }}
-                    />
+                    <div key={row.key} className="space-y-1">
+                      <PlanPriceRow
+                        label={row.label}
+                        plan={row.plan}
+                        cycle={row.cycle}
+                        countryCode={editing.code || ""}
+                        amount={Number((editing as any)[row.key] || 0)}
+                        currentPriceId={(editing as any)[row.priceCol] || null}
+                        onAmountChange={(v) => setEditing({ ...editing, [row.key]: v } as any)}
+                        onApplied={async (res) => {
+                          setEditing({
+                            ...editing,
+                            [row.key]: res.amount,
+                            [row.priceCol]: res.new_stripe_price_id,
+                          } as any);
+                          clearPricingCache();
+                          await reloadCountriesFromDB();
+                          load();
+                        }}
+                      />
+                      <PlanPromoBlock
+                        countryCode={editing.code || ""}
+                        plan={row.plan}
+                        cycle={row.cycle}
+                        baseAmount={Number((editing as any)[row.key] || 0)}
+                        currencySymbol={editing.currency_symbol || ""}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>

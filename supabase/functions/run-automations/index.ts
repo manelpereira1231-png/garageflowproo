@@ -135,8 +135,9 @@ Deno.serve(async (req) => {
               emailItems = overdue.slice(0, 10).map(i => `${i.number} — ${(i.clients as any)?.name || 'Cliente'}`);
               // Send reminder to each client with overdue invoice
               for (const inv of overdue) {
-                const clientEmail = (inv.clients as any)?.email;
-                if (clientEmail) recipientEmails.push(clientEmail);
+                const c = inv.clients as any;
+                if (c?.email) recipientEmails.push(c.email);
+                if (c?.phone) recipientPhones.push(c.phone);
               }
             }
             break;

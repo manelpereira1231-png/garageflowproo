@@ -133,11 +133,15 @@ function OwnerDashboard() {
           const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
           if (shop) {
             shopId = shop.id;
-            localStorage.setItem("garageflow_active_shop", shop.id);
+            // Fallback path: user has a shop but activeShopId was null (fresh
+            // session, cache miss). Route through the official primitive so
+            // every live useShopContext instance picks it up.
+            void setActiveShopAndSync(shop.id, { reason: "fallback" });
           } else {
             return;
           }
         }
+
         const { data: shop } = await supabase.from("shops").select("id, currency, name, logo_url").eq("id", shopId).maybeSingle();
         if (!shop) {
           return;

@@ -50,6 +50,7 @@ interface PlanRow {
   visible_on_compare: boolean;
   archived_at: string | null;
   limits: Record<string, number | boolean> | null;
+  cta_mode: "checkout" | "trial" | "demo" | "contact" | "unavailable";
 }
 
 interface LimitCatalogRow {

@@ -51,6 +51,11 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
   const [symptoms, setSymptoms] = useState(clientDescription || "");
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [loading, setLoading] = useState(false);
+  const quota = useAiQuota(shopId);
+
+  const noAi = !quota.loading && quota.limit === 0 && !quota.unlimited;
+  const exhausted = !quota.loading && !quota.unlimited && quota.remaining <= 0 && quota.limit > 0;
+  const disabled = loading || noAi || exhausted;
 
   const generateDiagnosis = async () => {
     if (!symptoms.trim()) {

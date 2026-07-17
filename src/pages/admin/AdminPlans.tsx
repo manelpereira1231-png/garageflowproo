@@ -12,7 +12,7 @@
  * Retrocompatível: as colunas antigas de country_settings.saas_ / stripe_
  * continuam a existir e são mantidas em sincronia por um trigger DB.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Save, Globe, ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,6 +105,35 @@ export default function AdminPlans() {
 
   const [limitsCatalog, setLimitsCatalog] = useState<LimitCatalogRow[]>([]);
 
+  // ── Dirty-tracking so realtime reloads don't wipe unsaved edits ──
+  // `serverSnapshotRef` holds the last known server rows keyed by slug. A slug
+  // is considered dirty when the local row differs from the snapshot. Any
+  // reload merges the incoming server rows in only for non-dirty slugs. Save
+  // handlers refresh the snapshot for their slug so subsequent reloads adopt
+  // the persisted server value.
+  const serverSnapshotRef = useRef<Map<string, PlanRow>>(new Map());
+  const dirtyRef = useRef<Set<string>>(new Set());
+  const clearDirty = (slug: string) => { dirtyRef.current.delete(slug); };
+  const isDirty = (local: PlanRow | undefined, server: PlanRow | undefined) => {
+    if (!local || !server) return false;
+    // Compare only the fields the editor mutates (avoid noisy timestamps).
+    const keys: (keyof PlanRow)[] = [
+      "name","description","active","sort_order","color","icon","label",
+      "visible_on_landing","visible_on_billing","visible_on_checkout","visible_on_compare",
+      "cta_mode","cta_label","cta_url","badge_label",
+      "show_button","show_price","show_trial","show_badge",
+    ];
+    for (const k of keys) {
+      if ((local as any)[k] !== (server as any)[k]) return true;
+    }
+    // Deep-compare limits jsonb
+    try {
+      if (JSON.stringify(local.limits ?? {}) !== JSON.stringify(server.limits ?? {})) return true;
+    } catch { /* noop */ }
+    return false;
+  };
+
+
   const load = async () => {
     setLoading(true);
     const [plansRes, pricesRes, countriesRes, catalogRes] = await Promise.all([
@@ -114,7 +143,42 @@ export default function AdminPlans() {
       supabase.from("plan_limits_catalog" as any).select("*").order("sort_order", { ascending: true }),
     ]);
     if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
-    setPlans((plansRes.data as any) ?? []);
+
+    const serverPlans = ((plansRes.data as any) ?? []) as PlanRow[];
+
+    // Refresh dirty set: a slug is dirty when local edit differs from the
+    // last known server row for that slug (auto-detected, no need to touch
+    // every setPlans call site).
+    setPlans((prev) => {
+      const prevBySlug = new Map(prev.map((p) => [p.slug, p]));
+      const serverBySlug = new Map(serverPlans.map((p) => [p.slug, p]));
+
+      // Recompute dirty against the previous snapshot to catch anything the
+      // user changed but hasn't saved yet.
+      const nextDirty = new Set<string>();
+      for (const [slug, local] of prevBySlug) {
+        const snap = serverSnapshotRef.current.get(slug);
+        if (isDirty(local, snap)) nextDirty.add(slug);
+      }
+      dirtyRef.current = nextDirty;
+
+      // Refresh the snapshot to the new server truth.
+      serverSnapshotRef.current = serverBySlug;
+
+      if (nextDirty.size === 0) return serverPlans;
+
+      const merged = serverPlans.map((sp) =>
+        nextDirty.has(sp.slug) && prevBySlug.has(sp.slug)
+          ? (prevBySlug.get(sp.slug) as PlanRow)
+          : sp
+      );
+      // Preserve dirty local rows that don't exist on the server yet.
+      for (const [slug, p] of prevBySlug) {
+        if (nextDirty.has(slug) && !serverBySlug.has(slug)) merged.push(p);
+      }
+      return merged.sort((a, b) => a.sort_order - b.sort_order);
+    });
+
     setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
     setCountries((countriesRes.data as any) ?? []);
     setLimitsCatalog(((catalogRes.data as unknown) as LimitCatalogRow[]) ?? []);
@@ -167,8 +231,12 @@ export default function AdminPlans() {
       .eq("slug", p.slug);
     setSaving(null);
     if (error) return toast.error("Erro ao guardar: " + error.message);
+    // Clear dirty BEFORE the realtime callback fires so the fresh server row wins.
+    clearDirty(p.slug);
     toast.success(`Plano ${p.name} atualizado`);
     try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch {}
+    // Force a reload so any DB-side transforms (triggers, defaults) reach the UI immediately.
+    void load();
   };
 
   const createPlan = async () => {

@@ -5,13 +5,47 @@ import type { Plan } from "@/hooks/useSubscription";
  * Higher number = higher tier. "Sem plano" (no active subscription) is treated
  * as -1 so every real plan is an "upgrade" from it.
  *
- * Displayed hierarchy: No plan → Start (free) → Pro → Garage.
+ * The map is populated at runtime from `plans.sort_order` via
+ * `registerPlanRanks()` (called by `usePlansCatalog` when the catalog loads).
+ * Any plan created in the Admin — Start, Pro, Garage, Enterprise, Business,
+ * or any future slug — automatically has a rank without touching code.
+ *
+ * Legacy fallbacks are kept ONLY for the initial render before the catalog
+ * is fetched. They are overwritten as soon as the DB responds.
  */
-export const PLAN_RANK: Record<Plan, number> = {
+
+// Mutable runtime registry. Not `Record<Plan, ...>` because Plan may now be
+// any string slug from the DB (the type alias is legacy).
+const rankRegistry: Record<string, number> = {
   free: 0,   // "Start"
   pro: 1,
   garage: 2,
 };
+
+/**
+ * Called by usePlansCatalog whenever the plans catalog is (re)loaded.
+ * Passes a fresh map of slug -> sort_order taken from the `plans` table.
+ */
+export function registerPlanRanks(map: Record<string, number>): void {
+  // Merge, don't replace: keep legacy fallbacks for plans that haven't
+  // arrived yet in this snapshot (defensive; the DB should be authoritative).
+  for (const [slug, rank] of Object.entries(map)) {
+    rankRegistry[slug] = rank;
+  }
+}
+
+export function getPlanRank(slug: string | null | undefined): number {
+  if (!slug) return -1;
+  const r = rankRegistry[slug];
+  return typeof r === "number" ? r : -1;
+}
+
+/**
+ * @deprecated Use `getPlanRank(slug)` instead. Kept for back-compat with the
+ * legacy `Record<Plan, number>` shape; readers will still find the 3 legacy
+ * slugs but new slugs must be looked up via `getPlanRank`.
+ */
+export const PLAN_RANK: Record<Plan, number> = rankRegistry as Record<Plan, number>;
 
 export type PlanButtonAction = 'subscribe' | 'current' | 'upgrade' | 'downgrade';
 
@@ -43,8 +77,8 @@ export function getPlanButtonState(params: {
     return { action: 'subscribe', labelKey: 'billing.subscribe', disabled: false };
   }
 
-  const displayedRank = PLAN_RANK[displayedPlan];
-  const activeRank = PLAN_RANK[activePlan];
+  const displayedRank = getPlanRank(displayedPlan);
+  const activeRank = getPlanRank(activePlan);
 
   if (displayedRank === activeRank) {
     return { action: 'current', labelKey: 'billing.currentPlan', disabled: true };

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { registerPlanRanks } from "@/lib/planHierarchy";
 
 /**
  * Catálogo de planos 100% dinâmico — fonte única de verdade para toda a app.
@@ -95,6 +96,11 @@ async function fetchCatalog(): Promise<PlansCatalog> {
   for (const f of (featRes.data ?? []) as PlanFeatureRow[]) {
     (featuresByPlan[f.plan_slug] ??= []).push(f);
   }
+
+  // Register plan ranks into the shared planHierarchy registry so
+  // getPlanButtonState / getPlanRank work for *any* plan slug (Enterprise,
+  // Business, custom…) without touching code.
+  registerPlanRanks(Object.fromEntries(plans.map((p) => [p.slug, p.sort_order])));
 
   return {
     plans,

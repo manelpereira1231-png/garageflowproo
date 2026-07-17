@@ -7,6 +7,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useAuthReady } from "@/hooks/useAuthReady";

@@ -5,7 +5,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 export interface OwnedShop {
   id: string;
   name: string | null;
-  city: string | null;
+  address: string | null;
   currency: string | null;
   logo_url: string | null;
   created_at: string;

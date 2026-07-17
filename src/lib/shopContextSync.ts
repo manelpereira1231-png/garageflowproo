@@ -108,20 +108,19 @@ export async function setActiveShopAndSync(
 }
 
 /**
- * Official primitive: clear the active shop (delete flows, logout).
- * Callers pass `deletedShopId` so live consumers can drop the row from local
- * state without waiting for the Realtime round-trip.
+ * Official primitive: signal that a shop was deleted.
+ *
+ * We DO NOT touch `localStorage` here — `useShopContext.handleShopDeleted`
+ * decides whether the deleted shop was the active one and, if so, picks a
+ * remaining shop or clears storage. That keeps the "delete non-active shop"
+ * case from wiping the active id.
+ *
+ * Two microtask flushes so every listener that schedules `loadShops()` gets
+ * a chance to run before the caller navigates.
  */
 export async function clearActiveShopAndSync(
   options: { deletedShopId?: string; reason?: ShopContextChangeReason | string } = {},
 ): Promise<void> {
-  if (typeof window !== "undefined") {
-    try {
-      window.localStorage.removeItem(ACTIVE_SHOP_STORAGE_KEY);
-    } catch {
-      /* storage unavailable */
-    }
-  }
   broadcastShopContextChange({
     deletedShopId: options.deletedShopId,
     reason: options.reason ?? "deleted",
@@ -129,3 +128,21 @@ export async function clearActiveShopAndSync(
   await Promise.resolve();
   await Promise.resolve();
 }
+
+/**
+ * Full sign-out helper — used only by explicit logout flows. Wipes the
+ * active-shop pointer AND broadcasts so every live consumer clears state.
+ */
+export async function resetActiveShopOnLogout(): Promise<void> {
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(ACTIVE_SHOP_STORAGE_KEY);
+    } catch {
+      /* storage unavailable */
+    }
+  }
+  broadcastShopContextChange({ reason: "logout" });
+  await Promise.resolve();
+  await Promise.resolve();
+}
+

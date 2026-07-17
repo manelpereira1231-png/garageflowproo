@@ -8508,6 +8508,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_default_plan_slug: { Args: never; Returns: string }
       get_effective_plan_price: {
         Args: { p_country_code: string; p_cycle: string; p_plan_slug: string }
         Returns: {

@@ -146,6 +146,19 @@ Deno.serve(async (req) => {
     const { data: isSuper } = await supa.rpc("is_super_admin", { _user_id: user.id });
     if (!isSuper) return json({ error: "Acesso restrito a super admin" }, 403);
 
+    // Cost control: global budget + rate limit
+    const userSupa = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: budget } = await userSupa.rpc("consume_platform_ai_credit", {
+      _function_name: "marketing-autopilot", _cost: 3, _metadata: {},
+    });
+    if (!(budget as any)?.allowed) {
+      const reason = (budget as any)?.reason || "blocked";
+      const status = reason === "rate_limited" ? 429 : reason === "forbidden" ? 403 : 402;
+      return json({ error: reason, quota: budget }, status);
+    }
+
     const body = await req.json().catch(() => ({}));
     const action = body?.action ?? "generate";
     console.log("action:", action, "by:", user.id);

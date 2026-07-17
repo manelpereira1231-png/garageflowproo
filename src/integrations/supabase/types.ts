@@ -303,35 +303,92 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_rate_limits: {
+        Row: {
+          count: number
+          subject_id: string
+          subject_type: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          subject_id: string
+          subject_type: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          subject_id?: string
+          subject_type?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      ai_response_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          function_name: string
+          response: Json
+          shop_id: string | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at: string
+          function_name: string
+          response: Json
+          shop_id?: string | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          function_name?: string
+          response?: Json
+          shop_id?: string | null
+        }
+        Relationships: []
+      }
       ai_usage_ledger: {
         Row: {
+          cached: boolean
+          cost_estimate_eur: number
           created_at: string
           credits: number
           function_name: string
           id: string
           metadata: Json
           plan_slug: string | null
-          shop_id: string
+          prompt_hash: string | null
+          shop_id: string | null
           user_id: string | null
         }
         Insert: {
+          cached?: boolean
+          cost_estimate_eur?: number
           created_at?: string
           credits?: number
           function_name: string
           id?: string
           metadata?: Json
           plan_slug?: string | null
-          shop_id: string
+          prompt_hash?: string | null
+          shop_id?: string | null
           user_id?: string | null
         }
         Update: {
+          cached?: boolean
+          cost_estimate_eur?: number
           created_at?: string
           credits?: number
           function_name?: string
           id?: string
           metadata?: Json
           plan_slug?: string | null
-          shop_id?: string
+          prompt_hash?: string | null
+          shop_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -8138,6 +8195,14 @@ export type Database = {
       }
     }
     Functions: {
+      _ai_check_rate_limit: {
+        Args: { _limit: number; _subject_id: string; _subject_type: string }
+        Returns: boolean
+      }
+      _ai_setting_numeric: {
+        Args: { _default: number; _key: string }
+        Returns: number
+      }
       accept_team_invitation: {
         Args: { _token: string }
         Returns: {
@@ -8224,6 +8289,21 @@ export type Database = {
         Args: { _new_status: string; _report_id: string }
         Returns: undefined
       }
+      ai_log_cache_hit: {
+        Args: { _function_name: string; _prompt_hash: string; _shop_id: string }
+        Returns: undefined
+      }
+      ai_save_cache: {
+        Args: {
+          _cache_key: string
+          _function_name: string
+          _response: Json
+          _shop_id: string
+          _ttl_seconds?: number
+        }
+        Returns: undefined
+      }
+      ai_try_cache: { Args: { _cache_key: string }; Returns: Json }
       archive_old_events: { Args: { _days?: number }; Returns: Json }
       calculate_inspection_risk: {
         Args: { _report_id: string }
@@ -8308,6 +8388,10 @@ export type Database = {
         }
         Returns: Json
       }
+      consume_platform_ai_credit: {
+        Args: { _cost?: number; _function_name: string; _metadata?: Json }
+        Returns: Json
+      }
       create_team_invitation: {
         Args: {
           _email: string
@@ -8374,6 +8458,8 @@ export type Database = {
         }[]
       }
       get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
+      get_ai_admin_stats: { Args: never; Returns: Json }
+      get_ai_global_status: { Args: never; Returns: Json }
       get_ai_usage: { Args: { _shop_id: string }; Returns: Json }
       get_client_portal_data: { Args: { _token: string }; Returns: Json }
       get_country_config: {

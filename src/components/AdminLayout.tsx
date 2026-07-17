@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
-  Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket,
+  Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +82,7 @@ const navSections = [
     label: "Configuração",
     items: [
       { path: "/admin/plans", label: "Planos (Nome e Estado)", icon: CreditCard },
+      { path: "/admin/ai-control", label: "Controlo de IA (Custos)", icon: Zap },
       { path: "/admin/countries", label: "Países e Preços Stripe", icon: Globe },
       { path: "/admin/partners", label: "Parceiros", icon: Handshake },
       { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },

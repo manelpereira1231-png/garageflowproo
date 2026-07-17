@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,9 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 
-const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
-const PLAN_COLORS = ["hsl(var(--muted-foreground))", "hsl(var(--primary))", "hsl(var(--chart-3))"];
+// Fonte única de verdade: preços, planos e ordem lidos do catálogo dinâmico.
+// Nunca hardcoded — se o admin criar/renomear um plano em /admin/plans,
+// este relatório reflete a alteração automaticamente.
+const CHART_PALETTE = [
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--primary))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
 const STATUS_COLORS: Record<string, string> = {
   active: "hsl(var(--chart-3))",
   trialing: "hsl(var(--primary))",
@@ -61,6 +70,27 @@ export default function AdminReports() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("6");
   const [refreshing, setRefreshing] = useState(false);
+  const { data: catalog } = usePlansCatalog();
+
+  // Catálogo dinâmico → mapas de preço / nome / entry plan (sem hardcodes)
+  const { planPriceMap, planLabelMap, entryPlanSlug, paidPlanSlugs } = useMemo(() => {
+    const plans = catalog?.plans ?? [];
+    const prices = catalog?.prices ?? [];
+    const priceMap: Record<string, number> = {};
+    const labelMap: Record<string, string> = {};
+    for (const p of plans) {
+      labelMap[p.slug] = p.name || p.slug;
+      // Preço PT mensal como referência para MRR (mesma moeda usada no UI: €)
+      const pt = prices.find(pr => pr.plan_slug === p.slug && pr.country_code === "PT" && pr.cycle === "monthly");
+      priceMap[p.slug] = pt ? Number(pt.amount) : 0;
+    }
+    // Entry plan = plano com preço zero (ou o primeiro por sort_order)
+    const entry = plans.find(p => (priceMap[p.slug] ?? 0) === 0)?.slug
+      ?? plans[0]?.slug
+      ?? "free";
+    const paid = plans.filter(p => (priceMap[p.slug] ?? 0) > 0).map(p => p.slug);
+    return { planPriceMap: priceMap, planLabelMap: labelMap, entryPlanSlug: entry, paidPlanSlugs: paid };
+  }, [catalog]);
 
   const fetchData = async () => {
     const months = parseInt(period);
@@ -109,12 +139,12 @@ export default function AdminReports() {
     // === MRR/ARR — APENAS STRIPE PAID (receita real) ===
     const activeSubs = subscriptions.filter(s => s.status === "active" || s.status === "trialing");
     const stripePaidSubs = activeSubs.filter(s => 
-      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== 'free')
+      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== entryPlanSlug)
     );
     let mrrReal = 0;
     let discountImpact = 0;
     stripePaidSubs.forEach(s => {
-      const base = PLAN_PRICES[s.plan] || 0;
+      const base = planPriceMap[s.plan] || 0;
       const disc = Number(s.discount_percent || 0);
       const expired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
       const effectiveDisc = expired ? 0 : disc;
@@ -123,15 +153,16 @@ export default function AdminReports() {
       discountImpact += discounted;
     });
 
-    // === PLAN DISTRIBUTION ===
-    const planCounts: Record<string, number> = { Free: 0, Pro: 0, Garage: 0 };
+    // === PLAN DISTRIBUTION (dinâmico — iterado do catálogo) ===
+    const planSlugs = Object.keys(planLabelMap);
+    const planCounts: Record<string, number> = Object.fromEntries(planSlugs.map(s => [s, 0]));
     subscriptions.forEach(s => {
-      if (s.plan === "free") planCounts.Free++;
-      else if (s.plan === "pro") planCounts.Pro++;
-      else if (s.plan === "garage") planCounts.Garage++;
+      if (s.plan && planCounts.hasOwnProperty(s.plan)) planCounts[s.plan]++;
     });
-    const planDistribution = Object.entries(planCounts).map(([name, value], i) => ({
-      name, value, color: PLAN_COLORS[i]
+    const planDistribution = planSlugs.map((slug, i) => ({
+      name: planLabelMap[slug],
+      value: planCounts[slug],
+      color: CHART_PALETTE[i % CHART_PALETTE.length],
     }));
 
     // === STATUS DISTRIBUTION ===
@@ -158,25 +189,27 @@ export default function AdminReports() {
       registrationsByMonth.push({ month: monthStr, shops: count });
     }
 
-    // === FUNNEL ===
+    // === FUNNEL (nome do entry plan lido do catálogo) ===
     const totalAccounts = shops.length;
-    const freeSubs = subscriptions.filter(s => s.plan === "free").length;
+    const freeSubs = subscriptions.filter(s => s.plan === entryPlanSlug).length;
     const trialingSubs = subscriptions.filter(s => s.status === "trialing").length;
     const paidSubs = stripePaidSubs.filter(s => s.status === "active").length;
     const cancelledSubs = subscriptions.filter(s => s.status === "cancelled" || s.status === "canceled").length;
     const funnelMax = Math.max(totalAccounts, 1);
     const funnel = [
       { stage: "Contas Criadas", count: totalAccounts, percent: 100 },
-      { stage: "Start", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
+      { stage: planLabelMap[entryPlanSlug] || "Entrada", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
       { stage: "Trial", count: trialingSubs, percent: Math.round((trialingSubs / funnelMax) * 100) },
       { stage: "Pago", count: paidSubs, percent: Math.round((paidSubs / funnelMax) * 100) },
       { stage: "Cancelado", count: cancelledSubs, percent: Math.round((cancelledSubs / funnelMax) * 100) },
     ];
 
-    // === CHURN & CONVERSION ===
+    // === CHURN & CONVERSION (planos pagos dinâmicos) ===
     const churnRate = subscriptions.length > 0 ? (cancelledSubs / subscriptions.length) * 100 : 0;
     const hadTrial = subscriptions.filter(s => s.trial_end).length;
-    const convertedFromTrial = subscriptions.filter(s => s.trial_end && (s.plan === "pro" || s.plan === "garage") && s.status === "active").length;
+    const convertedFromTrial = subscriptions.filter(s =>
+      s.trial_end && paidPlanSlugs.includes(s.plan) && s.status === "active"
+    ).length;
     const trialConversion = hadTrial > 0 ? (convertedFromTrial / hadTrial) * 100 : 0;
 
     // === TOP SHOPS BY REVENUE ===
@@ -210,7 +243,7 @@ export default function AdminReports() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [period]);
+  useEffect(() => { if (catalog) fetchData(); }, [period, catalog]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

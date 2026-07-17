@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
+  Package, Inbox, Sparkles, Languages, Coins, Layers,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,32 +13,41 @@ import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { prefetchRoute } from "@/lib/routePrefetch";
 
-// Sidebar reorganizada por blocos mentais — "o que está a acontecer / como está o SaaS /
-// o que os utilizadores fazem / mercado / crescimento / sistema / configuração".
-// Apenas reorganização — nenhuma página foi removida.
+// Arquitetura aprovada: 7 grupos, cada opção existe UMA única vez.
+// Páginas legadas (AdminSettings, AdminAlerts, AdminGrowth, AdminGrowthOpportunities,
+// AdminMarketingAutopilot, AdminTraffic, AdminFeatureAdoption) saem do menu mas as rotas
+// continuam acessíveis por URL — serão absorvidas como tabs em lotes seguintes.
 const navSections = [
   {
-    label: "Principal",
+    label: "Plataforma",
     items: [
       { path: "/admin", label: "Centro de Controlo", icon: LayoutDashboard },
+      { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
+      { path: "/admin/system", label: "Kill Switches & Flags", icon: ToggleLeft },
+      { path: "/admin/logs", label: "Auditoria", icon: FileText },
+      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
+      { path: "/admin/rate-limits", label: "Rate Limits", icon: Activity },
     ],
   },
   {
-    label: "Negócio",
+    label: "Planos",
+    items: [
+      { path: "/admin/plans", label: "Planos", icon: CreditCard },
+      { path: "/admin/features", label: "Funcionalidades", icon: Layers },
+      { path: "/admin/countries", label: "Preços por País", icon: Globe },
+      { path: "/admin/coupons", label: "Cupões & Promoções", icon: Tag },
+      { path: "/admin/ai-control", label: "IA (Custos & Orçamento)", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Clientes",
     items: [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
-      { path: "/admin/demos", label: "Pedidos de Demonstração", icon: Users },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
-      { path: "/admin/billing", label: "Planos e Subscrições", icon: CreditCard },
-      { path: "/admin/finance", label: "Receita e Crescimento", icon: TrendingUp },
+      { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
+      { path: "/admin/finance", label: "Receita", icon: TrendingUp },
+      { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
-      { path: "/admin/accounting", label: "Contabilidade", icon: FileText },
-    ],
-  },
-  {
-    label: "Operações",
-    items: [
-      { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
     ],
   },
   {
@@ -46,48 +56,34 @@ const navSections = [
       { path: "/admin/market-dashboard", label: "Marketplace", icon: Store },
       { path: "/admin/market-listings", label: "Anúncios", icon: Car },
       { path: "/admin/market", label: "Inspeções", icon: Wrench },
-      { path: "/admin/market-escrows", label: "Escrow e Disputas", icon: ShieldCheck },
-      { path: "/admin/market-kyc", label: "KYC e Verificações", icon: IdCard },
-      { path: "/admin/market-activations", label: "Adesões Marketplace", icon: Store },
+      { path: "/admin/market-escrows", label: "Escrow & Disputas", icon: ShieldCheck },
+      { path: "/admin/market-kyc", label: "KYC", icon: IdCard },
+      { path: "/admin/market-activations", label: "Adesões", icon: Package },
       { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
     ],
   },
   {
-    label: "Crescimento",
+    label: "Marketing",
     items: [
-      { path: "/admin/growth-opportunities", label: "Oportunidades", icon: TrendingUp },
-      { path: "/admin/business-metrics", label: "Métricas de Negócio", icon: BarChart3 },
-      { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
-      { path: "/admin/marketing-autopilot", label: "Autopiloto de Marketing", icon: Rocket },
-      { path: "/admin/coupons", label: "Cupões e Ofertas", icon: Tag },
-      { path: "/admin/traffic", label: "Tráfego e Conversões", icon: Globe },
-      { path: "/admin/seo", label: "SEO Portugal", icon: Search },
-      { path: "/admin/seo-blog", label: "Blog SEO", icon: FileText },
-      { path: "/admin/adoption", label: "Adoção", icon: Activity },
+      { path: "/admin/marketing", label: "Campanhas & Automações", icon: Megaphone },
+      { path: "/admin/seo", label: "SEO", icon: Search },
+      { path: "/admin/seo-blog", label: "Blog", icon: FileText },
     ],
   },
   {
-    label: "Sistema",
+    label: "Suporte",
     items: [
-      { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
-      { path: "/admin/action-queue", label: "Action Queue", icon: Activity },
+      { path: "/admin/action-queue", label: "Inbox Operacional", icon: Inbox },
       { path: "/admin/complaints", label: "Reclamações", icon: ShieldAlert },
-      { path: "/admin/alerts", label: "Alertas", icon: Bell },
-      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
-      { path: "/admin/logs", label: "Auditoria", icon: FileText },
-      { path: "/admin/rate-limits", label: "Rate Limits", icon: Activity },
+      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
+      { path: "/admin/demos", label: "Demonstrações", icon: Users },
+      { path: "/admin/partners", label: "Parceiros", icon: Handshake },
     ],
   },
   {
-    label: "Configuração",
+    label: "Operações",
     items: [
-      { path: "/admin/plans", label: "Planos (Nome e Estado)", icon: CreditCard },
-      { path: "/admin/ai-control", label: "Controlo de IA (Custos)", icon: Zap },
-      { path: "/admin/countries", label: "Países e Preços Stripe", icon: Globe },
-      { path: "/admin/partners", label: "Parceiros", icon: Handshake },
-      { path: "/admin/system", label: "Funcionalidades e Avisos", icon: ToggleLeft },
-      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
-      { path: "/admin/settings", label: "Configurações", icon: Settings },
+      { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
     ],
   },
 ];

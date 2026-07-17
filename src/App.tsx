@@ -401,6 +401,7 @@ const adminRoutes = [
   { path: "/admin/settings", element: <AdminSettings /> },
   { path: "/admin/features", element: <AdminFeatureMatrix /> },
   { path: "/admin/plans", element: <AdminPlans /> },
+  { path: "/admin/ai-control", element: <AdminAIControl /> },
   { path: "/admin/logs", element: <AdminLogs /> },
   { path: "/admin/users", element: <AdminUsers /> },
   { path: "/admin/system-health", element: <AdminSystemHealth /> },

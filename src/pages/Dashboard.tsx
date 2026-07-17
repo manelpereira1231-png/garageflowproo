@@ -66,17 +66,14 @@ export default function Dashboard() {
 function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
-  const { plan, isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
+  const { isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();
 
-  // Seletor de contexto — Oficina Mãe (dono do grupo) no plano Garage com >1 oficina.
-  // Só quem é `shops.user_id = auth.uid()` de várias oficinas vê o seletor:
-  // membros de equipa de uma oficina filha nunca aparecem em `ownedShops` (RLS +
-  // filtro explícito no hook), portanto nunca acedem à opção "Todas as oficinas"
-  // nem aos dados agregados. Isolamento por shop_id permanece intacto.
-  const isOwnerOfGroup = plan === 'garage' && ownedShops.length > 1;
+  // Seletor de contexto — apenas a Oficina Mãe vê o grupo. O hook lê a
+  // hierarquia real (`group_owner_id`) e filhas independentes não entram aqui.
+  const isOwnerOfGroup = ownedShops.length > 1;
   const [selectedFilter, setSelectedFilterRaw] = useState<string>(() => {
     if (typeof window === 'undefined') return 'all';
     return localStorage.getItem('garageflow_dashboard_filter') || 'all';

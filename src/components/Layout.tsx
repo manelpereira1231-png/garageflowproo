@@ -123,8 +123,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // shops and the one currently selected is NOT the oldest (primary). Child
   // shops NEVER see Billing/Stripe surfaces and NEVER trigger the paywall
   // — the mother shop owns the subscription for the entire group.
+  const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const isChildShopContext = Boolean(
-    !primaryShopLoading && primaryShopId && activeShopId && activeShopId !== primaryShopId,
+    !primaryShopLoading && activeShopId && !isPrimaryShopActive,
   );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
@@ -460,7 +461,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // A child-only user (team member of a single child shop) or a single-shop owner
   // must NEVER see that other shops exist.
   const isGroupOwner = ownedShops.length > 1;
-  const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {
       if (roleLoading || !role) return false;
@@ -733,7 +733,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               switchShop(id);
               navigate(location.pathname, { replace: true });
             }}
-            showCreate={canUseFeature("multiShop") && isPrimaryShopActive}
+            showCreate={(canUseFeature("multiShop") || enabledFeatures.has("multiShop") || enabledFeatures.has("multi_shop")) && isPrimaryShopActive}
           />
         )}
 

@@ -12,15 +12,14 @@ export interface OwnedShop {
 }
 
 /**
- * Returns every shop owned by the authenticated account (shops.user_id =
- * auth.uid()), ordered by creation (oldest first). The oldest is the
- * "Oficina Mãe"; the rest are "Oficinas Filhas".
+ * Returns every shop in the authenticated account's group
+ * (`shops.group_owner_id = auth.uid()`), ordered by creation (oldest first).
+ * The oldest is the "Oficina Mãe"; the rest are "Oficinas Filhas".
  *
  * Used exclusively by the Dashboard Group Mode to aggregate KPIs across
- * the whole group without touching RLS, RBAC, or the ShopSwitcher. Because
- * every row is scoped by `user_id = auth.uid()`, this can NEVER return
- * shops from another account — enforced both by RLS on `shops` and by the
- * explicit `.eq("user_id", user.id)` filter here.
+ * the whole group without touching RLS, RBAC, or the ShopSwitcher. Child
+ * accounts have a different auth id from `group_owner_id`, so they never see
+ * siblings through this hook.
  */
 export function useOwnedShops() {
   const { isReady, user } = useAuthReady();

@@ -64,12 +64,21 @@ export function useShopContext() {
     }
 
     try {
-      // Get shops where user is owner (select `name` so we can detect empty
-      // ghost shops auto-created by the handle_new_user trigger for invited
-      // team members — those must NOT become the active shop, otherwise
-      // the invited user becomes "owner" of an empty phantom and the RBAC
-      // grants them full access.)
-      const { data: ownedShops } = await Promise.race([
+      // Canonical group scope: if this account is the Oficina Mãe
+      // (`group_owner_id = auth.uid()`), load every child shop in the group so
+      // switching to a child does not get reverted by the next context reload.
+      // Child accounts never match this filter, so they remain isolated.
+      const { data: groupShops } = await Promise.race([
+        supabase
+          .from("shops")
+          .select("id, name, logo_url, currency, language")
+          .eq("group_owner_id", user.id),
+        timeoutResult({ data: [] }),
+      ]);
+
+      // Direct ownership still matters for legacy/single-shop accounts and for
+      // independent child-shop login (`shops.user_id = child_user_id`).
+      const { data: directOwnedShops } = await Promise.race([
         supabase
           .from("shops")
           .select("id, name, logo_url, currency, language")
@@ -86,9 +95,15 @@ export function useShopContext() {
         timeoutResult({ data: [] }),
       ]);
 
+      const ownedById = new Map<string, Shop>();
+      for (const s of [...(groupShops || []), ...(directOwnedShops || [])] as Shop[]) {
+        ownedById.set(s.id, s);
+      }
+      const ownedShops = Array.from(ownedById.values());
+
       const memberShopIds = (memberEntries || [])
         .map(e => e.shop_id)
-        .filter(id => !(ownedShops || []).some(s => s.id === id));
+        .filter(id => !ownedById.has(id));
 
       let memberShops: Shop[] = [];
       if (memberShopIds.length > 0) {
@@ -110,11 +125,11 @@ export function useShopContext() {
         ? (ownedShops || []).filter((s) => (s.name || "").trim().length > 0)
         : (ownedShops || []);
 
-      // Prefer member shops first: for an invited technician/reception, their
-      // "real" workplace should be the default active shop.
-      const allShops = memberShops.length > 0
-        ? [...memberShops, ...realOwnedShops]
-        : [...realOwnedShops, ...memberShops];
+      // Prefer owned/group shops first for the Oficina Mãe; prefer member shops
+      // first only for pure team users with no direct/group ownership.
+      const allShops = realOwnedShops.length > 0
+        ? [...realOwnedShops, ...memberShops]
+        : [...memberShops, ...realOwnedShops];
       setShops(allShops);
 
       // Restore or pick default; if the stored active id no longer exists

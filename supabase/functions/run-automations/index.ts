@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
         let emailMessage = "";
         let emailItems: string[] = [];
         let recipientEmails: string[] = [];
+        let recipientPhones: string[] = [];
 
         // Get shop info for emails
         const { data: shop } = await supabase
@@ -121,7 +122,7 @@ Deno.serve(async (req) => {
           case "invoice_overdue": {
             const { data: overdueRaw } = await supabase
               .from("invoices")
-              .select("id, number, client_id, total, clients(name, email)")
+              .select("id, number, client_id, total, clients(name, email, phone)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "issued")
               .lt("due_date", new Date().toISOString().split("T")[0]);
@@ -134,8 +135,9 @@ Deno.serve(async (req) => {
               emailItems = overdue.slice(0, 10).map(i => `${i.number} — ${(i.clients as any)?.name || 'Cliente'}`);
               // Send reminder to each client with overdue invoice
               for (const inv of overdue) {
-                const clientEmail = (inv.clients as any)?.email;
-                if (clientEmail) recipientEmails.push(clientEmail);
+                const c = inv.clients as any;
+                if (c?.email) recipientEmails.push(c.email);
+                if (c?.phone) recipientPhones.push(c.phone);
               }
             }
             break;
@@ -246,7 +248,7 @@ Deno.serve(async (req) => {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
             const { data: completedRaw } = await supabase
               .from("work_orders")
-              .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
+              .select("id, number, total, labor_hours, clients(name, email, phone), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);
@@ -262,11 +264,12 @@ Deno.serve(async (req) => {
               });
               // Notify clients their vehicle is ready (with labor breakdown)
               for (const wo of completed) {
-                const clientEmail = (wo.clients as any)?.email;
-                if (clientEmail) {
-                  recipientEmails.push(clientEmail);
-                  recipientLabor[clientEmail] = laborLine((wo as any).labor_hours);
+                const c = wo.clients as any;
+                if (c?.email) {
+                  recipientEmails.push(c.email);
+                  recipientLabor[c.email] = laborLine((wo as any).labor_hours);
                 }
+                if (c?.phone) recipientPhones.push(c.phone);
               }
             }
             break;
@@ -356,16 +359,56 @@ Deno.serve(async (req) => {
               }
             }
           } else if (rule.action_type === "send_sms" || rule.action_type === "send_whatsapp") {
-            // Channel not yet configured — log as skipped, do not fake success
-            await supabase.from("automation_logs").insert({
-              shop_id: rule.shop_id,
-              rule_id: rule.id,
-              trigger_type: rule.trigger_type,
-              action_type: rule.action_type,
-              status: "skipped",
-              details: { reason: "Channel not configured" },
-            });
-            continue;
+            const fnName = rule.action_type === "send_sms" ? "send-sms" : "send-whatsapp";
+            const smsBody = `${shopName}: ${emailSubject}`.slice(0, 320);
+            const phones = Array.from(new Set(recipientPhones)).slice(0, 20);
+            if (phones.length === 0) {
+              await supabase.from("automation_logs").insert({
+                shop_id: rule.shop_id, rule_id: rule.id,
+                trigger_type: rule.trigger_type, action_type: rule.action_type,
+                status: "skipped", details: { reason: "No recipient phone numbers" },
+              });
+              continue;
+            }
+            let sent = 0, failed = 0, notConfigured = false;
+            const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/${fnName}`;
+            for (const to of phones) {
+              try {
+                const r = await fetch(fnUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  },
+                  body: JSON.stringify({ to, message: smsBody, shop_id: rule.shop_id, entity_id: rule.id }),
+                });
+                if (r.ok) sent++;
+                else { failed++; if (r.status === 503) { notConfigured = true; break; } }
+              } catch { failed++; }
+            }
+            if (notConfigured) {
+              await supabase.from("automation_logs").insert({
+                shop_id: rule.shop_id, rule_id: rule.id,
+                trigger_type: rule.trigger_type, action_type: rule.action_type,
+                status: "skipped", details: { reason: "Twilio not configured" },
+              });
+              continue;
+            }
+            details = { ...details, sent, failed, phones: phones.length };
+          } else if (rule.action_type === "send_push") {
+            try {
+              await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({
+                  shop_id: rule.shop_id, title: emailSubject || rule.name,
+                  body: emailMessage || "", url: "/dashboard",
+                }),
+              });
+            } catch (e) { console.error("push send failed", e); }
           } else if (rule.action_type === "create_alert") {
             await supabase.from("alerts").insert({
               shop_id: rule.shop_id,

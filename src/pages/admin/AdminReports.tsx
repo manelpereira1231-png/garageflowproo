@@ -243,7 +243,7 @@ export default function AdminReports() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [period]);
+  useEffect(() => { if (catalog) fetchData(); }, [period, catalog]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

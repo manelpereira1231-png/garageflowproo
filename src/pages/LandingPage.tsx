@@ -775,27 +775,31 @@ export default function LandingPage() {
           }`}>
             {planConfigs.map(plan => (
               <div
-                key={plan.nameKey}
+                key={plan.slug}
                 className={`bg-card rounded-xl p-5 sm:p-6 border-2 transition-all ${
                   plan.highlighted
                     ? "border-primary shadow-lg shadow-primary/10 md:scale-[1.02]"
                     : "border-border hover:border-primary/30"
                 }`}
               >
-                {plan.highlighted && (
+                {plan.badgeLabel ? (
+                  <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{plan.badgeLabel}</div>
+                ) : plan.highlighted ? (
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
-                )}
-                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey) || plan.displayName)}</h3>
-                <div className="mt-2 mb-2">
-                  <PriceWithPromo
-                    basePrice={plan.basePrice}
-                    country={countryCode}
-                    plan={plan.slug}
-                    cycle={billingCycle}
-                    periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
-                    size="lg"
-                  />
-                </div>
+                ) : null}
+                <h3 className="text-xl font-bold">{getPlanName(plan.slug, plan.displayName)}</h3>
+                {plan.showPrice ? (
+                  <div className="mt-2 mb-2">
+                    <PriceWithPromo
+                      basePrice={plan.basePrice}
+                      country={countryCode}
+                      plan={plan.slug}
+                      cycle={billingCycle}
+                      periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
+                      size="lg"
+                    />
+                  </div>
+                ) : <div className="mt-2 mb-2" />}
                 {plan.subtitleKey ? (
                   <p className="text-xs text-muted-foreground mb-5 sm:mb-6">{t(plan.subtitleKey)}</p>
                 ) : (
@@ -816,19 +820,30 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                {plan.ctaMode === "unavailable" ? (
-                  <Button className="w-full" variant="outline" disabled>
-                    {t(plan.ctaKey)}
-                  </Button>
-                ) : (
-                  <Link to={plan.ctaMode === "demo" || plan.ctaMode === "contact" ? "/demo" : "/auth?mode=signup"}>
-                    <Button
-                      className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                      variant={plan.ctaPrimary ? "default" : "outline"}
-                    >
-                      {t(plan.ctaKey)}
+                {plan.cta.visible && (
+                  plan.cta.disabled ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      {plan.cta.label}
                     </Button>
-                  </Link>
+                  ) : plan.cta.external ? (
+                    <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                        variant={plan.ctaPrimary ? "default" : "outline"}
+                      >
+                        {plan.cta.label}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Link to={plan.cta.href}>
+                      <Button
+                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
+                        variant={plan.ctaPrimary ? "default" : "outline"}
+                      >
+                        {plan.cta.label}
+                      </Button>
+                    </Link>
+                  )
                 )}
               </div>
             ))}

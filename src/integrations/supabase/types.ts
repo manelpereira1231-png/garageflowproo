@@ -4997,6 +4997,60 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_promotions: {
+        Row: {
+          active: boolean
+          country_code: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          cycle: string
+          ends_at: string | null
+          id: string
+          notes: string | null
+          plan: string
+          promo_price: number
+          starts_at: string | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          country_code: string
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          cycle: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          plan: string
+          promo_price: number
+          starts_at?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          cycle?: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          plan?: string
+          promo_price?: number
+          starts_at?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           active: boolean
@@ -8091,6 +8145,15 @@ export type Database = {
         Returns: Json
       }
       generate_report_hash: { Args: { _report_id: string }; Returns: string }
+      get_active_promotion: {
+        Args: { _country_code: string; _cycle: string; _plan: string }
+        Returns: {
+          discount_percent: number
+          ends_at: string
+          promo_price: number
+          stripe_price_id: string
+        }[]
+      }
       get_admin_countries: { Args: { _user_id: string }; Returns: string[] }
       get_client_portal_data: { Args: { _token: string }; Returns: Json }
       get_country_config: {

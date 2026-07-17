@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import { loadCountriesFromDB, detectCountryByIP, reloadCountriesFromDB } from "@/lib/regionConfig";
 import { clearPricingCache } from "@/hooks/useCountryPricing";
 import { loadPlatformSettings, notifyPlatformSettingsUpdated } from "@/lib/platformSettings";
+import { ensurePromotionsLoaded, clearPromotionsCache } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
 import { initSentry } from "@/lib/sentry";
@@ -15,7 +16,9 @@ const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());
   // Preload admin-managed platform settings (plan limits + feature gates).
   void loadPlatformSettings();
-  // Realtime: any admin change to country_settings / platform_settings
+  // Preload active plan promotions (single source of truth for landing/billing/checkout).
+  void ensurePromotionsLoaded();
+  // Realtime: any admin change to country_settings / platform_settings / plan_promotions
   // propagates to every open session within ~1s — landing, dashboard,
   // billing, checkout and every feature gate re-read instantly.
   try {
@@ -33,6 +36,16 @@ const bootRegionalConfig = () => {
         "postgres_changes",
         { event: "*", schema: "public", table: "platform_settings" },
         () => { notifyPlatformSettingsUpdated(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "plan_promotions" },
+        () => {
+          clearPromotionsCache();
+          void ensurePromotionsLoaded().then(() => {
+            try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch { /* ignore */ }
+          });
+        }
       )
       .subscribe();
   } catch {}

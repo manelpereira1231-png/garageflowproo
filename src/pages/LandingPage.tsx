@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
-import { getRegionalPricing, formatPrice } from "@/lib/regionConfig";
+import { getRegionalPricing, getCountryCode } from "@/lib/regionConfig";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
@@ -19,6 +19,8 @@ import SpreadsheetMockup from "@/components/landing/SpreadsheetMockup";
 import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 import { SITE_URL } from "@/lib/seoConfig";
 import { usePlanNames } from "@/hooks/usePlanNames";
+import PriceWithPromo from "@/components/PriceWithPromo";
+import { getEffectivePrice } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
@@ -218,11 +220,12 @@ export default function LandingPage() {
 
   const { getName: getPlanName } = usePlanNames();
 
+  const countryCode = getCountryCode();
   const planConfigs = [
     {
       slug: 'free' as const,
       nameKey: 'landing.planFree',
-      price: formatPrice(pricing.free[billingCycle]),
+      basePrice: pricing.free[billingCycle],
       periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: freeItems,
@@ -233,7 +236,7 @@ export default function LandingPage() {
     {
       slug: 'pro' as const,
       nameKey: 'landing.planPro',
-      price: formatPrice(pricing.pro[billingCycle]),
+      basePrice: pricing.pro[billingCycle],
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: proItems,
@@ -244,7 +247,7 @@ export default function LandingPage() {
     {
       slug: 'garage' as const,
       nameKey: 'landing.planGarage',
-      price: formatPrice(pricing.garage[billingCycle]),
+      basePrice: pricing.garage[billingCycle],
       periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: garageItems,
@@ -257,6 +260,10 @@ export default function LandingPage() {
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 
   // Rich SEO JSON-LD: SoftwareApplication + Organization + FAQPage
+  // When a promotion is active for Pro monthly, reflect the promo price
+  // in the SoftwareApplication offer so search results and social crawlers
+  // show the discounted headline price.
+  const proEff = getEffectivePrice(pricing.pro.monthly, countryCode, "pro", "monthly");
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -268,8 +275,11 @@ export default function LandingPage() {
       description: t('landing.heroSubtitle'),
       offers: {
         "@type": "Offer",
-        price: String(pricing.pro.monthly),
+        price: String(proEff.effectivePrice),
         priceCurrency: pricing.currency || "EUR",
+        ...(proEff.isPromo && proEff.endsAt
+          ? { priceValidUntil: proEff.endsAt.slice(0, 10) }
+          : {}),
       },
     },
     {
@@ -773,8 +783,14 @@ export default function LandingPage() {
                 )}
                 <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey))}</h3>
                 <div className="mt-2 mb-2">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  {plan.periodKey && <span className="text-muted-foreground text-sm">{t(plan.periodKey)}</span>}
+                  <PriceWithPromo
+                    basePrice={plan.basePrice}
+                    country={countryCode}
+                    plan={plan.slug}
+                    cycle={billingCycle}
+                    periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
+                    size="lg"
+                  />
                 </div>
                 {plan.subtitleKey ? (
                   <p className="text-xs text-muted-foreground mb-5 sm:mb-6">{t(plan.subtitleKey)}</p>

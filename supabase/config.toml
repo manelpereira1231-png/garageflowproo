@@ -132,6 +132,9 @@ verify_jwt = false
 [functions.admin-update-plan-price]
 verify_jwt = false
 
+[functions.admin-set-promotion]
+verify_jwt = false
+
 
 
 

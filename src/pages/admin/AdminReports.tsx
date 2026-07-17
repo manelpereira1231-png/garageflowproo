@@ -70,6 +70,27 @@ export default function AdminReports() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("6");
   const [refreshing, setRefreshing] = useState(false);
+  const { data: catalog } = usePlansCatalog();
+
+  // Catálogo dinâmico → mapas de preço / nome / entry plan (sem hardcodes)
+  const { planPriceMap, planLabelMap, entryPlanSlug, paidPlanSlugs } = useMemo(() => {
+    const plans = catalog?.plans ?? [];
+    const prices = catalog?.prices ?? [];
+    const priceMap: Record<string, number> = {};
+    const labelMap: Record<string, string> = {};
+    for (const p of plans) {
+      labelMap[p.slug] = p.name || p.slug;
+      // Preço PT mensal como referência para MRR (mesma moeda usada no UI: €)
+      const pt = prices.find(pr => pr.plan_slug === p.slug && pr.country_code === "PT" && pr.cycle === "monthly");
+      priceMap[p.slug] = pt ? Number(pt.amount) : 0;
+    }
+    // Entry plan = plano com preço zero (ou o primeiro por sort_order)
+    const entry = plans.find(p => (priceMap[p.slug] ?? 0) === 0)?.slug
+      ?? plans[0]?.slug
+      ?? "free";
+    const paid = plans.filter(p => (priceMap[p.slug] ?? 0) > 0).map(p => p.slug);
+    return { planPriceMap: priceMap, planLabelMap: labelMap, entryPlanSlug: entry, paidPlanSlugs: paid };
+  }, [catalog]);
 
   const fetchData = async () => {
     const months = parseInt(period);

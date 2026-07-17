@@ -67,6 +67,25 @@ function OwnerDashboard() {
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
+  const { shops: ownedShops, primaryShopId } = useOwnedShops();
+
+  // "Modo Grupo" — visão consolidada da Oficina Mãe (Plano Garage).
+  // Só é oferecido quando: (1) o plano permite multi-oficina, (2) o utilizador
+  // é dono de pelo menos 2 oficinas, (3) está posicionado na Oficina Mãe.
+  // Uma Oficina Filha nunca vê o toggle porque a shop ativa não coincide com
+  // a primaryShopId, e porque só listamos shops onde `shops.user_id = auth.uid()`.
+  const isGroupEligible =
+    plan === 'garage' && ownedShops.length > 1 && !!activeShopId && activeShopId === primaryShopId;
+  const [viewModeRaw, setViewModeRaw] = useState<'shop' | 'group'>(() =>
+    (typeof window !== 'undefined' && localStorage.getItem('garageflow_view_mode') === 'group') ? 'group' : 'shop'
+  );
+  const isGroupMode = isGroupEligible && viewModeRaw === 'group';
+  const setViewMode = (v: 'shop' | 'group') => {
+    setViewModeRaw(v);
+    try { localStorage.setItem('garageflow_view_mode', v); } catch { /* noop */ }
+  };
+  const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
+
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
@@ -82,6 +101,10 @@ function OwnerDashboard() {
   const [paidReferrals, setPaidReferrals] = useState(0);
   const [monthlyQuoteCount, setMonthlyQuoteCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [perShopBreakdown, setPerShopBreakdown] = useState<Array<{
+    id: string; name: string; address: string | null; revenue: number; profit: number;
+    services: number; clients: number; vehicles: number; growth: number;
+  }>>([]);
 
   const loadData = useCallback(async () => {
       if (!isReady) return;

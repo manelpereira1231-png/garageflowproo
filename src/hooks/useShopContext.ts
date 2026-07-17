@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
@@ -13,6 +15,23 @@ interface Shop {
 const STORAGE_KEY = "garageflow_active_shop";
 const SHOP_CONTEXT_TIMEOUT_MS = 3000;
 
+/**
+ * Cross-hook-instance broadcast: `useShopContext` is invoked in many
+ * components. When a shop is created/deleted or the active shop changes we
+ * dispatch a window event so every live instance refreshes without a page
+ * refresh. This avoids the "Shop Not Found / 404 until F5" bug.
+ */
+const SHOP_EVT = "garageflow:shop-context-changed";
+export function broadcastShopContextChange(
+  detail?: { deletedShopId?: string; reason?: string },
+) {
+  try {
+    window.dispatchEvent(new CustomEvent(SHOP_EVT, { detail }));
+  } catch {
+    /* SSR / no window */
+  }
+}
+
 function timeoutResult<T>(value: T, ms = SHOP_CONTEXT_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
 }
@@ -22,6 +41,15 @@ export function useShopContext() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [activeShopId, setActiveShopId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Keep the latest shops/activeShopId available inside effects without
+  // re-subscribing to Realtime on every state change.
+  const shopsRef = useRef<Shop[]>([]);
+  const activeShopIdRef = useRef<string | null>(null);
+  shopsRef.current = shops;
+  activeShopIdRef.current = activeShopId;
 
   const loadShops = useCallback(async () => {
     if (!isReady) {
@@ -90,13 +118,18 @@ export function useShopContext() {
         : [...realOwnedShops, ...memberShops];
       setShops(allShops);
 
-      // Restore or pick default
+      // Restore or pick default; if the stored active id no longer exists
+      // (e.g. shop was deleted), fall back to the primary shop.
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored && allShops.some(s => s.id === stored)) {
         setActiveShopId(stored);
       } else if (allShops.length > 0) {
         setActiveShopId(allShops[0].id);
         localStorage.setItem(STORAGE_KEY, allShops[0].id);
+      } else {
+        // No shops at all → clear context and let the caller redirect.
+        setActiveShopId(null);
+        localStorage.removeItem(STORAGE_KEY);
       }
     } finally {
       setLoading(false);
@@ -105,9 +138,96 @@ export function useShopContext() {
 
   useEffect(() => { loadShops(); }, [loadShops]);
 
+  // ─────────────────────────────────────────────────────────────────────
+  // Realtime + cross-instance sync: whenever any shop the user can see is
+  // deleted (INSERT/UPDATE/DELETE on `shops` or `shop_users`), refresh the
+  // context immediately — no window.location.reload, no setTimeout.
+  // ─────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+
+    const handleShopDeleted = (deletedId: string) => {
+      // Optimistically drop the deleted shop from local state.
+      const remaining = shopsRef.current.filter((s) => s.id !== deletedId);
+      setShops(remaining);
+
+      const wasActive = activeShopIdRef.current === deletedId;
+      if (wasActive) {
+        if (remaining.length > 0) {
+          // Pick the primary/first remaining shop.
+          const next = remaining[0].id;
+          setActiveShopId(next);
+          localStorage.setItem(STORAGE_KEY, next);
+        } else {
+          setActiveShopId(null);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+
+      // Purge every cached query — shop-scoped hooks will refetch against
+      // the (new or absent) active shop.
+      try { queryClient.clear(); } catch { /* noop */ }
+
+      // Kick a full reload of shops list so RLS-affected memberships settle.
+      void loadShops();
+
+      // If the user now has zero shops, route them to onboarding.
+      if (remaining.length === 0) {
+        try { navigate("/onboarding", { replace: true }); } catch { /* noop */ }
+      }
+    };
+
+    const channel = supabase
+      .channel(`shop-context-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "shops" },
+        (payload) => {
+          const oldId = (payload.old as any)?.id as string | undefined;
+          if (!oldId) return;
+          // Only react if this user actually saw the shop.
+          if (shopsRef.current.some((s) => s.id === oldId)) {
+            handleShopDeleted(oldId);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shops" },
+        () => { void loadShops(); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shop_users", filter: `user_id=eq.${user.id}` },
+        () => { void loadShops(); },
+      )
+      .subscribe();
+
+    // Cross-instance sync via window event (fires from ShopSwitcher on the
+    // same tab, before the Realtime round-trip completes).
+    const onLocalChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { deletedShopId?: string }
+        | undefined;
+      if (detail?.deletedShopId) {
+        handleShopDeleted(detail.deletedShopId);
+      } else {
+        void loadShops();
+      }
+    };
+    window.addEventListener(SHOP_EVT, onLocalChange);
+
+    return () => {
+      void supabase.removeChannel(channel);
+      window.removeEventListener(SHOP_EVT, onLocalChange);
+    };
+  }, [user, loadShops, queryClient, navigate]);
+
   const switchShop = useCallback((shopId: string) => {
     setActiveShopId(shopId);
     localStorage.setItem(STORAGE_KEY, shopId);
+    // Let every other useShopContext instance re-render on the active shop.
+    broadcastShopContextChange({ reason: "switch" });
   }, []);
 
   const activeShop = shops.find(s => s.id === activeShopId) || null;

@@ -1,14 +1,20 @@
 /**
- * Admin · Planos
+ * Admin · Planos (dinâmico)
  *
- * Edita metadados de cada plano (nome, descrição, estado ativo, ordem).
- * Os PREÇOS por país × ciclo são geridos em /admin/countries (já com sync Stripe).
- * Esta página é a fonte de verdade do nome/descrição que aparece na landing,
- * checkout, billing, etc. — nada hardcoded.
+ * Gestor completo — criar/editar/duplicar/arquivar/restaurar planos e as
+ * suas configurações visuais + preços por país × ciclo, sem alterar código.
+ *
+ * Fonte de verdade:
+ *   - `plans` (metadata + visibilidade)
+ *   - `plan_country_prices` (preço + Stripe IDs por país × ciclo)
+ *   - `plan_features` (funcionalidades por plano — gerido em /admin/features)
+ *
+ * Retrocompatível: as colunas antigas de country_settings.saas_ / stripe_
+ * continuam a existir e são mantidas em sincronia por um trigger DB.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Save, Globe, ListChecks } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Globe, ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,6 +24,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+type Cycle = "monthly" | "yearly" | "quarterly" | "semestral" | "lifetime";
 
 interface PlanRow {
   slug: string;
@@ -25,34 +41,78 @@ interface PlanRow {
   description: string | null;
   active: boolean;
   sort_order: number;
+  color: string | null;
+  icon: string | null;
+  label: string | null;
+  visible_on_landing: boolean;
+  visible_on_billing: boolean;
+  visible_on_checkout: boolean;
+  visible_on_compare: boolean;
+  archived_at: string | null;
 }
+
+interface PriceRow {
+  id: string;
+  plan_slug: string;
+  country_code: string;
+  cycle: Cycle;
+  currency: string;
+  amount: number;
+  stripe_product_id: string | null;
+  stripe_price_id: string | null;
+  active: boolean;
+}
+
+interface CountryRow {
+  code: string;
+  name: string;
+  currency: string;
+  currency_symbol: string;
+}
+
+const CYCLES: Cycle[] = ["monthly", "yearly", "quarterly", "semestral", "lifetime"];
 
 export default function AdminPlans() {
   const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [prices, setPrices] = useState<PriceRow[]>([]);
+  const [countries, setCountries] = useState<CountryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newPlan, setNewPlan] = useState({ slug: "", name: "", description: "" });
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("plans")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    if (error) toast.error("Erro ao carregar planos: " + error.message);
-    setPlans((data as any) ?? []);
+    const [plansRes, pricesRes, countriesRes] = await Promise.all([
+      supabase.from("plans").select("*").order("sort_order", { ascending: true }),
+      supabase.from("plan_country_prices" as any).select("*"),
+      supabase.from("country_settings").select("code,name,currency,currency_symbol").eq("active", true).order("name"),
+    ]);
+    if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
+    setPlans((plansRes.data as any) ?? []);
+    setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
+    setCountries((countriesRes.data as any) ?? []);
     setLoading(false);
   };
 
   useEffect(() => {
     void load();
     const ch = supabase
-      .channel("admin-plans")
+      .channel("admin-plans-dynamic")
       .on("postgres_changes", { event: "*", schema: "public", table: "plans" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "plan_country_prices" }, () => void load())
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
   }, []);
 
-  const save = async (p: PlanRow) => {
+  const visiblePlans = useMemo(
+    () => plans.filter((p) => showArchived ? !!p.archived_at : !p.archived_at),
+    [plans, showArchived]
+  );
+
+  const savePlan = async (p: PlanRow) => {
     setSaving(p.slug);
     const { error } = await supabase
       .from("plans")
@@ -61,17 +121,126 @@ export default function AdminPlans() {
         description: p.description,
         active: p.active,
         sort_order: p.sort_order,
-      })
+        color: p.color,
+        icon: p.icon,
+        label: p.label,
+        visible_on_landing: p.visible_on_landing,
+        visible_on_billing: p.visible_on_billing,
+        visible_on_checkout: p.visible_on_checkout,
+        visible_on_compare: p.visible_on_compare,
+      } as any)
       .eq("slug", p.slug);
     setSaving(null);
     if (error) return toast.error("Erro ao guardar: " + error.message);
-    toast.success(`Plano ${p.name} atualizado — propagado para toda a app`);
+    toast.success(`Plano ${p.name} atualizado`);
     try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch {}
+  };
+
+  const createPlan = async () => {
+    const slug = newPlan.slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    if (!slug) return toast.error("Slug obrigatório (apenas letras minúsculas, números, _ ou -)");
+    if (!newPlan.name.trim()) return toast.error("Nome obrigatório");
+    if (plans.some((p) => p.slug === slug)) return toast.error("Já existe um plano com esse slug");
+    const nextOrder = Math.max(0, ...plans.map((p) => p.sort_order)) + 1;
+    const { error } = await supabase.from("plans").insert({
+      slug,
+      name: newPlan.name.trim(),
+      description: newPlan.description.trim() || null,
+      sort_order: nextOrder,
+      active: true,
+    } as any);
+    if (error) return toast.error("Erro: " + error.message);
+    toast.success(`Plano "${newPlan.name}" criado. Configura preços por país abaixo.`);
+    setCreateOpen(false);
+    setNewPlan({ slug: "", name: "", description: "" });
+    setExpanded(slug);
+  };
+
+  const duplicatePlan = async (p: PlanRow) => {
+    const base = `${p.slug}_copy`;
+    let candidate = base;
+    let n = 2;
+    while (plans.some((x) => x.slug === candidate)) { candidate = `${base}${n++}`; }
+    const nextOrder = Math.max(0, ...plans.map((x) => x.sort_order)) + 1;
+    const { error } = await supabase.from("plans").insert({
+      slug: candidate,
+      name: `${p.name} (cópia)`,
+      description: p.description,
+      sort_order: nextOrder,
+      active: false,
+      color: p.color,
+      icon: p.icon,
+      label: p.label,
+    } as any);
+    if (error) return toast.error("Erro: " + error.message);
+    // Copy prices too
+    const src = prices.filter((pr) => pr.plan_slug === p.slug);
+    if (src.length > 0) {
+      const clones = src.map((pr) => ({
+        plan_slug: candidate,
+        country_code: pr.country_code,
+        cycle: pr.cycle,
+        currency: pr.currency,
+        amount: pr.amount,
+        // Stripe IDs must NOT be reused between plans — leave blank; admin
+        // creates fresh Stripe products/prices via the sync button.
+        stripe_product_id: null,
+        stripe_price_id: null,
+        active: false,
+      }));
+      await supabase.from("plan_country_prices" as any).insert(clones);
+    }
+    toast.success(`Plano duplicado como "${candidate}" (inativo — configura Stripe IDs)`);
+  };
+
+  const archivePlan = async (p: PlanRow) => {
+    const { error } = await supabase.from("plans").update({ archived_at: new Date().toISOString(), active: false } as any).eq("slug", p.slug);
+    if (error) return toast.error("Erro: " + error.message);
+    toast.success(`Plano ${p.name} arquivado`);
+  };
+
+  const restorePlan = async (p: PlanRow) => {
+    const { error } = await supabase.from("plans").update({ archived_at: null } as any).eq("slug", p.slug);
+    if (error) return toast.error("Erro: " + error.message);
+    toast.success(`Plano ${p.name} restaurado`);
+  };
+
+  const deletePlan = async (p: PlanRow) => {
+    // Guard: block if any subscription still references this plan.
+    const { count } = await supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("plan", p.slug);
+    if ((count ?? 0) > 0) {
+      return toast.error(`Não é possível eliminar: ${count} subscrição(ões) ainda usam este plano. Arquiva em vez de eliminar.`);
+    }
+    if (!confirm(`Eliminar plano "${p.name}" definitivamente? Esta ação é irreversível.`)) return;
+    const { error } = await supabase.from("plans").delete().eq("slug", p.slug);
+    if (error) return toast.error("Erro: " + error.message);
+    toast.success(`Plano ${p.name} eliminado`);
+  };
+
+  const upsertPrice = async (planSlug: string, countryCode: string, cycle: Cycle, patch: Partial<PriceRow>) => {
+    const country = countries.find((c) => c.code === countryCode);
+    const currency = patch.currency ?? country?.currency ?? "EUR";
+    const existing = prices.find((p) => p.plan_slug === planSlug && p.country_code === countryCode && p.cycle === cycle);
+    const merged = {
+      plan_slug: planSlug,
+      country_code: countryCode,
+      cycle,
+      currency,
+      amount: patch.amount ?? existing?.amount ?? 0,
+      stripe_product_id: patch.stripe_product_id ?? existing?.stripe_product_id ?? null,
+      stripe_price_id: patch.stripe_price_id ?? existing?.stripe_price_id ?? null,
+      active: patch.active ?? existing?.active ?? true,
+    };
+    const { error } = await supabase
+      .from("plan_country_prices" as any)
+      .upsert(merged, { onConflict: "plan_slug,country_code,cycle" });
+    if (error) return toast.error("Erro ao guardar preço: " + error.message);
+    toast.success(`Preço ${planSlug}/${countryCode}/${cycle} guardado`);
   };
 
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <Link to="/admin">
@@ -79,16 +248,47 @@ export default function AdminPlans() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold">Planos</h1>
-              <p className="text-sm text-muted-foreground">Nome, descrição e estado de cada plano. Editável e sem hardcode.</p>
+              <p className="text-sm text-muted-foreground">Cria, edita, duplica e arquiva planos. Zero código.</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-md border">
+              <Label htmlFor="show-archived" className="text-xs">Ver arquivados</Label>
+              <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+            </div>
             <Link to="/admin/countries">
-              <Button variant="outline" size="sm"><Globe className="w-4 h-4 mr-2" />Preços por país (Stripe)</Button>
+              <Button variant="outline" size="sm"><Globe className="w-4 h-4 mr-2" />Países</Button>
             </Link>
             <Link to="/admin/features">
-              <Button variant="outline" size="sm"><ListChecks className="w-4 h-4 mr-2" />Funcionalidades por plano</Button>
+              <Button variant="outline" size="sm"><ListChecks className="w-4 h-4 mr-2" />Funcionalidades</Button>
             </Link>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="w-4 h-4 mr-2" />Novo plano</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Criar novo plano</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Slug (imutável)</Label>
+                    <Input placeholder="ex: enterprise" value={newPlan.slug} onChange={(e) => setNewPlan({ ...newPlan, slug: e.target.value })} />
+                    <p className="text-xs text-muted-foreground mt-1">Apenas letras minúsculas, números, _ ou -. Não pode ser alterado depois (usado pelo Stripe).</p>
+                  </div>
+                  <div>
+                    <Label>Nome</Label>
+                    <Input placeholder="ex: Enterprise" value={newPlan.name} onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea rows={2} value={newPlan.description} onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+                  <Button onClick={createPlan}>Criar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -98,65 +298,200 @@ export default function AdminPlans() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {plans.map((p) => (
-              <Card key={p.slug}>
-                <CardHeader className="flex flex-row items-start justify-between gap-3">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-xs">{p.slug}</Badge>
-                      {p.name}
-                    </CardTitle>
-                    <CardDescription>
-                      Editar metadados deste plano. Os preços vivem em <Link to="/admin/countries" className="underline">Países</Link>.
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor={`active-${p.slug}`} className="text-xs">Ativo</Label>
-                    <Switch
-                      id={`active-${p.slug}`}
-                      checked={p.active}
-                      onCheckedChange={(v) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, active: v } : x))}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="md:col-span-2">
-                      <Label className="text-xs">Nome de exibição</Label>
-                      <Input
-                        value={p.name}
-                        onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, name: e.target.value } : x))}
-                      />
+            {visiblePlans.map((p) => {
+              const planPrices = prices.filter((pr) => pr.plan_slug === p.slug);
+              const isOpen = expanded === p.slug;
+              return (
+                <Card key={p.slug}>
+                  <CardHeader className="flex flex-row items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <CardTitle className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="font-mono text-xs">{p.slug}</Badge>
+                        <span>{p.name}</span>
+                        {p.label && <Badge>{p.label}</Badge>}
+                        {p.archived_at && <Badge variant="secondary">Arquivado</Badge>}
+                      </CardTitle>
+                      <CardDescription>{p.description || "—"}</CardDescription>
                     </div>
-                    <div>
-                      <Label className="text-xs">Ordem</Label>
-                      <Input
-                        type="number"
-                        value={p.sort_order}
-                        onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, sort_order: Number(e.target.value) } : x))}
-                      />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs">Ativo</Label>
+                        <Switch checked={p.active} onCheckedChange={(v) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, active: v } : x))} />
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => setExpanded(isOpen ? null : p.slug)}>
+                        {isOpen ? "Fechar" : "Configurar"}
+                      </Button>
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Descrição</Label>
-                    <Textarea
-                      rows={2}
-                      value={p.description ?? ""}
-                      onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, description: e.target.value } : x))}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button onClick={() => save(p)} disabled={saving === p.slug}>
-                      {saving === p.slug ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      Guardar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  {isOpen && (
+                    <CardContent className="space-y-4 border-t pt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="md:col-span-2">
+                          <Label className="text-xs">Nome</Label>
+                          <Input value={p.name} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, name: e.target.value } : x))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Ordem</Label>
+                          <Input type="number" value={p.sort_order} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, sort_order: Number(e.target.value) } : x))} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Descrição</Label>
+                        <Textarea rows={2} value={p.description ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, description: e.target.value } : x))} />
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <Label className="text-xs">Cor (hex)</Label>
+                          <Input placeholder="#22c55e" value={p.color ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, color: e.target.value } : x))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Ícone (lucide)</Label>
+                          <Input placeholder="Rocket" value={p.icon ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, icon: e.target.value } : x))} />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label className="text-xs">Etiqueta (ex: "Mais Popular")</Label>
+                          <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-md border bg-muted/30">
+                        {[
+                          { k: "visible_on_landing", label: "Landing" },
+                          { k: "visible_on_billing", label: "Billing" },
+                          { k: "visible_on_checkout", label: "Checkout" },
+                          { k: "visible_on_compare", label: "Comparação" },
+                        ].map(({ k, label }) => (
+                          <div key={k} className="flex items-center justify-between gap-2">
+                            <Label className="text-xs">{label}</Label>
+                            <Switch
+                              checked={(p as any)[k]}
+                              onCheckedChange={(v) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, [k]: v } as PlanRow : x))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Preços por país × ciclo */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold">Preços por país e ciclo</h3>
+                          <span className="text-xs text-muted-foreground">{planPrices.length} entradas</span>
+                        </div>
+                        <div className="overflow-x-auto rounded-md border">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2">País</th>
+                                <th className="text-left p-2">Ciclo</th>
+                                <th className="text-left p-2">Moeda</th>
+                                <th className="text-left p-2">Montante</th>
+                                <th className="text-left p-2">Stripe Product</th>
+                                <th className="text-left p-2">Stripe Price</th>
+                                <th className="text-left p-2">Ativo</th>
+                                <th className="text-right p-2"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {countries.flatMap((c) => CYCLES.map((cy) => {
+                                const row = planPrices.find((pr) => pr.country_code === c.code && pr.cycle === cy);
+                                const key = `${p.slug}-${c.code}-${cy}`;
+                                return (
+                                  <PriceEditor
+                                    key={key}
+                                    country={c}
+                                    cycle={cy}
+                                    row={row}
+                                    onSave={async (patch) => { await upsertPrice(p.slug, c.code, cy, patch); }}
+                                  />
+                                );
+                              }))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between gap-2 flex-wrap pt-2 border-t">
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => duplicatePlan(p)}>
+                            <Copy className="w-4 h-4 mr-2" />Duplicar
+                          </Button>
+                          {p.archived_at ? (
+                            <Button size="sm" variant="outline" onClick={() => restorePlan(p)}>
+                              <ArchiveRestore className="w-4 h-4 mr-2" />Restaurar
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => archivePlan(p)}>
+                              <Archive className="w-4 h-4 mr-2" />Arquivar
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deletePlan(p)}>
+                            <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                          </Button>
+                        </div>
+                        <Button onClick={() => savePlan(p)} disabled={saving === p.slug}>
+                          {saving === p.slug ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                          Guardar metadados
+                        </Button>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+            {visiblePlans.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-8">
+                {showArchived ? "Sem planos arquivados." : "Sem planos ativos. Cria um novo."}
+              </p>
+            )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function PriceEditor({ country, cycle, row, onSave }: {
+  country: CountryRow;
+  cycle: Cycle;
+  row?: PriceRow;
+  onSave: (patch: Partial<PriceRow>) => Promise<void>;
+}) {
+  const [amount, setAmount] = useState(row?.amount ?? 0);
+  const [productId, setProductId] = useState(row?.stripe_product_id ?? "");
+  const [priceId, setPriceId] = useState(row?.stripe_price_id ?? "");
+  const [active, setActive] = useState(row?.active ?? true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setAmount(row?.amount ?? 0);
+    setProductId(row?.stripe_product_id ?? "");
+    setPriceId(row?.stripe_price_id ?? "");
+    setActive(row?.active ?? true);
+  }, [row?.id, row?.amount, row?.stripe_product_id, row?.stripe_price_id, row?.active]);
+
+  const dirty = row
+    ? (amount !== row.amount || (productId || "") !== (row.stripe_product_id || "") || (priceId || "") !== (row.stripe_price_id || "") || active !== row.active)
+    : (amount > 0 || productId !== "" || priceId !== "");
+
+  const save = async () => {
+    setBusy(true);
+    await onSave({ amount, stripe_product_id: productId || null, stripe_price_id: priceId || null, active, currency: country.currency });
+    setBusy(false);
+  };
+
+  return (
+    <tr className="border-t">
+      <td className="p-2">{country.code} — {country.name}</td>
+      <td className="p-2 capitalize">{cycle}</td>
+      <td className="p-2">{country.currency}</td>
+      <td className="p-2 w-28"><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="h-8 text-xs" /></td>
+      <td className="p-2 w-40"><Input value={productId} onChange={(e) => setProductId(e.target.value)} placeholder="prod_..." className="h-8 text-xs font-mono" /></td>
+      <td className="p-2 w-40"><Input value={priceId} onChange={(e) => setPriceId(e.target.value)} placeholder="price_..." className="h-8 text-xs font-mono" /></td>
+      <td className="p-2"><Switch checked={active} onCheckedChange={setActive} /></td>
+      <td className="p-2 text-right">
+        <Button size="sm" variant={dirty ? "default" : "ghost"} disabled={!dirty || busy} onClick={save}>
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Guardar"}
+        </Button>
+      </td>
+    </tr>
   );
 }

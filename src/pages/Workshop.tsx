@@ -98,7 +98,6 @@ export default function Workshop() {
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   // Realtime: work order status changes / new orders reflect without refresh.
-  const activeShopId = useShopContext().activeShopId;
   useRealtimeTable("work_orders", { shopId: activeShopId, onChange: fetchOrders });
 
   const advanceStatus = async (wo: any) => {

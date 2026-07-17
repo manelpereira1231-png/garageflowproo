@@ -264,11 +264,12 @@ Deno.serve(async (req) => {
               });
               // Notify clients their vehicle is ready (with labor breakdown)
               for (const wo of completed) {
-                const clientEmail = (wo.clients as any)?.email;
-                if (clientEmail) {
-                  recipientEmails.push(clientEmail);
-                  recipientLabor[clientEmail] = laborLine((wo as any).labor_hours);
+                const c = wo.clients as any;
+                if (c?.email) {
+                  recipientEmails.push(c.email);
+                  recipientLabor[c.email] = laborLine((wo as any).labor_hours);
                 }
+                if (c?.phone) recipientPhones.push(c.phone);
               }
             }
             break;

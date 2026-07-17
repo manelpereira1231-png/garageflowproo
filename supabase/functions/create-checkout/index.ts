@@ -83,8 +83,17 @@ serve(async (req) => {
     const user = userData.user;
     const { plan, billing_cycle, region, country_code } = await req.json();
 
-    if (!plan || !["free", "pro", "garage"].includes(plan)) {
-      throw new Error("Plano inválido. Escolha Start, Pro ou Garage.");
+    // ── Validate plan against `plans` table (100% dynamic — no whitelist) ──
+    if (!plan || typeof plan !== "string") throw new Error("Plano inválido.");
+    const { data: planRow, error: planErr } = await supabaseClient
+      .from("plans")
+      .select("slug, name, active, archived_at")
+      .eq("slug", plan)
+      .maybeSingle();
+    if (planErr) throw new Error("Erro a validar plano: " + planErr.message);
+    if (!planRow) throw new Error(`Plano "${plan}" não existe.`);
+    if (!planRow.active || planRow.archived_at) {
+      throw new Error(`O plano "${planRow.name}" está desativado.`);
     }
     const cycle = (billing_cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly";
 
@@ -104,7 +113,7 @@ serve(async (req) => {
     }
     if (!resolvedCountry) resolvedCountry = "PT";
 
-    // Load country settings (Stripe price IDs + trial days)
+    // Load country settings (trial days + currency; legacy stripe columns as fallback only)
     const { data: countryConfig } = await supabaseClient
       .from("country_settings")
       .select("stripe_free_monthly,stripe_free_yearly,stripe_pro_monthly,stripe_pro_yearly,stripe_garage_monthly,stripe_garage_yearly,saas_trial_days,currency")
@@ -116,8 +125,19 @@ serve(async (req) => {
       console.warn("[create-checkout] country settings missing or inactive", { resolvedCountry, plan, cycle });
     }
 
-    // Determine price ID — fallback to EUR if not set for this country
-    const priceMap: Record<string, string | null | undefined> = {
+    // ── PRIMARY SOURCE OF TRUTH: plan_country_prices ──
+    // Any plan created in the admin (Enterprise, Business, custom…) works here.
+    const { data: priceRow } = await supabaseClient
+      .from("plan_country_prices")
+      .select("stripe_price_id, active")
+      .eq("plan_slug", plan)
+      .eq("country_code", resolvedCountry)
+      .eq("cycle", cycle)
+      .eq("active", true)
+      .maybeSingle();
+
+    // Legacy fallback: country_settings columns (only for the 3 legacy slugs)
+    const legacyMap: Record<string, string | null | undefined> = {
       free_monthly: countryConfig?.stripe_free_monthly,
       free_yearly: countryConfig?.stripe_free_yearly,
       pro_monthly: countryConfig?.stripe_pro_monthly,
@@ -126,7 +146,9 @@ serve(async (req) => {
       garage_yearly: countryConfig?.stripe_garage_yearly,
     };
     const key = `${plan}_${cycle}`;
-    let priceId = priceMap[key] || (FALLBACK_EUR as any)[key];
+    let priceId = priceRow?.stripe_price_id
+      || legacyMap[key]
+      || (FALLBACK_EUR as any)[key];
 
     // ─── PROMOTION OVERRIDE ───
     // If there is an active promotion for this country/plan/cycle at now(),

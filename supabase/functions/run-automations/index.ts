@@ -101,6 +101,22 @@ Deno.serve(async (req) => {
         // Track per-recipient labor summary for client emails
         const recipientLabor: Record<string, string> = {};
 
+        // Visual-flow conditions (persisted from the UI builder)
+        const cond = (rule.conditions || {}) as {
+          min_total?: number | null;
+          vip_only?: boolean;
+          client_tag?: string;
+          delay_minutes?: number | null;
+        };
+        const minTotal = Number(cond.min_total) || 0;
+        const delayMs = (Number(cond.delay_minutes) || 0) * 60 * 1000;
+        // Respect user-defined delay between runs of the same rule
+        if (delayMs > 0 && rule.last_run_at) {
+          const since = Date.now() - new Date(rule.last_run_at).getTime();
+          if (since < delayMs) continue;
+        }
+
+
         switch (rule.trigger_type) {
           case "invoice_overdue": {
             const { data: overdue } = await supabase

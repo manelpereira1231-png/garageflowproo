@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Mail, MessageSquare, Phone, Bell, RefreshCw, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAiQuota } from "@/hooks/useAiQuota";
 
 export type AIInsight = {
   id: string;

@@ -189,25 +189,27 @@ export default function AdminReports() {
       registrationsByMonth.push({ month: monthStr, shops: count });
     }
 
-    // === FUNNEL ===
+    // === FUNNEL (nome do entry plan lido do catálogo) ===
     const totalAccounts = shops.length;
-    const freeSubs = subscriptions.filter(s => s.plan === "free").length;
+    const freeSubs = subscriptions.filter(s => s.plan === entryPlanSlug).length;
     const trialingSubs = subscriptions.filter(s => s.status === "trialing").length;
     const paidSubs = stripePaidSubs.filter(s => s.status === "active").length;
     const cancelledSubs = subscriptions.filter(s => s.status === "cancelled" || s.status === "canceled").length;
     const funnelMax = Math.max(totalAccounts, 1);
     const funnel = [
       { stage: "Contas Criadas", count: totalAccounts, percent: 100 },
-      { stage: "Start", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
+      { stage: planLabelMap[entryPlanSlug] || "Entrada", count: freeSubs, percent: Math.round((freeSubs / funnelMax) * 100) },
       { stage: "Trial", count: trialingSubs, percent: Math.round((trialingSubs / funnelMax) * 100) },
       { stage: "Pago", count: paidSubs, percent: Math.round((paidSubs / funnelMax) * 100) },
       { stage: "Cancelado", count: cancelledSubs, percent: Math.round((cancelledSubs / funnelMax) * 100) },
     ];
 
-    // === CHURN & CONVERSION ===
+    // === CHURN & CONVERSION (planos pagos dinâmicos) ===
     const churnRate = subscriptions.length > 0 ? (cancelledSubs / subscriptions.length) * 100 : 0;
     const hadTrial = subscriptions.filter(s => s.trial_end).length;
-    const convertedFromTrial = subscriptions.filter(s => s.trial_end && (s.plan === "pro" || s.plan === "garage") && s.status === "active").length;
+    const convertedFromTrial = subscriptions.filter(s =>
+      s.trial_end && paidPlanSlugs.includes(s.plan) && s.status === "active"
+    ).length;
     const trialConversion = hadTrial > 0 ? (convertedFromTrial / hadTrial) * 100 : 0;
 
     // === TOP SHOPS BY REVENUE ===

@@ -400,7 +400,7 @@ export default function AdminPlans() {
                                     country={c}
                                     cycle={cy}
                                     row={row}
-                                    onSave={(patch) => upsertPrice(p.slug, c.code, cy, patch)}
+                                    onSave={async (patch) => { await upsertPrice(p.slug, c.code, cy, patch); }}
                                   />
                                 );
                               }))}

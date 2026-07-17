@@ -36,10 +36,11 @@ const TRIGGER_KEYS = [
 
 const ACTION_KEYS = [
   { value: "send_email", label: "automations.action.sendEmail", icon: Mail, ready: true },
+  { value: "send_sms", label: "automations.action.sendSms", icon: Phone, ready: true },
+  { value: "send_whatsapp", label: "automations.action.sendWhatsapp", icon: MessageSquare, ready: true },
+  { value: "send_push", label: "automations.action.sendPush", icon: Bell, ready: true },
   { value: "create_alert", label: "automations.action.createAlert", icon: Bell, ready: true },
   { value: "create_notification", label: "automations.action.createNotification", icon: Bell, ready: true },
-  { value: "send_sms", label: "automations.action.sendSms", icon: Phone, ready: false },
-  { value: "send_whatsapp", label: "automations.action.sendWhatsapp", icon: MessageSquare, ready: false },
 ];
 
 const TEMPLATE_VARIABLES = [

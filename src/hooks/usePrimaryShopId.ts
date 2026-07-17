@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
 /**
- * The "Oficina Mãe" (primary shop) of the group is the OLDEST shop owned by the
- * authenticated account creator (shops.user_id = auth.uid()). All other owned
- * shops of the same account are "Oficinas Filhas" and must NOT show group-level
+ * The "Oficina Mãe" (primary shop) of the group is the OLDEST shop in the
+ * authenticated account's group (`group_owner_id = auth.uid()`). All other
+ * shops of the same group are "Oficinas Filhas" and must NOT show group-level
  * admin surfaces (Billing, Plano, Stripe, Subscrição, Pagamentos, Licenciamento).
  *
  * Returns null while loading, or when the user does not own any shop (e.g. is
@@ -23,13 +23,13 @@ export function usePrimaryShopId(): { primaryShopId: string | null; loading: boo
     (async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id, created_at")
+          .select("id, name, created_at")
         .eq("group_owner_id", user.id)
         .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+          .limit(10);
       if (!alive) return;
-      setPrimaryShopId(data?.id ?? null);
+      const primary = (data || []).find((s: any) => (s.name || "").trim().length > 0);
+      setPrimaryShopId(primary?.id ?? null);
       setLoading(false);
     })();
     return () => { alive = false; };

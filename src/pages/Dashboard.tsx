@@ -127,7 +127,13 @@ function OwnerDashboard() {
       try {
         let shopId = activeShopId;
         if (!shopId) {
-          const { data: shop } = await supabase.from("shops").select("id").eq("user_id", user.id).maybeSingle();
+          const { data: fallbackShops } = await supabase
+            .from("shops")
+            .select("id, name, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(10);
+          const shop = (fallbackShops || []).find((s: any) => (s.name || "").trim().length > 0) ?? fallbackShops?.[0];
           if (shop) {
             shopId = shop.id;
             // Fallback path: user has a shop but activeShopId was null (fresh

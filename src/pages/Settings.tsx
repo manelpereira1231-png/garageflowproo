@@ -61,8 +61,13 @@ export default function SettingsPage() {
       } else {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
-        shopData = data;
+        const { data } = await supabase
+          .from("shops")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(10);
+        shopData = (data || []).find((s: any) => (s.name || "").trim().length > 0) ?? data?.[0];
       }
 
       if (shopData) {

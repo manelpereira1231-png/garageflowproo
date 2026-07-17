@@ -221,15 +221,16 @@ export function useSubscription() {
       if (shop) return shop.id;
     }
 
-    const { data: shop } = await Promise.race([
+    const { data: fallbackShops } = await Promise.race([
       supabase
         .from("shops")
-        .select("id")
+        .select("id, name, created_at")
         .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle(),
-      timeoutResult({ data: null }),
+        .order("created_at", { ascending: true })
+        .limit(10),
+      timeoutResult({ data: [] }),
     ]);
+    const shop = (fallbackShops || []).find((s: any) => (s.name || "").trim().length > 0) ?? fallbackShops?.[0];
     return shop?.id || null;
   }, [authReady, user]);
 

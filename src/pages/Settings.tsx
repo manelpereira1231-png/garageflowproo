@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const { plan, shopId: subShopId, isEntryPlan } = useSubscription();
+  const { isChildShop } = useIsChildShop();
   const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);

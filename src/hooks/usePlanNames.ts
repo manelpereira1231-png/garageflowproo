@@ -13,9 +13,15 @@ let cache: Record<string, string> | null = null;
 const listeners = new Set<(m: Record<string, string>) => void>();
 
 async function loadPlanNames() {
-  const { data } = await supabase.from("plans").select("slug, name");
+  // Only surface names of active, non-archived plans so a deactivated plan
+  // never leaks its label into Landing / Billing / Upgrade dialogs.
+  const { data } = await supabase
+    .from("plans")
+    .select("slug, name, active, archived_at")
+    .eq("active", true)
+    .is("archived_at", null);
   const map: Record<string, string> = {};
-  (data as PlanName[] | null)?.forEach((r) => {
+  (data as Array<{ slug: string; name: string }> | null)?.forEach((r) => {
     if (r.slug && r.name) map[r.slug] = r.name;
   });
   cache = map;

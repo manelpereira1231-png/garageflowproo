@@ -215,48 +215,41 @@ export default function LandingPage() {
   // Single source of truth: same ordered list rendered in every plan card;
   // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
-  const freeItems = buildPlanFeatureItems("free", fxFeatures, fxMatrix);
-  const proItems = buildPlanFeatureItems("pro", fxFeatures, fxMatrix);
-  const garageItems = buildPlanFeatureItems("garage", fxFeatures, fxMatrix);
 
   const { getName: getPlanName } = usePlanNames();
 
+  // ✅ Catálogo dinâmico da BD — sem lista hardcoded de planos.
+  // Um plano novo criado no Super Admin (ex.: "Enterprise") aparece
+  // automaticamente aqui, mantendo o design.
+  const { data: catalog } = usePlansCatalog();
   const countryCode = getCountryCode();
-  const planConfigs = [
-    {
-      slug: 'free' as const,
-      nameKey: 'landing.planFree',
-      basePrice: pricing.free[billingCycle],
-      periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
+
+  const planConfigs = publicPlans(catalog, "landing").map((p) => {
+    // Preço: usa mapa regional legacy quando existe (start/pro/garage),
+    // caso contrário procura em plan_country_prices.
+    const legacy = (pricing as any)[p.slug];
+    let base = legacy?.[billingCycle];
+    if (base == null) {
+      const row = catalog?.prices.find(
+        (pp) => pp.plan_slug === p.slug && pp.country_code === countryCode && pp.cycle === billingCycle,
+      );
+      base = row?.amount ?? 0;
+    }
+    return {
+      slug: p.slug,
+      nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
+      displayName: p.label || p.name,
+      basePrice: base as number,
+      periodKey: (base as number) > 0
+        ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')
+        : '',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: freeItems,
-      ctaKey: 'landing.ctaFree',
-      highlighted: false,
-      ctaPrimary: true,
-    },
-    {
-      slug: 'pro' as const,
-      nameKey: 'landing.planPro',
-      basePrice: pricing.pro[billingCycle],
-      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: proItems,
-      ctaKey: 'landing.ctaPro',
-      highlighted: true,
-      ctaPrimary: true,
-    },
-    {
-      slug: 'garage' as const,
-      nameKey: 'landing.planGarage',
-      basePrice: pricing.garage[billingCycle],
-      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: garageItems,
-      ctaKey: 'landing.ctaGarage',
-      highlighted: false,
-      ctaPrimary: false,
-    },
-  ];
+      items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
+      ctaKey: `landing.ctaPro`, // CTA genérico; per-plan override via translation com fallback
+      highlighted: p.sort_order === 2, // plano do meio destacado
+      ctaPrimary: p.sort_order <= 2,
+    };
+  });
 
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 

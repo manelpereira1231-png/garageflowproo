@@ -142,7 +142,7 @@ export default function QuoteForm() {
     const shopId = activeShopId;
 
     // Check quote limit for new quotes on Free plan
-    if (!editId && plan === 'free') {
+    if (!editId && isEntryPlan) {
       const canCreate = await checkQuoteLimit();
       if (!canCreate) {
         setShowLimitModal(true);

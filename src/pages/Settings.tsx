@@ -214,7 +214,7 @@ export default function SettingsPage() {
             <div className="mt-4 flex items-center gap-2">
               <Badge variant="outline" className="capitalize">{plan}</Badge>
               <span className="text-xs text-muted-foreground">
-                {plan === 'free' ? t('settings.watermarkInfo') : t('settings.noWatermark')}
+                {isEntryPlan ? t('settings.watermarkInfo') : t('settings.noWatermark')}
               </span>
             </div>
           </CardContent>

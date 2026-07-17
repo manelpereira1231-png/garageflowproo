@@ -15,6 +15,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
+import MarketingAIAssistant, { type AIInsight } from "@/components/marketing/MarketingAIAssistant";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -131,6 +132,18 @@ export default function Marketing() {
 
   const openBlank = () => {
     setForm({ name: "", type: "email", subject: "", content: "", target_segment: "all", scheduled_at: "" });
+    setDialogOpen(true);
+  };
+
+  const applyAIInsight = (it: AIInsight) => {
+    setForm({
+      name: it.headline.slice(0, 60),
+      type: it.channel,
+      subject: it.subject,
+      content: it.content,
+      target_segment: it.segment,
+      scheduled_at: "",
+    });
     setDialogOpen(true);
   };
 
@@ -335,6 +348,9 @@ export default function Marketing() {
           </Button>
         </div>
       </div>
+
+      {/* AI Assistant */}
+      <MarketingAIAssistant shopId={activeShopId} onCreateCampaign={applyAIInsight} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

@@ -70,22 +70,29 @@ function OwnerDashboard() {
   const activeShopId = useActiveShopId();
   const { shops: ownedShops, primaryShopId } = useOwnedShops();
 
-  // "Modo Grupo" — visão consolidada da Oficina Mãe (Plano Garage).
-  // Só é oferecido quando: (1) o plano permite multi-oficina, (2) o utilizador
-  // é dono de pelo menos 2 oficinas, (3) está posicionado na Oficina Mãe.
-  // Uma Oficina Filha nunca vê o toggle porque a shop ativa não coincide com
-  // a primaryShopId, e porque só listamos shops onde `shops.user_id = auth.uid()`.
-  const isGroupEligible =
-    plan === 'garage' && ownedShops.length > 1 && !!activeShopId && activeShopId === primaryShopId;
-  const [viewModeRaw, setViewModeRaw] = useState<'shop' | 'group'>(() =>
-    (typeof window !== 'undefined' && localStorage.getItem('garageflow_view_mode') === 'group') ? 'group' : 'shop'
-  );
-  const isGroupMode = isGroupEligible && viewModeRaw === 'group';
-  const setViewMode = (v: 'shop' | 'group') => {
-    setViewModeRaw(v);
-    try { localStorage.setItem('garageflow_view_mode', v); } catch { /* noop */ }
+  // Seletor de contexto — Oficina Mãe (dono do grupo) no plano Garage com >1 oficina.
+  // Só quem é `shops.user_id = auth.uid()` de várias oficinas vê o seletor:
+  // membros de equipa de uma oficina filha nunca aparecem em `ownedShops` (RLS +
+  // filtro explícito no hook), portanto nunca acedem à opção "Todas as oficinas"
+  // nem aos dados agregados. Isolamento por shop_id permanece intacto.
+  const isOwnerOfGroup = plan === 'garage' && ownedShops.length > 1;
+  const [selectedFilter, setSelectedFilterRaw] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'all';
+    return localStorage.getItem('garageflow_dashboard_filter') || 'all';
+  });
+  const isGroupMode = isOwnerOfGroup && selectedFilter === 'all';
+  const setSelectedFilter = (v: string) => {
+    setSelectedFilterRaw(v);
+    try { localStorage.setItem('garageflow_dashboard_filter', v); } catch { /* noop */ }
+    // Ao escolher uma oficina específica, sincroniza o activeShopId global
+    // (via useSyncExternalStore) para que os cartões, navegação e destinos
+    // filtrem já pela oficina selecionada, sem refresh.
+    if (v !== 'all' && v !== activeShopId) {
+      try { localStorage.setItem('garageflow_active_shop', v); } catch { /* noop */ }
+    }
   };
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
+
 
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });

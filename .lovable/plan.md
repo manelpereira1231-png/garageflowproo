@@ -1,137 +1,177 @@
 
-## Objetivo
+# Auditoria Enterprise ao Painel de Administração
 
-Blindar completamente o consumo de IA do GarageFlow **sem tocar** em Design, Layout, UX, Stripe, Billing, Marketplace, Multi-Oficina, Landing Page, Dashboard, SEO, RLS, RBAC, APIs existentes ou qualquer módulo do ERP fora da camada IA. Só é adicionada infraestrutura de controlo de custos por cima da que já existe (`ai_usage_ledger`, `consume_ai_credit`, `useAiQuota`).
+## 1. Inventário atual (41 páginas de admin)
 
-## Regra base preservada
+Agrupadas por assunto real, para expor sobreposições:
 
-1 pedido = 1 crédito. Continua assim. Nada de tokens.
+**Dashboards / visões gerais (6 páginas — 4 sobrepostas)**
+- `AdminDashboard` (Centro de Controlo)
+- `AdminBusinessMetrics` (métricas de negócio)
+- `AdminSystemHealth` (saúde sistema)
+- `AdminSystemControl` (funcionalidades + avisos + kill switches)
+- `AdminMarketDashboard` (dashboard marketplace)
+- `AdminCarity` (inspeções — herdou nome legacy)
 
----
+**Planos / preços / funcionalidades (4 páginas — dispersas)**
+- `AdminPlans` — nome, estado, ordem, limites, CTAs, IA
+- `AdminFeatureMatrix` — matriz de features por plano
+- `AdminCountries` — preços Stripe por país
+- `AdminAIControl` — limites de IA por plano/global
 
-## 1. Base de dados (uma migração)
+**Billing / Finance / Reports / Accounting (5 páginas — 3 sobrepostas)**
+- `AdminBilling` (planos + subscrições listagem)
+- `AdminFinance` (receita/MRR)
+- `AdminReports` (relatórios gerais, KPIs)
+- `AdminAccounting` (contabilidade)
+- `AdminBusinessMetrics` (também mostra MRR/ARR)
 
-**Extensões a `ai_usage_ledger`**
-- `cost_estimate_eur numeric(10,4)` — custo estimado por chamada.
-- `prompt_hash text` — para deduplicação/cache.
-- `cached boolean default false` — marca chamadas servidas por cache.
+**Marketplace (7 páginas)**
+- `AdminMarketDashboard`, `AdminMarketListings`, `AdminCarity` (inspeções), `AdminMarketEscrows`, `AdminMarketKYC`, `AdminMarketActivations`, `AdminRiskEngine`
 
-**Nova tabela `ai_response_cache`**
-- `cache_key text primary key` (hash de `shop_id + function + prompt_hash`).
-- `response jsonb`, `expires_at timestamptz`.
-- GRANTs corretos, RLS: só server-side (service_role).
+**Marketing / Growth (6 páginas — 4 sobrepostas)**
+- `AdminMarketing`, `AdminMarketingAutopilot`, `AdminGrowth`, `AdminGrowthOpportunities`, `AdminTraffic`, `AdminFeatureAdoption`, `AdminSeo`, `AdminSeoBlog`, `AdminCoupons`
 
-**Nova tabela `ai_rate_limits`** (in-memory-like, com TTL curto)
-- `subject_type` (`user`|`shop`), `subject_id uuid`, `window_start timestamptz`, `count int`.
-- Índice único `(subject_type, subject_id, window_start)`.
+**Utilizadores / Suporte (5 páginas — parcialmente sobrepostas)**
+- `AdminUsers`, `AdminShops`, `AdminShopDetail`, `AdminDemoRequests`, `AdminSupport`, `AdminComplaints`, `AdminActionQueue`, `AdminPartners`
 
-**`platform_settings` — novas chaves** (não altera schema):
-- `ai_monthly_budget_eur` — orçamento máximo mensal (default 250).
-- `ai_safety_margin_pct` — margem de segurança (default 95).
-- `ai_rate_per_min_user` (default 10).
-- `ai_rate_per_min_shop` (default 30).
-- `ai_cache_ttl_seconds` (default 900 = 15 min).
-- `ai_cost_per_credit_eur` (default 0.02 — configurável).
+**Sistema (7 páginas — dispersas)**
+- `AdminSettings`, `AdminSystemControl`, `AdminSystemHealth`, `AdminLogs`, `AdminAlerts`, `AdminEmailLogs`, `AdminRateLimits`
 
-**RPC `consume_ai_credit` (reescrita, mesmo contrato)** — passa a validar em ordem:
-1. Membro da oficina? (bloqueia se não)
-2. Plano tem IA? (`plan_no_ai` se limite = 0)
-3. Rate limit user + shop? (`rate_limited`)
-4. Orçamento global mensal < margem de segurança? (`global_budget_exceeded`)
-5. Quota mensal da oficina? (`quota_exceeded`)
-6. Regista consumo com `cost_estimate_eur`.
+## 2. Duplicações confirmadas (evidência)
 
-**Novas RPCs**
-- `ai_try_cache(_cache_key)` → devolve `response` se válido, senão null.
-- `ai_save_cache(_cache_key, _response, _ttl_seconds)`.
-- `get_ai_admin_stats(_from, _to)` → agregações para o painel (chamadas hoje/mês, top oficinas, top utilizadores, top funções, por plano, por país, por dia, orçamento consumido). Super admin only.
+| # | Duplicação | Onde | Deve viver em |
+|---|---|---|---|
+| D1 | **Estado/nome do plano** editável | `AdminPlans` **e** `AdminBilling` (edição inline de subscrições altera plano) | `AdminPlans` (fonte única) |
+| D2 | **Preço do plano** | `AdminPlans` (default) **e** `AdminCountries` (por país) — ambos gravam | `AdminCountries` (por país é a verdade) + `AdminPlans` lê |
+| D3 | **Features por plano** | `AdminPlans` (limits + `has_features`) **e** `AdminFeatureMatrix` | `AdminFeatureMatrix` (fonte única) |
+| D4 | **Limites (utilizadores, oficinas, IA)** | `AdminPlans.limits_json` **e** `AdminAIControl` (limites IA) | `AdminPlans.limits_json` — `AdminAIControl` só orçamento global |
+| D5 | **Trial (dias)** | `AdminPlans` **e** `AdminSystemControl` (platform_settings) | `AdminPlans` |
+| D6 | **Kill switches / feature flags** | `AdminSystemControl` **e** `AdminSettings` | `AdminSystemControl` |
+| D7 | **MRR/ARR/receita** exibida | `AdminFinance`, `AdminReports`, `AdminBusinessMetrics`, `AdminDashboard` | `AdminFinance` (canónico) + Dashboard só mostra widget |
+| D8 | **Marketing** | `AdminMarketing` + `AdminMarketingAutopilot` + `AdminGrowth` + `AdminGrowthOpportunities` | Unificar rota `/admin/marketing` com tabs |
+| D9 | **Tráfego/adoção** | `AdminTraffic` + `AdminFeatureAdoption` | Sub-tabs de `AdminMarketing` (Aquisição/Adoção) |
+| D10 | **Marketplace overview** | `AdminMarketDashboard` **e** `AdminCarity` (mistura inspeções + overview) | Split: dashboard vs inspeções |
+| D11 | **Comissões marketplace** | `country_settings.market_commission_rate` **e** `carity_listings.commission_rate` (por anúncio) | `country_settings` (defaults) + listing só override justificado |
+| D12 | **Alertas / notificações admin** | `AdminAlerts` + `AdminEmailLogs` + `AdminComplaints` + `AdminActionQueue` | Unificar `AdminActionQueue` como inbox operacional |
+| D13 | **Utilizadores vs Oficinas** | `AdminUsers` e `AdminShops` cruzam dados de utilizadores/donos | Manter separadas mas com link canónico shop→users |
 
----
+## 3. Hardcodes detetados (`if (plan === 'free'|'pro'|'garage')`)
 
-## 2. Guard centralizado (Edge Functions)
+Ocorrências em produção:
+- `src/lib/features.ts` (linhas 98, 189, 218, 231) — fallback legacy
+- `src/lib/platformSettings.ts` (145–171) — mapeia gates a nomes fixos
+- `src/pages/Dashboard.tsx` (79, 362, 670, 715)
+- `src/pages/Quotes.tsx`, `src/pages/QuoteForm.tsx`
+- `src/pages/Settings.tsx` (217)
+- `src/lib/pdfGenerator.ts` (65), `src/lib/invoicePdfGenerator.ts` (76)
+- `src/pages/MarketDealerDashboard.tsx` (112)
+- `src/pages/admin/AdminReports.tsx` (129–179)
+- `src/pages/admin/AdminDashboard.tsx` (88)
 
-Novo módulo `supabase/functions/_shared/ai-guard.ts` com uma função `guardAiCall({ req, shopId, functionName, prompt })` que:
+Estes são o núcleo do problema "editar plano no admin não reflete em todo o lado" — cada um destes ficheiros ignora o catálogo dinâmico.
 
-1. Autentica o utilizador via JWT.
-2. Calcula `prompt_hash = sha256(prompt normalizado)`.
-3. Tenta `ai_try_cache` — se hit, devolve resposta imediata (0 créditos, marca `cached=true` no ledger com custo 0).
-4. Chama `consume_ai_credit`. Se recusar, devolve HTTP 402/403/429 conforme reason.
-5. Devolve helpers: `saveCache(response)` e `estimateCost()`.
+## 4. Configurações mortas / redundantes
 
-**Edge functions IA existentes passam pelo guard** (sem alterar a lógica de negócio, só o wrapper de entrada):
-- `ai-diagnosis` ✓ (já parcialmente feito, migra para guard)
-- `marketing-ai-insights` ✓ (idem)
-- `ai-business-forecast`
-- `marketing-creative`
-- `marketing-autopilot`
-- `seo-generate-article`
-- `market-translate-listing`
-- `market-kyc-auto-verify`
+- `AdminSettings` sobrepõe-se totalmente a `AdminSystemControl` — candidato a arquivar.
+- `AdminGrowth` e `AdminGrowthOpportunities` — duas páginas com o mesmo objetivo.
+- `AdminMarketingAutopilot` — sub-área de Marketing.
+- `AdminAlerts` — hoje é apenas um feed que já existe em `AdminActionQueue`.
 
-Se alguma delas contém consultas puramente SQL (previsões baseadas em dados históricos), passa a servir esses casos **sem chamar o modelo** (regra nº 1: se o DB responde, não gasta IA).
+## 5. Nova arquitetura proposta (menus)
 
----
+7 grupos, cada opção existe uma única vez:
 
-## 3. Frontend
+```
+Plataforma
+  Centro de Controlo        /admin
+  Saúde do Sistema          /admin/system-health
+  Kill Switches & Flags     /admin/system              (ex-SystemControl)
+  Idiomas & Moedas          /admin/settings?tab=locale (canónico aqui)
+  Auditoria                 /admin/logs
+  Emails                    /admin/emails
+  Rate Limits               /admin/rate-limits
 
-**Sem mudanças de design/layout.** Apenas:
+Planos
+  Planos                    /admin/plans               (fonte única: nome/estado/ordem/trial/limits/IA)
+  Funcionalidades           /admin/features            (fonte única de features)
+  Preços por País           /admin/countries           (fonte única de preços)
+  Cupões & Promoções        /admin/coupons
+  IA (Custos & Orçamento)   /admin/ai-control          (só orçamento global — limites por plano vivem em Planos)
 
-- `useAiQuota` já existe. Estende-se para incluir estado global (`globalBudgetPct`, `globalBlocked`).
-- Componentes `AIDiagnosisPanel` e `MarketingAIAssistant` já mostram badge — passam a mostrar também aviso quando `globalBlocked` (orçamento da plataforma atingido).
+Clientes
+  Oficinas                  /admin/shops
+  Utilizadores              /admin/users
+  Subscrições & Faturas     /admin/billing             (só leitura de estado Stripe — não edita planos)
+  Receita                   /admin/finance             (canónico MRR/ARR)
+  Contabilidade             /admin/accounting
+  Relatórios                /admin/reports             (compostos, lê de finance)
 
-**Nova página Super Admin**: `src/pages/admin/AdminAIControl.tsx`
-- Cartões de estatística (dados reais via `get_ai_admin_stats`).
-- Configuração inline de `ai_monthly_budget_eur`, `ai_safety_margin_pct`, rate limits, TTL de cache, custo por crédito.
-- Ranking de oficinas/utilizadores/funções.
-- Consumo por plano/país/dia.
-- Design usa os tokens e componentes já existentes (`Card`, `Badge`, `Progress`).
+Marketplace
+  Marketplace (Overview)    /admin/market-dashboard
+  Anúncios                  /admin/market-listings
+  Inspeções                 /admin/market
+  Escrow & Disputas         /admin/market-escrows
+  KYC                       /admin/market-kyc
+  Adesões                   /admin/market-activations
+  Risk Engine               /admin/risk-engine
+  Comissões                 (sub-tab em Países — não duplicar)
 
-Adicionada entrada de menu no Admin apenas — sem mexer no menu do ERP.
+Marketing
+  Campanhas                 /admin/marketing?tab=campaigns
+  Autopiloto                /admin/marketing?tab=autopilot   (ex-MarketingAutopilot)
+  Oportunidades             /admin/marketing?tab=growth      (ex-Growth + GrowthOpportunities)
+  Aquisição (Tráfego)       /admin/marketing?tab=traffic     (ex-Traffic)
+  Adoção                    /admin/marketing?tab=adoption    (ex-FeatureAdoption)
+  SEO                       /admin/seo
+  Blog                      /admin/seo-blog
 
----
+Suporte
+  Action Queue (Inbox)      /admin/action-queue        (agrega alertas + reclamações)
+  Reclamações               /admin/complaints
+  Suporte                   /admin/support
+  Demonstrações             /admin/demos
+  Parceiros                 /admin/partners
 
-## 4. Comportamento efetivo
-
-```text
-Pedido IA
-  → Guard verifica JWT + membership
-  → Cache? sim → devolve (0 €)
-  → Rate limit user/shop? passa
-  → Global budget × margem 95% já atingido? bloqueia (global_budget_exceeded)
-  → Plano tem IA? passa
-  → Quota mensal da oficina? passa
-  → Chama modelo → guarda no ledger (custo est.) → guarda em cache
+Operações
+  Veículos (Global)         /admin/vehicles
 ```
 
-Bloqueios automáticos independentes:
-- Global (Super Admin) — protege o negócio.
-- Por plano (limite mensal configurável).
-- Rate limit por utilizador e por oficina.
+Páginas fundidas em tabs, **sem eliminar código** — ficheiros existentes montam-se como tabs da mesma rota, garantindo zero regressões. `AdminSettings` e `AdminAlerts` continuam acessíveis por URL para links antigos, mas saem do menu.
 
----
+## 6. Refactor de fonte única — o que muda no backend
 
-## 5. Detalhes técnicos
+Zero alterações a schema, RLS, Stripe, Edge Functions ou RBAC.
 
-- Hash de prompt: `encode(digest(lower(trim(prompt)), 'sha256'), 'hex')` (pgcrypto já disponível).
-- Rate limit: janela de 60 segundos, contagem incrementada dentro de `consume_ai_credit`, sem tabela em RAM (mantém-se simples e auditável).
-- Cache TTL: default 15 minutos, configurável. Chave por (shop, função, prompt) — não vaza entre oficinas.
-- Custo estimado: `ai_cost_per_credit_eur` × créditos consumidos. Ficamos independentes de tokens.
-- Segurança: nenhuma nova policy afeta tabelas existentes; `ai_response_cache` fica sem policies para roles não-server (só service_role acede).
+Alterações apenas em `src/lib/features.ts`, `platformSettings.ts` e páginas com `plan === 'x'` para lerem sempre do catálogo (`usePlansCatalog`, `plan_limits_catalog`, `plan_country_prices`). Cada consumidor passa a resolver via helpers já existentes (`hasFeature`, `getLimit`, `getPlanPrice`).
 
----
+## 7. Plano de execução seguro (por lotes)
 
-## 6. Fora de âmbito (não tocamos)
+**Lote 1 — Reorganização do menu** (`src/components/AdminLayout.tsx`)
+- Reescrever `navSections` com os 7 grupos acima.
+- Manter todas as rotas existentes (sem apagar páginas).
+- Zero risco funcional.
 
-Stripe, Billing, Landing, Marketplace UI, Multi-Oficina, Dashboard, Clientes, Veículos, Inventário, APIs REST, RLS/RBAC das restantes tabelas, SEO — tudo intocado. Zero migrações fora da camada IA. Zero alterações à Sidebar do ERP.
+**Lote 2 — Fusão em tabs** (Marketing e Sistema)
+- `AdminMarketing.tsx` passa a expor tabs internas que fazem `lazy import` de `AdminMarketingAutopilot`, `AdminGrowth`, `AdminGrowthOpportunities`, `AdminTraffic`, `AdminFeatureAdoption`.
+- `AdminSystemControl.tsx` absorve os toggles de `AdminSettings` (mantendo `/admin/settings` como redirect para a tab correta).
 
----
+**Lote 3 — Remover duplicação de edição**
+- `AdminBilling`: remover controlos que editam o plano; passar a mostrar só o estado Stripe e link "Editar plano em /admin/plans".
+- `AdminAIControl`: remover campos de limite por plano; passar a ler `plan_limits_catalog` e editar apenas orçamento global.
 
-## 7. Relatório final (a apresentar após implementação)
+**Lote 4 — Erradicar hardcodes**
+- Substituir `plan === 'free'|'pro'|'garage'` por leitura de features/limites no catálogo, ficheiro a ficheiro (lista da secção 3).
 
-Onde a IA foi adicionada, como é controlado o consumo, como é impedido o abuso, limites por plano, orçamento global com margem de 95 %, bloqueio automático, cache, rate limit, e confirmação explícita de que não é possível ultrapassar o orçamento definido pelo Super Admin.
+**Lote 5 — Relatório final** com diff de duplicações eliminadas, hardcodes removidos e mapa de propagação (create/edit plan → landing/checkout/billing/erp).
 
----
+## 8. Aprovação necessária
 
-**Estimativa**: 1 migração + 1 módulo guard + 8 edge functions atualizadas (só o wrapper) + 1 nova página admin + 2 componentes com aviso extra.
+Preciso de confirmar antes de tocar em código:
 
-Confirmas para eu avançar?
+1. Confirmas os **7 grupos de menu** e as fusões em tabs propostas (secção 5)?
+2. Confirmas que `AdminSettings` e `AdminAlerts` saem do menu (mas rotas continuam vivas para não partir bookmarks)?
+3. Executo os **5 lotes em sequência** com commit por lote, ou preferes ver só o Lote 1 primeiro para validar?
+4. Alguma página desta lista que **não pode** ser tocada nesta ronda?
+
+Assim que confirmares, arranco pelo Lote 1 (só sidebar, zero risco) e sigo até ao 5.

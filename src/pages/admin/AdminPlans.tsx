@@ -49,7 +49,19 @@ interface PlanRow {
   visible_on_checkout: boolean;
   visible_on_compare: boolean;
   archived_at: string | null;
+  limits: Record<string, number | boolean> | null;
 }
+
+interface LimitCatalogRow {
+  key: string;
+  label: string;
+  description: string | null;
+  unit: string;
+  category: string;
+  sort_order: number;
+  allow_unlimited: boolean;
+}
+
 
 interface PriceRow {
   id: string;
@@ -83,19 +95,24 @@ export default function AdminPlans() {
   const [newPlan, setNewPlan] = useState({ slug: "", name: "", description: "" });
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const [limitsCatalog, setLimitsCatalog] = useState<LimitCatalogRow[]>([]);
+
   const load = async () => {
     setLoading(true);
-    const [plansRes, pricesRes, countriesRes] = await Promise.all([
+    const [plansRes, pricesRes, countriesRes, catalogRes] = await Promise.all([
       supabase.from("plans").select("*").order("sort_order", { ascending: true }),
       supabase.from("plan_country_prices" as any).select("*"),
       supabase.from("country_settings").select("code,name,currency,currency_symbol").eq("active", true).order("name"),
+      supabase.from("plan_limits_catalog" as any).select("*").order("sort_order", { ascending: true }),
     ]);
     if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
     setPlans((plansRes.data as any) ?? []);
     setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
     setCountries((countriesRes.data as any) ?? []);
+    setLimitsCatalog(((catalogRes.data as unknown) as LimitCatalogRow[]) ?? []);
     setLoading(false);
   };
+
 
   useEffect(() => {
     void load();
@@ -128,7 +145,9 @@ export default function AdminPlans() {
         visible_on_billing: p.visible_on_billing,
         visible_on_checkout: p.visible_on_checkout,
         visible_on_compare: p.visible_on_compare,
+        limits: p.limits ?? {},
       } as any)
+
       .eq("slug", p.slug);
     setSaving(null);
     if (error) return toast.error("Erro ao guardar: " + error.message);
@@ -370,7 +389,85 @@ export default function AdminPlans() {
                         ))}
                       </div>
 
-                      {/* Preços por país × ciclo */}
+                      {/* Limites dinâmicos (100% data-driven) */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold">Limites do plano</h3>
+                          <span className="text-xs text-muted-foreground">
+                            {limitsCatalog.length} limite(s) · <span className="font-mono">-1</span> = ilimitado
+                          </span>
+                        </div>
+                        {Object.entries(
+                          limitsCatalog.reduce<Record<string, LimitCatalogRow[]>>((acc, l) => {
+                            (acc[l.category] ??= []).push(l);
+                            return acc;
+                          }, {})
+                        ).map(([category, items]) => (
+                          <div key={category} className="rounded-md border p-3 space-y-3">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {category}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {items.map((limit) => {
+                                const raw = (p.limits ?? {})[limit.key];
+                                const isBool = limit.unit === "boolean";
+                                const numValue = typeof raw === "number" ? raw : (typeof raw === "boolean" ? (raw ? 1 : 0) : 0);
+                                const boolValue = typeof raw === "boolean" ? raw : (typeof raw === "number" ? raw !== 0 : false);
+                                const unlimited = !isBool && numValue === -1;
+                                const setLimit = (val: number | boolean) =>
+                                  setPlans((arr) => arr.map((x) => x.slug === p.slug
+                                    ? { ...x, limits: { ...(x.limits ?? {}), [limit.key]: val } }
+                                    : x));
+                                return (
+                                  <div key={limit.key} className="space-y-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <Label className="text-xs" title={limit.description ?? ""}>{limit.label}</Label>
+                                      {isBool ? (
+                                        <Switch checked={boolValue} onCheckedChange={(v) => setLimit(v)} />
+                                      ) : limit.allow_unlimited ? (
+                                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                          <input
+                                            type="checkbox"
+                                            checked={unlimited}
+                                            onChange={(e) => setLimit(e.target.checked ? -1 : 0)}
+                                          />
+                                          ∞
+                                        </label>
+                                      ) : null}
+                                    </div>
+                                    {!isBool && (
+                                      <Input
+                                        type="number"
+                                        step={limit.unit === "percent" ? "0.01" : "1"}
+                                        value={unlimited ? "" : numValue}
+                                        placeholder={unlimited ? "Ilimitado" : "0"}
+                                        disabled={unlimited}
+                                        onChange={(e) => setLimit(e.target.value === "" ? 0 : Number(e.target.value))}
+                                        className="h-8 text-xs font-mono"
+                                      />
+                                    )}
+                                    {limit.description && (
+                                      <p className="text-[10px] text-muted-foreground leading-tight">
+                                        {limit.description}
+                                        {limit.unit !== "boolean" && limit.unit !== "count" && (
+                                          <span className="ml-1 opacity-70">({limit.unit})</span>
+                                        )}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                        {limitsCatalog.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Catálogo de limites vazio. Adiciona entradas em <code>plan_limits_catalog</code>.
+                          </p>
+                        )}
+                      </div>
+
+
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-semibold">Preços por país e ciclo</h3>

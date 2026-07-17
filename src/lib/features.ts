@@ -191,7 +191,9 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
   return useMemo(() => {
     if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };
     if (mustSubscribe) return { allowed: false, loaded: true, limits: {} };
-    if (GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage") {
+    // Legacy hardcoded restriction — only applies to legacy plans while
+    // the DB matrix hasn't loaded yet. Custom plans go straight to matrix.
+    if (isLegacy && GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage" && (!loaded || matrix.length === 0)) {
       return { allowed: false, loaded: true, limits: {} };
     }
     if (!loaded || matrix.length === 0) {

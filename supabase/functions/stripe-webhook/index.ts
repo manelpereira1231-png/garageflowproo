@@ -234,7 +234,7 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
-          const plan = resolvePlan(subscription);
+          const plan = await resolvePlan(subscription);
           const billingCycle = resolveBillingCycle(subscription);
           
           // Map Stripe status to our status
@@ -473,7 +473,7 @@ serve(async (req) => {
 
         // Fetch the full subscription from Stripe
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        const plan = resolvePlan(stripeSub);
+        const plan = await resolvePlan(stripeSub);
         const billingCycle = resolveBillingCycle(stripeSub);
 
         const sub = await findSubscription(customerId);

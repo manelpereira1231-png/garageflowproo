@@ -775,7 +775,7 @@ export default function LandingPage() {
                 {plan.highlighted && (
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
                 )}
-                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey))}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey) || plan.displayName)}</h3>
                 <div className="mt-2 mb-2">
                   <PriceWithPromo
                     basePrice={plan.basePrice}

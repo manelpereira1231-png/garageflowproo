@@ -363,10 +363,28 @@ Deno.serve(async (req) => {
             const smsBody = `${shopName}: ${emailSubject}`.slice(0, 320);
             const phones = Array.from(new Set(recipientPhones)).slice(0, 20);
             if (phones.length === 0) {
+              // Fallback: sem telemóveis → tenta email
+              let fbSent = 0;
+              if (resend && recipientEmails.length > 0) {
+                const emails = Array.from(new Set(recipientEmails)).slice(0, 50);
+                for (const email of emails) {
+                  try {
+                    const html = automationEmailHtml(shopName, emailSubject || rule.name, emailMessage || smsBody, []);
+                    await resend.emails.send({
+                      from: `${shopName} <noreply@garageflow.pt>`,
+                      to: [email],
+                      subject: emailSubject || rule.name,
+                      html,
+                    });
+                    fbSent++;
+                  } catch (_) { /* skip */ }
+                }
+              }
               await supabase.from("automation_logs").insert({
                 shop_id: rule.shop_id, rule_id: rule.id,
                 trigger_type: rule.trigger_type, action_type: rule.action_type,
-                status: "skipped", details: { reason: "No recipient phone numbers" },
+                status: fbSent > 0 ? "success" : "skipped",
+                details: { reason: "Sem telemóveis — fallback email", email_sent: fbSent },
               });
               continue;
             }
@@ -387,10 +405,28 @@ Deno.serve(async (req) => {
               } catch { failed++; }
             }
             if (notConfigured) {
+              // Fallback automático: envia por email a quem tiver email
+              let fbSent = 0;
+              if (resend && recipientEmails.length > 0) {
+                const emails = Array.from(new Set(recipientEmails)).slice(0, 50);
+                for (const email of emails) {
+                  try {
+                    const html = automationEmailHtml(shopName, emailSubject || rule.name, emailMessage || smsBody, []);
+                    await resend.emails.send({
+                      from: `${shopName} <noreply@garageflow.pt>`,
+                      to: [email],
+                      subject: emailSubject || rule.name,
+                      html,
+                    });
+                    fbSent++;
+                  } catch (_) { /* skip */ }
+                }
+              }
               await supabase.from("automation_logs").insert({
                 shop_id: rule.shop_id, rule_id: rule.id,
                 trigger_type: rule.trigger_type, action_type: rule.action_type,
-                status: "skipped", details: { reason: "Twilio not configured" },
+                status: fbSent > 0 ? "success" : "skipped",
+                details: { reason: "Twilio não configurado — fallback email", email_sent: fbSent },
               });
               continue;
             }

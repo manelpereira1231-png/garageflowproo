@@ -388,21 +388,70 @@ export default function AdminPlans() {
                           <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
                         </div>
                       </div>
-                      <div>
-                        <Label className="text-xs">Comportamento do Botão (Landing/Billing)</Label>
-                        <select
-                          className="w-full h-9 rounded-md border bg-background px-2 text-sm"
-                          value={p.cta_mode}
-                          onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, cta_mode: e.target.value as PlanRow["cta_mode"] } : x))}
-                        >
-                          <option value="trial">Testar Plano (Trial)</option>
-                          <option value="checkout">Subscrever (Stripe Checkout)</option>
-                          <option value="demo">Pedir Demonstração</option>
-                          <option value="contact">Contactar Comercial</option>
-                          <option value="unavailable">Indisponível (botão desativado)</option>
-                        </select>
-                        <p className="text-[11px] text-muted-foreground mt-1">
-                          Controla dinamicamente o CTA de cada plano em toda a plataforma (Landing, Billing, Checkout).
+                      <div className="space-y-3 p-3 rounded-md border bg-muted/20">
+                        <div className="text-sm font-semibold">Botão de conversão (CTA)</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Tipo de ação</Label>
+                            <select
+                              className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                              value={p.cta_mode}
+                              onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, cta_mode: e.target.value as PlanRow["cta_mode"] } : x))}
+                            >
+                              <option value="trial">Trial (registo + período de teste)</option>
+                              <option value="checkout">Checkout Stripe (compra imediata)</option>
+                              <option value="demo">Marcar Demonstração</option>
+                              <option value="contact">Contactar Comercial</option>
+                              <option value="custom_url">URL personalizada</option>
+                              <option value="unavailable">Indisponível (botão desativado)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Texto do botão</Label>
+                            <Input
+                              placeholder={`(auto: "Testar Plano ${p.label || p.name}")`}
+                              value={p.cta_label ?? ""}
+                              onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, cta_label: e.target.value } : x))}
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1">Deixe vazio para gerar automaticamente a partir do nome do plano.</p>
+                          </div>
+                          {p.cta_mode === "custom_url" && (
+                            <div className="md:col-span-2">
+                              <Label className="text-xs">URL de destino</Label>
+                              <Input
+                                placeholder="/pagina-interna  ou  https://exemplo.com/…"
+                                value={p.cta_url ?? ""}
+                                onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, cta_url: e.target.value } : x))}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-xs">Texto do selo (badge)</Label>
+                            <Input
+                              placeholder='ex.: "Mais Popular"'
+                              value={p.badge_label ?? ""}
+                              onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, badge_label: e.target.value } : x))}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                          {[
+                            { k: "show_button", label: "Mostrar botão" },
+                            { k: "show_price", label: "Mostrar preço" },
+                            { k: "show_trial", label: "Mostrar trial" },
+                            { k: "show_badge", label: "Mostrar selo" },
+                          ].map(({ k, label }) => (
+                            <div key={k} className="flex items-center justify-between gap-2 rounded border bg-background px-2 py-1">
+                              <Label className="text-xs">{label}</Label>
+                              <Switch
+                                checked={(p as any)[k] ?? true}
+                                onCheckedChange={(v) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, [k]: v } as PlanRow : x))}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Estas definições propagam-se em tempo real para Landing, Billing, Checkout, comparador e SEO.
                         </p>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-md border bg-muted/30">

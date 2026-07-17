@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { broadcastShopContextChange } from "@/hooks/useShopContext";
 import { toast } from "sonner";
 
 interface Shop {

@@ -111,7 +111,7 @@ export async function fetchAllPlanPrices(countryCode: string) {
     .eq("country_code", countryCode)
     .eq("active", true);
   if (error || !data) return [];
-  return data as Array<{
+  return (data as unknown) as Array<{
     plan_slug: string;
     country_code: string;
     cycle: EffectivePlanPrice["cycle"];

@@ -235,6 +235,14 @@ export default function LandingPage() {
       );
       base = row?.amount ?? 0;
     }
+    // CTA driven by Super Admin (`plans.cta_mode`): checkout | trial | demo | contact | unavailable.
+    const ctaMode = p.cta_mode || "trial";
+    const ctaKey =
+      ctaMode === "demo" ? "landing.ctaGarage" :          // "Marcar Demonstração"
+      ctaMode === "contact" ? "landing.ctaContact" :      // "Contactar Comercial"
+      ctaMode === "unavailable" ? "landing.ctaUnavailable" :
+      ctaMode === "checkout" ? "landing.ctaSubscribe" :   // "Subscrever"
+      "landing.ctaPro";                                   // trial → "Testar Plano"
     return {
       slug: p.slug,
       nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
@@ -245,7 +253,8 @@ export default function LandingPage() {
         : '',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
-      ctaKey: `landing.ctaPro`, // CTA genérico; per-plan override via translation com fallback
+      ctaKey,
+      ctaMode,
       highlighted: p.sort_order === 2, // plano do meio destacado
       ctaPrimary: p.sort_order <= 2,
     };

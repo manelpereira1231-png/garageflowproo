@@ -105,10 +105,16 @@ export function useCountryPricing() {
     };
     window.addEventListener("garageflow:country-detected", reload);
     window.addEventListener("garageflow:pricing-updated", reload);
+    // Realtime: any admin-side update to country_settings → reload pricing.
+    const channel = supabase
+      .channel("country-settings-live")
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "country_settings" }, reload)
+      .subscribe();
     return () => {
       cancelled = true;
       window.removeEventListener("garageflow:country-detected", reload);
       window.removeEventListener("garageflow:pricing-updated", reload);
+      supabase.removeChannel(channel);
     };
   }, []);
 

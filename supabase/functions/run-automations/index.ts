@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
           case "invoice_overdue": {
             const { data: overdueRaw } = await supabase
               .from("invoices")
-              .select("id, number, client_id, total, clients(name, email)")
+              .select("id, number, client_id, total, clients(name, email, phone)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "issued")
               .lt("due_date", new Date().toISOString().split("T")[0]);

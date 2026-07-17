@@ -129,11 +129,11 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         return;
       }
       toast.success(`Oficina "${shop.name || 'sem nome'}" eliminada. Vaga libertada.`);
-      // If the deleted shop was active, fall back to primary.
-      if (activeShopId === shop.id && primaryShopId) {
-        onSwitch(primaryShopId);
-        localStorage.setItem("garageflow_active_shop", primaryShopId);
-      }
+      // Immediately notify every useShopContext instance to drop this shop,
+      // switch active shop if it was the deleted one, and purge caches.
+      // The Realtime DELETE listener will also fire — the broadcast just
+      // makes the UI feel instantaneous on the same tab.
+      broadcastShopContextChange({ deletedShopId: shop.id, reason: "deleted" });
       setConfirmDelete(null);
       onShopCreated?.(); // reuses the same reload path
       await refreshStatus();

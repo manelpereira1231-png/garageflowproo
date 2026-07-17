@@ -17,6 +17,7 @@ import { ShieldCheck, Car, ClipboardCheck, Camera, CheckCircle, AlertTriangle, X
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useCountryPricing } from "@/hooks/useCountryPricing";
 import { formatLocalDate, getMarketLocale } from "@/lib/marketPrice";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 const COMPONENT_KEYS = [
   { key: "engine_status", label: "Motor" },

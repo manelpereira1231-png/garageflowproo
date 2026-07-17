@@ -105,6 +105,13 @@ export default function AdminPlans() {
 
   const [limitsCatalog, setLimitsCatalog] = useState<LimitCatalogRow[]>([]);
 
+  // ── Dirty-tracking so realtime reloads don't wipe unsaved edits ──
+  // Any local mutation of `plans` marks the slug dirty; realtime reloads
+  // then merge server rows in only for non-dirty plans. Cleared on save.
+  const dirtyRef = useRef<Set<string>>(new Set());
+  const markDirty = (slug: string) => { dirtyRef.current.add(slug); };
+  const clearDirty = (slug: string) => { dirtyRef.current.delete(slug); };
+
   const load = async () => {
     setLoading(true);
     const [plansRes, pricesRes, countriesRes, catalogRes] = await Promise.all([
@@ -114,7 +121,25 @@ export default function AdminPlans() {
       supabase.from("plan_limits_catalog" as any).select("*").order("sort_order", { ascending: true }),
     ]);
     if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
-    setPlans((plansRes.data as any) ?? []);
+
+    // Merge server rows with local dirty edits so ongoing user input is not lost.
+    const serverPlans = ((plansRes.data as any) ?? []) as PlanRow[];
+    setPlans((prev) => {
+      if (dirtyRef.current.size === 0) return serverPlans;
+      const prevBySlug = new Map(prev.map((p) => [p.slug, p]));
+      const merged = serverPlans.map((sp) =>
+        dirtyRef.current.has(sp.slug) && prevBySlug.has(sp.slug)
+          ? (prevBySlug.get(sp.slug) as PlanRow)
+          : sp
+      );
+      // Keep dirty new plans that don't yet exist on the server (edge case).
+      for (const [slug, p] of prevBySlug) {
+        if (dirtyRef.current.has(slug) && !serverPlans.some((sp) => sp.slug === slug)) {
+          merged.push(p);
+        }
+      }
+      return merged.sort((a, b) => a.sort_order - b.sort_order);
+    });
     setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
     setCountries((countriesRes.data as any) ?? []);
     setLimitsCatalog(((catalogRes.data as unknown) as LimitCatalogRow[]) ?? []);
@@ -167,8 +192,12 @@ export default function AdminPlans() {
       .eq("slug", p.slug);
     setSaving(null);
     if (error) return toast.error("Erro ao guardar: " + error.message);
+    // Clear dirty BEFORE the realtime callback fires so the fresh server row wins.
+    clearDirty(p.slug);
     toast.success(`Plano ${p.name} atualizado`);
     try { window.dispatchEvent(new CustomEvent("garageflow:pricing-updated")); } catch {}
+    // Force a reload so any DB-side transforms (triggers, defaults) reach the UI immediately.
+    void load();
   };
 
   const createPlan = async () => {

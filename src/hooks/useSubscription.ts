@@ -9,7 +9,16 @@ import {
   type PlatformSettings,
 } from "@/lib/platformSettings";
 
-export type Plan = 'free' | 'pro' | 'garage';
+/**
+ * Plan slug. `'free' | 'pro' | 'garage'` are the historical/legacy slugs
+ * with hardcoded fallbacks in this file. Any other string is a plan
+ * created dynamically by Super Admin via `AdminPlans` — its limits are
+ * resolved from `plan_features` matrix (loaded by `src/lib/features.ts`)
+ * and Admin overrides in `platform_settings`. No code change is needed
+ * to add a new plan.
+ */
+export type Plan = 'free' | 'pro' | 'garage' | (string & {});
+export type LegacyPlan = 'free' | 'pro' | 'garage';
 
 export interface Subscription {
   id: string;

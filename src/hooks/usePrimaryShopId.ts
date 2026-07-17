@@ -23,13 +23,13 @@ export function usePrimaryShopId(): { primaryShopId: string | null; loading: boo
     (async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id, created_at")
+          .select("id, name, created_at")
         .eq("group_owner_id", user.id)
         .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+          .limit(10);
       if (!alive) return;
-      setPrimaryShopId(data?.id ?? null);
+      const primary = (data || []).find((s: any) => (s.name || "").trim().length > 0);
+      setPrimaryShopId(primary?.id ?? null);
       setLoading(false);
     })();
     return () => { alive = false; };

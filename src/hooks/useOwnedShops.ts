@@ -33,11 +33,11 @@ export function useOwnedShops() {
     (async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id, name, address, currency, logo_url, created_at")
+          .select("id, name, address, currency, logo_url, created_at")
         .eq("group_owner_id", user.id)
         .order("created_at", { ascending: true });
       if (!alive) return;
-      setShops((data as OwnedShop[]) ?? []);
+      setShops(((data as OwnedShop[]) ?? []).filter((s) => (s.name || "").trim().length > 0));
       setLoading(false);
     })();
     return () => { alive = false; };

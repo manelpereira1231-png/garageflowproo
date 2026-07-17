@@ -121,7 +121,8 @@ export function useShopContext() {
       // belongs to at least one real member shop. This preserves the
       // classic "one-owner, one-shop" flow while blocking privilege escalation
       // for invited members whose signup trigger created an empty shop.
-      const realOwnedShops = memberShops.length > 0
+      const hasRealOwnedShop = (ownedShops || []).some((s) => (s.name || "").trim().length > 0);
+      const realOwnedShops = hasRealOwnedShop
         ? (ownedShops || []).filter((s) => (s.name || "").trim().length > 0)
         : (ownedShops || []);
 

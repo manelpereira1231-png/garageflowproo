@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 import {
   loadPlatformSettings,
   getCachedPlatformSettings,

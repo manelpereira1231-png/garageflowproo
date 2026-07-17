@@ -785,6 +785,76 @@ function OwnerDashboard() {
         )}
       </div>
 
+      {/* === Modo Grupo: Rankings + Breakdown por oficina === */}
+      {isGroupMode && dataLoaded && perShopBreakdown.length > 0 && (() => {
+        const byRevenue = [...perShopBreakdown].sort((a, b) => b.revenue - a.revenue);
+        const byProfit = [...perShopBreakdown].sort((a, b) => b.profit - a.profit);
+        const byServices = [...perShopBreakdown].sort((a, b) => b.services - a.services);
+        const byGrowth = [...perShopBreakdown].sort((a, b) => b.growth - a.growth);
+        const rankings = [
+          { label: 'Maior faturação', shop: byRevenue[0], value: `${currency}${byRevenue[0].revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
+          { label: 'Maior lucro', shop: byProfit[0], value: `${currency}${byProfit[0].profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
+          { label: 'Mais serviços', shop: byServices[0], value: `${byServices[0].services}`, icon: Wrench, color: 'text-blue-500' },
+          { label: 'Maior crescimento', shop: byGrowth[0], value: `${byGrowth[0].growth >= 0 ? '+' : ''}${byGrowth[0].growth}%`, icon: BarChart3, color: byGrowth[0].growth >= 0 ? 'text-emerald-500' : 'text-destructive' },
+        ];
+        return (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {rankings.map((r) => (
+                <div key={r.label} className="card-premium p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{r.label}</span>
+                    <r.icon className={`w-4 h-4 ${r.color}`} />
+                  </div>
+                  <div className="text-lg font-bold tabular-nums truncate">{r.value}</div>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">{r.shop.name}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card-premium p-3 sm:p-5">
+              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-primary" />
+                Resumo por oficina
+              </h2>
+              <div className="overflow-x-auto -mx-3 sm:mx-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                      <th className="py-2 px-3 font-semibold">Oficina</th>
+                      <th className="py-2 px-3 font-semibold text-right">Faturação</th>
+                      <th className="py-2 px-3 font-semibold text-right">Lucro</th>
+                      <th className="py-2 px-3 font-semibold text-right">Serviços</th>
+                      <th className="py-2 px-3 font-semibold text-right hidden sm:table-cell">Clientes</th>
+                      <th className="py-2 px-3 font-semibold text-right hidden sm:table-cell">Veículos</th>
+                      <th className="py-2 px-3 font-semibold text-right">Δ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byRevenue.map((s) => (
+                      <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="font-medium truncate max-w-[220px]">{s.name}</div>
+                          {s.address && <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">{s.address}</div>}
+                        </td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{currency}{s.revenue.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{currency}{s.profit.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{s.services}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.clients}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.vehicles}</td>
+                        <td className={`py-2.5 px-3 text-right mono tabular-nums text-xs ${s.growth > 0 ? 'text-emerald-500' : s.growth < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {s.growth > 0 ? '+' : ''}{s.growth}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {/* Charts Row */}
       {plan !== 'free' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

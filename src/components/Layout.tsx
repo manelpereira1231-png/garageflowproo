@@ -124,6 +124,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // full Market navigation the instant `enroll_shop_in_market` runs — and
   // never re-shows "Ativar Market" while the shop is an active partner.
   const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
+  const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");

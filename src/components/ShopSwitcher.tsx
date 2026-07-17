@@ -78,7 +78,13 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
     if (!newShopName.trim() || !newShopEmail.trim()) return;
     setCreating(true);
     try {
-      const { data: latestStatus } = await supabase.rpc('get_shop_creation_status', { _user_id: (await supabase.auth.getUser()).data.user?.id });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Sessão expirada. Inicie sessão novamente.");
+        return;
+      }
+
+      const { data: latestStatus } = await supabase.rpc('get_shop_creation_status', { _user_id: user.id });
       if (latestStatus) {
         const nextStatus = latestStatus as any;
         setStatus(nextStatus);

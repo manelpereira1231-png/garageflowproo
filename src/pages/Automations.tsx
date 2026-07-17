@@ -364,6 +364,15 @@ export default function Automations() {
                 </Select>
               </div>
             </TabsContent>
+            <TabsContent value="flow" className="mt-3">
+              <VisualFlowBuilder
+                triggerLabel={t(TRIGGER_KEYS.find(tk => tk.value === form.trigger_type)?.label || form.trigger_type)}
+                actionLabel={t(ACTION_KEYS.find(ak => ak.value === form.action_type)?.label || form.action_type)}
+                actionIcon={ACTION_KEYS.find(ak => ak.value === form.action_type)?.icon}
+                conditions={form.conditions as FlowConditions}
+                onChange={(next) => setForm({ ...form, conditions: next })}
+              />
+            </TabsContent>
             <TabsContent value="template" className="space-y-3 mt-3">
               <div>
                 <Label>{t('automations.emailSubject') || 'Assunto'}</Label>

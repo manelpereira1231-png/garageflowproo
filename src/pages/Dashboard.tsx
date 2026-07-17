@@ -79,22 +79,28 @@ function OwnerDashboard() {
   // Seletor de contexto — apenas a Oficina Mãe vê o grupo. O hook lê a
   // hierarquia real (`group_owner_id`) e filhas independentes não entram aqui.
   const isOwnerOfGroup = ownedShops.length > 1;
-  const [selectedFilter, setSelectedFilterRaw] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'all';
-    return localStorage.getItem('garageflow_dashboard_filter') || 'all';
-  });
+  // Fonte de verdade: activeShopId. Modo "Grupo/Todas as oficinas" é
+  // efémero — nunca persistido. Sempre que o utilizador troca de oficina
+  // (via ShopSwitcher ou qualquer outro canal), saímos do modo consolidado
+  // automaticamente. Isto garante que ao entrar numa oficina filha nunca
+  // fica lixo do modo grupo visível.
+  const [selectedFilter, setSelectedFilterRaw] = useState<string>(() => activeShopId || '');
+  useEffect(() => {
+    // Qualquer mudança de contexto externa (ShopSwitcher, delete, login
+    // direto duma filha) reseta imediatamente para modo individual.
+    if (activeShopId) setSelectedFilterRaw(activeShopId);
+  }, [activeShopId]);
   const isGroupMode = isOwnerOfGroup && selectedFilter === 'all';
   const setSelectedFilter = (v: string) => {
     setSelectedFilterRaw(v);
-    try { localStorage.setItem('garageflow_dashboard_filter', v); } catch { /* noop */ }
     // Ao escolher uma oficina específica, sincroniza o activeShopId global
-    // via o helper oficial (localStorage + broadcast + microtask flush) para
-    // que os cartões, navegação e destinos filtrem já pela oficina
-    // selecionada, sem refresh.
+    // via o helper oficial para que os cartões, navegação e destinos filtrem
+    // já pela oficina selecionada, sem refresh.
     if (v !== 'all' && v !== activeShopId) {
       void setActiveShopAndSync(v, { reason: "switch" });
     }
   };
+
 
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
 

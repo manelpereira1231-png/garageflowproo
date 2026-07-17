@@ -177,7 +177,8 @@ export function useCurrentPlan(): string {
 export function useFeature(slug: string): { allowed: boolean; loaded: boolean; limits: Record<string, any> } {
   const { matrix, features, loaded } = useFeatureMatrix();
   const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
-  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const plan: string = currentPlan || "free";
+  const isLegacy = plan === "free" || plan === "pro" || plan === "garage";
   const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
     if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };

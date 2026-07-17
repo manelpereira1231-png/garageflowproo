@@ -190,16 +190,19 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
                 <DialogTitle>{t('shop.createNew')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Vamos criar uma conta independente para a nova oficina. O responsável vai receber um email com um link seguro para definir a palavra-passe.
+                </p>
                 <div className="space-y-1.5">
                   <Label>{t('settings.shopName')} *</Label>
                   <Input value={newShopName} onChange={e => setNewShopName(e.target.value)} placeholder="Ex: Oficina Norte" autoFocus />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t('settings.email')}</Label>
-                  <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="oficina@exemplo.com" />
+                  <Label>Email do responsável *</Label>
+                  <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="responsavel@oficina.pt" />
                 </div>
-                <Button onClick={handleCreateShop} disabled={!newShopName.trim() || creating} className="w-full">
-                  {creating ? t('common.loading') : t('shop.createNew')}
+                <Button onClick={handleCreateShop} disabled={!newShopName.trim() || !newShopEmail.trim() || creating} className="w-full">
+                  {creating ? "A criar e a enviar convite..." : "Criar oficina e enviar convite"}
                 </Button>
               </div>
             </DialogContent>

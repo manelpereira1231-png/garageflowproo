@@ -40,6 +40,16 @@ serve(async (req) => {
     const { data: admin } = await supabase.rpc("is_super_admin", { _user_id: u.user.id });
     if (!admin) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Cost control: global budget
+    const { data: budget } = await userClient.rpc("consume_platform_ai_credit", {
+      _function_name: "seo-generate-article", _cost: 2, _metadata: {},
+    });
+    if (!(budget as any)?.allowed) {
+      const reason = (budget as any)?.reason || "blocked";
+      const status = reason === "rate_limited" ? 429 : reason === "forbidden" ? 403 : 402;
+      return new Response(JSON.stringify({ error: reason, quota: budget }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { topic, intent = "solucao", category = "Gestão", save = true } = await req.json();
     if (!topic || typeof topic !== "string") throw new Error("topic obrigatório");
 

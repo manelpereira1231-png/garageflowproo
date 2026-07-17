@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, Link, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { marketSupabase } from "@/integrations/supabase/realmClients";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,13 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { ensureSignupAllowed } from "@/lib/signupGuard";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 
 export default function MarketAuth() {
+  // Global kill-switch: when Super Admin disables `market_enabled`, the Market
+  // login/signup page is inaccessible just like every other Market route.
+  const { enabled: marketEnabled, ready: marketReady } = useGlobalMarketEnabled();
+  if (marketReady && !marketEnabled) return <Navigate to="/" replace />;
   const { language, setLanguage } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

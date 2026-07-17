@@ -24,7 +24,7 @@ export function usePrimaryShopId(): { primaryShopId: string | null; loading: boo
       const { data } = await supabase
         .from("shops")
         .select("id, created_at")
-        .eq("user_id", user.id)
+        .eq("group_owner_id", user.id)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();

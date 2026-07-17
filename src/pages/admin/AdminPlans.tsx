@@ -144,24 +144,41 @@ export default function AdminPlans() {
     ]);
     if (plansRes.error) toast.error("Erro ao carregar planos: " + plansRes.error.message);
 
-    // Merge server rows with local dirty edits so ongoing user input is not lost.
     const serverPlans = ((plansRes.data as any) ?? []) as PlanRow[];
+
+    // Refresh dirty set: a slug is dirty when local edit differs from the
+    // last known server row for that slug (auto-detected, no need to touch
+    // every setPlans call site).
     setPlans((prev) => {
-      if (dirtyRef.current.size === 0) return serverPlans;
       const prevBySlug = new Map(prev.map((p) => [p.slug, p]));
+      const serverBySlug = new Map(serverPlans.map((p) => [p.slug, p]));
+
+      // Recompute dirty against the previous snapshot to catch anything the
+      // user changed but hasn't saved yet.
+      const nextDirty = new Set<string>();
+      for (const [slug, local] of prevBySlug) {
+        const snap = serverSnapshotRef.current.get(slug);
+        if (isDirty(local, snap)) nextDirty.add(slug);
+      }
+      dirtyRef.current = nextDirty;
+
+      // Refresh the snapshot to the new server truth.
+      serverSnapshotRef.current = serverBySlug;
+
+      if (nextDirty.size === 0) return serverPlans;
+
       const merged = serverPlans.map((sp) =>
-        dirtyRef.current.has(sp.slug) && prevBySlug.has(sp.slug)
+        nextDirty.has(sp.slug) && prevBySlug.has(sp.slug)
           ? (prevBySlug.get(sp.slug) as PlanRow)
           : sp
       );
-      // Keep dirty new plans that don't yet exist on the server (edge case).
+      // Preserve dirty local rows that don't exist on the server yet.
       for (const [slug, p] of prevBySlug) {
-        if (dirtyRef.current.has(slug) && !serverPlans.some((sp) => sp.slug === slug)) {
-          merged.push(p);
-        }
+        if (nextDirty.has(slug) && !serverBySlug.has(slug)) merged.push(p);
       }
       return merged.sort((a, b) => a.sort_order - b.sort_order);
     });
+
     setPrices(((pricesRes.data as unknown) as PriceRow[]) ?? []);
     setCountries((countriesRes.data as any) ?? []);
     setLimitsCatalog(((catalogRes.data as unknown) as LimitCatalogRow[]) ?? []);

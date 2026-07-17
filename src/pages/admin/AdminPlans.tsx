@@ -12,7 +12,7 @@
  * Retrocompatível: as colunas antigas de country_settings.saas_ / stripe_
  * continuam a existir e são mantidas em sincronia por um trigger DB.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Save, Globe, ListChecks, Plus, Copy, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

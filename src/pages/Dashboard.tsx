@@ -1033,6 +1033,7 @@ function OwnerDashboard() {
               const plate = v.plate || '';
               const makeModel = [v.make, v.model].filter(Boolean).join(' ');
               const time = s.created_at ? new Date(s.created_at).toLocaleTimeString(language === 'pt' ? 'pt-PT' : undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+              const shopBadge = isGroupMode ? (ownedShops.find(o => o.id === s.shop_id)?.name || null) : null;
               return (
                 <div key={s.number} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
                   <div className="min-w-0 flex-1">
@@ -1040,6 +1041,7 @@ function OwnerDashboard() {
                       <span className="mono text-sm font-medium">{s.number}</span>
                       {plate && <span className="mono text-[11px] px-1.5 py-0.5 rounded bg-muted/70 border border-border/60">{plate}</span>}
                       <span className="text-xs text-muted-foreground truncate">{makeModel}</span>
+                      {shopBadge && <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">{shopBadge}</span>}
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
                       <span className="truncate">{(s.clients as any)?.name || '—'}</span>

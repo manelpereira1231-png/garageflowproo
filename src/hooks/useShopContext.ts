@@ -223,11 +223,13 @@ export function useShopContext() {
   }, [user, loadShops, queryClient, navigate]);
 
   const switchShop = useCallback((shopId: string) => {
+    // Optimistic local update — this instance flips immediately.
     setActiveShopId(shopId);
-    localStorage.setItem(STORAGE_KEY, shopId);
-    // Let every other useShopContext instance re-render on the active shop.
-    broadcastShopContextChange({ reason: "switch" });
+    // Delegate persistence + cross-instance broadcast to the single official
+    // primitive so we never diverge from create/delete/onboarding flows.
+    void setActiveShopAndSync(shopId, { reason: "switch" });
   }, []);
+
 
   const activeShop = shops.find(s => s.id === activeShopId) || null;
 

@@ -137,6 +137,7 @@ import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
+import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));

@@ -139,12 +139,12 @@ export default function AdminReports() {
     // === MRR/ARR — APENAS STRIPE PAID (receita real) ===
     const activeSubs = subscriptions.filter(s => s.status === "active" || s.status === "trialing");
     const stripePaidSubs = activeSubs.filter(s => 
-      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== 'free')
+      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== entryPlanSlug)
     );
     let mrrReal = 0;
     let discountImpact = 0;
     stripePaidSubs.forEach(s => {
-      const base = PLAN_PRICES[s.plan] || 0;
+      const base = planPriceMap[s.plan] || 0;
       const disc = Number(s.discount_percent || 0);
       const expired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
       const effectiveDisc = expired ? 0 : disc;
@@ -153,15 +153,16 @@ export default function AdminReports() {
       discountImpact += discounted;
     });
 
-    // === PLAN DISTRIBUTION ===
-    const planCounts: Record<string, number> = { Free: 0, Pro: 0, Garage: 0 };
+    // === PLAN DISTRIBUTION (dinâmico — iterado do catálogo) ===
+    const planSlugs = Object.keys(planLabelMap);
+    const planCounts: Record<string, number> = Object.fromEntries(planSlugs.map(s => [s, 0]));
     subscriptions.forEach(s => {
-      if (s.plan === "free") planCounts.Free++;
-      else if (s.plan === "pro") planCounts.Pro++;
-      else if (s.plan === "garage") planCounts.Garage++;
+      if (s.plan && planCounts.hasOwnProperty(s.plan)) planCounts[s.plan]++;
     });
-    const planDistribution = Object.entries(planCounts).map(([name, value], i) => ({
-      name, value, color: PLAN_COLORS[i]
+    const planDistribution = planSlugs.map((slug, i) => ({
+      name: planLabelMap[slug],
+      value: planCounts[slug],
+      color: CHART_PALETTE[i % CHART_PALETTE.length],
     }));
 
     // === STATUS DISTRIBUTION ===

@@ -147,6 +147,11 @@ export default function Billing() {
     loadUsage();
   }, [shopId]);
 
+  // Dynamic plans catalog — MUST be called BEFORE any early return so the hook
+  // order stays stable across renders (fixes "Rendered more hooks than during
+  // the previous render" crash when `loading` flips from true to false).
+  const { data: catalog } = usePlansCatalog();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -166,7 +171,7 @@ export default function Billing() {
   // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
   // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin
   // faz aparecer automaticamente um cartão aqui — sem alterar código.
-  const { data: catalog } = usePlansCatalog();
+  // (catalog already fetched above via usePlansCatalog before the early return)
   const ICONS: Record<string, React.ElementType> = { crown: Crown, building: Building2, gift: Gift, shield: Shield, gauge: Gauge };
   const plans = publicPlans(catalog, "billing").map((p) => ({
     key: p.slug as Plan,

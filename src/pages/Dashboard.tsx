@@ -68,7 +68,7 @@ function OwnerDashboard() {
   const { plan, isTrialing, trialDaysLeft } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
-  const { shops: ownedShops, primaryShopId } = useOwnedShops();
+  const { shops: ownedShops } = useOwnedShops();
 
   // Seletor de contexto — Oficina Mãe (dono do grupo) no plano Garage com >1 oficina.
   // Só quem é `shops.user_id = auth.uid()` de várias oficinas vê o seletor:

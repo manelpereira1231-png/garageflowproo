@@ -103,13 +103,13 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         const code = (data as any)?.error || error?.message || "";
         if (code === "SHOP_LIMIT_REACHED") toast.error(limitMsg);
         else if (code === "INVALID_EMAIL") toast.error("Email inválido.");
-        else if (code === "INVITE_FAILED") toast.error("Não foi possível enviar o convite. Tente novamente.");
+        else if (code === "INVITE_FAILED" || code === "EMAIL_SEND_FAILED") toast.error("A oficina foi criada, mas o email de convite não foi aceite. Use o botão de reenviar ou contacte o suporte.");
         else toast.error("Não foi possível criar a oficina. " + (code || ""));
         return;
       }
 
       toast.success(
-        `Oficina "${newShopName.trim()}" criada. Enviámos um email para ${newShopEmail.trim()} com o link para definir a palavra-passe.`,
+        `Oficina "${newShopName.trim()}" criada. Email de convite aceite para envio para ${newShopEmail.trim()}.`,
       );
       setNewShopName("");
       setNewShopEmail("");

@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
       language: mother?.language ?? "pt",
     });
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      const emailResp = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,9 +176,14 @@ Deno.serve(async (req) => {
           footerNote: mail.footerNote,
         }),
       });
+      if (!emailResp.ok) {
+        const detail = await emailResp.text().catch(() => "");
+        console.error("[invite-child-shop] send-email returned non-2xx", emailResp.status, detail);
+        return json({ error: "EMAIL_SEND_FAILED", detail }, 502);
+      }
     } catch (e) {
       console.error("[invite-child-shop] send-email failed", e);
-      // Non-fatal — shop is created; owner can trigger resend-child-invite.
+      return json({ error: "EMAIL_SEND_FAILED", detail: String((e as any)?.message ?? e) }, 502);
     }
 
     return json({ ok: true, shop_id: shop.id, user_id: childUserId }, 200);

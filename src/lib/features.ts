@@ -214,7 +214,8 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
 export function useEnabledFeatureSet(): Set<string> {
   const { matrix, features, loaded } = useFeatureMatrix();
   const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
-  const plan = currentPlan === "garage" || currentPlan === "pro" || currentPlan === "free" ? currentPlan : "free";
+  const plan: string = currentPlan || "free";
+  const isLegacy = plan === "free" || plan === "pro" || plan === "garage";
   const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
     // While the subscription is still resolving, do not falsely mark Garage

@@ -63,6 +63,23 @@ Deno.serve(async (req) => {
       if (!ownedShop) return json({ error: "Forbidden" }, 403);
     }
 
+    // Consume AI credit — needs a user-scoped client so RPC sees auth.uid()
+    const userSupa = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: creditRes, error: creditErr } = await userSupa.rpc("consume_ai_credit", {
+      _shop_id: shop_id,
+      _function_name: "marketing-ai-insights",
+      _cost: 1,
+      _metadata: {},
+    });
+    if (creditErr) return json({ error: creditErr.message }, 500);
+    if (!(creditRes as any)?.allowed) {
+      const reason = (creditRes as any)?.reason || "quota_exceeded";
+      return json({ error: reason, quota: creditRes }, reason === "plan_no_ai" ? 403 : 402);
+    }
+
+
     const now = new Date();
     const nineMonthsAgo = new Date(now); nineMonthsAgo.setMonth(now.getMonth() - 9);
     const thirtyDaysAhead = new Date(now); thirtyDaysAhead.setDate(now.getDate() + 30);

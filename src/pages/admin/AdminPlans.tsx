@@ -372,9 +372,6 @@ export default function AdminPlans() {
                         <div className="md:col-span-2">
                           <Label className="text-xs">Etiqueta (ex: "Mais Popular")</Label>
                           <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
-                        <div className="md:col-span-2">
-                          <Label className="text-xs">Etiqueta (ex: "Mais Popular")</Label>
-                          <Input placeholder="opcional" value={p.label ?? ""} onChange={(e) => setPlans((arr) => arr.map((x) => x.slug === p.slug ? { ...x, label: e.target.value } : x))} />
                         </div>
                       </div>
                       <div>

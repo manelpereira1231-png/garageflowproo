@@ -155,6 +155,13 @@ export default function AdminPlans() {
         visible_on_compare: p.visible_on_compare,
         limits: p.limits ?? {},
         cta_mode: p.cta_mode,
+        cta_label: p.cta_label,
+        cta_url: p.cta_url,
+        badge_label: p.badge_label,
+        show_button: p.show_button,
+        show_price: p.show_price,
+        show_trial: p.show_trial,
+        show_badge: p.show_badge,
       } as any)
 
       .eq("slug", p.slug);

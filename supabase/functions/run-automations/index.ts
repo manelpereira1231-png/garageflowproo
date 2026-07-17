@@ -224,12 +224,13 @@ Deno.serve(async (req) => {
           }
           case "quote_approved": {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
-            const { data: approved } = await supabase
+            const { data: approvedRaw } = await supabase
               .from("quotes")
               .select("id, number, total, labor_hours, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "approved")
               .gte("created_at", oneDayAgo);
+            const approved = (approvedRaw || []).filter(q => (Number((q as any).total) || 0) >= minTotal);
             if (approved && approved.length > 0) {
               triggered = true;
               details = { count: approved.length };

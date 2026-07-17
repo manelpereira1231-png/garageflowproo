@@ -107,7 +107,29 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
         <Badge variant="outline" className="text-[10px] ml-auto">
           <Sparkles className="w-3 h-3 mr-0.5" /> AI
         </Badge>
+        {!quota.loading && (
+          <Badge variant={exhausted || noAi ? "destructive" : "secondary"} className="text-[10px]">
+            {quota.unlimited
+              ? (isPt ? "Ilimitado" : "Unlimited")
+              : `${quota.used}/${quota.limit} ${isPt ? "créditos" : "credits"}`}
+          </Badge>
+        )}
       </div>
+
+      {noAi && (
+        <div className="text-xs bg-destructive/10 border border-destructive/30 rounded-md p-2 text-destructive">
+          {isPt
+            ? "O seu plano não inclui créditos IA. Faça upgrade para desbloquear o diagnóstico automático."
+            : "Your plan does not include AI credits. Upgrade to unlock automatic diagnosis."}
+        </div>
+      )}
+      {exhausted && (
+        <div className="text-xs bg-warning/10 border border-warning/30 rounded-md p-2 text-warning">
+          {isPt
+            ? "Atingiu o limite mensal de créditos IA. Renova no próximo mês ou muda de plano."
+            : "You've hit your monthly AI credit limit. Renews next month or upgrade your plan."}
+        </div>
+      )}
 
       {/* Input */}
       <Textarea
@@ -116,9 +138,10 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
         placeholder={isPt ? "Descreva os sintomas (ex: barulho nos travões, vibração no volante, luz de motor acesa...)" : "Describe symptoms (e.g., brake noise, steering vibration, engine light on...)"}
         rows={2}
         className="text-sm"
+        disabled={noAi}
       />
 
-      <Button onClick={generateDiagnosis} disabled={loading} size="sm" className="w-full">
+      <Button onClick={generateDiagnosis} disabled={disabled} size="sm" className="w-full">
         {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Brain className="w-4 h-4 mr-1" />}
         {loading ? (isPt ? "A analisar..." : "Analyzing...") : (isPt ? "Gerar Diagnóstico IA" : "Generate AI Diagnosis")}
       </Button>

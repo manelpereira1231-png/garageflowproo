@@ -362,7 +362,7 @@ export type Database = {
           metadata: Json
           plan_slug: string | null
           prompt_hash: string | null
-          shop_id: string
+          shop_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -375,7 +375,7 @@ export type Database = {
           metadata?: Json
           plan_slug?: string | null
           prompt_hash?: string | null
-          shop_id: string
+          shop_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -388,7 +388,7 @@ export type Database = {
           metadata?: Json
           plan_slug?: string | null
           prompt_hash?: string | null
-          shop_id?: string
+          shop_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -8386,6 +8386,10 @@ export type Database = {
           _metadata?: Json
           _shop_id: string
         }
+        Returns: Json
+      }
+      consume_platform_ai_credit: {
+        Args: { _cost?: number; _function_name: string; _metadata?: Json }
         Returns: Json
       }
       create_team_invitation: {

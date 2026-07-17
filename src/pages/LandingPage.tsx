@@ -762,7 +762,11 @@ export default function LandingPage() {
               </Badge>
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className={`grid grid-cols-1 gap-4 sm:gap-6 ${
+            planConfigs.length >= 4 ? 'sm:grid-cols-2 lg:grid-cols-4'
+              : planConfigs.length === 3 ? 'md:grid-cols-3'
+              : planConfigs.length === 2 ? 'md:grid-cols-2' : ''
+          }`}>
             {planConfigs.map(plan => (
               <div
                 key={plan.nameKey}

@@ -253,11 +253,18 @@ export default function LandingPage() {
 
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 
-  // Rich SEO JSON-LD: SoftwareApplication + Organization + FAQPage
-  // When a promotion is active for Pro monthly, reflect the promo price
-  // in the SoftwareApplication offer so search results and social crawlers
-  // show the discounted headline price.
-  const proEff = getEffectivePrice(pricing.pro.monthly, countryCode, "pro", "monthly");
+  // Rich SEO JSON-LD gerado a partir do catálogo dinâmico: uma Offer por plano
+  // com preço efetivo (aplicando promoções) e moeda regional.
+  const offers = planConfigs.map((p) => {
+    const eff = getEffectivePrice(p.basePrice, countryCode, p.slug, billingCycle);
+    return {
+      "@type": "Offer",
+      name: p.displayName,
+      price: String(eff.effectivePrice),
+      priceCurrency: pricing.currency || "EUR",
+      ...(eff.isPromo && eff.endsAt ? { priceValidUntil: eff.endsAt.slice(0, 10) } : {}),
+    };
+  });
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -267,14 +274,7 @@ export default function LandingPage() {
       operatingSystem: "Web, iOS, Android",
       url: SITE_URL,
       description: t('landing.heroSubtitle'),
-      offers: {
-        "@type": "Offer",
-        price: String(proEff.effectivePrice),
-        priceCurrency: pricing.currency || "EUR",
-        ...(proEff.isPromo && proEff.endsAt
-          ? { priceValidUntil: proEff.endsAt.slice(0, 10) }
-          : {}),
-      },
+      offers: offers.length > 0 ? offers : undefined,
     },
     {
       "@context": "https://schema.org",

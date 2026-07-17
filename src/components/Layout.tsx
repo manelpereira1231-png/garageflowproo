@@ -143,15 +143,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Hard paywall: there is NO free tier. When the trial/subscription expires
   // (canceled, past_due, trial_expired, admin-managed expired), the user is
   // forced to /trial-expired and can only reach billing/support/logout.
+  //
+  // BUT: child shops (Oficinas Filhas) NEVER trigger the paywall. Billing is a
+  // group-level responsibility that lives on the primary shop (Oficina Mãe).
+  // If the child shop's `subscriptions` row is stale/expired for any reason,
+  // sending the child user to /trial-expired → /billing creates an infinite
+  // redirect loop (RoleProtectedRoute in App.tsx bounces /billing back out
+  // because it is a PRIMARY_ONLY path). Skip the paywall entirely here and
+  // let the mother account handle billing.
+  //
   // Super admins bypass this lock entirely.
   useEffect(() => {
     if (!mustSubscribe) return;
     if (isSuperAdmin) return;
+    if (isChildShopContext) return;
     const allowed = ["/trial-expired", "/billing", "/support", "/auth"];
     if (!allowed.some((p) => location.pathname.startsWith(p))) {
       navigate("/trial-expired", { replace: true });
     }
-  }, [mustSubscribe, isSuperAdmin, location.pathname, navigate]);
+  }, [mustSubscribe, isSuperAdmin, isChildShopContext, location.pathname, navigate]);
 
 
   useEffect(() => {

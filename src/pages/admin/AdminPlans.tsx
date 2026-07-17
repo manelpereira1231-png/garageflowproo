@@ -49,7 +49,19 @@ interface PlanRow {
   visible_on_checkout: boolean;
   visible_on_compare: boolean;
   archived_at: string | null;
+  limits: Record<string, number | boolean> | null;
 }
+
+interface LimitCatalogRow {
+  key: string;
+  label: string;
+  description: string | null;
+  unit: string;
+  category: string;
+  sort_order: number;
+  allow_unlimited: boolean;
+}
+
 
 interface PriceRow {
   id: string;

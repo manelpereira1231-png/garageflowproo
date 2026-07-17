@@ -1,99 +1,137 @@
-# Planos 100% Dinâmicos — Enterprise, Sem Regressões
 
-## Princípio
+## Objetivo
 
-Uma única fonte de verdade: tabelas `plans`, `plan_features`, `plan_limits_catalog` (nova, para descrever os *tipos* de limites configuráveis) e `plan_country_prices`. Nenhum código compara slug (`plan === "garage"`). Toda a UI itera o catálogo. Todos os limites são **numéricos** (`-1` = ilimitado, `0` = sem acesso, `N` = quota).
+Blindar completamente o consumo de IA do GarageFlow **sem tocar** em Design, Layout, UX, Stripe, Billing, Marketplace, Multi-Oficina, Landing Page, Dashboard, SEO, RLS, RBAC, APIs existentes ou qualquer módulo do ERP fora da camada IA. Só é adicionada infraestrutura de controlo de custos por cima da que já existe (`ai_usage_ledger`, `consume_ai_credit`, `useAiQuota`).
 
-## O que muda
+## Regra base preservada
 
-### 1. Base de dados
+1 pedido = 1 crédito. Continua assim. Nada de tokens.
 
-**`plan_limits_catalog`** (nova) — define os limites disponíveis no sistema, editáveis pelo Super Admin:
+---
 
-| coluna | tipo | descrição |
-|---|---|---|
-| key | text PK | ex: `max_shops`, `max_users`, `max_ai_credits` |
-| label | text | "Oficinas máximas" |
-| description | text | ajuda inline |
-| unit | text | `count`, `gb`, `per_month`, `boolean` |
-| category | text | `limits`, `channels`, `ai`, `access` |
-| sort_order | int | |
+## 1. Base de dados (uma migração)
 
-Seed com: `max_shops, max_users, max_clients, max_vehicles, max_work_orders_month, max_quotes_month, max_services_catalog, max_products_stock, max_storage_gb, max_api_calls_month, max_ai_credits_month, max_sms_month, max_emails_month, max_whatsapp_month, max_campaigns, max_automations, max_team_members, marketplace_access, partner_commission_rate`.
+**Extensões a `ai_usage_ledger`**
+- `cost_estimate_eur numeric(10,4)` — custo estimado por chamada.
+- `prompt_hash text` — para deduplicação/cache.
+- `cached boolean default false` — marca chamadas servidas por cache.
 
-**`plans.limits jsonb`** — já existe. Passa a conter todos os limites por chave: `{"max_shops": 5, "max_users": -1, "marketplace_access": 1, ...}`. `-1` = ilimitado.
+**Nova tabela `ai_response_cache`**
+- `cache_key text primary key` (hash de `shop_id + function + prompt_hash`).
+- `response jsonb`, `expires_at timestamptz`.
+- GRANTs corretos, RLS: só server-side (service_role).
 
-**`plan_features`** — sem alterações estruturais; matriz plano × feature (on/off) permanece.
+**Nova tabela `ai_rate_limits`** (in-memory-like, com TTL curto)
+- `subject_type` (`user`|`shop`), `subject_id uuid`, `window_start timestamptz`, `count int`.
+- Índice único `(subject_type, subject_id, window_start)`.
 
-**Backfill**: escrever para os 3 planos actuais os valores iguais aos existentes (`start: max_shops=1, max_users=1`, `pro: max_shops=1, max_users=5`, `garage: max_shops=5, max_users=-1`, etc.), garantindo zero regressão comportamental.
+**`platform_settings` — novas chaves** (não altera schema):
+- `ai_monthly_budget_eur` — orçamento máximo mensal (default 250).
+- `ai_safety_margin_pct` — margem de segurança (default 95).
+- `ai_rate_per_min_user` (default 10).
+- `ai_rate_per_min_shop` (default 30).
+- `ai_cache_ttl_seconds` (default 900 = 15 min).
+- `ai_cost_per_credit_eur` (default 0.02 — configurável).
 
-**`check_shop_creation_limit`** RPC: passa a ler `plan.limits->>'max_shops'` em vez de comparar slugs.
+**RPC `consume_ai_credit` (reescrita, mesmo contrato)** — passa a validar em ordem:
+1. Membro da oficina? (bloqueia se não)
+2. Plano tem IA? (`plan_no_ai` se limite = 0)
+3. Rate limit user + shop? (`rate_limited`)
+4. Orçamento global mensal < margem de segurança? (`global_budget_exceeded`)
+5. Quota mensal da oficina? (`quota_exceeded`)
+6. Regista consumo com `cost_estimate_eur`.
 
-**Trigger `handle_new_shop_subscription`**: ordena os planos do dono por `sort_order desc` e herda o mais alto (elimina prioridade fixa Garage>Pro>Start).
+**Novas RPCs**
+- `ai_try_cache(_cache_key)` → devolve `response` se válido, senão null.
+- `ai_save_cache(_cache_key, _response, _ttl_seconds)`.
+- `get_ai_admin_stats(_from, _to)` → agregações para o painel (chamadas hoje/mês, top oficinas, top utilizadores, top funções, por plano, por país, por dia, orçamento consumido). Super admin only.
 
-### 2. Camada de acesso (frontend)
+---
 
-- `usePlansCatalog` (já existe) — mantém-se, é a fonte única.
-- `planLimit(plan, key)` — já existe; passa a ser o único caminho para ler limites.
-- `useSubscription`: remove `PLAN_LIMITS` hardcoded. `canUseFeature(key)` passa a delegar em `hasFeature(currentPlan, featureSlug)` (matriz) OU `planLimit(currentPlan, key) > 0`.
-- `src/lib/features.ts`: remove `FALLBACK_PLAN_FEATURES` e `GARAGE_ONLY_FEATURES`. Fonte = BD.
-- `src/lib/platformSettings.ts`: `limitOverridesFor` / `planFeatureKeysFor` deprecados — passam a delegar no catálogo dinâmico via wrapper (mantém-se export para não quebrar imports; internamente lê o catálogo).
-- `FeatureGate` / `PlanGate`: aceitam nova prop `requiredFeature: string` OU `minSortOrder: number`. `requiredPlan="pro"|"garage"` fica deprecado mas continua a funcionar (resolve para `sort_order` do slug via catálogo, com fallback seguro).
+## 2. Guard centralizado (Edge Functions)
 
-### 3. Admin — `/admin/plans`
+Novo módulo `supabase/functions/_shared/ai-guard.ts` com uma função `guardAiCall({ req, shopId, functionName, prompt })` que:
 
-Reconstruído com três secções por plano:
+1. Autentica o utilizador via JWT.
+2. Calcula `prompt_hash = sha256(prompt normalizado)`.
+3. Tenta `ai_try_cache` — se hit, devolve resposta imediata (0 créditos, marca `cached=true` no ledger com custo 0).
+4. Chama `consume_ai_credit`. Se recusar, devolve HTTP 402/403/429 conforme reason.
+5. Devolve helpers: `saveCache(response)` e `estimateCost()`.
 
-**Metadados**: nome, slug, descrição, cor, ícone, `sort_order`, `active`, `visible_on_landing/billing/checkout/compare`, `trial_days`, `is_recommended`.
+**Edge functions IA existentes passam pelo guard** (sem alterar a lógica de negócio, só o wrapper de entrada):
+- `ai-diagnosis` ✓ (já parcialmente feito, migra para guard)
+- `marketing-ai-insights` ✓ (idem)
+- `ai-business-forecast`
+- `marketing-creative`
+- `marketing-autopilot`
+- `seo-generate-article`
+- `market-translate-listing`
+- `market-kyc-auto-verify`
 
-**Limites** (renderizado dinamicamente a partir de `plan_limits_catalog`): para cada entrada do catálogo, mostra um campo numérico (ou toggle se `unit=boolean`) editando `plans.limits[key]`. `-1` = ilimitado (checkbox "∞"). **Multi-Oficina passa a ser `max_shops` numérico**, conforme pedido.
+Se alguma delas contém consultas puramente SQL (previsões baseadas em dados históricos), passa a servir esses casos **sem chamar o modelo** (regra nº 1: se o DB responde, não gasta IA).
 
-**Preços por país** (`plan_country_prices`): tabela editável com colunas `country_code, currency, monthly_amount, yearly_amount, stripe_product_id, stripe_price_monthly, stripe_price_yearly, promo_stripe_coupon_id, trial_days_override`.
+---
 
-**Features** (matriz): checkboxes por feature (linhas da tabela `features`), gravando em `plan_features`.
+## 3. Frontend
 
-### 4. Admin — Countries / Promoções / Feature Matrix
+**Sem mudanças de design/layout.** Apenas:
 
-- `AdminCountries`: colunas geradas por `catalog.plans.map(...)` — qualquer plano novo cria coluna automaticamente.
-- `AdminPromotions`: seletor de plano populado do catálogo.
-- `AdminFeatureMatrix`: colunas e linhas 100% do catálogo + tabela `features`.
+- `useAiQuota` já existe. Estende-se para incluir estado global (`globalBudgetPct`, `globalBlocked`).
+- Componentes `AIDiagnosisPanel` e `MarketingAIAssistant` já mostram badge — passam a mostrar também aviso quando `globalBlocked` (orçamento da plataforma atingido).
 
-### 5. Landing / Billing / Upgrade / Checkout
+**Nova página Super Admin**: `src/pages/admin/AdminAIControl.tsx`
+- Cartões de estatística (dados reais via `get_ai_admin_stats`).
+- Configuração inline de `ai_monthly_budget_eur`, `ai_safety_margin_pct`, rate limits, TTL de cache, custo por crédito.
+- Ranking de oficinas/utilizadores/funções.
+- Consumo por plano/país/dia.
+- Design usa os tokens e componentes já existentes (`Card`, `Badge`, `Progress`).
 
-- `LandingPage` pricing e `Billing`: já iteram `publicPlans(catalog, ...)` (feito na fase anterior). Confirmar que **um único `<PlanCard>`** é reutilizado, ícone/cor vêm de `plan.icon/color`.
-- `create-checkout` edge function: lookup em `plan_country_prices` por `(slug, country, cycle)` → `stripe_price_id`. Fallback: `plans.stripe_product_id` global. Sem switch por slug.
-- JSON-LD (SEO): gera uma `Offer` por plano do catálogo.
+Adicionada entrada de menu no Admin apenas — sem mexer no menu do ERP.
 
-### 6. Edge Functions
+---
 
-- `stripe-webhook`: identificar plano por `price.id` em `plan_country_prices` (reverse lookup); fallback `product.metadata.plan_slug`. Remove mapa `amount → slug`.
-- `generate-alerts`: quotas via `planLimit(plan, "max_alerts_month")` (adiciona ao catálogo). Remove `if (shop.plan !== "garage")`.
-- `partner-automation`: comissão via `planLimit(plan, "partner_commission_rate")` (novo limite). Remove ternário `sub.plan === "pro" ? 99 : 49`.
-- `run-automations` / `send-*`: consomem `max_sms_month`, `max_emails_month`, `max_whatsapp_month` via catálogo (enforcement via contadores).
+## 4. Comportamento efetivo
 
-### 7. Compatibilidade
+```text
+Pedido IA
+  → Guard verifica JWT + membership
+  → Cache? sim → devolve (0 €)
+  → Rate limit user/shop? passa
+  → Global budget × margem 95% já atingido? bloqueia (global_budget_exceeded)
+  → Plano tem IA? passa
+  → Quota mensal da oficina? passa
+  → Chama modelo → guarda no ledger (custo est.) → guarda em cache
+```
 
-Backfill garante `start / pro / garage` com valores idênticos aos actuais → comportamento externo inalterado. Testes manuais: signup, upgrade, downgrade, checkout Stripe (test mode), limite de oficinas, FeatureGate em rotas Garage-only.
+Bloqueios automáticos independentes:
+- Global (Super Admin) — protege o negócio.
+- Por plano (limite mensal configurável).
+- Rate limit por utilizador e por oficina.
 
-## Fora de âmbito
+---
 
-- Design/layout/UX inalterados.
-- Marketplace `market_enabled` kill-switch inalterado.
-- RLS / RBAC / Onboarding / Multi-Oficina lógica de isolamento inalterada.
-- Market (Carity) — catálogo próprio, não tocado.
+## 5. Detalhes técnicos
 
-## Execução
+- Hash de prompt: `encode(digest(lower(trim(prompt)), 'sha256'), 'hex')` (pgcrypto já disponível).
+- Rate limit: janela de 60 segundos, contagem incrementada dentro de `consume_ai_credit`, sem tabela em RAM (mantém-se simples e auditável).
+- Cache TTL: default 15 minutos, configurável. Chave por (shop, função, prompt) — não vaza entre oficinas.
+- Custo estimado: `ai_cost_per_credit_eur` × créditos consumidos. Ficamos independentes de tokens.
+- Segurança: nenhuma nova policy afeta tabelas existentes; `ai_response_cache` fica sem policies para roles não-server (só service_role acede).
 
-1. Migração SQL (catálogo de limites + backfill de `plans.limits` + RPCs + trigger).
-2. Refactor `useSubscription`, `features.ts`, `platformSettings.ts` para consumir catálogo.
-3. Reconstrução `AdminPlans` com secção "Limites" gerada dinamicamente.
-4. `AdminCountries`, `AdminPromotions`, `AdminFeatureMatrix` — colunas dinâmicas.
-5. Edge functions: `stripe-webhook`, `generate-alerts`, `partner-automation` — remover hardcodes.
-6. Validação: criar plano fictício "Enterprise" no Admin com `max_shops: 20`, todas features ON, e confirmar aparição automática em Landing, Billing, Upgrade, Checkout, Countries, Promotions, Feature Matrix, JSON-LD.
+---
 
-## Confirmação
+## 6. Fora de âmbito (não tocamos)
 
-Aprovas esta abordagem? Em particular:
-1. Criação da tabela `plan_limits_catalog` (descreve os *tipos* de limites disponíveis, editável no Admin).
-2. `FeatureGate`/`PlanGate` mantêm `requiredPlan` como deprecated (resolve via catálogo) — evita reescrever ~30 call-sites.
-3. Backfill mantém start/pro/garage 1:1 aos valores actuais.
+Stripe, Billing, Landing, Marketplace UI, Multi-Oficina, Dashboard, Clientes, Veículos, Inventário, APIs REST, RLS/RBAC das restantes tabelas, SEO — tudo intocado. Zero migrações fora da camada IA. Zero alterações à Sidebar do ERP.
+
+---
+
+## 7. Relatório final (a apresentar após implementação)
+
+Onde a IA foi adicionada, como é controlado o consumo, como é impedido o abuso, limites por plano, orçamento global com margem de 95 %, bloqueio automático, cache, rate limit, e confirmação explícita de que não é possível ultrapassar o orçamento definido pelo Super Admin.
+
+---
+
+**Estimativa**: 1 migração + 1 módulo guard + 8 edge functions atualizadas (só o wrapper) + 1 nova página admin + 2 componentes com aviso extra.
+
+Confirmas para eu avançar?

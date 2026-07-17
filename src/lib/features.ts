@@ -22,7 +22,7 @@ export interface FeatureRow {
 }
 
 export interface PlanFeatureRow {
-  plan_slug: "free" | "pro" | "garage";
+  plan_slug: string;
   feature_slug: string;
   enabled: boolean;
   limits: Record<string, any>;

@@ -1,96 +1,91 @@
-# Arquitetura de Planos 100% Dinâmica — Plano de Execução
 
-## Ponto de partida (já feito nos ciclos anteriores)
+# Planos 100% dinâmicos — plano de refactor
 
-- `plans`, `features`, `plan_features`, `plan_promotions`, `plan_country_prices`, `plan_price_history` — **schema dinâmico** ✅
-- Landing, Billing, PriceWithPromo — **lêem da BD com realtime** ✅
-- Edge functions (`create-checkout`, `admin-update-plan-price`, `admin-set-promotion`) — **resolvem preços via RPC** ✅
-- RPC `get_effective_plan_price` + hook `usePlanPricing` — ✅
-- Painel `AdminPlans` — CRUD dinâmico ✅
-- Kill switch `market_enabled` — validado ✅
-- Modo Grupo Garage (Dashboard) — ✅
+## Objetivo
+Uma única fonte de verdade (`plans` + `plan_features` + `plan_country_prices` + `plan_promotions`). Qualquer plano criado no Super Admin aparece automaticamente em Landing, Billing, Upgrade, Checkout Stripe, Países, Promoções, Feature Matrix, JSON-LD e RBAC — sem alterar código nem manter listas de slugs.
 
-## O que ainda está acoplado a `free|pro|garage` (auditoria)
+## Auditoria (locais com hardcode confirmados)
 
-**Tipos/gating (crítico):**
-1. `src/hooks/useSubscription.ts` — `type Plan = 'free'|'pro'|'garage'`, `PLAN_LIMITS` hardcoded como fallback, `LOCKED_LIMITS`.
-2. `src/lib/features.ts` — `useCurrentPlan()` restringe retorno, `GARAGE_ONLY_FEATURES` fixo.
-3. `src/components/PlanGate.tsx` + `FeatureGate.tsx` — prop `requiredPlan: 'pro'|'garage'`.
-4. `src/App.tsx` — ~25 rotas com `requiredPlan="pro"` ou `"garage"`.
-5. `src/lib/planPromotions.ts` — `PlanSlug = 'free'|'pro'|'garage'`.
-6. `src/lib/platformSettings.ts` — `planFeatureKeysFor`, `limitOverridesFor` com ramos por slug.
+Frontend
+- `src/lib/platformSettings.ts` — `PlanLimitsRow` por slug (`free/pro/garage`), `planFeatureKeysFor`, `limitOverridesFor` com `if plan === "pro" / "garage"`.
+- `src/lib/features.ts` — `FALLBACK_PLAN_FEATURES`, `GARAGE_ONLY_FEATURES`, ramos legacy.
+- `src/hooks/useSubscription.ts` — `PLAN_LIMITS` hardcoded, `LegacyPlan`, fallback por slug.
+- `src/components/FeatureGate.tsx` / `PlanGate.tsx` — prop `requiredPlan?: "pro" | "garage"` + comparação por slug.
+- `src/pages/Billing.tsx` — array `[{ key: "pro" }, { key: "garage" }]`, ícones e cores fixos, botões condicionados por slug.
+- `src/pages/LandingPage.tsx` (tabela de preços) — cartões manuais por plano.
+- `src/pages/admin/AdminPlans.tsx` — parcialmente dinâmico, falta secção "Stripe IDs por país" + trial.
+- `src/pages/admin/*Countries*`, `AdminPromotions*` — assumem 3 planos fixos nas colunas/rows.
+- `src/pages/Dashboard.tsx`, `src/pages/PartnersPortal.tsx`, `src/pages/Auth.tsx` — `plan === "garage"`, `plan_offer === "pro"`, `account_type: "pro"`.
 
-**UI que ramifica por slug:**
-7. `Dashboard.tsx` (5 checks), `Quotes.tsx` (4 checks), `PartnersPortal.tsx` (comissão 20% se garage).
-8. `AdminBilling.tsx` (downgrade → `'free'`), `AdminDashboard.tsx` (contadores/receita por slug).
+Backend (edge functions + SQL)
+- `supabase/functions/stripe-webhook/index.ts` — mapa `amount → slug` (9900→garage, 4900→pro).
+- `supabase/functions/generate-alerts/index.ts` — `if (shop.plan !== "garage")`, quotas por slug.
+- `supabase/functions/partner-automation/index.ts` — `sub.plan === "pro" ? 99 : 49`.
+- `supabase/functions/create-checkout/index.ts` — precisa ler `plan_country_prices` (já parcialmente feito).
+- Trigger SQL `handle_new_shop_subscription` — herda por prioridade fixa Garage>Pro>Start>Free.
 
-**PDFs:**
-9. `pdfGenerator.ts` / `invoicePdfGenerator.ts` — watermark se `plan === 'free'`.
+Fora de âmbito (não são planos ERP): `MarketDealerDashboard` (planos do Market — outro produto).
 
-**SEO/Landing JSON-LD:** já dinâmico ✅ (filtra por `visible_on_landing`).
+## Modelo de dados (extensões mínimas)
 
-## Estratégia — 4 fases, retrocompatível, zero UI change
+Adicionar à tabela `plans` (se em falta):
+- `sort_order int`, `is_public bool`, `icon text`, `accent text` (cor tailwind semântica), `trial_days int`, `is_default bool`, `supports_multi_shop bool`, `included_shops int`.
 
-### Fase A — Fundação de tipos + leitura de limites (baixo risco)
+Nova tabela `plan_limits(plan_id, key text, value_int int, value_bool bool)`:
+- Chaves: `max_shops`, `max_users`, `max_vehicles`, `max_clients`, `max_services_per_month`, `max_storage_mb`, `max_api_calls_per_day`, `max_quotes_per_month`, etc.
+- Único índice `(plan_id, key)`. GRANT + RLS (leitura pública, escrita só super_admin).
 
-- Alargar `Plan` para `string` mantendo alias `'free' | 'pro' | 'garage'` como valores conhecidos.
-- Novo helper `resolvePlanLimits(planSlug)` em `useSubscription`:
-  1. Tenta `plan_features` (BD) → agrega `limits` jsonb + `enabled` de cada feature.
-  2. Fallback para `PLAN_LIMITS` hardcoded apenas para os 3 slugs legacy.
-  3. Para planos novos sem entrada em `plan_features`: deriva limites do plano de `order_index` inferior (defensivo).
-- Novo helper derivado: `isEntryPlan` (plano com menor `order_index` ativo) — substitui checks `=== 'free'`.
-- `LOCKED_LIMITS` → derivado de `isEntryPlan` do plano ativo.
+Estender `plan_country_prices` (colunas em falta):
+- `stripe_product_id`, `stripe_price_monthly`, `stripe_price_yearly`, `promo_stripe_coupon_id`, `trial_days_override`.
 
-### Fase B — Gating por feature (não por slug)
+Nova coluna em `plans`: `default_stripe_product_id` (fallback global quando país não tem override).
 
-- `PlanGate` / `FeatureGate` passam a aceitar `requiredFeature: string` (slug de feature). Prop antiga `requiredPlan` mantida com deprecation shim: converte `'pro'` → primeira feature Pro-only, `'garage'` → primeira Garage-only, via lookup em `plan_features`.
-- Rotas em `App.tsx` migram progressivamente para `requiredFeature="reports_advanced"` etc. **Sem alterar UI/mensagem** — o modal de upgrade continua a mostrar "necessita Plano X" onde X = plano mínimo que habilita a feature (calculado dinamicamente).
+Backfill: seed dos 3 planos atuais (start/pro/garage) com todos os valores atuais, para que a app continue idêntica.
 
-### Fase C — Remover ramos hardcoded na UI
+## Camada de acesso única
 
-- `Dashboard.tsx`, `Quotes.tsx`, `PartnersPortal.tsx`: `plan === 'free'` → `!limits.<feature>` ou `isEntryPlan`. Comissão do PartnersPortal passa a ler `plans.partner_commission_pct` (nova coluna nullable com fallback 10%/20%).
-- `pdfGenerator.ts`: watermark passa a olhar `limits.pdfWatermark` (já existe em `platformSettings`).
-- `AdminBilling.tsx` downgrade: escolhe plano com menor `order_index` ativo (não `'free'`).
-- `AdminDashboard.tsx`: breakdown por slug torna-se `for (plan of plans) { count[plan.slug] = ... }`.
+Novo hook `src/hooks/usePlansCatalog.ts` (react-query, cache global 5 min):
+- Retorna `plans[]` já unidos com `features[]`, `limits{}`, `prices{country}`, `promotion{country}`.
+- Uma única query, invalidação por realtime em `plans` e `plan_features`.
 
-### Fase D — Limpar tipos legacy
+Utilitário puro `src/lib/plans.ts`:
+- `resolvePlanBySlug(catalog, slug)`
+- `hasFeature(plan, featureSlug)` — lê `plan.features`
+- `getLimit(plan, key, fallback?)` — lê `plan.limits`
+- `comparePlans(a, b)` — usa `sort_order`, nunca slug
+- `planSatisfies(current, required)` — via `sort_order >= required.sort_order`, sem "pro/garage"
 
-- `planPromotions.ts`: `PlanSlug = string`.
-- `platformSettings.ts`: `planFeatureKeysFor`/`limitOverridesFor` recebem plano como objeto e lêem features da BD (mantendo defaults para os 3 slugs enquanto BD estiver vazia).
+## Passos de execução
 
-## Retrocompatibilidade garantida
+1. **Migração SQL** (schema + backfill + GRANTs + RLS + trigger `set_updated_at`).
+2. **Camada dados**: `usePlansCatalog`, `lib/plans.ts`, remover `PLAN_LIMITS` de `useSubscription`, refazer `features.ts` sem fallback por slug (a fonte é sempre BD; se BD vazia → sem features, mostra loading).
+3. **Gates**: `FeatureGate`/`PlanGate` passam a receber `requiredFeature` ou `requiredSortOrder` (int) em vez de `requiredPlan`. Substituir todos os call-sites com codemod (`sort_order` do plano requerido lido do catálogo, não escrito no JSX).
+4. **Admin**:
+   - `AdminPlans`: CRUD completo (metadados + limites dinâmicos + features + `stripe_product` global).
+   - `AdminCountries`: gera colunas dinamicamente a partir de `plans` (map + reduce), edição de `stripe_price_monthly/yearly` por plano/país.
+   - `AdminPromotions`: seletor de plano é `<Select>` populado do catálogo.
+5. **Billing / Upgrade / LandingPage pricing**: renderizam `catalog.plans.filter(p => p.is_public).sort_by(sort_order)`. Um único `<PlanCard>` reutilizado. Ícone/cor vêm de `plan.icon/accent`.
+6. **Checkout**: `create-checkout` recebe `plan_slug` + `interval` + `country` e faz lookup em `plan_country_prices` → Stripe Price ID; se ausente cai para `plans.default_stripe_product_id`. Sem switch.
+7. **stripe-webhook**: identificar plano por `price.id` via `plan_country_prices` reverse lookup (não por valor). Fallback: `product.metadata.plan_slug`.
+8. **generate-alerts / partner-automation**: quotas via `getLimit(plan, "…")` e comissões via `plan.limits.partner_commission_rate` (novo limite). Sem `if plan === "garage"`.
+9. **Trigger `handle_new_shop_subscription`**: em vez de prioridade Garage>Pro>Start, ordena por `sort_order desc` na query — herda o plano mais alto que o dono já tem.
+10. **SEO**: `LandingPage` gera JSON-LD `Offer[]` iterando o catálogo. `SoftwareApplication.offers` idem.
+11. **Multi-oficina**: `check_shop_creation_limit` RPC passa a ler `plan_limits.max_shops` em vez de comparar slug.
+12. **Validação**: criar plano "Enterprise" via Admin (sort_order 40, max_shops 20, todas features on) e verificar que aparece em Landing/Billing/Upgrade/Checkout/Países/Promoções/JSON-LD sem alterar código.
 
-- Nenhuma coluna removida. Nenhum enum apagado. Fallbacks para os 3 slugs mantidos em todo o lado.
-- Clientes atuais (assinaturas Stripe ativas em `free`/`pro`/`garage`) continuam a resolver limites exatamente como hoje.
-- Nenhuma migração destrutiva. Apenas leitura adicional de `plan_features`.
+## Estratégia de rollout / não-regressão
 
-## Fora de escopo (respeitando a instrução "não alterar")
+- Backfill mantém `start/pro/garage` com valores 1:1 aos atuais → comportamento externo idêntico.
+- `useSubscription.plan` continua a devolver string (o slug real da BD), mas nenhum consumidor compara por string; comparam por `sort_order`/`features`/`limits`.
+- Manter export `LegacyPlan` como `string` (deprecated) para não quebrar imports; remover num passe seguinte.
+- Testes manuais: signup + upgrade + downgrade + checkout Stripe (test mode) + limite de oficinas + FeatureGate.
 
-- Design, layout, textos, cores, componentes visuais.
-- Fluxo Stripe existente (produtos/prices/webhooks).
-- RLS, RBAC, Marketplace, SEO estrutural.
-- Market plans (`dealer_plan`: `starter|pro|unlimited`) — sistema separado, não faz parte deste refactor.
+## Estimativa
+Migração + 4 hooks/libs + 8 páginas + 4 edge functions. ~1 iteração grande.
 
-## Escopo desta iteração
+## Confirmação pedida
+1. Aceitas criar as duas novas tabelas (`plan_limits`) e as colunas extra em `plans`/`plan_country_prices`?
+2. Aceitas que `FeatureGate`/`PlanGate` deixem de aceitar `requiredPlan="pro"|"garage"` e passem a exigir `requiredFeature` (recomendado) ou `minSortOrder`?
+3. Confirmas que o Market (`MarketDealerDashboard`) fica fora — é catálogo de planos do Market, não do ERP?
 
-**Fases A + B** (fundação + gating por feature) — 6 ficheiros editados, zero UI change, zero regressão esperada.
-**Fases C + D** ficam para iteração seguinte após validação em produção.
-
-## Validação (será executada)
-
-1. Build TypeScript passa.
-2. Utilizador `free` atual continua bloqueado exatamente nas mesmas rotas.
-3. Utilizador `garage` atual continua com acesso total.
-4. Criar plano fictício `enterprise` na BD com `plan_features` habilitando tudo → utilizador com esse plano passa por todas as rotas sem tocar em código.
-5. Painel `AdminPlans` continua a criar/editar/arquivar sem erros.
-
-## Relatório final entregue no fim
-
-- Lista exata de hardcodes removidos (ficheiro:linha).
-- Lista de fallbacks mantidos e porquê.
-- Prova (screenshots/queries) de que plano novo funciona end-to-end.
-- Confirmação de zero regressões nos 3 slugs existentes.
-
----
-
-**Confirmas que avanço com Fases A + B nesta iteração?** (Fase C+D fica para o próximo ciclo, para manter cada passo pequeno e verificável — respeita a tua regra "sem asneiras".)
+Assim que aprovares, executo tudo numa passagem.

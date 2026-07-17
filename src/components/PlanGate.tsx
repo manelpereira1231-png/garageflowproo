@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 
 interface PlanGateProps {
   feature: keyof PlanLimits;
@@ -21,6 +22,7 @@ const PlanGate = React.forwardRef<HTMLDivElement, PlanGateProps>(
   ({ feature, requiredPlan = 'garage', children }, ref) => {
     const { canUseFeature, loading, subscriptionLoaded } = useSubscription();
     const { t } = useLanguage();
+    const { isChildShop } = useIsChildShop();
 
     if (loading || !subscriptionLoaded) {
       return (
@@ -47,11 +49,15 @@ const PlanGate = React.forwardRef<HTMLDivElement, PlanGateProps>(
                   {t('planGate.title')}
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  {t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
+                  {isChildShop
+                    ? "Esta funcionalidade não está incluída na licença da empresa. Contacte a Oficina Mãe."
+                    : t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
                 </p>
-                <Link to="/billing">
-                  <Button className="mt-2">{t('planGate.upgrade')}</Button>
-                </Link>
+                {!isChildShop && (
+                  <Link to="/billing">
+                    <Button className="mt-2">{t('planGate.upgrade')}</Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -14,6 +14,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useShopRole } from "@/hooks/useShopRole";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 import MarketActivityCard from "@/components/MarketActivityCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
@@ -70,6 +71,10 @@ function OwnerDashboard() {
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();
+  // Oficinas Filhas nunca vêem informação comercial (planos, trial, upgrade,
+  // billing). A subscrição pertence à Empresa e é gerida pela Oficina Mãe.
+  const { isChildShop } = useIsChildShop();
+  const canSeeCommercial = !isChildShop;
 
   // Seletor de contexto — apenas a Oficina Mãe vê o grupo. O hook lê a
   // hierarquia real (`group_owner_id`) e filhas independentes não entram aqui.
@@ -670,7 +675,7 @@ function OwnerDashboard() {
       )}
 
       {/* Plan Banner — celebrates the auto-Pro trial, becomes urgent near the end */}
-      {(isEntryPlan || isTrialing) && (() => {
+      {canSeeCommercial && (isEntryPlan || isTrialing) && (() => {
         const ending = isTrialing && trialDaysLeft <= 5;
         const expired = isEntryPlan && !isTrialing;
         const tone = ending
@@ -715,7 +720,7 @@ function OwnerDashboard() {
       })()}
 
       {/* Usage Nudge for Free users */}
-      {isEntryPlan && monthlyQuoteCount > 0 && (
+      {canSeeCommercial && isEntryPlan && monthlyQuoteCount > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">

@@ -14,6 +14,7 @@ import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsChildShop } from "@/hooks/useIsChildShop";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const { t, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const { plan, shopId: subShopId, isEntryPlan } = useSubscription();
+  const { isChildShop } = useIsChildShop();
   const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);
   const [shopId, setShopId] = useState<string | null>(null);
@@ -175,20 +177,22 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/settings/billing-integration")}>
-        <CardContent className="p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+      {!isChildShop && (
+        <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/settings/billing-integration")}>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Faturação certificada (AT)</p>
+                <p className="text-xs text-muted-foreground">Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-sm">Faturação certificada (AT)</p>
-              <p className="text-xs text-muted-foreground">Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code</p>
-            </div>
-          </div>
-          <ExternalLink className="w-4 h-4 text-muted-foreground" />
-        </CardContent>
-      </Card>
+            <ExternalLink className="w-4 h-4 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Logo & Branding */}
@@ -216,12 +220,14 @@ export default function SettingsPage() {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <Badge variant="outline" className="capitalize">{plan}</Badge>
-              <span className="text-xs text-muted-foreground">
-                {isEntryPlan ? t('settings.watermarkInfo') : t('settings.noWatermark')}
-              </span>
-            </div>
+            {!isChildShop && (
+              <div className="mt-4 flex items-center gap-2">
+                <Badge variant="outline" className="capitalize">{plan}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {isEntryPlan ? t('settings.watermarkInfo') : t('settings.noWatermark')}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
 

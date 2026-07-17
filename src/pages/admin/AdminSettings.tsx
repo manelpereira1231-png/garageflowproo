@@ -333,7 +333,7 @@ export default function AdminSettings() {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left px-3 py-2 font-medium text-muted-foreground">Funcionalidade</th>
-                <th className="text-center px-3 py-2 font-medium text-muted-foreground">Free</th>
+                <th className="text-center px-3 py-2 font-medium text-muted-foreground">Start</th>
                 <th className="text-center px-3 py-2 font-medium text-primary">Pro</th>
                 <th className="text-center px-3 py-2 font-medium text-success">Garage</th>
               </tr>

@@ -471,7 +471,7 @@ export default function AdminShopDetail() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="free">FREE</SelectItem>
+                <SelectItem value="free">Start</SelectItem>
                 <SelectItem value="pro">PRO</SelectItem>
                 <SelectItem value="garage">GARAGE</SelectItem>
               </SelectContent>

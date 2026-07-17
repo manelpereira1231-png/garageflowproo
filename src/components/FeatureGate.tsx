@@ -31,6 +31,7 @@ export default function FeatureGate({
   children,
 }: FeatureGateProps) {
   const { allowed, loaded } = useFeature(feature);
+  const { isChildShop } = useIsChildShop();
 
   if (!loaded) {
     return (
@@ -50,11 +51,15 @@ export default function FeatureGate({
         </div>
         <h2 className="text-xl font-bold">Funcionalidade bloqueada</h2>
         <p className="text-sm text-muted-foreground">
-          Esta área requer o plano <strong>{PLAN_LABELS[requiredPlan]}</strong> ou superior.
+          {isChildShop
+            ? "Esta funcionalidade não está incluída na licença da empresa. Contacte a Oficina Mãe."
+            : <>Esta área requer o plano <strong>{PLAN_LABELS[requiredPlan]}</strong> ou superior.</>}
         </p>
-        <Link to="/billing">
-          <Button className="mt-2">Fazer upgrade</Button>
-        </Link>
+        {!isChildShop && (
+          <Link to="/billing">
+            <Button className="mt-2">Fazer upgrade</Button>
+          </Link>
+        )}
       </CardContent>
     </Card>
   );

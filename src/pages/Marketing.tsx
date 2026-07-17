@@ -135,6 +135,18 @@ export default function Marketing() {
     setDialogOpen(true);
   };
 
+  const applyAIInsight = (it: AIInsight) => {
+    setForm({
+      name: it.headline.slice(0, 60),
+      type: it.channel,
+      subject: it.subject,
+      content: it.content,
+      target_segment: it.segment,
+      scheduled_at: "",
+    });
+    setDialogOpen(true);
+  };
+
   const createCampaign = async () => {
     if (!activeShopId || !form.name || !form.subject) {
       toast.error(t('marketing.fillRequired'));

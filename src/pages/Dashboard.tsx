@@ -430,7 +430,7 @@ function OwnerDashboard() {
       } finally {
         setDataLoaded(true);
       }
-  }, [language, activeShopId, isReady, user, plan, isGroupMode, groupShopIds, ownedShops, t]);
+  }, [language, activeShopId, isReady, user, isGroupMode, groupShopIds, ownedShops, t]);
 
   useEffect(() => {
     loadData();

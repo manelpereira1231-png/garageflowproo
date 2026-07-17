@@ -244,12 +244,13 @@ Deno.serve(async (req) => {
           }
           case "service_completed": {
             const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
-            const { data: completed } = await supabase
+            const { data: completedRaw } = await supabase
               .from("work_orders")
               .select("id, number, total, labor_hours, clients(name, email), vehicles(make, model, plate)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "completed")
               .gte("completed_at", oneDayAgo);
+            const completed = (completedRaw || []).filter(wo => (Number((wo as any).total) || 0) >= minTotal);
             if (completed && completed.length > 0) {
               triggered = true;
               details = { count: completed.length };

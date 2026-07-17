@@ -238,11 +238,11 @@ export default function LandingPage() {
     // CTA driven by Super Admin (`plans.cta_mode`): checkout | trial | demo | contact | unavailable.
     const ctaMode = p.cta_mode || "trial";
     const ctaKey =
-      ctaMode === "demo" ? "landing.ctaGarage" :          // "Marcar Demonstração"
-      ctaMode === "contact" ? "landing.ctaContact" :      // "Contactar Comercial"
-      ctaMode === "unavailable" ? "landing.ctaUnavailable" :
-      ctaMode === "checkout" ? "landing.ctaSubscribe" :   // "Subscrever"
-      "landing.ctaPro";                                   // trial → "Testar Plano"
+      ctaMode === "demo" || ctaMode === "contact"
+        ? "landing.ctaGarage"                 // "Pedir Demonstração"
+        : ctaMode === "unavailable"
+          ? "landing.ctaGarage"               // (disabled anyway; text irrelevant)
+          : "landing.ctaPro";                 // trial / checkout → "Testar Plano"
     return {
       slug: p.slug,
       nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,

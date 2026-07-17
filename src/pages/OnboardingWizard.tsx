@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
-import { useShopContext, broadcastShopContextChange } from "@/hooks/useShopContext";
+import { useShopContext } from "@/hooks/useShopContext";
+import { setActiveShopAndSync } from "@/lib/shopContextSync";
 
 const countries = Object.keys(VAT_RATES);
 const CURRENCIES = [

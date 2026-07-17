@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, AlertTriangle, Wrench, Package, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAiQuota } from "@/hooks/useAiQuota";
 
 interface AIDiagnosisPanelProps {
   vehicle?: { make: string; model: string; year: number; fuel: string; mileage: number };

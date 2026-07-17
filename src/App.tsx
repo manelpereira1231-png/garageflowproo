@@ -150,6 +150,7 @@ const AdminAlerts = lazyRetry(() => import("@/pages/admin/AdminAlerts"));
 const AdminSettings = lazyRetry(() => import("@/pages/admin/AdminSettings"));
 const AdminFeatureMatrix = lazyRetry(() => import("@/pages/admin/AdminFeatureMatrix"));
 const AdminPlans = lazyRetry(() => import("@/pages/admin/AdminPlans"));
+const AdminAIControl = lazyRetry(() => import("@/pages/admin/AdminAIControl"));
 const AdminUsers = lazyRetry(() => import("@/pages/admin/AdminUsers"));
 const AdminEmailLogs = lazyRetry(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminFeatureAdoption = lazyRetry(() => import("@/pages/admin/AdminFeatureAdoption"));

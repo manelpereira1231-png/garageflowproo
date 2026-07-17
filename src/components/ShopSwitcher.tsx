@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Building2, ChevronDown, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Building2, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -30,8 +30,30 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
   const [creating, setCreating] = useState(false);
   const [newShopName, setNewShopName] = useState("");
   const [newShopEmail, setNewShopEmail] = useState("");
+  const [status, setStatus] = useState<{ allowed: boolean; current: number; max: number; plan: string } | null>(null);
+
+  // Fetch shop creation status so we can hide/disable the "+" button when at
+  // the plan cap (Garage = 5). This is a pure UX signal — the authoritative
+  // enforcement lives in the DB trigger + RPC.
+  useEffect(() => {
+    if (!showCreate) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data } = await supabase.rpc('get_shop_creation_status', { _user_id: user.id });
+      if (cancelled || !data) return;
+      setStatus(data as any);
+    })();
+    return () => { cancelled = true; };
+  }, [showCreate, shops.length]);
 
   if (shops.length <= 1 && !showCreate) return null;
+
+  const atLimit = status ? !status.allowed : false;
+  const limitMsg = status && status.max > 0
+    ? `Já atingiu o limite máximo de ${status.max} oficinas permitido pelo seu plano. Para adicionar mais será necessário um plano superior.`
+    : t('shops.limitReached');
 
   const handleCreateShop = async () => {
     if (!newShopName.trim()) return;
@@ -44,7 +66,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       const { data: canCreate, error: limitError } = await supabase.rpc('check_shop_creation_limit', { _user_id: user.id });
       if (limitError) { toast.error(limitError.message); return; }
       if (!canCreate) {
-        toast.error(t('shops.limitReached'));
+        toast.error(limitMsg);
         return;
       }
 
@@ -54,7 +76,15 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         email: newShopEmail.trim() || user.email || "",
       }).select().single();
 
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        // The DB trigger raises SHOP_LIMIT_REACHED if a race sneaks past the RPC.
+        if (error.message?.includes('SHOP_LIMIT_REACHED')) {
+          toast.error(limitMsg);
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
       
       toast.success(`${newShopName.trim()} criada com sucesso!`);
       setNewShopName("");
@@ -71,6 +101,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       setCreating(false);
     }
   };
+
 
   return (
     <div className="px-3 pb-2">
@@ -95,10 +126,10 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
             ))}
           </SelectContent>
         </Select>
-        {showCreate && (
+        {showCreate && !atLimit && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="t(" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
                 <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>
@@ -135,6 +166,17 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
               </div>
             </DialogContent>
           </Dialog>
+        )}
+        {showCreate && atLimit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0 opacity-40 cursor-not-allowed"
+            title={limitMsg}
+            onClick={() => toast.error(limitMsg)}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         )}
       </div>
     </div>

@@ -20,6 +20,29 @@ const log = (step: string, details?: any) => {
   console.log(`[GENERATE-ALERTS] ${step}`, details ? JSON.stringify(details) : "");
 };
 
+// ─── Capabilities dinâmicas (plan_features) ───
+// Fonte única de verdade: a matriz gerida no Super Admin.
+// Nada hardcoded — qualquer plano novo criado no painel é tratado
+// automaticamente com base nas features que o admin lhe atribuir.
+let _featureCache: Record<string, Set<string>> | null = null;
+async function loadFeatureMatrix(): Promise<Record<string, Set<string>>> {
+  if (_featureCache) return _featureCache;
+  const { data } = await supabaseAdmin
+    .from("plan_features")
+    .select("plan_slug, feature_slug, enabled");
+  const map: Record<string, Set<string>> = {};
+  for (const row of data || []) {
+    if (!row.enabled) continue;
+    (map[row.plan_slug] ??= new Set()).add(row.feature_slug);
+  }
+  _featureCache = map;
+  return map;
+}
+async function hasFeature(planSlug: string, featureSlug: string): Promise<boolean> {
+  const m = await loadFeatureMatrix();
+  return m[planSlug]?.has(featureSlug) === true;
+}
+
 interface ShopWithSub {
   id: string;
   name: string;
@@ -183,16 +206,16 @@ async function generateExpiredQuoteAlerts(shop: ShopWithSub): Promise<number> {
     const title = tr(shop.language, "expired_quote_title");
     const message = tr(shop.language, "expired_quote_msg", { number: q.number, client: clientName });
     const created = await createAlertIfNotExists(shop.id, "quote_expired", title, message, q.validity_date, q.client_id, null, "high");
-    if (created) {
-      count++;
-      if (shop.plan !== "free") await sendAlertEmail(shop.email, title, message, shop.name);
-    }
+      if (created) {
+        count++;
+        if (await hasFeature(shop.plan, "alerts_basic")) await sendAlertEmail(shop.email, title, message, shop.name);
+      }
   }
   return count;
 }
 
 async function generateInactiveClientAlerts(shop: ShopWithSub): Promise<number> {
-  if (shop.plan !== "garage") return 0;
+  if (!(await hasFeature(shop.plan, "alerts_advanced"))) return 0;
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const { data: clients } = await supabaseAdmin.from("clients").select("id, name").eq("shop_id", shop.id);
   if (!clients) return 0;
@@ -218,7 +241,7 @@ async function generateInactiveClientAlerts(shop: ShopWithSub): Promise<number> 
 
 // Predictive: revision based on mileage (every 15000 km) and time (every 12 months)
 async function generatePredictiveAlerts(shop: ShopWithSub): Promise<number> {
-  if (shop.plan === "free") return 0;
+  if (!(await hasFeature(shop.plan, "alerts_basic"))) return 0;
 
   const { data: vehicles } = await supabaseAdmin
     .from("vehicles")
@@ -264,7 +287,7 @@ async function generatePredictiveAlerts(shop: ShopWithSub): Promise<number> {
     }
 
     // Warranty expiring: services completed within last 11-12 months (assuming 12-month warranty)
-    if (shop.plan === "garage") {
+    if (await hasFeature(shop.plan, "alerts_advanced")) {
       const elevenMonthsAgo = new Date(Date.now() - 11 * 30 * 24 * 60 * 60 * 1000).toISOString();
       const twelveMonthsAgo = new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data: warrantySvcs } = await supabaseAdmin
@@ -288,7 +311,7 @@ async function generatePredictiveAlerts(shop: ShopWithSub): Promise<number> {
 
 // Follow-up: resend pending alerts after X days (max 3 follow-ups)
 async function processFollowUps(shop: ShopWithSub): Promise<number> {
-  if (shop.plan === "free") return 0;
+  if (!(await hasFeature(shop.plan, "alerts_basic"))) return 0;
 
   const now = new Date().toISOString();
   const { data: dueFollowUps } = await supabaseAdmin
@@ -346,13 +369,13 @@ serve(async (req) => {
 
     let totalAlerts = 0;
     for (const shop of shops) {
-      if (shop.plan === "free") continue;
+      if (!(await hasFeature(shop.plan, "alerts_basic"))) continue;
 
       let shopAlerts = 0;
       shopAlerts += await generateExpiredQuoteAlerts(shop);
       shopAlerts += await generatePredictiveAlerts(shop);
 
-      if (shop.plan === "garage") {
+      if (await hasFeature(shop.plan, "alerts_advanced")) {
         shopAlerts += await generateInactiveClientAlerts(shop);
       }
 

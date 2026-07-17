@@ -119,28 +119,52 @@ Deno.serve(async (req) => {
       if (!existing && ref.subscription_id) {
         const { data: sub } = await supabase
           .from("subscriptions")
-          .select("plan, status")
+          .select("plan, status, shop_id")
           .eq("id", ref.subscription_id)
           .maybeSingle();
 
-        if (sub && sub.status === "active" && sub.plan !== "free") {
-          const planPrice = sub.plan === "garage" ? 99 : 49;
-          const rate = (ref as any).partners?.commission_percentage || ref.commission_rate || 10;
-          const amount = (planPrice * rate) / 100;
+        if (sub && sub.status === "active") {
+          // Preço base do plano lido dinamicamente de plan_country_prices
+          // (país da oficina). Sem hardcodes 99/49; suporta qualquer plano
+          // novo criado no Admin.
+          let country = "PT";
+          if (sub.shop_id) {
+            const { data: shop } = await supabase
+              .from("shops")
+              .select("country")
+              .eq("id", sub.shop_id)
+              .maybeSingle();
+            if (shop?.country) country = shop.country;
+          }
+          const { data: priceRow } = await supabase
+            .from("plan_country_prices")
+            .select("amount")
+            .eq("plan_slug", sub.plan)
+            .eq("country_code", country)
+            .eq("cycle", "monthly")
+            .eq("active", true)
+            .maybeSingle();
 
-          await supabase.from("partner_commissions").insert({
-            partner_id: ref.partner_id,
-            shop_id: ref.shop_id,
-            referral_id: ref.id,
-            amount,
-            status: "pending",
-            period_start: monthStart.split("T")[0],
-            period_end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
-          } as any);
+          const planPrice = priceRow?.amount ?? 0;
+          if (planPrice > 0) {
+            const rate = (ref as any).partners?.commission_percentage || ref.commission_rate || 10;
+            const amount = (planPrice * rate) / 100;
 
-          commissions_created++;
+            await supabase.from("partner_commissions").insert({
+              partner_id: ref.partner_id,
+              shop_id: ref.shop_id,
+              referral_id: ref.id,
+              amount,
+              status: "pending",
+              period_start: monthStart.split("T")[0],
+              period_end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+            } as any);
+
+            commissions_created++;
+          }
         }
       }
+    }
     }
 
     return new Response(JSON.stringify({

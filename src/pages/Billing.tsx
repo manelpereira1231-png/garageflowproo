@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePlanNames } from "@/hooks/usePlanNames";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
+import { usePlansCatalog, publicPlans, planLimit } from "@/hooks/usePlansCatalog";
 
 function ReferralFreeMonths() {
   const { t } = useLanguage();
@@ -162,18 +163,18 @@ export default function Billing() {
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
 
-  // Single source of truth: the ordered feature list comes from the admin
-  // feature matrix (`features` + `plan_features`, edited in /admin/features).
-  // Every plan card renders the SAME list in the SAME order — only the
-  // icon (✓ vs 🔒) changes per plan. See `buildPlanFeatureItems`.
-  const planMeta: { key: Plan; icon: React.ElementType; color: string }[] = [
-    { key: 'free',   icon: Gift,       color: 'text-muted-foreground' },
-    { key: 'pro',    icon: Crown,      color: 'text-primary' },
-    { key: 'garage', icon: Building2,  color: 'text-success' },
-  ];
-  const plans = planMeta.map((p) => ({
-    ...p,
-    items: buildPlanFeatureItems(p.key as "free" | "pro" | "garage", fxFeatures, fxMatrix),
+  // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
+  // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin
+  // faz aparecer automaticamente um cartão aqui — sem alterar código.
+  const { data: catalog } = usePlansCatalog();
+  const ICONS: Record<string, React.ElementType> = { crown: Crown, building: Building2, gift: Gift, shield: Shield, gauge: Gauge };
+  const plans = publicPlans(catalog, "billing").map((p) => ({
+    key: p.slug as Plan,
+    row: p,
+    icon: (p.icon && ICONS[p.icon]) || (p.sort_order >= 3 ? Building2 : p.sort_order === 2 ? Crown : Gift),
+    color: p.color || (p.sort_order >= 3 ? 'text-success' : p.sort_order === 2 ? 'text-primary' : 'text-muted-foreground'),
+    items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
+    isFeatured: p.sort_order === 2,
   }));
 
 
@@ -434,9 +435,16 @@ export default function Billing() {
                 {t('billing.cancelSubscription')}
               </Button>
             )}
-            {/* Subscribe — shown when the user has no active plan */}
+            {/* Subscribe — usa o plano "destaque" (isFeatured) do catálogo, ou o primeiro plano público */}
             {noActivePlan && (
-              <Button onClick={() => handleUpgrade('pro')} disabled={upgrading} className="gradient-primary text-primary-foreground">
+              <Button
+                onClick={() => {
+                  const featured = plans.find(p => p.isFeatured) || plans[0];
+                  if (featured) handleUpgrade(featured.key);
+                }}
+                disabled={upgrading || plans.length === 0}
+                className="gradient-primary text-primary-foreground"
+              >
                 <Crown className="w-4 h-4 mr-2" />
                 {t('billing.subscribe') || 'Subscrever'}
               </Button>
@@ -510,11 +518,17 @@ export default function Billing() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('billing.limitsShops')}</span>
               <span className="font-medium mono">
-                {shopCount}/{limits.multiShop ? 5 : 1}
+                {shopCount}/{(() => {
+                  const max = planLimit(catalog?.plans.find(p => p.slug === plan), 'max_shops', 1);
+                  return max < 0 ? '∞' : max;
+                })()}
               </span>
             </div>
             <Progress
-              value={(shopCount / (limits.multiShop ? 5 : 1)) * 100}
+              value={(() => {
+                const max = planLimit(catalog?.plans.find(p => p.slug === plan), 'max_shops', 1);
+                return max <= 0 ? 0 : Math.min(100, (shopCount / max) * 100);
+              })()}
               className="h-2"
             />
           </div>
@@ -563,12 +577,16 @@ export default function Billing() {
         </button>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(({ key, icon: Icon, color, items }) => {
-          const price = prices[key][billingCycle];
-          // Centralised button state — never derive Upgrade/Downgrade/Plano Atual
-          // with local ifs. See src/lib/planHierarchy.ts.
+      {/* Pricing Cards — grelha responsiva com nº de colunas dinâmico */}
+      <div className={`grid grid-cols-1 gap-6 ${
+        plans.length >= 4 ? 'md:grid-cols-2 lg:grid-cols-4'
+          : plans.length === 3 ? 'md:grid-cols-3'
+          : plans.length === 2 ? 'md:grid-cols-2' : ''
+      }`}>
+        {plans.map(({ key, row, icon: Icon, color, items, isFeatured }) => {
+          // Preço: usa fallback do país configurado se legacy price map o tiver;
+          // planos novos leem-no do plan_country_prices via PriceWithPromo/create-checkout.
+          const price = (prices as any)[key]?.[billingCycle] ?? 0;
           const btnState = getPlanButtonState({
             displayedPlan: key,
             activePlan: plan,
@@ -583,7 +601,7 @@ export default function Billing() {
                 isCurrentPlan ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
               }`}
             >
-              {key === 'pro' && (
+              {isFeatured && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="gradient-primary text-primary-foreground px-3 py-1">
                     {t('billing.popular')}
@@ -593,7 +611,7 @@ export default function Billing() {
 
               <div className="text-center mb-6">
                 <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
-                <h3 className="text-xl font-bold">{getPlanName(key, t(`billing.plan.${key}`))}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(key, row?.label || row?.name || key)}</h3>
                 <div className="mt-3">
                   <PriceWithPromo
                     basePrice={price}
@@ -627,7 +645,7 @@ export default function Billing() {
                 className={`w-full ${
                   isCurrentPlan
                     ? 'bg-muted text-muted-foreground cursor-default hover:bg-muted'
-                    : key === 'pro'
+                    : isFeatured
                     ? 'gradient-primary text-primary-foreground'
                     : ''
                 }`}

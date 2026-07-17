@@ -4930,8 +4930,10 @@ export type Database = {
           cycle: string
           id: string
           plan_slug: string
+          stripe_coupon_id: string | null
           stripe_price_id: string | null
           stripe_product_id: string | null
+          trial_days_override: number | null
           updated_at: string
         }
         Insert: {
@@ -4943,8 +4945,10 @@ export type Database = {
           cycle: string
           id?: string
           plan_slug: string
+          stripe_coupon_id?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
+          trial_days_override?: number | null
           updated_at?: string
         }
         Update: {
@@ -4956,8 +4960,10 @@ export type Database = {
           cycle?: string
           id?: string
           plan_slug?: string
+          stripe_coupon_id?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
+          trial_days_override?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -5122,10 +5128,15 @@ export type Database = {
           created_at: string
           description: string | null
           icon: string | null
+          included_shops: number
           label: string | null
+          limits: Json
           name: string
           slug: string
           sort_order: number
+          stripe_product_id: string | null
+          supports_multi_shop: boolean
+          trial_days: number | null
           updated_at: string
           visible_on_billing: boolean
           visible_on_checkout: boolean
@@ -5139,10 +5150,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           icon?: string | null
+          included_shops?: number
           label?: string | null
+          limits?: Json
           name: string
           slug: string
           sort_order?: number
+          stripe_product_id?: string | null
+          supports_multi_shop?: boolean
+          trial_days?: number | null
           updated_at?: string
           visible_on_billing?: boolean
           visible_on_checkout?: boolean
@@ -5156,10 +5172,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           icon?: string | null
+          included_shops?: number
           label?: string | null
+          limits?: Json
           name?: string
           slug?: string
           sort_order?: number
+          stripe_product_id?: string | null
+          supports_multi_shop?: boolean
+          trial_days?: number | null
           updated_at?: string
           visible_on_billing?: boolean
           visible_on_checkout?: boolean
@@ -8320,6 +8341,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_shop_creation_status: { Args: { _user_id: string }; Returns: Json }
       get_shop_member_emails: {
         Args: { _shop_id: string }
         Returns: {

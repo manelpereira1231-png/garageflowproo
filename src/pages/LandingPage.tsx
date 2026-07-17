@@ -22,6 +22,7 @@ import { usePlanNames } from "@/hooks/usePlanNames";
 import PriceWithPromo from "@/components/PriceWithPromo";
 import { getEffectivePrice } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlansCatalog, publicPlans } from "@/hooks/usePlansCatalog";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];
@@ -214,56 +215,56 @@ export default function LandingPage() {
   // Single source of truth: same ordered list rendered in every plan card;
   // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
-  const freeItems = buildPlanFeatureItems("free", fxFeatures, fxMatrix);
-  const proItems = buildPlanFeatureItems("pro", fxFeatures, fxMatrix);
-  const garageItems = buildPlanFeatureItems("garage", fxFeatures, fxMatrix);
 
   const { getName: getPlanName } = usePlanNames();
 
+  // ✅ Catálogo dinâmico da BD — sem lista hardcoded de planos.
+  // Um plano novo criado no Super Admin (ex.: "Enterprise") aparece
+  // automaticamente aqui, mantendo o design.
+  const { data: catalog } = usePlansCatalog();
   const countryCode = getCountryCode();
-  const planConfigs = [
-    {
-      slug: 'free' as const,
-      nameKey: 'landing.planFree',
-      basePrice: pricing.free[billingCycle],
-      periodKey: pricing.free[billingCycle] > 0 ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear') : '',
+
+  const planConfigs = publicPlans(catalog, "landing").map((p) => {
+    // Preço: usa mapa regional legacy quando existe (start/pro/garage),
+    // caso contrário procura em plan_country_prices.
+    const legacy = (pricing as any)[p.slug];
+    let base = legacy?.[billingCycle];
+    if (base == null) {
+      const row = catalog?.prices.find(
+        (pp) => pp.plan_slug === p.slug && pp.country_code === countryCode && pp.cycle === billingCycle,
+      );
+      base = row?.amount ?? 0;
+    }
+    return {
+      slug: p.slug,
+      nameKey: `landing.plan${p.slug.charAt(0).toUpperCase() + p.slug.slice(1)}`,
+      displayName: p.label || p.name,
+      basePrice: base as number,
+      periodKey: (base as number) > 0
+        ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')
+        : '',
       subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: freeItems,
-      ctaKey: 'landing.ctaFree',
-      highlighted: false,
-      ctaPrimary: true,
-    },
-    {
-      slug: 'pro' as const,
-      nameKey: 'landing.planPro',
-      basePrice: pricing.pro[billingCycle],
-      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: proItems,
-      ctaKey: 'landing.ctaPro',
-      highlighted: true,
-      ctaPrimary: true,
-    },
-    {
-      slug: 'garage' as const,
-      nameKey: 'landing.planGarage',
-      basePrice: pricing.garage[billingCycle],
-      periodKey: billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear',
-      subtitleKey: isAuthenticated ? undefined : 'landing.trial30',
-      items: garageItems,
-      ctaKey: 'landing.ctaGarage',
-      highlighted: false,
-      ctaPrimary: false,
-    },
-  ];
+      items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
+      ctaKey: `landing.ctaPro`, // CTA genérico; per-plan override via translation com fallback
+      highlighted: p.sort_order === 2, // plano do meio destacado
+      ctaPrimary: p.sort_order <= 2,
+    };
+  });
 
   const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
 
-  // Rich SEO JSON-LD: SoftwareApplication + Organization + FAQPage
-  // When a promotion is active for Pro monthly, reflect the promo price
-  // in the SoftwareApplication offer so search results and social crawlers
-  // show the discounted headline price.
-  const proEff = getEffectivePrice(pricing.pro.monthly, countryCode, "pro", "monthly");
+  // Rich SEO JSON-LD gerado a partir do catálogo dinâmico: uma Offer por plano
+  // com preço efetivo (aplicando promoções) e moeda regional.
+  const offers = planConfigs.map((p) => {
+    const eff = getEffectivePrice(p.basePrice, countryCode, p.slug, billingCycle);
+    return {
+      "@type": "Offer",
+      name: p.displayName,
+      price: String(eff.effectivePrice),
+      priceCurrency: pricing.currency || "EUR",
+      ...(eff.isPromo && eff.endsAt ? { priceValidUntil: eff.endsAt.slice(0, 10) } : {}),
+    };
+  });
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -273,14 +274,7 @@ export default function LandingPage() {
       operatingSystem: "Web, iOS, Android",
       url: SITE_URL,
       description: t('landing.heroSubtitle'),
-      offers: {
-        "@type": "Offer",
-        price: String(proEff.effectivePrice),
-        priceCurrency: pricing.currency || "EUR",
-        ...(proEff.isPromo && proEff.endsAt
-          ? { priceValidUntil: proEff.endsAt.slice(0, 10) }
-          : {}),
-      },
+      offers: offers.length > 0 ? offers : undefined,
     },
     {
       "@context": "https://schema.org",
@@ -768,7 +762,11 @@ export default function LandingPage() {
               </Badge>
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className={`grid grid-cols-1 gap-4 sm:gap-6 ${
+            planConfigs.length >= 4 ? 'sm:grid-cols-2 lg:grid-cols-4'
+              : planConfigs.length === 3 ? 'md:grid-cols-3'
+              : planConfigs.length === 2 ? 'md:grid-cols-2' : ''
+          }`}>
             {planConfigs.map(plan => (
               <div
                 key={plan.nameKey}
@@ -781,7 +779,7 @@ export default function LandingPage() {
                 {plan.highlighted && (
                   <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
                 )}
-                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey))}</h3>
+                <h3 className="text-xl font-bold">{getPlanName(plan.slug, t(plan.nameKey) || plan.displayName)}</h3>
                 <div className="mt-2 mb-2">
                   <PriceWithPromo
                     basePrice={plan.basePrice}

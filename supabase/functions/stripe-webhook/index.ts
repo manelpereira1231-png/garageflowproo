@@ -15,16 +15,49 @@ const supabaseAdmin = createClient(
 const log = (msg: string, data?: any) =>
   console.log(`[STRIPE-WEBHOOK] ${msg}`, data ? JSON.stringify(data) : "");
 
-// Resolve plan from Stripe subscription price amount
-function resolvePlan(subscription: Stripe.Subscription): string {
+// Resolve plano da subscrição dinamicamente:
+//  1) stripe_price_id (fonte oficial) — funciona para qualquer plano registado
+//     no Admin, incluindo planos novos como "Enterprise".
+//  2) stripe_product_id (fallback quando o Admin registou só o produto)
+//  3) Metadata da subscrição (`plan_slug`), útil em criação via API
+//  Sem hardcodes de amounts (9900/4900). Sem `switch (slug)`.
+async function resolvePlan(subscription: Stripe.Subscription): Promise<string> {
   const item = subscription.items?.data[0];
-  if (!item) return "free";
-  const amount = item.price?.unit_amount || 0;
-  // Garage: €99/mo (9900) or €990/yr (99000)
-  if (amount >= 9900) return "garage";
-  // Pro: €49/mo (4900) or €490/yr (49000)
-  if (amount >= 4900) return "pro";
-  return "free";
+  const priceId = item?.price?.id;
+  const productId = typeof item?.price?.product === "string"
+    ? item.price.product
+    : item?.price?.product?.id;
+
+  if (priceId) {
+    const { data } = await supabaseAdmin
+      .from("plan_country_prices")
+      .select("plan_slug")
+      .eq("stripe_price_id", priceId)
+      .limit(1)
+      .maybeSingle();
+    if (data?.plan_slug) return data.plan_slug;
+  }
+  if (productId) {
+    const { data } = await supabaseAdmin
+      .from("plans")
+      .select("slug")
+      .eq("stripe_product_id", productId)
+      .limit(1)
+      .maybeSingle();
+    if (data?.slug) return data.slug;
+  }
+  const metaSlug = (subscription.metadata?.plan_slug || "").trim();
+  if (metaSlug) return metaSlug;
+
+  // Último recurso: primeiro plano ativo com sort_order mínimo (evita "free" hardcoded)
+  const { data: firstPlan } = await supabaseAdmin
+    .from("plans")
+    .select("slug")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return firstPlan?.slug || "free";
 }
 
 // Resolve billing cycle from Stripe interval
@@ -201,7 +234,7 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
-          const plan = resolvePlan(subscription);
+          const plan = await resolvePlan(subscription);
           const billingCycle = resolveBillingCycle(subscription);
           
           // Map Stripe status to our status
@@ -440,7 +473,7 @@ serve(async (req) => {
 
         // Fetch the full subscription from Stripe
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        const plan = resolvePlan(stripeSub);
+        const plan = await resolvePlan(stripeSub);
         const billingCycle = resolveBillingCycle(stripeSub);
 
         const sub = await findSubscription(customerId);

@@ -39,7 +39,7 @@ interface PdfData {
   laborHours?: number;
   laborRate?: number;
   currency: string;
-  plan?: 'free' | 'pro' | 'garage';
+  plan?: string;
   language?: string;
 }
 

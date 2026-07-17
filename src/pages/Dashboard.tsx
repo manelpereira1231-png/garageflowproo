@@ -86,12 +86,14 @@ function OwnerDashboard() {
     setSelectedFilterRaw(v);
     try { localStorage.setItem('garageflow_dashboard_filter', v); } catch { /* noop */ }
     // Ao escolher uma oficina específica, sincroniza o activeShopId global
-    // (via useSyncExternalStore) para que os cartões, navegação e destinos
-    // filtrem já pela oficina selecionada, sem refresh.
+    // via o helper oficial (localStorage + broadcast + microtask flush) para
+    // que os cartões, navegação e destinos filtrem já pela oficina
+    // selecionada, sem refresh.
     if (v !== 'all' && v !== activeShopId) {
-      try { localStorage.setItem('garageflow_active_shop', v); } catch { /* noop */ }
+      void setActiveShopAndSync(v, { reason: "switch" });
     }
   };
+
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
 
 

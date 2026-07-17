@@ -675,7 +675,7 @@ function OwnerDashboard() {
       )}
 
       {/* Plan Banner — celebrates the auto-Pro trial, becomes urgent near the end */}
-      {(isEntryPlan || isTrialing) && (() => {
+      {canSeeCommercial && (isEntryPlan || isTrialing) && (() => {
         const ending = isTrialing && trialDaysLeft <= 5;
         const expired = isEntryPlan && !isTrialing;
         const tone = ending

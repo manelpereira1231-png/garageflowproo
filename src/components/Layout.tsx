@@ -62,6 +62,7 @@ import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useOwnedShops } from "@/hooks/useOwnedShops";
 
 // Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"
 // (primary shop). Even the account owner does NOT see these when the active
@@ -113,7 +114,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { t, language, setLanguage } = useLanguage();
   const { isSuperAdmin } = useSuperAdmin();
   const { canUseFeature, mustSubscribe } = useSubscription();
-  const { shops, activeShopId, switchShop, hasMultipleShops } = useShopContext();
+  const { shops, activeShopId, switchShop } = useShopContext();
   const { isReady, user } = useAuthReady();
   const { isGuidedMode } = useOnboardingStatus();
   const sidebarPrefs = useSidebarPrefs(activeShopId);
@@ -436,9 +437,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const planVisibleItems = navItems;
   const { role, can, loading: roleLoading } = useShopRole();
   const { primaryShopId } = usePrimaryShopId();
-  // A child shop = any shop that is NOT the primary. This holds true both
-  // for team-members (primaryShopId === null → every shop is a child) and
-  // for account owners who switched context to a secondary shop.
+  const { shops: ownedShops } = useOwnedShops();
+  // "Oficina Mãe" account = user owns 2+ shops (i.e. has actually created a group).
+  // Only this account can see/use the shop switcher and Multi-Oficina surfaces.
+  // A child-only user (team member of a single child shop) or a single-shop owner
+  // must NEVER see that other shops exist.
+  const isGroupOwner = ownedShops.length > 1;
   const isPrimaryShopActive = Boolean(primaryShopId && activeShopId && primaryShopId === activeShopId);
   const roleFilteredItems = useMemo(
     () => planVisibleItems.filter((item) => {
@@ -702,11 +706,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {(hasMultipleShops || canUseFeature("multiShop")) && (
+        {isGroupOwner && (
           <ShopSwitcher
-            shops={shops}
+            shops={ownedShops.map((s) => ({ id: s.id, name: s.name ?? "", logo_url: s.logo_url ?? null }))}
             activeShopId={activeShopId}
             onSwitch={(id) => {
+              // Extra safety: only allow switching to shops this account actually owns.
+              if (!ownedShops.some((s) => s.id === id)) return;
               switchShop(id);
               navigate(location.pathname, { replace: true });
             }}

@@ -97,6 +97,11 @@ async function fetchCatalog(): Promise<PlansCatalog> {
     (featuresByPlan[f.plan_slug] ??= []).push(f);
   }
 
+  // Register plan ranks into the shared planHierarchy registry so
+  // getPlanButtonState / getPlanRank work for *any* plan slug (Enterprise,
+  // Business, custom…) without touching code.
+  registerPlanRanks(Object.fromEntries(plans.map((p) => [p.slug, p.sort_order])));
+
   return {
     plans,
     features: featuresByPlan,

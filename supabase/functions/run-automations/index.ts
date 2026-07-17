@@ -119,12 +119,13 @@ Deno.serve(async (req) => {
 
         switch (rule.trigger_type) {
           case "invoice_overdue": {
-            const { data: overdue } = await supabase
+            const { data: overdueRaw } = await supabase
               .from("invoices")
               .select("id, number, client_id, total, clients(name, email)")
               .eq("shop_id", rule.shop_id)
               .eq("status", "issued")
               .lt("due_date", new Date().toISOString().split("T")[0]);
+            const overdue = (overdueRaw || []).filter(i => (Number((i as any).total) || 0) >= minTotal);
             if (overdue && overdue.length > 0) {
               triggered = true;
               details = { count: overdue.length, invoices: overdue.map(i => i.number) };

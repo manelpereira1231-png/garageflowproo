@@ -101,10 +101,28 @@ export default function MarketingAIAssistant({ shopId, onCreateCampaign }: Props
               </p>
             </div>
           </div>
-          <Button size="sm" variant="ghost" onClick={analyze} disabled={loading || !shopId}>
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {!quota.loading && (
+              <Badge variant={blocked ? "destructive" : "secondary"} className="text-[10px]">
+                {quota.unlimited ? "Ilimitado" : `${quota.used}/${quota.limit}`}
+              </Badge>
+            )}
+            <Button size="sm" variant="ghost" onClick={analyze} disabled={loading || !shopId || blocked}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
+
+        {noAi && (
+          <div className="text-xs bg-destructive/10 border border-destructive/30 rounded-md p-2 text-destructive mb-2">
+            O seu plano não inclui créditos IA. Faça upgrade para desbloquear o assistente de marketing.
+          </div>
+        )}
+        {exhausted && (
+          <div className="text-xs bg-warning/10 border border-warning/30 rounded-md p-2 text-warning mb-2">
+            Atingiu o limite mensal de créditos IA do seu plano. Renova no próximo mês ou muda de plano.
+          </div>
+        )}
 
         {loading && insights === null && (
           <div className="text-xs text-muted-foreground py-4 text-center">

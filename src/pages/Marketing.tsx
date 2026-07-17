@@ -15,6 +15,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
+import MarketingAIAssistant, { type AIInsight } from "@/components/marketing/MarketingAIAssistant";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

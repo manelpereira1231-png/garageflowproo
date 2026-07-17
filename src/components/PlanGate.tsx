@@ -49,11 +49,15 @@ const PlanGate = React.forwardRef<HTMLDivElement, PlanGateProps>(
                   {t('planGate.title')}
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  {t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
+                  {isChildShop
+                    ? "Esta funcionalidade não está incluída na licença da empresa. Contacte a Oficina Mãe."
+                    : t('planGate.description').replace('{plan}', PLAN_LABELS[requiredPlan] || requiredPlan)}
                 </p>
-                <Link to="/billing">
-                  <Button className="mt-2">{t('planGate.upgrade')}</Button>
-                </Link>
+                {!isChildShop && (
+                  <Link to="/billing">
+                    <Button className="mt-2">{t('planGate.upgrade')}</Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </div>

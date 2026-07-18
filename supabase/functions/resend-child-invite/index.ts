@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,19 +10,16 @@ const corsHeaders = {
 /**
  * resend-child-invite
  * -------------------
- * Re-sends the branded "Set your password" email to a child shop.
- * Uses the same Resend-based branded sender used for customer emails —
- * never Supabase's default template.
+ * Re-sends the official password setup email to a child shop account.
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const INTERNAL_TOKEN = Deno.env.get("INTERNAL_EMAIL_TOKEN") || SERVICE_ROLE_KEY;
 
 const REDIRECT_URL =
   Deno.env.get("CHILD_SHOP_INVITE_REDIRECT") ??
-  "https://www.garageflow.pt/reset-password?realm=erp";
+  "https://garageflow-pt.lovable.app/reset-password?realm=erp";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,6 +36,9 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    const publicAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const { data: userRes } = await userClient.auth.getUser();
     if (!userRes.user) return json({ error: "NOT_AUTHENTICATED" }, 401);
@@ -50,7 +49,7 @@ Deno.serve(async (req) => {
 
     const { data: shop } = await admin
       .from("shops")
-      .select("id, user_id, group_owner_id, email, name, language")
+      .select("id, user_id, group_owner_id, email, name")
       .eq("id", shop_id)
       .maybeSingle();
 
@@ -60,59 +59,34 @@ Deno.serve(async (req) => {
 
     const { data: child, error: getErr } = await admin.auth.admin.getUserById(shop.user_id);
     if (getErr || !child?.user?.email) return json({ error: "CHILD_USER_NOT_FOUND" }, 404);
-    const childEmail = child.user.email;
 
-    // Try invite first (unconfirmed users), fall back to recovery.
-    let actionLink: string | null = null;
-    const inv = await admin.auth.admin.generateLink({
-      type: "invite",
-      email: childEmail,
-      options: { redirectTo: REDIRECT_URL },
-    });
-    if (!inv.error && inv.data) {
-      actionLink = (inv.data.properties as any)?.action_link ?? null;
-    }
-    if (!actionLink) {
-      const rec = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: childEmail,
-        options: { redirectTo: REDIRECT_URL },
+    const childEmail = child.user.email;
+    let authEmailMode: "invite" | "recovery" = child.user.email_confirmed_at ? "recovery" : "invite";
+
+    if (authEmailMode === "invite") {
+      const invite = await admin.auth.admin.inviteUserByEmail(childEmail, {
+        redirectTo: REDIRECT_URL,
+        data: { source: "child_shop_invite", shop_name: shop.name ?? "" },
       });
-      if (!rec.error && rec.data) {
-        actionLink = (rec.data.properties as any)?.action_link ?? null;
+      if (invite.error) {
+        const msg = String(invite.error.message || "").toLowerCase();
+        if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
+          return json({ error: "INVITE_EMAIL_FAILED", detail: invite.error.message }, 500);
+        }
+        authEmailMode = "recovery";
       }
     }
-    if (!actionLink) return json({ error: "LINK_FAILED" }, 500);
 
-    const mail = buildChildInviteEmail({
-      recipientName: shop.name ?? "",
-      language: (shop as any).language ?? "pt",
-    });
-
-    const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-token": INTERNAL_TOKEN,
-      },
-      body: JSON.stringify({
-        to: childEmail,
-        from: "GarageFlow <noreply@garageflow.pt>",
-        subject: mail.subject,
-        html: mail.html,
-        branded: true,
-        brand: "garageflow",
-        preheader: mail.preheader,
-        cta: { label: mail.ctaLabel, url: actionLink },
-        footerNote: mail.footerNote,
-      }),
-    });
-    if (!resp.ok) {
-      const detail = await resp.text().catch(() => "");
-      return json({ error: "SEND_FAILED", detail }, 500);
+    if (authEmailMode === "recovery") {
+      const reset = await publicAuth.auth.resetPasswordForEmail(childEmail, {
+        redirectTo: REDIRECT_URL,
+      });
+      if (reset.error) {
+        return json({ error: "PASSWORD_EMAIL_FAILED", detail: reset.error.message }, 500);
+      }
     }
 
-    return json({ ok: true }, 200);
+    return json({ ok: true, auth_email: authEmailMode }, 200);
   } catch (e: any) {
     return json({ error: "UNEXPECTED", detail: String(e?.message ?? e) }, 500);
   }

@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,23 +10,18 @@ const corsHeaders = {
 /**
  * invite-child-shop
  * ------------------------------------------------------------------
- * Called by an authenticated "Oficina Mãe" (group owner) to create a
- * child shop that has its OWN independent auth account.
- *
- * Emails are dispatched via the branded GarageFlow sender (`send-email`
- * -> Resend), never via Supabase's default auth mailer. The Supabase
- * action link is minted with `generateLink` (which does NOT send an
- * email on its own) and embedded as the CTA in our branded template.
+ * Called by an authenticated Oficina Mãe to create a child shop with an
+ * independent auth account. The password setup email is delivery-critical,
+ * so it uses the platform auth mailer instead of the app-email sender domain.
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const INTERNAL_TOKEN = Deno.env.get("INTERNAL_EMAIL_TOKEN") || SERVICE_ROLE_KEY;
 
 const REDIRECT_URL =
   Deno.env.get("CHILD_SHOP_INVITE_REDIRECT") ??
-  "https://www.garageflow.pt/reset-password?realm=erp";
+  "https://garageflow-pt.lovable.app/reset-password?realm=erp";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,6 +38,9 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const publicAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
@@ -68,9 +65,7 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (!mother) {
-      return json({ error: "NOT_GROUP_OWNER" }, 403);
-    }
+    if (!mother) return json({ error: "NOT_GROUP_OWNER" }, 403);
 
     const { data: status } = await admin.rpc("get_shop_creation_status", {
       _user_id: caller.id,
@@ -79,50 +74,40 @@ Deno.serve(async (req) => {
       return json({ error: "SHOP_LIMIT_REACHED", status }, 403);
     }
 
-    // 1) Mint the Supabase action link WITHOUT sending Supabase's default email.
-    //    generateLink({type:'invite'}) creates the user if it doesn't exist and
-    //    returns `action_link`; it does not itself dispatch an email.
     let childUserId: string | null = null;
-    let actionLink: string | null = null;
+    let authEmailMode: "invite" | "recovery" = "invite";
 
-    const invite = await admin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: {
-        redirectTo: REDIRECT_URL,
-        data: { source: "child_shop_invite", shop_name: name },
-      },
+    const invite = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: REDIRECT_URL,
+      data: { source: "child_shop_invite", shop_name: name },
     });
 
-    if (!invite.error && invite.data) {
-      childUserId = invite.data.user?.id ?? null;
-      actionLink = (invite.data.properties as any)?.action_link ?? null;
+    if (!invite.error && invite.data?.user) {
+      childUserId = invite.data.user.id;
     } else {
       const msg = String(invite.error?.message || "").toLowerCase();
-      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-        // User already exists — fall back to recovery flow so they can (re)set a password.
-        const { data: existing } = await admin.auth.admin.listUsers({ perPage: 200 });
-        childUserId =
-          existing?.users.find((u) => (u.email ?? "").toLowerCase() === email)?.id ?? null;
-        if (!childUserId) return json({ error: "USER_LOOKUP_FAILED" }, 500);
+      if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
+        return json({ error: "INVITE_EMAIL_FAILED", detail: invite.error?.message }, 500);
+      }
 
-        const rec = await admin.auth.admin.generateLink({
-          type: "recovery",
-          email,
-          options: { redirectTo: REDIRECT_URL },
-        });
-        if (rec.error || !rec.data) {
-          return json({ error: "LINK_FAILED", detail: rec.error?.message }, 500);
-        }
-        actionLink = (rec.data.properties as any)?.action_link ?? null;
-      } else {
-        return json({ error: "INVITE_FAILED", detail: invite.error?.message }, 500);
+      childUserId = await findUserIdByEmail(admin, email);
+      if (!childUserId) return json({ error: "USER_LOOKUP_FAILED" }, 500);
+
+      authEmailMode = "recovery";
+      const reset = await publicAuth.auth.resetPasswordForEmail(email, {
+        redirectTo: REDIRECT_URL,
+      });
+      if (reset.error) {
+        return json({ error: "PASSWORD_EMAIL_FAILED", detail: reset.error.message }, 500);
       }
     }
 
-    if (!childUserId || !actionLink) return json({ error: "INVITE_FAILED" }, 500);
+    if (!childUserId) return json({ error: "INVITE_FAILED" }, 500);
 
-    // 2) Insert the shop.
+    await admin.auth.admin.updateUserById(childUserId, {
+      user_metadata: { source: "child_shop_invite", shop_name: name },
+    }).catch(() => null);
+
     const { data: shop, error: insertErr } = await admin
       .from("shops")
       .insert({
@@ -145,7 +130,6 @@ Deno.serve(async (req) => {
       return json({ error: "SHOP_INSERT_FAILED", detail: insertErr.message }, 500);
     }
 
-    // 3) Register as owner in shop_users.
     await admin
       .from("shop_users")
       .upsert(
@@ -153,41 +137,7 @@ Deno.serve(async (req) => {
         { onConflict: "shop_id,user_id" },
       );
 
-    // 4) Send the branded GarageFlow email (same infra used for client emails).
-    const mail = buildChildInviteEmail({
-      recipientName: name,
-      language: mother?.language ?? "pt",
-    });
-    try {
-      const emailResp = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-internal-token": INTERNAL_TOKEN,
-        },
-        body: JSON.stringify({
-          to: email,
-          from: "GarageFlow <noreply@garageflow.pt>",
-          subject: mail.subject,
-          html: mail.html,
-          branded: true,
-          brand: "garageflow",
-          preheader: mail.preheader,
-          cta: { label: mail.ctaLabel, url: actionLink },
-          footerNote: mail.footerNote,
-        }),
-      });
-      if (!emailResp.ok) {
-        const detail = await emailResp.text().catch(() => "");
-        console.error("[invite-child-shop] send-email returned non-2xx", emailResp.status, detail);
-        return json({ error: "EMAIL_SEND_FAILED", detail }, 502);
-      }
-    } catch (e) {
-      console.error("[invite-child-shop] send-email failed", e);
-      return json({ error: "EMAIL_SEND_FAILED", detail: String((e as any)?.message ?? e) }, 502);
-    }
-
-    return json({ ok: true, shop_id: shop.id, user_id: childUserId }, 200);
+    return json({ ok: true, shop_id: shop.id, user_id: childUserId, auth_email: authEmailMode }, 200);
   } catch (e: any) {
     return json({ error: "UNEXPECTED", detail: String(e?.message ?? e) }, 500);
   }
@@ -198,4 +148,15 @@ function json(body: unknown, status: number) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+async function findUserIdByEmail(admin: any, email: string): Promise<string | null> {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const match = data?.users?.find((u: any) => String(u.email ?? "").toLowerCase() === email);
+    if (match?.id) return match.id;
+    if (!data?.users || data.users.length < 1000) break;
+  }
+  return null;
 }

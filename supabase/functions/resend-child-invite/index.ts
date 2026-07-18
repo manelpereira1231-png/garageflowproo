@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         to: childEmail,
+        from: "GarageFlow <noreply@garageflow.pt>",
         subject: mail.subject,
         html: mail.html,
         branded: true,

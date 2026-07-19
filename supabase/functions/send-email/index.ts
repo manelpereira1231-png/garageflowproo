@@ -212,6 +212,7 @@ serve(async (req: Request) => {
     const finalFrom = useSandbox
       ? "GarageFlow <onboarding@resend.dev>"
       : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
+    const emailType = String((body as any).emailType ?? "");
 
     // Inject open-pixel + rewrite links for click tracking.
     const emailIdEarly = crypto.randomUUID();
@@ -246,8 +247,13 @@ serve(async (req: Request) => {
     }
 
 
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error("Email send blocked: RESEND_API_KEY is not configured.");
+      return new Response(JSON.stringify({ error: "EMAIL_PROVIDER_NOT_CONFIGURED" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
 
-    console.log(`Sending email | to: ${finalTo.join(",")} | branded: ${!!branded} | subject: ${finalSubject} | attachments: ${attachments?.length ?? 0}`);
+    console.log(`Sending email | to: ${finalTo.join(",")} | from: ${finalFrom} | branded: ${!!branded} | type: ${emailType || "generic"} | subject: ${finalSubject} | attachments: ${attachments?.length ?? 0}`);
 
     const resendPayload: any = {
       from: finalFrom,
@@ -268,7 +274,7 @@ serve(async (req: Request) => {
     // não está verificado. Mantemos o envio funcional usando o remetente seguro
     // do Resend apenas neste fluxo operacional.
     const resendMessage = String((error as any)?.message || "");
-    if (invite && error && resendMessage.toLowerCase().includes("domain is not verified")) {
+    if (invite && !emailType.startsWith("child_shop_invite") && error && resendMessage.toLowerCase().includes("domain is not verified")) {
       console.warn("Team invite sender domain not verified; retrying with fallback sender.");
       const retry = await resend.emails.send({ ...resendPayload, from: fallbackFrom });
       data = retry.data;
@@ -278,25 +284,27 @@ serve(async (req: Request) => {
     const emailId = (data as any)?.id || emailIdEarly;
 
     if (error) {
-      console.error("Resend error:", JSON.stringify(error));
+      console.error("Resend error:", JSON.stringify({ error, from: finalFrom, to: finalTo, type: emailType || null }));
       // Observability: log failure (silent fail).
       try {
         await admin.from("email_events").insert({
-          email_id: emailId, email_type: (body as any).emailType ?? null,
+          email_id: emailId, email_type: emailType || null,
           recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
-          event_type: "failed", details: { error: error.message },
+          event_type: "failed", details: { error: error.message, from: finalFrom, provider: "resend" },
         });
       } catch (_e) { /* ignore */ }
       return new Response(JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
+    console.log(`Email accepted by provider | id: ${emailId} | from: ${finalFrom} | to: ${finalTo.join(",")} | type: ${emailType || "generic"}`);
+
     // Observability: log successful send.
     try {
       await admin.from("email_events").insert({
-        email_id: emailId, email_type: (body as any).emailType ?? null,
+        email_id: emailId, email_type: emailType || null,
         recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
-        event_type: "sent", details: { subject: finalSubject, branded: !!branded },
+        event_type: "sent", details: { subject: finalSubject, branded: !!branded, from: finalFrom, provider: "resend" },
       });
     } catch (_e) { /* ignore */ }
 

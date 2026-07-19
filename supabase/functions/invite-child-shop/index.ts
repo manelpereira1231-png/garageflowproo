@@ -87,6 +87,32 @@ Deno.serve(async (req) => {
       },
     }).catch(() => null);
 
+    const { data: existingChildShops } = await admin
+      .from("shops")
+      .select("id, user_id, group_owner_id")
+      .eq("user_id", childUserId);
+
+    const existingInThisGroup = (existingChildShops ?? []).find((s: any) => s.group_owner_id === caller.id && s.user_id !== caller.id);
+    const ownsIndependentWorkshop = (existingChildShops ?? []).some((s: any) => s.group_owner_id === childUserId);
+    const belongsToOtherGroup = (existingChildShops ?? []).some((s: any) => s.group_owner_id !== caller.id && s.group_owner_id !== childUserId);
+
+    if (ownsIndependentWorkshop || belongsToOtherGroup) {
+      return json({ error: "EMAIL_ALREADY_HAS_WORKSHOP" }, 409);
+    }
+
+    if (existingInThisGroup?.id) {
+      const emailResult = await sendBrandedPasswordEmail({
+        to: email,
+        recipientName: name,
+        language: mother?.language,
+        actionLink: link.actionLink,
+      });
+      if (!emailResult.ok) {
+        return json({ error: "BRANDED_EMAIL_FAILED", detail: emailResult.detail }, 502);
+      }
+      return json({ ok: true, shop_id: existingInThisGroup.id, user_id: childUserId, auth_email: authEmailMode, email_id: emailResult.emailId }, 200);
+    }
+
     const { data: shop, error: insertErr } = await admin
       .from("shops")
       .insert({

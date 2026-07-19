@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: shop } = await admin
       .from("shops")
-      .select("id, user_id, group_owner_id, email, name")
+      .select("id, user_id, group_owner_id, email, name, language")
       .eq("id", shop_id)
       .maybeSingle();
 
@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
     const emailResult = await sendBrandedPasswordEmail({
       to: childEmail,
       recipientName: shop.name ?? "",
+      language: shop.language,
       actionLink: link.actionLink,
     });
     if (!emailResult.ok) {
@@ -125,11 +126,12 @@ async function createPasswordActionLink(
 async function sendBrandedPasswordEmail(params: {
   to: string;
   recipientName: string;
+  language?: string | null;
   actionLink: string;
 }): Promise<{ ok: true; emailId?: string } | { ok: false; detail: string }> {
   if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK" };
 
-  const copy = buildChildInviteEmail({ recipientName: params.recipientName, language: "pt" });
+  const copy = buildChildInviteEmail({ recipientName: params.recipientName, language: params.language });
   const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
     method: "POST",
     headers: {

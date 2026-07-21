@@ -217,7 +217,7 @@ async function sendBrandedPasswordEmail(params: {
   debugId: string;
   audit: (step: string, details?: Record<string, unknown>) => void;
 }): Promise<
-  | { ok: true; emailId?: string; status: number; response: unknown; deliveryState: "accepted" | "delivered" }
+  | { ok: true; provider: "lovable" | "resend"; emailId?: string; status: number; response: unknown; deliveryState: "accepted" | "delivered" }
   | { ok: false; detail: string; status: number; response: unknown; deliveryState: "failed" }
 > {
   if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK", status: 0, response: null, deliveryState: "failed" };
@@ -251,7 +251,7 @@ async function sendBrandedPasswordEmail(params: {
       provider: platform.provider,
       response: platform.response,
       deliveryState: "accepted",
-    } as any;
+    };
   }
 
   params.audit("resend_fallback_send_start", {
@@ -313,5 +313,5 @@ async function sendBrandedPasswordEmail(params: {
     provider: "resend",
     response: parsed,
     deliveryState: "accepted",
-  } as any;
+  };
 }

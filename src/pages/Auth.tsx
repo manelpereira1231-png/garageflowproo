@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { ensureSignupAllowed } from "@/lib/signupGuard";
+import { ACTIVE_SHOP_STORAGE_KEY, setActiveShopAndSync } from "@/lib/shopContextSync";
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;
@@ -31,6 +32,54 @@ const getSafeGarageRedirectPath = (candidate: string | null) => {
 
 function timeoutResult<T>(value: T, ms = LOGIN_PROFILE_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
+
+async function syncShopContextAfterLogin(userId: string) {
+  const [groupShopsRes, directShopsRes, memberEntriesRes] = await Promise.all([
+    erpSupabase
+      .from("shops")
+      .select("id, name")
+      .eq("group_owner_id", userId)
+      .order("created_at", { ascending: true }),
+    erpSupabase
+      .from("shops")
+      .select("id, name")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true }),
+    erpSupabase
+      .from("shop_users")
+      .select("shop_id")
+      .eq("user_id", userId),
+  ]);
+
+  const byId = new Map<string, { id: string; name: string | null }>();
+  for (const shop of [...(groupShopsRes.data || []), ...(directShopsRes.data || [])]) {
+    byId.set(shop.id, shop);
+  }
+
+  const memberIds = (memberEntriesRes.data || [])
+    .map((entry) => entry.shop_id)
+    .filter((id): id is string => Boolean(id) && !byId.has(id));
+
+  if (memberIds.length > 0) {
+    const { data: memberShops } = await erpSupabase
+      .from("shops")
+      .select("id, name")
+      .in("id", memberIds);
+    for (const shop of memberShops || []) byId.set(shop.id, shop);
+  }
+
+  const shops = Array.from(byId.values()).filter((shop) => (shop.name || "").trim().length > 0);
+  if (shops.length === 0) {
+    try { localStorage.removeItem(ACTIVE_SHOP_STORAGE_KEY); } catch {}
+    return;
+  }
+
+  const stored = (() => {
+    try { return localStorage.getItem(ACTIVE_SHOP_STORAGE_KEY); } catch { return null; }
+  })();
+  const nextShopId = stored && shops.some((shop) => shop.id === stored) ? stored : shops[0].id;
+  await setActiveShopAndSync(nextShopId, { reason: "login" });
 }
 
 export default function Auth({ defaultRedirect }: { defaultRedirect?: string } = {}) {
@@ -89,6 +138,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
           throw new Error('Esta conta é apenas do GarageFlow Market. Entre em /market/auth.');
         }
 
+        await syncShopContextAfterLogin(signInData.user.id);
         toast.success(t('auth.welcomeBack'));
         import("@/lib/trackEvent").then(({ trackEvent }) => trackEvent("login", { realm: "erp" }));
         navigate(getSafeGarageRedirectPath(searchParams.get("redirect") ?? defaultRedirect ?? null), { replace: true });

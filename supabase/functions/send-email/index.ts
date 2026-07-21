@@ -287,12 +287,15 @@ serve(async (req: Request) => {
       console.error("Resend error:", JSON.stringify({ error, from: finalFrom, to: finalTo, type: emailType || null }));
       // Observability: log failure (silent fail).
       try {
-        await admin.from("email_events").insert({
+        const { error: logError } = await admin.from("email_events").insert({
           email_id: emailId, email_type: emailType || null,
           recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
           event_type: "failed", details: { error: error.message, from: finalFrom, provider: "resend" },
         });
-      } catch (_e) { /* ignore */ }
+        if (logError) console.error("Email event failed-log insert failed:", JSON.stringify(logError));
+      } catch (logException: any) {
+        console.error("Email event failed-log insert exception:", String(logException?.message ?? logException));
+      }
       return new Response(JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
@@ -301,12 +304,15 @@ serve(async (req: Request) => {
 
     // Observability: log successful send.
     try {
-      await admin.from("email_events").insert({
+      const { error: logError } = await admin.from("email_events").insert({
         email_id: emailId, email_type: emailType || null,
         recipient: Array.isArray(originalTo) ? originalTo.join(",") : String(originalTo),
         event_type: "sent", details: { subject: finalSubject, branded: !!branded, from: finalFrom, provider: "resend" },
       });
-    } catch (_e) { /* ignore */ }
+      if (logError) console.error("Email event sent-log insert failed:", JSON.stringify(logError));
+    } catch (logException: any) {
+      console.error("Email event sent-log insert exception:", String(logException?.message ?? logException));
+    }
 
     return new Response(JSON.stringify({ success: true, data, email_id: emailId }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });

@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
     const emailResult = await sendBrandedPasswordEmail({
       to: email,
       recipientName: name,
-      language: mother?.language,
+      language: resolveInviteLanguage(mother?.language, mother?.country_code),
       actionLink: link.actionLink,
       debugId,
       audit,
@@ -324,6 +324,14 @@ async function createPasswordActionLink(
     actionLink: String(recovery.data?.properties?.action_link ?? ""),
     mode: "recovery",
   };
+}
+
+function resolveInviteLanguage(language?: string | null, countryCode?: string | null): string {
+  const normalized = String(language || "").toLowerCase();
+  if (countryCode === "PT" || normalized === "pt" || normalized === "pt-pt") return "pt";
+  if (normalized === "pt-br") return "pt";
+  if (["es", "fr", "en"].includes(normalized)) return normalized;
+  return "pt";
 }
 
 async function sendBrandedPasswordEmail(params: {

@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
     const { data: shop, error: shopErr } = await admin
       .from("shops")
-      .select("id, user_id, group_owner_id, email, name, language")
+      .select("id, user_id, group_owner_id, email, name, language, country_code")
       .eq("id", shop_id)
       .maybeSingle();
 
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     const emailResult = await sendBrandedPasswordEmail({
       to: childEmail,
       recipientName: shop.name ?? "",
-      language: shop.language,
+      language: resolveInviteLanguage(shop.language, shop.country_code),
       actionLink: link.actionLink,
       audit,
     });
@@ -140,6 +140,14 @@ function json(body: unknown, status: number) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function resolveInviteLanguage(language?: string | null, countryCode?: string | null): string {
+  const normalized = String(language || "").toLowerCase();
+  if (countryCode === "PT" || normalized === "pt" || normalized === "pt-pt") return "pt";
+  if (normalized === "pt-br") return "pt";
+  if (["es", "fr", "en"].includes(normalized)) return normalized;
+  return "pt";
 }
 
 async function createPasswordActionLink(

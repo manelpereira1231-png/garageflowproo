@@ -126,6 +126,7 @@ const nonBlockingAuthLock = async <R,>(
 ): Promise<R> => fn();
 
 function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> {
+  const isPasswordActivationPath = typeof window !== "undefined" && window.location.pathname === "/reset-password";
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
@@ -133,7 +134,9 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
       persistSession: true,
       autoRefreshToken: true,
       lock: nonBlockingAuthLock,
-      detectSessionInUrl: detectRealm() === realm,
+      // Password/invite activation uses its own short-lived auth client so a
+      // child-shop link can never consume, overwrite, or reuse an open mother-shop session.
+      detectSessionInUrl: !isPasswordActivationPath && detectRealm() === realm,
     },
   }) as SupabaseClient<Database>;
 }

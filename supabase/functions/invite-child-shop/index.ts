@@ -188,15 +188,16 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    // Fallback nativo é APENAS rede de segurança para falha real do branded.
-    // Se o branded foi aceite pelo provider (com retry automático para sender
-    // de fallback quando o domínio não está verificado), confiamos na entrega
-    // e NUNCA disparamos o email nativo do Supabase — esse email vem em inglês,
-    // redireciona para o Site URL (landing) e faz auto-login, quebrando o fluxo
-    // isolado de definição de palavra-passe.
+    // Rede de segurança obrigatória: "accepted" pelo provider branded NÃO prova
+    // entrega na caixa de correio. Enquanto não houver confirmação real de
+    // entrega, o fallback nativo tem de correr para o utilizador nunca ficar sem email.
     let nativeResult: Awaited<ReturnType<typeof sendNativeAuthFallback>> | null = null;
-    if (!emailResult.ok) {
-      audit("native_fallback_required", { reason: "branded_failed", branded: emailResult });
+    const shouldRunNativeFallback = !emailResult.ok || emailResult.deliveryState !== "delivered";
+    if (shouldRunNativeFallback) {
+      audit("native_fallback_required", {
+        reason: emailResult.ok ? "branded_only_provider_accepted_not_delivered" : "branded_failed",
+        branded: emailResult,
+      });
       nativeResult = await sendNativeAuthFallback({
         supabaseUrl: SUPABASE_URL,
         serviceRoleKey: SERVICE_ROLE_KEY,
@@ -237,7 +238,7 @@ Deno.serve(async (req) => {
       debug_id: debugId,
       delivery_note: nativeResult?.ok
         ? "Email nativo acionado porque aceitação do provider branded não confirma entrega na caixa de correio."
-        : "Provider branded respondeu sem erro, mas entrega final depende do provider.",
+        : "Provider branded confirmou entrega sem erro.",
     }, 200);
   } catch (e: any) {
     audit("function_unexpected_error", { message: String(e?.message ?? e), stack: String(e?.stack ?? "") });

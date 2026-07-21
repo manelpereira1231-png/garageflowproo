@@ -100,16 +100,19 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
         body: { name: newShopName.trim(), email: newShopEmail.trim() },
       });
       if (error || (data && (data as any).error)) {
-        const code = (data as any)?.error || error?.message || "";
+        const details = data as any;
+        const code = details?.error || error?.message || "";
+        const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
         if (code === "SHOP_LIMIT_REACHED") toast.error(limitMsg);
         else if (code === "INVALID_EMAIL") toast.error("Email inválido.");
-        else if (code === "INVITE_FAILED" || code === "EMAIL_SEND_FAILED") toast.error("A oficina foi criada, mas o email de convite não foi aceite. Use o botão de reenviar ou contacte o suporte.");
-        else toast.error("Não foi possível criar a oficina. " + (code || ""));
+        else if (code === "INVITE_FAILED" || code === "EMAIL_SEND_FAILED" || code === "EMAIL_DELIVERY_FAILED") toast.error(`A oficina foi criada, mas o email de ativação falhou.${debugId}`);
+        else toast.error(`Não foi possível criar a oficina. ${code || ""}${debugId}`);
         return;
       }
 
+      const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
       toast.success(
-        `Oficina "${newShopName.trim()}" criada. Email de convite aceite para envio para ${newShopEmail.trim()}.`,
+        `Oficina "${newShopName.trim()}" criada. Link de ativação enviado por ${provider} para ${newShopEmail.trim()}.`,
       );
       setNewShopName("");
       setNewShopEmail("");
@@ -126,10 +129,13 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       body: { shop_id: shop.id },
     });
     if (error || (data && (data as any).error)) {
-      toast.error("Não foi possível reenviar o convite.");
+      const details = data as any;
+      const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
+      toast.error(`Não foi possível reenviar o convite.${debugId}`);
       return;
     }
-    toast.success(`Convite reenviado para "${shop.name || 'sem nome'}".`);
+    const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
+    toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
   };
 
   const handleDeleteShop = async (shop: Shop) => {

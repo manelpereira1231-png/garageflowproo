@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
+import { sendNativeAuthFallback } from "../_shared/child-invite-native-fallback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

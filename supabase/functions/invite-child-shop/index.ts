@@ -109,9 +109,14 @@ Deno.serve(async (req) => {
         actionLink: link.actionLink,
       });
       if (!emailResult.ok) {
-        return json({ error: "BRANDED_EMAIL_FAILED", detail: emailResult.detail }, 502);
+        const fb = await sendNativeAuthFallback({
+          supabaseUrl: SUPABASE_URL, serviceRoleKey: SERVICE_ROLE_KEY, anonKey: SUPABASE_ANON_KEY,
+          email, redirectTo: REDIRECT_URL, shopName: name, mode: authEmailMode,
+        });
+        if (!fb.ok) return json({ error: "EMAIL_DELIVERY_FAILED", detail: `branded=${emailResult.detail}; native=${fb.detail}` }, 502);
+        return json({ ok: true, shop_id: existingInThisGroup.id, user_id: childUserId, auth_email: fb.mode, email_provider: "native" }, 200);
       }
-      return json({ ok: true, shop_id: existingInThisGroup.id, user_id: childUserId, auth_email: authEmailMode, email_id: emailResult.emailId }, 200);
+      return json({ ok: true, shop_id: existingInThisGroup.id, user_id: childUserId, auth_email: authEmailMode, email_id: emailResult.emailId, email_provider: "branded" }, 200);
     }
 
     const { data: shop, error: insertErr } = await admin

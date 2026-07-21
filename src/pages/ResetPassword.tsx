@@ -99,6 +99,7 @@ export default function ResetPassword() {
       const url = new URL(window.location.href);
       const hashParams = getHashParams();
       const code = url.searchParams.get("code");
+      const tokenHash = url.searchParams.get("token_hash") || hashParams.get("token_hash");
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
       const errDesc = url.searchParams.get("error_description") || url.searchParams.get("error");
@@ -111,7 +112,7 @@ export default function ResetPassword() {
       }
 
       // No token/code means an existing browser session is irrelevant here.
-      if (!code && (!accessToken || !refreshToken)) {
+      if (!code && !tokenHash && (!accessToken || !refreshToken)) {
         if (!cancelled) setChecked(true);
         return;
       }
@@ -122,7 +123,9 @@ export default function ResetPassword() {
       try {
         const result = code
           ? await client.auth.exchangeCodeForSession(code)
-          : await client.auth.setSession({ access_token: accessToken!, refresh_token: refreshToken! });
+          : tokenHash
+            ? await client.auth.verifyOtp({ type: type === "invite" ? "invite" : "recovery", token_hash: tokenHash } as any)
+            : await client.auth.setSession({ access_token: accessToken!, refresh_token: refreshToken! });
 
         if (result.error || !result.data.session) {
           if (!cancelled) setChecked(true);
@@ -151,6 +154,8 @@ export default function ResetPassword() {
         // Clean one-time credentials from the address bar so refresh cannot replay them.
         url.searchParams.delete("code");
         url.searchParams.delete("type");
+        url.searchParams.delete("token_hash");
+        url.searchParams.delete("email");
         window.history.replaceState({}, document.title, url.pathname + (url.search || "") + url.hash);
         if (window.location.hash) window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       } finally {

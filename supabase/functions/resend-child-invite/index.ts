@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     const emailResult = await sendBrandedPasswordEmail({
       to: childEmail,
       recipientName: shop.name ?? "",
-      language: resolveInviteLanguage(shop.language, shop.country_code),
+      language: "pt",
       actionLink: link.actionLink,
       audit,
     });
@@ -161,7 +161,15 @@ async function createPasswordActionLink(
       hasActionLink: !!invite.data?.properties?.action_link,
     });
     if (!invite.error) {
-      return { actionLink: String(invite.data?.properties?.action_link ?? ""), mode: "invite" };
+      return {
+        actionLink: buildPasswordActivationUrl(
+          String(invite.data?.properties?.hashed_token ?? ""),
+          "invite",
+          email,
+          String(invite.data?.properties?.action_link ?? ""),
+        ),
+        mode: "invite",
+      };
     }
     const msg = String(invite.error.message || "").toLowerCase();
     if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
@@ -181,7 +189,25 @@ async function createPasswordActionLink(
     hasActionLink: !!recovery.data?.properties?.action_link,
   });
   if (recovery.error) throw new Error(`RECOVERY_LINK_FAILED: ${recovery.error.message}`);
-  return { actionLink: String(recovery.data?.properties?.action_link ?? ""), mode: "recovery" };
+  return {
+    actionLink: buildPasswordActivationUrl(
+      String(recovery.data?.properties?.hashed_token ?? ""),
+      "recovery",
+      email,
+      String(recovery.data?.properties?.action_link ?? ""),
+    ),
+    mode: "recovery",
+  };
+}
+
+function buildPasswordActivationUrl(tokenHash: string, type: "invite" | "recovery", email: string, fallbackActionLink: string): string {
+  if (!tokenHash) return fallbackActionLink;
+  const url = new URL(REDIRECT_URL);
+  url.searchParams.set("realm", "erp");
+  url.searchParams.set("type", type);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("email", email);
+  return url.toString();
 }
 
 async function sendBrandedPasswordEmail(params: {

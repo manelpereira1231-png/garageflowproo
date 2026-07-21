@@ -9,12 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-/**
- * resend-child-invite
- * -------------------
- * Re-sends the GarageFlow-branded password setup email to a child shop account.
- */
-
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -24,13 +18,23 @@ const REDIRECT_URL =
   "https://garageflow-pt.lovable.app/reset-password?realm=erp";
 
 Deno.serve(async (req) => {
+  const debugId = crypto.randomUUID();
+  const audit = (step: string, details: Record<string, unknown> = {}) => {
+    console.log(`[child-invite:${debugId}] ${step} ${JSON.stringify(details)}`);
+  };
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  audit("resend_function_entered", { method: req.method, redirectTo: REDIRECT_URL });
+
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) return json({ error: "NOT_AUTHENTICATED" }, 401);
+    if (!authHeader.startsWith("Bearer ")) {
+      audit("auth_failed", { reason: "missing_bearer" });
+      return json({ error: "NOT_AUTHENTICATED", debug_id: debugId }, 401);
+    }
 
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
@@ -39,48 +43,95 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: userRes } = await userClient.auth.getUser();
-    if (!userRes.user) return json({ error: "NOT_AUTHENTICATED" }, 401);
+    const { data: userRes, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userRes.user) {
+      audit("auth_failed", { reason: userErr?.message ?? "no_user" });
+      return json({ error: "NOT_AUTHENTICATED", debug_id: debugId }, 401);
+    }
     const caller = userRes.user;
+    audit("caller_resolved", { callerId: caller.id, callerEmail: caller.email ?? null });
 
-    const { shop_id } = await req.json().catch(() => ({}));
-    if (!shop_id) return json({ error: "MISSING_SHOP_ID" }, 400);
+    const { shop_id } = await req.json().catch((error) => {
+      audit("body_parse_failed", { message: String(error?.message ?? error) });
+      return {};
+    });
+    audit("request_body_received", { shop_id: shop_id ?? null });
+    if (!shop_id) return json({ error: "MISSING_SHOP_ID", debug_id: debugId }, 400);
 
-    const { data: shop } = await admin
+    const { data: shop, error: shopErr } = await admin
       .from("shops")
       .select("id, user_id, group_owner_id, email, name, language")
       .eq("id", shop_id)
       .maybeSingle();
 
-    if (!shop) return json({ error: "SHOP_NOT_FOUND" }, 404);
-    if (shop.group_owner_id !== caller.id) return json({ error: "NOT_GROUP_OWNER" }, 403);
-    if (shop.user_id === caller.id) return json({ error: "CANNOT_RESET_PRIMARY" }, 400);
+    audit("child_shop_lookup", { found: !!shop, shopId: shop?.id ?? null, error: shopErr?.message ?? null });
+    if (!shop) return json({ error: "SHOP_NOT_FOUND", debug_id: debugId }, 404);
+    if (shop.group_owner_id !== caller.id) return json({ error: "NOT_GROUP_OWNER", debug_id: debugId }, 403);
+    if (shop.user_id === caller.id) return json({ error: "CANNOT_RESET_PRIMARY", debug_id: debugId }, 400);
 
     const { data: child, error: getErr } = await admin.auth.admin.getUserById(shop.user_id);
-    if (getErr || !child?.user?.email) return json({ error: "CHILD_USER_NOT_FOUND" }, 404);
+    audit("child_auth_user_lookup", {
+      exists: !!child?.user,
+      userId: child?.user?.id ?? shop.user_id,
+      email: child?.user?.email ?? null,
+      emailConfirmedAt: child?.user?.email_confirmed_at ?? null,
+      error: getErr?.message ?? null,
+    });
+    if (getErr || !child?.user?.email) return json({ error: "CHILD_USER_NOT_FOUND", debug_id: debugId }, 404);
 
     const childEmail = child.user.email;
     const authEmailMode: "invite" | "recovery" = child.user.email_confirmed_at ? "recovery" : "invite";
-    const link = await createPasswordActionLink(admin, childEmail, shop.name ?? "", authEmailMode);
+    const link = await createPasswordActionLink(admin, childEmail, shop.name ?? "", authEmailMode, audit);
+    audit("password_action_link_resolved", { mode: link.mode, hasActionLink: !!link.actionLink });
 
     const emailResult = await sendBrandedPasswordEmail({
       to: childEmail,
       recipientName: shop.name ?? "",
       language: shop.language,
       actionLink: link.actionLink,
+      audit,
     });
-    if (!emailResult.ok) {
-      const fb = await sendNativeAuthFallback({
-        supabaseUrl: SUPABASE_URL, serviceRoleKey: SERVICE_ROLE_KEY, anonKey: SUPABASE_ANON_KEY,
-        email: childEmail, redirectTo: REDIRECT_URL, shopName: shop.name ?? "", mode: authEmailMode,
+
+    const mustUseNativeFallback = !emailResult.ok || (emailResult.ok && emailResult.deliveryState === "accepted");
+    let nativeResult: Awaited<ReturnType<typeof sendNativeAuthFallback>> | null = null;
+    if (mustUseNativeFallback) {
+      audit("native_fallback_required", {
+        reason: emailResult.ok ? "branded_only_provider_accepted_not_delivered" : "branded_failed",
+        branded: emailResult,
       });
-      if (!fb.ok) return json({ error: "EMAIL_DELIVERY_FAILED", detail: `branded=${emailResult.detail}; native=${fb.detail}` }, 502);
-      return json({ ok: true, auth_email: fb.mode, email_provider: "native" }, 200);
+      nativeResult = await sendNativeAuthFallback({
+        supabaseUrl: SUPABASE_URL,
+        serviceRoleKey: SERVICE_ROLE_KEY,
+        anonKey: SUPABASE_ANON_KEY,
+        email: childEmail,
+        redirectTo: REDIRECT_URL,
+        shopName: shop.name ?? "",
+        mode: authEmailMode,
+        debugId,
+      });
+      audit("native_fallback_finished", nativeResult.ok ? nativeResult : { ok: false, detail: nativeResult.detail, attempts: nativeResult.attempts });
     }
 
-    return json({ ok: true, auth_email: link.mode, email_id: emailResult.emailId, email_provider: "branded" }, 200);
+    if (!emailResult.ok && (!nativeResult || !nativeResult.ok)) {
+      return json({
+        error: "EMAIL_DELIVERY_FAILED",
+        detail: `branded=${emailResult.detail}; native=${nativeResult && !nativeResult.ok ? nativeResult.detail : "not_run"}`,
+        debug_id: debugId,
+      }, 502);
+    }
+
+    const provider = nativeResult?.ok ? "native" : "branded";
+    audit("resend_function_success", { provider, branded: emailResult, native: nativeResult });
+    return json({
+      ok: true,
+      auth_email: nativeResult?.ok ? nativeResult.mode : link.mode,
+      email_id: emailResult.ok ? emailResult.emailId : undefined,
+      email_provider: provider,
+      debug_id: debugId,
+    }, 200);
   } catch (e: any) {
-    return json({ error: "UNEXPECTED", detail: String(e?.message ?? e) }, 500);
+    audit("resend_function_unexpected_error", { message: String(e?.message ?? e), stack: String(e?.stack ?? "") });
+    return json({ error: "UNEXPECTED", detail: String(e?.message ?? e), debug_id: debugId }, 500);
   }
 });
 
@@ -96,6 +147,7 @@ async function createPasswordActionLink(
   email: string,
   shopName: string,
   preferred: "invite" | "recovery",
+  audit: (step: string, details?: Record<string, unknown>) => void,
 ): Promise<{ actionLink: string; mode: "invite" | "recovery" }> {
   if (preferred === "invite") {
     const invite = await admin.auth.admin.generateLink({
@@ -111,6 +163,13 @@ async function createPasswordActionLink(
         },
       },
     });
+    audit("generateLink_invite_result", {
+      ok: !invite.error,
+      status: (invite.error as any)?.status ?? null,
+      message: invite.error?.message ?? null,
+      userId: invite.data?.user?.id ?? null,
+      hasActionLink: !!invite.data?.properties?.action_link,
+    });
     if (!invite.error) {
       return { actionLink: String(invite.data?.properties?.action_link ?? ""), mode: "invite" };
     }
@@ -125,6 +184,12 @@ async function createPasswordActionLink(
     email,
     options: { redirectTo: REDIRECT_URL },
   });
+  audit("generateLink_recovery_result", {
+    ok: !recovery.error,
+    status: (recovery.error as any)?.status ?? null,
+    message: recovery.error?.message ?? null,
+    hasActionLink: !!recovery.data?.properties?.action_link,
+  });
   if (recovery.error) throw new Error(`RECOVERY_LINK_FAILED: ${recovery.error.message}`);
   return { actionLink: String(recovery.data?.properties?.action_link ?? ""), mode: "recovery" };
 }
@@ -134,10 +199,21 @@ async function sendBrandedPasswordEmail(params: {
   recipientName: string;
   language?: string | null;
   actionLink: string;
-}): Promise<{ ok: true; emailId?: string } | { ok: false; detail: string }> {
-  if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK" };
+  audit: (step: string, details?: Record<string, unknown>) => void;
+}): Promise<
+  | { ok: true; emailId?: string; status: number; response: unknown; deliveryState: "accepted" }
+  | { ok: false; detail: string; status: number; response: unknown; deliveryState: "failed" }
+> {
+  if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK", status: 0, response: null, deliveryState: "failed" };
 
   const copy = buildChildInviteEmail({ recipientName: params.recipientName, language: params.language });
+  params.audit("branded_send_start", {
+    provider: "resend",
+    email: params.to,
+    from: "GarageFlow <noreply@garageflow.pt>",
+    subject: copy.subject,
+  });
+
   const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
     method: "POST",
     headers: {
@@ -161,9 +237,32 @@ async function sendBrandedPasswordEmail(params: {
 
   const text = await response.text();
   let parsed: any = null;
-  try { parsed = text ? JSON.parse(text) : null; } catch { /* keep raw text */ }
-  if (!response.ok) {
-    return { ok: false, detail: parsed?.error || parsed?.detail || text || `HTTP_${response.status}` };
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    parsed = { raw: text };
   }
-  return { ok: true, emailId: parsed?.email_id || parsed?.data?.id };
+  params.audit("branded_send_result", {
+    ok: response.ok,
+    status: response.status,
+    providerStatus: response.ok ? "accepted" : "failed",
+    response: parsed,
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      detail: parsed?.error || parsed?.detail || text || `HTTP_${response.status}`,
+      status: response.status,
+      response: parsed,
+      deliveryState: "failed",
+    };
+  }
+  return {
+    ok: true,
+    emailId: parsed?.email_id || parsed?.data?.id,
+    status: response.status,
+    response: parsed,
+    deliveryState: "accepted",
+  };
 }

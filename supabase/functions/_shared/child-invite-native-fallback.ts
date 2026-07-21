@@ -13,7 +13,17 @@ export async function sendNativeAuthFallback(params: {
   redirectTo: string;
   shopName: string;
   mode: "invite" | "recovery";
-}): Promise<{ ok: true; mode: "invite" | "recovery" } | { ok: false; detail: string }> {
+  debugId?: string;
+}): Promise<
+  | { ok: true; mode: "invite" | "recovery"; method: "inviteUserByEmail" | "resetPasswordForEmail"; userId?: string | null }
+  | { ok: false; detail: string; attempts: Array<Record<string, unknown>> }
+> {
+  const debugId = params.debugId ?? crypto.randomUUID();
+  const attempts: Array<Record<string, unknown>> = [];
+  const audit = (step: string, details: Record<string, unknown> = {}) => {
+    console.log(`[child-invite:${debugId}] ${step} ${JSON.stringify(details)}`);
+  };
+
   const admin = createClient(params.supabaseUrl, params.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -23,6 +33,11 @@ export async function sendNativeAuthFallback(params: {
 
   // Prefer native invite (only works if user is not yet confirmed / not registered).
   if (params.mode === "invite") {
+    audit("native_inviteUserByEmail_start", {
+      email: params.email,
+      redirectTo: params.redirectTo,
+      provider: "native_auth_mailer",
+    });
     const invite = await admin.auth.admin.inviteUserByEmail(params.email, {
       redirectTo: params.redirectTo,
       data: {
@@ -32,19 +47,41 @@ export async function sendNativeAuthFallback(params: {
         shop_name: params.shopName,
       },
     });
-    if (!invite.error) return { ok: true, mode: "invite" };
+    attempts.push({
+      method: "inviteUserByEmail",
+      ok: !invite.error,
+      status: (invite.error as any)?.status ?? null,
+      message: invite.error?.message ?? null,
+      userId: invite.data?.user?.id ?? null,
+    });
+    audit("native_inviteUserByEmail_result", attempts[attempts.length - 1]);
+    if (!invite.error) {
+      return { ok: true, mode: "invite", method: "inviteUserByEmail", userId: invite.data?.user?.id ?? null };
+    }
     const msg = String(invite.error.message || "").toLowerCase();
     if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
-      return { ok: false, detail: `NATIVE_INVITE_FAILED: ${invite.error.message}` };
+      return { ok: false, detail: `NATIVE_INVITE_FAILED: ${invite.error.message}`, attempts };
     }
     // Fall through to recovery for existing users.
   }
 
+  audit("native_resetPasswordForEmail_start", {
+    email: params.email,
+    redirectTo: params.redirectTo,
+    provider: "native_auth_mailer",
+  });
   const recovery = await publicClient.auth.resetPasswordForEmail(params.email, {
     redirectTo: params.redirectTo,
   });
+  attempts.push({
+    method: "resetPasswordForEmail",
+    ok: !recovery.error,
+    status: (recovery.error as any)?.status ?? null,
+    message: recovery.error?.message ?? null,
+  });
+  audit("native_resetPasswordForEmail_result", attempts[attempts.length - 1]);
   if (recovery.error) {
-    return { ok: false, detail: `NATIVE_RECOVERY_FAILED: ${recovery.error.message}` };
+    return { ok: false, detail: `NATIVE_RECOVERY_FAILED: ${recovery.error.message}`, attempts };
   }
-  return { ok: true, mode: "recovery" };
+  return { ok: true, mode: "recovery", method: "resetPasswordForEmail" };
 }

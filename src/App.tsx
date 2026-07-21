@@ -982,6 +982,24 @@ function AppRoutes() {
     );
   }
 
+  if (location.pathname === "/login") {
+    return (
+      <ChunkErrorBoundary>
+        <Auth />
+      </ChunkErrorBoundary>
+    );
+  }
+
+  if (location.pathname === "/reset-password") {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <ResetPassword />
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
   if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -1008,6 +1026,7 @@ function AppRoutes() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Auth />} />
             <Route path="/marketing" element={<Auth defaultRedirect="/marketing" />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />

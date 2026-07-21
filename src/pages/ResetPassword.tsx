@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { erpSupabase, marketSupabase, type Realm } from "@/integrations/supabase/realmClients";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { type Realm } from "@/integrations/supabase/realmClients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,18 +11,51 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 /**
- * Password recovery page — works for BOTH realms (ERP + Market).
+ * Password / child-shop activation page.
  *
- * The recovery email is sent by either `erpSupabase` or `marketSupabase`
- * (each has its own storageKey). When the user clicks the link, Supabase
- * sets the recovery session on the SAME client that issued it. We
- * subscribe to both clients here and use whichever one fires
- * PASSWORD_RECOVERY (or already has a session).
- *
- * The `?realm=` query param is a hint added by the sender (Auth.tsx /
- * MarketAuth.tsx) so we know where to redirect after success, even if
- * Supabase strips the hash before our listeners attach.
+ * Critical security rule: this page NEVER reads the normal ERP/Market auth
+ * clients and NEVER trusts an already-open browser session. Email action links
+ * are consumed by a dedicated temporary client with its own storage key, so a
+ * child-shop invitation cannot log into, replace, or reuse the Oficina Mãe session.
  */
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const ACTIVATION_STORAGE_PREFIX = "garageflow_password_activation";
+
+type ActivationType = "invite" | "recovery" | "unknown";
+
+function createActivationClient(realm: Realm) {
+  const storageKey = `${ACTIVATION_STORAGE_PREFIX}_${realm}`;
+  try { window.localStorage.removeItem(storageKey); } catch {}
+  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: window.localStorage,
+      storageKey,
+      persistSession: true,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+function clearActivationStorage(realm: Realm) {
+  try { window.localStorage.removeItem(`${ACTIVATION_STORAGE_PREFIX}_${realm}`); } catch {}
+}
+
+function getHashParams() {
+  return new URLSearchParams(window.location.hash.replace(/^#/, ""));
+}
+
+function getActivationType(url: URL, hashParams: URLSearchParams): ActivationType {
+  const raw = hashParams.get("type") || url.searchParams.get("type") || "";
+  return raw === "invite" || raw === "recovery" ? raw : "unknown";
+}
+
+function isChildInviteUser(user: User | null) {
+  const metadata = user?.user_metadata ?? {};
+  return metadata.source === "child_shop_invite" || metadata.account_type === "garage_child";
+}
 
 function friendlyAuthError(message?: string): string {
   if (!message) return "Não foi possível redefinir a password. Tente novamente.";
@@ -53,66 +88,80 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false);
   const [activeRealm, setActiveRealm] = useState<Realm | null>(null);
   const [checked, setChecked] = useState(false);
+  const [activationType, setActivationType] = useState<ActivationType>("unknown");
+  const [activationUser, setActivationUser] = useState<User | null>(null);
+  const activationClientRef = useRef<SupabaseClient<Database> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    const clients: Array<{ realm: Realm; client: typeof erpSupabase }> = [
-      { realm: "erp", client: erpSupabase },
-      { realm: "market", client: marketSupabase },
-    ];
-
-    const subs = clients.map(({ realm, client }) =>
-      client.auth.onAuthStateChange((event, session) => {
-        if (cancelled) return;
-        if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
-          setActiveRealm((prev) => prev ?? realm);
-        }
-      })
-    );
-
     const run = async () => {
-      // 1) PKCE flow: Supabase appends ?code=... — exchange it for a session
-      //    on the realm hinted by the sender (?realm=erp|market).
       const url = new URL(window.location.href);
+      const hashParams = getHashParams();
       const code = url.searchParams.get("code");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
       const errDesc = url.searchParams.get("error_description") || url.searchParams.get("error");
+      const type = getActivationType(url, hashParams);
+      const realm: Realm = realmHint === "market" ? "market" : "erp";
 
       if (errDesc) {
         if (!cancelled) setChecked(true);
         return;
       }
 
-      if (code) {
-        const realm: Realm = realmHint === "market" ? "market" : "erp";
-        const client = realm === "market" ? marketSupabase : erpSupabase;
-        try {
-          const { error } = await client.auth.exchangeCodeForSession(code);
-          if (!error && !cancelled) setActiveRealm((prev) => prev ?? realm);
-        } catch {
-          // fall through to session probe
-        }
-        // Clean ?code from URL so a refresh doesn't replay it
-        url.searchParams.delete("code");
-        window.history.replaceState({}, document.title, url.pathname + (url.search || "") + url.hash);
+      // No token/code means an existing browser session is irrelevant here.
+      if (!code && (!accessToken || !refreshToken)) {
+        if (!cancelled) setChecked(true);
+        return;
       }
 
-      // 2) Probe existing sessions (covers hash-based recovery already consumed by detectSessionInUrl)
-      const results = await Promise.all(clients.map(async ({ realm, client }) => {
-        const { data } = await client.auth.getSession();
-        return data.session ? realm : null;
-      }));
-      if (cancelled) return;
-      const found = results.find(Boolean) as Realm | undefined;
-      if (found) setActiveRealm((prev) => prev ?? found);
-      setChecked(true);
+      const client = createActivationClient(realm);
+      activationClientRef.current = client;
+
+      try {
+        const result = code
+          ? await client.auth.exchangeCodeForSession(code)
+          : await client.auth.setSession({ access_token: accessToken!, refresh_token: refreshToken! });
+
+        if (result.error || !result.data.session) {
+          if (!cancelled) setChecked(true);
+          return;
+        }
+
+        const { data: userData, error: userError } = await client.auth.getUser();
+        if (userError || !userData.user) {
+          if (!cancelled) setChecked(true);
+          return;
+        }
+
+        if (type === "invite" && isChildInviteUser(userData.user) && userData.user.user_metadata?.child_password_set_at) {
+          await client.auth.signOut({ scope: "local" });
+          clearActivationStorage(realm);
+          if (!cancelled) setChecked(true);
+          return;
+        }
+
+        if (!cancelled) {
+          setActivationType(type);
+          setActivationUser(userData.user);
+          setActiveRealm(realm);
+        }
+
+        // Clean one-time credentials from the address bar so refresh cannot replay them.
+        url.searchParams.delete("code");
+        url.searchParams.delete("type");
+        window.history.replaceState({}, document.title, url.pathname + (url.search || "") + url.hash);
+        if (window.location.hash) window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      } finally {
+        if (!cancelled) setChecked(true);
+      }
     };
 
     void run();
 
     return () => {
       cancelled = true;
-      subs.forEach(({ data }) => data.subscription.unsubscribe());
     };
   }, [realmHint]);
 
@@ -129,16 +178,24 @@ export default function ResetPassword() {
       return;
     }
     const realm = activeRealm ?? realmHint ?? "erp";
-    const client = realm === "market" ? marketSupabase : erpSupabase;
+    const client = activationClientRef.current;
+    if (!client || !activationUser) {
+      toast.error("Link inválido ou expirado. Peça um novo email.");
+      return;
+    }
 
     setLoading(true);
     try {
-      const { error } = await client.auth.updateUser({ password });
+      const updatePayload = isChildInviteUser(activationUser)
+        ? { password, data: { child_password_set_at: new Date().toISOString() } }
+        : { password };
+      const { error } = await client.auth.updateUser(updatePayload);
       if (error) throw error;
       setSuccess(true);
       toast.success(t('auth.resetSuccess') || "Password redefinida com sucesso.");
-      const dest = realm === "market" ? "/market/auth" : "/auth";
-      setTimeout(() => navigate(dest, { replace: true }), 1800);
+      await client.auth.signOut({ scope: "local" });
+      clearActivationStorage(realm);
+      setTimeout(() => navigate(realm === "market" ? "/market/auth" : "/login", { replace: true }), 1800);
     } catch (err: any) {
       toast.error(friendlyAuthError(err?.message));
     } finally {
@@ -147,7 +204,7 @@ export default function ResetPassword() {
   };
 
   const hasSession = activeRealm !== null;
-  const backDest = useMemo(() => (realmHint === "market" ? "/market/auth" : "/auth"), [realmHint]);
+  const backDest = useMemo(() => (realmHint === "market" ? "/market/auth" : "/login"), [realmHint]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -188,7 +245,9 @@ export default function ResetPassword() {
             <>
               <h2 className="text-lg font-semibold mb-1">{t('auth.resetPassword') || "Redefinir password"}</h2>
               <p className="text-xs text-muted-foreground mb-4">
-                {activeRealm === "market" ? "Conta GarageFlow Market" : "Conta GarageFlow ERP"}
+                {activationType === "invite" && isChildInviteUser(activationUser)
+                  ? "Convite de Oficina Filha"
+                  : activeRealm === "market" ? "Conta GarageFlow Market" : "Conta GarageFlow ERP"}
               </p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">

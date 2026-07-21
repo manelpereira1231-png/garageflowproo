@@ -14,14 +14,14 @@ const COPY: Record<InviteLang, {
   footer: string;
 }> = {
   pt: {
-    subject: "Bem-vindo ao GarageFlow",
-    preheader: "Define a tua palavra-passe para começares a utilizar o GarageFlow.",
-    greeting: (n) => `Olá ${n},`,
+    subject: "Foi convidado para aceder ao GarageFlow",
+    preheader: "Ative a sua conta definindo a sua palavra-passe.",
+    greeting: (n) => n ? `Olá ${n},` : "Olá,",
     intro:
-      "A tua oficina foi criada no <strong>GarageFlow</strong>. Para acederes à tua conta independente, define agora a tua palavra-passe.",
-    action: "Basta clicares no botão abaixo — o link é seguro e temporário.",
+      "Foi criada uma conta para a sua oficina no <strong>GarageFlow</strong>.",
+    action: "Para ativar a sua conta, clique no botão abaixo para definir a sua palavra-passe.",
     security:
-      "Se não estavas à espera deste convite, podes ignorar este email — nenhuma conta será ativada sem que definas uma palavra-passe.",
+      "Após concluir este passo poderá iniciar sessão normalmente com o email desta oficina e a palavra-passe escolhida.",
     cta: "Definir Palavra-passe",
     footer: "GarageFlow — a plataforma de gestão para oficinas modernas.",
   },
@@ -76,7 +76,7 @@ export function buildChildInviteEmail(params: {
   const raw = (params.language || "pt").toLowerCase().slice(0, 2);
   const lang: InviteLang = (["pt", "es", "fr", "en"].includes(raw) ? raw : "pt") as InviteLang;
   const c = COPY[lang];
-  const name = params.recipientName?.trim() || (lang === "en" ? "there" : "");
+  const name = params.recipientName?.trim() || "";
 
   const html = `
     <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">${c.greeting(name)}</p>

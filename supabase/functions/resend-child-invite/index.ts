@@ -92,13 +92,11 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    const mustUseNativeFallback = !emailResult.ok || (emailResult.ok && emailResult.deliveryState === "accepted");
+    // Só acionar o fallback nativo (email genérico em Inglês do Supabase)
+    // se o envio branded falhar. Evita entregar 2 emails ao utilizador.
     let nativeResult: Awaited<ReturnType<typeof sendNativeAuthFallback>> | null = null;
-    if (mustUseNativeFallback) {
-      audit("native_fallback_required", {
-        reason: emailResult.ok ? "branded_only_provider_accepted_not_delivered" : "branded_failed",
-        branded: emailResult,
-      });
+    if (!emailResult.ok) {
+      audit("native_fallback_required", { reason: "branded_failed", branded: emailResult });
       nativeResult = await sendNativeAuthFallback({
         supabaseUrl: SUPABASE_URL,
         serviceRoleKey: SERVICE_ROLE_KEY,

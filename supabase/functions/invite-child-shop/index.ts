@@ -1,7 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
-import { sendNativeAuthFallback } from "../_shared/child-invite-native-fallback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,57 +187,34 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    // Rede de segurança obrigatória: "accepted" pelo provider branded NÃO prova
-    // entrega na caixa de correio. Enquanto não houver confirmação real de
-    // entrega, o fallback nativo tem de correr para o utilizador nunca ficar sem email.
-    let nativeResult: Awaited<ReturnType<typeof sendNativeAuthFallback>> | null = null;
-    const shouldRunNativeFallback = !emailResult.ok || emailResult.deliveryState !== "delivered";
-    if (shouldRunNativeFallback) {
-      audit("native_fallback_required", {
-        reason: emailResult.ok ? "branded_only_provider_accepted_not_delivered" : "branded_failed",
-        branded: emailResult,
-      });
-      nativeResult = await sendNativeAuthFallback({
-        supabaseUrl: SUPABASE_URL,
-        serviceRoleKey: SERVICE_ROLE_KEY,
-        anonKey: SUPABASE_ANON_KEY,
-        email,
-        redirectTo: REDIRECT_URL,
-        shopName: name,
-        mode: authEmailMode,
-        debugId,
-      });
-      audit("native_fallback_finished", nativeResult.ok ? nativeResult : { ok: false, detail: nativeResult.detail, attempts: nativeResult.attempts });
-    }
-
-    if (!emailResult.ok && (!nativeResult || !nativeResult.ok)) {
+    // Não usar o mailer nativo neste fluxo: esse email vem em inglês, usa o
+    // template "Accept Invitation" e pode reutilizar a sessão aberta da Oficina Mãe.
+    // Este fluxo deve enviar apenas o email PT GarageFlow com link para /reset-password.
+    if (!emailResult.ok) {
       return json({
         error: "EMAIL_DELIVERY_FAILED",
-        detail: `branded=${emailResult.detail}; native=${nativeResult && !nativeResult.ok ? nativeResult.detail : "not_run"}`,
+        detail: `branded=${emailResult.detail}`,
         debug_id: debugId,
       }, 502);
     }
 
-    const provider = nativeResult?.ok ? "native" : "branded";
+    const provider = "branded";
     audit("function_success", {
       shopId,
       childUserId,
       provider,
       branded: emailResult,
-      native: nativeResult,
     });
 
     return json({
       ok: true,
       shop_id: shopId,
       user_id: childUserId,
-      auth_email: nativeResult?.ok ? nativeResult.mode : authEmailMode,
+      auth_email: authEmailMode,
       email_id: emailResult.ok ? emailResult.emailId : undefined,
       email_provider: provider,
       debug_id: debugId,
-      delivery_note: nativeResult?.ok
-        ? "Email nativo acionado porque aceitação do provider branded não confirma entrega na caixa de correio."
-        : "Provider branded confirmou entrega sem erro.",
+      delivery_note: "Email GarageFlow em Português enviado com link para definir palavra-passe.",
     }, 200);
   } catch (e: any) {
     audit("function_unexpected_error", { message: String(e?.message ?? e), stack: String(e?.stack ?? "") });

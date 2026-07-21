@@ -270,12 +270,12 @@ serve(async (req: Request) => {
     }
     let { data, error } = await resend.emails.send(resendPayload);
 
-    // Convites de equipa não devem falhar só porque o domínio de envio ainda
-    // não está verificado. Mantemos o envio funcional usando o remetente seguro
-    // do Resend apenas neste fluxo operacional.
+    // Convites (equipa E oficina filha) e outros fluxos operacionais não devem
+    // falhar só porque o domínio de envio ainda não está verificado. Usamos o
+    // remetente seguro do Resend como fallback para garantir entrega real.
     const resendMessage = String((error as any)?.message || "");
-    if (invite && !emailType.startsWith("child_shop_invite") && error && resendMessage.toLowerCase().includes("domain is not verified")) {
-      console.warn("Team invite sender domain not verified; retrying with fallback sender.");
+    if (error && resendMessage.toLowerCase().includes("domain is not verified")) {
+      console.warn(`Sender domain not verified; retrying with fallback sender (type=${emailType || "generic"}).`);
       const retry = await resend.emails.send({ ...resendPayload, from: fallbackFrom });
       data = retry.data;
       error = retry.error;

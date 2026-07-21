@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
+import { sendGarageFlowPlatformEmail } from "../_shared/lovable-transactional-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -88,21 +89,19 @@ Deno.serve(async (req) => {
       recipientName: shop.name ?? "",
       language: "pt",
       actionLink: link.actionLink,
+      debugId,
       audit,
     });
 
-    // Não usar o mailer nativo neste fluxo: esse email vem em inglês, usa o
-    // template "Accept Invitation" e pode reutilizar a sessão aberta da Oficina Mãe.
-    // Este fluxo deve enviar apenas o email PT GarageFlow com link para /reset-password.
     if (!emailResult.ok) {
       return json({
         error: "EMAIL_DELIVERY_FAILED",
-        detail: `branded=${emailResult.detail}`,
+        detail: emailResult.detail,
         debug_id: debugId,
       }, 502);
     }
 
-    const provider = "branded";
+    const provider = emailResult.provider;
     audit("resend_function_success", { provider, branded: emailResult });
     return json({
       ok: true,
@@ -215,19 +214,52 @@ async function sendBrandedPasswordEmail(params: {
   recipientName: string;
   language?: string | null;
   actionLink: string;
+  debugId: string;
   audit: (step: string, details?: Record<string, unknown>) => void;
 }): Promise<
-  | { ok: true; emailId?: string; status: number; response: unknown; deliveryState: "accepted" | "delivered" }
+  | { ok: true; provider: "lovable" | "resend"; emailId?: string; status: number; response: unknown; deliveryState: "accepted" | "delivered" }
   | { ok: false; detail: string; status: number; response: unknown; deliveryState: "failed" }
 > {
   if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK", status: 0, response: null, deliveryState: "failed" };
 
   const copy = buildChildInviteEmail({ recipientName: params.recipientName, language: params.language });
-  params.audit("branded_send_start", {
+  params.audit("platform_send_start", {
+    provider: "lovable",
+    email: params.to,
+    from: "GarageFlow <no-reply@auth.lovable.cloud>",
+    subject: copy.subject,
+  });
+
+  const platform = await sendGarageFlowPlatformEmail({
+    to: params.to,
+    subject: copy.subject,
+    bodyHtml: copy.html,
+    preheader: copy.preheader,
+    cta: { label: copy.ctaLabel, url: params.actionLink },
+    footerNote: copy.footerNote,
+    idempotencyKey: `child-shop-resend-${params.debugId}`,
+    label: "child_shop_invite_resend",
+  });
+
+  params.audit("platform_send_result", platform);
+
+  if (platform.ok) {
+    return {
+      ok: true,
+      emailId: platform.emailId,
+      status: 200,
+      provider: platform.provider,
+      response: platform.response,
+      deliveryState: "accepted",
+    };
+  }
+
+  params.audit("resend_fallback_send_start", {
     provider: "resend",
     email: params.to,
     from: "GarageFlow <noreply@garageflow.pt>",
     subject: copy.subject,
+    platformDetail: platform.detail,
   });
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
@@ -268,7 +300,7 @@ async function sendBrandedPasswordEmail(params: {
   if (!response.ok) {
     return {
       ok: false,
-      detail: parsed?.error || parsed?.detail || text || `HTTP_${response.status}`,
+      detail: `platform=${platform.detail}; resend=${parsed?.error || parsed?.detail || text || `HTTP_${response.status}`}`,
       status: response.status,
       response: parsed,
       deliveryState: "failed",
@@ -278,6 +310,7 @@ async function sendBrandedPasswordEmail(params: {
     ok: true,
     emailId: parsed?.email_id || parsed?.data?.id,
     status: response.status,
+    provider: "resend",
     response: parsed,
     deliveryState: "accepted",
   };

@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
+import { sendNativeAuthFallback } from "../_shared/child-invite-native-fallback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,19 +92,29 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    // Não usar o mailer nativo neste fluxo: esse email vem em inglês, usa o
-    // template "Accept Invitation" e pode reutilizar a sessão aberta da Oficina Mãe.
-    // Este fluxo deve enviar apenas o email PT GarageFlow com link para /reset-password.
-    if (!emailResult.ok) {
+    const nativeFallback = !emailResult.ok
+      ? await sendNativeAuthFallback({
+          supabaseUrl: SUPABASE_URL,
+          serviceRoleKey: SERVICE_ROLE_KEY,
+          anonKey: SUPABASE_ANON_KEY,
+          email: childEmail,
+          redirectTo: REDIRECT_URL,
+          shopName: shop.name ?? "",
+          mode: link.mode,
+          debugId,
+        })
+      : null;
+
+    if (!emailResult.ok && !nativeFallback?.ok) {
       return json({
         error: "EMAIL_DELIVERY_FAILED",
-        detail: `branded=${emailResult.detail}`,
+        detail: `branded=${emailResult.detail}; native=${nativeFallback?.detail ?? "not_attempted"}`,
         debug_id: debugId,
       }, 502);
     }
 
-    const provider = "branded";
-    audit("resend_function_success", { provider, branded: emailResult });
+    const provider = emailResult.ok ? "branded" : "native";
+    audit("resend_function_success", { provider, branded: emailResult, native: nativeFallback });
     return json({
       ok: true,
       auth_email: link.mode,

@@ -213,8 +213,6 @@ serve(async (req: Request) => {
     const isChildShopInvite = emailType === "child_shop_invite" || emailType === "child_shop_invite_resend";
     const finalFrom = useSandbox
       ? "GarageFlow <onboarding@resend.dev>"
-      : isChildShopInvite
-        ? fallbackFrom
       : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
 
     // Inject open-pixel + rewrite links for click tracking.

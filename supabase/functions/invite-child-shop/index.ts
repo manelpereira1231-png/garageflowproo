@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
-import { sendNativeAuthFallback } from "../_shared/child-invite-native-fallback.ts";
+import { sendGarageFlowPlatformEmail } from "../_shared/lovable-transactional-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,34 +188,20 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    const nativeFallback = !emailResult.ok
-      ? await sendNativeAuthFallback({
-          supabaseUrl: SUPABASE_URL,
-          serviceRoleKey: SERVICE_ROLE_KEY,
-          anonKey: SUPABASE_ANON_KEY,
-          email,
-          redirectTo: REDIRECT_URL,
-          shopName: name,
-          mode: authEmailMode,
-          debugId,
-        })
-      : null;
-
-    if (!emailResult.ok && !nativeFallback?.ok) {
+    if (!emailResult.ok) {
       return json({
         error: "EMAIL_DELIVERY_FAILED",
-        detail: `branded=${emailResult.detail}; native=${nativeFallback?.detail ?? "not_attempted"}`,
+        detail: emailResult.detail,
         debug_id: debugId,
       }, 502);
     }
 
-    const provider = emailResult.ok ? "branded" : "native";
+    const provider = emailResult.provider;
     audit("function_success", {
       shopId,
       childUserId,
       provider,
       branded: emailResult,
-      native: nativeFallback,
     });
 
     return json({
@@ -226,9 +212,7 @@ Deno.serve(async (req) => {
       email_id: emailResult.ok ? emailResult.emailId : undefined,
       email_provider: provider,
       debug_id: debugId,
-      delivery_note: provider === "branded"
-        ? "Email GarageFlow em Português enviado com link para definir palavra-passe."
-        : "Email de ativação enviado pelo sistema de autenticação com link isolado para definir palavra-passe.",
+      delivery_note: "Email GarageFlow em Português enviado com link para definir palavra-passe.",
     }, 200);
   } catch (e: any) {
     audit("function_unexpected_error", { message: String(e?.message ?? e), stack: String(e?.stack ?? "") });
@@ -361,11 +345,43 @@ async function sendBrandedPasswordEmail(params: {
   if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK", status: 0, response: null, deliveryState: "failed" };
 
   const copy = buildChildInviteEmail({ recipientName: params.recipientName, language: params.language });
-  params.audit("branded_send_start", {
+  params.audit("platform_send_start", {
+    provider: "lovable",
+    email: params.to,
+    from: "GarageFlow <no-reply@auth.lovable.cloud>",
+    subject: copy.subject,
+  });
+
+  const platform = await sendGarageFlowPlatformEmail({
+    to: params.to,
+    subject: copy.subject,
+    bodyHtml: copy.html,
+    preheader: copy.preheader,
+    cta: { label: copy.ctaLabel, url: params.actionLink },
+    footerNote: copy.footerNote,
+    idempotencyKey: `child-shop-invite-${params.debugId}`,
+    label: "child_shop_invite",
+  });
+
+  params.audit("platform_send_result", platform);
+
+  if (platform.ok) {
+    return {
+      ok: true,
+      emailId: platform.emailId,
+      status: 200,
+      provider: platform.provider,
+      response: platform.response,
+      deliveryState: "accepted",
+    } as any;
+  }
+
+  params.audit("resend_fallback_send_start", {
     provider: "resend",
     email: params.to,
     from: "GarageFlow <noreply@garageflow.pt>",
     subject: copy.subject,
+    platformDetail: platform.detail,
   });
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
@@ -406,7 +422,7 @@ async function sendBrandedPasswordEmail(params: {
   if (!response.ok) {
     return {
       ok: false,
-      detail: parsed?.error || parsed?.detail || text || `HTTP_${response.status}`,
+      detail: `platform=${platform.detail}; resend=${parsed?.error || parsed?.detail || text || `HTTP_${response.status}`}`,
       status: response.status,
       response: parsed,
       deliveryState: "failed",
@@ -416,7 +432,8 @@ async function sendBrandedPasswordEmail(params: {
     ok: true,
     emailId: parsed?.email_id || parsed?.data?.id,
     status: response.status,
+    provider: "resend",
     response: parsed,
     deliveryState: "accepted",
-  };
+  } as any;
 }

@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildChildInviteEmail } from "../_shared/child-invite-email.ts";
+import { sendNativeAuthFallback } from "../_shared/child-invite-native-fallback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,10 +70,15 @@ Deno.serve(async (req) => {
       actionLink: link.actionLink,
     });
     if (!emailResult.ok) {
-      return json({ error: "BRANDED_EMAIL_FAILED", detail: emailResult.detail }, 502);
+      const fb = await sendNativeAuthFallback({
+        supabaseUrl: SUPABASE_URL, serviceRoleKey: SERVICE_ROLE_KEY, anonKey: SUPABASE_ANON_KEY,
+        email: childEmail, redirectTo: REDIRECT_URL, shopName: shop.name ?? "", mode: authEmailMode,
+      });
+      if (!fb.ok) return json({ error: "EMAIL_DELIVERY_FAILED", detail: `branded=${emailResult.detail}; native=${fb.detail}` }, 502);
+      return json({ ok: true, auth_email: fb.mode, email_provider: "native" }, 200);
     }
 
-    return json({ ok: true, auth_email: link.mode, email_id: emailResult.emailId }, 200);
+    return json({ ok: true, auth_email: link.mode, email_id: emailResult.emailId, email_provider: "branded" }, 200);
   } catch (e: any) {
     return json({ error: "UNEXPECTED", detail: String(e?.message ?? e) }, 500);
   }

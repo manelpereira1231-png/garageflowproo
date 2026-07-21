@@ -209,10 +209,13 @@ serve(async (req: Request) => {
     const finalTo = useSandbox ? [SANDBOX_REDIRECT] : originalTo;
     const finalSubject = useSandbox ? `[Para: ${originalTo.join(", ")}] ${subject}` : subject;
     const fallbackFrom = "GarageFlow <onboarding@resend.dev>";
+    const emailType = String((body as any).emailType ?? "");
+    const isChildShopInvite = emailType === "child_shop_invite" || emailType === "child_shop_invite_resend";
     const finalFrom = useSandbox
       ? "GarageFlow <onboarding@resend.dev>"
+      : isChildShopInvite
+        ? fallbackFrom
       : (from || (brand === "market" ? "GarageFlow Market <market@garageflow.pt>" : "GarageFlow <noreply@garageflow.pt>"));
-    const emailType = String((body as any).emailType ?? "");
 
     // Inject open-pixel + rewrite links for click tracking.
     const emailIdEarly = crypto.randomUUID();
@@ -225,6 +228,9 @@ serve(async (req: Request) => {
         try {
           const target = new URL(href);
           const host = target.hostname.toLowerCase();
+          if (isChildShopInvite || target.pathname === "/reset-password") {
+            return m;
+          }
           // Auth action links must stay untouched. Rewriting them through the
           // click tracker can invalidate/strip the recovery/invite flow or hit
           // the tracker allow-list instead of the auth endpoint.

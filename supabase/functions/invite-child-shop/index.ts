@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     const emailResult = await sendBrandedPasswordEmail({
       to: email,
       recipientName: name,
-      language: resolveInviteLanguage(mother?.language, mother?.country_code),
+      language: "pt",
       actionLink: link.actionLink,
       debugId,
       audit,
@@ -272,7 +272,12 @@ async function createPasswordActionLink(
   }
 
   if (invite && !invite.error) {
-    const actionLink = String(invite.data?.properties?.action_link ?? "");
+    const actionLink = buildPasswordActivationUrl(
+      String(invite.data?.properties?.hashed_token ?? ""),
+      "invite",
+      email,
+      String(invite.data?.properties?.action_link ?? ""),
+    );
     return { userId: invite.data?.user?.id ?? null, actionLink, mode: "invite" };
   }
 
@@ -300,9 +305,24 @@ async function createPasswordActionLink(
 
   return {
     userId,
-    actionLink: String(recovery.data?.properties?.action_link ?? ""),
+    actionLink: buildPasswordActivationUrl(
+      String(recovery.data?.properties?.hashed_token ?? ""),
+      "recovery",
+      email,
+      String(recovery.data?.properties?.action_link ?? ""),
+    ),
     mode: "recovery",
   };
+}
+
+function buildPasswordActivationUrl(tokenHash: string, type: "invite" | "recovery", email: string, fallbackActionLink: string): string {
+  if (!tokenHash) return fallbackActionLink;
+  const url = new URL(REDIRECT_URL);
+  url.searchParams.set("realm", "erp");
+  url.searchParams.set("type", type);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("email", email);
+  return url.toString();
 }
 
 function resolveInviteLanguage(language?: string | null, countryCode?: string | null): string {

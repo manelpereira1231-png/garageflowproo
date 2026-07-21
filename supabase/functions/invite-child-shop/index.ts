@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
       audit,
     });
 
-    const mustUseNativeFallback = !emailResult.ok || emailResult.deliveryState !== "delivered";
+    const mustUseNativeFallback = !emailResult.ok || (emailResult.ok && emailResult.deliveryState === "accepted");
     let nativeResult: Awaited<ReturnType<typeof sendNativeAuthFallback>> | null = null;
     if (mustUseNativeFallback) {
       audit("native_fallback_required", {

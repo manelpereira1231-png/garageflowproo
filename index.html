@@ -4,6 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+    <!-- Non-production host guard: prevent Google/Bing/etc from indexing preview / lovable.app / any host ≠ garageflow.pt.
+         Runs synchronously before body parse so crawlers that execute JS see the noindex before rendering. -->
+    <script>
+      (function () {
+        try {
+          var host = location.hostname;
+          var isProd = host === "garageflow.pt" || host === "www.garageflow.pt";
+          if (isProd) return;
+          var m = document.createElement("meta");
+          m.name = "robots";
+          m.content = "noindex, nofollow, noarchive, nosnippet";
+          document.head.appendChild(m);
+          var gm = document.createElement("meta");
+          gm.name = "googlebot";
+          gm.content = "noindex, nofollow";
+          document.head.appendChild(gm);
+          // Rewrite canonical + og:url to the production equivalent so any accidental crawl consolidates on garageflow.pt.
+          var prodUrl = "https://garageflow.pt" + location.pathname + location.search;
+          document.querySelectorAll('link[rel="canonical"], meta[property="og:url"]').forEach(function (el) {
+            if (el.tagName === "LINK") el.setAttribute("href", prodUrl);
+            else el.setAttribute("content", prodUrl);
+          });
+        } catch (_) { /* noop — never break the page */ }
+      })();
+    </script>
+
     <!-- Default = ERP landing (/). /market and other routes override via react-helmet-async (SEOHead). -->
     <title>GarageFlow | Software Gestão Oficinas Automóvel e Mecânicos</title>
     <meta name="description" content="Software completo para oficinas: orçamentos, ordens de serviço, faturação, stock, agenda, CRM, WhatsApp, IA e Marketplace. Teste grátis 30 dias.">
@@ -15,7 +41,10 @@
     <meta name="bingbot" content="index, follow" />
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/og-image.jpg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+    <meta name="msapplication-config" content="/browserconfig.xml">
     <link rel="canonical" href="https://garageflow.pt/" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#e8930c" />

@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
       .from("carity_listings")
       .select("id, make, model, year, mileage, fuel, price, photos, status")
       .eq("id", listingId)
+      .eq("status", "published")
       .maybeSingle();
 
     if (!listing) return new Response("not found", { status: 404, headers: corsHeaders });

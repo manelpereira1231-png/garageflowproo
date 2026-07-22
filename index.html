@@ -45,7 +45,9 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
     <meta name="msapplication-config" content="/browserconfig.xml">
-    <link rel="canonical" href="https://garageflow.pt/" />
+    <!-- canonical is emitted per-route by react-helmet-async (SEOHead / Helmet).
+         Keeping a static one here would duplicate with the per-route tag and
+         risk Google consolidating every landing onto "/". -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#e8930c" />
     <meta name="application-name" content="GarageFlow" />

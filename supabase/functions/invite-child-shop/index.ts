@@ -348,7 +348,7 @@ async function sendBrandedPasswordEmail(params: {
   params.audit("platform_send_start", {
     provider: "lovable",
     email: params.to,
-    from: "GarageFlow <no-reply@auth.lovable.cloud>",
+    from: Deno.env.get("GARAGEFLOW_EMAIL_FROM") || "GarageFlow <noreply@notify.garageflow.pt>",
     subject: copy.subject,
   });
 
@@ -375,65 +375,11 @@ async function sendBrandedPasswordEmail(params: {
       deliveryState: "accepted",
     };
   }
-
-  params.audit("resend_fallback_send_start", {
-    provider: "resend",
-    email: params.to,
-    from: "GarageFlow <noreply@garageflow.pt>",
-    subject: copy.subject,
-    platformDetail: platform.detail,
-  });
-
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
-      "x-internal-token": SERVICE_ROLE_KEY,
-    },
-    body: JSON.stringify({
-      to: params.to,
-      from: "GarageFlow <noreply@garageflow.pt>",
-      subject: copy.subject,
-      html: copy.html,
-      branded: true,
-      brand: "garageflow",
-      preheader: copy.preheader,
-      cta: { label: copy.ctaLabel, url: params.actionLink },
-      footerNote: copy.footerNote,
-      emailType: "child_shop_invite",
-    }),
-  });
-
-  const text = await response.text();
-  let parsed: any = null;
-  try {
-    parsed = text ? JSON.parse(text) : null;
-  } catch {
-    parsed = { raw: text };
-  }
-  params.audit("branded_send_result", {
-    ok: response.ok,
-    status: response.status,
-    providerStatus: response.ok ? "accepted" : "failed",
-    response: parsed,
-  });
-
-  if (!response.ok) {
-    return {
-      ok: false,
-      detail: `platform=${platform.detail}; resend=${parsed?.error || parsed?.detail || text || `HTTP_${response.status}`}`,
-      status: response.status,
-      response: parsed,
-      deliveryState: "failed",
-    };
-  }
   return {
-    ok: true,
-    emailId: parsed?.email_id || parsed?.data?.id,
-    status: response.status,
-    provider: "resend",
-    response: parsed,
-    deliveryState: "accepted",
+    ok: false,
+    detail: platform.detail,
+    status: 502,
+    response: platform.response,
+    deliveryState: "failed",
   };
 }

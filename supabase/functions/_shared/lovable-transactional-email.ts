@@ -36,6 +36,9 @@ export async function sendGarageFlowPlatformEmail(params: {
     return { ok: false, provider: "lovable", detail: "LOVABLE_API_KEY_NOT_CONFIGURED", response: null };
   }
 
+  const senderDomain = Deno.env.get("GARAGEFLOW_EMAIL_SENDER_DOMAIN") || "notify.garageflow.pt";
+  const fromAddress = Deno.env.get("GARAGEFLOW_EMAIL_FROM") || `GarageFlow <noreply@${senderDomain}>`;
+
   const html = renderBrandedEmail({
     body: params.bodyHtml,
     preheader: params.preheader,
@@ -48,8 +51,8 @@ export async function sendGarageFlowPlatformEmail(params: {
     const response = await sendLovableEmail(
       {
         to: params.to,
-        from: "GarageFlow <no-reply@auth.lovable.cloud>",
-        sender_domain: "auth.lovable.cloud",
+        from: fromAddress,
+        sender_domain: senderDomain,
         subject: params.subject,
         html,
         text: htmlToText(params.bodyHtml, params.cta),

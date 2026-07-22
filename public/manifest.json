@@ -10,34 +10,17 @@
   "theme_color": "#e8930c",
   "categories": ["business", "productivity"],
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon",
-      "purpose": "maskable"
-    }
+    { "src": "/favicon.ico", "sizes": "64x64", "type": "image/x-icon" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
   ],
   "screenshots": [],
   "shortcuts": [
-    {
-      "name": "Dashboard",
-      "url": "/dashboard",
-      "description": "Ver dashboard da oficina"
-    },
-    {
-      "name": "Novo Orçamento",
-      "url": "/quotes/new",
-      "description": "Criar novo orçamento"
-    },
-    {
-      "name": "Agenda",
-      "url": "/agenda",
-      "description": "Ver agenda de marcações"
-    }
+    { "name": "Dashboard", "url": "/dashboard", "description": "Ver dashboard da oficina" },
+    { "name": "Novo Orçamento", "url": "/quotes/new", "description": "Criar novo orçamento" },
+    { "name": "Agenda", "url": "/agenda", "description": "Ver agenda de marcações" }
   ]
 }

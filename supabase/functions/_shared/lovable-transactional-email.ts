@@ -1,6 +1,40 @@
 // deno-lint-ignore-file no-explicit-any
 import { sendLovableEmail } from "npm:@lovable.dev/email-js@0.1.2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderBrandedEmail } from "./branded-email.ts";
+
+async function ensureUnsubscribeToken(email: string): Promise<string | undefined> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return undefined;
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const normalized = email.toLowerCase().trim();
+    const { data: existing } = await supabase
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", normalized)
+      .maybeSingle();
+    if (existing?.token) return existing.token as string;
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const { data: inserted, error } = await supabase
+      .from("email_unsubscribe_tokens")
+      .insert({ email: normalized, token })
+      .select("token")
+      .maybeSingle();
+    if (error) {
+      const { data: retry } = await supabase
+        .from("email_unsubscribe_tokens")
+        .select("token")
+        .eq("email", normalized)
+        .maybeSingle();
+      return retry?.token as string | undefined;
+    }
+    return inserted?.token as string | undefined;
+  } catch (_e) {
+    return undefined;
+  }
+}
 
 type PlatformEmailResult =
   | { ok: true; provider: "lovable"; emailId?: string; status?: string; response: unknown }

@@ -81,6 +81,8 @@ export async function sendGarageFlowPlatformEmail(params: {
     brand: "garageflow",
   });
 
+  const unsubscribeToken = await ensureUnsubscribeToken(params.to);
+
   try {
     const response = await sendLovableEmail(
       {
@@ -93,7 +95,8 @@ export async function sendGarageFlowPlatformEmail(params: {
         purpose: "transactional",
         idempotency_key: params.idempotencyKey,
         label: params.label,
-      },
+        unsubscribe_token: unsubscribeToken,
+      } as any,
       { apiKey },
     );
 

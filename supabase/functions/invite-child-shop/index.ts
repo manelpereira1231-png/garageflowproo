@@ -339,7 +339,7 @@ async function sendBrandedPasswordEmail(params: {
   debugId: string;
   audit: (step: string, details?: Record<string, unknown>) => void;
 }): Promise<
-  | { ok: true; provider: "lovable" | "resend"; emailId?: string; status: number; response: unknown; deliveryState: "accepted" | "delivered" }
+  | { ok: true; provider: "lovable_queue"; emailId?: string; status: number; response: unknown; deliveryState: "queued" }
   | { ok: false; detail: string; status: number; response: unknown; deliveryState: "failed" }
 > {
   if (!params.actionLink) return { ok: false, detail: "MISSING_ACTION_LINK", status: 0, response: null, deliveryState: "failed" };
@@ -372,7 +372,7 @@ async function sendBrandedPasswordEmail(params: {
       status: 200,
       provider: platform.provider,
       response: platform.response,
-      deliveryState: "accepted",
+      deliveryState: "queued",
     };
   }
   return {

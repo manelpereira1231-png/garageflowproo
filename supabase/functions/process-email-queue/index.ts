@@ -302,8 +302,9 @@ Deno.serve(async (req) => {
             message_id: payload.message_id,
             template_name: payload.label || queue,
             recipient_email: payload.to,
-            status: 'rate_limited',
+            status: 'failed',
             error_message: errorMsg.slice(0, 1000),
+            metadata: { reason: 'rate_limited' },
           })
 
           const retryAfterSecs = getRetryAfterSeconds(error)

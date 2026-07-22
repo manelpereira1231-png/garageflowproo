@@ -56,9 +56,10 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Default Open Graph (overridden per page by SEOHead) -->
+    <!-- Default Open Graph (overridden per page by SEOHead).
+         og:url is intentionally omitted here — it must self-reference each route,
+         and react-helmet-async does not dedupe <link>/<meta property=og:url> against static tags. -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://garageflow.pt/" />
     <meta property="og:site_name" content="GarageFlow" />
     <meta property="og:title" content="GarageFlow | Software Gestão Oficinas Automóvel e Mecânicos">
     <meta property="og:description" content="Software completo para oficinas: orçamentos, ordens de serviço, faturação, stock, agenda, CRM, WhatsApp, IA e Marketplace. Teste grátis 30 dias.">

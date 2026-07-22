@@ -151,3 +151,6 @@ verify_jwt = false
 
 [functions.market-translate-listing]
 verify_jwt = true
+
+[functions.process-email-queue]
+verify_jwt = true

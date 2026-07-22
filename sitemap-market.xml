@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fuel & segment SEO routes added: combustivel/{gasolina,diesel,hibrido,eletrico,gpl}, segmento/{suv,citadino,carrinha,monovolume,comercial,desportivo} -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- ===== GarageFlow Market — global ===== -->
+  <url>
+    <loc>https://garageflow.pt/market</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+    <lastmod>2026-04-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="pt-PT" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="hi-IN" href="https://garageflow.pt/market" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://garageflow.pt/market" />
+  </url>
+  <url><loc>https://garageflow.pt/market/sell</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+
+  <!-- ===== Top makes (global brands) ===== -->
+  <url><loc>https://garageflow.pt/market/make/BMW</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Audi</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Mercedes-Benz</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Volkswagen</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Toyota</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Honda</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Ford</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Chevrolet</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Nissan</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Hyundai</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Kia</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Renault</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Peugeot</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Citro%C3%ABn</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Opel</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Fiat</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Seat</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Volvo</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Skoda</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Mazda</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Tesla</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Porsche</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Land-Rover</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Jaguar</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Mini</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Suzuki</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Mitsubishi</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Dacia</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Jeep</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Lexus</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Subaru</loc><priority>0.5</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Maruti-Suzuki</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Tata</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://garageflow.pt/market/make/Mahindra</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+
+  <!-- ===== Top models ===== -->
+  <url><loc>https://garageflow.pt/market/modelo/BMW/serie-3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/BMW/serie-5</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/BMW/x1</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/BMW/x3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Audi/a3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Audi/a4</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Audi/q3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Audi/q5</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Mercedes-Benz/classe-a</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Mercedes-Benz/classe-c</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Mercedes-Benz/classe-e</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Volkswagen/golf</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Volkswagen/polo</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Volkswagen/passat</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Volkswagen/tiguan</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Renault/clio</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Renault/megane</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Peugeot/208</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Peugeot/308</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Toyota/yaris</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Toyota/corolla</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Toyota/rav4</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Honda/civic</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Honda/cr-v</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Ford/fiesta</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Ford/focus</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Ford/kuga</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Opel/corsa</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Opel/astra</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Citro%C3%ABn/c3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Fiat/500</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Tesla/model-3</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Tesla/model-y</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Hyundai/tucson</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Kia/sportage</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/modelo/Nissan/qashqai</loc><priority>0.7</priority></url>
+
+  <!-- ===== Price ranges (multi currency labels) ===== -->
+  <url><loc>https://garageflow.pt/market/preco/ate-5000-euros</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/preco/ate-10000-euros</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/preco/10000-a-20000-euros</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/preco/20000-a-35000-euros</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/preco/acima-35000-euros</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Portugal ===== -->
+  <url><loc>https://garageflow.pt/market/city/Lisboa</loc><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Porto</loc><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Braga</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Coimbra</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Faro</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Aveiro</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Set%C3%BAbal</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Leiria</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Viseu</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/%C3%89vora</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Funchal</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Guimar%C3%A3es</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Brasil ===== -->
+  <url><loc>https://garageflow.pt/market/city/S%C3%A3o-Paulo</loc><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Rio-de-Janeiro</loc><priority>0.8</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Belo-Horizonte</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Bras%C3%ADlia</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Salvador</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Curitiba</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Porto-Alegre</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Recife</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Fortaleza</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Manaus</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Espanha ===== -->
+  <url><loc>https://garageflow.pt/market/city/Madrid</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Barcelona</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Valencia</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Sevilla</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Bilbao</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/M%C3%A1laga</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — França ===== -->
+  <url><loc>https://garageflow.pt/market/city/Paris</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Lyon</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Marseille</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Toulouse</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Alemanha ===== -->
+  <url><loc>https://garageflow.pt/market/city/Berlin</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Munich</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Hamburg</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Frankfurt</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Cologne</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Itália ===== -->
+  <url><loc>https://garageflow.pt/market/city/Roma</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Milano</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Napoli</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Torino</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — UK ===== -->
+  <url><loc>https://garageflow.pt/market/city/London</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Manchester</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Birmingham</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — USA ===== -->
+  <url><loc>https://garageflow.pt/market/city/New-York</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Los-Angeles</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Chicago</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Houston</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Miami</loc><priority>0.6</priority></url>
+
+  <!-- ===== Cities — Índia ===== -->
+  <url><loc>https://garageflow.pt/market/city/Mumbai</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Delhi</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Bangalore</loc><priority>0.7</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Hyderabad</loc><priority>0.6</priority></url>
+  <url><loc>https://garageflow.pt/market/city/Chennai</loc><priority>0.6</priority></url>
+</urlset>

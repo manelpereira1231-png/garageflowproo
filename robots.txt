@@ -1,0 +1,130 @@
+# GarageFlow — Global SEO Robots
+# https://garageflow.pt
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /reset-password
+Disallow: /portal/
+Disallow: /quote/
+Disallow: /book/
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin/
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+
+User-agent: Yandex
+Allow: /
+Disallow: /admin/
+
+User-agent: Applebot
+Allow: /
+Disallow: /admin/
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# AI Search readiness — permitir indexação por assistentes IA
+# (OpenAI ChatGPT Search, Anthropic Claude, Perplexity, Google Gemini, Apple Intelligence, Common Crawl)
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /portal/
+Disallow: /reset-password
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin/
+
+# Default — allow all, block private areas
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /reset-password
+Disallow: /portal/
+Disallow: /quote/
+Disallow: /book/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /market/dashboard
+Disallow: /market/messages
+Disallow: /market/profile
+Disallow: /market/wallet
+
+Crawl-delay: 1
+
+Sitemap: https://garageflow.pt/sitemap.xml
+Sitemap: https://garageflow.pt/sitemap-erp.xml
+Sitemap: https://garageflow.pt/sitemap-market.xml

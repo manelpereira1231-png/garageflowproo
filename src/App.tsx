@@ -487,6 +487,7 @@ const supplierRoutes = [
 
 const partsRoutes = [
   { path: "/parts", element: <PartsSearch />, exact: true },
+  { path: "/parts/suppliers", element: <PartsSuppliersDirectory /> },
   { path: "/parts/favorites", element: <PartsFavorites /> },
   { path: "/parts/cart", element: <PartsCart /> },
   { path: "/parts/orders", element: <PartsOrders /> },

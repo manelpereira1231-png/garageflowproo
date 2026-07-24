@@ -59,9 +59,9 @@ function getOrSetFirstTouch(source: string): string {
  * - Guarda first_touch persistente
  * - Atualiza scroll_depth e time_on_page no beforeunload
  */
-export function trackLandingVisit() {
+export function trackLandingVisit(pathname?: string) {
   try {
-    const path = window.location.pathname || "/";
+    const path = (pathname && pathname.length > 0 ? pathname : "/");
     // Per-path dedup: cada rota pública é registada no máx. 1x por sessão do browser.
     let trackedPaths: Record<string, 1> = {};
     try {
@@ -92,7 +92,7 @@ export function trackLandingVisit() {
       medium: params.get("utm_medium") || "",
       campaign: params.get("utm_campaign") || "",
       gclid: params.get("gclid") || "",
-      landing_path: window.location.pathname,
+      landing_path: path,
       referrer: document.referrer || "",
       device_type: isMobile ? "mobile" : "desktop",
       session_id: sessionId,

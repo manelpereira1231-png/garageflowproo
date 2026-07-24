@@ -78,7 +78,7 @@ export default function PublicRouteTracker() {
     // Defer to next tick so o React acabe de montar a rota antes de registar.
     const id = window.setTimeout(() => {
       try {
-        trackLandingVisit();
+        trackLandingVisit(pathname);
       } catch {
         /* nunca bloquear a UX */
       }

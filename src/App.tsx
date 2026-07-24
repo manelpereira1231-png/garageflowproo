@@ -907,7 +907,7 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
-            <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+            <Route element={<SupplierNetworkGate><SupplierApprovalGate><SupplierLayout /></SupplierApprovalGate></SupplierNetworkGate>}>
               {supplierRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
@@ -1019,7 +1019,7 @@ function AuthenticatedRoutes() {
             <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
           </Route>
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
-          <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+          <Route element={<SupplierNetworkGate><SupplierApprovalGate><SupplierLayout /></SupplierApprovalGate></SupplierNetworkGate>}>
             {supplierRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}

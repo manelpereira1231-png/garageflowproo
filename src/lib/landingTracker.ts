@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { classifyTraffic } from "./internalTrafficDetect";
 
-const TRACKED_KEY = "gf_visit_tracked";
+const TRACKED_KEY = "gf_visit_tracked"; // legacy (session-wide) — kept for compat
+const TRACKED_PATHS_KEY = "gf_visit_tracked_paths"; // per-path dedup within the session
 const FIRST_TOUCH_KEY = "gf_first_touch";
 const SESSION_ID_KEY = "gf_session_id";
 const MAX_RETRIES = 3;
@@ -60,11 +61,23 @@ function getOrSetFirstTouch(source: string): string {
  */
 export function trackLandingVisit() {
   try {
-    if (sessionStorage.getItem(TRACKED_KEY)) {
+    const path = window.location.pathname || "/";
+    // Per-path dedup: cada rota pública é registada no máx. 1x por sessão do browser.
+    let trackedPaths: Record<string, 1> = {};
+    try {
+      trackedPaths = JSON.parse(sessionStorage.getItem(TRACKED_PATHS_KEY) || "{}");
+    } catch {
+      trackedPaths = {};
+    }
+    if (trackedPaths[path]) {
       setupEngagementTracking();
       return;
     }
-    sessionStorage.setItem(TRACKED_KEY, "1");
+    trackedPaths[path] = 1;
+    try {
+      sessionStorage.setItem(TRACKED_PATHS_KEY, JSON.stringify(trackedPaths));
+      sessionStorage.setItem(TRACKED_KEY, "1"); // compat
+    } catch { /* ignore */ }
 
     const params = new URLSearchParams(window.location.search);
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);

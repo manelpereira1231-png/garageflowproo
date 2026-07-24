@@ -138,6 +138,7 @@ import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
+import PublicRouteTracker from "@/components/PublicRouteTracker";
 
 // Admin pages
 const AdminDashboard = lazyRetry(() => import("@/pages/admin/AdminDashboard"));

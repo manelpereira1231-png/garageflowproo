@@ -217,6 +217,16 @@ const SupplierPayments = lazyRetry(() => import("@/pages/supplier/SupplierPaymen
 const SupplierCarriers = lazyRetry(() => import("@/pages/supplier/SupplierCarriers"));
 const SupplierCustomers = lazyRetry(() => import("@/pages/supplier/SupplierCustomers"));
 const SupplierSettings = lazyRetry(() => import("@/pages/supplier/SupplierSettings"));
+const PartsMarketplaceGate = lazyRetry(() => import("@/components/parts/PartsMarketplaceGate"));
+const PartsMarketLayout = lazyRetry(() => import("@/components/parts/PartsMarketLayout"));
+const PartsSearch = lazyRetry(() => import("@/pages/parts/PartsSearch"));
+const PartDetail = lazyRetry(() => import("@/pages/parts/PartDetail"));
+const PartsFavorites = lazyRetry(() => import("@/pages/parts/PartsFavorites"));
+const PartsCart = lazyRetry(() => import("@/pages/parts/PartsCart"));
+const PartsOrders = lazyRetry(() => import("@/pages/parts/PartsOrders"));
+const PartsOrderDetail = lazyRetry(() => import("@/pages/parts/PartsOrderDetail"));
+const PartsNotifications = lazyRetry(() => import("@/pages/parts/PartsNotifications"));
+const PartsSupplierPublic = lazyRetry(() => import("@/pages/parts/SupplierPublic"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
@@ -471,6 +481,18 @@ const supplierRoutes = [
   { path: "/supplier/profile", element: <SupplierProfile /> },
   { path: "/supplier/settings", element: <SupplierSettings /> },
 ];
+
+const partsRoutes = [
+  { path: "/parts", element: <PartsSearch />, exact: true },
+  { path: "/parts/favorites", element: <PartsFavorites /> },
+  { path: "/parts/cart", element: <PartsCart /> },
+  { path: "/parts/orders", element: <PartsOrders /> },
+  { path: "/parts/orders/:orderId", element: <PartsOrderDetail /> },
+  { path: "/parts/notifications", element: <PartsNotifications /> },
+  { path: "/parts/supplier/:supplierSlug", element: <PartsSupplierPublic /> },
+  { path: "/parts/:productId", element: <PartDetail /> },
+];
+
 
 
 const shopRoutes = [
@@ -875,6 +897,11 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
+            <Route element={<PartsMarketplaceGate><PartsMarketLayout /></PartsMarketplaceGate>}>
+              {partsRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+              ))}
+            </Route>
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
@@ -979,6 +1006,11 @@ function AuthenticatedRoutes() {
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
           <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
             {supplierRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+            ))}
+          </Route>
+          <Route element={<PartsMarketplaceGate><PartsMarketLayout /></PartsMarketplaceGate>}>
+            {partsRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}
           </Route>

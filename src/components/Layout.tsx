@@ -362,6 +362,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
 
+    // ── Fornecedor (Supplier Network — B2B parts marketplace) ──
+    // Hidden entirely when the global feature flag is OFF.
+    ...(supplierNetworkEnabled ? [
+      { path: "/parts", label: "Comprar Peças", icon: ShoppingCart } as NavItem,
+      { path: "/parts/suppliers", label: "Fornecedores", icon: Store } as NavItem,
+      { path: "/parts/orders", label: "Encomendas", icon: Truck } as NavItem,
+      { path: "/parts/favorites", label: "Favoritos", icon: Star } as NavItem,
+    ] : []),
+
     // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },
     { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, featureSlug: "financial_reports_basic" },

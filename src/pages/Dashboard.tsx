@@ -302,7 +302,7 @@ function OwnerDashboard() {
           const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
           autoAlerts.push({
             id: 'auto-overdue',
-            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${currency}${overdueTotal.toFixed(0)})`,
+            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${fmt(overdueTotal)})`,
             type: 'payment_failed',
             status: 'pending',
             created_at: new Date().toISOString(),

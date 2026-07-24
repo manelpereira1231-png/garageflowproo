@@ -39,7 +39,14 @@ serve(async (req) => {
           status: "captured", stripe_payment_intent_id: pi, updated_at: new Date().toISOString(),
         }).eq("order_id", orderId);
       }
+      // Fire-and-forget notification
+      try {
+        await supa.functions.invoke("gsn-notify-order-event", {
+          body: { order_id: orderId, event: "paid" },
+        });
+      } catch (_e) { /* ignore */ }
     };
+
 
     switch (event.type) {
       case "checkout.session.completed": {

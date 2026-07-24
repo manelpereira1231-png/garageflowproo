@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { classifyTraffic } from "./internalTrafficDetect";
 
-const TRACKED_KEY = "gf_visit_tracked";
+const TRACKED_KEY = "gf_visit_tracked"; // legacy (session-wide) — kept for compat
+const TRACKED_PATHS_KEY = "gf_visit_tracked_paths"; // per-path dedup within the session
 const FIRST_TOUCH_KEY = "gf_first_touch";
 const SESSION_ID_KEY = "gf_session_id";
 const MAX_RETRIES = 3;

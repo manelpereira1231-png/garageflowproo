@@ -3181,6 +3181,96 @@ export type Database = {
         }
         Relationships: []
       }
+      gsn_admin_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          payload: Json
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
+      gsn_carrier_shipments: {
+        Row: {
+          carrier: string
+          created_at: string
+          delivered_at: string | null
+          id: string
+          metadata: Json
+          order_id: string
+          shipped_at: string | null
+          status: string
+          supplier_id: string
+          tracking_code: string | null
+          tracking_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          metadata?: Json
+          order_id: string
+          shipped_at?: string | null
+          status?: string
+          supplier_id: string
+          tracking_code?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          metadata?: Json
+          order_id?: string
+          shipped_at?: string | null
+          status?: string
+          supplier_id?: string
+          tracking_code?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_carrier_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_carrier_shipments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gsn_carriers: {
         Row: {
           active: boolean
@@ -3225,6 +3315,88 @@ export type Database = {
           },
         ]
       }
+      gsn_cart_items: {
+        Row: {
+          cart_id: string
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          supplier_id: string
+          unit_price: number
+          updated_at: string
+          vat: number
+        }
+        Insert: {
+          cart_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          supplier_id: string
+          unit_price?: number
+          updated_at?: string
+          vat?: number
+        }
+        Update: {
+          cart_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          supplier_id?: string
+          unit_price?: number
+          updated_at?: string
+          vat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_cart_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_carts: {
+        Row: {
+          created_at: string
+          id: string
+          shop_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          shop_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          shop_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gsn_categories: {
         Row: {
           active: boolean
@@ -3259,6 +3431,63 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "gsn_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_complaints: {
+        Row: {
+          body: string | null
+          buyer_user_id: string | null
+          created_at: string
+          id: string
+          order_id: string | null
+          resolution: string | null
+          shop_id: string | null
+          status: string
+          subject: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          resolution?: string | null
+          shop_id?: string | null
+          status?: string
+          subject: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          resolution?: string | null
+          shop_id?: string | null
+          status?: string
+          subject?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_complaints_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_complaints_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -3345,6 +3574,35 @@ export type Database = {
           },
         ]
       }
+      gsn_favorites_products: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_favorites_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gsn_invoices: {
         Row: {
           commission_total: number
@@ -3407,6 +3665,83 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["gsn_notification_kind"]
+          link: string | null
+          metadata: Json
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["gsn_notification_kind"]
+          link?: string | null
+          metadata?: Json
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["gsn_notification_kind"]
+          link?: string | null
+          metadata?: Json
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gsn_order_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json
+          note: string | null
+          order_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          note?: string | null
+          order_id: string
+          to_status: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json
+          note?: string | null
+          order_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -3529,6 +3864,69 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "gsn_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_payment_intents: {
+        Row: {
+          amount: number
+          commission_amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json
+          order_id: string | null
+          shop_id: string | null
+          state: Database["public"]["Enums"]["gsn_payment_state"]
+          stripe_payment_intent_id: string | null
+          stripe_transfer_id: string | null
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json
+          order_id?: string | null
+          shop_id?: string | null
+          state?: Database["public"]["Enums"]["gsn_payment_state"]
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json
+          order_id?: string | null
+          shop_id?: string | null
+          state?: Database["public"]["Enums"]["gsn_payment_state"]
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_payment_intents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_payment_intents_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "gsn_suppliers"
@@ -3706,6 +4104,104 @@ export type Database = {
           },
         ]
       }
+      gsn_promotion_redemptions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          order_id: string | null
+          promotion_id: string
+          shop_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          promotion_id: string
+          shop_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          promotion_id?: string
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_promotion_redemptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsn_promotion_redemptions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_promotions: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          name: string
+          starts_at: string | null
+          supplier_id: string
+          updated_at: string
+          usage_count: number
+          usage_limit: number | null
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          name: string
+          starts_at?: string | null
+          supplier_id: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          name?: string
+          starts_at?: string | null
+          supplier_id?: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_promotions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gsn_reviews: {
         Row: {
           buyer_user_id: string | null
@@ -3846,11 +4342,15 @@ export type Database = {
           postal_code: string | null
           rating_average: number
           rating_count: number
+          slug: string | null
           stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_payouts_enabled: boolean
           subscription_plan: string | null
           subscription_status: string | null
           support_email: string | null
           support_phone: string | null
+          suspended: boolean
           trade_name: string | null
           updated_at: string
           vat_number: string | null
@@ -3881,11 +4381,15 @@ export type Database = {
           postal_code?: string | null
           rating_average?: number
           rating_count?: number
+          slug?: string | null
           stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_payouts_enabled?: boolean
           subscription_plan?: string | null
           subscription_status?: string | null
           support_email?: string | null
           support_phone?: string | null
+          suspended?: boolean
           trade_name?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -3916,11 +4420,15 @@ export type Database = {
           postal_code?: string | null
           rating_average?: number
           rating_count?: number
+          slug?: string | null
           stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_payouts_enabled?: boolean
           subscription_plan?: string | null
           subscription_status?: string | null
           support_email?: string | null
           support_phone?: string | null
+          suspended?: boolean
           trade_name?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -9503,6 +10011,73 @@ export type Database = {
         }[]
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
+      gsn_cart_add: {
+        Args: { _product_id: string; _quantity?: number; _shop_id: string }
+        Returns: string
+      }
+      gsn_cart_checkout: { Args: { _shop_id: string }; Returns: string[] }
+      gsn_cart_ensure: { Args: { _shop_id: string }; Returns: string }
+      gsn_complaint_create: {
+        Args: { _body: string; _order_id: string; _subject: string }
+        Returns: string
+      }
+      gsn_order_transition: {
+        Args: { _note?: string; _order_id: string; _to: string }
+        Returns: undefined
+      }
+      gsn_search_products: {
+        Args: {
+          _brand?: string
+          _category?: string
+          _in_stock?: boolean
+          _limit?: number
+          _max_price?: number
+          _min_price?: number
+          _offset?: number
+          _q?: string
+          _supplier_id?: string
+        }
+        Returns: {
+          brand: string | null
+          category: string | null
+          compatibility: Json
+          condition: Database["public"]["Enums"]["gsn_product_condition"]
+          created_at: string
+          currency: string
+          datasheet: string | null
+          deleted_at: string | null
+          description: string | null
+          discount_price: number | null
+          ean: string | null
+          gallery: Json
+          height: number | null
+          id: string
+          image: string | null
+          length: number | null
+          manual_pdf: string | null
+          manufacturer_reference: string | null
+          model: string | null
+          price: number
+          reserved_stock: number
+          sku: string | null
+          status: Database["public"]["Enums"]["gsn_product_status"]
+          stock: number
+          subcategory: string | null
+          supplier_id: string
+          technical_description: string | null
+          title: string
+          updated_at: string
+          vat: number
+          weight: number | null
+          width: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "gsn_products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_capability: {
         Args: { _cap: string; _shop_id: string }
         Returns: boolean
@@ -9620,6 +10195,8 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       touch_user_activity: { Args: { _shop_id?: string }; Returns: undefined }
       track_event: {
         Args: {
@@ -9682,6 +10259,34 @@ export type Database = {
         | "super_admin"
         | "commercial_admin"
         | "supplier"
+      gsn_notification_kind:
+        | "order_new"
+        | "order_status"
+        | "payment_new"
+        | "tracking_new"
+        | "low_stock"
+        | "product_approved"
+        | "supplier_approved"
+        | "promo"
+        | "review_new"
+        | "complaint_new"
+      gsn_order_state:
+        | "cart"
+        | "pending"
+        | "paid"
+        | "confirmed"
+        | "preparing"
+        | "shipped"
+        | "partial"
+        | "delivered"
+        | "cancelled"
+        | "refunded"
+      gsn_payment_state:
+        | "pending"
+        | "authorized"
+        | "captured"
+        | "failed"
+        | "refunded"
       gsn_product_condition: "new" | "refurbished" | "used"
       gsn_product_status: "draft" | "active" | "archived"
       gsn_stock_move_type:
@@ -9827,6 +10432,37 @@ export const Constants = {
         "super_admin",
         "commercial_admin",
         "supplier",
+      ],
+      gsn_notification_kind: [
+        "order_new",
+        "order_status",
+        "payment_new",
+        "tracking_new",
+        "low_stock",
+        "product_approved",
+        "supplier_approved",
+        "promo",
+        "review_new",
+        "complaint_new",
+      ],
+      gsn_order_state: [
+        "cart",
+        "pending",
+        "paid",
+        "confirmed",
+        "preparing",
+        "shipped",
+        "partial",
+        "delivered",
+        "cancelled",
+        "refunded",
+      ],
+      gsn_payment_state: [
+        "pending",
+        "authorized",
+        "captured",
+        "failed",
+        "refunded",
       ],
       gsn_product_condition: ["new", "refurbished", "used"],
       gsn_product_status: ["draft", "active", "archived"],

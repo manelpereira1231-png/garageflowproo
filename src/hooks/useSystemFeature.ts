@@ -61,10 +61,16 @@ export function useSystemFeature(key: string): { enabled: boolean; loaded: boole
 }
 
 export async function setSystemFeature(key: string, enabled: boolean): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("system_features" as any)
     .update({ enabled, updated_at: new Date().toISOString() })
-    .eq("key", key);
+    .eq("key", key)
+    .select("key,enabled");
   if (error) throw error;
-  cache.set(key, { enabled, at: Date.now() });
+  if (!data || (data as any[]).length === 0) {
+    throw new Error("Sem permissão para alterar esta funcionalidade (é necessário ser Super Admin).");
+  }
+  const persisted = !!(data as any[])[0].enabled;
+  cache.set(key, { enabled: persisted, at: Date.now() });
+  listeners.get(key)?.forEach((fn) => { try { fn(); } catch {} });
 }

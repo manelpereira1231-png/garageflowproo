@@ -416,7 +416,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled]);
+  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —

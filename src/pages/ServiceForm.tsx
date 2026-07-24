@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;

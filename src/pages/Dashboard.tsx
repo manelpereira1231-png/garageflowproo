@@ -1075,7 +1075,7 @@ function OwnerDashboard() {
                       {time && <><span>·</span><span>{time}</span></>}
                     </div>
                   </div>
-                  <span className="mono font-semibold shrink-0 text-sm">{currency}{(s.total || 0).toFixed(2)}</span>
+                  <span className="mono font-semibold shrink-0 text-sm">{fmt(s.total || 0)}</span>
                 </div>
               );
             })}

@@ -17,6 +17,8 @@ import { useOwnedShops } from "@/hooks/useOwnedShops";
 import { useIsChildShop } from "@/hooks/useIsChildShop";
 import MarketActivityCard from "@/components/MarketActivityCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
+import { formatMoney } from "@/lib/money";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.

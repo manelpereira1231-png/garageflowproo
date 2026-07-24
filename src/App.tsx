@@ -482,6 +482,18 @@ const supplierRoutes = [
   { path: "/supplier/settings", element: <SupplierSettings /> },
 ];
 
+const partsRoutes = [
+  { path: "/parts", element: <PartsSearch />, exact: true },
+  { path: "/parts/favorites", element: <PartsFavorites /> },
+  { path: "/parts/cart", element: <PartsCart /> },
+  { path: "/parts/orders", element: <PartsOrders /> },
+  { path: "/parts/orders/:orderId", element: <PartsOrderDetail /> },
+  { path: "/parts/notifications", element: <PartsNotifications /> },
+  { path: "/parts/supplier/:supplierSlug", element: <PartsSupplierPublic /> },
+  { path: "/parts/:productId", element: <PartDetail /> },
+];
+
+
 
 const shopRoutes = [
   { path: "/dashboard", element: <Dashboard /> },

@@ -1,115 +1,141 @@
 
-# GSN Fases 2–5 — Plano de Implementação
+# Supplier Onboarding Profissional — Plano
 
-Todo o trabalho é **aditivo**, prefixado `gsn_`, protegido pela feature flag `supplier_network_enabled` (default `false`) e por RLS. Nenhum ficheiro do ERP, Market, Inventário, Oficina Filha, SEO, Convites ou Auth é alterado — apenas leituras pontuais para adicionar pontos de entrada opcionais (botão "Comprar Peças" em Orçamentos e ação "Adicionar ao stock" em Inventário, ambos por trás de `useSystemFeature("supplier_network_enabled")`).
+Módulo 100% aditivo. Não toca em ERP, Market, Inventário, Oficina Filha, SEO existente, Auth, RLS existente, nem menus atuais. Toda a lógica nova vive sob "Supplier Network" e respeita `supplier_network_enabled`.
 
-## Fase 2 — Marketplace B2B (pesquisa e perfis)
+## 1. Base de dados (migração aditiva)
 
-Rotas novas (só para utilizadores autenticados de oficinas, gate `SupplierNetworkGate` + `RequireAuth`):
-- `/parts` — pesquisa e listagem.
-- `/parts/:productId` — detalhe do produto.
-- `/parts/supplier/:supplierSlug` — perfil público do fornecedor.
-- `/parts/favorites` — favoritos.
-- `/parts/cart` — carrinho multi-fornecedor.
+Sem alterar tabelas existentes; apenas colunas novas em `gsn_suppliers` e uma tabela nova.
 
-Backend:
-- Índices `gin_trgm_ops` em `gsn_products (name, sku, ean, brand, model_compat)` para pesquisa rápida.
-- RPC `gsn_search_products(q, filters jsonb, page, page_size)` com paginação + facets (marca, categoria, fornecedor, preço, stock, entrega).
-- Nova tabela `gsn_favorites_products` (oficina ↔ produto) e `gsn_favorites_suppliers`.
-- View `gsn_supplier_public` (campos seguros do fornecedor).
+- Novo enum `gsn_supplier_state`: `invited | pending | pending_approval | approved | rejected | suspended | blocked`.
+- `gsn_suppliers` — colunas novas (nullable, defaults seguros):
+  - `state gsn_supplier_state default 'approved'` (retrocompatível: registos atuais ficam `approved`).
+  - `application_source text` (`invite | public | manual`).
+  - `rejection_reason text`, `approved_at`, `approved_by`, `invited_at`, `invited_by`.
+  - `docs jsonb default '{}'` (certidão, IVA, logótipo, banner, catálogo — cada um `{url,status}`).
+- Nova tabela `gsn_supplier_invites` (token único, email, payload de pré-registo, `expires_at`, `used_at`).
+- Nova tabela `gsn_supplier_applications` (candidaturas públicas antes de terem `owner_user_id`): empresa, responsável, contactos, NIF, morada, categorias, marcas, transportadoras, tempo entrega, estado, motivo rejeição, `created_supplier_id`.
+- GRANTs + RLS:
+  - `gsn_supplier_invites`: só super admin lê/escreve; leitura por token via RPC `SECURITY DEFINER`.
+  - `gsn_supplier_applications`: `INSERT` público (rate-limited via `check_rate_limit`), `SELECT/UPDATE` só super admin.
+  - Regras existentes de `gsn_suppliers` mantidas; adiciona política que impede o próprio supplier de mudar `state`, `commission_percentage`, `approved`.
 
-Frontend:
-- `SearchBar` (debounce 250 ms), painel de filtros lateral, grelha de cartões, paginação infinita.
-- Cartão de produto com botões: **Adicionar ao carrinho**, **Guardar favorito**, **Adicionar ao orçamento** (visível dentro do fluxo do orçamento).
+## 2. Gating de acesso (backend + frontend)
 
-## Fase 3 — Encomendas, Carrinho e Orçamentos
+- RPC `gsn_current_supplier_state()` retorna estado do supplier do utilizador.
+- `useIsSupplier` estendido → devolve `{ isSupplier, state, loading }` sem alterar chamadas atuais (campos novos opcionais).
+- Novo componente `SupplierApprovalGate` embrulha rotas `/supplier/*` (exceto `setup`, `login`, `pending`):
+  - `approved` → passa.
+  - `invited | pending | pending_approval` → redireciona para `/supplier/pending` (nova página "candidatura em análise").
+  - `rejected | suspended | blocked` → página dedicada com motivo.
+- RLS reforçado: policies de `gsn_products`, `gsn_stock_movements`, `gsn_orders` etc. já filtram por `supplier_id`; adiciona-se `USING` extra para exigir `state = 'approved'` via função `has_approved_supplier(uid)` (SECURITY DEFINER, sem recursão).
 
-Reutiliza `gsn_orders`, `gsn_order_items`, `gsn_invoices` existentes; adiciona:
-- `gsn_carts` e `gsn_cart_items` (por `shop_id`).
-- `gsn_order_events` (auditoria de estado).
-- Enum `gsn_order_status`: `cart, pending, paid, confirmed, preparing, shipped, partial, delivered, cancelled, refunded`.
+## 3. Modo 1 — Convite Manual (Admin)
 
-RPCs atómicas:
-- `gsn_cart_add / gsn_cart_update / gsn_cart_remove`.
-- `gsn_cart_checkout` — divide o carrinho por `supplier_id` gerando N `gsn_orders` (uma por fornecedor), calcula subtotal/IVA/portes/desconto/comissão/total, cria items, marca `payment_status='pending'`.
-- `gsn_order_transition(order_id, new_status)` — máquina de estados com validação de transições e escrita em `gsn_order_events`.
-- `gsn_order_receive_to_inventory(order_id)` — opcional; devolve payload preparado para inserção no inventário existente (não escreve diretamente; o botão "Adicionar ao stock" chama a função de inventário atual).
+- Em `AdminSupplierNetwork.tsx`: novo botão "Convidar Fornecedor" (modal com campos pedidos).
+- Ação cria linha em `gsn_supplier_invites` + envia email via `send-transactional-email` template novo `supplier-invite`.
+- Página pública `/supplier/setup?token=…`:
+  - Valida token via RPC `gsn_accept_invite(token, password)`.
+  - Cria user (`supabase.auth.signUp`), cria/atualiza `gsn_suppliers` com dados do convite, estado `pending_approval`, marca token `used_at`.
+  - Redireciona para `/supplier/pending`.
 
-Frontend:
-- `/supplier-market/cart`, `/orders` (comprador) e páginas existentes do fornecedor recebem realtime + ações (Aceitar/Rejeitar/Tracking/Nota/Guia PDF).
-- Integração leve no ERP: em `Quotes` (só leitura de UI, sem alterar lógica) mostra botão **Comprar Peças** que abre um Drawer com pesquisa; ao adicionar, guarda-se em `quote_metadata.gsn_items` — não altera schema de orçamentos.
-- Em `Inventory`, após entrega, aparece toast "Adicionar ao stock?" que chama o fluxo de inventário existente com os campos preenchidos.
+## 4. Modo 2 — Candidatura Pública
 
-## Fase 4 — Pagamentos (arquitetura, sem cobrar) e Promoções
+- Nova página `/fornecedores` (landing profissional, mesmo design system) com CTA.
+- `/fornecedores/candidatura` com formulário validado por Zod.
+- `INSERT` em `gsn_supplier_applications` (estado `pending`).
+- Email confirmação candidatura + email admin nova candidatura.
+- Se `supplier_network_enabled = false`: form mostra aviso "aceitamos apenas por convite".
 
-Sem implementar cobranças. Cria estrutura:
-- Colunas em `gsn_suppliers`: `stripe_account_id`, `stripe_charges_enabled`, `stripe_payouts_enabled`, `commission_rate` (default lido de `country_settings`).
-- Tabela `gsn_payment_intents` (mirror local do estado Stripe: `pending/authorized/captured/failed/refunded`).
-- Tabela `gsn_promotions` (fornecedor, tipo `percent|fixed`, valor, datas, limite, código opcional) e `gsn_promotion_redemptions`.
-- Tabela `gsn_carrier_shipments` (tracking normalizado por transportadora) — apenas guarda dados, sem chamar APIs.
-- Adapter TS `src/lib/gsn/payments/StripeConnectAdapter.ts` com métodos `createAccountLink`, `createPaymentIntent`, `capture`, `refund` — todos devolvem `NotImplementedError` mas com assinaturas estáveis.
-- Adapters de faturação (`MoloniAdapter`, `InvoiceXpressAdapter`, `JasminAdapter`, `PrimaveraAdapter`, `PHCAdapter`) e distribuidores (`TecDocAdapter`, `LKQAdapter`, `BoschAdapter`, `DistrigoAdapter`, `ADPartsAdapter`, `EurorepAdapter`, `AutoPartnerAdapter`, `RestGenericAdapter`, `SoapGenericAdapter`) — todos sob interface comum `SupplierIntegrationAdapter`, sem implementação de rede.
+## 5. Admin — Supplier Applications
 
-Frontend fornecedor:
-- Página `/supplier/promotions` (CRUD).
-- Página `/supplier/payments` já existe; adiciona secção "Stripe Connect" com CTA `Ativar` (chama edge function stub que devolve `501 not_implemented` visível como "Em breve").
+- Nova secção em `/admin/supplier-network/applications` (rota nova, item novo no submenu admin — não altera menus existentes de utilizadores).
+- Tabs: Novas / Pendentes / Aprovadas / Rejeitadas.
+- Ações: Ver, Aprovar, Rejeitar (com motivo), Pedir Informação (email livre).
+- Aprovar → RPC `gsn_approve_application(app_id)`:
+  - Cria supplier com estado `approved`, gera magic link/reset password, envia email `supplier-approved`.
+- Rejeitar → estado `rejected` + email `supplier-rejected` com motivo.
 
-## Fase 5 — Painel Admin, Notificações, Segurança e Performance
+## 6. Dashboard cards (Admin)
 
-Painel Admin (`/admin/supplier-network` expandido em subrotas):
-- `dashboard` — receita, comissões, contagens, top fornecedores/produtos/oficinas (via views materializadas `gsn_admin_kpis_daily`).
-- `suppliers`, `products`, `orders`, `payments`, `commissions`, `reviews`, `logs`, `complaints`, `carriers`, `settings`, `feature-flags`.
-- Ações: suspender, bloquear, editar `commission_rate`, exportar CSV/Excel (client-side com `xlsx`).
+- Em `AdminSupplierNetwork.tsx` adicionar cards de KPI (total, por estado, novas este mês, receita/comissões) usando queries agregadas — sem mexer no layout do resto da página.
 
-Notificações (reutiliza tabela `notifications` existente + `email_queue`):
-- Novo `gsn_notification_kind` enum (`order_new, payment_new, tracking_new, low_stock, product_approved, supplier_approved, promo`).
-- Triggers em `gsn_orders`, `gsn_payment_intents`, `gsn_products.stock` enviam para `enqueue_email` + inserem `notifications` in-app.
-- Push: reutiliza `push_subscriptions` existente (adapter novo `sendPushToUser`).
+## 7. Emails (React Email templates)
 
-Segurança:
-- RLS em TODAS as novas tabelas com `has_role` + `supplier_id = get_my_supplier_id()` para fornecedor, `shop_id in get_user_shop_ids()` para oficina, `has_role(auth.uid(),'super_admin')` para admin.
-- `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated` + `GRANT ALL ... TO service_role`; sem `anon`.
-- Funções `SECURITY DEFINER` com `set search_path = public`.
+Novos templates em `supabase/functions/_shared/transactional-email-templates/`:
+- `supplier-invite`
+- `supplier-application-received`
+- `supplier-application-info-request`
+- `supplier-approved`
+- `supplier-rejected`
+- `supplier-suspended`
 
-Performance:
-- Índices compostos (`supplier_id, status, created_at desc`), `pg_trgm` para pesquisa, view materializada de KPIs com refresh nightly.
-- Paginação server-side (`page_size <= 50`), lazy loading de imagens, `React.Suspense` + `lazyRetry` para todas as rotas novas.
+Registados em `registry.ts`. Um único trigger por evento (transacional, não marketing).
+
+## 8. Notificações in-app
+
+Usa tabela `notifications` existente (não altera schema). Insere notificações para super admins em novos eventos.
+
+## 9. SEO da landing `/fornecedores`
+
+`<Helmet>` com título, descrição, OG, Twitter, JSON-LD `FAQPage` + `Organization`. Não altera SEO existente.
+
+## 10. Feature Flag
+
+- `/fornecedores` sempre acessível (SEO), mas submissão bloqueada quando flag off (mensagem "só por convite").
+- `/admin/supplier-network/*` já protegido por Super Admin.
+- Dashboards supplier já protegidos por `SupplierNetworkGate` + novo `SupplierApprovalGate`.
+
+## 11. Arquitetura futura (stubs, sem UI)
+
+Interfaces TypeScript em `src/lib/gsn/onboarding/`:
+- `StripeConnectOnboarding`, `SupplierSubscriptionAdapter`, `SupplierPayoutAdapter`, `PublicApiKeyIssuer`.
+Implementações vazias (`throw not_implemented`) — só contratos.
+
+## 12. Rotas novas
+
+Registadas em `src/App.tsx` (aditivo):
+- `/fornecedores` (público)
+- `/fornecedores/candidatura` (público)
+- `/supplier/setup` (público, com token)
+- `/supplier/pending` (autenticado)
+- `/admin/supplier-network/applications` (super admin)
+
+`/supplier/login` já existe via `/auth` — reutilizado, não duplicado.
+
+## 13. Garantias de não-regressão
+
+- Registos `gsn_suppliers` existentes default `approved` → nenhum supplier atual é bloqueado.
+- Nenhuma policy existente é DROPPED; apenas `CREATE POLICY … FOR …` novas e `ALTER TABLE ADD COLUMN`.
+- Nenhum menu, rota, ou componente existente é modificado exceto:
+  - `AdminSupplierNetwork.tsx`: adiciona botão "Convidar" e cards KPI (sem remover nada).
+  - `useIsSupplier.ts`: adiciona campo opcional `state`.
+  - `App.tsx`: adiciona rotas.
+- Typecheck após cada bloco.
 
 ## Detalhes técnicos
 
-Migração SQL (uma única, ordem obrigatória): CREATE TABLE → GRANT → ENABLE RLS → POLICIES → índices → triggers → RPCs.
-
-Nova hook `useSupplierMarket()` centraliza `enabled = useSystemFeature("supplier_network_enabled")` + role do utilizador. Todos os pontos de entrada usam-no; quando `false`, renderizam `null` (nenhum flash).
-
-Ficheiros novos (indicativo, sem alterar existentes fora dos dois pontos aprovados em Quotes e Inventory):
 ```text
-src/pages/parts/{PartsSearch,PartDetail,SupplierPublic,PartsFavorites,PartsCart,PartsCheckout,PartsOrders,PartsOrderDetail}.tsx
-src/pages/supplier/{SupplierPromotions,SupplierShipments,SupplierStripeConnect}.tsx
-src/pages/admin/supplier/{Dashboard,Suppliers,Products,Orders,Payments,Commissions,Reviews,Logs,Complaints,Carriers,Settings,FeatureFlags}.tsx
-src/components/parts/{SearchBar,FiltersPanel,ProductCard,CartDrawer,QuotePartsPicker}.tsx
-src/hooks/{useSupplierMarket,useGsnCart,useGsnSearch,useGsnFavorites,useGsnOrders}.ts
-src/lib/gsn/{payments,invoicing,carriers,suppliers}/*.ts  (adapters, stubs)
-supabase/functions/gsn-checkout/index.ts               (chama RPC gsn_cart_checkout)
-supabase/functions/gsn-stripe-connect/index.ts         (stub 501)
-supabase/functions/gsn-notify/index.ts                 (dispatch email/push)
+Fluxo Convite:
+Admin ── invite ──► gsn_supplier_invites (token) ──► email
+   Fornecedor abre /supplier/setup?token=…
+   RPC gsn_accept_invite → cria auth user + gsn_suppliers(state=pending_approval)
+   Admin aprova → state=approved → email
+
+Fluxo Público:
+Visitante /fornecedores ──► form /fornecedores/candidatura
+   INSERT gsn_supplier_applications(state=pending)
+   Admin aprova → cria auth user + gsn_suppliers(state=approved) + reset password email
 ```
 
-Nos dois pontos de integração no ERP, apenas se adiciona um bloco condicional `enabled && <NovoComponente/>` — nenhuma lógica existente é modificada.
+Gating (RLS chave):
+```sql
+create or replace function public.gsn_supplier_is_approved(_uid uuid)
+returns boolean language sql stable security definer set search_path=public as $$
+  select exists(select 1 from gsn_suppliers
+                 where owner_user_id=_uid and state='approved' and deleted_at is null);
+$$;
+```
+Usada em `USING` de policies de write em `gsn_products`, `gsn_stock_movements`, etc. (aditiva, combinada com AND às existentes via nova policy paralela — as antigas mantêm-se).
 
-## Ordem de execução
-
-1. Migração SQL completa (tabelas, RLS, RPCs, índices, triggers, enums).
-2. Hooks + adapters (sem UI).
-3. Fase 2 UI (pesquisa, detalhe, perfil, favoritos).
-4. Fase 3 UI (carrinho, checkout, orders, integração leve em Quotes e Inventory).
-5. Fase 4 (promoções + stubs Stripe/faturação/carriers).
-6. Fase 5 (admin panel + notificações + views KPI).
-7. Typecheck (`tsgo`) e verificação de que rotas ficam ocultas com a flag desligada.
-
-## Fora do âmbito (explicitamente não fazer)
-
-- Cobrar pagamentos reais.
-- Chamar APIs Stripe/Moloni/TecDoc/etc.
-- Alterar schema de `quotes`, `parts`, `stock_movements`, `invoices`.
-- Alterar RLS existente ou funções `has_role`, `get_user_shop_ids`.
-- Alterar componentes ERP/Market fora dos dois pontos identificados.
+Confirma para arrancar (migração SQL primeiro; depois emails, páginas públicas, admin apps, gating).

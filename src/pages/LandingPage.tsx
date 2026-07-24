@@ -369,7 +369,7 @@ export default function LandingPage() {
       {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable).
           Cards are gated by system_feature_flags in real time. If both products
           are disabled, or flags still loading, the entire section is hidden. */}
-      {chooserEnabled && (erpEnabled === true || marketEnabled === true) && (() => {
+      {chooserEnabled && erpEnabled === true && marketEnabled === true && (() => {
         const iconMap: Record<string, any> = { Wrench, ShieldCheck, Car, Store, Building2, Users, Sparkles };
         const ErpIcon = iconMap[landingCfg.erp.icon] || Wrench;
         const MarketIcon = iconMap[landingCfg.market.icon] || Car;

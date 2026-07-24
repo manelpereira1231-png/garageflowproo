@@ -8,6 +8,7 @@ import { Plus, Search, Pencil, Copy, Archive, Trash2, Upload, Download } from "l
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/money";
 
 interface Product {
   id: string;

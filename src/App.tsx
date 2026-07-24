@@ -861,6 +861,11 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
+            <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+              {supplierRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+              ))}
+            </Route>
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />

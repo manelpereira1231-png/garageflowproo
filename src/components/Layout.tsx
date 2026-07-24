@@ -442,7 +442,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
-  ], []);
+  ], [supplierNetworkEnabled]);
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");

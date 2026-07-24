@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Store, ShieldCheck, ShieldOff } from "lucide-react";
+import { Plus, Store, ShieldCheck, ShieldOff, Copy, Send, Users, Clock, CheckCircle2, Ban } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemFeature, setSystemFeature } from "@/hooks/useSystemFeature";
 import { toast } from "sonner";
@@ -91,11 +92,96 @@ export default function AdminSupplierNetwork() {
     void load();
   };
 
+  // Invite state
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState<any>({ company_name: "", email: "", commission_percentage: "5", country: "PT" });
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [applicationsCount, setApplicationsCount] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      const { count } = await supabase
+        .from("gsn_supplier_applications" as any)
+        .select("*", { count: "exact", head: true })
+        .eq("state", "pending");
+      setApplicationsCount(count ?? 0);
+    })();
+  }, []);
+
+  const sendInvite = async () => {
+    if (!inviteForm.company_name.trim() || !inviteForm.email.trim()) return toast.error("Empresa e email obrigatórios");
+    setInviteBusy(true);
+    const token = crypto.randomUUID().replace(/-/g, "") + Math.random().toString(36).slice(2, 10);
+    const { error } = await supabase.from("gsn_supplier_invites" as any).insert({
+      token,
+      email: inviteForm.email.trim(),
+      company_name: inviteForm.company_name.trim(),
+      trade_name: inviteForm.trade_name || null,
+      vat_number: inviteForm.vat_number || null,
+      phone: inviteForm.phone || null,
+      website: inviteForm.website || null,
+      country: inviteForm.country || "PT",
+      district: inviteForm.district || null,
+      city: inviteForm.city || null,
+      plan: inviteForm.plan || null,
+      commission_percentage: Number(inviteForm.commission_percentage) || 5,
+      notes: inviteForm.notes || null,
+    });
+    setInviteBusy(false);
+    if (error) return toast.error(error.message);
+    setInviteLink(`${window.location.origin}/supplier/setup?token=${token}`);
+    toast.success("Convite criado. Copie o link e envie ao fornecedor.");
+  };
+
+  const stats = {
+    total: suppliers.length,
+    pending: suppliers.filter((s) => !s.approved).length,
+    approved: suppliers.filter((s) => s.approved && s.active).length,
+    suspended: suppliers.filter((s) => !s.active).length,
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Rede de Fornecedores</h1>
-        <p className="text-sm text-muted-foreground">Gestão do módulo B2B de peças automóveis.</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Rede de Fornecedores</h1>
+          <p className="text-sm text-muted-foreground">Gestão do módulo B2B de peças automóveis.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild size="sm">
+            <Link to="/admin/supplier-network/applications">
+              Candidaturas
+              {applicationsCount > 0 && <Badge variant="secondary" className="ml-2">{applicationsCount}</Badge>}
+            </Link>
+          </Button>
+          <Button size="sm" onClick={() => { setInviteOpen(true); setInviteLink(null); setInviteForm({ company_name: "", email: "", commission_percentage: "5", country: "PT" }); }}>
+            <Send className="w-4 h-4 mr-2" /> Convidar Fornecedor
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { icon: Users, label: "Total", value: stats.total, tone: "text-primary" },
+          { icon: Clock, label: "Pendentes", value: stats.pending, tone: "text-amber-500" },
+          { icon: CheckCircle2, label: "Ativos", value: stats.approved, tone: "text-emerald-500" },
+          { icon: Ban, label: "Suspensos", value: stats.suspended, tone: "text-destructive" },
+        ].map((k) => {
+          const Icon = k.icon;
+          return (
+            <Card key={k.label}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${k.tone}`} />
+                <div>
+                  <div className="text-2xl font-bold">{k.value}</div>
+                  <div className="text-xs text-muted-foreground">{k.label}</div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Card>
@@ -200,6 +286,45 @@ export default function AdminSupplierNetwork() {
           )}
         </CardContent>
       </Card>
+
+      {/* Invite dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Convidar Fornecedor</DialogTitle></DialogHeader>
+          {inviteLink ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Convite criado. Envie este link ao fornecedor:</p>
+              <div className="flex gap-2">
+                <Input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} />
+                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success("Copiado"); }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button className="w-full" onClick={() => { setInviteOpen(false); void load(); }}>Fechar</Button>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Empresa *</Label><Input value={inviteForm.company_name} onChange={(e) => setInviteForm({ ...inviteForm, company_name: e.target.value })} /></div>
+                <div><Label>Nome comercial</Label><Input value={inviteForm.trade_name || ""} onChange={(e) => setInviteForm({ ...inviteForm, trade_name: e.target.value })} /></div>
+                <div><Label>NIF</Label><Input value={inviteForm.vat_number || ""} onChange={(e) => setInviteForm({ ...inviteForm, vat_number: e.target.value })} /></div>
+                <div><Label>Email *</Label><Input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} /></div>
+                <div><Label>Telefone</Label><Input value={inviteForm.phone || ""} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} /></div>
+                <div><Label>Website</Label><Input value={inviteForm.website || ""} onChange={(e) => setInviteForm({ ...inviteForm, website: e.target.value })} /></div>
+                <div><Label>País</Label><Input value={inviteForm.country || "PT"} maxLength={2} onChange={(e) => setInviteForm({ ...inviteForm, country: e.target.value.toUpperCase() })} /></div>
+                <div><Label>Distrito</Label><Input value={inviteForm.district || ""} onChange={(e) => setInviteForm({ ...inviteForm, district: e.target.value })} /></div>
+                <div><Label>Cidade</Label><Input value={inviteForm.city || ""} onChange={(e) => setInviteForm({ ...inviteForm, city: e.target.value })} /></div>
+                <div><Label>Plano</Label><Input value={inviteForm.plan || ""} onChange={(e) => setInviteForm({ ...inviteForm, plan: e.target.value })} /></div>
+                <div><Label>Comissão (%)</Label><Input type="number" step="0.01" value={inviteForm.commission_percentage} onChange={(e) => setInviteForm({ ...inviteForm, commission_percentage: e.target.value })} /></div>
+              </div>
+              <div><Label>Observações</Label><Input value={inviteForm.notes || ""} onChange={(e) => setInviteForm({ ...inviteForm, notes: e.target.value })} /></div>
+              <Button onClick={sendInvite} disabled={inviteBusy} className="w-full">
+                {inviteBusy ? "A criar convite..." : "Enviar convite"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

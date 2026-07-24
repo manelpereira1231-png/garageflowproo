@@ -203,6 +203,7 @@ const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 const AdminSupplierNetwork = lazyRetry(() => import("@/pages/admin/AdminSupplierNetwork"));
 const AdminSupplierNetworkOrders = lazyRetry(() => import("@/pages/admin/AdminSupplierNetworkOrders"));
 const SupplierNetworkGate = lazyRetry(() => import("@/components/supplier/SupplierNetworkGate"));
+const SupplierApprovalGate = lazyRetry(() => import("@/components/supplier/SupplierApprovalGate"));
 const SupplierLayout = lazyRetry(() => import("@/components/supplier/SupplierLayout"));
 const SupplierDashboard = lazyRetry(() => import("@/pages/supplier/SupplierDashboard"));
 const SupplierProducts = lazyRetry(() => import("@/pages/supplier/SupplierProducts"));
@@ -218,6 +219,11 @@ const SupplierPayments = lazyRetry(() => import("@/pages/supplier/SupplierPaymen
 const SupplierCarriers = lazyRetry(() => import("@/pages/supplier/SupplierCarriers"));
 const SupplierCustomers = lazyRetry(() => import("@/pages/supplier/SupplierCustomers"));
 const SupplierSettings = lazyRetry(() => import("@/pages/supplier/SupplierSettings"));
+const SupplierPending = lazyRetry(() => import("@/pages/supplier/SupplierPending"));
+const SupplierAcceptInvite = lazyRetry(() => import("@/pages/supplier/SupplierAcceptInvite"));
+const FornecedoresLanding = lazyRetry(() => import("@/pages/public/FornecedoresLanding"));
+const FornecedoresApplication = lazyRetry(() => import("@/pages/public/FornecedoresApplication"));
+const AdminSupplierApplications = lazyRetry(() => import("@/pages/admin/AdminSupplierApplications"));
 const PartsMarketplaceGate = lazyRetry(() => import("@/components/parts/PartsMarketplaceGate"));
 const PartsMarketLayout = lazyRetry(() => import("@/components/parts/PartsMarketLayout"));
 const PartsSearch = lazyRetry(() => import("@/pages/parts/PartsSearch"));
@@ -466,10 +472,12 @@ const adminRoutes = [
   { path: "/admin/demos", element: <AdminDemoRequests /> },
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
   { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
+  { path: "/admin/supplier-network/applications", element: <AdminSupplierApplications /> },
 ];
 
 const supplierRoutes = [
   { path: "/supplier", element: <SupplierDashboard />, exact: true },
+  { path: "/supplier/pending", element: <SupplierPending /> },
   { path: "/supplier/products", element: <SupplierProducts /> },
   { path: "/supplier/products/new", element: <SupplierProductForm /> },
   { path: "/supplier/products/:id", element: <SupplierProductForm /> },
@@ -632,6 +640,9 @@ const publicRoutes = [
   { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
   { path: "/legal/market-terms", element: <Suspense fallback={<PageLoader />}><MarketTerms /></Suspense> },
   { path: "/support", element: <Suspense fallback={<PageLoader />}><Support /></Suspense> },
+  { path: "/fornecedores", element: <Suspense fallback={<PageLoader />}><FornecedoresLanding /></Suspense> },
+  { path: "/fornecedores/candidatura", element: <Suspense fallback={<PageLoader />}><FornecedoresApplication /></Suspense> },
+  { path: "/supplier/setup", element: <Suspense fallback={<PageLoader />}><SupplierAcceptInvite /></Suspense> },
 
   // ============ SEO PT (landing pages orgânicas) ============
   { path: "/software-gestao-oficinas", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },
@@ -896,7 +907,7 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
-            <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+            <Route element={<SupplierNetworkGate><SupplierApprovalGate><SupplierLayout /></SupplierApprovalGate></SupplierNetworkGate>}>
               {supplierRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
@@ -1008,7 +1019,7 @@ function AuthenticatedRoutes() {
             <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
           </Route>
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
-          <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+          <Route element={<SupplierNetworkGate><SupplierApprovalGate><SupplierLayout /></SupplierApprovalGate></SupplierNetworkGate>}>
             {supplierRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}

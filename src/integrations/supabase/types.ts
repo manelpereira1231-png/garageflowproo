@@ -4316,11 +4316,187 @@ export type Database = {
           },
         ]
       }
+      gsn_supplier_applications: {
+        Row: {
+          accepted_terms: boolean
+          address: string | null
+          admin_notes: string | null
+          average_delivery_time: string | null
+          brands: string[] | null
+          carriers: string[] | null
+          categories: string[] | null
+          city: string | null
+          company_name: string
+          country: string | null
+          created_at: string
+          created_supplier_id: string | null
+          description: string | null
+          district: string | null
+          email: string
+          id: string
+          ip_hash: string | null
+          phone: string | null
+          postal_code: string | null
+          rejection_reason: string | null
+          responsible_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string | null
+          state: Database["public"]["Enums"]["gsn_supplier_state"]
+          trade_name: string | null
+          updated_at: string
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          accepted_terms?: boolean
+          address?: string | null
+          admin_notes?: string | null
+          average_delivery_time?: string | null
+          brands?: string[] | null
+          carriers?: string[] | null
+          categories?: string[] | null
+          city?: string | null
+          company_name: string
+          country?: string | null
+          created_at?: string
+          created_supplier_id?: string | null
+          description?: string | null
+          district?: string | null
+          email: string
+          id?: string
+          ip_hash?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          rejection_reason?: string | null
+          responsible_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string | null
+          state?: Database["public"]["Enums"]["gsn_supplier_state"]
+          trade_name?: string | null
+          updated_at?: string
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          accepted_terms?: boolean
+          address?: string | null
+          admin_notes?: string | null
+          average_delivery_time?: string | null
+          brands?: string[] | null
+          carriers?: string[] | null
+          categories?: string[] | null
+          city?: string | null
+          company_name?: string
+          country?: string | null
+          created_at?: string
+          created_supplier_id?: string | null
+          description?: string | null
+          district?: string | null
+          email?: string
+          id?: string
+          ip_hash?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          rejection_reason?: string | null
+          responsible_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string | null
+          state?: Database["public"]["Enums"]["gsn_supplier_state"]
+          trade_name?: string | null
+          updated_at?: string
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsn_supplier_applications_created_supplier_id_fkey"
+            columns: ["created_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsn_supplier_invites: {
+        Row: {
+          city: string | null
+          commission_percentage: number | null
+          company_name: string
+          country: string | null
+          created_at: string
+          district: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          notes: string | null
+          phone: string | null
+          plan: string | null
+          token: string
+          trade_name: string | null
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          commission_percentage?: number | null
+          company_name: string
+          country?: string | null
+          created_at?: string
+          district?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          phone?: string | null
+          plan?: string | null
+          token: string
+          trade_name?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          commission_percentage?: number | null
+          company_name?: string
+          country?: string | null
+          created_at?: string
+          district?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          phone?: string | null
+          plan?: string | null
+          token?: string
+          trade_name?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       gsn_suppliers: {
         Row: {
           active: boolean
           address: string | null
+          application_source: string | null
           approved: boolean
+          approved_at: string | null
+          approved_by: string | null
           average_delivery_time: string | null
           banner_url: string | null
           city: string | null
@@ -4332,8 +4508,11 @@ export type Database = {
           delivery_available: boolean
           description: string | null
           district: string | null
+          docs: Json
           email: string | null
           id: string
+          invited_at: string | null
+          invited_by: string | null
           logo_url: string | null
           minimum_order: number | null
           owner_user_id: string | null
@@ -4342,7 +4521,9 @@ export type Database = {
           postal_code: string | null
           rating_average: number
           rating_count: number
+          rejection_reason: string | null
           slug: string | null
+          state: Database["public"]["Enums"]["gsn_supplier_state"]
           stripe_account_id: string | null
           stripe_charges_enabled: boolean
           stripe_payouts_enabled: boolean
@@ -4359,7 +4540,10 @@ export type Database = {
         Insert: {
           active?: boolean
           address?: string | null
+          application_source?: string | null
           approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           average_delivery_time?: string | null
           banner_url?: string | null
           city?: string | null
@@ -4371,8 +4555,11 @@ export type Database = {
           delivery_available?: boolean
           description?: string | null
           district?: string | null
+          docs?: Json
           email?: string | null
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
           logo_url?: string | null
           minimum_order?: number | null
           owner_user_id?: string | null
@@ -4381,7 +4568,9 @@ export type Database = {
           postal_code?: string | null
           rating_average?: number
           rating_count?: number
+          rejection_reason?: string | null
           slug?: string | null
+          state?: Database["public"]["Enums"]["gsn_supplier_state"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
           stripe_payouts_enabled?: boolean
@@ -4398,7 +4587,10 @@ export type Database = {
         Update: {
           active?: boolean
           address?: string | null
+          application_source?: string | null
           approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           average_delivery_time?: string | null
           banner_url?: string | null
           city?: string | null
@@ -4410,8 +4602,11 @@ export type Database = {
           delivery_available?: boolean
           description?: string | null
           district?: string | null
+          docs?: Json
           email?: string | null
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
           logo_url?: string | null
           minimum_order?: number | null
           owner_user_id?: string | null
@@ -4420,7 +4615,9 @@ export type Database = {
           postal_code?: string | null
           rating_average?: number
           rating_count?: number
+          rejection_reason?: string | null
           slug?: string | null
+          state?: Database["public"]["Enums"]["gsn_supplier_state"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
           stripe_payouts_enabled?: boolean
@@ -10011,6 +10208,11 @@ export type Database = {
         }[]
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
+      gsn_accept_invite: { Args: { _token: string }; Returns: string }
+      gsn_approve_application: {
+        Args: { _app_id: string; _commission?: number; _owner_user_id: string }
+        Returns: string
+      }
       gsn_cart_add: {
         Args: { _product_id: string; _quantity?: number; _shop_id: string }
         Returns: string
@@ -10021,8 +10223,21 @@ export type Database = {
         Args: { _body: string; _order_id: string; _subject: string }
         Returns: string
       }
+      gsn_current_supplier_state: {
+        Args: never
+        Returns: {
+          company_name: string
+          rejection_reason: string
+          state: Database["public"]["Enums"]["gsn_supplier_state"]
+          supplier_id: string
+        }[]
+      }
       gsn_order_transition: {
         Args: { _note?: string; _order_id: string; _to: string }
+        Returns: undefined
+      }
+      gsn_reject_application: {
+        Args: { _app_id: string; _reason: string }
         Returns: undefined
       }
       gsn_search_products: {
@@ -10078,6 +10293,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      gsn_supplier_is_approved: { Args: { _uid: string }; Returns: boolean }
       has_capability: {
         Args: { _cap: string; _shop_id: string }
         Returns: boolean
@@ -10296,6 +10512,14 @@ export type Database = {
         | "release"
         | "adjust"
         | "inventory"
+      gsn_supplier_state:
+        | "invited"
+        | "pending"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "suspended"
+        | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -10473,6 +10697,15 @@ export const Constants = {
         "release",
         "adjust",
         "inventory",
+      ],
+      gsn_supplier_state: [
+        "invited",
+        "pending",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "suspended",
+        "blocked",
       ],
     },
   },

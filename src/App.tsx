@@ -1089,6 +1089,7 @@ const App = () => (
           <Suspense fallback={null}>
             <CommandPalette />
           </Suspense>
+          <PublicRouteTracker />
           <AppRoutes />
           <SupportFab />
           <CookieConsentBanner />

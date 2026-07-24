@@ -94,9 +94,36 @@ export default function SupplierProfile() {
           <div><Label>Encomenda mínima (€)</Label><Input type="number" step="0.01" value={data.minimum_order ?? 0} onChange={(e) => set("minimum_order", e.target.value)} /></div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader><CardTitle>Pagamentos (Stripe Connect)</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-3 text-sm">
+            <span className={data.stripe_charges_enabled ? "text-emerald-600" : "text-muted-foreground"}>
+              {data.stripe_charges_enabled ? "✓ Recebimentos ativos" : "○ Recebimentos inativos"}
+            </span>
+            <span className={data.stripe_payouts_enabled ? "text-emerald-600" : "text-muted-foreground"}>
+              {data.stripe_payouts_enabled ? "✓ Transferências ativas" : "○ Transferências inativas"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Ative a sua conta Stripe Express para receber pagamentos diretamente. A comissão da plataforma é retida automaticamente em cada venda.
+          </p>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { data: res, error } = await supabase.functions.invoke("gsn-connect-onboarding");
+              if (error) return toast.error(error.message);
+              if (res?.url) window.location.href = res.url;
+            }}
+          >
+            {data.stripe_account_id ? "Gerir conta Stripe" : "Ativar recebimentos via Stripe"}
+          </Button>
+        </CardContent>
+      </Card>
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>{saving ? "A guardar..." : "Guardar alterações"}</Button>
       </div>
+
     </div>
   );
 }

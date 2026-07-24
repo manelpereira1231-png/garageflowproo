@@ -78,6 +78,43 @@ export default function SupplierProducts() {
     void load();
   };
 
+  const exportCsv = () => {
+    const rows = [["sku","title","brand","price","stock","status"], ...items.map((p) => [p.sku ?? "", p.title, p.brand ?? "", String(p.price), String(p.stock), p.status])];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = `produtos-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCsv = async (file: File) => {
+    if (!supplierId) return;
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) return toast.error("CSV vazio");
+    const header = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase());
+    const idx = (k: string) => header.indexOf(k);
+    const rows: any[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].match(/("([^"]|"")*"|[^,]*)(,|$)/g)?.map((c) => c.replace(/,$/, "").replace(/^"|"$/g, "").replace(/""/g, '"')) ?? [];
+      const title = cols[idx("title")]?.trim();
+      if (!title) continue;
+      rows.push({
+        supplier_id: supplierId,
+        title,
+        sku: cols[idx("sku")]?.trim() || null,
+        brand: cols[idx("brand")]?.trim() || null,
+        price: Number(cols[idx("price")] || 0),
+        stock: Number(cols[idx("stock")] || 0),
+        status: (cols[idx("status")]?.trim() as any) || "draft",
+      });
+    }
+    if (!rows.length) return toast.error("Sem linhas válidas");
+    const { error } = await supabase.from("gsn_products" as any).insert(rows);
+    if (error) return toast.error(error.message);
+    toast.success(`${rows.length} produtos importados`);
+    void load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -85,9 +122,16 @@ export default function SupplierProducts() {
           <h1 className="text-2xl font-bold">Produtos</h1>
           <p className="text-sm text-muted-foreground">Catálogo da sua loja.</p>
         </div>
-        <Link to="/supplier/products/new">
-          <Button><Plus className="w-4 h-4 mr-2" />Novo produto</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-2" />Exportar</Button>
+          <label>
+            <input type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importCsv(f); e.target.value = ""; }} />
+            <Button variant="outline" asChild><span><Upload className="w-4 h-4 mr-2" />Importar CSV</span></Button>
+          </label>
+          <Link to="/supplier/products/new">
+            <Button><Plus className="w-4 h-4 mr-2" />Novo produto</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="relative max-w-md">

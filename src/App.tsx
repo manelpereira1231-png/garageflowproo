@@ -208,6 +208,8 @@ const SupplierProducts = lazyRetry(() => import("@/pages/supplier/SupplierProduc
 const SupplierProductForm = lazyRetry(() => import("@/pages/supplier/SupplierProductForm"));
 const SupplierProfile = lazyRetry(() => import("@/pages/supplier/SupplierProfile"));
 const SupplierPlaceholder = lazyRetry(() => import("@/pages/supplier/SupplierPlaceholder"));
+const SupplierCategories = lazyRetry(() => import("@/pages/supplier/SupplierCategories"));
+const SupplierStock = lazyRetry(() => import("@/pages/supplier/SupplierStock"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
@@ -451,8 +453,8 @@ const supplierRoutes = [
   { path: "/supplier/products", element: <SupplierProducts /> },
   { path: "/supplier/products/new", element: <SupplierProductForm /> },
   { path: "/supplier/products/:id", element: <SupplierProductForm /> },
-  { path: "/supplier/categories", element: <SupplierPlaceholder title="Categorias" description="Gestão de categorias do seu catálogo." /> },
-  { path: "/supplier/stock", element: <SupplierPlaceholder title="Stock" description="Histórico de movimentos, ajustes e inventário." /> },
+  { path: "/supplier/categories", element: <SupplierCategories /> },
+  { path: "/supplier/stock", element: <SupplierStock /> },
   { path: "/supplier/orders", element: <SupplierPlaceholder title="Encomendas" description="Encomendas recebidas de oficinas." /> },
   { path: "/supplier/customers", element: <SupplierPlaceholder title="Clientes" description="Oficinas que compram os seus produtos." /> },
   { path: "/supplier/payments", element: <SupplierPlaceholder title="Pagamentos" description="Pagamentos processados via Stripe Connect." /> },

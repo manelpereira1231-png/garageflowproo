@@ -109,9 +109,10 @@ export async function ensurePromotionsLoaded() {
 export async function listAllPromotions(): Promise<PromoRow[]> {
   const { data } = await supabase
     .from("plan_promotions")
-    .select("country_code, plan, cycle, promo_price, currency, stripe_price_id, active, starts_at, ends_at");
-  return (data as PromoRow[] | null) ?? [];
+    .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
+  return ((data as Omit<PromoRow, "stripe_price_id">[] | null) ?? []).map((r) => ({ ...r, stripe_price_id: null }));
 }
+
 
 /** Real-time subscription so any tab (landing, billing, admin) updates instantly. */
 export function subscribeToPromotions(onChange: () => void) {

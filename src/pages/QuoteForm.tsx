@@ -15,6 +15,7 @@ import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;

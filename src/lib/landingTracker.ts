@@ -92,7 +92,7 @@ export function trackLandingVisit(pathname?: string) {
       medium: params.get("utm_medium") || "",
       campaign: params.get("utm_campaign") || "",
       gclid: params.get("gclid") || "",
-      landing_path: window.location.pathname,
+      landing_path: path,
       referrer: document.referrer || "",
       device_type: isMobile ? "mobile" : "desktop",
       session_id: sessionId,

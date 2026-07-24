@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Copy, Archive, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Copy, Archive, Trash2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { toast } from "sonner";

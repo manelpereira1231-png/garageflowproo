@@ -472,10 +472,12 @@ const adminRoutes = [
   { path: "/admin/demos", element: <AdminDemoRequests /> },
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
   { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
+  { path: "/admin/supplier-network/applications", element: <AdminSupplierApplications /> },
 ];
 
 const supplierRoutes = [
   { path: "/supplier", element: <SupplierDashboard />, exact: true },
+  { path: "/supplier/pending", element: <SupplierPending /> },
   { path: "/supplier/products", element: <SupplierProducts /> },
   { path: "/supplier/products/new", element: <SupplierProductForm /> },
   { path: "/supplier/products/:id", element: <SupplierProductForm /> },

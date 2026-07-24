@@ -91,20 +91,19 @@ function PlanPromoBlock({ countryCode, plan, cycle, baseAmount, currencySymbol }
 
   const load = async () => {
     if (!countryCode) return;
-    const { data } = await supabase
-      .from("plan_promotions")
-      .select("promo_price, active, starts_at, ends_at, stripe_price_id")
-      .eq("country_code", countryCode)
-      .eq("plan", plan)
-      .eq("cycle", cycle)
-      .maybeSingle();
-    if (data) {
+    const { data } = await supabase.rpc("admin_get_promotion" as any, {
+      p_country_code: countryCode,
+      p_plan: plan,
+      p_cycle: cycle,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row) {
       setState({
-        promo_price: Number(data.promo_price || 0),
-        active: !!data.active,
-        starts_at: toLocalInput(data.starts_at as any),
-        ends_at: toLocalInput(data.ends_at as any),
-        stripe_price_id: data.stripe_price_id ?? null,
+        promo_price: Number(row.promo_price || 0),
+        active: !!row.active,
+        starts_at: toLocalInput(row.starts_at as any),
+        ends_at: toLocalInput(row.ends_at as any),
+        stripe_price_id: row.stripe_price_id ?? null,
         loaded: true,
       });
       setExisted(true);
@@ -114,6 +113,7 @@ function PlanPromoBlock({ countryCode, plan, cycle, baseAmount, currencySymbol }
       setExisted(false);
     }
   };
+
 
   useEffect(() => { void load(); }, [countryCode, plan, cycle]);
 

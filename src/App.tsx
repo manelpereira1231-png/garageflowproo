@@ -228,6 +228,7 @@ const PartsOrders = lazyRetry(() => import("@/pages/parts/PartsOrders"));
 const PartsOrderDetail = lazyRetry(() => import("@/pages/parts/PartsOrderDetail"));
 const PartsNotifications = lazyRetry(() => import("@/pages/parts/PartsNotifications"));
 const PartsSupplierPublic = lazyRetry(() => import("@/pages/parts/SupplierPublic"));
+const PartsSuppliersDirectory = lazyRetry(() => import("@/pages/parts/PartsSuppliersDirectory"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)

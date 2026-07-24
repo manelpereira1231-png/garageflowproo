@@ -8335,6 +8335,16 @@ export type Database = {
         Args: { _shop_id: string; _target_user_id: string }
         Returns: boolean
       }
+      admin_get_promotion: {
+        Args: { p_country_code: string; p_cycle: string; p_plan: string }
+        Returns: {
+          active: boolean
+          ends_at: string
+          promo_price: number
+          starts_at: string
+          stripe_price_id: string
+        }[]
+      }
       admin_list_country_settings: {
         Args: never
         Returns: {
@@ -8377,6 +8387,30 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "country_settings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_list_plan_country_prices: {
+        Args: never
+        Returns: {
+          active: boolean
+          amount: number
+          country_code: string
+          created_at: string
+          currency: string
+          cycle: string
+          id: string
+          plan_slug: string
+          stripe_coupon_id: string | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          trial_days_override: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "plan_country_prices"
           isOneToOne: false
           isSetofReturn: true
         }

@@ -464,6 +464,7 @@ const adminRoutes = [
   { path: "/admin/accounting", element: <AdminAccounting /> },
   { path: "/admin/demos", element: <AdminDemoRequests /> },
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
+  { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
 ];
 
 const supplierRoutes = [

@@ -208,6 +208,8 @@ const SupplierProducts = lazyRetry(() => import("@/pages/supplier/SupplierProduc
 const SupplierProductForm = lazyRetry(() => import("@/pages/supplier/SupplierProductForm"));
 const SupplierProfile = lazyRetry(() => import("@/pages/supplier/SupplierProfile"));
 const SupplierPlaceholder = lazyRetry(() => import("@/pages/supplier/SupplierPlaceholder"));
+const SupplierCategories = lazyRetry(() => import("@/pages/supplier/SupplierCategories"));
+const SupplierStock = lazyRetry(() => import("@/pages/supplier/SupplierStock"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)

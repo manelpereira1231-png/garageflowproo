@@ -84,6 +84,7 @@ const navSections = [
     label: "Operações",
     items: [
       { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
+      { path: "/admin/supplier-network", label: "Rede de Fornecedores", icon: Store },
     ],
   },
 ];

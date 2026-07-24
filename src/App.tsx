@@ -199,6 +199,16 @@ const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDem
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 
+// GarageFlow Supplier Network (GSN) — módulo B2B isolado por feature flag
+const AdminSupplierNetwork = lazyRetry(() => import("@/pages/admin/AdminSupplierNetwork"));
+const SupplierNetworkGate = lazyRetry(() => import("@/components/supplier/SupplierNetworkGate"));
+const SupplierLayout = lazyRetry(() => import("@/components/supplier/SupplierLayout"));
+const SupplierDashboard = lazyRetry(() => import("@/pages/supplier/SupplierDashboard"));
+const SupplierProducts = lazyRetry(() => import("@/pages/supplier/SupplierProducts"));
+const SupplierProductForm = lazyRetry(() => import("@/pages/supplier/SupplierProductForm"));
+const SupplierProfile = lazyRetry(() => import("@/pages/supplier/SupplierProfile"));
+const SupplierPlaceholder = lazyRetry(() => import("@/pages/supplier/SupplierPlaceholder"));
+
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({
@@ -433,6 +443,24 @@ const adminRoutes = [
   { path: "/admin/growth", element: <AdminGrowth /> },
   { path: "/admin/accounting", element: <AdminAccounting /> },
   { path: "/admin/demos", element: <AdminDemoRequests /> },
+  { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
+];
+
+const supplierRoutes = [
+  { path: "/supplier", element: <SupplierDashboard />, exact: true },
+  { path: "/supplier/products", element: <SupplierProducts /> },
+  { path: "/supplier/products/new", element: <SupplierProductForm /> },
+  { path: "/supplier/products/:id", element: <SupplierProductForm /> },
+  { path: "/supplier/categories", element: <SupplierPlaceholder title="Categorias" description="Gestão de categorias do seu catálogo." /> },
+  { path: "/supplier/stock", element: <SupplierPlaceholder title="Stock" description="Histórico de movimentos, ajustes e inventário." /> },
+  { path: "/supplier/orders", element: <SupplierPlaceholder title="Encomendas" description="Encomendas recebidas de oficinas." /> },
+  { path: "/supplier/customers", element: <SupplierPlaceholder title="Clientes" description="Oficinas que compram os seus produtos." /> },
+  { path: "/supplier/payments", element: <SupplierPlaceholder title="Pagamentos" description="Pagamentos processados via Stripe Connect." /> },
+  { path: "/supplier/carriers", element: <SupplierPlaceholder title="Transportadoras" description="CTT, DPD, GLS, MRW, DHL, UPS, Correos Express e outros." /> },
+  { path: "/supplier/invoices", element: <SupplierPlaceholder title="Faturas" description="Faturas emitidas para cada encomenda." /> },
+  { path: "/supplier/reviews", element: <SupplierPlaceholder title="Avaliações" description="Feedback recebido das oficinas compradoras." /> },
+  { path: "/supplier/profile", element: <SupplierProfile /> },
+  { path: "/supplier/settings", element: <SupplierPlaceholder title="Configurações" description="Notificações, preferências e conta." /> },
 ];
 
 
@@ -833,6 +861,11 @@ function AuthenticatedRoutes() {
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
               ))}
             </Route>
+            <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+              {supplierRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+              ))}
+            </Route>
             <Route element={<Layout><Outlet /></Layout>}>
               {shopRoutes.map((route) => (
                 <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
@@ -935,6 +968,11 @@ function AuthenticatedRoutes() {
             <Route path="/market/profile" element={<MarketLoginRouteRedirect />} />
           </Route>
           <Route path="/carity/*" element={<Navigate to="/market" replace />} />
+          <Route element={<SupplierNetworkGate><SupplierLayout /></SupplierNetworkGate>}>
+            {supplierRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+            ))}
+          </Route>
           <Route element={<Layout><Outlet /></Layout>}>
             {shopRoutes.map((route) => (
               <Route

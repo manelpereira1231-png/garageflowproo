@@ -217,6 +217,16 @@ const SupplierPayments = lazyRetry(() => import("@/pages/supplier/SupplierPaymen
 const SupplierCarriers = lazyRetry(() => import("@/pages/supplier/SupplierCarriers"));
 const SupplierCustomers = lazyRetry(() => import("@/pages/supplier/SupplierCustomers"));
 const SupplierSettings = lazyRetry(() => import("@/pages/supplier/SupplierSettings"));
+const PartsMarketplaceGate = lazyRetry(() => import("@/components/parts/PartsMarketplaceGate"));
+const PartsMarketLayout = lazyRetry(() => import("@/components/parts/PartsMarketLayout"));
+const PartsSearch = lazyRetry(() => import("@/pages/parts/PartsSearch"));
+const PartDetail = lazyRetry(() => import("@/pages/parts/PartDetail"));
+const PartsFavorites = lazyRetry(() => import("@/pages/parts/PartsFavorites"));
+const PartsCart = lazyRetry(() => import("@/pages/parts/PartsCart"));
+const PartsOrders = lazyRetry(() => import("@/pages/parts/PartsOrders"));
+const PartsOrderDetail = lazyRetry(() => import("@/pages/parts/PartsOrderDetail"));
+const PartsNotifications = lazyRetry(() => import("@/pages/parts/PartsNotifications"));
+const PartsSupplierPublic = lazyRetry(() => import("@/pages/parts/SupplierPublic"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)

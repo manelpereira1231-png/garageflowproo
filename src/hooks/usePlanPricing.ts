@@ -107,18 +107,17 @@ export function useEffectivePlanPrice(
 export async function fetchAllPlanPrices(countryCode: string) {
   const { data, error } = await supabase
     .from("plan_country_prices" as any)
-    .select("plan_slug, country_code, cycle, currency, amount, stripe_price_id, stripe_product_id, active")
+    .select("plan_slug, country_code, cycle, currency, amount, active")
     .eq("country_code", countryCode)
     .eq("active", true);
   if (error || !data) return [];
-  return (data as unknown) as Array<{
+  return ((data as unknown) as Array<{
     plan_slug: string;
     country_code: string;
     cycle: EffectivePlanPrice["cycle"];
     currency: string;
     amount: number;
-    stripe_price_id: string | null;
-    stripe_product_id: string | null;
     active: boolean;
-  }>;
+  }>).map((r) => ({ ...r, stripe_price_id: null, stripe_product_id: null }));
 }
+

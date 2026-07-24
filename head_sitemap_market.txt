@@ -1,0 +1,12 @@
+HTTP/2 200 
+date: Fri, 24 Jul 2026 00:48:47 GMT
+content-type: text/xml; charset=utf-8
+etag: "b61796b0ef93498d134a9f89fe8d3e75"
+strict-transport-security: max-age=31536000; includeSubDomains
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+x-deployment-id: 762b4af3-7aa3-426b-81d7-aabb9fee7737
+set-cookie: __cf_bm=cZ_HHl.tkd56Ko5Z8uLL1NC7PtCRL05Vat7f9d8Cwg8-1784854127.4746933-1.0.1.1-zzsx7WJgDfmDxoaUKbBXC642_WKz9na0PhLGOFU9.MQL8YGoqfAr7uugfufIR_6rBvo_.9PSKzx1KSgcieuKnXKsCIjcGHyOj0Y7BFReT4eFNuIPvAkvIore6mlQo0Gj; HttpOnly; SameSite=None; Secure; Path=/; Domain=garageflow.pt; Expires=Fri, 24 Jul 2026 01:18:47 GMT
+server: cloudflare
+cf-ray: a1feebd8ba489ed2-CDG
+

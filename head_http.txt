@@ -1,0 +1,11 @@
+HTTP/1.1 301 Moved Permanently
+Date: Fri, 24 Jul 2026 00:48:47 GMT
+Connection: keep-alive
+Location: https://garageflow.pt/
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Referrer-Policy: strict-origin-when-cross-origin
+X-Content-Type-Options: nosniff
+set-cookie: __cf_bm=UPh_aBTthPqd16jUwFEsL5Ob3lmRShdObdwdyjRZ61I-1784854127.404909-1.0.1.1-RRvRNQzLObKMTYnOX7TmHOcA4FtOJAJNK._5jjHqCFySwPFSYKOYgJ0.S0lS0zg5OXHw8hb.j5u9RW.prYOyca6s5spEibkrjJtxqZFiYqS5D0iL3.TTEz2LSia08hdJ; HttpOnly; Path=/; Domain=garageflow.pt; Expires=Fri, 24 Jul 2026 01:18:47 GMT
+Server: cloudflare
+CF-RAY: a1feebd84a1fd36b-CDG
+

@@ -216,9 +216,20 @@ export default function ServiceForm() {
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="font-semibold">{t('quotes.lines')}</h3>
-            <Button type="button" variant="outline" size="sm" onClick={addLine}>
-              <Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <GsnPartPickerButton
+                label="Comprar do Marketplace"
+                onPick={(p) => setLines(prev => [...prev, {
+                  id: crypto.randomUUID(), type: 'part',
+                  name: `${p.title}${p.brand ? ` — ${p.brand}` : ''}${p.sku ? ` (${p.sku})` : ''}`,
+                  quantity: 1, unit_price: Number(p.price) || 0,
+                  unit_cost: Number(p.price) || 0, vat_rate: Number(p.vat) || shopDefaults.vat_rate,
+                }])}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                <Plus className="w-3.5 h-3.5 mr-1.5" />{t('quotes.addLine')}
+              </Button>
+            </div>
           </div>
           <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
             <span>

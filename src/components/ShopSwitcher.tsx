@@ -357,6 +357,46 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Link de ativação — garante entrega mesmo se o email não chegar (spam, descartáveis, etc.) */}
+      <Dialog open={!!activationInfo} onOpenChange={(v) => !v && setActivationInfo(null)}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Convite pronto para partilhar</DialogTitle>
+            <DialogDescription>
+              Enviámos o email de ativação para <strong>{activationInfo?.email}</strong>. Como alguns domínios (empresariais, filtros anti-spam, endereços descartáveis) podem bloquear a entrega, deixamos aqui o link direto — pode enviá-lo pelo WhatsApp, SMS ou copiar diretamente ao responsável.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="rounded-md border bg-muted/40 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Link de ativação (válido de imediato)</p>
+              <p className="text-xs break-all font-mono text-foreground/90 select-all">{activationInfo?.link}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={copyActivationLink} className="flex-1">
+                {copied ? <><Check className="w-4 h-4 mr-2" /> Copiado</> : <><Copy className="w-4 h-4 mr-2" /> Copiar link</>}
+              </Button>
+              {activationInfo && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const msg = `Olá! Aqui está o teu acesso ao GarageFlow: ${activationInfo.link}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                  }}
+                >
+                  WhatsApp
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Ao abrir o link, o responsável define a palavra-passe e entra automaticamente. O link é pessoal — não o partilhe publicamente.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setActivationInfo(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

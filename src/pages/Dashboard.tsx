@@ -829,8 +829,8 @@ function OwnerDashboard() {
         const byServices = [...perShopBreakdown].sort((a, b) => b.services - a.services);
         const byGrowth = [...perShopBreakdown].sort((a, b) => b.growth - a.growth);
         const rankings = [
-          { label: 'Maior faturação', shop: byRevenue[0], value: `${currency}${byRevenue[0].revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
-          { label: 'Maior lucro', shop: byProfit[0], value: `${currency}${byProfit[0].profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
+          { label: 'Maior faturação', shop: byRevenue[0], value: fmt(byRevenue[0].revenue), icon: DollarSign, color: 'text-emerald-500' },
+          { label: 'Maior lucro', shop: byProfit[0], value: fmt(byProfit[0].profit), icon: TrendingUp, color: 'text-primary' },
           { label: 'Mais serviços', shop: byServices[0], value: `${byServices[0].services}`, icon: Wrench, color: 'text-blue-500' },
           { label: 'Maior crescimento', shop: byGrowth[0], value: `${byGrowth[0].growth >= 0 ? '+' : ''}${byGrowth[0].growth}%`, icon: BarChart3, color: byGrowth[0].growth >= 0 ? 'text-emerald-500' : 'text-destructive' },
         ];

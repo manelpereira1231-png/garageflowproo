@@ -210,6 +210,13 @@ const SupplierProfile = lazyRetry(() => import("@/pages/supplier/SupplierProfile
 const SupplierPlaceholder = lazyRetry(() => import("@/pages/supplier/SupplierPlaceholder"));
 const SupplierCategories = lazyRetry(() => import("@/pages/supplier/SupplierCategories"));
 const SupplierStock = lazyRetry(() => import("@/pages/supplier/SupplierStock"));
+const SupplierOrders = lazyRetry(() => import("@/pages/supplier/SupplierOrders"));
+const SupplierInvoices = lazyRetry(() => import("@/pages/supplier/SupplierInvoices"));
+const SupplierReviews = lazyRetry(() => import("@/pages/supplier/SupplierReviews"));
+const SupplierPayments = lazyRetry(() => import("@/pages/supplier/SupplierPayments"));
+const SupplierCarriers = lazyRetry(() => import("@/pages/supplier/SupplierCarriers"));
+const SupplierCustomers = lazyRetry(() => import("@/pages/supplier/SupplierCustomers"));
+const SupplierSettings = lazyRetry(() => import("@/pages/supplier/SupplierSettings"));
 
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
@@ -455,14 +462,14 @@ const supplierRoutes = [
   { path: "/supplier/products/:id", element: <SupplierProductForm /> },
   { path: "/supplier/categories", element: <SupplierCategories /> },
   { path: "/supplier/stock", element: <SupplierStock /> },
-  { path: "/supplier/orders", element: <SupplierPlaceholder title="Encomendas" description="Encomendas recebidas de oficinas." /> },
-  { path: "/supplier/customers", element: <SupplierPlaceholder title="Clientes" description="Oficinas que compram os seus produtos." /> },
-  { path: "/supplier/payments", element: <SupplierPlaceholder title="Pagamentos" description="Pagamentos processados via Stripe Connect." /> },
-  { path: "/supplier/carriers", element: <SupplierPlaceholder title="Transportadoras" description="CTT, DPD, GLS, MRW, DHL, UPS, Correos Express e outros." /> },
-  { path: "/supplier/invoices", element: <SupplierPlaceholder title="Faturas" description="Faturas emitidas para cada encomenda." /> },
-  { path: "/supplier/reviews", element: <SupplierPlaceholder title="Avaliações" description="Feedback recebido das oficinas compradoras." /> },
+  { path: "/supplier/orders", element: <SupplierOrders /> },
+  { path: "/supplier/customers", element: <SupplierCustomers /> },
+  { path: "/supplier/payments", element: <SupplierPayments /> },
+  { path: "/supplier/carriers", element: <SupplierCarriers /> },
+  { path: "/supplier/invoices", element: <SupplierInvoices /> },
+  { path: "/supplier/reviews", element: <SupplierReviews /> },
   { path: "/supplier/profile", element: <SupplierProfile /> },
-  { path: "/supplier/settings", element: <SupplierPlaceholder title="Configurações" description="Notificações, preferências e conta." /> },
+  { path: "/supplier/settings", element: <SupplierSettings /> },
 ];
 
 

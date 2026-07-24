@@ -165,7 +165,7 @@ function OwnerDashboard() {
         if (!shop) {
           return;
         }
-        setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
+        setCurrency(shop.currency || getCountryConfig().currency || "EUR");
         setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
         setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
 

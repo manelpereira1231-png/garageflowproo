@@ -334,12 +334,13 @@ export default function Stock() {
           <p className="text-sm text-muted-foreground mt-0.5">{t('stock.subtitle')}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditId(null); setForm(emptyForm); } }}>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {can("stock.manage") && parts.length === 0 && (
               <Button size="sm" variant="outline" className="gap-1" onClick={seedInitialParts}>
                 <Sparkles className="w-4 h-4" /> Pack inicial
               </Button>
             )}
+            {can("stock.manage") && <GsnPartPickerButton />}
             {can("stock.manage") && (
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="w-4 h-4 mr-1" />{t('stock.newPart')}</Button>

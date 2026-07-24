@@ -138,7 +138,7 @@ export default function AdminPlans() {
     setLoading(true);
     const [plansRes, pricesRes, countriesRes, catalogRes] = await Promise.all([
       supabase.from("plans").select("*").order("sort_order", { ascending: true }),
-      supabase.from("plan_country_prices" as any).select("*"),
+      supabase.rpc("admin_list_plan_country_prices" as any),
       supabase.from("country_settings").select("code,name,currency,currency_symbol").eq("active", true).order("name"),
       supabase.from("plan_limits_catalog" as any).select("*").order("sort_order", { ascending: true }),
     ]);

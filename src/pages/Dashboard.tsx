@@ -874,8 +874,8 @@ function OwnerDashboard() {
                           <div className="font-medium truncate max-w-[220px]">{s.name}</div>
                           {s.address && <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">{s.address}</div>}
                         </td>
-                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{currency}{s.revenue.toFixed(2)}</td>
-                        <td className="py-2.5 px-3 text-right mono tabular-nums">{currency}{s.profit.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{fmt(s.revenue)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{fmt(s.profit)}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums">{s.services}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.clients}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.vehicles}</td>

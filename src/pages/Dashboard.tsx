@@ -110,13 +110,10 @@ function OwnerDashboard() {
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
-  const [currencyCode, setCurrencyCode] = useState<string>(() => {
-    try { return require("@/lib/regionConfig").getCountryConfig().currency || "EUR"; } catch { return "EUR"; }
+  const [currency, setCurrency] = useState<string>(() => {
+    try { return getCountryConfig().currency || "EUR"; } catch { return "EUR"; }
   });
-  const fmt = useCallback((v: number) => {
-    const { formatMoney } = require("@/lib/money");
-    return formatMoney(v, currencyCode);
-  }, [currencyCode]);
+  const fmt = useCallback((v: number) => formatMoney(v, currency), [currency]);
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);

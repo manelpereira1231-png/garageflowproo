@@ -199,6 +199,16 @@ const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDem
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 
+// GarageFlow Supplier Network (GSN) — módulo B2B isolado por feature flag
+const AdminSupplierNetwork = lazyRetry(() => import("@/pages/admin/AdminSupplierNetwork"));
+const SupplierNetworkGate = lazyRetry(() => import("@/components/supplier/SupplierNetworkGate"));
+const SupplierLayout = lazyRetry(() => import("@/components/supplier/SupplierLayout"));
+const SupplierDashboard = lazyRetry(() => import("@/pages/supplier/SupplierDashboard"));
+const SupplierProducts = lazyRetry(() => import("@/pages/supplier/SupplierProducts"));
+const SupplierProductForm = lazyRetry(() => import("@/pages/supplier/SupplierProductForm"));
+const SupplierProfile = lazyRetry(() => import("@/pages/supplier/SupplierProfile"));
+const SupplierPlaceholder = lazyRetry(() => import("@/pages/supplier/SupplierPlaceholder"));
+
 
 // Optimized QueryClient for scale (staleTime, gcTime, retries)
 const queryClient = new QueryClient({

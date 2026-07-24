@@ -17,6 +17,8 @@ import { useOwnedShops } from "@/hooks/useOwnedShops";
 import { useIsChildShop } from "@/hooks/useIsChildShop";
 import MarketActivityCard from "@/components/MarketActivityCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
+import { formatMoney } from "@/lib/money";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.
@@ -108,7 +110,10 @@ function OwnerDashboard() {
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });
   const [recentServices, setRecentServices] = useState<any[]>([]);
-  const [currency, setCurrency] = useState("€");
+  const [currency, setCurrency] = useState<string>(() => {
+    try { return getCountryConfig().currency || "EUR"; } catch { return "EUR"; }
+  });
+  const fmt = useCallback((v: number) => formatMoney(v, currency), [currency]);
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
   const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
@@ -160,7 +165,7 @@ function OwnerDashboard() {
         if (!shop) {
           return;
         }
-        setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
+        setCurrency(shop.currency || getCountryConfig().currency || "EUR");
         setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
         setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
 
@@ -297,7 +302,7 @@ function OwnerDashboard() {
           const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
           autoAlerts.push({
             id: 'auto-overdue',
-            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${currency}${overdueTotal.toFixed(0)})`,
+            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${fmt(overdueTotal)})`,
             type: 'payment_failed',
             status: 'pending',
             created_at: new Date().toISOString(),
@@ -513,10 +518,10 @@ function OwnerDashboard() {
   };
 
   const stats = [
-    { label: t('dashboard.revenueMonth'), value: `${currency}${kpis.revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue), href: '/financial/reports' },
-    { label: t('dashboard.profitMonth'), value: `${currency}${kpis.profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit), href: '/financial/reports?view=profit' },
+    { label: t('dashboard.revenueMonth'), value: fmt(kpis.revenue), icon: DollarSign, color: 'text-emerald-500', delta: pctDelta(kpis.revenue, prevKpis.revenue), href: '/financial/reports' },
+    { label: t('dashboard.profitMonth'), value: fmt(kpis.profit), icon: TrendingUp, color: 'text-primary', delta: pctDelta(kpis.profit, prevKpis.profit), href: '/financial/reports?view=profit' },
     { label: t('dashboard.servicesMonth'), value: String(kpis.serviceCount), icon: Wrench, color: 'text-blue-500', delta: pctDelta(kpis.serviceCount, prevKpis.serviceCount), href: '/services' },
-    { label: t('dashboard.avgTicket'), value: `${currency}${kpis.avgTicket.toFixed(2)}`, icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket), href: '/financial/reports?view=ticket' },
+    { label: t('dashboard.avgTicket'), value: fmt(kpis.avgTicket), icon: BarChart3, color: 'text-purple-500', delta: pctDelta(kpis.avgTicket, prevKpis.avgTicket), href: '/financial/reports?view=ticket' },
     { label: t('dashboard.openQuotes'), value: String(kpis.openQuotes), icon: FileText, color: 'text-amber-500', delta: null, href: '/quotes?status=open' },
     { label: t('dashboard.activeClients'), value: String(kpis.activeClients), icon: Users, color: 'text-cyan-500', delta: null, href: '/clients?filter=active' },
   ];
@@ -824,8 +829,8 @@ function OwnerDashboard() {
         const byServices = [...perShopBreakdown].sort((a, b) => b.services - a.services);
         const byGrowth = [...perShopBreakdown].sort((a, b) => b.growth - a.growth);
         const rankings = [
-          { label: 'Maior faturação', shop: byRevenue[0], value: `${currency}${byRevenue[0].revenue.toFixed(2)}`, icon: DollarSign, color: 'text-emerald-500' },
-          { label: 'Maior lucro', shop: byProfit[0], value: `${currency}${byProfit[0].profit.toFixed(2)}`, icon: TrendingUp, color: 'text-primary' },
+          { label: 'Maior faturação', shop: byRevenue[0], value: fmt(byRevenue[0].revenue), icon: DollarSign, color: 'text-emerald-500' },
+          { label: 'Maior lucro', shop: byProfit[0], value: fmt(byProfit[0].profit), icon: TrendingUp, color: 'text-primary' },
           { label: 'Mais serviços', shop: byServices[0], value: `${byServices[0].services}`, icon: Wrench, color: 'text-blue-500' },
           { label: 'Maior crescimento', shop: byGrowth[0], value: `${byGrowth[0].growth >= 0 ? '+' : ''}${byGrowth[0].growth}%`, icon: BarChart3, color: byGrowth[0].growth >= 0 ? 'text-emerald-500' : 'text-destructive' },
         ];
@@ -869,8 +874,8 @@ function OwnerDashboard() {
                           <div className="font-medium truncate max-w-[220px]">{s.name}</div>
                           {s.address && <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">{s.address}</div>}
                         </td>
-                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{currency}{s.revenue.toFixed(2)}</td>
-                        <td className="py-2.5 px-3 text-right mono tabular-nums">{currency}{s.profit.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums font-medium">{fmt(s.revenue)}</td>
+                        <td className="py-2.5 px-3 text-right mono tabular-nums">{fmt(s.profit)}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums">{s.services}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.clients}</td>
                         <td className="py-2.5 px-3 text-right mono tabular-nums hidden sm:table-cell">{s.vehicles}</td>
@@ -904,7 +909,7 @@ function OwnerDashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={45} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : `${v}`} />
                   <Tooltip
-                    formatter={(value: number) => [`${currency}${value}`, '']}
+                    formatter={(value: number) => [fmt(value), '']}
                     contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
                   />
                   <Bar dataKey="revenue" name={t('dashboard.revenueMonth')} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
@@ -1070,7 +1075,7 @@ function OwnerDashboard() {
                       {time && <><span>·</span><span>{time}</span></>}
                     </div>
                   </div>
-                  <span className="mono font-semibold shrink-0 text-sm">{currency}{(s.total || 0).toFixed(2)}</span>
+                  <span className="mono font-semibold shrink-0 text-sm">{fmt(s.total || 0)}</span>
                 </div>
               );
             })}

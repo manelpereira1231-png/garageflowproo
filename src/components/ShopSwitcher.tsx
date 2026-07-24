@@ -125,14 +125,41 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       }
 
       const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
+      const activationLink = (data as any)?.activation_link as string | undefined;
+      const targetEmail = newShopEmail.trim();
       toast.success(
-        `Oficina "${newShopName.trim()}" criada. Link de ativação enviado por ${provider} para ${newShopEmail.trim()}.`,
+        `Oficina "${newShopName.trim()}" criada. Link de ativação enviado por ${provider} para ${targetEmail}.`,
       );
+      if (activationLink) {
+        setActivationInfo({ email: targetEmail, link: activationLink, emailSent: true });
+      }
       setNewShopName("");
       setNewShopEmail("");
       setOpen(false);
       onShopCreated?.();
       await refreshStatus();
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleResendInvite = async (shop: Shop) => {
+    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
+      body: { shop_id: shop.id },
+    });
+    if (error || (data && (data as any).error)) {
+      const details = data as any;
+      const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
+      toast.error(`Não foi possível reenviar o convite.${debugId}`);
+      return;
+    }
+    const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
+    const activationLink = (data as any)?.activation_link as string | undefined;
+    toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
+    if (activationLink) {
+      setActivationInfo({ email: shop.name || "responsável", link: activationLink, emailSent: true });
+    }
+  };
     } finally {
       setCreating(false);
     }

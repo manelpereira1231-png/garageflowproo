@@ -640,6 +640,9 @@ const publicRoutes = [
   { path: "/legal/my-data", element: <Suspense fallback={<PageLoader />}><MyData /></Suspense> },
   { path: "/legal/market-terms", element: <Suspense fallback={<PageLoader />}><MarketTerms /></Suspense> },
   { path: "/support", element: <Suspense fallback={<PageLoader />}><Support /></Suspense> },
+  { path: "/fornecedores", element: <Suspense fallback={<PageLoader />}><FornecedoresLanding /></Suspense> },
+  { path: "/fornecedores/candidatura", element: <Suspense fallback={<PageLoader />}><FornecedoresApplication /></Suspense> },
+  { path: "/supplier/setup", element: <Suspense fallback={<PageLoader />}><SupplierAcceptInvite /></Suspense> },
 
   // ============ SEO PT (landing pages orgânicas) ============
   { path: "/software-gestao-oficinas", element: <Suspense fallback={<PageLoader />}><SeoLandingPage /></Suspense> },

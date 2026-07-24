@@ -160,24 +160,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
       setActivationInfo({ email: shop.name || "responsável", link: activationLink, emailSent: true });
     }
   };
-    } finally {
-      setCreating(false);
-    }
-  };
 
-  const handleResendInvite = async (shop: Shop) => {
-    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
-      body: { shop_id: shop.id },
-    });
-    if (error || (data && (data as any).error)) {
-      const details = data as any;
-      const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
-      toast.error(`Não foi possível reenviar o convite.${debugId}`);
-      return;
-    }
-    const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
-    toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
-  };
 
   const handleDeleteShop = async (shop: Shop) => {
     setDeletingId(shop.id);

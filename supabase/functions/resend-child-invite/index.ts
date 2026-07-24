@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
       auth_email: link.mode,
       email_id: emailResult.ok ? emailResult.emailId : undefined,
       email_provider: provider,
+      activation_link: link.actionLink,
       debug_id: debugId,
     }, 200);
   } catch (e: any) {

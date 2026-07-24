@@ -201,6 +201,7 @@ const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 
 // GarageFlow Supplier Network (GSN) — módulo B2B isolado por feature flag
 const AdminSupplierNetwork = lazyRetry(() => import("@/pages/admin/AdminSupplierNetwork"));
+const AdminSupplierNetworkOrders = lazyRetry(() => import("@/pages/admin/AdminSupplierNetworkOrders"));
 const SupplierNetworkGate = lazyRetry(() => import("@/components/supplier/SupplierNetworkGate"));
 const SupplierLayout = lazyRetry(() => import("@/components/supplier/SupplierLayout"));
 const SupplierDashboard = lazyRetry(() => import("@/pages/supplier/SupplierDashboard"));

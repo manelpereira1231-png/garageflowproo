@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
       auth_email: authEmailMode,
       email_id: emailResult.ok ? emailResult.emailId : undefined,
       email_provider: provider,
+      activation_link: link.actionLink,
       debug_id: debugId,
       delivery_note: "Email GarageFlow em Português enviado com link para definir palavra-passe.",
     }, 200);

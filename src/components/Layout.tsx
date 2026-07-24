@@ -436,6 +436,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
     { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
+    ...(supplierNetworkEnabled ? [{ id: "supplier", label: "Fornecedor", paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },

@@ -286,6 +286,45 @@ export default function AdminSupplierNetwork() {
           )}
         </CardContent>
       </Card>
+
+      {/* Invite dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Convidar Fornecedor</DialogTitle></DialogHeader>
+          {inviteLink ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Convite criado. Envie este link ao fornecedor:</p>
+              <div className="flex gap-2">
+                <Input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} />
+                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success("Copiado"); }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button className="w-full" onClick={() => { setInviteOpen(false); void load(); }}>Fechar</Button>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Empresa *</Label><Input value={inviteForm.company_name} onChange={(e) => setInviteForm({ ...inviteForm, company_name: e.target.value })} /></div>
+                <div><Label>Nome comercial</Label><Input value={inviteForm.trade_name || ""} onChange={(e) => setInviteForm({ ...inviteForm, trade_name: e.target.value })} /></div>
+                <div><Label>NIF</Label><Input value={inviteForm.vat_number || ""} onChange={(e) => setInviteForm({ ...inviteForm, vat_number: e.target.value })} /></div>
+                <div><Label>Email *</Label><Input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} /></div>
+                <div><Label>Telefone</Label><Input value={inviteForm.phone || ""} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} /></div>
+                <div><Label>Website</Label><Input value={inviteForm.website || ""} onChange={(e) => setInviteForm({ ...inviteForm, website: e.target.value })} /></div>
+                <div><Label>País</Label><Input value={inviteForm.country || "PT"} maxLength={2} onChange={(e) => setInviteForm({ ...inviteForm, country: e.target.value.toUpperCase() })} /></div>
+                <div><Label>Distrito</Label><Input value={inviteForm.district || ""} onChange={(e) => setInviteForm({ ...inviteForm, district: e.target.value })} /></div>
+                <div><Label>Cidade</Label><Input value={inviteForm.city || ""} onChange={(e) => setInviteForm({ ...inviteForm, city: e.target.value })} /></div>
+                <div><Label>Plano</Label><Input value={inviteForm.plan || ""} onChange={(e) => setInviteForm({ ...inviteForm, plan: e.target.value })} /></div>
+                <div><Label>Comissão (%)</Label><Input type="number" step="0.01" value={inviteForm.commission_percentage} onChange={(e) => setInviteForm({ ...inviteForm, commission_percentage: e.target.value })} /></div>
+              </div>
+              <div><Label>Observações</Label><Input value={inviteForm.notes || ""} onChange={(e) => setInviteForm({ ...inviteForm, notes: e.target.value })} /></div>
+              <Button onClick={sendInvite} disabled={inviteBusy} className="w-full">
+                {inviteBusy ? "A criar convite..." : "Enviar convite"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

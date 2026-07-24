@@ -63,6 +63,8 @@ import { clearShopRoleCache, useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
+import { useSystemFeature } from "@/hooks/useSystemFeature";
+import { Store, ShoppingCart, Truck, History } from "lucide-react";
 
 // Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"
 // (primary shop). Even the account owner does NOT see these when the active
@@ -136,6 +138,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // never re-shows "Ativar Market" while the shop is an active partner.
   const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
   const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
+  const { enabled: supplierNetworkEnabled } = useSystemFeature("supplier_network_enabled");
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
@@ -359,6 +362,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
 
+    // ── Fornecedor (Supplier Network — B2B parts marketplace) ──
+    // Hidden entirely when the global feature flag is OFF.
+    ...(supplierNetworkEnabled ? [
+      { path: "/parts", label: "Comprar Peças", icon: ShoppingCart } as NavItem,
+      { path: "/parts/suppliers", label: "Fornecedores", icon: Store } as NavItem,
+      { path: "/parts/orders", label: "Encomendas", icon: Truck } as NavItem,
+      { path: "/parts/favorites", label: "Favoritos", icon: Star } as NavItem,
+    ] : []),
+
     // ── Faturação ──
     { path: "/invoices", label: t("nav.invoices"), icon: Receipt, featureSlug: "invoices" },
     { path: "/financial/reports", label: t("nav.financialReports"), icon: Receipt, featureSlug: "financial_reports_basic" },
@@ -404,7 +416,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled]);
+  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —
@@ -424,12 +436,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
     { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
+    ...(supplierNetworkEnabled ? [{ id: "supplier", label: "Fornecedor", paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
     { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
     { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
-  ], []);
+  ], [supplierNetworkEnabled]);
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");

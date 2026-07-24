@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, ShoppingBag } from "lucide-react";
 import { useGsnCart } from "@/hooks/useGsnCart";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function PartsCart() {
   const { items, bySupplier, subtotal, vatTotal, total, updateQuantity, remove, checkout, loading } = useGsnCart();
@@ -11,8 +13,20 @@ export default function PartsCart() {
 
   const onCheckout = async () => {
     const orderIds = await checkout();
-    if (orderIds.length > 0) navigate("/parts/orders");
+    if (!orderIds.length) return;
+    const { data, error } = await supabase.functions.invoke("gsn-checkout", { body: { order_ids: orderIds } });
+    if (error) { toast.error(error.message); navigate("/parts/orders"); return; }
+    const sessions = (data?.sessions ?? []) as { url: string | null; error?: string }[];
+    const first = sessions.find(s => s.url);
+    if (first?.url) {
+      if (sessions.length > 1) toast.info(`${sessions.length} pagamentos criados. A abrir o primeiro; os restantes ficam em Encomendas.`);
+      window.location.href = first.url;
+    } else {
+      toast.error(sessions[0]?.error || "Falha a criar pagamento");
+      navigate("/parts/orders");
+    }
   };
+
 
   if (loading) return <p className="text-sm text-muted-foreground">A carregar...</p>;
 

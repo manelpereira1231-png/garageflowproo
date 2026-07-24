@@ -443,6 +443,24 @@ const adminRoutes = [
   { path: "/admin/growth", element: <AdminGrowth /> },
   { path: "/admin/accounting", element: <AdminAccounting /> },
   { path: "/admin/demos", element: <AdminDemoRequests /> },
+  { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
+];
+
+const supplierRoutes = [
+  { path: "/supplier", element: <SupplierDashboard />, exact: true },
+  { path: "/supplier/products", element: <SupplierProducts /> },
+  { path: "/supplier/products/new", element: <SupplierProductForm /> },
+  { path: "/supplier/products/:id", element: <SupplierProductForm /> },
+  { path: "/supplier/categories", element: <SupplierPlaceholder title="Categorias" description="Gestão de categorias do seu catálogo." /> },
+  { path: "/supplier/stock", element: <SupplierPlaceholder title="Stock" description="Histórico de movimentos, ajustes e inventário." /> },
+  { path: "/supplier/orders", element: <SupplierPlaceholder title="Encomendas" description="Encomendas recebidas de oficinas." /> },
+  { path: "/supplier/customers", element: <SupplierPlaceholder title="Clientes" description="Oficinas que compram os seus produtos." /> },
+  { path: "/supplier/payments", element: <SupplierPlaceholder title="Pagamentos" description="Pagamentos processados via Stripe Connect." /> },
+  { path: "/supplier/carriers", element: <SupplierPlaceholder title="Transportadoras" description="CTT, DPD, GLS, MRW, DHL, UPS, Correos Express e outros." /> },
+  { path: "/supplier/invoices", element: <SupplierPlaceholder title="Faturas" description="Faturas emitidas para cada encomenda." /> },
+  { path: "/supplier/reviews", element: <SupplierPlaceholder title="Avaliações" description="Feedback recebido das oficinas compradoras." /> },
+  { path: "/supplier/profile", element: <SupplierProfile /> },
+  { path: "/supplier/settings", element: <SupplierPlaceholder title="Configurações" description="Notificações, preferências e conta." /> },
 ];
 
 

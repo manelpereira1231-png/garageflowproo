@@ -39,6 +39,20 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
   const [newShopName, setNewShopName] = useState("");
   const [newShopEmail, setNewShopEmail] = useState("");
   const [status, setStatus] = useState<{ allowed: boolean; current: number; max: number; plan: string } | null>(null);
+  const [activationInfo, setActivationInfo] = useState<{ email: string; link: string; emailSent: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyActivationLink = async () => {
+    if (!activationInfo?.link) return;
+    try {
+      await navigator.clipboard.writeText(activationInfo.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copiado.");
+    } catch {
+      toast.error("Não foi possível copiar. Selecione e copie manualmente.");
+    }
+  };
 
   // The oldest owned shop = "Oficina Mãe". It is undeletable.
   // `shops` is already sorted by useShopContext but we defensively pick by

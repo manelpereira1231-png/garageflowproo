@@ -59,15 +59,16 @@ async function loadPromotions(): Promise<Map<string, PromoRow>> {
     const map = new Map<string, PromoRow>();
     const { data } = await supabase
       .from("plan_promotions")
-      .select("country_code, plan, cycle, promo_price, currency, stripe_price_id, active, starts_at, ends_at");
-    (data as PromoRow[] | null)?.forEach((row) => {
-      map.set(key(row.country_code, row.plan, row.cycle), row);
+      .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
+    (data as Omit<PromoRow, "stripe_price_id">[] | null)?.forEach((row) => {
+      map.set(key(row.country_code, row.plan, row.cycle), { ...row, stripe_price_id: null });
     });
     cache = map;
     return map;
   })();
   return cachePromise;
 }
+
 
 /** Force-refresh cache (called by admin pages after mutations). */
 export function clearPromotionsCache() {

@@ -105,7 +105,7 @@ export const PROVIDERS: Record<ProviderSlug, BillingProviderInfo> = {
       "A conta eNotas continua a pertencer à oficina",
       "Credenciais encriptadas AES-GCM no GarageFlow",
     ],
-    supportLevel: "preview",
+    supportLevel: "production",
   },
   nuvem_fiscal: {
     slug: "nuvem_fiscal",

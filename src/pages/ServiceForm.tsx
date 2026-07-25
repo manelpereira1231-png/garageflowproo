@@ -11,6 +11,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
 
 interface LineItem {
@@ -207,7 +209,7 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5"><Label>{t('services.entryMileage')}</Label><Input type="number" value={entryMileage} onChange={e => setEntryMileage(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>{t('services.technician')}</Label><Input value={technician} onChange={e => setTechnician(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({shopDefaults.labor_rate.toFixed(2)}€/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>
@@ -233,7 +235,7 @@ export default function ServiceForm() {
           </div>
           <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
             <span>
-              Tarifa mão-de-obra: <strong className="text-foreground">€{shopDefaults.labor_rate.toFixed(2)}/h</strong>
+              Tarifa mão-de-obra: <strong className="text-foreground">{formatMoney(shopDefaults.labor_rate)}/h</strong>
               {' · '}IVA por defeito: <strong className="text-foreground">{shopDefaults.vat_rate}%</strong>
               {' · '}fonte: <button type="button" onClick={() => navigate('/settings')} className="underline hover:text-foreground">Definições</button>
             </span>
@@ -315,7 +317,7 @@ export default function ServiceForm() {
                         : '';
                       return (
                         <SelectItem key={c.id} value={c.id}>
-                          {c.name}{timeLabel} — €{previewPrice.toFixed(2)}
+                          {c.name}{timeLabel} — {formatMoney(previewPrice)}
                         </SelectItem>
                       );
                     })}
@@ -332,7 +334,7 @@ export default function ServiceForm() {
                 <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.vat')}%</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>
-                <div className="col-span-8 sm:col-span-2 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-semibold h-9 flex items-center justify-end">€{(line.quantity * line.unit_price).toFixed(2)}</p></div>
+                <div className="col-span-8 sm:col-span-2 text-right"><Label className="text-xs">{t('line.total')}</Label><p className="mono text-sm font-semibold h-9 flex items-center justify-end">{formatMoney((line.quantity * line.unit_price))}</p></div>
               </div>
             </div>
             );
@@ -341,11 +343,11 @@ export default function ServiceForm() {
 
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">€{subtotal.toFixed(2)}</span></div>
-            {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × €{shopDefaults.labor_rate.toFixed(2)}/h)</span><span className="mono">€{laborCharge.toFixed(2)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">€{vatTotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">€{total.toFixed(2)}</span></div>
-            <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">€{profit.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.subtotal')}</span><span className="mono">{formatMoney(subtotal)}</span></div>
+            {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × {formatMoney(shopDefaults.labor_rate)}/h)</span><span className="mono">{formatMoney(laborCharge)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">{formatMoney(vatTotal)}</span></div>
+            <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">{formatMoney(total)}</span></div>
+            <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">{formatMoney(profit)}</span></div>
           </div>
         </div>
 

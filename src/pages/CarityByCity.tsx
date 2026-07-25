@@ -17,8 +17,8 @@ export default function CarityByCity() {
 
   const loadData = useCallback(async () => {
     const { data: sellers } = await supabase
-      .from("carity_seller_profiles").select("user_id").ilike("location", `%${decodedCity}%`);
-    const sellerIds = (sellers || []).map(s => s.user_id);
+      .from("carity_seller_profiles_public" as any).select("user_id").ilike("location", `%${decodedCity}%`);
+    const sellerIds = ((sellers as any[]) || []).map((s: any) => s.user_id);
     if (sellerIds.length === 0) { setListings([]); setLoading(false); return; }
 
     const { data } = await supabase

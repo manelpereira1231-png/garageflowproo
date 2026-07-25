@@ -31,7 +31,7 @@ export default function MarketStandPublic() {
     if (!slug) return;
     (async () => {
       const { data: d } = await supabase
-        .from("carity_seller_profiles")
+        .from("carity_seller_profiles_public" as any)
         .select("user_id, dealer_company_name, dealer_logo_url, dealer_city, dealer_description, phone")
         .eq("dealer_slug", slug)
         .eq("account_type", "dealer")

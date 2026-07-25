@@ -76,7 +76,7 @@ async function fetchCatalog(): Promise<PlansCatalog> {
   const [plansRes, featRes, pricesRes] = await Promise.all([
     supabase.from("plans").select("*").eq("active", true).order("sort_order"),
     supabase.from("plan_features").select("*"),
-    supabase.from("plan_country_prices").select("*").eq("active", true),
+    supabase.from("plan_country_prices_public" as any).select("*").eq("active", true),
   ]);
 
   const plans = (plansRes.data ?? []).map((p: any) => ({
@@ -105,7 +105,7 @@ async function fetchCatalog(): Promise<PlansCatalog> {
   return {
     plans,
     features: featuresByPlan,
-    prices: (pricesRes.data ?? []) as PlanPriceRow[],
+    prices: ((pricesRes.data ?? []) as unknown) as PlanPriceRow[],
   };
 }
 

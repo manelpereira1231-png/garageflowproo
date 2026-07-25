@@ -9521,6 +9521,65 @@ export type Database = {
           },
         ]
       }
+      carity_seller_profiles_public: {
+        Row: {
+          account_type: string | null
+          country_code: string | null
+          created_at: string | null
+          dealer_city: string | null
+          dealer_company_name: string | null
+          dealer_description: string | null
+          dealer_logo_url: string | null
+          dealer_slug: string | null
+          id: string | null
+          location: string | null
+          name: string | null
+          phone: string | null
+          user_id: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          account_type?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          dealer_city?: string | null
+          dealer_company_name?: string | null
+          dealer_description?: string | null
+          dealer_logo_url?: string | null
+          dealer_slug?: string | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          account_type?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          dealer_city?: string | null
+          dealer_company_name?: string | null
+          dealer_description?: string | null
+          dealer_logo_url?: string | null
+          dealer_slug?: string | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       dealer_directory: {
         Row: {
           active_listings: number | null
@@ -9608,6 +9667,60 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_country_prices_public: {
+        Row: {
+          active: boolean | null
+          amount: number | null
+          country_code: string | null
+          created_at: string | null
+          currency: string | null
+          cycle: string | null
+          id: string | null
+          plan_slug: string | null
+          trial_days_override: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          amount?: number | null
+          country_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          cycle?: string | null
+          id?: string | null
+          plan_slug?: string | null
+          trial_days_override?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          amount?: number | null
+          country_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          cycle?: string | null
+          id?: string | null
+          plan_slug?: string | null
+          trial_days_override?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_country_prices_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "plan_country_prices_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["slug"]
           },
         ]
       }

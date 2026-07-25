@@ -335,7 +335,7 @@ export default function QuoteApproval() {
           if (!subjectTpl) subjectTpl = def.subject;
           if (!bodyTpl) bodyTpl = def.body;
 
-          const nowStr = new Date().toLocaleString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT', { dateStyle: 'short', timeStyle: 'short' });
+          const nowStr = new Date().toLocaleString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : getLocaleForCurrency(shop?.currency), { dateStyle: 'short', timeStyle: 'short' });
           const vars: Record<string, string> = {
             cliente_nome: clientName,
             nome_oficina: shop.name || '',
@@ -439,11 +439,13 @@ export default function QuoteApproval() {
   if (result) {
     const decidedAt = result === 'approved' ? (quote?.signed_at || quote?.updated_at) : quote?.updated_at;
     const decidedDate = decidedAt ? new Date(decidedAt) : new Date();
-    const fmtDate = decidedDate.toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT');
-    const fmtTime = decidedDate.toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'pt-PT', { hour: '2-digit', minute: '2-digit' });
+    const shopLocale = getLocaleForCurrency(shop?.currency);
+    const fmtDate = decidedDate.toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : shopLocale);
+    const fmtTime = decidedDate.toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : shopLocale, { hour: '2-digit', minute: '2-digit' });
     const veh = quote?.vehicles as any;
     const cli = quote?.clients as any;
-    const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+    const cur = getCurrencySymbol(shop?.currency);
+
 
     const labels = {
       pt: { qNum: 'Orçamento', state: 'Estado', client: 'Cliente', vehicle: 'Veículo', plate: 'Matrícula', decidedOn: 'Data da aprovação', decidedOnRej: 'Data da rejeição', total: 'Valor', at: 'às', notified: 'A oficina foi notificada automaticamente e irá iniciar a preparação dos trabalhos.', rejectedInfo: 'Caso pretenda solicitar alterações, contacte diretamente a oficina.', back: 'Voltar ao GarageFlow', approved: 'Aprovado', rejected: 'Rejeitado' },
@@ -524,8 +526,11 @@ export default function QuoteApproval() {
   }
 
   const lines = (Array.isArray(quote.lines) ? quote.lines : []) as any[];
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const cur = getCurrencySymbol(shop?.currency);
+  const shopLocale = getLocaleForCurrency(shop?.currency);
+  const vatLabel = getTaxLabelForCurrency(shop?.currency);
   const totalLaborHours = lines.filter((l: any) => l.type === 'service').reduce((s: number, l: any) => s + (l.quantity || 0), 0);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4 sm:p-6">
@@ -627,11 +632,12 @@ export default function QuoteApproval() {
                           <span className="font-medium">Mão-de-obra</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>
                           <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-                            {Number(quote.labor_hours).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {cur}{Number(shop.labor_rate).toFixed(2)}/h
+                            {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {cur}{Number(shop.labor_rate).toFixed(2)}/h
                           </div>
                         </td>
                         <td className="p-3 text-center font-mono text-muted-foreground">
-                          {Number(quote.labor_hours).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
+                          {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
+
                         </td>
                         <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{cur}{Number(shop.labor_rate).toFixed(2)}</td>
                         <td className="p-3 text-right font-mono font-semibold">{cur}{(Number(quote.labor_hours) * Number(shop.labor_rate)).toFixed(2)}</td>
@@ -650,7 +656,7 @@ export default function QuoteApproval() {
                   <span className="font-mono">{cur}{quote.subtotal?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t('vat')}</span>
+                  <span className="text-muted-foreground">{vatLabel}</span>
                   <span className="font-mono">{cur}{quote.vat_total?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">

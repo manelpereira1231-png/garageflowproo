@@ -267,7 +267,7 @@ export default function LandingPage() {
       "@type": "Offer",
       name: p.displayName,
       price: String(eff.effectivePrice),
-      priceCurrency: pricing.currency || "EUR",
+      priceCurrency: pricing.currency,
       ...(eff.isPromo && eff.endsAt ? { priceValidUntil: eff.endsAt.slice(0, 10) } : {}),
     };
   });

@@ -602,14 +602,24 @@ export default function InvoiceDetail() {
           </div>
         </div>
       )}
-      {(!invoice.legal_status || invoice.legal_status === 'draft') && (
-        <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 flex items-start gap-2 text-xs">
-          <FileText className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-          <p className="text-muted-foreground">
-            <strong className="text-foreground">Rascunho interno</strong> — sem valor fiscal. Para emitir uma fatura legalmente válida, use o botão <em>“Emitir via {billingProvider === "moloni" ? "Moloni" : "InvoiceXpress"}”</em>{!billingProvider ? " após ligar a integração em Definições → Faturação" : ""}.
-          </p>
-        </div>
-      )}
+      {(!invoice.legal_status || invoice.legal_status === 'draft') && (() => {
+        const shopCountry = (shop?.country_code || "PT").toUpperCase();
+        const defaultProviderLabel = shopCountry === "BR" ? "eNotas" : "InvoiceXpress";
+        const providerLabel =
+          billingProvider === "moloni" ? "Moloni" :
+          billingProvider === "enotas" ? "eNotas" :
+          billingProvider === "invoicexpress" ? "InvoiceXpress" :
+          defaultProviderLabel;
+        const emitText = shopCountry === "BR" ? `Emitir Nota Fiscal (${providerLabel})` : `Emitir via ${providerLabel}`;
+        return (
+          <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 flex items-start gap-2 text-xs">
+            <FileText className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+            <p className="text-muted-foreground">
+              <strong className="text-foreground">Rascunho interno</strong> — sem valor fiscal. Para emitir um documento legalmente válido, use o botão <em>“{emitText}”</em>{!billingProvider ? " após ligar a integração em Definições → Faturação" : ""}.
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Client & Vehicle Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

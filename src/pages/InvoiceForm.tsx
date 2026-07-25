@@ -132,7 +132,7 @@ export default function InvoiceForm() {
   const subtotal = items.reduce((acc, i) => acc + i.quantity * i.unit_price, 0);
   const vatTotal = items.reduce((acc, i) => acc + i.quantity * i.unit_price * (i.vat_rate / 100), 0);
   const total = subtotal + vatTotal;
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const invoiceCurrency = shop?.currency || undefined;
 
   const handleSave = async (issueNow: boolean) => {
     if (!clientId) { toast.error(t('invoices.selectClient')); return; }

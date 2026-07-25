@@ -140,7 +140,8 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   doc.text(invoice.number, pageW - 14, 26, { align: "right" });
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`${t('date', lang)}: ${new Date(invoice.created_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'pt-PT')}`, pageW - 14, 34, { align: "right" });
+  const dateLocale = shop?.currency === 'BRL' ? 'pt-BR' : (lang === 'en' ? 'en-GB' : 'pt-PT');
+  doc.text(`${t('date', lang)}: ${new Date(invoice.created_at).toLocaleDateString(dateLocale)}`, pageW - 14, 34, { align: "right" });
 
   // Client info
   let y = 50;

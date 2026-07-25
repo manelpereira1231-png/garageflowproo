@@ -243,7 +243,7 @@ const emailLabels: Record<string, Record<string, string>> = {
 
 export function quoteEmailHtml(data: QuoteEmailData): string {
   const l = emailLabels[data.lang || 'pt'] || emailLabels.pt;
-  const cur = data.currency === 'EUR' ? '€' : data.currency;
+
 
   const linesHtml = data.lines.map((line, i) => `
     <tr style="background-color: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">

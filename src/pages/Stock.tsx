@@ -294,7 +294,7 @@ export default function Stock() {
   // Exporta a lista de peças para CSV
   const exportCsv = () => {
     if (!can("stock.manage")) return;
-    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço","IVA","Ativo"];
+    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço",getTaxLabel(),"Ativo"];
     const rows = filtered.map(p => [
       p.name,
       p.reference || "",

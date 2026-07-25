@@ -466,7 +466,7 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
             <th align="left"  style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Descrição</th>
             <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:60px;">Qtd</th>
             <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:90px;">Unit.</th>
-            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:60px;">IVA</th>
+            <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:60px;">${data.currency === "BRL" ? "Imposto" : "IVA"}</th>
             <th align="right" style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;width:100px;">Total</th>
           </tr>
         </thead>
@@ -474,7 +474,7 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
           ${data.items.map((it, i) => `
             <tr style="background-color:${i % 2 === 0 ? '#ffffff' : '#f9fafb'};border-top:1px solid #e5e7eb;">
               <td style="padding:10px 14px;font-size:13px;color:#111827;">${(it.description || '—').replace(/</g, '&lt;')}</td>
-              <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${Number(it.quantity || 0).toLocaleString('pt-PT', { maximumFractionDigits: 2 })}</td>
+              <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${Number(it.quantity || 0).toLocaleString(isoCountry, { maximumFractionDigits: 2 })}</td>
               <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${fmt(Number(it.unit_price || 0))}</td>
               <td style="padding:10px 14px;font-size:13px;color:#374151;text-align:right;">${it.vat_rate != null ? `${Number(it.vat_rate).toFixed(0)}%` : '—'}</td>
               <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600;text-align:right;">${fmt(Number(it.total || 0))}</td>
@@ -485,7 +485,7 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
               <td style="padding:8px 14px;font-size:12px;color:#111827;text-align:right;">${fmt(data.subtotal ?? (data.total - (data.taxTotal || 0)))}</td>
             </tr>
             <tr style="background-color:#f9fafb;">
-              <td colspan="4" style="padding:8px 14px;font-size:12px;color:#6b7280;text-align:right;">IVA</td>
+              <td colspan="4" style="padding:8px 14px;font-size:12px;color:#6b7280;text-align:right;">${data.currency === "BRL" ? "Imposto" : "IVA"}</td>
               <td style="padding:8px 14px;font-size:12px;color:#111827;text-align:right;">${fmt(data.taxTotal ?? 0)}</td>
             </tr>` : ''}
           <tr style="background-color:#262626;color:#ffb41e;">

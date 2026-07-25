@@ -99,6 +99,17 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
+  const [country, setCountry] = useState<string>(() => (getCountryCode() || "PT").toUpperCase());
+
+  const countryOptions = (() => {
+    const all = listActiveCountries();
+    const byCode = new Map(all.map((c) => [c.code.toUpperCase(), c]));
+    const preferred = PREFERRED_COUNTRIES.map((code) => byCode.get(code)).filter(Boolean) as ReturnType<typeof listActiveCountries>;
+    const others = all
+      .filter((c) => !PREFERRED_COUNTRIES.includes(c.code.toUpperCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return { preferred, others };
+  })();
 
   const urlPartnerId = searchParams.get('partner');
   

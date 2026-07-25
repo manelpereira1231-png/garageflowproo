@@ -133,9 +133,9 @@ export default function SupplierProductForm() {
       <Card>
         <CardHeader><CardTitle>Preço e stock</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div><Label>Preço (€)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} /></div>
-          <div><Label>Preço promo (€)</Label><Input type="number" step="0.01" value={form.discount_price} onChange={(e) => set("discount_price", e.target.value)} /></div>
-          <div><Label>IVA (%)</Label><Input type="number" step="0.01" value={form.vat} onChange={(e) => set("vat", e.target.value)} /></div>
+          <div><Label>Preço ({getCountryConfig().currencySymbol})</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} /></div>
+          <div><Label>Preço promo ({getCountryConfig().currencySymbol})</Label><Input type="number" step="0.01" value={form.discount_price} onChange={(e) => set("discount_price", e.target.value)} /></div>
+          <div><Label>{getTaxLabel()} (%)</Label><Input type="number" step="0.01" value={form.vat} onChange={(e) => set("vat", e.target.value)} /></div>
           <div><Label>Stock</Label><Input type="number" min="0" value={form.stock} onChange={(e) => set("stock", e.target.value)} /></div>
         </CardContent>
       </Card>

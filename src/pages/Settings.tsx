@@ -187,8 +187,12 @@ export default function SettingsPage() {
                 <ShieldCheck className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">Faturação certificada (AT)</p>
-                <p className="text-xs text-muted-foreground">Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code</p>
+                <p className="font-medium text-sm">{countryCode === "BR" ? "Faturação certificada (NF-e)" : "Faturação certificada (AT)"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {countryCode === "BR"
+                    ? "Liga o eNotas para emitir Nota Fiscal Eletrónica na SEFAZ"
+                    : "Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code"}
+                </p>
               </div>
             </div>
             <ExternalLink className="w-4 h-4 text-muted-foreground" />

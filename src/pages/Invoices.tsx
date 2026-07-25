@@ -133,6 +133,8 @@ export default function Invoices() {
   };
 
   const [saftLoading, setSaftLoading] = useState(false);
+  const isBR = (shop?.country_code || "PT").toUpperCase() === "BR";
+  const dateLocale = isBR ? 'pt-BR' : 'pt-PT';
   const handleExportSaft = async () => {
     if (!can("invoices.export")) return;
     if (!activeShopId) return;
@@ -263,7 +265,7 @@ export default function Invoices() {
             .order('paid_at', { ascending: false });
           if (pays && pays.length) {
             amountPaid = pays.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
-            paymentDate = new Date(pays[0].paid_at).toLocaleDateString('pt-PT');
+            paymentDate = new Date(pays[0].paid_at).toLocaleDateString(dateLocale);
             paymentMethod = String(pays[0].method || '').toUpperCase();
           } else {
             amountPaid = Number(inv.total || 0);
@@ -280,7 +282,7 @@ export default function Invoices() {
         shopLogoUrl: shop.logo_url,
         clientName: (inv.clients as any)?.name || '',
         invoiceNumber: inv.number,
-        invoiceDate: new Date(inv.created_at || Date.now()).toLocaleDateString('pt-PT'),
+        invoiceDate: new Date(inv.created_at || Date.now()).toLocaleDateString(dateLocale),
         vehicleInfo: vehicle,
         plate: (inv.vehicles as any)?.plate,
         total: Number(inv.total || 0),
@@ -328,7 +330,7 @@ export default function Invoices() {
               <FileDown className="w-4 h-4 mr-1" />CSV
             </Button>
           )}
-          {can("invoices.export") && (
+          {can("invoices.export") && !isBR && (
             <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
               {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
               SAF-T

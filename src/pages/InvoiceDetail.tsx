@@ -503,7 +503,7 @@ export default function InvoiceDetail() {
             <Badge variant="secondary" className={statusColors[invoice.status] || ''}>
               {t(`invoices.status_${invoice.status}`)}
             </Badge>
-            {invoice.atcud && <span className="text-[10px] text-muted-foreground mono">ATCUD: {invoice.atcud}</span>}
+            {invoice.atcud && (shop?.country_code || 'PT').toUpperCase() !== 'BR' && <span className="text-[10px] text-muted-foreground mono">ATCUD: {invoice.atcud}</span>}
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -580,17 +580,23 @@ export default function InvoiceDetail() {
       </div>
 
       {/* Legal status banner */}
-      {invoice.legal_status === 'certified' && (
-        <div className="mb-4 rounded-xl border-2 border-success/30 bg-success/5 p-4 flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-success shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm">
-            <p className="font-semibold text-success">Fatura certificada — imutável (art. 36º CIVA)</p>
-            <p className="text-muted-foreground text-xs mt-1">
-              Este documento tem valor fiscal, ATCUD {invoice.atcud || '—'}{invoice.certified_series ? ` e série ${invoice.certified_series}` : ''}. Não pode ser editado ou apagado. Para corrigir, emita uma <strong>Nota de Crédito</strong>.
-            </p>
+      {invoice.legal_status === 'certified' && (() => {
+        const shopCountry = (shop?.country_code || "PT").toUpperCase();
+        const isBR = shopCountry === "BR";
+        const title = isBR ? "Nota Fiscal Eletrónica emitida — imutável" : "Fatura certificada — imutável (art. 36º CIVA)";
+        const desc = isBR
+          ? <>Este documento tem valor fiscal na SEFAZ{invoice.certified_series ? ` (série ${invoice.certified_series})` : ''}. Não pode ser editado ou apagado. Para corrigir, cancele/emita uma <strong>Nota Fiscal de Devolução</strong>.</>
+          : <>Este documento tem valor fiscal, ATCUD {invoice.atcud || '—'}{invoice.certified_series ? ` e série ${invoice.certified_series}` : ''}. Não pode ser editado ou apagado. Para corrigir, emita uma <strong>Nota de Crédito</strong>.</>;
+        return (
+          <div className="mb-4 rounded-xl border-2 border-success/30 bg-success/5 p-4 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-success shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold text-success">{title}</p>
+              <p className="text-muted-foreground text-xs mt-1">{desc}</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {invoice.legal_status === 'cancelled' && (
         <div className="mb-4 rounded-xl border-2 border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
           <Ban className="w-5 h-5 text-destructive shrink-0 mt-0.5" />

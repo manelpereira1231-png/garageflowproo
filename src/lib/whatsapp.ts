@@ -76,12 +76,14 @@ function buildServiceStageMessage(p: WhatsAppMessageParams): string | null {
   return null;
 }
 
-function cleanPhone(phone: string): string {
+function cleanPhone(phone: string, defaultCountry: 'PT' | 'BR' | 'ES' | 'other' = 'PT'): string {
   let cleaned = phone.replace(/[^0-9+]/g, '');
   if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2);
-  // If no country code, assume Portugal (+351)
-  if (!cleaned.startsWith('+') && !cleaned.startsWith('351')) {
-    cleaned = '351' + cleaned;
+  // If no country code, prepend the shop's default
+  const dialByCountry: Record<string, string> = { PT: '351', BR: '55', ES: '34' };
+  const dial = dialByCountry[defaultCountry] || '';
+  if (dial && !cleaned.startsWith('+') && !cleaned.startsWith(dial)) {
+    cleaned = dial + cleaned;
   }
   cleaned = cleaned.replace('+', '');
   return cleaned;

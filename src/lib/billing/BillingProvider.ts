@@ -76,7 +76,7 @@ class InvoiceXpressProvider implements BillingProvider {
       if (error) return { ok: false, error: error.message };
       return {
         ok: true,
-        providerId: data?.id,
+        providerId: data?.provider_invoice_id ?? data?.id,
         documentNumber: data?.number,
         pdfUrl: data?.pdf_url,
       };
@@ -86,7 +86,15 @@ class InvoiceXpressProvider implements BillingProvider {
   }
 
   async getDocumentPdfUrl(providerId: string): Promise<string | null> {
+    // Source of truth = BD. Fallback: pede à edge function `invoicexpress-emit`
+    // via action `get_pdf` (que consulta o InvoiceXpress se necessário).
     try {
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("provider_pdf_url")
+        .eq("provider_invoice_id", providerId)
+        .maybeSingle();
+      if (inv?.provider_pdf_url) return inv.provider_pdf_url;
       const { data } = await supabase.functions.invoke("invoicexpress-emit", {
         body: { action: "get_pdf", id: providerId },
       });
@@ -97,8 +105,51 @@ class InvoiceXpressProvider implements BillingProvider {
   }
 
   async isConfigured(): Promise<boolean> {
-    // Feature is enabled when the shop has InvoiceXpress credentials configured;
-    // the edge function itself performs the real check.
+    return true;
+  }
+}
+
+// ─── BR: eNotas (delegates to enotas-emit edge function) ─────────────────
+class ENotasProvider implements BillingProvider {
+  slug = "enotas";
+  countryCode = "BR";
+
+  async emitDocument(input: EmitDocumentInput): Promise<EmitDocumentResult> {
+    try {
+      const { data, error } = await supabase.functions.invoke("enotas-emit", {
+        body: input,
+      });
+      if (error) return { ok: false, error: error.message };
+      if (data?.error) return { ok: false, error: data.error };
+      return {
+        ok: true,
+        providerId: data?.provider_invoice_id,
+        documentNumber: data?.number,
+        pdfUrl: data?.pdf_url,
+      };
+    } catch (e: unknown) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  async getDocumentPdfUrl(providerId: string): Promise<string | null> {
+    try {
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("provider_pdf_url")
+        .eq("provider_invoice_id", providerId)
+        .maybeSingle();
+      if (inv?.provider_pdf_url) return inv.provider_pdf_url;
+      const { data } = await supabase.functions.invoke("enotas-emit", {
+        body: { action: "get_pdf", id: providerId },
+      });
+      return data?.pdf_url ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async isConfigured(): Promise<boolean> {
     return true;
   }
 }
@@ -126,6 +177,8 @@ export function getBillingProvider(countryCode: string): BillingProvider {
   switch (cfg.billingProvider) {
     case "invoicexpress":
       return new InvoiceXpressProvider();
+    case "enotas":
+      return new ENotasProvider();
     default:
       return new NotYetSupportedProvider(cfg.billingProvider, cfg.code);
   }

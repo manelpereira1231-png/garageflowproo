@@ -26,6 +26,10 @@ export interface CountryConfig {
   defaultLanguage: string;
   taxLabel: string;
   defaultTimezone?: string;
+  /** Timezones available for the country (first is the default). */
+  timezones?: string[];
+  /** Standard tax rate for the country (%). */
+  defaultVatRate?: number;
   saas: {
     free: { monthly: number; yearly: number };
     pro: { monthly: number; yearly: number };

@@ -48,10 +48,10 @@ export default function PartsCart() {
                     <div key={it.id} className="flex items-center gap-3 p-2 border rounded-md">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{it.product?.title ?? "Produto"}</p>
-                        <p className="text-xs text-muted-foreground">€ {Number(it.unit_price).toFixed(2)} · IVA {it.vat}%</p>
+                        <p className="text-xs text-muted-foreground">{formatMoney(Number(it.unit_price))} · {getTaxLabel()} {it.vat}%</p>
                       </div>
                       <Input type="number" min={1} value={it.quantity} onChange={(e) => updateQuantity(it.id, Number(e.target.value))} className="w-16 h-9" />
-                      <p className="w-24 text-right font-semibold">€ {(it.unit_price * it.quantity).toFixed(2)}</p>
+                      <p className="w-24 text-right font-semibold">{formatMoney(it.unit_price * it.quantity)}</p>
                       <Button size="icon" variant="ghost" onClick={() => remove(it.id)}><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   ))}
@@ -62,9 +62,9 @@ export default function PartsCart() {
           <Card className="h-fit sticky top-24">
             <CardHeader><CardTitle>Resumo</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span>€ {subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>IVA</span><span>€ {vatTotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span>€ {total.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
+              <div className="flex justify-between"><span>{getTaxLabel()}</span><span>{formatMoney(vatTotal)}</span></div>
+              <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span>{formatMoney(total)}</span></div>
               <Button className="w-full mt-3" size="lg" onClick={onCheckout}>Finalizar compra</Button>
               <p className="text-xs text-muted-foreground text-center">Cada fornecedor gera uma encomenda separada.</p>
             </CardContent>

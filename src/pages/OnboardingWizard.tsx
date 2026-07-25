@@ -61,11 +61,12 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [planLabel, setPlanLabel] = useState<string>("Start");
   const fileRef = useRef<HTMLInputElement>(null);
+  const initialCountryCfg = getCountryConfig();
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
-    country: "Portugal", currency: "EUR",
+    country: initialCountryCfg.name || "Portugal", currency: initialCountryCfg.currency || "EUR",
     vat_rate: "23", labor_rate: "35", language: language as string,
-    nif: "", address: "", timezone: "Europe/Lisbon",
+    nif: "", address: "", timezone: getDefaultTimezone(),
   });
 
   // Pre-fill form with existing shop data (from signup metadata)

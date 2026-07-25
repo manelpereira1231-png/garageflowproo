@@ -19,6 +19,8 @@ import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/mark
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

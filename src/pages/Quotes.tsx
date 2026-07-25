@@ -24,6 +24,8 @@ import { pageCache } from "@/lib/pageCache";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 const statusColors: Record<QuoteStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -440,8 +442,8 @@ export default function Quotes() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
-                <span className="text-sm font-semibold mono">€{q.total?.toFixed(2)}</span>
-                <span className="text-sm mono text-success">+€{q.profit?.toFixed(2)}</span>
+                <span className="text-sm font-semibold mono">{formatMoney(q.total?)}</span>
+                <span className="text-sm mono text-success">+{formatMoney(q.profit?)}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
@@ -523,8 +525,8 @@ export default function Quotes() {
                   <span className="break-words">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model}</span>
                   <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(q.vehicles as any)?.plate})</span>
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono">€{q.total?.toFixed(2)}</TableCell>
-                <TableCell className="hidden lg:table-cell px-3 py-3 mono text-success">€{q.profit?.toFixed(2)}</TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(q.total?)}</TableCell>
+                <TableCell className="hidden lg:table-cell px-3 py-3 mono text-success">{formatMoney(q.profit?)}</TableCell>
                 <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}

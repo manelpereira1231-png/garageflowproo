@@ -14,6 +14,11 @@ import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { ensureSignupAllowed } from "@/lib/signupGuard";
 import { ACTIVE_SHOP_STORAGE_KEY, setActiveShopAndSync } from "@/lib/shopContextSync";
+import { setCountryCode, listActiveCountries, getCountryCode } from "@/lib/regionConfig";
+
+// Preferred order shown at the top of the country picker. Any other active
+// country from country_settings is shown afterwards under "Outros países".
+const PREFERRED_COUNTRIES = ["PT", "BR", "ES", "FR", "DE", "UK", "US", "IN"];
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;

@@ -81,11 +81,11 @@ export default function SettingsPage() {
         setCountryCode((shopData.country_code || "PT").toUpperCase());
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
-          country: shopData.country || "Portugal", currency: shopData.currency || "EUR",
+          country: shopData.country || defaultCfg.name, currency: shopData.currency || defaultCfg.currency,
           vat_rate: String(shopData.vat_rate ?? 23), labor_rate: String(shopData.labor_rate ?? 35),
           language: shopData.language || "pt",
           nif: shopData.nif || "", address: shopData.address || "",
-          timezone: shopData.timezone || "Europe/Lisbon",
+          timezone: shopData.timezone || getDefaultTimezone(shopData.country_code),
         });
         setLogoPreview(shopData.logo_url || null);
         if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);

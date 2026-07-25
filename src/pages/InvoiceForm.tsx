@@ -295,7 +295,7 @@ export default function InvoiceForm() {
                 />
               </div>
               <div className="col-span-3 md:col-span-2">
-                {idx === 0 && <Label className="text-xs">IVA %</Label>}
+                {idx === 0 && <Label className="text-xs">{getTaxLabel()} %</Label>}
                 <Input
                   type="number"
                   inputMode="decimal"

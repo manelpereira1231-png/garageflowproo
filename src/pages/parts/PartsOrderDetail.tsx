@@ -54,13 +54,13 @@ export default function PartsOrderDetail() {
         {items.map((i) => (
           <div key={i.id} className="flex items-center gap-3 p-2 border rounded-md">
             <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{i.product?.title ?? "Produto"}</p></div>
-            <p className="text-sm">{i.quantity} × € {Number(i.unit_price).toFixed(2)}</p>
-            <p className="w-20 text-right font-semibold">€ {Number(i.total).toFixed(2)}</p>
+            <p className="text-sm">{i.quantity} × {formatMoney(Number(i.unit_price), order.currency)}</p>
+            <p className="w-20 text-right font-semibold">{formatMoney(Number(i.total), order.currency)}</p>
           </div>
         ))}
         <div className="pt-2 border-t text-right">
-          <p className="text-sm text-muted-foreground">Subtotal € {Number(order.subtotal).toFixed(2)} · IVA € {Number(order.vat_total).toFixed(2)}</p>
-          <p className="text-lg font-bold">Total {order.currency} {Number(order.total).toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">Subtotal {formatMoney(Number(order.subtotal), order.currency)} · {getTaxLabel()} {formatMoney(Number(order.vat_total), order.currency)}</p>
+          <p className="text-lg font-bold">Total {formatMoney(Number(order.total), order.currency)}</p>
         </div>
       </CardContent></Card>
 

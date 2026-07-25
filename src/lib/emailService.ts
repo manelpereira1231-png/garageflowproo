@@ -408,7 +408,7 @@ export interface InvoiceEmailData {
 }
 
 export function invoiceEmailHtml(data: InvoiceEmailData): string {
-  const cur = (data.currency || 'EUR') === 'EUR' ? '€' : (data.currency || '');
+  const isoCountry = (data.currency === 'BRL' ? 'pt-BR' : 'pt-PT');
   const isPaid = data.variant === 'paid';
   const fmt = (v?: number) => (typeof v === 'number' ? `${formatMoney(v, data.currency)}` : '—');
 

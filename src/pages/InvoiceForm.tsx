@@ -199,7 +199,7 @@ export default function InvoiceForm() {
       if (client?.email) {
         void sendLifecycleEmail({
           shopId: activeId, templateKey: "invoice_created", entityId: invoice.id, recipient: client.email,
-          data: { client_name: clientName, invoice_number: number, total: `${(shop?.currency || '€')}${total.toFixed(2)}` },
+          data: { client_name: clientName, invoice_number: number, total: formatMoney(total, invoiceCurrency) },
         });
       }
     }

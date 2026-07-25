@@ -39,7 +39,53 @@ Deno.serve(async (req) => {
     const user = userRes.user;
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { invoice_id, send_email = false } = await req.json();
+    const bodyIn = await req.json();
+    const { invoice_id, send_email = false, action } = bodyIn ?? {};
+
+    // ─── Action: get_pdf ────────────────────────────────────────────────
+    // Lightweight lookup: returns the certified PDF URL for a document
+    // already emitted. Reads from BD first (source of truth) and falls
+    // back to fetching IX again if the URL was somehow lost.
+    if (action === "get_pdf") {
+      const lookupId = bodyIn.id || bodyIn.provider_invoice_id || invoice_id;
+      if (!lookupId) return json({ error: "id em falta" }, 400);
+      const { data: inv } = await admin
+        .from("invoices")
+        .select("shop_id, provider_invoice_id, provider_pdf_url, provider")
+        .or(`provider_invoice_id.eq.${lookupId},id.eq.${lookupId}`)
+        .maybeSingle();
+      if (!inv) return json({ error: "Documento não encontrado" }, 404);
+      const { data: idsA } = await admin.rpc("get_user_shop_ids", { _user_id: user.id });
+      const shopIdsA = Array.isArray(idsA) ? idsA.map((r: any) => r.get_user_shop_ids ?? r) : [];
+      if (!shopIdsA.includes(inv.shop_id)) return json({ error: "Sem permissão" }, 403);
+      if (inv.provider_pdf_url) return json({ pdf_url: inv.provider_pdf_url });
+      // Fallback: refetch from InvoiceXpress
+      if (inv.provider !== "invoicexpress" || !inv.provider_invoice_id) {
+        return json({ pdf_url: null });
+      }
+      const { data: integ2 } = await admin
+        .from("integracao_faturacao").select("api_key_encrypted, account_name, documento_default")
+        .eq("shop_id", inv.shop_id).eq("ativo", true).maybeSingle();
+      if (!integ2) return json({ pdf_url: null });
+      const apiKey2 = await decryptSecret(integ2.api_key_encrypted);
+      const base2 = `https://${integ2.account_name}.app.invoicexpress.com`;
+      const kindMap2: Record<string, string> = {
+        invoice: "invoices", invoice_receipt: "invoice_receipts", simplified_invoice: "simplified_invoices",
+      };
+      const endpoint = kindMap2[integ2.documento_default] || "invoices";
+      try {
+        const r = await fetch(`${base2}/api/${endpoint}/${inv.provider_invoice_id}.json?api_key=${encodeURIComponent(apiKey2)}`, { headers: { Accept: "application/json" } });
+        if (!r.ok) return json({ pdf_url: null });
+        const j = await r.json().catch(() => ({}));
+        const d = j?.invoice || j?.invoice_receipt || j?.simplified_invoice || j;
+        const url = d?.public_pdf_url || d?.pdf_url || null;
+        if (url) {
+          await admin.from("invoices").update({ provider_pdf_url: url }).eq("id", inv.provider_invoice_id ? undefined as any : lookupId).eq("provider_invoice_id", inv.provider_invoice_id);
+        }
+        return json({ pdf_url: url });
+      } catch { return json({ pdf_url: null }); }
+    }
+
     if (!invoice_id) return json({ error: "invoice_id em falta" }, 400);
 
     // Load invoice with items + client + shop, using service-role but scoping by ownership.

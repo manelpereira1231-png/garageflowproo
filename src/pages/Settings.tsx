@@ -291,7 +291,7 @@ export default function SettingsPage() {
                 <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.laborRate')} ({getCountryFiscalConfig(countryCode).code === "PT" ? "€" : ""}/h)</Label>
+                <Label>{t('settings.laborRate')} ({getCountryConfig(countryCode).currencySymbol}/h)</Label>
                 <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">

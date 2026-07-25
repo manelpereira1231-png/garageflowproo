@@ -494,7 +494,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </h2>
               <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
                 <p>✅ <strong>{t('settings.shopName')}:</strong> {form.name || '—'}</p>
-                <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% IVA)</p>
+                <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% {getTaxLabel()})</p>
                 <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
                 <p>✅ <strong>{t('settings.address')}:</strong> {form.address || '—'}</p>
                 <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>

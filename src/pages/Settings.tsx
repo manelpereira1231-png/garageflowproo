@@ -20,7 +20,7 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
 import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
-import { getDefaultTimezone, getCountryConfig } from "@/lib/regionConfig";
+import { getDefaultTimezone, getCountryConfig, listActiveCountries, setCountryCode as setActiveCountryCode } from "@/lib/regionConfig";
 
 const DAYS: { key: keyof OpeningHours; label: string }[] = [
   { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },

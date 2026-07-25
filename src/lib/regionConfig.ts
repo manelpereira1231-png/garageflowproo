@@ -410,6 +410,32 @@ export function getTaxLabel(countryOrRegion?: CountryCode | Region): string {
 }
 
 /**
+ * List of IANA timezones available for the country (first entry is the default).
+ */
+export function getCountryTimezones(countryOrRegion?: CountryCode | Region): string[] {
+  let config: CountryConfig;
+  if (!countryOrRegion) config = getCountryConfig();
+  else if (countryOrRegion === 'br') config = getCountryConfig('BR');
+  else if (countryOrRegion === 'eu') config = getCountryConfig('PT');
+  else config = getCountryConfig(countryOrRegion);
+  if (config.timezones && config.timezones.length) return config.timezones;
+  return config.defaultTimezone ? [config.defaultTimezone] : [];
+}
+
+/**
+ * Default legal tax rate (%) for the country. 0 when the country does not have
+ * a single standard rate (e.g. BR/US where taxes are calculated per item).
+ */
+export function getDefaultVatRate(countryOrRegion?: CountryCode | Region): number {
+  let config: CountryConfig;
+  if (!countryOrRegion) config = getCountryConfig();
+  else if (countryOrRegion === 'br') config = getCountryConfig('BR');
+  else if (countryOrRegion === 'eu') config = getCountryConfig('PT');
+  else config = getCountryConfig(countryOrRegion);
+  return typeof config.defaultVatRate === 'number' ? config.defaultVatRate : 0;
+}
+
+/**
  * Get default IANA timezone for the active (or given) country.
  * Falls back to browser timezone, then Europe/Lisbon.
  */

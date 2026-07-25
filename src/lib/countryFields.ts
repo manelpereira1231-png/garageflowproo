@@ -31,9 +31,11 @@ export type FieldDef = {
 export type CountryFiscalConfig = {
   code: string;
   fields: FieldDef[];
-  /** Fiscal document provider slug (see BillingProvider). */
+  /** Fiscal document provider slug (see billing/providers.ts). */
   billingProvider:
     | "invoicexpress"
+    | "moloni"
+    | "enotas"
     | "nuvem_fiscal"
     | "quickbooks"
     | "xero"
@@ -58,7 +60,7 @@ const PT: CountryFiscalConfig = {
 
 const BR: CountryFiscalConfig = {
   code: "BR",
-  billingProvider: "nuvem_fiscal",
+  billingProvider: "enotas",
   fields: [
     { key: "taxId", label: "CPF / CNPJ", placeholder: "00.000.000/0000-00", required: true },
     { key: "postalCode", label: "CEP", placeholder: "00000-000", required: true, pattern: "^\\d{5}-?\\d{3}$" },

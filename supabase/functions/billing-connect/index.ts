@@ -18,7 +18,7 @@ const corsHeaders = {
 };
 
 const ALLOWED = new Set([
-  "nuvem_fiscal", "quickbooks", "xero", "holded",
+  "enotas", "nuvem_fiscal", "quickbooks", "xero", "holded",
   "pennylane", "sevdesk", "zoho_books", "cleartax", "generic",
 ]);
 

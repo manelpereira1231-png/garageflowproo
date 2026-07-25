@@ -258,6 +258,54 @@ export default function SettingsPage() {
                 <Label>{t('settings.address')}</Label>
                 <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
               </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" /> País da Oficina
+                </Label>
+                <Select
+                  value={countryCode}
+                  onValueChange={(next) => {
+                    if (next === countryCode) return;
+                    const ok = window.confirm(
+                      "A alteração do país altera moeda, impostos, emissor fiscal e configurações regionais. Confirmar?"
+                    );
+                    if (!ok) return;
+                    setCountryCode(next);
+                    setActiveCountryCode(next);
+                    if (shopId) {
+                      supabase
+                        .from("shops")
+                        .update({ country_code: next })
+                        .eq("id", shopId)
+                        .then(({ error }) => {
+                          if (error) {
+                            toast.error(
+                              "Contexto atualizado, mas o país fiscal da oficina só pode ser alterado pelo suporte."
+                            );
+                          } else {
+                            toast.success("País atualizado. A recarregar…");
+                            setTimeout(() => window.location.reload(), 600);
+                          }
+                        });
+                    } else {
+                      toast.success("Contexto atualizado.");
+                      setTimeout(() => window.location.reload(), 600);
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {listActiveCountries().map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.flag} {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Define moeda, locale, timezone, impostos e emissor fiscal (PT → InvoiceXpress · BR → eNotas).
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

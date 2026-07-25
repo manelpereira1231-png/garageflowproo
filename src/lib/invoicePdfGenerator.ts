@@ -302,7 +302,11 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
     doc.setTextColor(140, 90, 0);
     doc.setFontSize(6);
     doc.setFont("helvetica", "italic");
-    doc.text('DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Emita fatura certificada via InvoiceXpress/Moloni.', pageW / 2, pageH - 22, { align: "center" });
+    const isBR = shop?.currency === 'BRL';
+    const draftMsg = isBR
+      ? 'DOCUMENTO SEM VALOR FISCAL — não é Nota Fiscal Eletrónica. Emita a NF-e via eNotas.'
+      : 'DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Emita fatura certificada via InvoiceXpress/Moloni.';
+    doc.text(draftMsg, pageW / 2, pageH - 22, { align: "center" });
   }
 
   // Footer

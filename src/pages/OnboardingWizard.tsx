@@ -320,7 +320,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </h2>
               <div className="space-y-1.5">
                 <Label>{t('settings.shopName')} *</Label>
-                <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Auto Centro Lisboa" required />
+                <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Auto Centro" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -376,7 +376,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.address')}</Label>
-                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123, Lisboa" />
+                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">

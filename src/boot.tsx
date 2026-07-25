@@ -49,7 +49,28 @@ const bootRegionalConfig = () => {
       )
       .subscribe();
   } catch {}
+
+  // Country persistence: after login (or when the user switches shop), pull
+  // the ACTIVE SHOP's country_code from the DB and sync it into
+  // localStorage `garageflow_country`. Fixes the "chose Brasil, ERP still
+  // behaves as Portugal after refresh/logout/other browser" bug — the shop
+  // row is the single source of truth, and every legacy helper resolves
+  // from it via `setCountryCode()` inside `getShopCountry()`.
+  void import("@/hooks/useShopCountry").then((m) => {
+    void m.getShopCountry();
+    const onShopChange = () => { void m.getShopCountry(); };
+    window.addEventListener("garageflow:shop-context-changed", onShopChange);
+    window.addEventListener("garageflow:active-shop-changed", onShopChange);
+    try {
+      supabase.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+          void m.getShopCountry();
+        }
+      });
+    } catch {}
+  });
 };
+
 
 // Boot after first paint: static country/pricing fallbacks render instantly;
 // DB/IP enrichment updates the UI later without blocking page opening.

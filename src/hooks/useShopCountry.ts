@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getCountryConfig, type CountryConfig, type CountryCode } from "@/lib/regionConfig";
+import { getCountryConfig, setCountryCode, type CountryConfig, type CountryCode } from "@/lib/regionConfig";
 
 const ACTIVE_SHOP_KEY = "garageflow_active_shop";
 
@@ -32,12 +32,22 @@ async function loadShopCountry(): Promise<{ code: CountryCode; config: CountryCo
     const config = getCountryConfig(code);
     const value = { code, config };
     cache = value;
+    // CRITICAL: sync localStorage `garageflow_country` so that every legacy
+    // helper (getCountryCode / getCountryConfig / formatCurrency / getTaxLabel
+    // / getDefaultTimezone) — and consequently InvoiceXpress vs eNotas, EUR
+    // vs BRL, IVA vs Impostos, Europe/Lisbon vs America/Sao_Paulo — resolves
+    // from the ACTIVE SHOP's country, not from the browser timezone/IP.
+    try {
+      setCountryCode(code);
+      window.dispatchEvent(new CustomEvent("garageflow:pricing-updated"));
+    } catch {}
     listeners.forEach((cb) => cb(value));
     return value;
   } catch {
     return fallback;
   }
 }
+
 
 export function useShopCountry() {
   const [state, setState] = useState<{ code: CountryCode; config: CountryConfig }>(
@@ -64,8 +74,9 @@ export function useShopCountry() {
   return state;
 }
 
-/** Non-hook accessor for use inside async utilities. */
+/** Non-hook accessor for use inside async utilities. Always reloads so a
+ * shop switch or fresh login is respected (never trusts stale cache). */
 export async function getShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
-  if (cache) return cache;
   return loadShopCountry();
 }
+

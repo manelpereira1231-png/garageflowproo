@@ -192,7 +192,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           language: form.language,
           nif: form.nif || '',
           address: form.address || '',
-          timezone: form.timezone || 'Europe/Lisbon',
+          timezone: form.timezone || getDefaultTimezone(),
         };
         console.info("[onboarding] fallback shop insert payload", createPayload);
         const { data: newShop, error: createError } = await supabase

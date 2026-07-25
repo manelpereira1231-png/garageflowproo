@@ -389,6 +389,24 @@ export function getTaxLabel(countryOrRegion?: CountryCode | Region): string {
   return getCountryConfig(countryOrRegion).taxLabel;
 }
 
+/**
+ * Get default IANA timezone for the active (or given) country.
+ * Falls back to browser timezone, then Europe/Lisbon.
+ */
+export function getDefaultTimezone(countryOrRegion?: CountryCode | Region): string {
+  let config: CountryConfig;
+  if (!countryOrRegion) config = getCountryConfig();
+  else if (countryOrRegion === 'br') config = getCountryConfig('BR');
+  else if (countryOrRegion === 'eu') config = getCountryConfig('PT');
+  else config = getCountryConfig(countryOrRegion);
+  if (config.defaultTimezone) return config.defaultTimezone;
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Lisbon';
+  } catch {
+    return 'Europe/Lisbon';
+  }
+}
+
 // ─── Stripe Price IDs (legacy interface) ─────────────────
 export interface StripePriceMap {
   pro: { monthly: string; yearly: string };

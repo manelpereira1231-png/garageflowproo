@@ -50,7 +50,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   PT: {
     code: 'PT', name: 'Portugal', flag: '🇵🇹',
     currency: 'EUR', currencySymbol: '€', locale: 'pt-PT',
-    defaultLanguage: 'pt', taxLabel: 'IVA',
+    defaultLanguage: 'pt', taxLabel: 'IVA', defaultTimezone: 'Europe/Lisbon',
     saas: { free: { monthly: 19.99, yearly: 199 }, pro: { monthly: 59.99, yearly: 599 }, garage: { monthly: 129.99, yearly: 1299 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {
@@ -64,7 +64,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   BR: {
     code: 'BR', name: 'Brasil', flag: '🇧🇷',
     currency: 'BRL', currencySymbol: 'R$', locale: 'pt-BR',
-    defaultLanguage: 'pt-BR', taxLabel: 'Impostos',
+    defaultLanguage: 'pt-BR', taxLabel: 'Impostos', defaultTimezone: 'America/Sao_Paulo',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 97, yearly: 970 }, garage: { monthly: 197, yearly: 1970 }, trialDays: 30 },
     inspection: { price: 89.90, shopShare: 50.00, platformShare: 39.90 },
     stripe: {
@@ -78,7 +78,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   IN: {
     code: 'IN', name: 'India', flag: '🇮🇳',
     currency: 'INR', currencySymbol: '₹', locale: 'en-IN',
-    defaultLanguage: 'en', taxLabel: 'GST',
+    defaultLanguage: 'en', taxLabel: 'GST', defaultTimezone: 'Asia/Kolkata',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 999, yearly: 9990 }, garage: { monthly: 1999, yearly: 19990 }, trialDays: 30 },
     inspection: { price: 499, shopShare: 300, platformShare: 199 },
     stripe: {},
@@ -87,7 +87,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   ES: {
     code: 'ES', name: 'España', flag: '🇪🇸',
     currency: 'EUR', currencySymbol: '€', locale: 'es-ES',
-    defaultLanguage: 'es', taxLabel: 'IVA',
+    defaultLanguage: 'es', taxLabel: 'IVA', defaultTimezone: 'Europe/Madrid',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -96,7 +96,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   FR: {
     code: 'FR', name: 'France', flag: '🇫🇷',
     currency: 'EUR', currencySymbol: '€', locale: 'fr-FR',
-    defaultLanguage: 'fr', taxLabel: 'TVA',
+    defaultLanguage: 'fr', taxLabel: 'TVA', defaultTimezone: 'Europe/Paris',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -105,7 +105,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   DE: {
     code: 'DE', name: 'Deutschland', flag: '🇩🇪',
     currency: 'EUR', currencySymbol: '€', locale: 'de-DE',
-    defaultLanguage: 'de', taxLabel: 'MwSt',
+    defaultLanguage: 'de', taxLabel: 'MwSt', defaultTimezone: 'Europe/Berlin',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -114,7 +114,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   UK: {
     code: 'UK', name: 'United Kingdom', flag: '🇬🇧',
     currency: 'GBP', currencySymbol: '£', locale: 'en-GB',
-    defaultLanguage: 'en', taxLabel: 'VAT',
+    defaultLanguage: 'en', taxLabel: 'VAT', defaultTimezone: 'Europe/London',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 45, yearly: 450 }, garage: { monthly: 89, yearly: 890 }, trialDays: 30 },
     inspection: { price: 29, shopShare: 17, platformShare: 12 },
     stripe: {},
@@ -123,7 +123,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
   US: {
     code: 'US', name: 'United States', flag: '🇺🇸',
     currency: 'USD', currencySymbol: '$', locale: 'en-US',
-    defaultLanguage: 'en', taxLabel: 'Sales Tax',
+    defaultLanguage: 'en', taxLabel: 'Sales Tax', defaultTimezone: 'America/New_York',
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 34.90, shopShare: 20.00, platformShare: 14.90 },
     stripe: {},

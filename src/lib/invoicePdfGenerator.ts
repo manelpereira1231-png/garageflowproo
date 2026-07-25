@@ -175,9 +175,9 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   const tableData = items.map(i => [
     i.description,
     String(i.quantity),
-    `${cur} ${Number(i.unit_price).toFixed(2)}`,
+    formatMoney(Number(i.unit_price), shop.currency),
     `${i.vat_rate}%`,
-    `${cur} ${Number(i.total).toFixed(2)}`,
+    formatMoney(Number(i.total), shop.currency),
   ]);
 
   autoTable(doc, {
@@ -225,7 +225,7 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
     const row = (lbl: string, val: number) => {
       if (val <= 0) return;
       doc.text(lbl, 14, by);
-      doc.text(`${cur} ${val.toFixed(2)}`, 90, by, { align: 'right' });
+      doc.text(formatMoney(val, shop.currency), 90, by, { align: 'right' });
       by += 5;
     };
     row('Peças', bucket.part);
@@ -238,15 +238,15 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(38, 38, 38);
-  doc.text(`${t('subtotal', lang)}: ${cur} ${Number(invoice.subtotal).toFixed(2)}`, totalsX, finalY, { align: "right" });
-  doc.text(`${t('vat', lang)}: ${cur} ${Number(invoice.vat_total).toFixed(2)}`, totalsX, finalY + 6, { align: "right" });
+  doc.text(`${t('subtotal', lang)}: ${formatMoney(Number(invoice.subtotal), shop.currency)}`, totalsX, finalY, { align: "right" });
+  doc.text(`${t('vat', lang)}: ${formatMoney(Number(invoice.vat_total), shop.currency)}`, totalsX, finalY + 6, { align: "right" });
 
   doc.setFillColor(38, 38, 38);
   doc.rect(pageW - 80, finalY + 9, 66, 10, 'F');
   doc.setTextColor(255, 180, 30);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(`TOTAL: ${cur} ${Number(invoice.total).toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
+  doc.text(`TOTAL: ${formatMoney(Number(invoice.total), shop.currency)}`, totalsX, finalY + 16, { align: "right" });
 
   // Payment status (posicionado abaixo do bloco de discriminação para não sobrepor)
   const paidY = Math.max(finalY + 26, breakdownEndY + 4);
@@ -254,11 +254,11 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`${t('paid', lang)}: ${cur} ${data.totalPaid.toFixed(2)}`, totalsX, paidY, { align: "right" });
+    doc.text(`${t('paid', lang)}: ${formatMoney(data.totalPaid, shop.currency)}`, totalsX, paidY, { align: "right" });
     const remaining = Number(invoice.total) - data.totalPaid;
     if (remaining > 0) {
       doc.setTextColor(200, 50, 50);
-      doc.text(`${t('remaining', lang)}: ${cur} ${remaining.toFixed(2)}`, totalsX, paidY + 6, { align: "right" });
+      doc.text(`${t('remaining', lang)}: ${formatMoney(remaining, shop.currency)}`, totalsX, paidY + 6, { align: "right" });
     }
   }
 

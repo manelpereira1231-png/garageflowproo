@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Settings, Building2, Globe, FileText, Palette, AlertTriangle, Copy, ExternalLink, Clock, ShieldCheck } from "lucide-react";
+import { Upload, Settings, Building2, Globe, FileText, Palette, Copy, ExternalLink, Clock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -20,19 +19,19 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
 import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
-import { getDefaultTimezone, getCountryConfig, listActiveCountries, setCountryCode as setActiveCountryCode } from "@/lib/regionConfig";
+import {
+  getDefaultTimezone,
+  getCountryConfig,
+  listActiveCountries,
+  setCountryCode as setActiveCountryCode,
+  getTaxLabel,
+  getCountryTimezones,
+  getDefaultVatRate,
+} from "@/lib/regionConfig";
 
 const DAYS: { key: keyof OpeningHours; label: string }[] = [
   { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
   { key: "thu", label: "Qui" }, { key: "fri", label: "Sex" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
-];
-
-const countries = Object.keys(VAT_RATES);
-
-const TIMEZONES = [
-  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
-  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
-  "Africa/Luanda", "Africa/Maputo",
 ];
 
 export default function SettingsPage() {

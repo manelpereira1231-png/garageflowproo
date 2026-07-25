@@ -48,10 +48,11 @@ export default function SettingsPage() {
   const [shopSlug, setShopSlug] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [countryCode, setCountryCode] = useState<string>("PT");
+  const defaultCfg = getCountryConfig();
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", country: "Portugal",
-    currency: "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
-    nif: "", address: "", timezone: "Europe/Lisbon",
+    name: "", email: "", phone: "", country: defaultCfg.name || "Portugal",
+    currency: defaultCfg.currency || "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
+    nif: "", address: "", timezone: getDefaultTimezone(),
   });
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 

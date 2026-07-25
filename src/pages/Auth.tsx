@@ -14,6 +14,11 @@ import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { getUserAccessProfile } from "@/lib/authRealm";
 import { ensureSignupAllowed } from "@/lib/signupGuard";
 import { ACTIVE_SHOP_STORAGE_KEY, setActiveShopAndSync } from "@/lib/shopContextSync";
+import { setCountryCode, listActiveCountries, getCountryCode } from "@/lib/regionConfig";
+
+// Preferred order shown at the top of the country picker. Any other active
+// country from country_settings is shown afterwards under "Outros países".
+const PREFERRED_COUNTRIES = ["PT", "BR", "ES", "FR", "DE", "UK", "US", "IN"];
 
 const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;
@@ -94,6 +99,17 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
+  const [country, setCountry] = useState<string>(() => (getCountryCode() || "PT").toUpperCase());
+
+  const countryOptions = (() => {
+    const all = listActiveCountries();
+    const byCode = new Map(all.map((c) => [c.code.toUpperCase(), c]));
+    const preferred = PREFERRED_COUNTRIES.map((code) => byCode.get(code)).filter(Boolean) as ReturnType<typeof listActiveCountries>;
+    const others = all
+      .filter((c) => !PREFERRED_COUNTRIES.includes(c.code.toUpperCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return { preferred, others };
+  })();
 
   const urlPartnerId = searchParams.get('partner');
   
@@ -149,6 +165,12 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         // Anti-flood: server-side rate limit by IP and email
         await ensureSignupAllowed(email, "erp");
 
+        // Persist chosen country BEFORE any subsequent context read so that
+        // regionConfig, LanguageContext, useCountryPricing, Stripe price IDs
+        // and every consumer of getCountryCode() switch to the picked country
+        // immediately after signup (no VPN / browser locale needed).
+        try { setCountryCode(country); } catch {}
+
         const { data: signUpData, error } = await erpSupabase.auth.signUp({
           email, password,
           options: {
@@ -157,6 +179,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
               name: shopName || name,
               referral_code: refCode || undefined,
               account_type: "garage",
+              country_code: country,
             },
             emailRedirectTo: window.location.origin,
           }
@@ -301,6 +324,35 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
                     maxLength={100}
                     placeholder={`${t('auth.shopName')} (${t('common.optional')})`}
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    <Globe className="w-3.5 h-3.5" /> País
+                  </Label>
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countryOptions.preferred.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.flag} {c.name}
+                        </SelectItem>
+                      ))}
+                      {countryOptions.others.length > 0 && (
+                        <>
+                          <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Outros países
+                          </div>
+                          {countryOptions.others.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             )}

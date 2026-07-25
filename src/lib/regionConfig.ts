@@ -162,6 +162,8 @@ export async function loadCountriesFromDB(): Promise<void> {
     if (error || !data) return;
     const map: Record<string, CountryConfig> = {};
     for (const row of data) {
+      const staticRef = STATIC_COUNTRIES[row.code];
+      const dbTimezones: string[] | undefined = Array.isArray(row.timezones) && row.timezones.length ? row.timezones : undefined;
       map[row.code] = {
         code: row.code,
         name: row.name,
@@ -171,6 +173,9 @@ export async function loadCountriesFromDB(): Promise<void> {
         locale: row.locale,
         defaultLanguage: row.default_language,
         taxLabel: row.tax_label,
+        defaultTimezone: dbTimezones?.[0] || staticRef?.defaultTimezone,
+        timezones: dbTimezones || staticRef?.timezones,
+        defaultVatRate: staticRef?.defaultVatRate,
         saas: {
           free: { monthly: Number(row.saas_free_monthly ?? 0), yearly: Number(row.saas_free_yearly ?? 0) },
           pro: { monthly: Number(row.saas_pro_monthly), yearly: Number(row.saas_pro_yearly) },

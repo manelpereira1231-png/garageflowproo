@@ -33,14 +33,18 @@ export default function FinancialReports() {
     paymentMethods: [] as any[],
   });
   const [currency, setCurrency] = useState("€");
+  const [isBR, setIsBR] = useState(false);
   const activeShopId = useActiveShopId();
 
   useEffect(() => {
     const load = async () => {
       if (!activeShopId) return;
 
-      const { data: shop } = await supabase.from("shops").select("currency").eq("id", activeShopId).maybeSingle();
-      if (shop) setCurrency(shop.currency === 'EUR' ? '€' : shop.currency);
+      const { data: shop } = await supabase.from("shops").select("currency, country_code").eq("id", activeShopId).maybeSingle();
+      if (shop) {
+        setCurrency(shop.currency === 'EUR' ? '€' : shop.currency === 'BRL' ? 'R$' : shop.currency);
+        setIsBR((shop.country_code || 'PT').toUpperCase() === 'BR');
+      }
 
       const monthCount = parseInt(period);
 
@@ -239,23 +243,25 @@ export default function FinancialReports() {
             {canUseFeature('csvExport') ? <FileDown className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
             CSV
           </Button>
-          <div className="flex items-center gap-1">
-            <Select value={saftYear} onValueChange={setSaftYear}>
-              <SelectTrigger className="w-[80px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[0, 1, 2].map(i => {
-                  const y = new Date().getFullYear() - i;
-                  return <SelectItem key={y} value={y.toString()}>{y}</SelectItem>;
-                })}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading}>
-              <FileCode className="w-4 h-4 mr-1" />
-              {saftLoading ? "..." : "SAF-T"}
-            </Button>
-          </div>
+          {!isBR && (
+            <div className="flex items-center gap-1">
+              <Select value={saftYear} onValueChange={setSaftYear}>
+                <SelectTrigger className="w-[80px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2].map(i => {
+                    const y = new Date().getFullYear() - i;
+                    return <SelectItem key={y} value={y.toString()}>{y}</SelectItem>;
+                  })}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading}>
+                <FileCode className="w-4 h-4 mr-1" />
+                {saftLoading ? "..." : "SAF-T"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

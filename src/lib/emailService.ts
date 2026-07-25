@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/money";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmailAttachment {
@@ -249,9 +250,9 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
       <td style="padding: 10px 12px; font-size: 13px; color: #6b7280;">${line.type === 'service' ? l.service : l.part}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #1f2937;">${line.name}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: center;">${line.quantity}</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: right;">${cur} ${line.unit_price.toFixed(2)}</td>
+      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: right;">${formatMoney(line.unit_price, data.currency)}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #6b7280; text-align: center;">${line.vat_rate}%</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; font-weight: 600; text-align: right;">${cur} ${(line.quantity * line.unit_price).toFixed(2)}</td>
+      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; font-weight: 600; text-align: right;">${formatMoney((line.quantity * line.unit_price), data.currency)}</td>
     </tr>
   `).join('');
 
@@ -336,12 +337,12 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
 
         <!-- Totals -->
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 260px; margin-left: auto;">
-          <tr><td style="padding: 4px 0; font-size: 13px; color: #6b7280;">${l.subtotal}</td><td style="text-align: right; font-size: 13px; color: #1f2937;">${cur} ${data.subtotal.toFixed(2)}</td></tr>
-          <tr><td style="padding: 4px 0; font-size: 13px; color: #6b7280;">${l.vatLabel}</td><td style="text-align: right; font-size: 13px; color: #1f2937;">${cur} ${data.vatTotal.toFixed(2)}</td></tr>
+          <tr><td style="padding: 4px 0; font-size: 13px; color: #6b7280;">${l.subtotal}</td><td style="text-align: right; font-size: 13px; color: #1f2937;">${formatMoney(data.subtotal, data.currency)}</td></tr>
+          <tr><td style="padding: 4px 0; font-size: 13px; color: #6b7280;">${l.vatLabel}</td><td style="text-align: right; font-size: 13px; color: #1f2937;">${formatMoney(data.vatTotal, data.currency)}</td></tr>
           <tr><td colspan="2" style="padding: 8px 0 0; border-top: 1px solid #e5e7eb;"></td></tr>
           <tr>
             <td style="padding: 8px 12px; background-color: #262626; border-radius: 6px 0 0 6px; font-size: 15px; font-weight: 700; color: #ffb41e;">${l.total}</td>
-            <td style="padding: 8px 12px; background-color: #262626; border-radius: 0 6px 6px 0; text-align: right; font-size: 15px; font-weight: 700; color: #ffb41e;">${cur} ${data.total.toFixed(2)}</td>
+            <td style="padding: 8px 12px; background-color: #262626; border-radius: 0 6px 6px 0; text-align: right; font-size: 15px; font-weight: 700; color: #ffb41e;">${formatMoney(data.total, data.currency)}</td>
           </tr>
         </table>
 
@@ -409,7 +410,7 @@ export interface InvoiceEmailData {
 export function invoiceEmailHtml(data: InvoiceEmailData): string {
   const cur = (data.currency || 'EUR') === 'EUR' ? '€' : (data.currency || '');
   const isPaid = data.variant === 'paid';
-  const fmt = (v?: number) => (typeof v === 'number' ? `${cur} ${v.toFixed(2)}` : '—');
+  const fmt = (v?: number) => (typeof v === 'number' ? `${formatMoney(v, data.currency)}` : '—');
 
   const logoHtml = data.shopLogoUrl
     ? `<img src="${data.shopLogoUrl}" alt="${data.shopName}" style="max-height: 48px; max-width: 160px; margin-bottom: 8px;" /><br/>`

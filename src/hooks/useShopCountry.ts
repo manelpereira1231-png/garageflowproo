@@ -74,8 +74,9 @@ export function useShopCountry() {
   return state;
 }
 
-/** Non-hook accessor for use inside async utilities. */
+/** Non-hook accessor for use inside async utilities. Always reloads so a
+ * shop switch or fresh login is respected (never trusts stale cache). */
 export async function getShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
-  if (cache) return cache;
   return loadShopCountry();
 }
+

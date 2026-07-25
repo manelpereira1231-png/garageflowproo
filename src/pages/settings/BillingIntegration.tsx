@@ -486,17 +486,31 @@ function IntlBillingForm({
         toast.error("API key é obrigatória na primeira ligação");
         return;
       }
-      const { data, error } = await supabase.functions.invoke("billing-connect", {
-        body: {
-          shop_id: shopId,
-          provider: providerSlug,
-          account_name: accountName.trim(),
-          api_key: apiKey.trim() || undefined,
-          serie_default: serie.trim() || null,
-          documento_default: documento,
-          test_only,
-        },
-      });
+      // Rotear para o edge function real de cada provider quando existe adapter
+      // dedicado; caso contrário cair no `billing-connect` genérico (que só
+      // persiste credenciais). Portugal (invoicexpress/moloni) usa o
+      // formulário PT — este ramo trata BR (enotas) e restantes países.
+      const isEnotas = providerSlug === "enotas";
+      const fn = isEnotas ? "enotas-connect" : "billing-connect";
+      const body = isEnotas
+        ? {
+            shop_id: shopId,
+            account_name: accountName.trim(),
+            api_key: apiKey.trim() || undefined,
+            serie_default: serie.trim() || null,
+            documento_default: documento,
+            test_only,
+          }
+        : {
+            shop_id: shopId,
+            provider: providerSlug,
+            account_name: accountName.trim(),
+            api_key: apiKey.trim() || undefined,
+            serie_default: serie.trim() || null,
+            documento_default: documento,
+            test_only,
+          };
+      const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       toast.success(test_only ? "Ligação OK" : `Integração ${providerLabel} gravada`);

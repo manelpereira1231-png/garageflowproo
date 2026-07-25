@@ -47,11 +47,25 @@ export default function SettingsPage() {
   const [shopSlug, setShopSlug] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [countryCode, setCountryCode] = useState<string>("PT");
-  const defaultCfg = getCountryConfig();
+  // All fiscal/regional defaults are derived from the shop's country_code
+  // via getCountryConfig — never from module-level hardcoded PT values.
+  const countryCfg = getCountryConfig(countryCode);
+  const fiscalCfg = getCountryFiscalConfig(countryCode);
+  const taxLabel = getTaxLabel(countryCode);
+  const timezones = getCountryTimezones(countryCode);
+  const addressPlaceholder = fiscalCfg.fields.find(f => f.key === "address")?.placeholder || "";
+  const billingProviderLabel: Record<string, string> = {
+    invoicexpress: "InvoiceXpress", moloni: "Moloni", enotas: "eNotas",
+    nuvem_fiscal: "Nuvem Fiscal", quickbooks: "QuickBooks", xero: "Xero",
+    holded: "Holded", pennylane: "Pennylane", sevdesk: "sevDesk",
+    zoho_books: "Zoho Books", cleartax: "ClearTax", generic: "Faturação",
+  };
+  const providerName = billingProviderLabel[fiscalCfg.billingProvider] || "Faturação";
+
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", country: defaultCfg.name || "Portugal",
-    currency: defaultCfg.currency || "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
-    nif: "", address: "", timezone: getDefaultTimezone(),
+    name: "", email: "", phone: "", country: "",
+    currency: "", vat_rate: "", labor_rate: "", language: "",
+    nif: "", address: "", timezone: "",
   });
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
@@ -74,17 +88,21 @@ export default function SettingsPage() {
       }
 
       if (shopData) {
+        const cc = (shopData.country_code || "PT").toUpperCase();
+        const cfg = getCountryConfig(cc);
         setShopId(shopData.id);
         setShopSlug(shopData.slug || "");
         setLogoFile(null);
-        setCountryCode((shopData.country_code || "PT").toUpperCase());
+        setCountryCode(cc);
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
-          country: shopData.country || defaultCfg.name, currency: shopData.currency || defaultCfg.currency,
-          vat_rate: String(shopData.vat_rate ?? 23), labor_rate: String(shopData.labor_rate ?? 35),
-          language: shopData.language || "pt",
+          country: shopData.country || cfg.name,
+          currency: shopData.currency || cfg.currency,
+          vat_rate: String(shopData.vat_rate ?? getDefaultVatRate(cc)),
+          labor_rate: String(shopData.labor_rate ?? 35),
+          language: shopData.language || cfg.defaultLanguage,
           nif: shopData.nif || "", address: shopData.address || "",
-          timezone: shopData.timezone || getDefaultTimezone(shopData.country_code),
+          timezone: shopData.timezone || getDefaultTimezone(cc),
         });
         setLogoPreview(shopData.logo_url || null);
         if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);

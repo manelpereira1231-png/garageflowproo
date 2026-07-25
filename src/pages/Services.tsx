@@ -719,7 +719,7 @@ export default function Services() {
             </div>
             <RepairTimeline status={s.status as ServiceStatus} />
             <div className="flex items-center justify-between pt-1 border-t border-border">
-              <span className="text-sm font-semibold mono">{formatMoney(s.total?)}</span>
+              <span className="text-sm font-semibold mono">{formatMoney(s.total)}</span>
               <div className="flex gap-1">
                 {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Link to={`/services/edit/${s.id}`}>
@@ -823,7 +823,7 @@ export default function Services() {
                 <TableCell className="hidden lg:table-cell px-2 py-3">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(s.total?)}</TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(s.total)}</TableCell>
                 <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
                     {t(`service.${s.status}`)}

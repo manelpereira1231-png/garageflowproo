@@ -442,8 +442,8 @@ export default function Quotes() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
-                <span className="text-sm font-semibold mono">{formatMoney(q.total?)}</span>
-                <span className="text-sm mono text-success">+{formatMoney(q.profit?)}</span>
+                <span className="text-sm font-semibold mono">{formatMoney(q.total)}</span>
+                <span className="text-sm mono text-success">+{formatMoney(q.profit)}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
@@ -525,8 +525,8 @@ export default function Quotes() {
                   <span className="break-words">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model}</span>
                   <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(q.vehicles as any)?.plate})</span>
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(q.total?)}</TableCell>
-                <TableCell className="hidden lg:table-cell px-3 py-3 mono text-success">{formatMoney(q.profit?)}</TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(q.total)}</TableCell>
+                <TableCell className="hidden lg:table-cell px-3 py-3 mono text-success">{formatMoney(q.profit)}</TableCell>
                 <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[q.status as QuoteStatus]}>
                     {getStatusLabel(q.status as QuoteStatus)}

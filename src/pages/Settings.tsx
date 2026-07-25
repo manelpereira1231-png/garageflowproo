@@ -204,11 +204,11 @@ export default function SettingsPage() {
                 <ShieldCheck className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">{countryCode === "BR" ? "Faturação certificada (NF-e)" : "Faturação certificada (AT)"}</p>
+                <p className="font-medium text-sm">
+                  {countryCode === "BR" ? "Faturação certificada (NF-e)" : `Faturação certificada (${providerName})`}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {countryCode === "BR"
-                    ? "Liga o eNotas para emitir Nota Fiscal Eletrónica na SEFAZ"
-                    : "Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code"}
+                  {`Liga o ${providerName} para emitir documentos fiscais para ${countryCfg.name}.`}
                 </p>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-1.5 col-span-2">
                 <Label>{t('settings.address')}</Label>
-                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
+                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder={addressPlaceholder} />
               </div>
               <div className="space-y-1.5 col-span-2">
                 <Label className="flex items-center gap-1.5">
@@ -324,7 +324,7 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">
-                  Define moeda, locale, timezone, impostos e emissor fiscal (PT → InvoiceXpress · BR → eNotas).
+                  {`Define moeda (${countryCfg.currency}), locale (${countryCfg.locale}), fuso (${countryCfg.defaultTimezone || '—'}), impostos (${taxLabel}) e emissor fiscal (${providerName}).`}
                 </p>
               </div>
             </div>
@@ -342,12 +342,12 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>{getTaxIdLabel(countryCode)}</Label>
-                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={getCountryFiscalConfig(countryCode).fields.find(f => f.key === "taxId")?.placeholder || ""} />
+                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={fiscalCfg.fields.find(f => f.key === "taxId")?.placeholder || ""} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.country')}</Label>
                 <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
-                  <span>{form.country}</span>
+                  <span>{form.country || countryCfg.name}</span>
                   <Badge variant="outline" className="text-[10px]">{countryCode}</Badge>
                   <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="País bloqueado" />
                 </div>
@@ -356,17 +356,17 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.vatRate')} (%)</Label>
-                <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
+                <Label>{taxLabel} (%)</Label>
+                <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} placeholder={String(getDefaultVatRate(countryCode))} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.laborRate')} ({getCountryConfig(countryCode).currencySymbol}/h)</Label>
+                <Label>{t('settings.laborRate')} ({countryCfg.currencySymbol}/h)</Label>
                 <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.currency')}</Label>
                 <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
-                  <span>{form.currency}</span>
+                  <span>{countryCfg.currencySymbol} {form.currency || countryCfg.currency}</span>
                   <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="Moeda bloqueada" />
                 </div>
                 <p className="text-[11px] text-muted-foreground">Definida pelo país da oficina.</p>

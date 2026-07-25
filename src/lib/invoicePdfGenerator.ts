@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatMoney } from "@/lib/money";
 
 interface InvoicePdfData {
   invoice: any;

@@ -105,7 +105,7 @@ async function fetchCatalog(): Promise<PlansCatalog> {
   return {
     plans,
     features: featuresByPlan,
-    prices: (pricesRes.data ?? []) as PlanPriceRow[],
+    prices: ((pricesRes.data ?? []) as unknown) as PlanPriceRow[],
   };
 }
 

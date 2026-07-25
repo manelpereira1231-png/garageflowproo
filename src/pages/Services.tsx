@@ -610,7 +610,7 @@ export default function Services() {
         {can("finance.view_profits") && (
           <div className="bg-card border border-border rounded-xl p-3">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Este mês</p>
-            <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
+            <p className="text-2xl font-bold mt-1 text-success mono">{formatMoney(monthRevenue, shop?.currency)}</p>
           </div>
         )}
       </div>

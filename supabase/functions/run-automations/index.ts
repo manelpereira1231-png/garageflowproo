@@ -92,13 +92,19 @@ Deno.serve(async (req) => {
         const shopEmail = shop?.email || "";
         const laborRate = Number((shop as any)?.labor_rate) || 0;
         const currency = ((shop as any)?.currency as string) || "EUR";
+        const locale = currency === "BRL" ? "pt-BR"
+          : currency === "USD" ? "en-US"
+          : currency === "GBP" ? "en-GB"
+          : currency === "INR" ? "en-IN"
+          : "pt-PT";
         const money = (v: number) =>
-          new Intl.NumberFormat("pt-PT", { style: "currency", currency, minimumFractionDigits: 2 }).format(v || 0);
+          new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2 }).format(v || 0);
         const laborLine = (hours: number | null | undefined) => {
           const h = Number(hours) || 0;
           if (h <= 0 || laborRate <= 0) return "Mão-de-obra: não aplicável";
-          return `Mão-de-obra: ${money(h * laborRate)} (${h.toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h × ${money(laborRate)}/h)`;
+          return `Mão-de-obra: ${money(h * laborRate)} (${h.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h × ${money(laborRate)}/h)`;
         };
+
         // Track per-recipient labor summary for client emails
         const recipientLabor: Record<string, string> = {};
 

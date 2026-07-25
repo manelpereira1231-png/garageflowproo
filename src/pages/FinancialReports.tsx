@@ -420,7 +420,7 @@ export default function FinancialReports() {
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.invoicesIssued')}</th>
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.revenuePaid')}</th>
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.profit')}</th>
-                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">IVA</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">{getTaxLabel()}</th>
                 </tr>
               </thead>
               <tbody>

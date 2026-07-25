@@ -532,19 +532,27 @@ export default function InvoiceDetail() {
               </a>
             </Button>
           ) : (
-            can("invoices.create") && invoice.status !== "cancelled" && (
-              billingProvider ? (
+            can("invoices.create") && invoice.status !== "cancelled" && (() => {
+              const shopCountry = (shop?.country_code || "PT").toUpperCase();
+              const defaultProviderLabel = shopCountry === "BR" ? "eNotas" : "InvoiceXpress";
+              const providerLabel =
+                billingProvider === "moloni" ? "Moloni" :
+                billingProvider === "enotas" ? "eNotas" :
+                billingProvider === "invoicexpress" ? "InvoiceXpress" :
+                defaultProviderLabel;
+              const emitText = shopCountry === "BR" ? `Emitir Nota Fiscal (${providerLabel})` : `Emitir via ${providerLabel}`;
+              return billingProvider ? (
                 <Button size="sm" variant="default" onClick={handleEmitCertified} disabled={emitting}>
                   {emitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
-                  Emitir via {billingProvider === "moloni" ? "Moloni" : "InvoiceXpress"}
+                  {emitText}
                 </Button>
               ) : (
                 <Button size="sm" variant="default" onClick={() => navigate("/settings/billing-integration")}>
                   <ShieldCheck className="w-4 h-4 mr-1" />
-                  Emitir via InvoiceXpress
+                  {emitText}
                 </Button>
-              )
-            )
+              );
+            })()
           )}
           {can("invoices.create") && invoice.status === 'draft' && (
             <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>

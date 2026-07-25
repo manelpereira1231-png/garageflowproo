@@ -69,7 +69,7 @@ async function loadImage(url: string): Promise<string | null> {
 export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
   const doc = new jsPDF();
   const { invoice, items, shop } = data;
-  const cur = shop.currency === 'EUR' ? '€' : shop.currency;
+  
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const lang = data.language || 'pt';

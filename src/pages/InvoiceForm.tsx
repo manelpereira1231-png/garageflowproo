@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/pushNotifications";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 interface InvoiceItem {
   id: string;
@@ -130,7 +132,7 @@ export default function InvoiceForm() {
   const subtotal = items.reduce((acc, i) => acc + i.quantity * i.unit_price, 0);
   const vatTotal = items.reduce((acc, i) => acc + i.quantity * i.unit_price * (i.vat_rate / 100), 0);
   const total = subtotal + vatTotal;
-  const cur = shop?.currency === 'EUR' ? '€' : (shop?.currency || '€');
+  const invoiceCurrency = shop?.currency || undefined;
 
   const handleSave = async (issueNow: boolean) => {
     if (!clientId) { toast.error(t('invoices.selectClient')); return; }
@@ -191,13 +193,13 @@ export default function InvoiceForm() {
       sendPushNotification(
         activeId,
         `Nova fatura ${number}`,
-        `${clientName} — ${shop?.currency || '€'}${total.toFixed(2)}`,
+        `${clientName} — ${formatMoney(total, invoiceCurrency)}`,
         `/invoices/${invoice.id}`
       );
       if (client?.email) {
         void sendLifecycleEmail({
           shopId: activeId, templateKey: "invoice_created", entityId: invoice.id, recipient: client.email,
-          data: { client_name: clientName, invoice_number: number, total: `${(shop?.currency || '€')}${total.toFixed(2)}` },
+          data: { client_name: clientName, invoice_number: number, total: formatMoney(total, invoiceCurrency) },
         });
       }
     }
@@ -293,7 +295,7 @@ export default function InvoiceForm() {
                 />
               </div>
               <div className="col-span-3 md:col-span-2">
-                {idx === 0 && <Label className="text-xs">IVA %</Label>}
+                {idx === 0 && <Label className="text-xs">{getTaxLabel()} %</Label>}
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -320,9 +322,9 @@ export default function InvoiceForm() {
       <Card className="mb-4">
         <CardContent className="pt-6">
           <div className="flex flex-col items-end gap-1">
-            <p className="text-sm text-muted-foreground">Subtotal: <span className="font-semibold text-foreground">{cur}{subtotal.toFixed(2)}</span></p>
-            <p className="text-sm text-muted-foreground">IVA: <span className="font-semibold text-foreground">{cur}{vatTotal.toFixed(2)}</span></p>
-            <p className="text-lg font-bold">Total: {cur}{total.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">Subtotal: <span className="font-semibold text-foreground">{formatMoney(subtotal, invoiceCurrency)}</span></p>
+            <p className="text-sm text-muted-foreground">{getTaxLabel()}: <span className="font-semibold text-foreground">{formatMoney(vatTotal, invoiceCurrency)}</span></p>
+            <p className="text-lg font-bold">Total: {formatMoney(total, invoiceCurrency)}</p>
           </div>
         </CardContent>
       </Card>

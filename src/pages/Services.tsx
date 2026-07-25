@@ -29,6 +29,8 @@ import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { useShopRole } from "@/hooks/useShopRole";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -527,7 +529,7 @@ export default function Services() {
       Número: s.number, Cliente: (s.clients as any)?.name,
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
       Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
-      IVA: s.vat_total, Total: s.total, Lucro: s.profit,
+      [getTaxLabel()]: s.vat_total, Total: s.total, Lucro: s.profit,
       Data: formatLocalDate(s.created_at),
     }));
     exportToCsv(csvData, 'servicos');
@@ -608,7 +610,7 @@ export default function Services() {
         {can("finance.view_profits") && (
           <div className="bg-card border border-border rounded-xl p-3">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Este mês</p>
-            <p className="text-2xl font-bold mt-1 text-success mono">{shop?.currency === 'BRL' ? 'R$' : '€'}{monthRevenue.toFixed(0)}</p>
+            <p className="text-2xl font-bold mt-1 text-success mono">{formatMoney(monthRevenue, shop?.currency)}</p>
           </div>
         )}
       </div>
@@ -717,7 +719,7 @@ export default function Services() {
             </div>
             <RepairTimeline status={s.status as ServiceStatus} />
             <div className="flex items-center justify-between pt-1 border-t border-border">
-              <span className="text-sm font-semibold mono">€{s.total?.toFixed(2)}</span>
+              <span className="text-sm font-semibold mono">{formatMoney(s.total)}</span>
               <div className="flex gap-1">
                 {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Link to={`/services/edit/${s.id}`}>
@@ -821,7 +823,7 @@ export default function Services() {
                 <TableCell className="hidden lg:table-cell px-2 py-3">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono">€{s.total?.toFixed(2)}</TableCell>
+                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(s.total)}</TableCell>
                 <TableCell className="px-3 py-3">
                   <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
                     {t(`service.${s.status}`)}

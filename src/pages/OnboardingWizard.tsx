@@ -14,6 +14,7 @@ import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
 import { useShopContext } from "@/hooks/useShopContext";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
+import { getDefaultTimezone, getCountryConfig, getCountryCode as getActiveCountryCode, getTaxLabel } from "@/lib/regionConfig";
 
 const countries = Object.keys(VAT_RATES);
 const CURRENCIES = [
@@ -60,11 +61,12 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [planLabel, setPlanLabel] = useState<string>("Start");
   const fileRef = useRef<HTMLInputElement>(null);
+  const initialCountryCfg = getCountryConfig();
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
-    country: "Portugal", currency: "EUR",
+    country: initialCountryCfg.name || "Portugal", currency: initialCountryCfg.currency || "EUR",
     vat_rate: "23", labor_rate: "35", language: language as string,
-    nif: "", address: "", timezone: "Europe/Lisbon",
+    nif: "", address: "", timezone: getDefaultTimezone(),
   });
 
   // Pre-fill form with existing shop data (from signup metadata)
@@ -190,7 +192,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           language: form.language,
           nif: form.nif || '',
           address: form.address || '',
-          timezone: form.timezone || 'Europe/Lisbon',
+          timezone: form.timezone || getDefaultTimezone(),
         };
         console.info("[onboarding] fallback shop insert payload", createPayload);
         const { data: newShop, error: createError } = await supabase
@@ -492,7 +494,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </h2>
               <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
                 <p>✅ <strong>{t('settings.shopName')}:</strong> {form.name || '—'}</p>
-                <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% IVA)</p>
+                <p>✅ <strong>{t('settings.country')}:</strong> {form.country} ({form.vat_rate}% {getTaxLabel()})</p>
                 <p>✅ <strong>NIF/VAT:</strong> {form.nif || '—'}</p>
                 <p>✅ <strong>{t('settings.address')}:</strong> {form.address || '—'}</p>
                 <p>✅ <strong>{t('settings.laborRate')}:</strong> {form.currency} {form.labor_rate}/h</p>

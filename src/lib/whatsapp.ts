@@ -1,5 +1,8 @@
 /** WhatsApp utility for sharing documents without exposing PDF links in the message. */
 
+import { formatMoney } from "@/lib/money";
+
+
 export type ServiceStage =
   | 'open'
   | 'diagnosis'
@@ -41,7 +44,9 @@ function vehicleLabel(p: WhatsAppMessageParams): string {
 
 function formatEUR(v?: number): string {
   if (typeof v !== 'number' || isNaN(v)) return '';
-  return `€${v.toFixed(2)}`;
+  // Uses active country config (currency + locale) automatically.
+  // Name kept for backward compatibility with call sites.
+  return formatMoney(v);
 }
 
 function buildServiceStageMessage(p: WhatsAppMessageParams): string | null {

@@ -20,6 +20,7 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
 import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
+import { getDefaultTimezone, getCountryConfig } from "@/lib/regionConfig";
 
 const DAYS: { key: keyof OpeningHours; label: string }[] = [
   { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
@@ -47,10 +48,11 @@ export default function SettingsPage() {
   const [shopSlug, setShopSlug] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [countryCode, setCountryCode] = useState<string>("PT");
+  const defaultCfg = getCountryConfig();
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", country: "Portugal",
-    currency: "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
-    nif: "", address: "", timezone: "Europe/Lisbon",
+    name: "", email: "", phone: "", country: defaultCfg.name || "Portugal",
+    currency: defaultCfg.currency || "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
+    nif: "", address: "", timezone: getDefaultTimezone(),
   });
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
@@ -79,11 +81,11 @@ export default function SettingsPage() {
         setCountryCode((shopData.country_code || "PT").toUpperCase());
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
-          country: shopData.country || "Portugal", currency: shopData.currency || "EUR",
+          country: shopData.country || defaultCfg.name, currency: shopData.currency || defaultCfg.currency,
           vat_rate: String(shopData.vat_rate ?? 23), labor_rate: String(shopData.labor_rate ?? 35),
           language: shopData.language || "pt",
           nif: shopData.nif || "", address: shopData.address || "",
-          timezone: shopData.timezone || "Europe/Lisbon",
+          timezone: shopData.timezone || getDefaultTimezone(shopData.country_code),
         });
         setLogoPreview(shopData.logo_url || null);
         if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);
@@ -289,7 +291,7 @@ export default function SettingsPage() {
                 <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.laborRate')} ({getCountryFiscalConfig(countryCode).code === "PT" ? "€" : ""}/h)</Label>
+                <Label>{t('settings.laborRate')} ({getCountryConfig(countryCode).currencySymbol}/h)</Label>
                 <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">

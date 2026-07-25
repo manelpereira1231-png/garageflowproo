@@ -19,6 +19,8 @@ import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/mark
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -176,7 +178,7 @@ export default function InvoiceDetail() {
         shopLogoUrl: shop.logo_url,
         clientName: (invoice.clients as any)?.name || '',
         invoiceNumber: invoice.number,
-        invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString('pt-PT'),
+        invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString(getCountryConfig().locale),
         vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
         plate: (invoice.vehicles as any)?.plate,
         total: Number(invoice.total || 0),
@@ -191,12 +193,12 @@ export default function InvoiceDetail() {
         })),
         amountPaid: variant === 'paid' ? paidInfo?.newTotalPaid : undefined,
         paymentDate: variant === 'paid' && paidInfo?.payDate
-          ? new Date(paidInfo.payDate).toLocaleDateString('pt-PT')
+          ? new Date(paidInfo.payDate).toLocaleDateString(getCountryConfig().locale)
           : undefined,
         paymentMethod: variant === 'paid' && paidInfo?.payMethod
           ? String(paidInfo.payMethod).toUpperCase()
           : undefined,
-        currency: shop.currency || 'EUR',
+        currency: shop.currency || getCountryConfig().currency,
       });
       await sendEmail({
         to: clientEmail,
@@ -389,7 +391,7 @@ export default function InvoiceDetail() {
         shopLogoUrl: shop.logo_url,
         clientName: (invoice.clients as any)?.name || '',
         invoiceNumber: invoice.number,
-        invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString('pt-PT'),
+        invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString(getCountryConfig().locale),
         vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
         plate: (invoice.vehicles as any)?.plate,
         total: Number(invoice.total || 0),
@@ -402,7 +404,7 @@ export default function InvoiceDetail() {
           vat_rate: it.vat_rate != null ? Number(it.vat_rate) : undefined,
           total: Number(it.total || 0),
         })),
-        currency: shop.currency || 'EUR',
+        currency: shop.currency || getCountryConfig().currency,
       });
       await sendEmail({
         to: clientEmail,

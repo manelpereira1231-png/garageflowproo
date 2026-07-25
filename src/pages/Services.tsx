@@ -529,7 +529,7 @@ export default function Services() {
       Número: s.number, Cliente: (s.clients as any)?.name,
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
       Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
-      IVA: s.vat_total, Total: s.total, Lucro: s.profit,
+      [getTaxLabel()]: s.vat_total, Total: s.total, Lucro: s.profit,
       Data: formatLocalDate(s.created_at),
     }));
     exportToCsv(csvData, 'servicos');

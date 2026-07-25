@@ -303,7 +303,7 @@ export default function Quotes() {
       Número: q.number, Cliente: (q.clients as any)?.name,
       Veículo: `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model}`,
       Matrícula: (q.vehicles as any)?.plate, Status: q.status, Subtotal: q.subtotal,
-      IVA: q.vat_total, Total: q.total, Lucro: q.profit, Data: q.date, Validade: q.validity_date,
+      [getTaxLabel()]: q.vat_total, Total: q.total, Lucro: q.profit, Data: q.date, Validade: q.validity_date,
     }));
     exportToCsv(csvData, 'orcamentos');
     toast.success(t('common.exported'));

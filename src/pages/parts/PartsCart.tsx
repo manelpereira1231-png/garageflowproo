@@ -6,6 +6,8 @@ import { Trash2, ShoppingBag } from "lucide-react";
 import { useGsnCart } from "@/hooks/useGsnCart";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 export default function PartsCart() {
   const { items, bySupplier, subtotal, vatTotal, total, updateQuantity, remove, checkout, loading } = useGsnCart();

@@ -123,11 +123,11 @@ export function GsnPartPickerButton({ onPick, label, size = "sm", variant = "out
                 <div className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
                   {p.sku && <span>REF: {p.sku}</span>}
                   <span>Stock: {p.stock}</span>
-                  <span>IVA {Number(p.vat)}%</span>
+                  <span>{getTaxLabel()} {Number(p.vat)}%</span>
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-semibold">€{Number(p.price).toFixed(2)}</div>
+                <div className="font-semibold">{formatMoney(Number(p.price))}</div>
                 <Button type="button" size="sm" className="mt-1 h-7" onClick={() => handleAction(p)}>
                   {onPick ? "Adicionar" : "Ao carrinho"}
                 </Button>

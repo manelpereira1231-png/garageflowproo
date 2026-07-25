@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { getTaxLabel } from "@/lib/regionConfig";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatMoney } from "@/lib/money";
 import { useShopRole } from "@/hooks/useShopRole";

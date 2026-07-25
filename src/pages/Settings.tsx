@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Settings, Building2, Globe, FileText, Palette, AlertTriangle, Copy, ExternalLink, Clock, ShieldCheck } from "lucide-react";
+import { Upload, Settings, Building2, Globe, FileText, Palette, Copy, ExternalLink, Clock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { VAT_RATES } from "@/types/garage";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -20,19 +19,19 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
 import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
-import { getDefaultTimezone, getCountryConfig, listActiveCountries, setCountryCode as setActiveCountryCode } from "@/lib/regionConfig";
+import {
+  getDefaultTimezone,
+  getCountryConfig,
+  listActiveCountries,
+  setCountryCode as setActiveCountryCode,
+  getTaxLabel,
+  getCountryTimezones,
+  getDefaultVatRate,
+} from "@/lib/regionConfig";
 
 const DAYS: { key: keyof OpeningHours; label: string }[] = [
   { key: "mon", label: "Seg" }, { key: "tue", label: "Ter" }, { key: "wed", label: "Qua" },
   { key: "thu", label: "Qui" }, { key: "fri", label: "Sex" }, { key: "sat", label: "Sáb" }, { key: "sun", label: "Dom" },
-];
-
-const countries = Object.keys(VAT_RATES);
-
-const TIMEZONES = [
-  "Europe/Lisbon", "Europe/Madrid", "Europe/London", "Europe/Paris",
-  "Europe/Berlin", "America/Sao_Paulo", "America/New_York",
-  "Africa/Luanda", "Africa/Maputo",
 ];
 
 export default function SettingsPage() {
@@ -48,11 +47,25 @@ export default function SettingsPage() {
   const [shopSlug, setShopSlug] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [countryCode, setCountryCode] = useState<string>("PT");
-  const defaultCfg = getCountryConfig();
+  // All fiscal/regional defaults are derived from the shop's country_code
+  // via getCountryConfig — never from module-level hardcoded PT values.
+  const countryCfg = getCountryConfig(countryCode);
+  const fiscalCfg = getCountryFiscalConfig(countryCode);
+  const taxLabel = getTaxLabel(countryCode);
+  const timezones = getCountryTimezones(countryCode);
+  const addressPlaceholder = fiscalCfg.fields.find(f => f.key === "address")?.placeholder || "";
+  const billingProviderLabel: Record<string, string> = {
+    invoicexpress: "InvoiceXpress", moloni: "Moloni", enotas: "eNotas",
+    nuvem_fiscal: "Nuvem Fiscal", quickbooks: "QuickBooks", xero: "Xero",
+    holded: "Holded", pennylane: "Pennylane", sevdesk: "sevDesk",
+    zoho_books: "Zoho Books", cleartax: "ClearTax", generic: "Faturação",
+  };
+  const providerName = billingProviderLabel[fiscalCfg.billingProvider] || "Faturação";
+
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", country: defaultCfg.name || "Portugal",
-    currency: defaultCfg.currency || "EUR", vat_rate: "23", labor_rate: "35", language: "pt",
-    nif: "", address: "", timezone: getDefaultTimezone(),
+    name: "", email: "", phone: "", country: "",
+    currency: "", vat_rate: "", labor_rate: "", language: "",
+    nif: "", address: "", timezone: "",
   });
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
@@ -75,17 +88,21 @@ export default function SettingsPage() {
       }
 
       if (shopData) {
+        const cc = (shopData.country_code || "PT").toUpperCase();
+        const cfg = getCountryConfig(cc);
         setShopId(shopData.id);
         setShopSlug(shopData.slug || "");
         setLogoFile(null);
-        setCountryCode((shopData.country_code || "PT").toUpperCase());
+        setCountryCode(cc);
         setForm({
           name: shopData.name || "", email: shopData.email || "", phone: shopData.phone || "",
-          country: shopData.country || defaultCfg.name, currency: shopData.currency || defaultCfg.currency,
-          vat_rate: String(shopData.vat_rate ?? 23), labor_rate: String(shopData.labor_rate ?? 35),
-          language: shopData.language || "pt",
+          country: shopData.country || cfg.name,
+          currency: shopData.currency || cfg.currency,
+          vat_rate: String(shopData.vat_rate ?? getDefaultVatRate(cc)),
+          labor_rate: String(shopData.labor_rate ?? 35),
+          language: shopData.language || cfg.defaultLanguage,
           nif: shopData.nif || "", address: shopData.address || "",
-          timezone: shopData.timezone || getDefaultTimezone(shopData.country_code),
+          timezone: shopData.timezone || getDefaultTimezone(cc),
         });
         setLogoPreview(shopData.logo_url || null);
         if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);
@@ -187,11 +204,11 @@ export default function SettingsPage() {
                 <ShieldCheck className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">{countryCode === "BR" ? "Faturação certificada (NF-e)" : "Faturação certificada (AT)"}</p>
+                <p className="font-medium text-sm">
+                  {countryCode === "BR" ? "Faturação certificada (NF-e)" : `Faturação certificada (${providerName})`}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {countryCode === "BR"
-                    ? "Liga o eNotas para emitir Nota Fiscal Eletrónica na SEFAZ"
-                    : "Liga o InvoiceXpress para emitir faturas com ATCUD e QR Code"}
+                  {`Liga o ${providerName} para emitir documentos fiscais para ${countryCfg.name}.`}
                 </p>
               </div>
             </div>
@@ -260,7 +277,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-1.5 col-span-2">
                 <Label>{t('settings.address')}</Label>
-                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Rua das Oficinas, 123" />
+                <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder={addressPlaceholder} />
               </div>
               <div className="space-y-1.5 col-span-2">
                 <Label className="flex items-center gap-1.5">
@@ -307,7 +324,7 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">
-                  Define moeda, locale, timezone, impostos e emissor fiscal (PT → InvoiceXpress · BR → eNotas).
+                  {`Define moeda (${countryCfg.currency}), locale (${countryCfg.locale}), fuso (${countryCfg.defaultTimezone || '—'}), impostos (${taxLabel}) e emissor fiscal (${providerName}).`}
                 </p>
               </div>
             </div>
@@ -325,12 +342,12 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>{getTaxIdLabel(countryCode)}</Label>
-                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={getCountryFiscalConfig(countryCode).fields.find(f => f.key === "taxId")?.placeholder || ""} />
+                <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={fiscalCfg.fields.find(f => f.key === "taxId")?.placeholder || ""} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.country')}</Label>
                 <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
-                  <span>{form.country}</span>
+                  <span>{form.country || countryCfg.name}</span>
                   <Badge variant="outline" className="text-[10px]">{countryCode}</Badge>
                   <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="País bloqueado" />
                 </div>
@@ -339,17 +356,17 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.vatRate')} (%)</Label>
-                <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} />
+                <Label>{taxLabel} (%)</Label>
+                <Input type="number" value={form.vat_rate} onChange={e => setForm({...form, vat_rate: e.target.value})} placeholder={String(getDefaultVatRate(countryCode))} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('settings.laborRate')} ({getCountryConfig(countryCode).currencySymbol}/h)</Label>
+                <Label>{t('settings.laborRate')} ({countryCfg.currencySymbol}/h)</Label>
                 <Input type="number" step="0.01" value={form.labor_rate} onChange={e => setForm({...form, labor_rate: e.target.value})} />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('settings.currency')}</Label>
                 <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">
-                  <span>{form.currency}</span>
+                  <span>{countryCfg.currencySymbol} {form.currency || countryCfg.currency}</span>
                   <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground ml-auto" aria-label="Moeda bloqueada" />
                 </div>
                 <p className="text-[11px] text-muted-foreground">Definida pelo país da oficina.</p>
@@ -387,7 +404,7 @@ export default function SettingsPage() {
                 <Select value={form.timezone} onValueChange={v => setForm({...form, timezone: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                    {timezones.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

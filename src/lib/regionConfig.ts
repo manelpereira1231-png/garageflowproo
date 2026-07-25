@@ -26,6 +26,10 @@ export interface CountryConfig {
   defaultLanguage: string;
   taxLabel: string;
   defaultTimezone?: string;
+  /** Timezones available for the country (first is the default). */
+  timezones?: string[];
+  /** Standard tax rate for the country (%). */
+  defaultVatRate?: number;
   saas: {
     free: { monthly: number; yearly: number };
     pro: { monthly: number; yearly: number };
@@ -51,6 +55,8 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'PT', name: 'Portugal', flag: '🇵🇹',
     currency: 'EUR', currencySymbol: '€', locale: 'pt-PT',
     defaultLanguage: 'pt', taxLabel: 'IVA', defaultTimezone: 'Europe/Lisbon',
+    timezones: ['Europe/Lisbon', 'Atlantic/Madeira', 'Atlantic/Azores'],
+    defaultVatRate: 23,
     saas: { free: { monthly: 19.99, yearly: 199 }, pro: { monthly: 59.99, yearly: 599 }, garage: { monthly: 129.99, yearly: 1299 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {
@@ -65,6 +71,8 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'BR', name: 'Brasil', flag: '🇧🇷',
     currency: 'BRL', currencySymbol: 'R$', locale: 'pt-BR',
     defaultLanguage: 'pt-BR', taxLabel: 'Impostos', defaultTimezone: 'America/Sao_Paulo',
+    timezones: ['America/Sao_Paulo', 'America/Fortaleza', 'America/Recife', 'America/Manaus', 'America/Belem', 'America/Cuiaba', 'America/Campo_Grande', 'America/Porto_Velho', 'America/Rio_Branco', 'America/Noronha'],
+    defaultVatRate: 0,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 97, yearly: 970 }, garage: { monthly: 197, yearly: 1970 }, trialDays: 30 },
     inspection: { price: 89.90, shopShare: 50.00, platformShare: 39.90 },
     stripe: {
@@ -79,6 +87,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'IN', name: 'India', flag: '🇮🇳',
     currency: 'INR', currencySymbol: '₹', locale: 'en-IN',
     defaultLanguage: 'en', taxLabel: 'GST', defaultTimezone: 'Asia/Kolkata',
+    timezones: ['Asia/Kolkata'], defaultVatRate: 18,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 999, yearly: 9990 }, garage: { monthly: 1999, yearly: 19990 }, trialDays: 30 },
     inspection: { price: 499, shopShare: 300, platformShare: 199 },
     stripe: {},
@@ -88,6 +97,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'ES', name: 'España', flag: '🇪🇸',
     currency: 'EUR', currencySymbol: '€', locale: 'es-ES',
     defaultLanguage: 'es', taxLabel: 'IVA', defaultTimezone: 'Europe/Madrid',
+    timezones: ['Europe/Madrid', 'Atlantic/Canary'], defaultVatRate: 21,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -97,6 +107,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'FR', name: 'France', flag: '🇫🇷',
     currency: 'EUR', currencySymbol: '€', locale: 'fr-FR',
     defaultLanguage: 'fr', taxLabel: 'TVA', defaultTimezone: 'Europe/Paris',
+    timezones: ['Europe/Paris'], defaultVatRate: 20,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -106,6 +117,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'DE', name: 'Deutschland', flag: '🇩🇪',
     currency: 'EUR', currencySymbol: '€', locale: 'de-DE',
     defaultLanguage: 'de', taxLabel: 'MwSt', defaultTimezone: 'Europe/Berlin',
+    timezones: ['Europe/Berlin'], defaultVatRate: 19,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 29.90, shopShare: 17.00, platformShare: 12.90 },
     stripe: {},
@@ -115,6 +127,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'UK', name: 'United Kingdom', flag: '🇬🇧',
     currency: 'GBP', currencySymbol: '£', locale: 'en-GB',
     defaultLanguage: 'en', taxLabel: 'VAT', defaultTimezone: 'Europe/London',
+    timezones: ['Europe/London'], defaultVatRate: 20,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 45, yearly: 450 }, garage: { monthly: 89, yearly: 890 }, trialDays: 30 },
     inspection: { price: 29, shopShare: 17, platformShare: 12 },
     stripe: {},
@@ -124,6 +137,8 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     code: 'US', name: 'United States', flag: '🇺🇸',
     currency: 'USD', currencySymbol: '$', locale: 'en-US',
     defaultLanguage: 'en', taxLabel: 'Sales Tax', defaultTimezone: 'America/New_York',
+    timezones: ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu', 'America/Phoenix'],
+    defaultVatRate: 0,
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 34.90, shopShare: 20.00, platformShare: 14.90 },
     stripe: {},
@@ -147,6 +162,8 @@ export async function loadCountriesFromDB(): Promise<void> {
     if (error || !data) return;
     const map: Record<string, CountryConfig> = {};
     for (const row of data) {
+      const staticRef = STATIC_COUNTRIES[row.code];
+      const dbTimezones: string[] | undefined = Array.isArray(row.timezones) && row.timezones.length ? row.timezones : undefined;
       map[row.code] = {
         code: row.code,
         name: row.name,
@@ -156,6 +173,9 @@ export async function loadCountriesFromDB(): Promise<void> {
         locale: row.locale,
         defaultLanguage: row.default_language,
         taxLabel: row.tax_label,
+        defaultTimezone: dbTimezones?.[0] || staticRef?.defaultTimezone,
+        timezones: dbTimezones || staticRef?.timezones,
+        defaultVatRate: staticRef?.defaultVatRate,
         saas: {
           free: { monthly: Number(row.saas_free_monthly ?? 0), yearly: Number(row.saas_free_yearly ?? 0) },
           pro: { monthly: Number(row.saas_pro_monthly), yearly: Number(row.saas_pro_yearly) },
@@ -387,6 +407,32 @@ export function getTaxLabel(countryOrRegion?: CountryCode | Region): string {
   if (countryOrRegion === 'br') return getCountryConfig('BR').taxLabel;
   if (countryOrRegion === 'eu') return getCountryConfig('PT').taxLabel;
   return getCountryConfig(countryOrRegion).taxLabel;
+}
+
+/**
+ * List of IANA timezones available for the country (first entry is the default).
+ */
+export function getCountryTimezones(countryOrRegion?: CountryCode | Region): string[] {
+  let config: CountryConfig;
+  if (!countryOrRegion) config = getCountryConfig();
+  else if (countryOrRegion === 'br') config = getCountryConfig('BR');
+  else if (countryOrRegion === 'eu') config = getCountryConfig('PT');
+  else config = getCountryConfig(countryOrRegion);
+  if (config.timezones && config.timezones.length) return config.timezones;
+  return config.defaultTimezone ? [config.defaultTimezone] : [];
+}
+
+/**
+ * Default legal tax rate (%) for the country. 0 when the country does not have
+ * a single standard rate (e.g. BR/US where taxes are calculated per item).
+ */
+export function getDefaultVatRate(countryOrRegion?: CountryCode | Region): number {
+  let config: CountryConfig;
+  if (!countryOrRegion) config = getCountryConfig();
+  else if (countryOrRegion === 'br') config = getCountryConfig('BR');
+  else if (countryOrRegion === 'eu') config = getCountryConfig('PT');
+  else config = getCountryConfig(countryOrRegion);
+  return typeof config.defaultVatRate === 'number' ? config.defaultVatRate : 0;
 }
 
 /**

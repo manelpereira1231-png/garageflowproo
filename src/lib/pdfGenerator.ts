@@ -1,5 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getCurrencySymbol, getTaxLabelForCurrency } from "@/lib/regionLabels";
+
 
 interface PdfLine {
   type: string;
@@ -60,7 +62,9 @@ async function loadImage(url: string): Promise<string | null> {
 
 export async function generatePdf(data: PdfData, watermark: boolean): Promise<jsPDF> {
   const doc = new jsPDF();
-  const cur = data.currency === 'EUR' ? '€' : data.currency;
+  const cur = getCurrencySymbol(data.currency);
+  const taxLabel = getTaxLabelForCurrency(data.currency);
+
   const pageW = doc.internal.pageSize.getWidth();
   const isFree = watermark || data.plan === 'free';
 
@@ -123,7 +127,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     description: { pt: 'Descrição', en: 'Description', es: 'Descripción', 'pt-BR': 'Descrição' },
     qty: { pt: 'Qtd', en: 'Qty', es: 'Cant', 'pt-BR': 'Qtd' },
     price: { pt: 'Preço', en: 'Price', es: 'Precio', 'pt-BR': 'Preço' },
-    vat: { pt: 'IVA', en: 'VAT', es: 'IVA', 'pt-BR': 'Imposto' },
+    vat: { pt: taxLabel, en: taxLabel, es: taxLabel, 'pt-BR': taxLabel },
     total: { pt: 'Total', en: 'Total', es: 'Total', 'pt-BR': 'Total' },
     serviceType: { pt: 'Serviço', en: 'Service', es: 'Servicio', 'pt-BR': 'Serviço' },
     partType: { pt: 'Peça', en: 'Part', es: 'Pieza', 'pt-BR': 'Peça' },
@@ -331,13 +335,17 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setTextColor(140, 90, 0);
   doc.setFontSize(6);
   doc.setFont("helvetica", "italic");
+  const isBR = (data.currency || '').toUpperCase() === 'BRL';
   const noticeByLang: Record<string, string> = {
-    pt: 'DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Para efeitos fiscais emita fatura certificada (InvoiceXpress/Moloni).',
+    pt: isBR
+      ? 'DOCUMENTO SEM VALOR FISCAL — apenas gestão interna. Emita NF-e/NFS-e no software fiscal (eNotas) para efeitos legais.'
+      : 'DOCUMENTO SEM VALOR FISCAL — não certificado pela Autoridade Tributária. Para efeitos fiscais emita fatura certificada (InvoiceXpress/Moloni).',
     en: 'NON-FISCAL DOCUMENT — not certified by the Tax Authority. Issue a certified invoice for fiscal purposes.',
     es: 'DOCUMENTO SIN VALOR FISCAL — no certificado por la Agencia Tributaria. Emita factura certificada para efectos fiscales.',
-    'pt-BR': 'DOCUMENTO SEM VALOR FISCAL — apenas gestão interna. Emita NF-e no software fiscal para efeitos legais.',
+    'pt-BR': 'DOCUMENTO SEM VALOR FISCAL — apenas gestão interna. Emita NF-e/NFS-e no software fiscal (eNotas) para efeitos legais.',
   };
   doc.text(noticeByLang[lang] || noticeByLang.pt, pageW / 2, pageH - 22, { align: "center" });
+
 
   // Footer
   doc.setTextColor(150, 150, 150);

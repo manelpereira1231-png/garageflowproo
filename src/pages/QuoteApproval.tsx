@@ -8,6 +8,8 @@ import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User,
 import { sendEmail } from "@/lib/emailService";
 import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote";
 import SignaturePad from "@/components/SignaturePad";
+import { getCurrencySymbol, getLocaleForCurrency, getTaxLabelForCurrency } from "@/lib/regionLabels";
+
 
 const translations: Record<string, Record<string, string>> = {
   pt: {

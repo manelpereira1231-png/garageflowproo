@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Package, Truck } from "lucide-react";
 import { useGsnCart } from "@/hooks/useGsnCart";
 import { useGsnFavorites } from "@/hooks/useGsnFavorites";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 export default function PartDetail() {
   const { productId } = useParams();
@@ -51,8 +53,8 @@ export default function PartDetail() {
           </Link>
         )}
         <div className="flex items-baseline gap-3">
-          <p className="text-3xl font-bold">€ {Number(p.price).toFixed(2)}</p>
-          <span className="text-xs text-muted-foreground">IVA {p.vat}%</span>
+          <p className="text-3xl font-bold">{formatMoney(Number(p.price))}</p>
+          <span className="text-xs text-muted-foreground">{getTaxLabel()} {p.vat}%</span>
           <Badge variant={p.stock > 0 ? "secondary" : "outline"}>{p.stock > 0 ? `${p.stock} em stock` : "Esgotado"}</Badge>
         </div>
         {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}

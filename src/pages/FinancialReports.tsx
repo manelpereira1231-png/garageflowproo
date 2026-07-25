@@ -11,6 +11,7 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { useSubscription } from "@/hooks/useSubscription";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 const COLORS = ["hsl(var(--primary))", "#22c55e", "#f59e0b", "#ef4444", "#6366f1", "#ec4899"];
 
@@ -154,7 +155,7 @@ export default function FinancialReports() {
     }
     exportToCsv(stats.monthlyData.map(m => ({
       Mês: m.month, 'Receita Paga': m.revenue.toFixed(2),
-      'IVA': m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
+      [getTaxLabel()]: m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
     })), 'relatorio-financeiro');
     toast.success(t('common.exported'));
   };
@@ -419,7 +420,7 @@ export default function FinancialReports() {
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.invoicesIssued')}</th>
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.revenuePaid')}</th>
                   <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t('financial.profit')}</th>
-                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">IVA</th>
+                  <th className="text-right py-2 px-3 font-medium text-muted-foreground">{getTaxLabel()}</th>
                 </tr>
               </thead>
               <tbody>

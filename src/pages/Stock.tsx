@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import { getTaxLabel } from "@/lib/regionConfig";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatMoney } from "@/lib/money";
 import { useShopRole } from "@/hooks/useShopRole";
@@ -293,7 +294,7 @@ export default function Stock() {
   // Exporta a lista de peças para CSV
   const exportCsv = () => {
     if (!can("stock.manage")) return;
-    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço","IVA","Ativo"];
+    const header = ["Nome","Referência","Fornecedor","Stock","Reservado","Mín.","Custo","Preço",getTaxLabel(),"Ativo"];
     const rows = filtered.map(p => [
       p.name,
       p.reference || "",

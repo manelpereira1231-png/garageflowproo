@@ -165,6 +165,12 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         // Anti-flood: server-side rate limit by IP and email
         await ensureSignupAllowed(email, "erp");
 
+        // Persist chosen country BEFORE any subsequent context read so that
+        // regionConfig, LanguageContext, useCountryPricing, Stripe price IDs
+        // and every consumer of getCountryCode() switch to the picked country
+        // immediately after signup (no VPN / browser locale needed).
+        try { setCountryCode(country); } catch {}
+
         const { data: signUpData, error } = await erpSupabase.auth.signUp({
           email, password,
           options: {
@@ -173,6 +179,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
               name: shopName || name,
               referral_code: refCode || undefined,
               account_type: "garage",
+              country_code: country,
             },
             emailRedirectTo: window.location.origin,
           }

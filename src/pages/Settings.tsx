@@ -404,7 +404,7 @@ export default function SettingsPage() {
                 <Select value={form.timezone} onValueChange={v => setForm({...form, timezone: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                    {timezones.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

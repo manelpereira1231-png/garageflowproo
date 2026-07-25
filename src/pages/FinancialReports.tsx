@@ -155,7 +155,7 @@ export default function FinancialReports() {
     }
     exportToCsv(stats.monthlyData.map(m => ({
       Mês: m.month, 'Receita Paga': m.revenue.toFixed(2),
-      'IVA': m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
+      [getTaxLabel()]: m.vat.toFixed(2), 'Lucro': m.profit.toFixed(2), 'Faturas': m.count,
     })), 'relatorio-financeiro');
     toast.success(t('common.exported'));
   };

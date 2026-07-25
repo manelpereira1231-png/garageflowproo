@@ -25,6 +25,7 @@ export interface CountryConfig {
   locale: string;
   defaultLanguage: string;
   taxLabel: string;
+  defaultTimezone?: string;
   saas: {
     free: { monthly: number; yearly: number };
     pro: { monthly: number; yearly: number };

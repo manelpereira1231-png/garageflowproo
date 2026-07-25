@@ -322,9 +322,9 @@ export default function InvoiceForm() {
       <Card className="mb-4">
         <CardContent className="pt-6">
           <div className="flex flex-col items-end gap-1">
-            <p className="text-sm text-muted-foreground">Subtotal: <span className="font-semibold text-foreground">{cur}{subtotal.toFixed(2)}</span></p>
-            <p className="text-sm text-muted-foreground">IVA: <span className="font-semibold text-foreground">{cur}{vatTotal.toFixed(2)}</span></p>
-            <p className="text-lg font-bold">Total: {cur}{total.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">Subtotal: <span className="font-semibold text-foreground">{formatMoney(subtotal, invoiceCurrency)}</span></p>
+            <p className="text-sm text-muted-foreground">{getTaxLabel()}: <span className="font-semibold text-foreground">{formatMoney(vatTotal, invoiceCurrency)}</span></p>
+            <p className="text-lg font-bold">Total: {formatMoney(total, invoiceCurrency)}</p>
           </div>
         </CardContent>
       </Card>

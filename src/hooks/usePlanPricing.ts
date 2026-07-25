@@ -106,7 +106,7 @@ export function useEffectivePlanPrice(
  */
 export async function fetchAllPlanPrices(countryCode: string) {
   const { data, error } = await supabase
-    .from("plan_country_prices" as any)
+    .from("plan_country_prices_public" as any)
     .select("plan_slug, country_code, cycle, currency, amount, active")
     .eq("country_code", countryCode)
     .eq("active", true);

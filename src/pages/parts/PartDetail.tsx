@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Package, Truck } from "lucide-react";
 import { useGsnCart } from "@/hooks/useGsnCart";
 import { useGsnFavorites } from "@/hooks/useGsnFavorites";
+import { formatMoney } from "@/lib/money";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 export default function PartDetail() {
   const { productId } = useParams();

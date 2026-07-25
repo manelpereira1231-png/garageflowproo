@@ -11,6 +11,7 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { useSubscription } from "@/hooks/useSubscription";
+import { getTaxLabel } from "@/lib/regionConfig";
 
 const COLORS = ["hsl(var(--primary))", "#22c55e", "#f59e0b", "#ef4444", "#6366f1", "#ec4899"];
 

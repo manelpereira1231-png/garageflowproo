@@ -193,7 +193,7 @@ export default function InvoiceForm() {
       sendPushNotification(
         activeId,
         `Nova fatura ${number}`,
-        `${clientName} — ${shop?.currency || '€'}${total.toFixed(2)}`,
+        `${clientName} — ${formatMoney(total, invoiceCurrency)}`,
         `/invoices/${invoice.id}`
       );
       if (client?.email) {

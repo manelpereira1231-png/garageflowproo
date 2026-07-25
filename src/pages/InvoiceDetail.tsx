@@ -47,7 +47,7 @@ export default function InvoiceDetail() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
-  const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | null>(null);
+  const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | "enotas" | null>(null);
   const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
 
   const handleEmitCertified = async () => {
@@ -57,12 +57,19 @@ export default function InvoiceDetail() {
       if (invoice.provider_pdf_url) window.open(invoice.provider_pdf_url, "_blank");
       return;
     }
-    const providerLabel = billingProvider === "moloni" ? "Moloni" : "InvoiceXpress";
+    const providerLabel =
+      billingProvider === "moloni" ? "Moloni" :
+      billingProvider === "enotas" ? "eNotas" : "InvoiceXpress";
     if (!billingProvider) { toast.error("Configura primeiro a Faturação Certificada em Definições."); return; }
-    if (!confirm(`Emitir fatura certificada via ${providerLabel}? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.`)) return;
+    const anulacaoMsg = billingProvider === "enotas"
+      ? `Emitir nota fiscal via ${providerLabel}? Depois de emitida só pode ser cancelada oficialmente na SEFAZ (dentro do prazo).`
+      : `Emitir fatura certificada via ${providerLabel}? Depois de emitida NÃO é possível apagar — apenas anular por nota de crédito.`;
+    if (!confirm(anulacaoMsg)) return;
     setEmitting(true);
     try {
-      const fn = billingProvider === "moloni" ? "moloni-emit" : "invoicexpress-emit";
+      const fn =
+        billingProvider === "moloni" ? "moloni-emit" :
+        billingProvider === "enotas" ? "enotas-emit" : "invoicexpress-emit";
       const { data, error } = await supabase.functions.invoke(fn, {
         body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
       });
@@ -305,7 +312,9 @@ export default function InvoiceDetail() {
       const reason = window.prompt("Motivo da anulação (obrigatório para a Nota de Crédito):", "Anulação a pedido do cliente");
       if (!reason || !reason.trim()) return;
       try {
-        const fn = billingProvider === "moloni" ? "moloni-credit-note" : "invoicexpress-credit-note";
+        const fn =
+          billingProvider === "moloni" ? "moloni-credit-note" :
+          billingProvider === "enotas" ? "enotas-cancel" : "invoicexpress-credit-note";
         const { data, error } = await supabase.functions.invoke(fn, {
           body: { invoice_id: invoice.id, reason: reason.trim() },
         });

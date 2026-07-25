@@ -1,5 +1,8 @@
 /** WhatsApp utility for sharing documents without exposing PDF links in the message. */
 
+import { formatMoney } from "@/lib/money";
+
+
 export type ServiceStage =
   | 'open'
   | 'diagnosis'

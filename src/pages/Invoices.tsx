@@ -133,6 +133,8 @@ export default function Invoices() {
   };
 
   const [saftLoading, setSaftLoading] = useState(false);
+  const isBR = (shop?.country_code || "PT").toUpperCase() === "BR";
+  const dateLocale = isBR ? 'pt-BR' : 'pt-PT';
   const handleExportSaft = async () => {
     if (!can("invoices.export")) return;
     if (!activeShopId) return;

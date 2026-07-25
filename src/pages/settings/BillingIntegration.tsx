@@ -581,7 +581,7 @@ function IntlBillingForm({
             <div>
               <Label>Identificador da conta</Label>
               <Input
-                placeholder={providerSlug === "nuvem_fiscal" ? "CNPJ ou empresa_id" : "Nome / ID da conta"}
+                placeholder={PROVIDERS[providerSlug as keyof typeof PROVIDERS]?.accountIdHint ?? "Nome / ID da conta"}
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
               />

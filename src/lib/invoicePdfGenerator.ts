@@ -285,8 +285,9 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<jsPDF> {
     doc.setTextColor(46, 125, 50);
     doc.setFontSize(6.5);
     doc.setFont("helvetica", "bold");
-    const parts = ['DOCUMENTO CERTIFICADO'];
-    if (invoice.atcud) parts.push(`ATCUD: ${invoice.atcud}`);
+    const isBR = shop?.currency === 'BRL';
+    const parts = [isBR ? 'NOTA FISCAL ELETRÓNICA EMITIDA' : 'DOCUMENTO CERTIFICADO'];
+    if (invoice.atcud) parts.push(`${isBR ? 'Chave' : 'ATCUD'}: ${invoice.atcud}`);
     if (invoice.certified_series) parts.push(`Série: ${invoice.certified_series}`);
     doc.text(parts.join(' · '), pageW / 2, pageH - 22, { align: "center" });
   } else if (isCancelled) {

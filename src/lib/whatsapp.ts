@@ -112,7 +112,7 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
       let msg = `${greeting} 👋\n\nA sua fatura já se encontra disponível.`;
       msg += `\n\n🧾 Fatura:${num || ' —'}`;
       msg += `\n🚗 Veículo: ${veh}`;
-      if (totalStr) msg += `\n💶 Total: ${totalStr}`;
+      if (totalStr) msg += `\n💰 Total: ${totalStr}`;
       msg += `\n\nSegue em anexo o PDF da fatura.\n\nCaso tenha alguma dúvida estaremos totalmente disponíveis.\n\nObrigado pela confiança.${signature}`;
       return msg;
     }

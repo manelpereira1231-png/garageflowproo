@@ -23,12 +23,11 @@ export function useFeaturedTestimonials(limit = 6) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Reads from `testimonials_public` — a security-invoker view that exposes
+      // only the safe subset of columns (no admin_notes / submitted_by / shop_id).
       const { data } = await supabase
-        .from("testimonials" as any)
+        .from("testimonials_public" as any)
         .select("id, author_name, workshop_name, rating, content, created_at")
-        .eq("status", "approved")
-        .eq("featured", true)
-        .eq("display_publicly", true)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (cancelled) return;

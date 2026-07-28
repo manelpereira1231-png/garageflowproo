@@ -309,7 +309,7 @@ export default function AdminFeatureMatrix() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm flex items-center gap-2">
-                        {item.label}
+                        {t(`feature.${item.slug}`, item.label)}
                         {feat?.is_core && (
                           <Badge variant="secondary" className="text-[10px]">
                             <Lock className="h-2.5 w-2.5 mr-0.5" /> core

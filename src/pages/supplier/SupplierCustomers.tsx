@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { formatMoney } from "@/lib/money";
 
 interface Row { buyer_shop_id: string; orders: number; total: number; }
 
@@ -42,7 +43,7 @@ export default function SupplierCustomers() {
                 <div key={r.buyer_shop_id} className="flex items-center justify-between p-3 border rounded-md">
                   <p className="text-sm font-mono">{r.buyer_shop_id.slice(0,8)}...</p>
                   <div className="text-right text-sm">
-                    <p className="font-semibold">€ {r.total.toFixed(2)}</p>
+                    <p className="font-semibold">{formatMoney(r.total)}</p>
                     <p className="text-xs text-muted-foreground">{r.orders} encomendas</p>
                   </div>
                 </div>

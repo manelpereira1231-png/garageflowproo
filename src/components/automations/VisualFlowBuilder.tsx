@@ -68,7 +68,7 @@ export function VisualFlowBuilder({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Valor mínimo (€)</Label>
+            <Label className="text-xs">Valor mínimo ({getCountryConfig().currencySymbol})</Label>
             <Input
               type="number"
               min={0}

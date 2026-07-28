@@ -113,7 +113,7 @@ export default function AppointmentsBell() {
       for (const q of filtered) {
         if (!knownIds.has(q.id)) {
           toast.success(`Orçamento ${q.number} aprovado por ${q.client_name || "cliente"}`, {
-            description: `Valor: €${q.total.toFixed(2)} · toque no sino para ver`,
+            description: `Valor: ${formatMoney(q.total)} · toque no sino para ver`,
             duration: 8000,
           });
         }
@@ -208,7 +208,7 @@ export default function AppointmentsBell() {
                         {q.number} · {q.client_name || "Cliente"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        €{q.total.toFixed(2)} · {new Date(q.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}
+                        {formatMoney(q.total)} · {new Date(q.created_at).toLocaleString(getCountryConfig().locale, { dateStyle: "short", timeStyle: "short" })}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

@@ -143,7 +143,7 @@ export default function CommandPalette() {
           id: q.id,
           type: "quote" as const,
           title: q.number,
-          subtitle: `${(q.clients as any)?.name || ""} · €${(q.total || 0).toFixed(2)}`,
+          subtitle: `${(q.clients as any)?.name || ""} · ${formatMoney(q.total || 0)}`,
         })),
         ...(servicesRes.data || []).map((s: any) => ({
           id: s.id,
@@ -155,13 +155,13 @@ export default function CommandPalette() {
           id: i.id,
           type: "invoice" as const,
           title: i.number,
-          subtitle: `${(i.clients as any)?.name || ""} · €${(i.total || 0).toFixed(2)}`,
+          subtitle: `${(i.clients as any)?.name || ""} · ${formatMoney(i.total || 0)}`,
         })),
         ...(catalogRes.data || []).map((c: any) => ({
           id: c.id,
           type: "catalog" as const,
           title: c.name,
-          subtitle: `${c.default_time || 0}min · €${Number(c.default_price || 0).toFixed(2)}`,
+          subtitle: `${c.default_time || 0}min · ${formatMoney(Number(c.default_price || 0))}`,
         })),
         ...(partsRes.data || []).map((p) => ({
           id: p.id,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { Loader2, ClipboardCheck, Wallet, TrendingUp, Star } from "lucide-react";
+import { formatMoney } from "@/lib/money";
 
 type Stats = {
   totalInspections: number;
@@ -72,8 +73,8 @@ export default function MarketStats() {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <Card icon={ClipboardCheck} label="Inspeções totais" value={s.totalInspections} color="text-amber-500" />
           <Card icon={TrendingUp} label="Inspeções este mês" value={s.monthInspections} color="text-blue-500" />
-          <Card icon={Wallet} label="Receita do mês" value={`€${s.monthRevenue.toFixed(2)}`} color="text-emerald-500" />
-          <Card icon={Wallet} label="Saldo na carteira" value={`€${s.walletBalance.toFixed(2)}`} color="text-purple-500" />
+          <Card icon={Wallet} label="Receita do mês" value={formatMoney(s.monthRevenue)} color="text-emerald-500" />
+          <Card icon={Wallet} label="Saldo na carteira" value={formatMoney(s.walletBalance)} color="text-purple-500" />
           <Card icon={Star} label="Rating" value={s.rating != null ? s.rating.toFixed(1) : "—"} color="text-yellow-500" />
         </div>
       )}

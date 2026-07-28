@@ -345,8 +345,8 @@ export default function QuoteApproval() {
             marca: veh?.make || '',
             modelo: veh?.model || '',
             veiculo: vehicleLabel,
-            valor_orcamento: `€${quote.total?.toFixed(2) ?? '0.00'}`,
-            valor_total: `€${quote.total?.toFixed(2) ?? '0.00'}`,
+            valor_orcamento: formatMoney(quote.total ?? 0),
+            valor_total: formatMoney(quote.total ?? 0),
             data_hora: nowStr,
             telefone: shop.phone || '',
             email: shop.email || '',
@@ -375,7 +375,7 @@ export default function QuoteApproval() {
                 <tr><td style="padding:4px 0;color:#6b7280;">${SL.quote}</td><td style="padding:4px 0;font-weight:600;font-family:monospace;">${quote.number || ''}</td></tr>
                 <tr><td style="padding:4px 0;color:#6b7280;">${SL.vehicle}</td><td style="padding:4px 0;font-weight:600;">${vehicleLabel || '—'}</td></tr>
                 ${plate ? `<tr><td style="padding:4px 0;color:#6b7280;">${SL.plate}</td><td style="padding:4px 0;font-weight:600;font-family:monospace;">${plate}</td></tr>` : ''}
-                <tr><td style="padding:4px 0;color:#6b7280;">${SL.amount}</td><td style="padding:4px 0;font-weight:700;color:#059669;">€${quote.total?.toFixed(2) ?? '0.00'}</td></tr>
+                <tr><td style="padding:4px 0;color:#6b7280;">${SL.amount}</td><td style="padding:4px 0;font-weight:700;color:#059669;">${formatMoney(quote.total ?? 0)}</td></tr>
                 <tr><td style="padding:4px 0;color:#6b7280;">${SL.when}</td><td style="padding:4px 0;font-weight:600;">${nowStr}</td></tr>
               </table>
             </div>

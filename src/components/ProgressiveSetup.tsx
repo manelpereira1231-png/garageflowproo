@@ -86,7 +86,7 @@ export default function ProgressiveSetup({ trigger, onComplete, children }: Prog
       icon: Wrench,
       title: "Define o preço por hora",
       desc: "Define o preço por hora de mão-de-obra para cálculos automáticos.",
-      label: "Preço/hora (€)",
+      label: `Preço/hora (${getCountryConfig().currencySymbol})`,
       placeholder: "45",
       field: "labor_rate",
     },
@@ -95,7 +95,7 @@ export default function ProgressiveSetup({ trigger, onComplete, children }: Prog
       title: "Adiciona a morada da oficina",
       desc: "A morada é necessária para documentos de faturação.",
       label: "Morada",
-      placeholder: "Rua das Oficinas, 123, Lisboa",
+      placeholder: "Ex: Rua Principal, 123",
       field: "address",
     },
   };

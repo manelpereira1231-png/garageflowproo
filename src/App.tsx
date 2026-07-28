@@ -198,6 +198,9 @@ const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/Commerci
 const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDemos"));
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
+const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
+const AdminTestimonials = lazyRetry(() => import("@/pages/admin/AdminTestimonials"));
+const SettingsTestimonials = lazyRetry(() => import("@/pages/settings/Testimonials"));
 
 // GarageFlow Supplier Network (GSN) — módulo B2B isolado por feature flag
 const AdminSupplierNetwork = lazyRetry(() => import("@/pages/admin/AdminSupplierNetwork"));
@@ -473,6 +476,8 @@ const adminRoutes = [
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
   { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
   { path: "/admin/supplier-network/applications", element: <AdminSupplierApplications /> },
+  { path: "/admin/legal-settings", element: <AdminLegalSettings /> },
+  { path: "/admin/testimonials", element: <AdminTestimonials /> },
 ];
 
 const supplierRoutes = [
@@ -521,6 +526,7 @@ const shopRoutes = [
   { path: "/settings/email-templates", element: <EmailTemplates /> },
   { path: "/settings/messages", element: <MessageTemplates /> },
   { path: "/settings/billing-integration", element: <BillingIntegration /> },
+  { path: "/settings/testimonials", element: <SettingsTestimonials /> },
   { path: "/billing", element: <Billing /> },
   { path: "/trial-expired", element: <TrialExpired /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },

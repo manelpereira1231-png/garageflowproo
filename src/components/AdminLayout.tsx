@@ -81,6 +81,13 @@ const navSections = [
     ],
   },
   {
+    label: "Site & Conteúdo",
+    items: [
+      { path: "/admin/testimonials", label: "Avaliações", icon: Sparkles },
+      { path: "/admin/legal-settings", label: "Informações Legais", icon: Shield },
+    ],
+  },
+  {
     label: "Operações",
     items: [
       { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },

@@ -155,9 +155,15 @@ export function resolvePlanCta(
  * Rótulo curto do selo (badge) — "Mais Popular" por defeito quando o admin
  * marca o plano como destacado mas não escreveu texto.
  */
-export function resolvePlanBadge(plan: PlanRow, t?: (k: string) => string): string | null {
+export function resolvePlanBadge(plan: PlanRow, t?: (k: string, defaultValue?: string) => string): string | null {
   if (plan.show_badge === false) return null;
   const custom = (plan.badge_label || "").trim();
+  // Se o admin definiu um badge que é claramente um CTA (contact/demo), traduzimos
+  // via chaves canónicas para não deixar "CONTACTE-NOS" em EN/ES/HI.
+  if (custom && (plan.cta_mode === "contact" || plan.cta_mode === "demo") && t) {
+    const key = plan.cta_mode === "contact" ? "cta.contact" : "cta.demo";
+    return t(key, custom);
+  }
   if (custom) return custom;
   return null; // sem badge se nada estiver configurado
 }

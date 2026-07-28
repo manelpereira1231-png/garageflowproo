@@ -1751,6 +1751,13 @@ export type Database = {
             referencedRelation: "country_settings"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
+            referencedColumns: ["code"]
+          },
         ]
       }
       carity_transactions: {
@@ -6612,10 +6619,24 @@ export type Database = {
             referencedColumns: ["code"]
           },
           {
+            foreignKeyName: "plan_country_prices_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "plan_country_prices_plan_slug_fkey"
             columns: ["plan_slug"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "plan_country_prices_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans_public"
             referencedColumns: ["slug"]
           },
         ]
@@ -7249,6 +7270,13 @@ export type Database = {
             columns: ["country_code"]
             isOneToOne: false
             referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "regional_admin_countries_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
             referencedColumns: ["code"]
           },
         ]
@@ -8088,6 +8116,13 @@ export type Database = {
             columns: ["country_code"]
             isOneToOne: false
             referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "shops_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
             referencedColumns: ["code"]
           },
         ]
@@ -9578,7 +9613,95 @@ export type Database = {
             referencedRelation: "country_settings"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
+            referencedColumns: ["code"]
+          },
         ]
+      }
+      country_settings_public: {
+        Row: {
+          active: boolean | null
+          code: string | null
+          created_at: string | null
+          currency: string | null
+          currency_symbol: string | null
+          default_language: string | null
+          flag_emoji: string | null
+          inspection_platform_share: number | null
+          inspection_price: number | null
+          inspection_shop_share: number | null
+          locale: string | null
+          market_commission_rate: number | null
+          name: string | null
+          saas_free_monthly: number | null
+          saas_free_yearly: number | null
+          saas_garage_monthly: number | null
+          saas_garage_yearly: number | null
+          saas_pro_monthly: number | null
+          saas_pro_yearly: number | null
+          saas_trial_days: number | null
+          supported_languages: string[] | null
+          tax_label: string | null
+          timezones: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          currency_symbol?: string | null
+          default_language?: string | null
+          flag_emoji?: string | null
+          inspection_platform_share?: number | null
+          inspection_price?: number | null
+          inspection_shop_share?: number | null
+          locale?: string | null
+          market_commission_rate?: number | null
+          name?: string | null
+          saas_free_monthly?: number | null
+          saas_free_yearly?: number | null
+          saas_garage_monthly?: number | null
+          saas_garage_yearly?: number | null
+          saas_pro_monthly?: number | null
+          saas_pro_yearly?: number | null
+          saas_trial_days?: number | null
+          supported_languages?: string[] | null
+          tax_label?: string | null
+          timezones?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          currency_symbol?: string | null
+          default_language?: string | null
+          flag_emoji?: string | null
+          inspection_platform_share?: number | null
+          inspection_price?: number | null
+          inspection_shop_share?: number | null
+          locale?: string | null
+          market_commission_rate?: number | null
+          name?: string | null
+          saas_free_monthly?: number | null
+          saas_free_yearly?: number | null
+          saas_garage_monthly?: number | null
+          saas_garage_yearly?: number | null
+          saas_pro_monthly?: number | null
+          saas_pro_yearly?: number | null
+          saas_trial_days?: number | null
+          supported_languages?: string[] | null
+          tax_label?: string | null
+          timezones?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       dealer_directory: {
         Row: {
@@ -9600,6 +9723,13 @@ export type Database = {
             columns: ["country_code"]
             isOneToOne: false
             referencedRelation: "country_settings"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "carity_seller_profiles_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
             referencedColumns: ["code"]
           },
         ]
@@ -9716,13 +9846,117 @@ export type Database = {
             referencedColumns: ["code"]
           },
           {
+            foreignKeyName: "plan_country_prices_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "country_settings_public"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "plan_country_prices_plan_slug_fkey"
             columns: ["plan_slug"]
             isOneToOne: false
             referencedRelation: "plans"
             referencedColumns: ["slug"]
           },
+          {
+            foreignKeyName: "plan_country_prices_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans_public"
+            referencedColumns: ["slug"]
+          },
         ]
+      }
+      plans_public: {
+        Row: {
+          active: boolean | null
+          archived_at: string | null
+          badge_label: string | null
+          color: string | null
+          created_at: string | null
+          cta_label: string | null
+          cta_mode: string | null
+          cta_url: string | null
+          description: string | null
+          icon: string | null
+          included_shops: number | null
+          label: string | null
+          limits: Json | null
+          name: string | null
+          show_badge: boolean | null
+          show_button: boolean | null
+          show_price: boolean | null
+          show_trial: boolean | null
+          slug: string | null
+          sort_order: number | null
+          supports_multi_shop: boolean | null
+          trial_days: number | null
+          updated_at: string | null
+          visible_on_billing: boolean | null
+          visible_on_checkout: boolean | null
+          visible_on_compare: boolean | null
+          visible_on_landing: boolean | null
+        }
+        Insert: {
+          active?: boolean | null
+          archived_at?: string | null
+          badge_label?: string | null
+          color?: string | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_mode?: string | null
+          cta_url?: string | null
+          description?: string | null
+          icon?: string | null
+          included_shops?: number | null
+          label?: string | null
+          limits?: Json | null
+          name?: string | null
+          show_badge?: boolean | null
+          show_button?: boolean | null
+          show_price?: boolean | null
+          show_trial?: boolean | null
+          slug?: string | null
+          sort_order?: number | null
+          supports_multi_shop?: boolean | null
+          trial_days?: number | null
+          updated_at?: string | null
+          visible_on_billing?: boolean | null
+          visible_on_checkout?: boolean | null
+          visible_on_compare?: boolean | null
+          visible_on_landing?: boolean | null
+        }
+        Update: {
+          active?: boolean | null
+          archived_at?: string | null
+          badge_label?: string | null
+          color?: string | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_mode?: string | null
+          cta_url?: string | null
+          description?: string | null
+          icon?: string | null
+          included_shops?: number | null
+          label?: string | null
+          limits?: Json | null
+          name?: string | null
+          show_badge?: boolean | null
+          show_button?: boolean | null
+          show_price?: boolean | null
+          show_trial?: boolean | null
+          slug?: string | null
+          sort_order?: number | null
+          supports_multi_shop?: boolean | null
+          trial_days?: number | null
+          updated_at?: string | null
+          visible_on_billing?: boolean | null
+          visible_on_checkout?: boolean | null
+          visible_on_compare?: boolean | null
+          visible_on_landing?: boolean | null
+        }
+        Relationships: []
       }
       quotes_public: {
         Row: {

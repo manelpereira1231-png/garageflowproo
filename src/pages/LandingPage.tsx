@@ -218,6 +218,8 @@ export default function LandingPage() {
   // Single source of truth: same ordered list rendered in every plan card;
   // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
+  const { items: featuredTestimonials, loaded: testimonialsLoaded } = useFeaturedTestimonials();
+  const { settings: legal, isConfigured: legalConfigured, contactEmail: legalEmail } = useLegalSettings();
 
   const { getName: getPlanName } = usePlanNames();
 

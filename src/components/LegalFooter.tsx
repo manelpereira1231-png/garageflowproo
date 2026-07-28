@@ -38,6 +38,14 @@ export default function LegalFooter() {
             <Link to="/support" className="hover:text-foreground font-medium text-primary">Suporte</Link>
           </nav>
         </div>
+        {isConfigured && settings?.social_links && Object.values(settings.social_links).some(Boolean) ? (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+            {settings.social_links.facebook && <a href={settings.social_links.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Facebook</a>}
+            {settings.social_links.instagram && <a href={settings.social_links.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Instagram</a>}
+            {settings.social_links.linkedin && <a href={settings.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">LinkedIn</a>}
+            {settings.social_links.other && <a href={settings.social_links.other} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Website</a>}
+          </div>
+        ) : null}
         {isConfigured ? (
           <div className="text-[11px] opacity-80">
             {[settings?.address, settings?.postal_code, settings?.city, settings?.country].filter(Boolean).join(", ")}

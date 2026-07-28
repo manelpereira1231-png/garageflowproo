@@ -4154,7 +4154,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte el taller directamente.',
 
     // Landing Page
-    'landing.badge': 'Software #1 para Talleres Mecánicos',
+    'landing.badge': '+100 talleres en Portugal ya usan GarageFlow',
+    'auth.countryLabel': 'País',
+    'auth.otherCountries': 'Otros países',
+    'affiliate.haveAccount': 'Ya tengo cuenta — Entrar',
     'landing.heroTitle1': 'Gestionar tu taller no debería depender de',
     'landing.heroTitle2': 'papel, Excel y WhatsApp',
     'landing.heroSubtitle': 'Crea presupuestos en segundos, sigue reparaciones, organiza clientes y tenlo todo en un solo lugar.',

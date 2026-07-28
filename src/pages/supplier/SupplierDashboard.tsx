@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, ShoppingCart, AlertTriangle, TrendingUp, Star, Boxes } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { formatMoney } from "@/lib/money";
 
 interface Stats {
   revenueToday: number;
@@ -43,9 +44,9 @@ export default function SupplierDashboard() {
   }, [supplierId]);
 
   const cards = [
-    { label: "Receita hoje", value: `€ ${stats.revenueToday.toFixed(2)}`, icon: TrendingUp },
-    { label: "Receita mês", value: `€ ${stats.revenueMonth.toFixed(2)}`, icon: TrendingUp },
-    { label: "Receita ano", value: `€ ${stats.revenueYear.toFixed(2)}`, icon: TrendingUp },
+    { label: "Receita hoje", value: formatMoney(stats.revenueToday), icon: TrendingUp },
+    { label: "Receita mês", value: formatMoney(stats.revenueMonth), icon: TrendingUp },
+    { label: "Receita ano", value: formatMoney(stats.revenueYear), icon: TrendingUp },
     { label: "Encomendas", value: stats.orders, icon: ShoppingCart },
     { label: "Produtos ativos", value: stats.active, icon: Package },
     { label: "Stock baixo", value: stats.lowStock, icon: AlertTriangle },

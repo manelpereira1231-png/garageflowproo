@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, ShieldCheck, Wrench, Tag, ChevronRight, Loader2 } from "lucide-react";
+import { formatMoney } from "@/lib/money";
 
 type Stats = {
   activeListings: number;
@@ -95,7 +96,7 @@ export default function MarketActivityCard({ shopId, userId }: { shopId: string 
   const items = [
     { icon: Tag, label: "Anúncios ativos", value: s.activeListings, link: "/market/my-listings", color: "text-amber-500" },
     { icon: Store, label: "Vendidos", value: s.soldListings, link: "/market/my-listings", color: "text-emerald-500" },
-    { icon: ShieldCheck, label: "Escrow ativo", value: `€${s.escrowVolume.toFixed(0)}`, sub: `${s.activeEscrows} transação(ões)`, link: "/market/sales", color: "text-blue-500" },
+    { icon: ShieldCheck, label: "Escrow ativo", value: formatMoney(s.escrowVolume), sub: `${s.activeEscrows} transação(ões)`, link: "/market/sales", color: "text-blue-500" },
     { icon: Wrench, label: "Inspeções pendentes", value: s.pendingInspections, link: "/market/inspections", color: "text-purple-500", badge: s.pendingInspections > 0 },
     { icon: Tag, label: "Ofertas a aguardar", value: s.pendingOffers, link: "/market/offers", color: "text-rose-500", badge: s.pendingOffers > 0 },
   ];

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Zap, Filter, Clock, ArrowDown, Send } from "lucide-react";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 export interface FlowConditions {
   min_total?: number | null;
@@ -68,7 +69,7 @@ export function VisualFlowBuilder({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Valor mínimo (€)</Label>
+            <Label className="text-xs">Valor mínimo ({getCountryConfig().currencySymbol})</Label>
             <Input
               type="number"
               min={0}

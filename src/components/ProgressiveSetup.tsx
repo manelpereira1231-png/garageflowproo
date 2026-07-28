@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FileText, Receipt, Wrench, MapPin, Image, X } from "lucide-react";
 import { toast } from "sonner";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 type PromptType = "nif" | "logo" | "labor_rate" | "address";
 
@@ -86,7 +87,7 @@ export default function ProgressiveSetup({ trigger, onComplete, children }: Prog
       icon: Wrench,
       title: "Define o preço por hora",
       desc: "Define o preço por hora de mão-de-obra para cálculos automáticos.",
-      label: "Preço/hora (€)",
+      label: `Preço/hora (${getCountryConfig().currencySymbol})`,
       placeholder: "45",
       field: "labor_rate",
     },
@@ -95,7 +96,7 @@ export default function ProgressiveSetup({ trigger, onComplete, children }: Prog
       title: "Adiciona a morada da oficina",
       desc: "A morada é necessária para documentos de faturação.",
       label: "Morada",
-      placeholder: "Rua das Oficinas, 123, Lisboa",
+      placeholder: "Ex: Rua Principal, 123",
       field: "address",
     },
   };

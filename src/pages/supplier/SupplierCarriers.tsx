@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { formatMoney } from "@/lib/money";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 export default function SupplierCarriers() {
   const { supplierId } = useIsSupplier();
@@ -52,7 +54,7 @@ export default function SupplierCarriers() {
         <CardHeader><CardTitle>Adicionar transportadora</CardTitle></CardHeader>
         <CardContent className="flex gap-2 flex-wrap">
           <Input placeholder="Nome (ex: CTT Expresso)" value={name} onChange={e => setName(e.target.value)} className="max-w-xs" />
-          <Input type="number" step="0.01" placeholder="Preço base €" value={price} onChange={e => setPrice(e.target.value)} className="max-w-[140px]" />
+          <Input type="number" step="0.01" placeholder={`Preço base ${getCountryConfig().currencySymbol}`} value={price} onChange={e => setPrice(e.target.value)} className="max-w-[140px]" />
           <Button onClick={add}>Adicionar</Button>
         </CardContent>
       </Card>
@@ -65,7 +67,7 @@ export default function SupplierCarriers() {
                 <div key={r.id} className="flex items-center justify-between gap-2 p-3 border rounded-md">
                   <div>
                     <p className="font-medium text-sm">{r.name}</p>
-                    <p className="text-xs text-muted-foreground">€ {Number(r.base_price).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">{formatMoney(Number(r.base_price))}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Switch checked={r.active} onCheckedChange={(v) => toggle(r.id, v)} />

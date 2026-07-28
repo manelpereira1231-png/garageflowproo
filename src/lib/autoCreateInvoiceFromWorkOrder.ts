@@ -51,14 +51,14 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
     // Se houver horas extra de mão-de-obra, adiciona linha correspondente
     // (usa a shop_labor_rate por defeito 30€/h se não conseguir ler)
     let extraLines: any[] = [];
+    const { data: shopData } = await supabase
+      .from("shops")
+      .select("labor_rate, vat_rate, currency")
+      .eq("id", wo.shop_id)
+      .maybeSingle();
     if (laborHours > 0) {
-      const { data: shopData } = await supabase
-        .from("shops")
-        .select("labor_rate, vat_rate")
-        .eq("id", wo.shop_id)
-        .maybeSingle();
       const rate = Number(shopData?.labor_rate || 30);
-      const vat = Number(shopData?.vat_rate || 23);
+      const vat = Number(shopData?.vat_rate || 0);
       extraLines.push({
         description: `Mão-de-obra adicional (${laborHours}h)`,
         quantity: laborHours,
@@ -81,7 +81,7 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
         subtotal: Number(wo.subtotal || 0),
         vat_total: Number(wo.vat_total || 0),
         total: Number(wo.total || 0),
-        currency: (wo as any).currency || "EUR",
+        currency: (wo as any).currency || shopData?.currency || "EUR",
         notes: wo.notes || null,
       })
       .select()

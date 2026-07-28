@@ -166,7 +166,7 @@ export default function SupplierProducts() {
                       <td className="px-4 py-3 font-medium">{p.title}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.sku || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.brand || "—"}</td>
-                      <td className="px-4 py-3 text-right">€ {Number(p.price).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right">{formatMoney(Number(p.price))}</td>
                       <td className="px-4 py-3 text-right">{p.stock}</td>
                       <td className="px-4 py-3">
                         <Badge variant={p.status === "active" ? "default" : p.status === "draft" ? "secondary" : "outline"}>

@@ -91,7 +91,7 @@ export default function SupplierProfile() {
         <CardHeader><CardTitle>Logística</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div><Label>Tempo médio de entrega</Label><Input value={data.average_delivery_time ?? ""} onChange={(e) => set("average_delivery_time", e.target.value)} placeholder="24-48h" /></div>
-          <div><Label>Encomenda mínima (€)</Label><Input type="number" step="0.01" value={data.minimum_order ?? 0} onChange={(e) => set("minimum_order", e.target.value)} /></div>
+          <div><Label>Encomenda mínima</Label><Input type="number" step="0.01" value={data.minimum_order ?? 0} onChange={(e) => set("minimum_order", e.target.value)} /></div>
         </CardContent>
       </Card>
       <Card>

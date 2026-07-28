@@ -104,7 +104,7 @@ export default function SupplierStock() {
                 <tbody>
                   {moves.map((m) => (
                     <tr key={m.id} className="border-b border-border last:border-0 hover:bg-accent/30">
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{new Date(m.created_at).toLocaleString()}</td>
                       <td className="px-4 py-3 font-medium">{m.product?.title ?? "—"} <span className="text-xs text-muted-foreground">{m.product?.sku}</span></td>
                       <td className="px-4 py-3">
                         <Badge variant={m.type === "in" ? "default" : m.type === "out" ? "destructive" : "secondary"}>

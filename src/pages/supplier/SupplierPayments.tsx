@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { format } from "date-fns";
+import { formatMoney } from "@/lib/money";
 
 export default function SupplierPayments() {
   const { supplierId } = useIsSupplier();
@@ -30,7 +31,7 @@ export default function SupplierPayments() {
       <Card>
         <CardContent className="p-4">
           <p className="text-xs text-muted-foreground uppercase">Total recebido</p>
-          <p className="text-2xl font-bold">€ {total.toFixed(2)}</p>
+          <p className="text-2xl font-bold">{formatMoney(total)}</p>
         </CardContent>
       </Card>
       <Card>
@@ -45,7 +46,7 @@ export default function SupplierPayments() {
                     <p className="text-xs text-muted-foreground">{format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{r.currency} {Number(r.amount).toFixed(2)}</p>
+                    <p className="font-semibold">{formatMoney(Number(r.amount), r.currency)}</p>
                     <Badge variant="outline">{r.status}</Badge>
                   </div>
                 </div>

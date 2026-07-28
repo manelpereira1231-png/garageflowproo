@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Package } from "lucide-react";
 import { useGsnFavorites } from "@/hooks/useGsnFavorites";
 import { useGsnCart } from "@/hooks/useGsnCart";
+import { formatMoney } from "@/lib/money";
 
 export interface PartProductCardProps {
   product: {
@@ -34,7 +35,7 @@ export default function PartProductCard({ product, supplierName }: PartProductCa
         <Link to={`/parts/${product.id}`} className="block text-sm font-medium line-clamp-2 hover:text-primary">{product.title}</Link>
         {supplierName && <p className="text-xs text-muted-foreground truncate">{supplierName}</p>}
         <div className="flex items-baseline justify-between">
-          <p className="font-semibold">€ {Number(product.price).toFixed(2)}</p>
+          <p className="font-semibold">{formatMoney(Number(product.price))}</p>
           <Badge variant={product.stock > 0 ? "secondary" : "outline"}>{product.stock > 0 ? `Stock: ${product.stock}` : "Esgotado"}</Badge>
         </div>
         <div className="flex gap-1">

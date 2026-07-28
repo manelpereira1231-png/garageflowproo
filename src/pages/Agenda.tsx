@@ -61,7 +61,11 @@ const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
 export default function Agenda() {
   const { activeShopId } = useShopContext();
   const { t, language } = useLanguage();
-  const locale = language === "pt" ? pt : language === "es" ? es : enUS;
+  const locale = language === "pt" ? pt
+    : language === "pt-BR" ? ptBR
+    : language === "es" ? es
+    : language === "hi" ? hi
+    : enUS;
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));

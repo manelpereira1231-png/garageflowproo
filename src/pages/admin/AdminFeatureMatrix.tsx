@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { invalidateFeatureCache } from "@/lib/features";
 import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -125,6 +126,7 @@ const PLAN_BADGE_COLORS = [
 
 export default function AdminFeatureMatrix() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { data: catalog, isLoading: catalogLoading, refetch: refetchCatalog } = usePlansCatalog();
   const [features, setFeatures] = useState<FeatureRow[]>([]);
   const [matrix, setMatrix] = useState<MatrixRow[]>([]);
@@ -309,7 +311,7 @@ export default function AdminFeatureMatrix() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm flex items-center gap-2">
-                        {item.label}
+                        {t(`feature.${item.slug}`, item.label)}
                         {feat?.is_core && (
                           <Badge variant="secondary" className="text-[10px]">
                             <Lock className="h-2.5 w-2.5 mr-0.5" /> core

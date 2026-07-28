@@ -544,7 +544,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': 'Software #1 para Oficinas Automóvel',
+    'landing.badge': '+100 oficinas em Portugal já usam o GarageFlow',
+    'auth.countryLabel': 'País',
+    'auth.otherCountries': 'Outros países',
+    'affiliate.haveAccount': 'Já tenho conta — Entrar',
     'landing.heroTitle1': 'Gerir a sua oficina não devia depender',
     'landing.heroTitle2': 'de papel, Excel e WhatsApp',
     'landing.heroSubtitle': 'Crie orçamentos em segundos, acompanhe reparações, organize clientes e tenha tudo num só lugar.',
@@ -2419,7 +2422,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'To reply, contact the workshop directly.',
 
     // Landing Page
-    'landing.badge': '#1 Auto Workshop Software',
+    'landing.badge': '100+ workshops in Portugal already use GarageFlow',
+    'auth.countryLabel': 'Country',
+    'auth.otherCountries': 'Other countries',
+    'affiliate.haveAccount': 'I already have an account — Sign in',
     'landing.heroTitle1': 'Running your workshop shouldn\'t depend on',
     'landing.heroTitle2': 'paper, spreadsheets and WhatsApp',
     'landing.heroSubtitle': 'Create quotes in seconds, track repairs, organize clients and have everything in one place.',
@@ -4148,7 +4154,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte el taller directamente.',
 
     // Landing Page
-    'landing.badge': 'Software #1 para Talleres Mecánicos',
+    'landing.badge': '+100 talleres en Portugal ya usan GarageFlow',
+    'auth.countryLabel': 'País',
+    'auth.otherCountries': 'Otros países',
+    'affiliate.haveAccount': 'Ya tengo cuenta — Entrar',
     'landing.heroTitle1': 'Gestionar tu taller no debería depender de',
     'landing.heroTitle2': 'papel, Excel y WhatsApp',
     'landing.heroSubtitle': 'Crea presupuestos en segundos, sigue reparaciones, organiza clientes y tenlo todo en un solo lugar.',
@@ -5898,7 +5907,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, entre em contato com a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': 'Software #1 para Oficinas Mecânicas',
+    'landing.badge': '+100 oficinas em Portugal já usam o GarageFlow',
+    'auth.countryLabel': 'País',
+    'auth.otherCountries': 'Outros países',
+    'affiliate.haveAccount': 'Já tenho conta — Entrar',
     'landing.heroTitle1': 'Gerenciar sua oficina não deveria depender de',
     'landing.heroTitle2': 'papel, planilha e WhatsApp',
     'landing.heroSubtitle': 'Crie orçamentos em segundos, acompanhe reparos, organize clientes e tenha tudo em um só lugar.',
@@ -7282,7 +7294,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'market.detail.seller': 'विक्रेता',
 
     // Landing page
-    'landing.badge': '#1 ऑटो वर्कशॉप सॉफ़्टवेयर',
+    'landing.badge': '100+ पुर्तगाल में गैरेज GarageFlow का उपयोग करते हैं',
+    'auth.countryLabel': 'देश',
+    'auth.otherCountries': 'अन्य देश',
+    'affiliate.haveAccount': 'मेरा पहले से खाता है — साइन इन करें',
     'landing.heroTitle1': 'अपनी वर्कशॉप चलाना निर्भर नहीं होना चाहिए',
     'landing.heroTitle2': 'कागज़, स्प्रेडशीट और WhatsApp पर',
     'landing.heroSubtitle': 'सेकंड में कोटेशन बनाएँ, मरम्मत ट्रैक करें, ग्राहकों को व्यवस्थित करें और सब कुछ एक ही जगह रखें।',

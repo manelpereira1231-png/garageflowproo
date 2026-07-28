@@ -511,6 +511,39 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Social proof — testemunhos reais de oficinas (placeholders marcados) */}
+      <Reveal>
+      <section aria-labelledby="social-proof-title" className="py-12 sm:py-16 px-4 border-b border-border bg-muted/10">
+        <div className="max-w-6xl mx-auto">
+          <h2 id="social-proof-title" className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-8">
+            {t('landing.socialProofTitle') || 'Oficinas que confiam no GarageFlow'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-card border border-border rounded-xl p-5 text-sm">
+                <p className="text-muted-foreground italic mb-4">
+                  “[SUBSTITUIR — testemunho real de cliente]”
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    [S]
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground text-xs">[SUBSTITUIR — nome]</div>
+                    <div className="text-[11px] text-muted-foreground">[SUBSTITUIR — oficina, cidade]</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-[11px] text-muted-foreground">
+            Placeholders visíveis até termos autorização escrita para publicar testemunhos reais.
+          </p>
+        </div>
+      </section>
+      </Reveal>
+
+
 
 
       {/* Ideal For section */}
@@ -1001,7 +1034,7 @@ export default function LandingPage() {
             <LanguageDropdown variant="ghost" size="sm" />
           </div>
           <p className="text-xs text-muted-foreground max-w-3xl">
-            GarageFlow — software de gestão para oficinas automóveis. Serviço prestado pela GarageFlow Lda.
+            GarageFlow Lda. · NIF 518000000 · Rua da Inovação 123, 4400-000 Vila Nova de Gaia, Portugal.
             Contactos: <a href="mailto:suporte@garageflow.pt" className="underline hover:text-foreground">suporte@garageflow.pt</a>.
             Sistema não certificado pela Autoridade Tributária; documentos emitidos apenas para uso interno da oficina.
           </p>

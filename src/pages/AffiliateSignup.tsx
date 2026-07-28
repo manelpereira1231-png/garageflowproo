@@ -225,7 +225,7 @@ export default function AffiliateSignup() {
                 onClick={() => navigate("/afiliados/login")}
                 className="h-14 px-6 text-base font-semibold"
               >
-                Já tenho conta — Entrar
+                {t('affiliate.haveAccount') || 'I already have an account — Sign in'}
               </Button>
             </div>
           </div>

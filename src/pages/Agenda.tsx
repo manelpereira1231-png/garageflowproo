@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, Trash2, Edit, CalendarCheck, CalendarX, CalendarClock, CheckCircle2, Sparkles, User } from "lucide-react";
 import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "date-fns";
-import { pt, enUS, es } from "date-fns/locale";
+import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
 
@@ -61,7 +61,11 @@ const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
 export default function Agenda() {
   const { activeShopId } = useShopContext();
   const { t, language } = useLanguage();
-  const locale = language === "pt" ? pt : language === "es" ? es : enUS;
+  const locale = language === "pt" ? pt
+    : language === "pt-BR" ? ptBR
+    : language === "es" ? es
+    : language === "hi" ? hi
+    : enUS;
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));

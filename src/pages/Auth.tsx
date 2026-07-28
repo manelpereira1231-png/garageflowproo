@@ -296,7 +296,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
             {mode === 'forgot' ? t('auth.resetPassword') : mode === 'login' ? t('auth.login') : t('auth.signup')}
           </h2>
           <p className="text-sm mb-6 text-muted-foreground">
-            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : 'Crie a sua conta de oficina'}
+            {mode === 'forgot' ? t('auth.sendResetLink') : mode === 'login' ? t('auth.welcomeBack') : t('auth.signupSubtitle')}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

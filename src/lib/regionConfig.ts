@@ -161,7 +161,7 @@ export async function loadCountriesFromDB(): Promise<void> {
       .eq('active', true);
     if (error || !data) return;
     const map: Record<string, CountryConfig> = {};
-    for (const row of data) {
+    for (const row of (data as any[])) {
       const staticRef = STATIC_COUNTRIES[row.code];
       const dbTimezones: string[] | undefined = Array.isArray(row.timezones) && row.timezones.length ? row.timezones : undefined;
       map[row.code] = {

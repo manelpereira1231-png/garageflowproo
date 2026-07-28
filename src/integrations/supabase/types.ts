@@ -10180,6 +10180,33 @@ export type Database = {
           },
         ]
       }
+      testimonials_public: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          created_at: string | null
+          id: string | null
+          rating: number | null
+          workshop_name: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string | null
+          rating?: number | null
+          workshop_name?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string | null
+          rating?: number | null
+          workshop_name?: string | null
+        }
+        Relationships: []
+      }
       work_orders_public: {
         Row: {
           client_description: string | null

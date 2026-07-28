@@ -31,9 +31,11 @@ export interface ResolvedPlanCta {
   mode: PlanCtaMode;
 }
 
-/** Nome mostrado ao utilizador — nunca o slug. */
+/** Nome mostrado ao utilizador — nunca o slug. Preferimos `name` porque
+ *  `label` é frequentemente usado como badge de marketing (ex.: "Mais Popular",
+ *  "Contacte-nos") e não como o nome real do plano. */
 function displayName(plan: PlanRow): string {
-  return (plan.label && plan.label.trim()) || (plan.name && plan.name.trim()) || plan.slug;
+  return (plan.name && plan.name.trim()) || (plan.label && plan.label.trim()) || plan.slug;
 }
 
 /**
@@ -125,12 +127,13 @@ export function resolvePlanCta(
 ): ResolvedPlanCta {
   const ctx: PlanCtaContext = opts.context ?? "anon";
 
-  // 1) Texto: cta_label (admin) tem prioridade — EXCEPTO em modos "contact"/"demo",
-  //    onde o rótulo tem tradução canónica e deve seguir o idioma da UI para não
-  //    aparecer "CONTACTE-NOS" em EN/ES/HI.
+  // 1) Texto: em modos standard (trial/checkout/demo/contact/unavailable) usamos
+  //    SEMPRE o texto traduzido para respeitar o idioma da UI — o admin não pode
+  //    hardcodar "Testar Plano" em PT e partir a landing em EN/ES/HI. Só em
+  //    `custom_url` (CTA externo controlado pelo admin) o `cta_label` prevalece.
   const customLabel = (plan.cta_label || "").trim();
   const translatedDefault = defaultLabel(plan, ctx, opts.t);
-  const preferTranslated = plan.cta_mode === "contact" || plan.cta_mode === "demo";
+  const preferTranslated = plan.cta_mode !== "custom_url";
   const label = preferTranslated ? translatedDefault : (customLabel || translatedDefault);
 
   // 2) Destino
@@ -152,9 +155,15 @@ export function resolvePlanCta(
  * Rótulo curto do selo (badge) — "Mais Popular" por defeito quando o admin
  * marca o plano como destacado mas não escreveu texto.
  */
-export function resolvePlanBadge(plan: PlanRow, t?: (k: string) => string): string | null {
+export function resolvePlanBadge(plan: PlanRow, t?: (k: string, defaultValue?: string) => string): string | null {
   if (plan.show_badge === false) return null;
   const custom = (plan.badge_label || "").trim();
+  // Se o admin definiu um badge que é claramente um CTA (contact/demo), traduzimos
+  // via chaves canónicas para não deixar "CONTACTE-NOS" em EN/ES/HI.
+  if (custom && (plan.cta_mode === "contact" || plan.cta_mode === "demo") && t) {
+    const key = plan.cta_mode === "contact" ? "cta.contact" : "cta.demo";
+    return t(key, custom);
+  }
   if (custom) return custom;
   return null; // sem badge se nada estiver configurado
 }

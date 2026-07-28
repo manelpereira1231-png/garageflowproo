@@ -36,6 +36,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // App
     'app.name': 'GarageFlow',
     'app.tagline': 'Gestão de oficina inteligente',
+    'auth.signupTagline': 'Software de gestão para oficinas',
 
     // Auth
     'auth.login': 'Entrar',
@@ -1987,6 +1988,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'feature.support': 'Support',
     'app.name': 'GarageFlow',
     'app.tagline': 'Smart workshop management',
+    'auth.signupTagline': 'Workshop management software',
 
     'auth.login': 'Sign In',
     'auth.signup': 'Create Account',
@@ -3765,6 +3767,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'feature.support': 'Soporte',
     'app.name': 'GarageFlow',
     'app.tagline': 'Gestión de taller inteligente',
+    'auth.signupTagline': 'Software de gestión para talleres',
 
     'auth.login': 'Iniciar Sesión',
     'auth.signup': 'Crear Cuenta',
@@ -5544,6 +5547,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // App
     'app.name': 'GarageFlow',
     'app.tagline': 'Gestão inteligente de oficina',
+    'auth.signupTagline': 'Software de gestão para oficinas',
 
     // Auth
     'auth.login': 'Entrar',
@@ -7437,6 +7441,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'feature.support': 'समर्थन',
     'app.name': 'GarageFlow',
     'app.tagline': 'स्मार्ट गैरेज प्रबंधन',
+    'auth.signupTagline': 'गैरेज प्रबंधन सॉफ्टवेयर',
 
     // Auth
     'auth.login': 'लॉग इन करें',

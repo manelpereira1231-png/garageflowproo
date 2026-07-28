@@ -115,6 +115,37 @@ export default function AdminLegalSettings() {
       </section>
 
       <section className="rounded-xl border p-5 space-y-4">
+        <h2 className="font-semibold">Redes Sociais</h2>
+        <p className="text-xs text-muted-foreground">URLs completos (https://…). Deixe em branco para omitir.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Facebook</Label>
+            <Input type="url" placeholder="https://facebook.com/…"
+              value={row.social_links?.facebook ?? ""}
+              onChange={(e) => set("social_links", { ...(row.social_links || {}), facebook: e.target.value || undefined })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Instagram</Label>
+            <Input type="url" placeholder="https://instagram.com/…"
+              value={row.social_links?.instagram ?? ""}
+              onChange={(e) => set("social_links", { ...(row.social_links || {}), instagram: e.target.value || undefined })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>LinkedIn</Label>
+            <Input type="url" placeholder="https://linkedin.com/company/…"
+              value={row.social_links?.linkedin ?? ""}
+              onChange={(e) => set("social_links", { ...(row.social_links || {}), linkedin: e.target.value || undefined })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Outro (URL)</Label>
+            <Input type="url" placeholder="https://…"
+              value={row.social_links?.other ?? ""}
+              onChange={(e) => set("social_links", { ...(row.social_links || {}), other: e.target.value || undefined })} />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border p-5 space-y-4">
         <h2 className="font-semibold">Rodapé & Textos legais</h2>
         <div className="grid gap-4">
           <div>

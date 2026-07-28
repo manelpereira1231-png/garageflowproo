@@ -280,7 +280,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
           </div>
           <h1 className="text-2xl font-bold">{t('app.name')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {mode === 'signup' ? 'Software de gestão para oficinas' : t('app.tagline')}
+            {mode === 'signup' ? t('auth.signupTagline', 'Software de gestão para oficinas') : t('app.tagline')}
           </p>
           {getPartnerId() && mode === 'signup' && (
             <div className="mt-3 inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">

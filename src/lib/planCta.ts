@@ -125,9 +125,13 @@ export function resolvePlanCta(
 ): ResolvedPlanCta {
   const ctx: PlanCtaContext = opts.context ?? "anon";
 
-  // 1) Texto: cta_label (admin) tem prioridade absoluta; caso contrário, gerado.
+  // 1) Texto: cta_label (admin) tem prioridade — EXCEPTO em modos "contact"/"demo",
+  //    onde o rótulo tem tradução canónica e deve seguir o idioma da UI para não
+  //    aparecer "CONTACTE-NOS" em EN/ES/HI.
   const customLabel = (plan.cta_label || "").trim();
-  const label = customLabel || defaultLabel(plan, ctx, opts.t);
+  const translatedDefault = defaultLabel(plan, ctx, opts.t);
+  const preferTranslated = plan.cta_mode === "contact" || plan.cta_mode === "demo";
+  const label = preferTranslated ? translatedDefault : (customLabel || translatedDefault);
 
   // 2) Destino
   const { href, external, disabled } = defaultHref(plan, ctx, opts.surface);

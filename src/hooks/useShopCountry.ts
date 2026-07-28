@@ -23,12 +23,15 @@ async function loadShopCountry(): Promise<{ code: CountryCode; config: CountryCo
   try {
     const activeShopId = localStorage.getItem(ACTIVE_SHOP_KEY);
     if (!activeShopId) return fallback;
-    const { data } = await supabase
-      .from("shops")
-      .select("country_code")
-      .eq("id", activeShopId)
-      .maybeSingle();
-    const code = (data?.country_code || "PT").toUpperCase() as CountryCode;
+    // Only query when there is an active session — the RPC below is safe for
+    // anon but reading it without a session on the public landing produces
+    // noise and is unnecessary (public landing derives country via IP/tz).
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return fallback;
+    // SECURITY: use SECURITY DEFINER RPC instead of `select from shops` so the
+    // `shops` table stays fully closed to the anon role.
+    const { data } = await (supabase as any).rpc("get_shop_country_code", { shop_id: activeShopId });
+    const code = ((typeof data === "string" ? data : null) || "PT").toUpperCase() as CountryCode;
     const config = getCountryConfig(code);
     const value = { code, config };
     cache = value;

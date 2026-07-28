@@ -5067,6 +5067,84 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_settings: {
+        Row: {
+          address: string | null
+          at_certificate_number: string | null
+          at_certified: boolean
+          city: string | null
+          company_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          copyright_text: string | null
+          country: string | null
+          created_at: string
+          footer_text: string | null
+          id: string
+          postal_code: string | null
+          privacy_policy: string | null
+          share_capital: string | null
+          show_in_footer: boolean
+          singleton: boolean
+          social_links: Json
+          tax_id: string | null
+          terms_of_service: string | null
+          trade_name: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          at_certificate_number?: string | null
+          at_certified?: boolean
+          city?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          copyright_text?: string | null
+          country?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          postal_code?: string | null
+          privacy_policy?: string | null
+          share_capital?: string | null
+          show_in_footer?: boolean
+          singleton?: boolean
+          social_links?: Json
+          tax_id?: string | null
+          terms_of_service?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          at_certificate_number?: string | null
+          at_certified?: boolean
+          city?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          copyright_text?: string | null
+          country?: string | null
+          created_at?: string
+          footer_text?: string | null
+          id?: string
+          postal_code?: string | null
+          privacy_policy?: string | null
+          share_capital?: string | null
+          show_in_footer?: boolean
+          singleton?: boolean
+          social_links?: Json
+          tax_id?: string | null
+          terms_of_service?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       listing_alerts: {
         Row: {
           active: boolean
@@ -8814,6 +8892,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "team_invitations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimonials: {
+        Row: {
+          admin_notes: string | null
+          author_name: string
+          content: string
+          created_at: string
+          display_publicly: boolean
+          featured: boolean
+          id: string
+          rating: number
+          shop_id: string
+          status: string
+          submitted_by: string | null
+          updated_at: string
+          workshop_name: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          author_name: string
+          content: string
+          created_at?: string
+          display_publicly?: boolean
+          featured?: boolean
+          id?: string
+          rating: number
+          shop_id: string
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+          workshop_name?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          author_name?: string
+          content?: string
+          created_at?: string
+          display_publicly?: boolean
+          featured?: boolean
+          id?: string
+          rating?: number
+          shop_id?: string
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+          workshop_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"

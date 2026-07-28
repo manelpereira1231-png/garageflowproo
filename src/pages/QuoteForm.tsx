@@ -302,7 +302,13 @@ export default function QuoteForm() {
                   </SelectContent>
                 </Select>
                 <Select
-                  value=""
+                  value={(() => {
+                    const baseName = (line.name || '').replace(/\s*\(\d+\s*min\)\s*$/i, '').trim();
+                    if (!baseName) return '';
+                    const src = line.type === 'service' ? catalog : partsList;
+                    const match = src.find((c: any) => (c.name || '').trim() === baseName);
+                    return match ? match.id : '';
+                  })()}
                   onValueChange={(val) => {
                     if (line.type === 'service') {
                       const item = catalog.find(c => c.id === val);

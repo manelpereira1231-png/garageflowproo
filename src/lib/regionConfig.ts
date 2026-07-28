@@ -156,7 +156,7 @@ let runtimeCountries: Record<string, CountryConfig> | null = null;
 export async function loadCountriesFromDB(): Promise<void> {
   try {
     const { data, error } = await supabase
-      .from('country_settings')
+      .from('country_settings_public' as any)
       .select('*')
       .eq('active', true);
     if (error || !data) return;

@@ -544,7 +544,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': 'Software #1 para Oficinas Automóvel',
+    'landing.badge': '+100 oficinas em Portugal já usam o GarageFlow',
+    'auth.countryLabel': 'País',
+    'auth.otherCountries': 'Outros países',
+    'affiliate.haveAccount': 'Já tenho conta — Entrar',
     'landing.heroTitle1': 'Gerir a sua oficina não devia depender',
     'landing.heroTitle2': 'de papel, Excel e WhatsApp',
     'landing.heroSubtitle': 'Crie orçamentos em segundos, acompanhe reparações, organize clientes e tenha tudo num só lugar.',

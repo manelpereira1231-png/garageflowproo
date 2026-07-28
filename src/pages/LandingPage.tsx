@@ -1039,11 +1039,27 @@ export default function LandingPage() {
             <Link to="/support" className="hover:text-foreground transition-colors">{t('landing.support') || 'Suporte'}</Link>
             <LanguageDropdown variant="ghost" size="sm" />
           </div>
-          <p className="text-xs text-muted-foreground max-w-3xl">
-            GarageFlow Lda. · NIF 518000000 · Rua da Inovação 123, 4400-000 Vila Nova de Gaia, Portugal.
-            Contactos: <a href="mailto:suporte@garageflow.pt" className="underline hover:text-foreground">suporte@garageflow.pt</a>.
-            Sistema não certificado pela Autoridade Tributária; documentos emitidos apenas para uso interno da oficina.
-          </p>
+          {legalConfigured ? (
+            <p className="text-xs text-muted-foreground max-w-3xl">
+              {legal?.company_name}
+              {legal?.tax_id ? ` · NIF ${legal.tax_id}` : ""}
+              {[legal?.address, legal?.postal_code, legal?.city, legal?.country].filter(Boolean).length > 0
+                ? ` · ${[legal?.address, legal?.postal_code, legal?.city, legal?.country].filter(Boolean).join(", ")}`
+                : ""}.
+              {" "}Contactos: <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a>
+              {legal?.contact_phone ? ` · Tel ${legal.contact_phone}` : ""}.
+              {" "}
+              {legal?.at_certified && legal?.at_certificate_number
+                ? `Sistema certificado pela Autoridade Tributária n.º ${legal.at_certificate_number}.`
+                : "Sistema não certificado pela Autoridade Tributária; documentos emitidos apenas para uso interno da oficina."}
+              {legal?.footer_text ? ` ${legal.footer_text}` : ""}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground max-w-3xl">
+              GarageFlow · <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a>.
+              {" "}Versão em desenvolvimento — dados legais serão publicados após configuração no painel de administração.
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}
           </p>

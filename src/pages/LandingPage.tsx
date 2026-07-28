@@ -984,7 +984,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30 pb-20 sm:pb-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-4 text-center">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
               <Wrench className="w-3 h-3 text-primary-foreground" />
@@ -997,14 +997,20 @@ export default function LandingPage() {
             <Link to="/legal/privacy" className="hover:text-foreground transition-colors">{t('legal.privacy') || 'Privacy'}</Link>
             <Link to="/legal/terms" className="hover:text-foreground transition-colors">{t('legal.terms') || 'Terms'}</Link>
             <Link to="/legal/cookies" className="hover:text-foreground transition-colors">{t('legal.cookies') || 'Cookies'}</Link>
+            <Link to="/support" className="hover:text-foreground transition-colors">{t('landing.support') || 'Suporte'}</Link>
             <LanguageDropdown variant="ghost" size="sm" />
-            <ThemeToggle />
           </div>
+          <p className="text-xs text-muted-foreground max-w-3xl">
+            GarageFlow — software de gestão para oficinas automóveis. Serviço prestado pela GarageFlow Lda.
+            Contactos: <a href="mailto:suporte@garageflow.pt" className="underline hover:text-foreground">suporte@garageflow.pt</a>.
+            Sistema não certificado pela Autoridade Tributária; documentos emitidos apenas para uso interno da oficina.
+          </p>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}
           </p>
         </div>
       </footer>
+
     </div>
   );
 }

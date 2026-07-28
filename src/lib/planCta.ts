@@ -31,9 +31,11 @@ export interface ResolvedPlanCta {
   mode: PlanCtaMode;
 }
 
-/** Nome mostrado ao utilizador — nunca o slug. */
+/** Nome mostrado ao utilizador — nunca o slug. Preferimos `name` porque
+ *  `label` é frequentemente usado como badge de marketing (ex.: "Mais Popular",
+ *  "Contacte-nos") e não como o nome real do plano. */
 function displayName(plan: PlanRow): string {
-  return (plan.label && plan.label.trim()) || (plan.name && plan.name.trim()) || plan.slug;
+  return (plan.name && plan.name.trim()) || (plan.label && plan.label.trim()) || plan.slug;
 }
 
 /**

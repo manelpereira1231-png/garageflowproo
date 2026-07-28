@@ -125,12 +125,13 @@ export function resolvePlanCta(
 ): ResolvedPlanCta {
   const ctx: PlanCtaContext = opts.context ?? "anon";
 
-  // 1) Texto: cta_label (admin) tem prioridade — EXCEPTO em modos "contact"/"demo",
-  //    onde o rótulo tem tradução canónica e deve seguir o idioma da UI para não
-  //    aparecer "CONTACTE-NOS" em EN/ES/HI.
+  // 1) Texto: em modos standard (trial/checkout/demo/contact/unavailable) usamos
+  //    SEMPRE o texto traduzido para respeitar o idioma da UI — o admin não pode
+  //    hardcodar "Testar Plano" em PT e partir a landing em EN/ES/HI. Só em
+  //    `custom_url` (CTA externo controlado pelo admin) o `cta_label` prevalece.
   const customLabel = (plan.cta_label || "").trim();
   const translatedDefault = defaultLabel(plan, ctx, opts.t);
-  const preferTranslated = plan.cta_mode === "contact" || plan.cta_mode === "demo";
+  const preferTranslated = plan.cta_mode !== "custom_url";
   const label = preferTranslated ? translatedDefault : (customLabel || translatedDefault);
 
   // 2) Destino

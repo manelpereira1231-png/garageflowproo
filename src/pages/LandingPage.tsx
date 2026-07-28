@@ -901,7 +901,7 @@ export default function LandingPage() {
                       ) : (
                         <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       )}
-                      {item.name}
+                      {t(`feature.${item.slug}`, item.name)}
                     </li>
                   ))}
                 </ul>

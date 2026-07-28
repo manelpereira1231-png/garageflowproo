@@ -7294,7 +7294,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'market.detail.seller': 'विक्रेता',
 
     // Landing page
-    'landing.badge': '#1 ऑटो वर्कशॉप सॉफ़्टवेयर',
+    'landing.badge': '100+ पुर्तगाल में गैरेज GarageFlow का उपयोग करते हैं',
+    'auth.countryLabel': 'देश',
+    'auth.otherCountries': 'अन्य देश',
+    'affiliate.haveAccount': 'मेरा पहले से खाता है — साइन इन करें',
     'landing.heroTitle1': 'अपनी वर्कशॉप चलाना निर्भर नहीं होना चाहिए',
     'landing.heroTitle2': 'कागज़, स्प्रेडशीट और WhatsApp पर',
     'landing.heroSubtitle': 'सेकंड में कोटेशन बनाएँ, मरम्मत ट्रैक करें, ग्राहकों को व्यवस्थित करें और सब कुछ एक ही जगह रखें।',

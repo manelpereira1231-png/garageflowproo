@@ -24,6 +24,8 @@ import { getEffectivePrice } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlansCatalog, publicPlans } from "@/hooks/usePlansCatalog";
 import { resolvePlanCta, resolvePlanBadge } from "@/lib/planCta";
+import { useFeaturedTestimonials } from "@/hooks/useFeaturedTestimonials";
+import { useLegalSettings } from "@/hooks/useLegalSettings";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
 const featureKeys = ['1', '2', '3', '4', '5', '6'];

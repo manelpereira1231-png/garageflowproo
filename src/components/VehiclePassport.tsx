@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Car, Wrench, ClipboardCheck, FileText, Receipt, AlertTriangle, TrendingDown, Download, Shield } from "lucide-react";
+import { Car, Wrench, ClipboardCheck, FileText, Receipt, AlertTriangle, TrendingDown, Shield } from "lucide-react";
 import { format } from "date-fns";
+import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface VehiclePassportProps {
@@ -45,8 +45,12 @@ const eventColors: Record<string, string> = {
 };
 
 export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePassportProps) {
-  const { language } = useLanguage();
-  const isPt = language === "pt";
+  const { t, language } = useLanguage();
+  const locale = language === "pt" ? pt
+    : language === "pt-BR" ? ptBR
+    : language === "es" ? es
+    : language === "hi" ? hi
+    : enUS;
   const [vehicle, setVehicle] = useState<any>(null);
   const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [workOrders, setWorkOrders] = useState<any[]>([]);
@@ -67,7 +71,6 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       setHistory((hRes.data || []) as HistoryEvent[]);
       setWorkOrders(woRes.data || []);
 
-      // Km fraud detection
       detectKmFraud(woRes.data || []);
       setLoading(false);
     };
@@ -83,11 +86,11 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     for (let i = 1; i < mileages.length; i++) {
       if (mileages[i].km < mileages[i - 1].km) {
         const diff = mileages[i - 1].km - mileages[i].km;
-        if (diff > 500) { // Allow small discrepancies
+        if (diff > 500) {
+          const prev = mileages[i - 1];
+          const curr = mileages[i];
           setKmFraudWarning(
-            isPt
-              ? `⚠️ Possível fraude de quilometragem detetada! ${format(new Date(mileages[i - 1].date), "dd/MM/yyyy")}: ${mileages[i - 1].km.toLocaleString()} km → ${format(new Date(mileages[i].date), "dd/MM/yyyy")}: ${mileages[i].km.toLocaleString()} km (redução de ${diff.toLocaleString()} km)`
-              : `⚠️ Possible odometer fraud detected! ${format(new Date(mileages[i - 1].date), "dd/MM/yyyy")}: ${mileages[i - 1].km.toLocaleString()} km → ${format(new Date(mileages[i].date), "dd/MM/yyyy")}: ${mileages[i].km.toLocaleString()} km (decrease of ${diff.toLocaleString()} km)`
+            `⚠️ ${t("passport.fraudMsg", "Possível fraude de quilometragem detetada!")} ${format(new Date(prev.date), "dd/MM/yyyy", { locale })}: ${prev.km.toLocaleString()} km → ${format(new Date(curr.date), "dd/MM/yyyy", { locale })}: ${curr.km.toLocaleString()} km (${t("passport.fraudDecrease", "redução")} ${diff.toLocaleString()} km)`
           );
           return;
         }
@@ -96,7 +99,6 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     setKmFraudWarning(null);
   };
 
-  // Combine history + work orders into unified timeline
   const timeline = [
     ...history.map(h => ({
       id: h.id,
@@ -108,20 +110,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       parts: h.parts_replaced,
     })),
     ...workOrders.map(wo => {
-      const statusLabels: Record<string, { pt: string; en: string }> = {
-        open: { pt: "Aberto", en: "Open" },
-        diagnosis: { pt: "Diagnóstico", en: "Diagnosis" },
-        pending: { pt: "Pendente", en: "Pending" },
-        waiting_approval: { pt: "Aguarda aprovação", en: "Waiting approval" },
-        approved: { pt: "Aprovado", en: "Approved" },
-        in_progress: { pt: "Em curso", en: "In progress" },
-        awaiting_parts: { pt: "A aguardar peças", en: "Awaiting parts" },
-        completed: { pt: "Concluído", en: "Completed" },
-        delivered: { pt: "Entregue", en: "Delivered" },
-        cancelled: { pt: "Cancelado", en: "Cancelled" },
-        invoiced: { pt: "Faturado", en: "Invoiced" },
-      };
-      const label = statusLabels[wo.status]?.[isPt ? "pt" : "en"] ?? wo.status;
+      const label = t(`wo.status.${wo.status}`, wo.status);
       return {
         id: wo.id,
         type: "service",
@@ -134,7 +123,6 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     }),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Deduplicate by id
   const seen = new Set();
   const uniqueTimeline = timeline.filter(t => {
     if (seen.has(t.id)) return false;
@@ -142,7 +130,6 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     return true;
   });
 
-  // Mileage history for chart-like display
   const mileagePoints = workOrders
     .filter(wo => wo.entry_mileage > 0)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -154,7 +141,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="w-5 h-5 text-primary" />
-            {isPt ? "Passaporte do Veículo" : "Vehicle Passport"}
+            {t("passport.title", "Passaporte do Veículo")}
           </DialogTitle>
         </DialogHeader>
 
@@ -165,7 +152,6 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         ) : vehicle ? (
           <ScrollArea className="flex-1 -mx-6 px-6">
             <div className="space-y-4 pb-4">
-              {/* Vehicle Header */}
               <div className="bg-muted rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
@@ -175,39 +161,37 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   <Badge variant="secondary" className="font-mono text-base px-3 py-1">{vehicle.plate}</Badge>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">{isPt ? "Quilometragem" : "Mileage"}</span><p className="font-semibold">{vehicle.mileage?.toLocaleString()} km</p></div>
-                  <div><span className="text-muted-foreground">VIN</span><p className="font-mono text-xs">{vehicle.vin || "—"}</p></div>
-                  <div><span className="text-muted-foreground">{isPt ? "Proprietário" : "Owner"}</span><p className="font-medium">{(vehicle.clients as any)?.name || "—"}</p></div>
-                  <div><span className="text-muted-foreground">{isPt ? "Serviços" : "Services"}</span><p className="font-semibold">{workOrders.length}</p></div>
+                  <div><span className="text-muted-foreground">{t("passport.mileage", "Quilometragem")}</span><p className="font-semibold">{vehicle.mileage?.toLocaleString()} km</p></div>
+                  <div><span className="text-muted-foreground">{t("passport.vin", "VIN")}</span><p className="font-mono text-xs">{vehicle.vin || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("passport.owner", "Proprietário")}</span><p className="font-medium">{(vehicle.clients as any)?.name || "—"}</p></div>
+                  <div><span className="text-muted-foreground">{t("passport.services", "Serviços")}</span><p className="font-semibold">{workOrders.length}</p></div>
                 </div>
               </div>
 
-              {/* KM Fraud Warning */}
               {kmFraudWarning && (
                 <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-start gap-2">
                   <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-destructive">{isPt ? "Alerta Anti-Fraude" : "Anti-Fraud Alert"}</p>
+                    <p className="text-sm font-semibold text-destructive">{t("passport.antiFraud", "Alerta Anti-Fraude")}</p>
                     <p className="text-xs text-destructive/80 mt-0.5">{kmFraudWarning}</p>
                   </div>
                 </div>
               )}
 
-              {/* Mileage Progression */}
               {mileagePoints.length > 1 && (
                 <div>
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                     <TrendingDown className="w-4 h-4" />
-                    {isPt ? "Evolução Quilometragem" : "Mileage History"}
+                    {t("passport.mileageHistory", "Evolução Quilometragem")}
                   </h4>
                   <div className="flex items-end gap-1 h-16">
                     {mileagePoints.map((p, i) => {
                       const max = Math.max(...mileagePoints.map(mp => mp.km));
                       const heightPct = max > 0 ? (p.km / max) * 100 : 0;
                       return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${format(new Date(p.date), "dd/MM/yy")}: ${p.km.toLocaleString()} km`}>
+                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${format(new Date(p.date), "dd/MM/yy", { locale })}: ${p.km.toLocaleString()} km`}>
                           <div className="w-full bg-primary/60 rounded-t" style={{ height: `${heightPct}%`, minHeight: 2 }} />
-                          <span className="text-[8px] text-muted-foreground">{format(new Date(p.date), "MM/yy")}</span>
+                          <span className="text-[8px] text-muted-foreground">{format(new Date(p.date), "MM/yy", { locale })}</span>
                         </div>
                       );
                     })}
@@ -215,11 +199,10 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 </div>
               )}
 
-              {/* Timeline */}
               <div>
-                <h4 className="text-sm font-semibold mb-2">{isPt ? "Histórico Completo" : "Full History"}</h4>
+                <h4 className="text-sm font-semibold mb-2">{t("passport.fullHistory", "Histórico Completo")}</h4>
                 {uniqueTimeline.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">{isPt ? "Sem histórico registado." : "No history recorded."}</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">{t("passport.noHistory", "Sem histórico registado.")}</p>
                 ) : (
                   <div className="space-y-2">
                     {uniqueTimeline.map(event => {
@@ -233,12 +216,12 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-medium truncate">{event.title}</p>
-                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(event.date), "dd/MM/yyyy")}</span>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(event.date), "dd/MM/yyyy", { locale })}</span>
                             </div>
                             {event.description && <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>}
                             <div className="flex gap-2 mt-0.5">
                               {event.mileage && event.mileage > 0 && <span className="text-[10px] text-muted-foreground">{event.mileage.toLocaleString()} km</span>}
-                              {event.parts?.length > 0 && <span className="text-[10px] text-muted-foreground">🔧 {event.parts.length} {isPt ? "peças" : "parts"}</span>}
+                              {event.parts?.length > 0 && <span className="text-[10px] text-muted-foreground">🔧 {event.parts.length} {t("passport.parts", "peças")}</span>}
                             </div>
                           </div>
                         </div>

@@ -74,7 +74,7 @@ export interface PlansCatalog {
 
 async function fetchCatalog(): Promise<PlansCatalog> {
   const [plansRes, featRes, pricesRes] = await Promise.all([
-    supabase.from("plans").select("*").eq("active", true).order("sort_order"),
+    supabase.from("plans_public" as any).select("*").eq("active", true).order("sort_order"),
     supabase.from("plan_features").select("*"),
     supabase.from("plan_country_prices_public" as any).select("*").eq("active", true),
   ]);

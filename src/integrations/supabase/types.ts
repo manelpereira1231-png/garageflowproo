@@ -10290,6 +10290,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_shop_country_code: { Args: { shop_id: string }; Returns: string }
       get_shop_creation_status: { Args: { _user_id: string }; Returns: Json }
       get_shop_member_emails: {
         Args: { _shop_id: string }

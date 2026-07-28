@@ -2422,7 +2422,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'To reply, contact the workshop directly.',
 
     // Landing Page
-    'landing.badge': '#1 Auto Workshop Software',
+    'landing.badge': '100+ workshops in Portugal already use GarageFlow',
+    'auth.countryLabel': 'Country',
+    'auth.otherCountries': 'Other countries',
+    'affiliate.haveAccount': 'I already have an account — Sign in',
     'landing.heroTitle1': 'Running your workshop shouldn\'t depend on',
     'landing.heroTitle2': 'paper, spreadsheets and WhatsApp',
     'landing.heroSubtitle': 'Create quotes in seconds, track repairs, organize clients and have everything in one place.',

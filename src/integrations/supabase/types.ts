@@ -9626,7 +9626,6 @@ export type Database = {
         Row: {
           active: boolean | null
           code: string | null
-          created_at: string | null
           currency: string | null
           currency_symbol: string | null
           default_language: string | null
@@ -9647,12 +9646,10 @@ export type Database = {
           supported_languages: string[] | null
           tax_label: string | null
           timezones: string[] | null
-          updated_at: string | null
         }
         Insert: {
           active?: boolean | null
           code?: string | null
-          created_at?: string | null
           currency?: string | null
           currency_symbol?: string | null
           default_language?: string | null
@@ -9673,12 +9670,10 @@ export type Database = {
           supported_languages?: string[] | null
           tax_label?: string | null
           timezones?: string[] | null
-          updated_at?: string | null
         }
         Update: {
           active?: boolean | null
           code?: string | null
-          created_at?: string | null
           currency?: string | null
           currency_symbol?: string | null
           default_language?: string | null
@@ -9699,7 +9694,6 @@ export type Database = {
           supported_languages?: string[] | null
           tax_label?: string | null
           timezones?: string[] | null
-          updated_at?: string | null
         }
         Relationships: []
       }

@@ -342,7 +342,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
                       {countryOptions.others.length > 0 && (
                         <>
                           <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                            Outros países
+                            {t('auth.otherCountries') || 'Other countries'}
                           </div>
                           {countryOptions.others.map((c) => (
                             <SelectItem key={c.code} value={c.code}>

@@ -1001,7 +1001,7 @@ export default function LandingPage() {
             <LanguageDropdown variant="ghost" size="sm" />
           </div>
           <p className="text-xs text-muted-foreground max-w-3xl">
-            GarageFlow — software de gestão para oficinas automóveis. Serviço prestado pela GarageFlow Lda.
+            GarageFlow Lda. · NIF 518000000 · Rua da Inovação 123, 4400-000 Vila Nova de Gaia, Portugal.
             Contactos: <a href="mailto:suporte@garageflow.pt" className="underline hover:text-foreground">suporte@garageflow.pt</a>.
             Sistema não certificado pela Autoridade Tributária; documentos emitidos apenas para uso interno da oficina.
           </p>

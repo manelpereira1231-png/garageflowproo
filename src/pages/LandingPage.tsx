@@ -246,7 +246,7 @@ export default function LandingPage() {
     const badgeLabel = resolvePlanBadge(p, t);
     return {
       slug: p.slug,
-      displayName: p.label || p.name,
+      displayName: p.name || p.label,
       basePrice: base as number,
       periodKey: (base as number) > 0
         ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { invalidateFeatureCache } from "@/lib/features";
 import { usePlansCatalog } from "@/hooks/usePlansCatalog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

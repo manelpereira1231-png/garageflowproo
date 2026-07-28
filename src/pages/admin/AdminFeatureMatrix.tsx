@@ -126,6 +126,7 @@ const PLAN_BADGE_COLORS = [
 
 export default function AdminFeatureMatrix() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { data: catalog, isLoading: catalogLoading, refetch: refetchCatalog } = usePlansCatalog();
   const [features, setFeatures] = useState<FeatureRow[]>([]);
   const [matrix, setMatrix] = useState<MatrixRow[]>([]);

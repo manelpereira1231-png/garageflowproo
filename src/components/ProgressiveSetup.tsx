@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FileText, Receipt, Wrench, MapPin, Image, X } from "lucide-react";
 import { toast } from "sonner";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 type PromptType = "nif" | "logo" | "labor_rate" | "address";
 

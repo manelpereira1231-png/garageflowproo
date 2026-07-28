@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useShopRole } from "@/hooks/useShopRole";
+import { formatMoney } from "@/lib/money";
+import { getCountryConfig } from "@/lib/regionConfig";
 
 type Appt = {
   id: string;

@@ -5,6 +5,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
 import { useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
+import { formatMoney } from "@/lib/money";
 import {
   CommandDialog,
   CommandEmpty,

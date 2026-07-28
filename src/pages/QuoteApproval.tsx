@@ -9,6 +9,7 @@ import { sendEmail } from "@/lib/emailService";
 import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote";
 import SignaturePad from "@/components/SignaturePad";
 import { getCurrencySymbol, getLocaleForCurrency, getTaxLabelForCurrency } from "@/lib/regionLabels";
+import { formatMoney } from "@/lib/money";
 
 
 const translations: Record<string, Record<string, string>> = {

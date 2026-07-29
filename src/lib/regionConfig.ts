@@ -131,7 +131,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 45, yearly: 450 }, garage: { monthly: 89, yearly: 890 }, trialDays: 30 },
     inspection: { price: 29, shopShare: 17, platformShare: 12 },
     stripe: {},
-    active: false,
+    active: true,
   },
   US: {
     code: 'US', name: 'United States', flag: '🇺🇸',
@@ -142,7 +142,7 @@ const STATIC_COUNTRIES: Record<string, CountryConfig> = {
     saas: { free: { monthly: 0, yearly: 0 }, pro: { monthly: 49, yearly: 490 }, garage: { monthly: 99, yearly: 990 }, trialDays: 30 },
     inspection: { price: 34.90, shopShare: 20.00, platformShare: 14.90 },
     stripe: {},
-    active: false,
+    active: true,
   },
 };
 

@@ -143,23 +143,48 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
     }
   };
 
-  const handleResendInvite = async (shop: Shop) => {
-    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
-      body: { shop_id: shop.id },
-    });
-    if (error || (data && (data as any).error)) {
-      const details = data as any;
-      const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
-      toast.error(`Não foi possível reenviar o convite.${debugId}`);
-      return;
-    }
-    const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
-    const activationLink = (data as any)?.activation_link as string | undefined;
-    toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
-    if (activationLink) {
-      setActivationInfo({ email: shop.name || "responsável", link: activationLink, emailSent: true });
+  const [resendEmailFor, setResendEmailFor] = useState<Shop | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resending, setResending] = useState(false);
+
+  const doResend = async (shop: Shop, emailOverride?: string) => {
+    setResending(true);
+    try {
+      const body: Record<string, unknown> = { shop_id: shop.id };
+      if (emailOverride) body.email = emailOverride.trim().toLowerCase();
+      const { data, error } = await supabase.functions.invoke("resend-child-invite", { body });
+      if (error || (data && (data as any).error)) {
+        const details = data as any;
+        const code = details?.error || "";
+        const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
+        if (code === "EMAIL_REQUIRED" || code === "CANNOT_RESET_PRIMARY" || code === "CHILD_USER_NOT_FOUND") {
+          // Legacy shop without an independent auth user — ask the mother for the responsible's email.
+          setResendEmail("");
+          setResendEmailFor(shop);
+          return;
+        }
+        if (code === "EMAIL_SAME_AS_OWNER") {
+          toast.error("O email tem de ser diferente do email da Oficina Mãe.");
+          return;
+        }
+        toast.error(`Não foi possível reenviar o convite.${debugId}`);
+        return;
+      }
+      const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
+      const activationLink = (data as any)?.activation_link as string | undefined;
+      toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
+      if (activationLink) {
+        setActivationInfo({ email: emailOverride || shop.name || "responsável", link: activationLink, emailSent: true });
+      }
+      setResendEmailFor(null);
+      setResendEmail("");
+    } finally {
+      setResending(false);
     }
   };
+
+  const handleResendInvite = (shop: Shop) => { void doResend(shop); };
+
 
 
   const handleDeleteShop = async (shop: Shop) => {
@@ -357,6 +382,42 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Prompt de email para oficinas legado (sem login independente ainda) */}
+      <Dialog open={!!resendEmailFor} onOpenChange={(v) => { if (!v) { setResendEmailFor(null); setResendEmail(""); } }}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Definir email de acesso</DialogTitle>
+            <DialogDescription>
+              Esta oficina foi criada antes do login independente existir e ainda não tem um responsável com conta própria. Indique o email do responsável — vamos criar a conta e enviar um convite de acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="space-y-1.5">
+              <Label>Email do responsável</Label>
+              <Input
+                type="email"
+                value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)}
+                placeholder="responsavel@oficina.pt"
+                autoFocus
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              O email tem de ser diferente do email da Oficina Mãe.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResendEmailFor(null); setResendEmail(""); }} disabled={resending}>Cancelar</Button>
+            <Button
+              onClick={() => resendEmailFor && doResend(resendEmailFor, resendEmail)}
+              disabled={resending || !/^\S+@\S+\.\S+$/.test(resendEmail.trim())}
+            >
+              {resending ? "A enviar..." : "Criar acesso e enviar convite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Link de ativação — garante entrega mesmo se o email não chegar (spam, descartáveis, etc.) */}
       <Dialog open={!!activationInfo} onOpenChange={(v) => !v && setActivationInfo(null)}>

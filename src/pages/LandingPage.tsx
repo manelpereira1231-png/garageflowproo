@@ -597,15 +597,16 @@ export default function LandingPage() {
       </section>
       </Reveal>
 
-      {/* Faturação legal — mensagem adapta-se ao país detetado */}
+      {/* Faturação legal — apenas para mercados com integração fiscal (PT/BR) */}
       <Reveal>
       {(() => {
         const country = (typeof window !== "undefined"
           ? localStorage.getItem("garageflow_country")
           : null) || "PT";
-        const suffix = country === "PT" ? "pt" : country === "BR" ? "br" : "other";
-        const providerName = suffix === "pt" ? "InvoiceXpress" : suffix === "br" ? "eNotas" : t('landing.billing.badge.other');
-        const providerUrl = suffix === "pt" ? "https://invoicexpress.com/" : suffix === "br" ? "https://enotas.com.br" : null;
+        if (country !== "PT" && country !== "BR") return null;
+        const suffix = country === "PT" ? "pt" : "br";
+        const providerName = suffix === "pt" ? "InvoiceXpress" : "eNotas";
+        const providerUrl = suffix === "pt" ? "https://invoicexpress.com/" : "https://enotas.com.br";
         const bullets = [1,2,3,4].map((n) => t(`landing.billing.bullet${n}.${suffix}`));
         return (
       <section aria-labelledby="billing-title" className="py-16 sm:py-20 px-4 border-t border-border">
@@ -639,16 +640,14 @@ export default function LandingPage() {
                   <div className="font-semibold text-foreground mb-1">{t(`landing.billing.certifiedByTitle.${suffix}`)}</div>
                   <p className="text-muted-foreground leading-relaxed">{t(`landing.billing.certifiedByDesc.${suffix}`)}</p>
                 </div>
-                {providerUrl && (
-                  <div>
-                    <div className="font-semibold text-foreground mb-1">{t('landing.billing.accountNeeded').replace('{provider}', providerName)}</div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      <a href={providerUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
-                        {providerUrl.replace(/^https?:\/\//, "")} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <div className="font-semibold text-foreground mb-1">{t('landing.billing.accountNeeded').replace('{provider}', providerName)}</div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <a href={providerUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                      {providerUrl.replace(/^https?:\/\//, "")} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -51,11 +51,14 @@ Deno.serve(async (req) => {
     const caller = userRes.user;
     audit("caller_resolved", { callerId: caller.id, callerEmail: caller.email ?? null });
 
-    const { shop_id } = await req.json().catch((error) => {
+    const parsedBody = await req.json().catch((error) => {
       audit("body_parse_failed", { message: String(error?.message ?? error) });
       return {};
     });
-    audit("request_body_received", { shop_id: shop_id ?? null });
+    const shop_id = parsedBody?.shop_id;
+    const emailOverrideRaw = String(parsedBody?.email ?? "").trim().toLowerCase();
+    const emailOverride = emailOverrideRaw && /^\S+@\S+\.\S+$/.test(emailOverrideRaw) ? emailOverrideRaw : null;
+    audit("request_body_received", { shop_id: shop_id ?? null, hasEmailOverride: !!emailOverride });
     if (!shop_id) return json({ error: "MISSING_SHOP_ID", debug_id: debugId }, 400);
 
     const { data: shop, error: shopErr } = await admin
@@ -67,25 +70,69 @@ Deno.serve(async (req) => {
     audit("child_shop_lookup", { found: !!shop, shopId: shop?.id ?? null, error: shopErr?.message ?? null });
     if (!shop) return json({ error: "SHOP_NOT_FOUND", debug_id: debugId }, 404);
     if (shop.group_owner_id !== caller.id) return json({ error: "NOT_GROUP_OWNER", debug_id: debugId }, 403);
-    if (shop.user_id === caller.id) return json({ error: "CANNOT_RESET_PRIMARY", debug_id: debugId }, 400);
 
-    const { data: child, error: getErr } = await admin.auth.admin.getUserById(shop.user_id);
-    audit("child_auth_user_lookup", {
-      exists: !!child?.user,
-      userId: child?.user?.id ?? shop.user_id,
-      email: child?.user?.email ?? null,
-      emailConfirmedAt: child?.user?.email_confirmed_at ?? null,
-      error: getErr?.message ?? null,
-    });
-    if (getErr || !child?.user?.email) return json({ error: "CHILD_USER_NOT_FOUND", debug_id: debugId }, 404);
+    // Detect legacy child shops where user_id === group_owner_id (created before the
+    // independent-login flow existed). These need to be re-provisioned with a fresh
+    // child auth user before we can send a real invite.
+    const needsProvisioning = shop.user_id === caller.id;
 
-    const childEmail = child.user.email;
-    const authEmailMode: "invite" | "recovery" = child.user.email_confirmed_at ? "recovery" : "invite";
-    const link = await createPasswordActionLink(admin, childEmail, shop.name ?? "", authEmailMode, audit);
+    let childUserId: string = shop.user_id;
+    let childEmail: string | null = null;
+
+    if (needsProvisioning) {
+      if (!emailOverride) {
+        audit("email_required_for_legacy_shop", { shopId: shop.id });
+        return json({ error: "EMAIL_REQUIRED", debug_id: debugId }, 400);
+      }
+      // Ensure the email doesn't collide with the caller (mother) or another group.
+      if (emailOverride === (caller.email ?? "").toLowerCase()) {
+        return json({ error: "EMAIL_SAME_AS_OWNER", debug_id: debugId }, 400);
+      }
+      const provisioned = await provisionChildUser(admin, emailOverride, shop.name ?? "", audit);
+      childUserId = provisioned.userId;
+      childEmail = emailOverride;
+
+      // Reassign shop ownership to the fresh child user + ensure membership row.
+      const upd = await admin
+        .from("shops")
+        .update({ user_id: childUserId, email: emailOverride })
+        .eq("id", shop.id);
+      audit("legacy_shop_reassigned", { shopId: shop.id, ok: !upd.error, error: upd.error?.message ?? null });
+      if (upd.error) return json({ error: "SHOP_REASSIGN_FAILED", detail: upd.error.message, debug_id: debugId }, 500);
+      const mem = await admin
+        .from("shop_users")
+        .upsert({ shop_id: shop.id, user_id: childUserId, role: "owner" }, { onConflict: "shop_id,user_id" });
+      audit("legacy_shop_membership_upserted", { ok: !mem.error, error: mem.error?.message ?? null });
+    } else {
+      const { data: child, error: getErr } = await admin.auth.admin.getUserById(shop.user_id);
+      audit("child_auth_user_lookup", {
+        exists: !!child?.user,
+        userId: child?.user?.id ?? shop.user_id,
+        email: child?.user?.email ?? null,
+        emailConfirmedAt: child?.user?.email_confirmed_at ?? null,
+        error: getErr?.message ?? null,
+      });
+      if (getErr || !child?.user?.email) {
+        // Auth user vanished — allow provisioning if the caller supplied an email.
+        if (!emailOverride) return json({ error: "EMAIL_REQUIRED", debug_id: debugId }, 400);
+        const provisioned = await provisionChildUser(admin, emailOverride, shop.name ?? "", audit);
+        childUserId = provisioned.userId;
+        childEmail = emailOverride;
+        const upd = await admin.from("shops").update({ user_id: childUserId, email: emailOverride }).eq("id", shop.id);
+        if (upd.error) return json({ error: "SHOP_REASSIGN_FAILED", detail: upd.error.message, debug_id: debugId }, 500);
+        await admin.from("shop_users").upsert({ shop_id: shop.id, user_id: childUserId, role: "owner" }, { onConflict: "shop_id,user_id" });
+      } else {
+        childEmail = emailOverride ?? child.user.email;
+      }
+    }
+
+    const { data: refreshed } = await admin.auth.admin.getUserById(childUserId);
+    const authEmailMode: "invite" | "recovery" = refreshed?.user?.email_confirmed_at ? "recovery" : "invite";
+    const link = await createPasswordActionLink(admin, childEmail!, shop.name ?? "", authEmailMode, audit);
     audit("password_action_link_resolved", { mode: link.mode, hasActionLink: !!link.actionLink });
 
     const emailResult = await sendBrandedPasswordEmail({
-      to: childEmail,
+      to: childEmail!,
       recipientName: shop.name ?? "",
       language: "pt",
       actionLink: link.actionLink,
@@ -198,6 +245,60 @@ async function createPasswordActionLink(
     ),
     mode: "recovery",
   };
+}
+
+async function findUserIdByEmail(admin: any, email: string): Promise<string | null> {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const match = data?.users?.find((u: any) => String(u.email ?? "").toLowerCase() === email);
+    if (match?.id) return match.id;
+    if (!data?.users || data.users.length < 1000) break;
+  }
+  return null;
+}
+
+async function provisionChildUser(
+  admin: any,
+  email: string,
+  shopName: string,
+  audit: (step: string, details?: Record<string, unknown>) => void,
+): Promise<{ userId: string }> {
+  const options = {
+    redirectTo: REDIRECT_URL,
+    data: {
+      source: "child_shop_invite",
+      skip_shop_creation: "true",
+      account_type: "garage_child",
+      shop_name: shopName,
+    },
+  };
+  const invite = await admin.auth.admin.generateLink({ type: "invite", email, options });
+  audit("provision_invite_result", {
+    ok: !invite.error,
+    status: (invite.error as any)?.status ?? null,
+    message: invite.error?.message ?? null,
+    userId: invite.data?.user?.id ?? null,
+  });
+  if (!invite.error && invite.data?.user?.id) {
+    await admin.auth.admin.updateUserById(invite.data.user.id, {
+      user_metadata: {
+        source: "child_shop_invite",
+        skip_shop_creation: "true",
+        account_type: "garage_child",
+        shop_name: shopName,
+      },
+    });
+    return { userId: invite.data.user.id };
+  }
+  const msg = String(invite.error?.message || "").toLowerCase();
+  if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
+    throw new Error(`INVITE_LINK_FAILED: ${invite.error?.message}`);
+  }
+  const existingId = await findUserIdByEmail(admin, email);
+  if (!existingId) throw new Error("USER_LOOKUP_FAILED");
+  audit("provision_reused_existing_user", { userId: existingId });
+  return { userId: existingId };
 }
 
 function buildPasswordActivationUrl(tokenHash: string, type: "invite" | "recovery", email: string, fallbackActionLink: string): string {

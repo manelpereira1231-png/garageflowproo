@@ -60,7 +60,7 @@ export default function LegalFooter() {
             {settings?.footer_text ? <> · {settings.footer_text}</> : null}
           </div>
         ) : (
-          <div className="text-[11px] opacity-80">{DEV_DISCLAIMER}</div>
+          <div className="text-[11px] opacity-80">{MINIMAL_FALLBACK}</div>
         )}
       </div>
     </footer>

@@ -440,19 +440,32 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         </p>
 
         {/* Legal links */}
-        <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-          <Link to="/legal/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>
-          <span>·</span>
-          <Link to="/legal/terms" className="hover:text-foreground transition-colors">Termos</Link>
-          <span>·</span>
-          <Link to="/legal/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
-          <span>·</span>
-          <Link to="/legal/dpa" className="hover:text-foreground transition-colors">DPA</Link>
-          <span>·</span>
-          <Link to="/legal/my-data" className="hover:text-foreground transition-colors">Os Meus Dados</Link>
-          <span>·</span>
-          <Link to="/support" className="text-primary hover:opacity-80 font-medium transition-colors">Suporte</Link>
-        </nav>
+        {(() => {
+          const L = (
+            language === 'pt' || language === 'pt-BR'
+              ? { privacy: 'Privacidade', terms: 'Termos', cookies: 'Cookies', dpa: 'DPA', data: 'Os Meus Dados', support: 'Suporte' }
+              : language === 'es'
+                ? { privacy: 'Privacidad', terms: 'Términos', cookies: 'Cookies', dpa: 'DPA', data: 'Mis Datos', support: 'Soporte' }
+                : language === 'hi'
+                  ? { privacy: 'गोपनीयता', terms: 'शर्तें', cookies: 'कुकीज़', dpa: 'DPA', data: 'मेरा डेटा', support: 'सहायता' }
+                  : { privacy: 'Privacy', terms: 'Terms', cookies: 'Cookies', dpa: 'DPA', data: 'My Data', support: 'Support' }
+          );
+          return (
+            <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              <Link to="/legal/privacy" className="hover:text-foreground transition-colors">{L.privacy}</Link>
+              <span>·</span>
+              <Link to="/legal/terms" className="hover:text-foreground transition-colors">{L.terms}</Link>
+              <span>·</span>
+              <Link to="/legal/cookies" className="hover:text-foreground transition-colors">{L.cookies}</Link>
+              <span>·</span>
+              <Link to="/legal/dpa" className="hover:text-foreground transition-colors">{L.dpa}</Link>
+              <span>·</span>
+              <Link to="/legal/my-data" className="hover:text-foreground transition-colors">{L.data}</Link>
+              <span>·</span>
+              <Link to="/support" className="text-primary hover:opacity-80 font-medium transition-colors">{L.support}</Link>
+            </nav>
+          );
+        })()}
       </div>
     </div>
   );

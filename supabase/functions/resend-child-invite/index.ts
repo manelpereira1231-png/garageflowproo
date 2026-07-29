@@ -247,6 +247,60 @@ async function createPasswordActionLink(
   };
 }
 
+async function findUserIdByEmail(admin: any, email: string): Promise<string | null> {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const match = data?.users?.find((u: any) => String(u.email ?? "").toLowerCase() === email);
+    if (match?.id) return match.id;
+    if (!data?.users || data.users.length < 1000) break;
+  }
+  return null;
+}
+
+async function provisionChildUser(
+  admin: any,
+  email: string,
+  shopName: string,
+  audit: (step: string, details?: Record<string, unknown>) => void,
+): Promise<{ userId: string }> {
+  const options = {
+    redirectTo: REDIRECT_URL,
+    data: {
+      source: "child_shop_invite",
+      skip_shop_creation: "true",
+      account_type: "garage_child",
+      shop_name: shopName,
+    },
+  };
+  const invite = await admin.auth.admin.generateLink({ type: "invite", email, options });
+  audit("provision_invite_result", {
+    ok: !invite.error,
+    status: (invite.error as any)?.status ?? null,
+    message: invite.error?.message ?? null,
+    userId: invite.data?.user?.id ?? null,
+  });
+  if (!invite.error && invite.data?.user?.id) {
+    await admin.auth.admin.updateUserById(invite.data.user.id, {
+      user_metadata: {
+        source: "child_shop_invite",
+        skip_shop_creation: "true",
+        account_type: "garage_child",
+        shop_name: shopName,
+      },
+    });
+    return { userId: invite.data.user.id };
+  }
+  const msg = String(invite.error?.message || "").toLowerCase();
+  if (!msg.includes("already") && !msg.includes("registered") && !msg.includes("exists")) {
+    throw new Error(`INVITE_LINK_FAILED: ${invite.error?.message}`);
+  }
+  const existingId = await findUserIdByEmail(admin, email);
+  if (!existingId) throw new Error("USER_LOOKUP_FAILED");
+  audit("provision_reused_existing_user", { userId: existingId });
+  return { userId: existingId };
+}
+
 function buildPasswordActivationUrl(tokenHash: string, type: "invite" | "recovery", email: string, fallbackActionLink: string): string {
   if (!tokenHash) return fallbackActionLink;
   const url = new URL(REDIRECT_URL);

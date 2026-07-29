@@ -809,11 +809,12 @@ export default function LandingPage() {
       <section aria-label="Confiança e segurança" className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           {[
-            { icon: Shield, label: "RGPD", sub: "Dados na UE" },
-            { icon: Lock, label: "SSL/TLS", sub: "Encriptação ponta-a-ponta" },
-            { icon: CheckCircle, label: "Backups diários", sub: "Sem perda de dados" },
-            { icon: Zap, label: "99,9% uptime", sub: "Sempre disponível" },
+            { icon: Shield, label: t('landing.trustGdpr', 'RGPD'), sub: t('landing.trustGdprSub', 'Dados na UE') },
+            { icon: Lock, label: t('landing.trustSsl', 'SSL/TLS'), sub: t('landing.trustSslSub', 'Encriptação ponta-a-ponta') },
+            { icon: CheckCircle, label: t('landing.trustBackup', 'Backups diários'), sub: t('landing.trustBackupSub', 'Sem perda de dados') },
+            { icon: Zap, label: t('landing.trustUptime', '99,9% uptime'), sub: t('landing.trustUptimeSub', 'Sempre disponível') },
           ].map(({ icon: Icon, label, sub }) => (
+
             <div key={label} className="flex flex-col items-center gap-1">
               <Icon className="w-6 h-6 text-primary" />
               <p className="text-sm font-semibold">{label}</p>

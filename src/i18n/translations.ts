@@ -4371,7 +4371,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.heroTitle1': 'Gestionar tu taller no debería depender de',
     'landing.heroTitle2': 'papel, Excel y WhatsApp',
     'landing.heroSubtitle': 'Crea presupuestos en segundos, sigue reparaciones, organiza clientes y tenlo todo en un solo lugar.',
-    'landing.cta': 'Empezar Gratis',
+    'landing.cta': 'Probar 30 días gratis',
     'landing.ctaDemo': 'Ver Demostración',
     'landing.ctaFeatures': 'Ver Funcionalidades',
     'landing.idealForTitle': 'Ideal para talleres que quieren:',

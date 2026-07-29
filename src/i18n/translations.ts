@@ -614,7 +614,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': '+100 oficinas em Portugal já usam o GarageFlow',
+    'landing.badge': '30 dias de trial · Sem cartão de crédito',
     'auth.countryLabel': 'País',
     'auth.otherCountries': 'Outros países',
     'affiliate.haveAccount': 'Já tenho conta — Entrar',

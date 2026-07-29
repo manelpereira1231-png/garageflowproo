@@ -7621,7 +7621,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'market.detail.seller': 'विक्रेता',
 
     // Landing page
-    'landing.badge': '100+ पुर्तगाल में गैरेज GarageFlow का उपयोग करते हैं',
+    'landing.badge': '30 दिन का ट्रायल · कोई क्रेडिट कार्ड नहीं',
     'auth.countryLabel': 'देश',
     'auth.otherCountries': 'अन्य देश',
     'affiliate.haveAccount': 'मेरा पहले से खाता है — साइन इन करें',

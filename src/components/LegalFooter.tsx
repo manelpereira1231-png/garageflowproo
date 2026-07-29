@@ -7,8 +7,8 @@
 import { Link } from "react-router-dom";
 import { useLegalSettings } from "@/hooks/useLegalSettings";
 
-const DEV_DISCLAIMER =
-  "Versão em desenvolvimento. Os documentos gerados destinam-se apenas a demonstração e testes e não constituem documentos fiscais.";
+const MINIMAL_FALLBACK =
+  "GarageFlow — Software de gestão de oficinas.";
 
 export default function LegalFooter() {
   const { settings, isConfigured, contactEmail, showInFooter } = useLegalSettings();

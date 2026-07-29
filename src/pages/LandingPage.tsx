@@ -767,26 +767,26 @@ export default function LandingPage() {
       <section aria-labelledby="compare-title" className="py-16 sm:py-20 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">Excel vs GarageFlow</h2>
-            <p className="text-muted-foreground text-base sm:text-lg">Porque a folha de cálculo já não chega para gerir uma oficina moderna.</p>
+            <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.compareTitle', 'Excel vs GarageFlow')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t('landing.compareSubtitle', 'Porque a folha de cálculo já não chega para gerir uma oficina moderna.')}</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Tarefa diária</th>
-                  <th className="text-center px-4 py-3 font-semibold">Excel / Papel</th>
+                  <th className="text-left px-4 py-3 font-semibold">{t('landing.compareTask', 'Tarefa diária')}</th>
+                  <th className="text-center px-4 py-3 font-semibold">{t('landing.compareExcel', 'Excel / Papel')}</th>
                   <th className="text-center px-4 py-3 font-semibold text-primary">GarageFlow</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ["Enviar orçamento ao cliente", "10 min · email manual", "30 seg · WhatsApp + 1 clique"],
-                  ["Saber quanto faturei este mês", "Calcular à mão", "Automático, em tempo real"],
-                  ["Encontrar histórico de uma viatura", "Procurar em pastas", "Pesquisa por matrícula"],
-                  ["Stock de peças sempre atualizado", "Quase nunca", "Desconta automaticamente"],
-                  ["Lembrar revisões aos clientes", "Esquecido", "SMS/email automáticos"],
-                  ["Aceder em qualquer dispositivo", "Não", "PC, tablet e telemóvel"],
+                  [t('landing.compareRow1Task', 'Enviar orçamento ao cliente'), t('landing.compareRow1Excel', '10 min · email manual'), t('landing.compareRow1Gf', '30 seg · WhatsApp + 1 clique')],
+                  [t('landing.compareRow2Task', 'Saber quanto faturei este mês'), t('landing.compareRow2Excel', 'Calcular à mão'), t('landing.compareRow2Gf', 'Automático, em tempo real')],
+                  [t('landing.compareRow3Task', 'Encontrar histórico de uma viatura'), t('landing.compareRow3Excel', 'Procurar em pastas'), t('landing.compareRow3Gf', 'Pesquisa por matrícula')],
+                  [t('landing.compareRow4Task', 'Stock de peças sempre atualizado'), t('landing.compareRow4Excel', 'Quase nunca'), t('landing.compareRow4Gf', 'Desconta automaticamente')],
+                  [t('landing.compareRow5Task', 'Lembrar revisões aos clientes'), t('landing.compareRow5Excel', 'Esquecido'), t('landing.compareRow5Gf', 'SMS/email automáticos')],
+                  [t('landing.compareRow6Task', 'Aceder em qualquer dispositivo'), t('landing.compareRow6Excel', 'Não'), t('landing.compareRow6Gf', 'PC, tablet e telemóvel')],
                 ].map(([task, excel, gf]) => (
                   <tr key={task} className="border-t border-border/60">
                     <td className="px-4 py-3 font-medium">{task}</td>
@@ -801,6 +801,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
       </Reveal>
 
       {/* Trust bar */}
@@ -808,11 +809,12 @@ export default function LandingPage() {
       <section aria-label="Confiança e segurança" className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           {[
-            { icon: Shield, label: "RGPD", sub: "Dados na UE" },
-            { icon: Lock, label: "SSL/TLS", sub: "Encriptação ponta-a-ponta" },
-            { icon: CheckCircle, label: "Backups diários", sub: "Sem perda de dados" },
-            { icon: Zap, label: "99,9% uptime", sub: "Sempre disponível" },
+            { icon: Shield, label: t('landing.trustGdpr', 'RGPD'), sub: t('landing.trustGdprSub', 'Dados na UE') },
+            { icon: Lock, label: t('landing.trustSsl', 'SSL/TLS'), sub: t('landing.trustSslSub', 'Encriptação ponta-a-ponta') },
+            { icon: CheckCircle, label: t('landing.trustBackup', 'Backups diários'), sub: t('landing.trustBackupSub', 'Sem perda de dados') },
+            { icon: Zap, label: t('landing.trustUptime', '99,9% uptime'), sub: t('landing.trustUptimeSub', 'Sempre disponível') },
           ].map(({ icon: Icon, label, sub }) => (
+
             <div key={label} className="flex flex-col items-center gap-1">
               <Icon className="w-6 h-6 text-primary" />
               <p className="text-sm font-semibold">{label}</p>
@@ -1059,6 +1061,15 @@ export default function LandingPage() {
               GarageFlow · <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a> — {t('landing.footer')}
             </p>
           )}
+          {legal?.social_links && Object.values(legal.social_links).some(Boolean) && (
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+              {legal.social_links.facebook && <a href={legal.social_links.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Facebook</a>}
+              {legal.social_links.instagram && <a href={legal.social_links.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Instagram</a>}
+              {legal.social_links.linkedin && <a href={legal.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">LinkedIn</a>}
+              {legal.social_links.other && <a href={legal.social_links.other} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Website</a>}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}
           </p>

@@ -1056,8 +1056,7 @@ export default function LandingPage() {
             </p>
           ) : (
             <p className="text-xs text-muted-foreground max-w-3xl">
-              GarageFlow · <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a>.
-              {" "}Versão em desenvolvimento — dados legais serão publicados após configuração no painel de administração.
+              GarageFlow · <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a> — {t('landing.footer')}
             </p>
           )}
           <p className="text-xs text-muted-foreground">

@@ -100,8 +100,22 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
   const [country, setCountry] = useState<string>(() => (getCountryCode() || "PT").toUpperCase());
+  const [countriesTick, setCountriesTick] = useState(0);
+
+  useEffect(() => {
+    // Ensure DB-backed active list (UK/US/etc) is loaded, then re-render.
+    import("@/lib/regionConfig").then((m) => m.loadCountriesFromDB()).then(() => setCountriesTick((n) => n + 1));
+    const onUpdate = () => setCountriesTick((n) => n + 1);
+    window.addEventListener("garageflow:pricing-updated", onUpdate);
+    window.addEventListener("garageflow:country-detected", onUpdate);
+    return () => {
+      window.removeEventListener("garageflow:pricing-updated", onUpdate);
+      window.removeEventListener("garageflow:country-detected", onUpdate);
+    };
+  }, []);
 
   const countryOptions = (() => {
+    void countriesTick;
     const all = listActiveCountries();
     const byCode = new Map(all.map((c) => [c.code.toUpperCase(), c]));
     const preferred = PREFERRED_COUNTRIES.map((code) => byCode.get(code)).filter(Boolean) as ReturnType<typeof listActiveCountries>;

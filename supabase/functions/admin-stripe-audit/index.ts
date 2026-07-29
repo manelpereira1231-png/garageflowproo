@@ -35,7 +35,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const auditSecret = Deno.env.get("LOVABLE_AUDIT_SECRET") ?? "";
+    const auditSecret = Deno.env.get("AUDIT_SHARED_SECRET") ?? "";
     const providedSecret = req.headers.get("x-audit-secret") ?? "";
     const isServiceRole = token && token === serviceRoleKey;
     const isSecretMatch = auditSecret && providedSecret === auditSecret;

@@ -664,16 +664,16 @@ export default function LandingPage() {
       <section aria-labelledby="principles-title" className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 sm:mb-12">
-            <h2 id="principles-title" className="text-2xl sm:text-4xl font-bold mb-4">Construído com oficinas reais</h2>
+            <h2 id="principles-title" className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.principlesTitle')}</h2>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-              Nada de promessas vazias. Estes são os princípios que guiam cada funcionalidade.
+              {t('landing.principlesSubtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { icon: Zap, title: "Rápido a usar", desc: "Criar um orçamento demora menos de 1 minuto. Tudo a 2 cliques." },
-              { icon: Shield, title: "Os seus dados são seus", desc: "RGPD, encriptação ponta-a-ponta, exporte tudo quando quiser." },
-              { icon: CheckCircle, title: "Honesto", desc: "Sem letras pequenas. Cancele quando quiser. 30 dias Pro grátis sem cartão." },
+              { icon: Zap, title: t('landing.principle1Title'), desc: t('landing.principle1Desc') },
+              { icon: Shield, title: t('landing.principle2Title'), desc: t('landing.principle2Desc') },
+              { icon: CheckCircle, title: t('landing.principle3Title'), desc: t('landing.principle3Desc') },
             ].map(({ icon: Icon, title, desc }) => (
               <article key={title} className="bg-card border border-border rounded-xl p-5 sm:p-6">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">

@@ -161,5 +161,3 @@ verify_jwt = false
 [functions.gsn-notify-order-event]
 verify_jwt = false
 
-[functions.admin-stripe-audit]
-verify_jwt = false

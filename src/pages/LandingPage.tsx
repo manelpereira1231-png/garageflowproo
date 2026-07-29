@@ -767,26 +767,26 @@ export default function LandingPage() {
       <section aria-labelledby="compare-title" className="py-16 sm:py-20 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">Excel vs GarageFlow</h2>
-            <p className="text-muted-foreground text-base sm:text-lg">Porque a folha de cálculo já não chega para gerir uma oficina moderna.</p>
+            <h2 id="compare-title" className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.compareTitle', 'Excel vs GarageFlow')}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t('landing.compareSubtitle', 'Porque a folha de cálculo já não chega para gerir uma oficina moderna.')}</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Tarefa diária</th>
-                  <th className="text-center px-4 py-3 font-semibold">Excel / Papel</th>
+                  <th className="text-left px-4 py-3 font-semibold">{t('landing.compareTask', 'Tarefa diária')}</th>
+                  <th className="text-center px-4 py-3 font-semibold">{t('landing.compareExcel', 'Excel / Papel')}</th>
                   <th className="text-center px-4 py-3 font-semibold text-primary">GarageFlow</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ["Enviar orçamento ao cliente", "10 min · email manual", "30 seg · WhatsApp + 1 clique"],
-                  ["Saber quanto faturei este mês", "Calcular à mão", "Automático, em tempo real"],
-                  ["Encontrar histórico de uma viatura", "Procurar em pastas", "Pesquisa por matrícula"],
-                  ["Stock de peças sempre atualizado", "Quase nunca", "Desconta automaticamente"],
-                  ["Lembrar revisões aos clientes", "Esquecido", "SMS/email automáticos"],
-                  ["Aceder em qualquer dispositivo", "Não", "PC, tablet e telemóvel"],
+                  [t('landing.compareRow1Task', 'Enviar orçamento ao cliente'), t('landing.compareRow1Excel', '10 min · email manual'), t('landing.compareRow1Gf', '30 seg · WhatsApp + 1 clique')],
+                  [t('landing.compareRow2Task', 'Saber quanto faturei este mês'), t('landing.compareRow2Excel', 'Calcular à mão'), t('landing.compareRow2Gf', 'Automático, em tempo real')],
+                  [t('landing.compareRow3Task', 'Encontrar histórico de uma viatura'), t('landing.compareRow3Excel', 'Procurar em pastas'), t('landing.compareRow3Gf', 'Pesquisa por matrícula')],
+                  [t('landing.compareRow4Task', 'Stock de peças sempre atualizado'), t('landing.compareRow4Excel', 'Quase nunca'), t('landing.compareRow4Gf', 'Desconta automaticamente')],
+                  [t('landing.compareRow5Task', 'Lembrar revisões aos clientes'), t('landing.compareRow5Excel', 'Esquecido'), t('landing.compareRow5Gf', 'SMS/email automáticos')],
+                  [t('landing.compareRow6Task', 'Aceder em qualquer dispositivo'), t('landing.compareRow6Excel', 'Não'), t('landing.compareRow6Gf', 'PC, tablet e telemóvel')],
                 ].map(([task, excel, gf]) => (
                   <tr key={task} className="border-t border-border/60">
                     <td className="px-4 py-3 font-medium">{task}</td>
@@ -801,6 +801,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
       </Reveal>
 
       {/* Trust bar */}

@@ -2562,7 +2562,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'To reply, contact the workshop directly.',
 
     // Landing Page
-    'landing.badge': '100+ workshops in Portugal already use GarageFlow',
+    'landing.badge': '30-day trial · No credit card required',
     'auth.countryLabel': 'Country',
     'auth.otherCountries': 'Other countries',
     'affiliate.haveAccount': 'I already have an account — Sign in',

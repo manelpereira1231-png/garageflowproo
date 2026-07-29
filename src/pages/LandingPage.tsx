@@ -916,6 +916,43 @@ export default function LandingPage() {
       )}
 
 
+      {/* Testemunhos aprovados + destacados — entre Preços e FAQ. Só renderiza quando existem. */}
+      {testimonialsLoaded && featuredTestimonials.length > 0 && (
+        <Reveal>
+        <section aria-labelledby="social-proof-title" className="py-14 sm:py-20 px-4 border-t border-border bg-muted/10">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 id="social-proof-title" className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.testimonials.sectionTitle')}</h2>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {t('landing.socialProofTitle')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {featuredTestimonials.map((r) => (
+                <div key={r.id} className="bg-card border border-border rounded-xl p-5 text-sm">
+                  <div className="flex gap-0.5 mb-2" aria-label={`${r.rating} / 5`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} className={i < r.rating ? "text-amber-400" : "text-muted-foreground/30"}>★</span>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground italic mb-4">“{r.content}”</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {r.author_name.trim().charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground text-xs">{r.author_name}</div>
+                      {r.workshop_name && <div className="text-[11px] text-muted-foreground">{r.workshop_name}</div>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        </Reveal>
+      )}
+
       {/* FAQ Section */}
       <Reveal>
       <section id="faq" className="py-16 sm:py-20 px-4 border-t border-border">

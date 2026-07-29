@@ -7628,7 +7628,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.heroTitle1': 'अपनी वर्कशॉप चलाना निर्भर नहीं होना चाहिए',
     'landing.heroTitle2': 'कागज़, स्प्रेडशीट और WhatsApp पर',
     'landing.heroSubtitle': 'सेकंड में कोटेशन बनाएँ, मरम्मत ट्रैक करें, ग्राहकों को व्यवस्थित करें और सब कुछ एक ही जगह रखें।',
-    'landing.cta': 'मुफ़्त शुरू करें',
+    'landing.cta': '30 दिन का ट्रायल शुरू करें',
     'landing.ctaDemo': 'डेमो देखें',
     'landing.ctaFeatures': 'विशेषताएँ देखें',
     'landing.idealForTitle': 'उन वर्कशॉप के लिए आदर्श जो चाहते हैं:',

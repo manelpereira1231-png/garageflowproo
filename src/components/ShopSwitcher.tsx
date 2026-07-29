@@ -143,23 +143,48 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
     }
   };
 
-  const handleResendInvite = async (shop: Shop) => {
-    const { data, error } = await supabase.functions.invoke("resend-child-invite", {
-      body: { shop_id: shop.id },
-    });
-    if (error || (data && (data as any).error)) {
-      const details = data as any;
-      const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
-      toast.error(`Não foi possível reenviar o convite.${debugId}`);
-      return;
-    }
-    const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
-    const activationLink = (data as any)?.activation_link as string | undefined;
-    toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
-    if (activationLink) {
-      setActivationInfo({ email: shop.name || "responsável", link: activationLink, emailSent: true });
+  const [resendEmailFor, setResendEmailFor] = useState<Shop | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resending, setResending] = useState(false);
+
+  const doResend = async (shop: Shop, emailOverride?: string) => {
+    setResending(true);
+    try {
+      const body: Record<string, unknown> = { shop_id: shop.id };
+      if (emailOverride) body.email = emailOverride.trim().toLowerCase();
+      const { data, error } = await supabase.functions.invoke("resend-child-invite", { body });
+      if (error || (data && (data as any).error)) {
+        const details = data as any;
+        const code = details?.error || "";
+        const debugId = details?.debug_id ? ` Ref: ${details.debug_id}` : "";
+        if (code === "EMAIL_REQUIRED" || code === "CANNOT_RESET_PRIMARY" || code === "CHILD_USER_NOT_FOUND") {
+          // Legacy shop without an independent auth user — ask the mother for the responsible's email.
+          setResendEmail("");
+          setResendEmailFor(shop);
+          return;
+        }
+        if (code === "EMAIL_SAME_AS_OWNER") {
+          toast.error("O email tem de ser diferente do email da Oficina Mãe.");
+          return;
+        }
+        toast.error(`Não foi possível reenviar o convite.${debugId}`);
+        return;
+      }
+      const provider = (data as any)?.email_provider === "native" ? "email de autenticação" : "email GarageFlow";
+      const activationLink = (data as any)?.activation_link as string | undefined;
+      toast.success(`Convite reenviado por ${provider} para "${shop.name || 'sem nome'}".`);
+      if (activationLink) {
+        setActivationInfo({ email: emailOverride || shop.name || "responsável", link: activationLink, emailSent: true });
+      }
+      setResendEmailFor(null);
+      setResendEmail("");
+    } finally {
+      setResending(false);
     }
   };
+
+  const handleResendInvite = (shop: Shop) => { void doResend(shop); };
+
 
 
   const handleDeleteShop = async (shop: Shop) => {

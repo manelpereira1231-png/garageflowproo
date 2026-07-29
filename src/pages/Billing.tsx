@@ -463,7 +463,7 @@ export default function Billing() {
           <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-6 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="w-4 h-4" />
-              <span>{t('billing.billingCycleLabel')}: <strong className="text-foreground">{t(`billing.cycle.${subscription?.billing_cycle || 'monthly'}`, subscription?.billing_cycle || 'monthly')}</strong></span>
+              <span>{t('billing.billingCycleLabel')}: <strong className="text-foreground">{t(`billing.cycle.${(subscription?.billing_cycle || 'monthly').toString().toLowerCase()}`, subscription?.billing_cycle || 'monthly')}</strong></span>
             </div>
             {subscription?.current_period_end && (
               <div className="flex items-center gap-2 text-muted-foreground">

@@ -7,8 +7,8 @@
 import { Link } from "react-router-dom";
 import { useLegalSettings } from "@/hooks/useLegalSettings";
 
-const DEV_DISCLAIMER =
-  "Versão em desenvolvimento. Os documentos gerados destinam-se apenas a demonstração e testes e não constituem documentos fiscais.";
+const MINIMAL_FALLBACK =
+  "GarageFlow — Software de gestão de oficinas.";
 
 export default function LegalFooter() {
   const { settings, isConfigured, contactEmail, showInFooter } = useLegalSettings();
@@ -60,7 +60,7 @@ export default function LegalFooter() {
             {settings?.footer_text ? <> · {settings.footer_text}</> : null}
           </div>
         ) : (
-          <div className="text-[11px] opacity-80">{DEV_DISCLAIMER}</div>
+          <div className="text-[11px] opacity-80">{MINIMAL_FALLBACK}</div>
         )}
       </div>
     </footer>

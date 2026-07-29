@@ -2569,7 +2569,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.heroTitle1': 'Running your workshop shouldn\'t depend on',
     'landing.heroTitle2': 'paper, spreadsheets and WhatsApp',
     'landing.heroSubtitle': 'Create quotes in seconds, track repairs, organize clients and have everything in one place.',
-    'landing.cta': 'Start Free',
+    'landing.cta': 'Start 30-day trial',
     'landing.ctaDemo': 'See Demo',
     'landing.ctaFeatures': 'See Features',
     'landing.idealForTitle': 'Ideal for workshops that want to:',

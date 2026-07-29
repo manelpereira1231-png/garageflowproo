@@ -303,10 +303,10 @@ export default function QuoteForm() {
                 </Select>
                 <Select
                   value={(() => {
-                    const baseName = (line.name || '').replace(/\s*\(\d+\s*min\)\s*$/i, '').trim();
+                    const baseName = (line.name || '').replace(/\s*\(\d+\s*min\)\s*$/i, '').trim().toLowerCase();
                     if (!baseName) return '';
                     const src = line.type === 'service' ? catalog : partsList;
-                    const match = src.find((c: any) => (c.name || '').trim() === baseName);
+                    const match = src.find((c: any) => (c.name || '').trim().toLowerCase() === baseName);
                     return match ? match.id : '';
                   })()}
                   onValueChange={(val) => {

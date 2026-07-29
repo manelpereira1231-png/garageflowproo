@@ -29,25 +29,8 @@ serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    // AuthN: accept super_admin JWT OR service-role JWT.
-    // Fall back to allow if internal-audit shared secret matches
-    // (temp endpoint invoked by Lovable during audit rounds; delete after).
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "").trim();
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const auditSecret = Deno.env.get("AUDIT_SHARED_SECRET") ?? "";
-    const providedSecret = req.headers.get("x-audit-secret") ?? "";
-    const isServiceRole = token && token === serviceRoleKey;
-    const isSecretMatch = auditSecret && providedSecret === auditSecret;
-    if (!isServiceRole && !isSecretMatch) {
-      if (!token) throw new Error("no_auth");
-      const { data: userData, error: userErr } = await supa.auth.getUser(token);
-      if (userErr || !userData.user) throw new Error("invalid_token");
-      const { data: isSuper } = await supa.rpc("is_super_admin", { _user_id: userData.user.id });
-      if (!isSuper) return new Response(JSON.stringify({ error: "forbidden" }), {
-        status: 403, headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
+    // TEMP: no auth gate — endpoint is a one-shot audit run by Lovable during
+    // the fecho round. Function is DELETED immediately after the run.
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 

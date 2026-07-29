@@ -515,39 +515,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Social proof — only rendered when admin has approved + featured testimonials */}
-      {testimonialsLoaded && featuredTestimonials.length > 0 && (
-        <Reveal>
-        <section aria-labelledby="social-proof-title" className="py-12 sm:py-16 px-4 border-b border-border bg-muted/10">
-          <div className="max-w-6xl mx-auto">
-            <h2 id="social-proof-title" className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-8">
-              {t('landing.socialProofTitle')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {featuredTestimonials.map((r) => (
-                <div key={r.id} className="bg-card border border-border rounded-xl p-5 text-sm">
-                  <div className="flex gap-0.5 mb-2" aria-label={`${r.rating} / 5`}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className={i < r.rating ? "text-amber-400" : "text-muted-foreground/30"}>★</span>
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground italic mb-4">“{r.content}”</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                      {r.author_name.trim().charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground text-xs">{r.author_name}</div>
-                      {r.workshop_name && <div className="text-[11px] text-muted-foreground">{r.workshop_name}</div>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        </Reveal>
-      )}
+      {/* Social proof moved to sit between Pricing and FAQ */}
+
 
 
 
@@ -634,43 +603,10 @@ export default function LandingPage() {
         const country = (typeof window !== "undefined"
           ? localStorage.getItem("garageflow_country")
           : null) || "PT";
-        const isPT = country === "PT";
-        const isBR = country === "BR";
-        const providerName = isPT ? "InvoiceXpress" : isBR ? "eNotas" : "o emissor fiscal oficial do teu país";
-        const providerUrl = isPT ? "https://invoicexpress.com/" : isBR ? "https://enotas.com.br" : null;
-        const badge = isPT
-          ? "Faturação legal em Portugal"
-          : isBR
-            ? "Emissão fiscal no Brasil"
-            : "Emissão fiscal no teu país";
-        const title = isPT
-          ? "Faturas certificadas pela AT, sem trocar de programa"
-          : isBR
-            ? "NF-e, NFS-e e NFC-e emitidas via eNotas, sem sair do GarageFlow"
-            : "Integração com o teu emissor fiscal oficial";
-        const intro = isPT ? (
-          <>O GarageFlow <strong>integra</strong> com o <strong>InvoiceXpress</strong> — software de faturação certificado pela Autoridade Tributária (nº 192). A tua oficina liga a conta InvoiceXpress em <em>Definições → Faturação Certificada</em> e passa a emitir faturas diretamente da ficha de serviço, com <strong>ATCUD, QR Code, hash criptográfico, série sequencial e SAF-T oficial</strong>.</>
-        ) : isBR ? (
-          <>O GarageFlow <strong>integra</strong> com o <strong>eNotas</strong>. A sua oficina liga a conta eNotas em <em>Definições → Faturação</em> e passa a emitir <strong>NF-e, NFS-e e NFC-e</strong> a partir da ordem de serviço. O GarageFlow sincroniza <strong>chave, número, série, PDF, XML e status</strong> — a conta fiscal continua a pertencer à oficina.</>
-        ) : (
-          <>O GarageFlow integra com o emissor fiscal oficial do teu país. A tua oficina liga a sua conta em <em>Definições → Faturação</em> e emite documentos legais sem sair do sistema.</>
-        );
-        const bullets = isPT ? [
-          "Emissão a 1 clique a partir da ordem de serviço",
-          "Anulação legal por Nota de Crédito automática",
-          "SAF-T PT oficial descarregado do painel InvoiceXpress",
-          "Credenciais encriptadas AES-GCM, isoladas por oficina",
-        ] : isBR ? [
-          "Emissão de NF-e, NFS-e e NFC-e a partir da ordem de serviço",
-          "Sincronização automática de chave, número, PDF e XML",
-          "A conta eNotas continua a pertencer à oficina",
-          "Credenciais encriptadas AES-GCM, isoladas por oficina",
-        ] : [
-          "Emissão de documentos legais a partir da ordem de serviço",
-          "Sincronização automática com o teu provedor fiscal",
-          "A conta fiscal continua a pertencer à oficina",
-          "Credenciais encriptadas AES-GCM, isoladas por oficina",
-        ];
+        const suffix = country === "PT" ? "pt" : country === "BR" ? "br" : "other";
+        const providerName = suffix === "pt" ? "InvoiceXpress" : suffix === "br" ? "eNotas" : t('landing.billing.badge.other');
+        const providerUrl = suffix === "pt" ? "https://invoicexpress.com/" : suffix === "br" ? "https://enotas.com.br" : null;
+        const bullets = [1,2,3,4].map((n) => t(`landing.billing.bullet${n}.${suffix}`));
         return (
       <section aria-labelledby="billing-title" className="py-16 sm:py-20 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
@@ -678,13 +614,13 @@ export default function LandingPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                {badge}
+                {t(`landing.billing.badge.${suffix}`)}
               </div>
               <h2 id="billing-title" className="text-2xl sm:text-4xl font-bold mb-4">
-                {title}
+                {t(`landing.billing.title.${suffix}`)}
               </h2>
               <p className="text-muted-foreground text-base sm:text-lg mb-4 leading-relaxed">
-                {intro}
+                {t(`landing.billing.intro.${suffix}`)}
               </p>
               <ul className="space-y-2 text-sm">
                 {bullets.map((b) => (
@@ -693,30 +629,19 @@ export default function LandingPage() {
               </ul>
             </div>
             <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Transparência total</h3>
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">{t('landing.billing.transparencyTitle')}</h3>
               <div className="space-y-4 text-sm">
                 <div>
-                  <div className="font-semibold text-foreground mb-1">O GarageFlow por si só NÃO é certificado</div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    O PDF gerado internamente pelo GarageFlow é apenas para orçamentos, propostas e uso interno —
-                    tem sempre a menção "documento não certificado".
-                  </p>
+                  <div className="font-semibold text-foreground mb-1">{t('landing.billing.notCertifiedTitle')}</div>
+                  <p className="text-muted-foreground leading-relaxed">{t('landing.billing.notCertifiedDesc')}</p>
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground mb-1">
-                    {isPT ? "A certificação vem do InvoiceXpress" : isBR ? "A emissão fiscal vem do eNotas" : `A emissão fiscal vem de ${providerName}`}
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {isPT
-                      ? "É a conta AT da tua oficina que emite. O GarageFlow envia os dados e recebe de volta o PDF legal já assinado, com ATCUD e QR válidos perante a AT."
-                      : isBR
-                        ? "É a conta eNotas da tua oficina que emite. O GarageFlow envia os dados e recebe de volta o documento fiscal com chave e número oficiais junto à SEFAZ/Prefeitura."
-                        : "É a conta fiscal da tua oficina que emite. O GarageFlow envia os dados e recebe de volta o documento legal."}
-                  </p>
+                  <div className="font-semibold text-foreground mb-1">{t(`landing.billing.certifiedByTitle.${suffix}`)}</div>
+                  <p className="text-muted-foreground leading-relaxed">{t(`landing.billing.certifiedByDesc.${suffix}`)}</p>
                 </div>
                 {providerUrl && (
                   <div>
-                    <div className="font-semibold text-foreground mb-1">Precisas de uma conta {providerName}</div>
+                    <div className="font-semibold text-foreground mb-1">{t('landing.billing.accountNeeded').replace('{provider}', providerName)}</div>
                     <p className="text-muted-foreground leading-relaxed">
                       <a href={providerUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
                         {providerUrl.replace(/^https?:\/\//, "")} <ExternalLink className="w-3 h-3" />
@@ -733,21 +658,22 @@ export default function LandingPage() {
       })()}
       </Reveal>
 
+
       {/* Built by people who know workshops — replaces fake testimonials */}
       <Reveal>
       <section aria-labelledby="principles-title" className="py-16 sm:py-20 px-4 bg-muted/20 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 sm:mb-12">
-            <h2 id="principles-title" className="text-2xl sm:text-4xl font-bold mb-4">Construído com oficinas reais</h2>
+            <h2 id="principles-title" className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.principlesTitle')}</h2>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-              Nada de promessas vazias. Estes são os princípios que guiam cada funcionalidade.
+              {t('landing.principlesSubtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { icon: Zap, title: "Rápido a usar", desc: "Criar um orçamento demora menos de 1 minuto. Tudo a 2 cliques." },
-              { icon: Shield, title: "Os seus dados são seus", desc: "RGPD, encriptação ponta-a-ponta, exporte tudo quando quiser." },
-              { icon: CheckCircle, title: "Honesto", desc: "Sem letras pequenas. Cancele quando quiser. 30 dias Pro grátis sem cartão." },
+              { icon: Zap, title: t('landing.principle1Title'), desc: t('landing.principle1Desc') },
+              { icon: Shield, title: t('landing.principle2Title'), desc: t('landing.principle2Desc') },
+              { icon: CheckCircle, title: t('landing.principle3Title'), desc: t('landing.principle3Desc') },
             ].map(({ icon: Icon, title, desc }) => (
               <article key={title} className="bg-card border border-border rounded-xl p-5 sm:p-6">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
@@ -989,6 +915,43 @@ export default function LandingPage() {
       </Reveal>
       )}
 
+
+      {/* Testemunhos aprovados + destacados — entre Preços e FAQ. Só renderiza quando existem. */}
+      {testimonialsLoaded && featuredTestimonials.length > 0 && (
+        <Reveal>
+        <section aria-labelledby="social-proof-title" className="py-14 sm:py-20 px-4 border-t border-border bg-muted/10">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 id="social-proof-title" className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.testimonials.sectionTitle')}</h2>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {t('landing.socialProofTitle')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {featuredTestimonials.map((r) => (
+                <div key={r.id} className="bg-card border border-border rounded-xl p-5 text-sm">
+                  <div className="flex gap-0.5 mb-2" aria-label={`${r.rating} / 5`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} className={i < r.rating ? "text-amber-400" : "text-muted-foreground/30"}>★</span>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground italic mb-4">“{r.content}”</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {r.author_name.trim().charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground text-xs">{r.author_name}</div>
+                      {r.workshop_name && <div className="text-[11px] text-muted-foreground">{r.workshop_name}</div>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        </Reveal>
+      )}
 
       {/* FAQ Section */}
       <Reveal>

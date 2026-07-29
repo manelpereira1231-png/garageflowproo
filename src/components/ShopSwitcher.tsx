@@ -382,6 +382,42 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Prompt de email para oficinas legado (sem login independente ainda) */}
+      <Dialog open={!!resendEmailFor} onOpenChange={(v) => { if (!v) { setResendEmailFor(null); setResendEmail(""); } }}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle>Definir email de acesso</DialogTitle>
+            <DialogDescription>
+              Esta oficina foi criada antes do login independente existir e ainda não tem um responsável com conta própria. Indique o email do responsável — vamos criar a conta e enviar um convite de acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="space-y-1.5">
+              <Label>Email do responsável</Label>
+              <Input
+                type="email"
+                value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)}
+                placeholder="responsavel@oficina.pt"
+                autoFocus
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              O email tem de ser diferente do email da Oficina Mãe.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResendEmailFor(null); setResendEmail(""); }} disabled={resending}>Cancelar</Button>
+            <Button
+              onClick={() => resendEmailFor && doResend(resendEmailFor, resendEmail)}
+              disabled={resending || !/^\S+@\S+\.\S+$/.test(resendEmail.trim())}
+            >
+              {resending ? "A enviar..." : "Criar acesso e enviar convite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Link de ativação — garante entrega mesmo se o email não chegar (spam, descartáveis, etc.) */}
       <Dialog open={!!activationInfo} onOpenChange={(v) => !v && setActivationInfo(null)}>

@@ -640,16 +640,14 @@ export default function LandingPage() {
                   <div className="font-semibold text-foreground mb-1">{t(`landing.billing.certifiedByTitle.${suffix}`)}</div>
                   <p className="text-muted-foreground leading-relaxed">{t(`landing.billing.certifiedByDesc.${suffix}`)}</p>
                 </div>
-                {providerUrl && (
-                  <div>
-                    <div className="font-semibold text-foreground mb-1">{t('landing.billing.accountNeeded').replace('{provider}', providerName)}</div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      <a href={providerUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
-                        {providerUrl.replace(/^https?:\/\//, "")} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <div className="font-semibold text-foreground mb-1">{t('landing.billing.accountNeeded').replace('{provider}', providerName)}</div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <a href={providerUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
+                      {providerUrl.replace(/^https?:\/\//, "")} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>

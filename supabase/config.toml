@@ -160,3 +160,4 @@ verify_jwt = false
 
 [functions.gsn-notify-order-event]
 verify_jwt = false
+

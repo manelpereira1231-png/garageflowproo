@@ -1061,6 +1061,15 @@ export default function LandingPage() {
               GarageFlow · <a href={`mailto:${legalEmail}`} className="underline hover:text-foreground">{legalEmail}</a> — {t('landing.footer')}
             </p>
           )}
+          {legal?.social_links && Object.values(legal.social_links).some(Boolean) && (
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+              {legal.social_links.facebook && <a href={legal.social_links.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Facebook</a>}
+              {legal.social_links.instagram && <a href={legal.social_links.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Instagram</a>}
+              {legal.social_links.linkedin && <a href={legal.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">LinkedIn</a>}
+              {legal.social_links.other && <a href={legal.social_links.other} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Website</a>}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} GarageFlow. {t('landing.footer')}
           </p>

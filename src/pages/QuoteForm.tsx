@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClientCombobox from "@/components/ClientCombobox";
+import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE } from "@/lib/sanityLimits";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -140,6 +141,15 @@ export default function QuoteForm() {
     e.preventDefault();
     if (!clientId || !vehicleId || lines.length === 0) {
       toast.error(t('quotes.fillRequired'));
+      return;
+    }
+    if ((parseFloat(laborHours) || 0) > MAX_LABOR_HOURS) {
+      toast.error(`Horas de mão-de-obra irrealistas (máx. ${MAX_LABOR_HOURS}h por orçamento).`);
+      return;
+    }
+    const badLine = lines.find(l => l.quantity > MAX_LINE_QUANTITY || l.unit_price > MAX_UNIT_PRICE);
+    if (badLine) {
+      toast.error(`Valor irrealista na linha "${badLine.name || 'sem nome'}". Verifique quantidade e preço.`);
       return;
     }
     setLoading(true);
@@ -394,7 +404,7 @@ export default function QuoteForm() {
                   <Label className="text-xs">{t('line.description')} *</Label>
                   <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
                 </div>
-                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} max={MAX_LINE_QUANTITY} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.vat')}%</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>

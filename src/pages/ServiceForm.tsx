@@ -1,3 +1,4 @@
+import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,19 @@ export default function ServiceForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId || !vehicleId) { toast.error(t('services.fillRequired')); return; }
+    if ((parseFloat(laborHours) || 0) > MAX_LABOR_HOURS) {
+      toast.error(`Horas de mão-de-obra irrealistas (máx. ${MAX_LABOR_HOURS}h).`);
+      return;
+    }
+    if ((parseInt(entryMileage || "0", 10) || 0) > MAX_MILEAGE) {
+      toast.error(`Quilometragem irrealista (máximo ${MAX_MILEAGE.toLocaleString()} km).`);
+      return;
+    }
+    const badServiceLine = lines.find(l => l.quantity > MAX_LINE_QUANTITY || l.unit_price > MAX_UNIT_PRICE);
+    if (badServiceLine) {
+      toast.error(`Valor irrealista na linha "${badServiceLine.name || 'sem nome'}". Verifique quantidade e preço.`);
+      return;
+    }
     setLoading(true);
     if (!activeShopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
     const shopId = activeShopId;
@@ -209,7 +223,7 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5"><Label>{t('services.entryMileage')}</Label><Input type="number" value={entryMileage} onChange={e => setEntryMileage(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>{t('services.technician')}</Label><Input value={technician} onChange={e => setTechnician(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} max={MAX_LABOR_HOURS} value={laborHours} onChange={e => setLaborHours(e.target.value)} aria-invalid={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS} className={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""} />{(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS && <p className="text-[11px] text-destructive">Máximo {MAX_LABOR_HOURS}h.</p>}</div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>
@@ -330,7 +344,7 @@ export default function ServiceForm() {
                   <Label className="text-xs">{t('line.description')} *</Label>
                   <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
                 </div>
-                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
+                <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} max={MAX_LINE_QUANTITY} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-1"><Label className="text-xs">{t('line.vat')}%</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" placeholder="23" value={line.vat_rate === 0 ? "" : line.vat_rate} onChange={e => updateLine(line.id, 'vat_rate', e.target.value === "" ? 0 : +e.target.value)} /></div>

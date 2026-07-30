@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
+import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";

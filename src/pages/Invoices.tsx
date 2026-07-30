@@ -430,7 +430,11 @@ export default function Invoices() {
                   {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <MessageCircle className="w-3 h-3 mr-1" />}WhatsApp
                 </Button>
               )}
+              <Button variant="ghost" size="sm" className="text-xs h-7" disabled={linkingInvoice === inv.id} onClick={() => copyPaymentLink(inv)} title="Link de pagamento">
+                {linkingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <LinkIcon className="w-3 h-3 mr-1" />}Link
+              </Button>
             </div>
+
           </div>
         ))}
       </div>

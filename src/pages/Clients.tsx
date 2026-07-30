@@ -44,12 +44,33 @@ const FETCH_LIMIT = 2000;
 type ClientsFilters = { search: string };
 const defaultClientsFilters: ClientsFilters = { search: "" };
 
-const copyPortalLink = (portalToken: string | null, successMsg: string) => {
-  if (!portalToken) return;
-  const url = `${window.location.origin}/portal/${portalToken}`;
-  navigator.clipboard.writeText(url);
-  toast.success(successMsg);
+const copyPortalLink = async (clientId: string, portalToken: string | null, successMsg: string) => {
+  try {
+    let token = portalToken;
+    if (!token) {
+      // Cliente antigo sem token — gera um agora para o botão nunca ficar "morto".
+      const newToken = crypto.randomUUID();
+      const { error } = await supabase
+        .from("clients")
+        .update({ portal_token: newToken })
+        .eq("id", clientId);
+      if (error) throw error;
+      token = newToken;
+    }
+    const url = `${window.location.origin}/portal/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(successMsg, { description: url });
+    } catch {
+      // Clipboard bloqueado (contexto não seguro / permissões): abre o portal.
+      window.open(url, "_blank", "noopener");
+      toast.success("Portal do cliente aberto numa nova janela");
+    }
+  } catch (e: any) {
+    toast.error(e?.message || "Não foi possível gerar o link do portal");
+  }
 };
+
 
 export default function Clients() {
   const { t } = useLanguage();

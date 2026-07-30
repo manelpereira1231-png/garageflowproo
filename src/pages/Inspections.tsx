@@ -214,7 +214,7 @@ export default function Inspections() {
     }
     setSaving(false);
     setDialogOpen(false);
-    setItems(buildDefaultItems());
+    setItems(buildDefaultItems()); setTemplateId("full");
     setSelectedWO("");
     setTechnician("");
     setGeneralNotes("");

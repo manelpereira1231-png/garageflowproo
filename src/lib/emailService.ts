@@ -21,6 +21,12 @@ interface SendEmailParams {
   shop_id?: string;
 }
 
+/** Basic RFC-ish email validation used before hitting the provider. */
+export function isValidEmail(value?: string | null): boolean {
+  if (!value) return false;
+  return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(value.trim());
+}
+
 export async function sendEmail({ to, subject, html, from, attachments, quote_token, invite, shop_id }: SendEmailParams) {
   try {
     const { data, error } = await supabase.functions.invoke("send-email", {

@@ -17,7 +17,7 @@ import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/marketPrice";
 import CertifiedBadge from "@/components/CertifiedBadge";
-import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
+import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
@@ -144,6 +144,10 @@ export default function InvoiceDetail() {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) return;
+    if (!isValidEmail(clientEmail)) {
+      toast.error(`Email do cliente inválido ("${clientEmail}") — a fatura não foi enviada.`);
+      return;
+    }
     try {
       const effectiveStatus = variant === 'paid' ? 'paid' : 'issued';
       const pdfDoc = await generateInvoicePdf({
@@ -247,9 +251,14 @@ export default function InvoiceDetail() {
       }
     } catch (e: any) {
       console.warn('[invoice] auto email failed', e);
-      toast.message(variant === 'paid'
-        ? 'Pagamento registado. O envio automático do email falhou — pode reenviar manualmente.'
-        : 'Fatura emitida. O envio automático do email falhou — pode reenviar manualmente.');
+      toast.error(`${variant === 'paid' ? 'Pagamento registado' : 'Fatura emitida'}, mas o envio do email falhou: ${e?.message || 'erro desconhecido'}. Pode reenviar manualmente.`);
+      if (shop?.id) {
+        void supabase.from('email_logs').insert({
+          shop_id: shop.id, to_email: (invoice?.clients as any)?.email || '',
+          subject: `Fatura ${invoice?.number ?? ''}`, status: 'failed',
+          entity_type: 'invoice', entity_id: invoice?.id,
+        });
+      }
     }
   };
 
@@ -371,7 +380,12 @@ export default function InvoiceDetail() {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) { toast.error('Cliente sem email'); return; }
+    if (!isValidEmail(clientEmail)) {
+      toast.error(`Email do cliente inválido ("${clientEmail}"). Corrija a ficha do cliente antes de enviar.`);
+      return;
+    }
     setSending("email");
+
     try {
       const pdfBlob = await buildInvoiceBlob();
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF.'); return; }
@@ -492,21 +506,21 @@ export default function InvoiceDetail() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/invoices")}>
+      <div className="flex flex-wrap items-start gap-3 mb-6">
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/invoices")}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex-1">
-          <h1 className="page-title">{invoice.number}</h1>
+        <div className="min-w-0 flex-1 basis-[12rem]">
+          <h1 className="page-title whitespace-nowrap overflow-hidden text-ellipsis">{invoice.number}</h1>
           <div className="flex items-center gap-2 flex-wrap mt-1">
             <CertifiedBadge legalStatus={invoice.legal_status} atcud={invoice.atcud} series={invoice.certified_series} size="md" />
-            <Badge variant="secondary" className={statusColors[invoice.status] || ''}>
+            <Badge variant="secondary" className={`whitespace-nowrap ${statusColors[invoice.status] || ''}`}>
               {t(`invoices.status_${invoice.status}`)}
             </Badge>
             {invoice.atcud && (shop?.country_code || 'PT').toUpperCase() !== 'BR' && <span className="text-[10px] text-muted-foreground mono">ATCUD: {invoice.atcud}</span>}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
           {can("invoices.print") && (
             <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
               <Printer className="w-4 h-4 mr-1" />PDF

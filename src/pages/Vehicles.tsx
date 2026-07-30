@@ -18,7 +18,9 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
-import { autoFormatPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
+import { normalizePlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
+import ClientCombobox from "@/components/ClientCombobox";
+import { MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
@@ -99,9 +101,17 @@ export default function Vehicles() {
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
     if (!form.client_id) { toast.error(t('vehicles.selectClient')); setLoading(false); return; }
     if (!form.make || !form.model) { toast.error(t('vehicles.make') + ' / ' + t('vehicles.model')); setLoading(false); return; }
-    const normalizedPlate = autoFormatPlate(form.plate, plateRegion);
+    // A matrícula é validada tal como o utilizador a escreveu (apenas
+    // maiúsculas + remoção de caracteres inválidos). Nunca é "adivinhada".
+    const normalizedPlate = normalizePlate(form.plate);
     if (!isValidPlate(normalizedPlate, plateRegion)) {
       toast.error(`Matrícula inválida — formato esperado: ${plateExample}`);
+      setLoading(false);
+      return;
+    }
+    const mileageValue = parseInt(form.mileage || "0", 10) || 0;
+    if (mileageValue > MAX_MILEAGE) {
+      toast.error(`Quilometragem irrealista (máximo ${MAX_MILEAGE.toLocaleString()} km).`);
       setLoading(false);
       return;
     }
@@ -113,7 +123,7 @@ export default function Vehicles() {
     const payload = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: modelToSave,
       year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
-      mileage: parseInt(form.mileage), fuel: form.fuel, notes: form.notes || null,
+      mileage: mileageValue, fuel: form.fuel, notes: form.notes || null,
     };
 
     const { error } = editingId
@@ -223,10 +233,12 @@ export default function Vehicles() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label>{t('vehicles.client')} *</Label>
-                <Select value={form.client_id} onValueChange={v => setForm({...form, client_id: v})}>
-                  <SelectTrigger><SelectValue placeholder={t('vehicles.selectClient')} /></SelectTrigger>
-                  <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <ClientCombobox
+                  clients={clients}
+                  value={form.client_id}
+                  onChange={v => setForm({...form, client_id: v})}
+                  placeholder={t('vehicles.selectClient')}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <VehicleMakeModelSelector
@@ -243,7 +255,7 @@ export default function Vehicles() {
                   <Label>{t('vehicles.plate')} *</Label>
                   <Input
                     value={form.plate}
-                    onChange={e => setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)})}
+                    onChange={e => setForm({...form, plate: normalizePlate(e.target.value)})}
                     required
                     placeholder={plateExample}
                     aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
@@ -252,7 +264,7 @@ export default function Vehicles() {
                   <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
                 </div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
-                <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="text" inputMode="numeric" value={form.mileage ? Number(form.mileage.replace(/\D/g, "")).toLocaleString("pt-PT") : ""} onChange={e => setForm({...form, mileage: e.target.value.replace(/\D/g, "")})} placeholder="0" /></div>
+                <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="text" inputMode="numeric" value={form.mileage ? Number(form.mileage.replace(/\D/g, "")).toLocaleString() : ""} onChange={e => setForm({...form, mileage: e.target.value.replace(/\D/g, "").slice(0, 8)})} placeholder="0" aria-invalid={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE} className={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE ? "border-destructive" : ""} />{(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE && <p className="text-[11px] text-destructive">Máximo {MAX_MILEAGE.toLocaleString()} km.</p>}</div>
                 <div className="space-y-1.5">
                   <Label>{t('vehicles.fuel')}</Label>
                   <Select value={form.fuel} onValueChange={v => setForm({...form, fuel: v})}>

@@ -56,7 +56,7 @@ export default function FinancialReports() {
       ]);
 
       const invoices = invoicesRes.data || [];
-      const workOrders = workOrdersRes.data || [];
+      const allWorkOrders = workOrdersRes.data || [];
       const quotes = quotesRes.data || [];
       const payments = paymentsRes.data || [];
 
@@ -68,6 +68,13 @@ export default function FinancialReports() {
       const overdueCount = invoices.filter(i => ['issued', 'partial'].includes(i.status) && i.due_date && i.due_date < today).length;
       const avgTicket = paidCount > 0 ? totalRevenue / paidCount : 0;
       const pendingAmount = invoices.filter(i => ['issued', 'partial', 'draft'].includes(i.status)).reduce((s, i) => s + Number(i.total), 0);
+
+      // O lucro só é contabilizado em ordens de serviço já faturadas e pagas —
+      // caso contrário o "Lucro Total" pode ultrapassar a "Receita Total".
+      const paidWorkOrderIds = new Set(
+        paidInvoices.map((i: any) => i.work_order_id).filter(Boolean)
+      );
+      const workOrders = allWorkOrders.filter((wo: any) => paidWorkOrderIds.has(wo.id));
 
       // Profit from work orders
       const totalProfit = workOrders.reduce((s, wo) => s + Number(wo.profit || 0), 0);
@@ -112,8 +119,11 @@ export default function FinancialReports() {
       workOrders.forEach(wo => {
         const lines = Array.isArray(wo.lines) ? wo.lines : [];
         (lines as any[]).forEach((line: any) => {
-          const name = line.description || 'Outro';
-          serviceRevenue[name] = (serviceRevenue[name] || 0) + Number(line.total || 0);
+          const name = line.name || line.description || 'Outro';
+          // As linhas de OS/orçamento guardam quantity + unit_price; `total` pode não existir.
+          const lineTotal = Number(line.total ?? (Number(line.quantity ?? 1) * Number(line.unit_price ?? 0)));
+          if (!Number.isFinite(lineTotal) || lineTotal <= 0) return;
+          serviceRevenue[name] = (serviceRevenue[name] || 0) + lineTotal;
         });
       });
       const topServices = Object.entries(serviceRevenue)

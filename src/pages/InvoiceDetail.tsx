@@ -290,9 +290,13 @@ export default function InvoiceDetail() {
     setPayAmount(0);
     setPayRef("");
 
-    // Auto-envio do email de confirmação de pagamento quando fica totalmente pago
-    if (isFullyPaid) {
-      await sendInvoiceEmailAuto('paid', { newTotalPaid, payDate, payMethod });
+    // Comunicação ao cliente apenas nos canais confirmados pelo utilizador
+    if (isFullyPaid && (notifyEmail || notifyWhatsApp)) {
+      await sendInvoiceEmailAuto(
+        'paid',
+        { newTotalPaid, payDate, payMethod },
+        { email: notifyEmail, whatsapp: notifyWhatsApp },
+      );
     }
 
     // Auto-emitir Fatura-Recibo no InvoiceExpress quando o pagamento fica completo

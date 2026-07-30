@@ -297,11 +297,11 @@ export default function InvoiceDetail() {
     setNotifyWhatsApp(false);
 
     // Comunicação ao cliente apenas nos canais confirmados pelo utilizador
-    if (isFullyPaid && (notifyEmail || notifyWhatsApp)) {
+    if (isFullyPaid && (wantEmail || wantWhatsApp)) {
       await sendInvoiceEmailAuto(
         'paid',
         { newTotalPaid, payDate, payMethod },
-        { email: notifyEmail, whatsapp: notifyWhatsApp },
+        { email: wantEmail, whatsapp: wantWhatsApp },
       );
     }
 

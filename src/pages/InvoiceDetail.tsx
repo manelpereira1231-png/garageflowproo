@@ -309,7 +309,7 @@ export default function InvoiceDetail() {
     if (isFullyPaid && !invoice.provider_invoice_id && billingProvider === 'invoicexpress') {
       try {
         const { data, error: emitErr } = await supabase.functions.invoke('invoicexpress-emit', {
-          body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
+          body: { invoice_id: invoice.id, send_email: wantEmail && !!(invoice.clients as any)?.email },
         });
         if (emitErr || data?.error) {
           toast.error(`Pagamento registado, mas falhou a emitir Fatura-Recibo: ${data?.error || emitErr?.message}`, { duration: 8000 });

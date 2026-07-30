@@ -803,9 +803,27 @@ export default function Inspections() {
                   <Input value={technician} onChange={e => setTechnician(e.target.value)} className="mt-1" placeholder={t('inspections.technicianPlaceholder')} />
                 </div>
                 <div className="sm:col-span-2">
+                  <Label className="text-xs font-medium">Modelo de checklist</Label>
+                  <Select
+                    value={templateId}
+                    onValueChange={(v) => { setTemplateId(v); setItems(buildDefaultItems(v)); }}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {INSPECTION_TEMPLATES.map(tpl => (
+                        <SelectItem key={tpl.id} value={tpl.id}>{tpl.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Ajusta os pontos a verificar ao tipo de serviço. Trocar de modelo repõe a lista.
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">{t('inspections.generalNotes')}</Label>
                   <Textarea value={generalNotes} onChange={e => setGeneralNotes(e.target.value)} className="mt-1 text-xs" rows={2} placeholder={t('inspections.generalNotesPlaceholder')} />
                 </div>
+
               </div>
             </div>
 

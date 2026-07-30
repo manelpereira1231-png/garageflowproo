@@ -36,6 +36,7 @@ const sendWhatsAppHello = (client: { phone: string; name: string }) => {
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
+  is_fleet?: boolean | null; fleet_name?: string | null; fleet_manager?: string | null;
   portal_token: string | null;
 }
 
@@ -83,9 +84,9 @@ export default function Clients() {
   const [dataLoading, setDataLoading] = useState(!cached);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
-  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "" });
+  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
   const activeShopId = useActiveShopId();
 
@@ -136,6 +137,8 @@ export default function Clients() {
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
+      is_fleet: !!form.is_fleet, fleet_name: form.is_fleet ? (form.fleet_name || null) : null,
+      fleet_manager: form.is_fleet ? (form.fleet_manager || null) : null,
     };
 
     const result = editingId
@@ -163,7 +166,7 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "" });
+    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
     setOpen(true);
   };
 
@@ -231,6 +234,29 @@ export default function Clients() {
                   <Label>{t('clients.nif')}</Label>
                   <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} />
                 </div>
+              </div>
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={form.is_fleet}
+                    onChange={e => setForm({ ...form, is_fleet: e.target.checked })}
+                  />
+                  Cliente de frota (empresa com vários veículos)
+                </label>
+                {form.is_fleet && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Nome da frota</Label>
+                      <Input value={form.fleet_name} onChange={e => setForm({ ...form, fleet_name: e.target.value })} placeholder="Ex.: Frota Norte" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Responsável da frota</Label>
+                      <Input value={form.fleet_manager} onChange={e => setForm({ ...form, fleet_manager: e.target.value })} />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>{t('clients.notes')}</Label>

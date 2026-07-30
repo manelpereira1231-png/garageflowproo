@@ -213,26 +213,25 @@ export default function InvoiceDetail() {
           : undefined,
         currency: shop.currency || getCountryConfig().currency,
       });
-      await sendEmail({
-        to: clientEmail,
-        subject,
-        html,
-        attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
-      });
-      await supabase.from('email_logs').insert({
-        shop_id: shop.id, to_email: clientEmail,
-        subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-      });
-      toast.success(variant === 'paid'
-        ? 'Confirmação de pagamento enviada ao cliente por email.'
-        : 'Fatura enviada ao cliente por email.');
+      if (channels.email && clientEmail) {
+        await sendEmail({
+          to: clientEmail,
+          subject,
+          html,
+          attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+        });
+        await supabase.from('email_logs').insert({
+          shop_id: shop.id, to_email: clientEmail,
+          subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
+        });
+        toast.success(variant === 'paid'
+          ? 'Confirmação de pagamento enviada ao cliente por email.'
+          : 'Fatura enviada ao cliente por email.');
+      }
 
-      // Auto-envio via WhatsApp (mesmo PDF do email) quando o cliente tem telefone.
-      // Reutiliza openWhatsApp: no desktop abre o WhatsApp Web já na conversa com
-      // a mensagem preenchida e faz download do PDF para o utilizador anexar;
-      // no mobile abre a app diretamente com o mesmo comportamento.
+      // Envio via WhatsApp (mesmo PDF do email) quando escolhido e o cliente tem telefone.
       const clientPhone = (invoice.clients as any)?.phone as string | undefined;
-      if (clientPhone) {
+      if (channels.whatsapp && clientPhone) {
         try {
           await openWhatsApp({
             phone: clientPhone,

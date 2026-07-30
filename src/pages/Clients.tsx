@@ -286,7 +286,7 @@ export default function Clients() {
                 {client.phone && (
                   <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-11 p-0"><Pencil className="w-4 h-4" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-11 p-0 text-destructive"><Trash2 className="w-4 h-4" /></Button>
               </div>
@@ -340,7 +340,7 @@ export default function Clients() {
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
+                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">

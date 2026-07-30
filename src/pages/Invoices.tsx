@@ -1,3 +1,4 @@
+import { exportSaftInBackground } from "@/lib/saftExport";
 import { useState, useEffect } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";

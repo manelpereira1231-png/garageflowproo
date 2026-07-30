@@ -1136,7 +1136,7 @@ function AppRoutes() {
             <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
-            <Route path="/marketing" element={<Auth defaultRedirect="/automations" />} />
+            <Route path="/marketing" element={<Navigate to="/automations" replace />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/afiliados/login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />

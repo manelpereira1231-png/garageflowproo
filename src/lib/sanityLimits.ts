@@ -16,7 +16,7 @@ export const MAX_LINE_QUANTITY = 9999;
 export const MAX_UNIT_PRICE = 1_000_000;
 
 /** Quilometragem de um veículo. */
-export const MAX_MILEAGE = 2_000_000;
+export const MAX_MILEAGE = 600_000;
 
 /** Duração estimada de um serviço, em minutos (≈ 100h). */
 export const MAX_SERVICE_MINUTES = 6000;

@@ -80,6 +80,20 @@ export default function InvoiceForm() {
         };
       };
 
+      // Linha de mão-de-obra extra (labor_hours) — não vem em `lines`,
+      // pelo que tem de ser reconstruída, senão a fatura fica abaixo do
+      // total aprovado no orçamento.
+      const laborItem = (hours: number) => {
+        const rate = Number(shopRes.data?.labor_rate || 30);
+        return {
+          id: crypto.randomUUID(),
+          description: `Mão de obra: mão-de-obra adicional (${hours}h)`,
+          quantity: hours,
+          unit_price: rate,
+          vat_rate: shopRes.data?.vat_rate ?? 23,
+        };
+      };
+
       // Pre-fill from quote
       if (fromQuote) {
         const { data: quote } = await supabase.from("quotes").select("*").eq("id", fromQuote).maybeSingle();
@@ -88,7 +102,12 @@ export default function InvoiceForm() {
           setVehicleId(quote.vehicle_id);
           setNotes(quote.notes || "");
           const lines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-          if (lines.length > 0) setItems(lines.map(mapLineToItem));
+          const hours = Number((quote as any).labor_hours || 0);
+          const mapped = [
+            ...lines.map(mapLineToItem),
+            ...(hours > 0 ? [laborItem(hours)] : []),
+          ];
+          if (mapped.length > 0) setItems(mapped);
         }
       }
 
@@ -102,7 +121,12 @@ export default function InvoiceForm() {
           setWorkOrderId(wo.id);
           if (wo.quote_id) setQuoteId(wo.quote_id);
           const lines = Array.isArray(wo.lines) ? (wo.lines as any[]) : [];
-          if (lines.length > 0) setItems(lines.map(mapLineToItem));
+          const hours = Number((wo as any).labor_hours || 0);
+          const mapped = [
+            ...lines.map(mapLineToItem),
+            ...(hours > 0 ? [laborItem(hours)] : []),
+          ];
+          if (mapped.length > 0) setItems(mapped);
         }
       }
     };

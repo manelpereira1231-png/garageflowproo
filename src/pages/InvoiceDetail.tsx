@@ -45,6 +45,8 @@ export default function InvoiceDetail() {
   const [payMethod, setPayMethod] = useState("cash");
   const [payRef, setPayRef] = useState("");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [notifyEmail, setNotifyEmail] = useState(false);
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(false);
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | "enotas" | null>(null);
@@ -140,11 +142,13 @@ export default function InvoiceDetail() {
   const sendInvoiceEmailAuto = async (
     variant: 'issued' | 'paid',
     paidInfo?: { newTotalPaid?: number; payDate?: string; payMethod?: string },
+    channels: { email?: boolean; whatsapp?: boolean } = { email: true, whatsapp: true },
   ) => {
     if (!invoice || !shop) return;
+    if (!channels.email && !channels.whatsapp) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
-    if (!clientEmail) return;
-    if (!isValidEmail(clientEmail)) {
+    if (channels.email && !clientEmail) return;
+    if (channels.email && !isValidEmail(clientEmail)) {
       toast.error(`Email do cliente inválido ("${clientEmail}") — a fatura não foi enviada.`);
       return;
     }
@@ -211,26 +215,25 @@ export default function InvoiceDetail() {
           : undefined,
         currency: shop.currency || getCountryConfig().currency,
       });
-      await sendEmail({
-        to: clientEmail,
-        subject,
-        html,
-        attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
-      });
-      await supabase.from('email_logs').insert({
-        shop_id: shop.id, to_email: clientEmail,
-        subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-      });
-      toast.success(variant === 'paid'
-        ? 'Confirmação de pagamento enviada ao cliente por email.'
-        : 'Fatura enviada ao cliente por email.');
+      if (channels.email && clientEmail) {
+        await sendEmail({
+          to: clientEmail,
+          subject,
+          html,
+          attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+        });
+        await supabase.from('email_logs').insert({
+          shop_id: shop.id, to_email: clientEmail,
+          subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
+        });
+        toast.success(variant === 'paid'
+          ? 'Confirmação de pagamento enviada ao cliente por email.'
+          : 'Fatura enviada ao cliente por email.');
+      }
 
-      // Auto-envio via WhatsApp (mesmo PDF do email) quando o cliente tem telefone.
-      // Reutiliza openWhatsApp: no desktop abre o WhatsApp Web já na conversa com
-      // a mensagem preenchida e faz download do PDF para o utilizador anexar;
-      // no mobile abre a app diretamente com o mesmo comportamento.
+      // Envio via WhatsApp (mesmo PDF do email) quando escolhido e o cliente tem telefone.
       const clientPhone = (invoice.clients as any)?.phone as string | undefined;
-      if (clientPhone) {
+      if (channels.whatsapp && clientPhone) {
         try {
           await openWhatsApp({
             phone: clientPhone,
@@ -288,17 +291,25 @@ export default function InvoiceDetail() {
     setShowPayment(false);
     setPayAmount(0);
     setPayRef("");
+    const wantEmail = notifyEmail;
+    const wantWhatsApp = notifyWhatsApp;
+    setNotifyEmail(false);
+    setNotifyWhatsApp(false);
 
-    // Auto-envio do email de confirmação de pagamento quando fica totalmente pago
-    if (isFullyPaid) {
-      await sendInvoiceEmailAuto('paid', { newTotalPaid, payDate, payMethod });
+    // Comunicação ao cliente apenas nos canais confirmados pelo utilizador
+    if (isFullyPaid && (wantEmail || wantWhatsApp)) {
+      await sendInvoiceEmailAuto(
+        'paid',
+        { newTotalPaid, payDate, payMethod },
+        { email: wantEmail, whatsapp: wantWhatsApp },
+      );
     }
 
     // Auto-emitir Fatura-Recibo no InvoiceExpress quando o pagamento fica completo
     if (isFullyPaid && !invoice.provider_invoice_id && billingProvider === 'invoicexpress') {
       try {
         const { data, error: emitErr } = await supabase.functions.invoke('invoicexpress-emit', {
-          body: { invoice_id: invoice.id, send_email: !!(invoice.clients as any)?.email },
+          body: { invoice_id: invoice.id, send_email: wantEmail && !!(invoice.clients as any)?.email },
         });
         if (emitErr || data?.error) {
           toast.error(`Pagamento registado, mas falhou a emitir Fatura-Recibo: ${data?.error || emitErr?.message}`, { duration: 8000 });
@@ -770,6 +781,42 @@ export default function InvoiceDetail() {
             <div>
               <Label>{t('invoices.date')}</Label>
               <Input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} />
+            </div>
+            <div className="space-y-2 rounded-md border border-border p-3">
+              <p className="text-sm font-medium">Comunicar ao cliente</p>
+              <label className="flex items-center gap-2 text-sm min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={notifyEmail}
+                  disabled={!(invoice?.clients as any)?.email}
+                  onChange={(e) => setNotifyEmail(e.target.checked)}
+                />
+                <span>
+                  Enviar email de confirmação
+                  {!(invoice?.clients as any)?.email && (
+                    <span className="text-muted-foreground"> — cliente sem email</span>
+                  )}
+                </span>
+              </label>
+              <label className="flex items-center gap-2 text-sm min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={notifyWhatsApp}
+                  disabled={!(invoice?.clients as any)?.phone}
+                  onChange={(e) => setNotifyWhatsApp(e.target.checked)}
+                />
+                <span>
+                  Enviar WhatsApp
+                  {!(invoice?.clients as any)?.phone && (
+                    <span className="text-muted-foreground"> — cliente sem telefone</span>
+                  )}
+                </span>
+              </label>
+              <p className="text-[11px] text-muted-foreground">
+                Nada é enviado ao cliente sem estas opções ativas.
+              </p>
             </div>
           </div>
           <DialogFooter>

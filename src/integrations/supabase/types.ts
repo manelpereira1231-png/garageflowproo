@@ -4642,28 +4642,37 @@ export type Database = {
       }
       inspection_checklists: {
         Row: {
+          client_viewed_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           items: Json
+          public_token: string | null
+          shared_at: string | null
           shop_id: string
           technician: string | null
           work_order_id: string
         }
         Insert: {
+          client_viewed_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           items?: Json
+          public_token?: string | null
+          shared_at?: string | null
           shop_id: string
           technician?: string | null
           work_order_id: string
         }
         Update: {
+          client_viewed_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           items?: Json
+          public_token?: string | null
+          shared_at?: string | null
           shop_id?: string
           technician?: string | null
           work_order_id?: string
@@ -10670,6 +10679,7 @@ export type Database = {
         Returns: string
       }
       get_my_supplier_id: { Args: never; Returns: string }
+      get_public_inspection: { Args: { _token: string }; Returns: Json }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {
@@ -10815,6 +10825,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_public_inspection_viewed: {
+        Args: { _token: string }
+        Returns: undefined
+      }
       mark_shop_payout_paid: {
         Args: { _payout_id: string; _reference?: string }
         Returns: undefined

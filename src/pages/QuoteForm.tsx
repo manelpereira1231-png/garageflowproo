@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ClientCombobox from "@/components/ClientCombobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -126,6 +127,7 @@ export default function QuoteForm() {
   // so profit is subtotal (net revenue) minus cost, NOT total (which includes VAT).
   const round2 = (n: number) => Math.round(n * 100) / 100;
   const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
+  const laborHoursInvalid = (parseFloat(laborHours) || 0) > MAX_LABOR_HOURS;
   const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
   const subtotal = round2(linesSubtotal + laborCharge);
   const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
@@ -231,10 +233,12 @@ export default function QuoteForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>{t('quotes.client')} *</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder={t('quotes.selectClient')} /></SelectTrigger>
-                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <ClientCombobox
+                clients={clients}
+                value={clientId}
+                onChange={setClientId}
+                placeholder={t('quotes.selectClient')}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t('quotes.vehicle')} *</Label>
@@ -245,7 +249,22 @@ export default function QuoteForm() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Horas de mão-de-obra ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
-              <Input type="number" inputMode="decimal" step="0.5" min={0} value={laborHours} onChange={e => setLaborHours(e.target.value)} />
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min={0}
+                max={MAX_LABOR_HOURS}
+                value={laborHours}
+                onChange={e => setLaborHours(e.target.value)}
+                aria-invalid={laborHoursInvalid}
+                className={laborHoursInvalid ? "border-destructive" : ""}
+              />
+              {laborHoursInvalid && (
+                <p className="text-[11px] text-destructive">
+                  Valor irrealista. O máximo permitido por orçamento é {MAX_LABOR_HOURS} horas.
+                </p>
+              )}
             </div>
           </div>
         </div>

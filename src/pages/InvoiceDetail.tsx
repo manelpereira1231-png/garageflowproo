@@ -371,7 +371,12 @@ export default function InvoiceDetail() {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) { toast.error('Cliente sem email'); return; }
+    if (!isValidEmail(clientEmail)) {
+      toast.error(`Email do cliente inválido ("${clientEmail}"). Corrija a ficha do cliente antes de enviar.`);
+      return;
+    }
     setSending("email");
+
     try {
       const pdfBlob = await buildInvoiceBlob();
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF.'); return; }

@@ -174,48 +174,16 @@ export default function FinancialReports() {
     toast.success(t('common.exported'));
   };
 
-  const handleExportSaft = async () => {
+  const handleExportSaft = () => {
     if (!activeShopId) return;
-    setSaftLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error("Unauthorized"); setSaftLoading(false); return; }
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-saft`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            shop_id: activeShopId,
-            year: parseInt(saftYear),
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error || t('financial.exportSaftError'));
-        setSaftLoading(false);
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `SAFT-PT_${saftYear}.xml`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(t('financial.exportSaftSuccess'));
-    } catch {
-      toast.error(t('financial.exportSaftError'));
-    }
-    setSaftLoading(false);
+    // Não bloqueia a página: corre em background com toast de progresso.
+    exportSaftInBackground({
+      shopId: activeShopId,
+      year: parseInt(saftYear),
+      filename: `SAFT-PT_${saftYear}.xml`,
+    });
   };
+
 
   const GrowthBadge = ({ value }: { value: number }) => {
     if (value === 0) return null;

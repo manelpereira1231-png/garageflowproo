@@ -4820,14 +4820,18 @@ export type Database = {
           legal_status: string
           notes: string | null
           number: string
+          paid_online_at: string | null
+          payment_link_sent_at: string | null
           provider: string | null
           provider_invoice_id: string | null
           provider_pdf_url: string | null
           provider_permalink: string | null
+          public_token: string | null
           qr_code: string | null
           quote_id: string | null
           shop_id: string
           status: string
+          stripe_payment_session_id: string | null
           subtotal: number
           total: number
           type: string
@@ -4853,14 +4857,18 @@ export type Database = {
           legal_status?: string
           notes?: string | null
           number: string
+          paid_online_at?: string | null
+          payment_link_sent_at?: string | null
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          public_token?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id: string
           status?: string
+          stripe_payment_session_id?: string | null
           subtotal?: number
           total?: number
           type?: string
@@ -4886,14 +4894,18 @@ export type Database = {
           legal_status?: string
           notes?: string | null
           number?: string
+          paid_online_at?: string | null
+          payment_link_sent_at?: string | null
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          public_token?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id?: string
           status?: string
+          stripe_payment_session_id?: string | null
           subtotal?: number
           total?: number
           type?: string
@@ -10680,6 +10692,7 @@ export type Database = {
       }
       get_my_supplier_id: { Args: never; Returns: string }
       get_public_inspection: { Args: { _token: string }; Returns: Json }
+      get_public_invoice: { Args: { _token: string }; Returns: Json }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {

@@ -45,6 +45,8 @@ export default function InvoiceDetail() {
   const [payMethod, setPayMethod] = useState("cash");
   const [payRef, setPayRef] = useState("");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [notifyEmail, setNotifyEmail] = useState(false);
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(false);
   const [saving, setSaving] = useState(false);
   const [emitting, setEmitting] = useState(false);
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | "enotas" | null>(null);

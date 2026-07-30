@@ -195,6 +195,36 @@ export default function Invoices() {
   });
 
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null);
+  const [linkingInvoice, setLinkingInvoice] = useState<string | null>(null);
+
+  /** Ativa e copia o link público de pagamento da fatura (text-to-pay). */
+  const copyPaymentLink = async (inv: any) => {
+    setLinkingInvoice(inv.id);
+    try {
+      const { data, error } = await supabase
+        .from("invoices")
+        .update({ payment_link_sent_at: new Date().toISOString() } as any)
+        .eq("id", inv.id)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link.");
+      const url = `${window.location.origin}/invoice/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link de pagamento copiado", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Link de pagamento aberto numa nova janela");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar link de pagamento");
+    } finally {
+      setLinkingInvoice(null);
+    }
+  };
+
 
   const sendInvoiceOnWhatsApp = async (inv: any) => {
     const phone = (inv.clients as any)?.phone;

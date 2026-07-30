@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
-import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
+import { sendEmail, quoteEmailHtml, isValidEmail } from "@/lib/emailService";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -178,6 +178,8 @@ export default function Quotes() {
   const sendQuoteEmail = async (q: any) => {
     const clientEmail = (q.clients as any)?.email;
     if (!clientEmail) { toast.error(t('quotes.noClientEmail')); return; }
+    // Evita falhas silenciosas do provedor de email com endereços mal formados.
+    if (!isValidEmail(clientEmail)) { toast.error(`Email inválido: ${clientEmail}`); return; }
     if (!shop) return;
     setSendingEmail(q.id);
     try {
@@ -226,7 +228,7 @@ export default function Quotes() {
           error_message: err.message, entity_type: 'quote', entity_id: q.id,
         });
       }
-      toast.error(t('quotes.emailError'));
+      toast.error(err?.message ? `${t('quotes.emailError')}: ${err.message}` : t('quotes.emailError'));
     }
     finally { setSendingEmail(null); }
   };

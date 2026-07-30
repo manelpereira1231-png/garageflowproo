@@ -54,6 +54,7 @@ import MarketLayout from "@/components/MarketLayout";
 // Lazy-loaded pages for code splitting & performance at scale
 const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
 const Clients = lazyRetry(() => import("@/pages/Clients"));
+const Fleets = lazyRetry(() => import("@/pages/Fleets"));
 const Vehicles = lazyRetry(() => import("@/pages/Vehicles"));
 const Quotes = lazyRetry(() => import("@/pages/Quotes"));
 const Services = lazyRetry(() => import("@/pages/Services"));
@@ -517,6 +518,7 @@ const partsRoutes = [
 const shopRoutes = [
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/clients", element: <FeatureGate feature="clients" requiredPlan="pro"><Clients /></FeatureGate> },
+  { path: "/fleets", element: <FeatureGate feature="clients" requiredPlan="pro"><Fleets /></FeatureGate> },
   { path: "/vehicles", element: <FeatureGate feature="vehicles" requiredPlan="pro"><Vehicles /></FeatureGate> },
   { path: "/quotes", element: <FeatureGate feature="quotes" requiredPlan="pro"><Quotes /></FeatureGate> },
   { path: "/quotes/new", element: <FeatureGate feature="quotes" requiredPlan="pro"><QuoteForm /></FeatureGate> },

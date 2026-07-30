@@ -706,12 +706,26 @@ export default function Inspections() {
                   <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setViewChecklist(cl)}>
                     <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    disabled={sharingId === cl.id}
+                    onClick={() => handleShare(cl.id)}
+                    title="Partilhar relatório com o cliente"
+                  >
+                    {sharingId === cl.id
+                      ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      : <Send className="w-3.5 h-3.5 mr-1" />}
+                    Partilhar
+                  </Button>
                   {!cl.completed_at && (
                     <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => handleComplete(cl.id)}>
                       <CheckCircle className="w-3.5 h-3.5 mr-1" />{t('inspections.markComplete')}
                     </Button>
                   )}
                 </div>
+
 
                 <p className="text-[10px] text-muted-foreground">
                   {cl.technician && `🔧 ${cl.technician} · `}{format(new Date(cl.created_at), "dd/MM/yy HH:mm")}

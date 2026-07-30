@@ -17,7 +17,7 @@ import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/marketPrice";
 import CertifiedBadge from "@/components/CertifiedBadge";
-import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
+import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
@@ -144,6 +144,10 @@ export default function InvoiceDetail() {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) return;
+    if (!isValidEmail(clientEmail)) {
+      toast.error(`Email do cliente inválido ("${clientEmail}") — a fatura não foi enviada.`);
+      return;
+    }
     try {
       const effectiveStatus = variant === 'paid' ? 'paid' : 'issued';
       const pdfDoc = await generateInvoicePdf({
@@ -247,9 +251,14 @@ export default function InvoiceDetail() {
       }
     } catch (e: any) {
       console.warn('[invoice] auto email failed', e);
-      toast.message(variant === 'paid'
-        ? 'Pagamento registado. O envio automático do email falhou — pode reenviar manualmente.'
-        : 'Fatura emitida. O envio automático do email falhou — pode reenviar manualmente.');
+      toast.error(`${variant === 'paid' ? 'Pagamento registado' : 'Fatura emitida'}, mas o envio do email falhou: ${e?.message || 'erro desconhecido'}. Pode reenviar manualmente.`);
+      if (shop?.id) {
+        void supabase.from('email_logs').insert({
+          shop_id: shop.id, to_email: (invoice?.clients as any)?.email || '',
+          subject: `Fatura ${invoice?.number ?? ''}`, status: 'failed',
+          entity_type: 'invoice', entity_id: invoice?.id,
+        });
+      }
     }
   };
 

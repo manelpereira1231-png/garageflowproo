@@ -109,6 +109,8 @@ export default function Inspections() {
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({});
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
+  const [sharingId, setSharingId] = useState<string | null>(null);
+
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const activeShopId = useActiveShopId();
 

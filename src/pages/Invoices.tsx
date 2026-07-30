@@ -516,7 +516,11 @@ export default function Invoices() {
                         {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
                       </Button>
                     )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={linkingInvoice === inv.id} onClick={(e) => { e.preventDefault(); copyPaymentLink(inv); }} title="Link de pagamento" aria-label="Link de pagamento">
+                      {linkingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                    </Button>
                   </div>
+
                 </TableCell>
               </TableRow>
             ))}

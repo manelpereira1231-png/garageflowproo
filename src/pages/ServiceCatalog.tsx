@@ -1,3 +1,4 @@
+import { MAX_SERVICE_MINUTES } from "@/lib/sanityLimits";
 import { useState, useEffect, useMemo } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -425,7 +426,7 @@ export default function ServiceCatalog() {
                   </div>
                   <div>
                     <Label>{t('catalog.time')} (min)</Label>
-                    <Input type="number" value={form.default_time || ""} placeholder="60" onChange={e => setForm({ ...form, default_time: Number(e.target.value) })} />
+                    <Input type="number" min={0} max={MAX_SERVICE_MINUTES} value={form.default_time || ""} placeholder="60" onChange={e => setForm({ ...form, default_time: Math.min(Number(e.target.value) || 0, MAX_SERVICE_MINUTES) })} />
                   </div>
                 </div>
 

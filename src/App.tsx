@@ -541,7 +541,7 @@ const shopRoutes = [
   { path: "/stock", element: <FeatureGate feature="stock" requiredPlan="pro"><Stock /></FeatureGate> },
   { path: "/inspections", element: <FeatureGate feature="inspections" requiredPlan="pro"><Inspections /></FeatureGate> },
   { path: "/loyalty", element: <FeatureGate feature="loyalty" requiredPlan="garage"><Loyalty /></FeatureGate> },
-  { path: "/marketing", element: <FeatureGate feature="automations" requiredPlan="garage"><AutomationsHub /></FeatureGate> },
+  { path: "/marketing", element: <Navigate to="/automations" replace /> },
   { path: "/workshop", element: <FeatureGate feature="workshop_mode" requiredPlan="pro"><Workshop /></FeatureGate> },
   { path: "/automations", element: <FeatureGate feature="automations" requiredPlan="garage"><AutomationsHub /></FeatureGate> },
   { path: "/developers", element: <FeatureGate feature="api" requiredPlan="garage"><Developers /></FeatureGate> },
@@ -1128,7 +1128,7 @@ function AppRoutes() {
             <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
-            <Route path="/marketing" element={<Auth defaultRedirect="/marketing" />} />
+            <Route path="/marketing" element={<Auth defaultRedirect="/automations" />} />
             <Route path="/admin/*" element={<LoginRouteRedirect />} />
             <Route path="/afiliados" element={<Suspense fallback={<PageLoader />}><AffiliateSignup /></Suspense>} />
             <Route path="/afiliados/login" element={<Suspense fallback={<PageLoader />}><AffiliateLogin /></Suspense>} />

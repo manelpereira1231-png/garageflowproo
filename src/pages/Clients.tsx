@@ -44,12 +44,33 @@ const FETCH_LIMIT = 2000;
 type ClientsFilters = { search: string };
 const defaultClientsFilters: ClientsFilters = { search: "" };
 
-const copyPortalLink = (portalToken: string | null, successMsg: string) => {
-  if (!portalToken) return;
-  const url = `${window.location.origin}/portal/${portalToken}`;
-  navigator.clipboard.writeText(url);
-  toast.success(successMsg);
+const copyPortalLink = async (clientId: string, portalToken: string | null, successMsg: string) => {
+  try {
+    let token = portalToken;
+    if (!token) {
+      // Cliente antigo sem token — gera um agora para o botão nunca ficar "morto".
+      const newToken = crypto.randomUUID();
+      const { error } = await supabase
+        .from("clients")
+        .update({ portal_token: newToken })
+        .eq("id", clientId);
+      if (error) throw error;
+      token = newToken;
+    }
+    const url = `${window.location.origin}/portal/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(successMsg, { description: url });
+    } catch {
+      // Clipboard bloqueado (contexto não seguro / permissões): abre o portal.
+      window.open(url, "_blank", "noopener");
+      toast.success("Portal do cliente aberto numa nova janela");
+    }
+  } catch (e: any) {
+    toast.error(e?.message || "Não foi possível gerar o link do portal");
+  }
 };
+
 
 export default function Clients() {
   const { t } = useLanguage();
@@ -265,7 +286,7 @@ export default function Clients() {
                 {client.phone && (
                   <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-11 p-0"><Pencil className="w-4 h-4" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-11 p-0 text-destructive"><Trash2 className="w-4 h-4" /></Button>
               </div>
@@ -319,7 +340,7 @@ export default function Clients() {
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
+                    <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">

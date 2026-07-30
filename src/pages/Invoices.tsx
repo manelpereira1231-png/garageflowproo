@@ -1,3 +1,4 @@
+import { exportSaftInBackground } from "@/lib/saftExport";
 import { useState, useEffect } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,32 +136,19 @@ export default function Invoices() {
   const [saftLoading, setSaftLoading] = useState(false);
   const isBR = (shop?.country_code || "PT").toUpperCase() === "BR";
   const dateLocale = isBR ? 'pt-BR' : 'pt-PT';
-  const handleExportSaft = async () => {
+  const handleExportSaft = () => {
     if (!can("invoices.export")) return;
     if (!activeShopId) return;
     if (!confirm("Exportar SAF-T PT do ano atual?\n\nAviso: se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente do InvoiceXpress — este ficheiro é apenas informativo e não substitui o SAF-T do provider certificado.")) return;
-    setSaftLoading(true);
-    try {
-      const year = new Date().getFullYear();
-      const { data, error } = await supabase.functions.invoke("export-saft", {
-        body: { shop_id: activeShopId, year },
-      });
-      if (error) throw error;
-      const xml = typeof data === "string" ? data : (data?.xml || "");
-      if (!xml) throw new Error("SAF-T vazio");
-      const blob = new Blob([xml], { type: "application/xml" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `SAFT_${activeShopId}_${year}.xml`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("SAF-T exportado (informativo)");
-    } catch (e: any) {
-      toast.error(e?.message || "Erro ao exportar SAF-T");
-    } finally {
-      setSaftLoading(false);
-    }
+    const year = new Date().getFullYear();
+    // Corre em background: a página continua utilizável durante a geração.
+    exportSaftInBackground({
+      shopId: activeShopId,
+      year,
+      filename: `SAFT_${activeShopId}_${year}.xml`,
+    });
   };
+
 
   const cur = getCurrencySymbol(shop?.currency);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);

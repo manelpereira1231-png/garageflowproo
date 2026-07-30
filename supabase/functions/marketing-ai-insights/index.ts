@@ -177,7 +177,7 @@ Devolve APENAS JSON válido com este schema exato:
           "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-3.5-flash",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: "Devolve sempre JSON válido, sem markdown, sem texto extra." },
             { role: "user", content: prompt },

@@ -778,6 +778,42 @@ export default function InvoiceDetail() {
               <Label>{t('invoices.date')}</Label>
               <Input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} />
             </div>
+            <div className="space-y-2 rounded-md border border-border p-3">
+              <p className="text-sm font-medium">Comunicar ao cliente</p>
+              <label className="flex items-center gap-2 text-sm min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={notifyEmail}
+                  disabled={!(invoice?.clients as any)?.email}
+                  onChange={(e) => setNotifyEmail(e.target.checked)}
+                />
+                <span>
+                  Enviar email de confirmação
+                  {!(invoice?.clients as any)?.email && (
+                    <span className="text-muted-foreground"> — cliente sem email</span>
+                  )}
+                </span>
+              </label>
+              <label className="flex items-center gap-2 text-sm min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={notifyWhatsApp}
+                  disabled={!(invoice?.clients as any)?.phone}
+                  onChange={(e) => setNotifyWhatsApp(e.target.checked)}
+                />
+                <span>
+                  Enviar WhatsApp
+                  {!(invoice?.clients as any)?.phone && (
+                    <span className="text-muted-foreground"> — cliente sem telefone</span>
+                  )}
+                </span>
+              </label>
+              <p className="text-[11px] text-muted-foreground">
+                Nada é enviado ao cliente sem estas opções ativas.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPayment(false)}>{t('common.cancel')}</Button>

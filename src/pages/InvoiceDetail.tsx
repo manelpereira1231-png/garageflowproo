@@ -146,7 +146,7 @@ export default function InvoiceDetail() {
     if (!channels.email && !channels.whatsapp) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (channels.email && !clientEmail) return;
-    if (!isValidEmail(clientEmail)) {
+    if (channels.email && !isValidEmail(clientEmail)) {
       toast.error(`Email do cliente inválido ("${clientEmail}") — a fatura não foi enviada.`);
       return;
     }

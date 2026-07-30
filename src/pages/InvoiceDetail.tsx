@@ -291,6 +291,10 @@ export default function InvoiceDetail() {
     setShowPayment(false);
     setPayAmount(0);
     setPayRef("");
+    const wantEmail = notifyEmail;
+    const wantWhatsApp = notifyWhatsApp;
+    setNotifyEmail(false);
+    setNotifyWhatsApp(false);
 
     // Comunicação ao cliente apenas nos canais confirmados pelo utilizador
     if (isFullyPaid && (notifyEmail || notifyWhatsApp)) {

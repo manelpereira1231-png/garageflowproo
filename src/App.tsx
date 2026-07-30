@@ -76,6 +76,8 @@ const InvoiceDetail = lazyRetry(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
 const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
 const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
+const PublicInspection = lazyRetry(() => import("@/pages/PublicInspection"));
+const PublicInvoice = lazyRetry(() => import("@/pages/PublicInvoice"));
 const ServiceCatalog = lazyRetry(() => import("@/pages/ServiceCatalog"));
 const Stock = lazyRetry(() => import("@/pages/Stock"));
 const Inspections = lazyRetry(() => import("@/pages/Inspections"));
@@ -611,6 +613,8 @@ const marketAuthedRoutes = [
 const publicRoutes = [
   { path: "/quote/:token", element: <QuoteApproval /> },
   { path: "/portal/:token", element: <ClientPortal /> },
+  { path: "/inspection/:token", element: <PublicInspection /> },
+  { path: "/invoice/:token", element: <PublicInvoice /> },
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/accept-invite", element: <Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense> },
   { path: "/", element: <LandingPage /> },
@@ -1124,6 +1128,8 @@ function AppRoutes() {
             <Route path="/free" element={<Navigate to="/gratis-3-meses" replace />} />
             <Route path="/quote/:token" element={<QuoteApproval />} />
             <Route path="/portal/:token" element={<ClientPortal />} />
+            <Route path="/inspection/:token" element={<Suspense fallback={<PageLoader />}><PublicInspection /></Suspense>} />
+            <Route path="/invoice/:token" element={<Suspense fallback={<PageLoader />}><PublicInvoice /></Suspense>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />

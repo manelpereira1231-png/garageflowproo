@@ -4642,28 +4642,37 @@ export type Database = {
       }
       inspection_checklists: {
         Row: {
+          client_viewed_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           items: Json
+          public_token: string | null
+          shared_at: string | null
           shop_id: string
           technician: string | null
           work_order_id: string
         }
         Insert: {
+          client_viewed_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           items?: Json
+          public_token?: string | null
+          shared_at?: string | null
           shop_id: string
           technician?: string | null
           work_order_id: string
         }
         Update: {
+          client_viewed_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           items?: Json
+          public_token?: string | null
+          shared_at?: string | null
           shop_id?: string
           technician?: string | null
           work_order_id?: string
@@ -4811,14 +4820,18 @@ export type Database = {
           legal_status: string
           notes: string | null
           number: string
+          paid_online_at: string | null
+          payment_link_sent_at: string | null
           provider: string | null
           provider_invoice_id: string | null
           provider_pdf_url: string | null
           provider_permalink: string | null
+          public_token: string | null
           qr_code: string | null
           quote_id: string | null
           shop_id: string
           status: string
+          stripe_payment_session_id: string | null
           subtotal: number
           total: number
           type: string
@@ -4844,14 +4857,18 @@ export type Database = {
           legal_status?: string
           notes?: string | null
           number: string
+          paid_online_at?: string | null
+          payment_link_sent_at?: string | null
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          public_token?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id: string
           status?: string
+          stripe_payment_session_id?: string | null
           subtotal?: number
           total?: number
           type?: string
@@ -4877,14 +4894,18 @@ export type Database = {
           legal_status?: string
           notes?: string | null
           number?: string
+          paid_online_at?: string | null
+          payment_link_sent_at?: string | null
           provider?: string | null
           provider_invoice_id?: string | null
           provider_pdf_url?: string | null
           provider_permalink?: string | null
+          public_token?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id?: string
           status?: string
+          stripe_payment_session_id?: string | null
           subtotal?: number
           total?: number
           type?: string
@@ -10670,6 +10691,8 @@ export type Database = {
         Returns: string
       }
       get_my_supplier_id: { Args: never; Returns: string }
+      get_public_inspection: { Args: { _token: string }; Returns: Json }
+      get_public_invoice: { Args: { _token: string }; Returns: Json }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {
@@ -10815,6 +10838,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_public_inspection_viewed: {
+        Args: { _token: string }
+        Returns: undefined
+      }
       mark_shop_payout_paid: {
         Args: { _payout_id: string; _reference?: string }
         Returns: undefined

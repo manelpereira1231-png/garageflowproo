@@ -109,6 +109,8 @@ export default function Inspections() {
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>({});
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
+  const [sharingId, setSharingId] = useState<string | null>(null);
+
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const activeShopId = useActiveShopId();
 
@@ -209,6 +211,40 @@ export default function Inspections() {
     toast.success(t('inspections.completed'));
     load();
   };
+
+  /** Gera (se necessário) e copia o link público da inspeção para o cliente. */
+  const handleShare = async (checklistId: string) => {
+    setSharingId(checklistId);
+    try {
+      const { data, error } = await supabase
+        .from("inspection_checklists")
+        .update({ shared_at: new Date().toISOString() } as any)
+        .eq("id", checklistId)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link de partilha");
+      const url = `${window.location.origin}/inspection/${token}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Relatório de inspeção", url });
+        } else {
+          await navigator.clipboard.writeText(url);
+        }
+        toast.success("Link da inspeção pronto a enviar ao cliente", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Relatório aberto numa nova janela");
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível partilhar a inspeção");
+    } finally {
+      setSharingId(null);
+    }
+  };
+
 
   const updateItemStatus = (index: number, status: ChecklistItem["status"]) => {
     setItems(prev => {
@@ -670,12 +706,26 @@ export default function Inspections() {
                   <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setViewChecklist(cl)}>
                     <Eye className="w-3.5 h-3.5 mr-1" />{t('common.view')}
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    disabled={sharingId === cl.id}
+                    onClick={() => handleShare(cl.id)}
+                    title="Partilhar relatório com o cliente"
+                  >
+                    {sharingId === cl.id
+                      ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      : <Send className="w-3.5 h-3.5 mr-1" />}
+                    Partilhar
+                  </Button>
                   {!cl.completed_at && (
                     <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => handleComplete(cl.id)}>
                       <CheckCircle className="w-3.5 h-3.5 mr-1" />{t('inspections.markComplete')}
                     </Button>
                   )}
                 </div>
+
 
                 <p className="text-[10px] text-muted-foreground">
                   {cl.technician && `🔧 ${cl.technician} · `}{format(new Date(cl.created_at), "dd/MM/yy HH:mm")}

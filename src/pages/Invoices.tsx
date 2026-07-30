@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X } from "lucide-react";
+import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -195,6 +195,36 @@ export default function Invoices() {
   });
 
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null);
+  const [linkingInvoice, setLinkingInvoice] = useState<string | null>(null);
+
+  /** Ativa e copia o link público de pagamento da fatura (text-to-pay). */
+  const copyPaymentLink = async (inv: any) => {
+    setLinkingInvoice(inv.id);
+    try {
+      const { data, error } = await supabase
+        .from("invoices")
+        .update({ payment_link_sent_at: new Date().toISOString() } as any)
+        .eq("id", inv.id)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link.");
+      const url = `${window.location.origin}/invoice/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link de pagamento copiado", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Link de pagamento aberto numa nova janela");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar link de pagamento");
+    } finally {
+      setLinkingInvoice(null);
+    }
+  };
+
 
   const sendInvoiceOnWhatsApp = async (inv: any) => {
     const phone = (inv.clients as any)?.phone;
@@ -400,7 +430,11 @@ export default function Invoices() {
                   {sendingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <MessageCircle className="w-3 h-3 mr-1" />}WhatsApp
                 </Button>
               )}
+              <Button variant="ghost" size="sm" className="text-xs h-7" disabled={linkingInvoice === inv.id} onClick={() => copyPaymentLink(inv)} title="Link de pagamento">
+                {linkingInvoice === inv.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <LinkIcon className="w-3 h-3 mr-1" />}Link
+              </Button>
             </div>
+
           </div>
         ))}
       </div>
@@ -482,7 +516,11 @@ export default function Invoices() {
                         {sendingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
                       </Button>
                     )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={linkingInvoice === inv.id} onClick={(e) => { e.preventDefault(); copyPaymentLink(inv); }} title="Link de pagamento" aria-label="Link de pagamento">
+                      {linkingInvoice === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                    </Button>
                   </div>
+
                 </TableCell>
               </TableRow>
             ))}

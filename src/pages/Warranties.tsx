@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { format, differenceInDays, addMonths } from "date-fns";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import ClientCombobox from "@/components/ClientCombobox";
 
 const WARRANTY_TYPES = ['service', 'part', 'general'];
 const WARRANTY_STATUSES = ['active', 'expired', 'claimed', 'voided'];
@@ -312,12 +313,11 @@ export default function Warranties() {
           <div className="space-y-4">
             <div>
               <Label>Cliente *</Label>
-              <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v, vehicle_id: "" }))}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <ClientCombobox
+                clients={clients}
+                value={form.client_id}
+                onChange={v => setForm(f => ({ ...f, client_id: v, vehicle_id: "" }))}
+              />
             </div>
             <div>
               <Label>Veículo *</Label>

@@ -115,8 +115,9 @@ export default function Loyalty() {
             html: loyaltyEmailHtml(isRedeem ? 'points_redeemed' : 'points_earned', (member.clients as any)?.name || '', shopName, pts, undefined, newPoints),
           });
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Loyalty email error:", e);
+        toast.error(`Pontos atualizados, mas o email ao cliente falhou: ${e?.message || 'erro desconhecido'}`);
       }
     }
 

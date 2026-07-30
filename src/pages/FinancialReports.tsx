@@ -112,8 +112,11 @@ export default function FinancialReports() {
       workOrders.forEach(wo => {
         const lines = Array.isArray(wo.lines) ? wo.lines : [];
         (lines as any[]).forEach((line: any) => {
-          const name = line.description || 'Outro';
-          serviceRevenue[name] = (serviceRevenue[name] || 0) + Number(line.total || 0);
+          const name = line.name || line.description || 'Outro';
+          // As linhas de OS/orçamento guardam quantity + unit_price; `total` pode não existir.
+          const lineTotal = Number(line.total ?? (Number(line.quantity ?? 1) * Number(line.unit_price ?? 0)));
+          if (!Number.isFinite(lineTotal) || lineTotal <= 0) return;
+          serviceRevenue[name] = (serviceRevenue[name] || 0) + lineTotal;
         });
       });
       const topServices = Object.entries(serviceRevenue)

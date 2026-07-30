@@ -56,10 +56,22 @@ export default function MarketingAIAssistant({ shopId, onCreateCampaign }: Props
         body: { shop_id: shopId },
       });
       if (error) {
-        const msg = String((error as any)?.message ?? "");
-        if (msg.includes("plan_no_ai")) throw new Error("O seu plano não inclui IA.");
-        if (msg.includes("quota_exceeded")) throw new Error("Atingiu o limite mensal de créditos IA.");
-        throw error;
+        // O SDK devolve apenas "non-2xx status code"; o motivo real vem no corpo.
+        let code = String((error as any)?.message ?? "");
+        let friendly = "";
+        try {
+          const ctx = (error as any).context;
+          const resp: Response | undefined = ctx instanceof Response ? ctx : ctx?.response;
+          const body = resp ? await resp.clone().json().catch(() => null) : null;
+          if (body?.error) code = String(body.error);
+          if (body?.message) friendly = String(body.message);
+        } catch { /* mantém o código do SDK */ }
+        if (code.includes("plan_no_ai")) throw new Error("O seu plano não inclui IA. Faça upgrade para usar o assistente.");
+        if (code.includes("quota_exceeded")) throw new Error("Atingiu o limite mensal de créditos IA.");
+        if (code.includes("rate_limited")) throw new Error("IA temporariamente indisponível. Tente novamente dentro de instantes.");
+        if (code.includes("credits_exhausted")) throw new Error("Créditos de IA esgotados.");
+        if (code.includes("Unauthorized") || code.includes("Forbidden")) throw new Error("Sem permissão para gerar sugestões nesta oficina.");
+        throw new Error(friendly || "Não foi possível gerar sugestões agora. Tente novamente.");
       }
       if ((data as any)?.error) {
         const msg = (data as any)?.message || (data as any)?.error;

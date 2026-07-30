@@ -351,6 +351,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // ── Operação Diária ──
     { path: "/clients", label: t("nav.clients"), icon: Users, featureSlug: "clients" },
     { path: "/vehicles", label: t("nav.vehicles"), icon: Car, featureSlug: "vehicles" },
+    { path: "/fleets", label: "Frotas", icon: Truck, featureSlug: "clients" },
     { path: "/quotes", label: t("nav.quotes"), icon: FileText, badge: pendingQuoteApprovalCount, featureSlug: "quotes" },
     { path: "/services", label: t("nav.services"), icon: Wrench, featureSlug: "services" },
     { path: "/workshop", label: t("nav.workshop"), icon: HardHat, featureSlug: "workshop_mode" },
@@ -434,7 +435,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Linear/Notion-style grouping. Order = workshop daily priority.
   // Inventário fica imediatamente acima da Faturação.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
-    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/quotes","/services","/workshop","/agenda"] },
+    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/fleets","/quotes","/services","/workshop","/agenda"] },
     { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
     ...(supplierNetworkEnabled ? [{ id: "supplier", label: "Fornecedor", paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
     { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },

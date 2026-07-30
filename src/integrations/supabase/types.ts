@@ -1866,7 +1866,10 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           email: string
+          fleet_manager: string | null
+          fleet_name: string | null
           id: string
+          is_fleet: boolean
           name: string
           nif: string | null
           notes: string | null
@@ -1879,7 +1882,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           email?: string
+          fleet_manager?: string | null
+          fleet_name?: string | null
           id?: string
+          is_fleet?: boolean
           name: string
           nif?: string | null
           notes?: string | null
@@ -1892,7 +1898,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           email?: string
+          fleet_manager?: string | null
+          fleet_name?: string | null
           id?: string
+          is_fleet?: boolean
           name?: string
           nif?: string | null
           notes?: string | null

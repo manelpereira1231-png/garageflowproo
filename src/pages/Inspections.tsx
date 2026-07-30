@@ -114,8 +114,23 @@ export default function Inspections() {
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const activeShopId = useActiveShopId();
 
-  const buildDefaultItems = useCallback((): ChecklistItem[] => {
-    return CHECKLIST_CATEGORIES.flatMap(cat =>
+  /** Modelos de checklist por tipo de serviço (subconjuntos das categorias). */
+  const INSPECTION_TEMPLATES: { id: string; label: string; categories: string[] | null }[] = [
+    { id: 'full', label: 'Inspeção completa', categories: null },
+    { id: 'oil', label: 'Mudança de óleo / revisão', categories: ['engine'] },
+    { id: 'brakes', label: 'Travões', categories: ['braking'] },
+    { id: 'tires', label: 'Pneus e suspensão', categories: ['tires', 'suspension'] },
+    { id: 'preTrip', label: 'Pré-viagem', categories: ['braking', 'tires', 'engine', 'electrical'] },
+    { id: 'electrical', label: 'Elétrica', categories: ['electrical'] },
+  ];
+  const [templateId, setTemplateId] = useState('full');
+
+  const buildDefaultItems = useCallback((tplId = 'full'): ChecklistItem[] => {
+    const tpl = INSPECTION_TEMPLATES.find(x => x.id === tplId);
+    const cats = tpl?.categories
+      ? CHECKLIST_CATEGORIES.filter(c => tpl.categories!.includes(c.id))
+      : CHECKLIST_CATEGORIES;
+    return cats.flatMap(cat =>
       cat.items.map(item => ({
         name: t(item.labelKey),
         key: item.key,
@@ -128,6 +143,7 @@ export default function Inspections() {
   }, [t]);
 
   const [items, setItems] = useState<ChecklistItem[]>(buildDefaultItems());
+
 
   useEffect(() => {
     setItems(buildDefaultItems());

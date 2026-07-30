@@ -140,10 +140,12 @@ export default function InvoiceDetail() {
   const sendInvoiceEmailAuto = async (
     variant: 'issued' | 'paid',
     paidInfo?: { newTotalPaid?: number; payDate?: string; payMethod?: string },
+    channels: { email?: boolean; whatsapp?: boolean } = { email: true, whatsapp: true },
   ) => {
     if (!invoice || !shop) return;
+    if (!channels.email && !channels.whatsapp) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
-    if (!clientEmail) return;
+    if (channels.email && !clientEmail) return;
     if (!isValidEmail(clientEmail)) {
       toast.error(`Email do cliente inválido ("${clientEmail}") — a fatura não foi enviada.`);
       return;

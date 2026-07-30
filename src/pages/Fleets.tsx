@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Truck, Search, Car, Wrench, Eye } from "lucide-react";
 import ListSkeleton from "@/components/ListSkeleton";
 import { formatMoney } from "@/lib/money";
-import { useShopCountry } from "@/hooks/useShopCountry";
 
 type FleetRow = {
   id: string;
@@ -26,7 +25,6 @@ type FleetRow = {
 /** Visão dedicada às frotas (clientes empresariais com vários veículos). */
 export default function Fleets() {
   const activeShopId = useActiveShopId();
-  const { currency, locale } = useShopCountry();
   const [rows, setRows] = useState<FleetRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -122,7 +120,7 @@ export default function Fleets() {
                   <span className="inline-flex items-center gap-1"><Car className="w-3.5 h-3.5" />{r.vehicles} veículos</span>
                   <span className="inline-flex items-center gap-1"><Wrench className="w-3.5 h-3.5" />{r.openOrders} em curso</span>
                 </div>
-                <p className="text-sm font-bold">{formatMoney(r.spend, currency, locale)}</p>
+                <p className="text-sm font-bold">{formatMoney(r.spend)}</p>
                 <Link to={`/clients?client=${r.id}`}>
                   <Button variant="outline" size="sm" className="w-full mt-1 text-xs">
                     <Eye className="w-3.5 h-3.5 mr-1" />Ver cliente

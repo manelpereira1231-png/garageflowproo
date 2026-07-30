@@ -210,6 +210,40 @@ export default function Inspections() {
     load();
   };
 
+  /** Gera (se necessário) e copia o link público da inspeção para o cliente. */
+  const handleShare = async (checklistId: string) => {
+    setSharingId(checklistId);
+    try {
+      const { data, error } = await supabase
+        .from("inspection_checklists")
+        .update({ shared_at: new Date().toISOString() } as any)
+        .eq("id", checklistId)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link de partilha");
+      const url = `${window.location.origin}/inspection/${token}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Relatório de inspeção", url });
+        } else {
+          await navigator.clipboard.writeText(url);
+        }
+        toast.success("Link da inspeção pronto a enviar ao cliente", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Relatório aberto numa nova janela");
+      }
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível partilhar a inspeção");
+    } finally {
+      setSharingId(null);
+    }
+  };
+
+
   const updateItemStatus = (index: number, status: ChecklistItem["status"]) => {
     setItems(prev => {
       const updated = [...prev];

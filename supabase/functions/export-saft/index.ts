@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -56,6 +58,7 @@ function parseAddress(address: string | null): { detail: string; city: string; p
 // TODO: AT validation — SoftwareCertificateNumber must be obtained from AT.
 
 Deno.serve(async (req) => {
+  let activeJobId: string | null = null;
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -83,7 +86,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { shop_id, year, start_date, end_date } = await req.json();
+    const requestBody = await req.json();
+    const { shop_id, year, start_date, end_date, action = "enqueue", job_id } = requestBody;
     if (!shop_id) {
       return new Response(JSON.stringify({ error: "shop_id required" }), {
         status: 400,
@@ -109,6 +113,75 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    if (action === "enqueue") {
+      const fiscalYear = Number(year || new Date().getFullYear());
+      const { data: job, error: jobError } = await admin
+        .from("saft_export_jobs")
+        .insert({
+          shop_id,
+          requested_by: user.id,
+          fiscal_year: fiscalYear,
+          status: "queued",
+          progress: 0,
+        })
+        .select("id")
+        .single();
+
+      if (jobError || !job) throw jobError || new Error("Não foi possível criar a exportação SAF-T");
+
+      const workerRequest = fetch(req.url, {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...requestBody,
+          action: "process",
+          job_id: job.id,
+          year: fiscalYear,
+        }),
+      }).catch(async (error) => {
+        await admin.from("saft_export_jobs").update({
+          status: "failed",
+          error_message: error instanceof Error ? error.message : "Falha ao iniciar geração",
+          completed_at: new Date().toISOString(),
+        }).eq("id", job.id);
+      });
+      EdgeRuntime.waitUntil(workerRequest);
+
+      return new Response(JSON.stringify({ job_id: job.id, status: "queued" }), {
+        status: 202,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action !== "process" || !job_id) {
+      return new Response(JSON.stringify({ error: "Invalid export action" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    activeJobId = job_id;
+    const { data: exportJob } = await admin
+      .from("saft_export_jobs")
+      .select("id, requested_by, shop_id")
+      .eq("id", job_id)
+      .eq("shop_id", shop_id)
+      .maybeSingle();
+    if (!exportJob || exportJob.requested_by !== user.id) {
+      return new Response(JSON.stringify({ error: "Export job not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    await admin.from("saft_export_jobs").update({
+      status: "processing",
+      progress: 10,
+      started_at: new Date().toISOString(),
+    }).eq("id", job_id);
 
     const fiscalYear = year || new Date().getFullYear();
     const periodStart = start_date || `${fiscalYear}-01-01`;
@@ -491,15 +564,44 @@ Deno.serve(async (req) => {
   </SourceDocuments>
 </AuditFile>`;
 
-    return new Response(xml, {
+    const safeShopName = String(shop.nif || shop.name || shop_id).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filename = `SAFT-PT_${safeShopName}_${fiscalYear}.xml`;
+    const storagePath = `${shop_id}/${job_id}/${filename}`;
+    const { error: uploadError } = await admin.storage
+      .from("saft-exports")
+      .upload(storagePath, new Blob([xml], { type: "application/xml; charset=utf-8" }), {
+        contentType: "application/xml; charset=utf-8",
+        upsert: false,
+      });
+    if (uploadError) throw uploadError;
+
+    await admin.from("saft_export_jobs").update({
+      status: "completed",
+      progress: 100,
+      storage_path: storagePath,
+      filename,
+      completed_at: new Date().toISOString(),
+      error_message: null,
+    }).eq("id", job_id);
+
+    return new Response(JSON.stringify({ job_id, status: "completed" }), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/xml; charset=utf-8",
-        "Content-Disposition": `attachment; filename="SAFT-PT_${shop.nif || shop.name}_${fiscalYear}.xml"`,
-      },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    if (activeJobId) {
+      try {
+        const admin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        await admin.from("saft_export_jobs").update({
+          status: "failed",
+          error_message: (err as Error).message || "Erro ao gerar SAF-T",
+          completed_at: new Date().toISOString(),
+        }).eq("id", activeJobId);
+      } catch { /* best effort */ }
+    }
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -7389,6 +7389,59 @@ export type Database = {
           },
         ]
       }
+      saft_export_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          filename: string | null
+          fiscal_year: number
+          id: string
+          progress: number
+          requested_by: string
+          shop_id: string
+          started_at: string | null
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filename?: string | null
+          fiscal_year: number
+          id?: string
+          progress?: number
+          requested_by: string
+          shop_id: string
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filename?: string | null
+          fiscal_year?: number
+          id?: string
+          progress?: number
+          requested_by?: string
+          shop_id?: string
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saft_export_jobs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_confirmations: {
         Row: {
           buyer_confirmed: boolean

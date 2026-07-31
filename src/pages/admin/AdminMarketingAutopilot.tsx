@@ -409,11 +409,7 @@ function AdvancedTools({ campaigns, onChanged }: { campaigns: Campaign[]; onChan
   const reoptimize = async (id: string) => {
     setBusyId(id);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: { action: "optimize", campaignId: id },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      await invokeAutopilot({ action: "optimize", campaignId: id });
       toast.success("Campanha reescrita pela IA");
       onChanged();
     } catch (e: any) {
@@ -424,17 +420,14 @@ function AdvancedTools({ campaigns, onChanged }: { campaigns: Campaign[]; onChan
   const generateOrganicPosts = async () => {
     setGenPosts(true);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: {
-          action: "generate_posts",
-          market: "Portugal", weeks: 4, postsPerWeek: 3,
-          channels: ["facebook", "instagram"],
-          startDate: new Date().toISOString(),
-        },
+      const data = await invokeAutopilot({
+        action: "generate_posts",
+        market: "Portugal", weeks: 4, postsPerWeek: 3,
+        channels: ["facebook", "instagram"],
+        startDate: new Date().toISOString(),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast.success(`${(data as any).count} posts orgânicos criados`);
+
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");
     } finally { setGenPosts(false); }

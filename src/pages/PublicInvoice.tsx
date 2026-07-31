@@ -156,6 +156,12 @@ export default function PublicInvoice() {
               </p>
             )}
 
+            {!isPaid && data.shop.online_payments && (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Pagamento processado de forma segura pela plataforma GarageFlow em nome da oficina.
+              </p>
+            )}
+
             {data.provider_pdf_url && (
               <a
                 href={data.provider_pdf_url}

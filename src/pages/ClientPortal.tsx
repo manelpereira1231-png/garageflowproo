@@ -258,6 +258,7 @@ const extraTranslations: Record<string, Record<string, string>> = {
     quoteRejected: "Orçamento rejeitado.",
     quoteDecisionError: "Não foi possível registar a sua decisão.",
     payNow: "Pagar agora",
+    payNotice: "Pagamento processado de forma segura pela plataforma GarageFlow em nome da oficina.",
     paymentSuccess: "Pagamento confirmado. A fatura está paga.",
     paymentError: "Não foi possível iniciar o pagamento.",
     paymentCanceled: "Pagamento cancelado.",
@@ -273,6 +274,7 @@ const extraTranslations: Record<string, Record<string, string>> = {
     quoteRejected: "Orçamento recusado.",
     quoteDecisionError: "Não foi possível registrar sua decisão.",
     payNow: "Pagar agora",
+    payNotice: "Pagamento processado com segurança pela plataforma GarageFlow em nome da oficina.",
     paymentSuccess: "Pagamento confirmado. A fatura está paga.",
     paymentError: "Não foi possível iniciar o pagamento.",
     paymentCanceled: "Pagamento cancelado.",
@@ -288,6 +290,7 @@ const extraTranslations: Record<string, Record<string, string>> = {
     quoteRejected: "Quote rejected.",
     quoteDecisionError: "We could not record your decision.",
     payNow: "Pay now",
+    payNotice: "Payment is securely processed by the GarageFlow platform on behalf of the workshop.",
     paymentSuccess: "Payment confirmed. The invoice is paid.",
     paymentError: "We could not start the payment.",
     paymentCanceled: "Payment canceled.",
@@ -303,6 +306,7 @@ const extraTranslations: Record<string, Record<string, string>> = {
     quoteRejected: "Presupuesto rechazado.",
     quoteDecisionError: "No se pudo registrar su decisión.",
     payNow: "Pagar ahora",
+    payNotice: "El pago se procesa de forma segura por la plataforma GarageFlow en nombre del taller.",
     paymentSuccess: "Pago confirmado. La factura está pagada.",
     paymentError: "No se pudo iniciar el pago.",
     paymentCanceled: "Pago cancelado.",
@@ -906,6 +910,9 @@ export default function ClientPortal() {
                       {payingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                       {t('payNow')}
                     </Button>
+                  )}
+                  {(inv.status === 'issued' || inv.status === 'partial') && !inv.paid_online_at && (
+                    <p className="text-[11px] text-muted-foreground leading-snug">{t('payNotice')}</p>
                   )}
 
                   {/* View payments detail */}

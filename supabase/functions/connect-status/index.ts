@@ -50,11 +50,14 @@ serve(async (req) => {
       accountId = profile?.stripe_connect_account_id || null;
     } else {
       if (!shopId) throw new Error("shop_id é obrigatório");
-      const { data: shop } = await supabaseClient
+      const { data: shop } = await supabaseAdmin
         .from("shops")
-        .select("stripe_connect_account_id")
+        .select("stripe_connect_account_id, user_id, group_owner_id")
         .eq("id", shopId)
         .maybeSingle();
+      if (shop && shop.user_id !== user.id && shop.group_owner_id !== user.id) {
+        throw new Error("Sem permissão para consultar esta oficina");
+      }
       accountId = shop?.stripe_connect_account_id || null;
     }
 

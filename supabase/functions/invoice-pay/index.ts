@@ -11,6 +11,7 @@
  */
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@14.21.0";
+import { recordManualPayout } from "../_shared/recordManualPayout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,6 +77,14 @@ Deno.serve(async (req) => {
         status: "paid",
         stripe_payment_session_id: session.id,
       }).eq("id", inv.id);
+      if (!connectAccount) {
+        await recordManualPayout(admin, {
+          invoiceId: inv.id,
+          stripeSessionId: session.id,
+          amountTotalCents: session.amount_total ?? null,
+          currency: session.currency ?? null,
+        }, (m, d) => console.log("[invoice-pay]", m, d));
+      }
       return json({ paid: true });
     }
 

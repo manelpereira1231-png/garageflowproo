@@ -78,12 +78,17 @@ serve(async (req) => {
       countryCode = (profile?.country_code || "PT").toUpperCase();
     } else {
       if (!shopId) throw new Error("shop_id é obrigatório para oficinas");
-      const { data: shop } = await supabaseClient
+      // Usa o admin client + verificação explícita de propriedade: o anon client
+      // não recebia o JWT do utilizador, pelo que a RLS bloqueava sempre a leitura.
+      const { data: shop } = await supabaseAdmin
         .from("shops")
-        .select("id, stripe_connect_account_id, country")
+        .select("id, stripe_connect_account_id, country, user_id, group_owner_id")
         .eq("id", shopId)
         .maybeSingle();
-      if (!shop) throw new Error("Oficina não encontrada ou sem permissão");
+      if (!shop) throw new Error("Oficina não encontrada");
+      if (shop.user_id !== user.id && shop.group_owner_id !== user.id) {
+        throw new Error("Sem permissão para configurar pagamentos desta oficina");
+      }
       accountId = shop.stripe_connect_account_id;
       countryCode = (shop.country || "PT").toUpperCase();
     }

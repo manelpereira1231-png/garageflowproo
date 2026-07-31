@@ -5427,6 +5427,68 @@ export type Database = {
           },
         ]
       }
+      manual_payouts: {
+        Row: {
+          created_at: string
+          currency: string
+          fee_amount: number
+          fee_percent: number
+          gross_amount: number
+          id: string
+          invoice_id: string
+          invoice_number: string | null
+          net_amount: number
+          notes: string | null
+          shop_id: string
+          status: string
+          stripe_session_id: string | null
+          transferred_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount?: number
+          id?: string
+          invoice_id: string
+          invoice_number?: string | null
+          net_amount?: number
+          notes?: string | null
+          shop_id: string
+          status?: string
+          stripe_session_id?: string | null
+          transferred_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount?: number
+          id?: string
+          invoice_id?: string
+          invoice_number?: string | null
+          net_amount?: number
+          notes?: string | null
+          shop_id?: string
+          status?: string
+          stripe_session_id?: string | null
+          transferred_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_payouts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: true
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_contracts: {
         Row: {
           amount: number

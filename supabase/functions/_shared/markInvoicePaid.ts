@@ -7,6 +7,8 @@
  *  - stripe-webhook            (pagamentos na conta da plataforma)
  *  - invoice-connect-webhook   (pagamentos em contas Stripe Connect das oficinas)
  */
+import { recordManualPayout } from "./recordManualPayout.ts";
+
 export interface MarkInvoiceResult {
   handled: boolean;
   already_paid?: boolean;
@@ -65,6 +67,14 @@ export async function markInvoicePaidFromSession(
     log("Erro a marcar fatura paga", { invoiceId, error: error.message });
     throw new Error(error.message);
   }
+
+  // Pagamento recebido na conta da plataforma → regista repasse manual + comissão.
+  await recordManualPayout(admin, {
+    invoiceId,
+    stripeSessionId: session.id,
+    amountTotalCents: session.amount_total ?? null,
+    currency: session.currency ?? null,
+  }, (m, d) => log(m, d));
 
   log("Fatura marcada como paga via webhook", { invoiceId, session: session.id });
   return { handled: true, already_paid: false, invoice_id: invoiceId };

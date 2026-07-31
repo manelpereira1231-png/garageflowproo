@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -392,7 +392,11 @@ export default function Workshop() {
                 </Badge>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detalhes do serviço e checklist de inspeção com 12 pontos.
+            </DialogDescription>
           </DialogHeader>
+
           
           {selected && (
             <div className="space-y-4">

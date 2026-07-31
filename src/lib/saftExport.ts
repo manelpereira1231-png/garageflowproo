@@ -15,7 +15,7 @@ export function exportSaftInBackground(opts: {
   filename?: string;
   timeoutMs?: number;
 }): void {
-  const { shopId, year, timeoutMs = 5 * 60 * 1000 } = opts;
+  const { shopId, year, timeoutMs = 10 * 60 * 1000 } = opts;
   const filename = opts.filename || `SAFT-PT_${year}.xml`;
   const toastId = `saft-${shopId}-${year}`;
 
@@ -25,8 +25,7 @@ export function exportSaftInBackground(opts: {
   });
 
   void (async () => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const startedAt = Date.now();
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -34,56 +33,48 @@ export function exportSaftInBackground(opts: {
         return;
       }
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-saft`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ shop_id: shopId, year: Number(year) }),
-          signal: controller.signal,
-        },
-      );
+      const { data: queued, error: queueError } = await supabase.functions.invoke("export-saft", {
+        body: { shop_id: shopId, year: Number(year), action: "enqueue" },
+      });
+      if (queueError || !queued?.job_id) throw queueError || new Error("Não foi possível iniciar a exportação.");
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        let message = text;
-        try { message = JSON.parse(text)?.error ?? text; } catch { /* texto simples */ }
-        toast.error(message || `Falha ao gerar SAF-T (HTTP ${res.status})`, { id: toastId });
-        return;
+      let job: { status: string; progress: number; storage_path?: string; filename?: string; error_message?: string } | null = null;
+      while (Date.now() - startedAt < timeoutMs) {
+        const { data, error } = await (supabase as any)
+          .from("saft_export_jobs")
+          .select("status, progress, storage_path, filename, error_message")
+          .eq("id", queued.job_id)
+          .maybeSingle();
+        if (error) throw error;
+        job = data;
+        if (job?.status === "completed" || job?.status === "failed") break;
+        toast.loading(`A gerar SAF-T… ${job?.progress ?? 0}%`, {
+          id: toastId,
+          description: "Pode continuar a trabalhar normalmente.",
+        });
+        await new Promise(resolve => window.setTimeout(resolve, 1500));
       }
 
-      const raw = await res.text();
-      let xml = raw;
-      if (raw.trim().startsWith("{")) {
-        try { xml = JSON.parse(raw)?.xml ?? raw; } catch { /* mantém raw */ }
-      }
-      if (!xml.trim()) {
-        toast.error("O servidor devolveu um SAF-T vazio.", { id: toastId });
-        return;
+      if (!job || job.status !== "completed" || !job.storage_path) {
+        throw new Error(job?.error_message || "A geração do SAF-T demorou demasiado. Tente novamente.");
       }
 
-      const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
+      const { data: file, error: downloadError } = await supabase.storage
+        .from("saft-exports")
+        .download(job.storage_path);
+      if (downloadError || !file) throw downloadError || new Error("Não foi possível descarregar o SAF-T.");
+
+      const url = URL.createObjectURL(file);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename;
+      a.download = job.filename || filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
       toast.success("SAF-T exportado (informativo, software não certificado).", { id: toastId });
     } catch (e: any) {
-      const aborted = e?.name === "AbortError";
-      toast.error(
-        aborted
-          ? "A geração do SAF-T demorou demasiado. Tente um período mais curto."
-          : e?.message || "Erro ao exportar SAF-T",
-        { id: toastId },
-      );
-    } finally {
-      clearTimeout(timer);
+      toast.error(e?.message || "Erro ao exportar SAF-T", { id: toastId });
     }
   })();
 }

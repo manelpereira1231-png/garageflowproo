@@ -7,6 +7,8 @@
  *  - stripe-webhook            (pagamentos na conta da plataforma)
  *  - invoice-connect-webhook   (pagamentos em contas Stripe Connect das oficinas)
  */
+import { recordManualPayout } from "./recordManualPayout.ts";
+
 export interface MarkInvoiceResult {
   handled: boolean;
   already_paid?: boolean;

@@ -167,3 +167,6 @@ verify_jwt = false
 
 [functions.stripe-connect-selftest]
 verify_jwt = false
+
+[functions.cancel-subscription]
+verify_jwt = true

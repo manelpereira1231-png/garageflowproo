@@ -375,7 +375,64 @@ export default function Team() {
         ))}
       </div>
 
+      {/* Pending invitations */}
+      {isOwner && pendingInvites.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">
+                Convites pendentes ({pendingInvites.length})
+              </p>
+            </div>
+            <div className="space-y-2">
+              {pendingInvites.map((inv) => {
+                const expired = inv.expires_at ? new Date(inv.expires_at) < new Date() : false;
+                return (
+                  <div
+                    key={inv.id}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border border-border rounded-lg p-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{inv.email}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t(`team.role.${inv.role}`)} ·{" "}
+                        {expired ? "Convite expirado" : `Enviado em ${new Date(inv.created_at).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={expired ? "border-destructive/40 text-destructive" : ""}>
+                        {expired ? "Expirado" : "Pendente"}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-[36px]"
+                        disabled={resendingId === inv.id}
+                        onClick={() => handleResendInvite(inv)}
+                      >
+                        {resendingId === inv.id ? t('common.loading') : "Reenviar convite"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label="Cancelar convite"
+                        className="min-h-[36px] text-destructive"
+                        onClick={() => handleRevokeInvite(inv)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Members table - Desktop */}
+
       <Card className="hidden sm:block">
         <CardContent className="p-0">
           <Table>

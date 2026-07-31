@@ -32,8 +32,7 @@ export function exportSaftInBackground(opts: {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error("Sessão expirada. Volte a iniciar sessão.", { id: toastId });
-        return;
+        throw new Error("Sessão expirada. Volte a iniciar sessão.");
       }
 
       const { data: queued, error: queueError } = await supabase.functions.invoke("export-saft", {
@@ -64,19 +63,19 @@ export function exportSaftInBackground(opts: {
         throw new Error(job?.error_message || "A geração do SAF-T demorou demasiado. Tente novamente.");
       }
 
-      const { data: file, error: downloadError } = await supabase.storage
+      // Entrega o ficheiro diretamente pelo Storage. Evita carregar e copiar um
+      // XML potencialmente grande para um Blob no main thread do browser.
+      const { data: signedFile, error: downloadError } = await supabase.storage
         .from("saft-exports")
-        .download(job.storage_path);
-      if (downloadError || !file) throw downloadError || new Error("Não foi possível descarregar o SAF-T.");
+        .createSignedUrl(job.storage_path, 60, { download: job.filename || filename });
+      if (downloadError || !signedFile?.signedUrl) throw downloadError || new Error("Não foi possível descarregar o SAF-T.");
 
-      const url = URL.createObjectURL(file);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = signedFile.signedUrl;
       a.download = job.filename || filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
       toast.success("SAF-T exportado (informativo, software não certificado).", { id: toastId });
       opts.onComplete?.();
     } catch (e: any) {

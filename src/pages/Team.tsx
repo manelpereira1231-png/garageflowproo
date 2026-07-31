@@ -161,6 +161,7 @@ export default function Team() {
       toast.success(t('team.inviteSent'));
       setInviteEmail("");
       setInviteOpen(false);
+      fetchPendingInvites();
     } catch (err: any) {
       const msg = err?.message || t('team.inviteError');
       toast.error(msg.length > 140 ? msg.slice(0, 140) + '…' : msg);
@@ -169,6 +170,55 @@ export default function Team() {
       setInviting(false);
     }
   };
+
+  const handleResendInvite = async (invite: PendingInvite) => {
+    if (!shopId) return;
+    setResendingId(invite.id);
+    try {
+      // Gera um convite novo (revoga o anterior) para garantir token válido
+      const { data: invData, error: invErr } = await supabase.rpc("create_team_invitation", {
+        _shop_id: shopId,
+        _email: invite.email,
+        _role: invite.role,
+        _name: null,
+        _phone: null,
+      });
+      if (invErr) throw invErr;
+      const token = Array.isArray(invData) ? (invData[0] as any)?.token : (invData as any)?.token;
+      if (!token) throw new Error("Não foi possível gerar um novo token de convite.");
+
+      const inviteUrl = `${window.location.origin}/accept-invite?token=${token}`;
+      await sendEmail({
+        to: invite.email,
+        subject: `${t('team.inviteSubject')} — ${shopName}`,
+        html: inviteUserEmailHtml(inviteUrl, shopName, t(`team.role.${invite.role}`)),
+        invite: true,
+        shop_id: shopId,
+      });
+      toast.success(`Convite reenviado para ${invite.email}`);
+      fetchPendingInvites();
+    } catch (err: any) {
+      const msg = err?.message || "Falha ao reenviar convite.";
+      toast.error(msg.length > 160 ? msg.slice(0, 160) + '…' : msg);
+      console.error("Resend team invite failed:", err);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleRevokeInvite = async (invite: PendingInvite) => {
+    const { error } = await supabase
+      .from("team_invitations")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", invite.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Convite cancelado.");
+      fetchPendingInvites();
+    }
+  };
+
+
 
   const handleForceLogout = async (targetUserId: string) => {
     if (!shopId) return;

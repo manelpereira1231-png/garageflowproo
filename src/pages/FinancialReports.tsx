@@ -161,6 +161,7 @@ export default function FinancialReports() {
   }, [period, activeShopId]);
 
   const [saftLoading, setSaftLoading] = useState(false);
+  const [saftProgress, setSaftProgress] = useState(0);
   const [saftYear, setSaftYear] = useState(new Date().getFullYear().toString());
 
   const handleExport = () => {
@@ -177,11 +178,15 @@ export default function FinancialReports() {
 
   const handleExportSaft = () => {
     if (!activeShopId) return;
-    // Não bloqueia a página: corre em background com toast de progresso.
+    setSaftLoading(true);
+    setSaftProgress(0);
     exportSaftInBackground({
       shopId: activeShopId,
       year: parseInt(saftYear),
       filename: `SAFT-PT_${saftYear}.xml`,
+      onProgress: setSaftProgress,
+      onComplete: () => setSaftLoading(false),
+      onError: () => setSaftLoading(false),
     });
   };
 
@@ -237,7 +242,7 @@ export default function FinancialReports() {
               </Select>
               <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading}>
                 <FileCode className="w-4 h-4 mr-1" />
-                {saftLoading ? "..." : "SAF-T"}
+                {saftLoading ? `${saftProgress}%` : "SAF-T"}
               </Button>
             </div>
           )}

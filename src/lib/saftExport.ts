@@ -14,6 +14,9 @@ export function exportSaftInBackground(opts: {
   year: number | string;
   filename?: string;
   timeoutMs?: number;
+  onProgress?: (progress: number) => void;
+  onComplete?: () => void;
+  onError?: (message: string) => void;
 }): void {
   const { shopId, year, timeoutMs = 10 * 60 * 1000 } = opts;
   const filename = opts.filename || `SAFT-PT_${year}.xml`;
@@ -37,6 +40,7 @@ export function exportSaftInBackground(opts: {
         body: { shop_id: shopId, year: Number(year), action: "enqueue" },
       });
       if (queueError || !queued?.job_id) throw queueError || new Error("Não foi possível iniciar a exportação.");
+      opts.onProgress?.(0);
 
       let job: { status: string; progress: number; storage_path?: string; filename?: string; error_message?: string } | null = null;
       while (Date.now() - startedAt < timeoutMs) {
@@ -47,6 +51,7 @@ export function exportSaftInBackground(opts: {
           .maybeSingle();
         if (error) throw error;
         job = data;
+        opts.onProgress?.(job?.progress ?? 0);
         if (job?.status === "completed" || job?.status === "failed") break;
         toast.loading(`A gerar SAF-T… ${job?.progress ?? 0}%`, {
           id: toastId,
@@ -73,8 +78,11 @@ export function exportSaftInBackground(opts: {
       a.remove();
       URL.revokeObjectURL(url);
       toast.success("SAF-T exportado (informativo, software não certificado).", { id: toastId });
+      opts.onComplete?.();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao exportar SAF-T", { id: toastId });
+      const message = e?.message || "Erro ao exportar SAF-T";
+      toast.error(message, { id: toastId });
+      opts.onError?.(message);
     }
   })();
 }

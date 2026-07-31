@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     );
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    const { token, action = "checkout", session_id, origin } = await req.json().catch(() => ({}));
+    const { token, action = "checkout", session_id, origin, return_url } = await req.json().catch(() => ({}));
     if (!token) return json({ error: "Link inválido." }, 400);
 
     const { data: inv } = await admin
@@ -54,13 +54,22 @@ Deno.serve(async (req) => {
       .eq("id", inv.shop_id)
       .maybeSingle();
 
+    // Se a oficina tem Stripe Connect ativo o dinheiro entra diretamente na
+    // oficina; caso contrário usamos a conta Stripe da plataforma (a mesma dos
+    // planos SaaS) para que o pagamento online funcione na mesma.
+    const connectAccount =
+      shop?.stripe_connect_account_id && shop?.stripe_connect_charges_enabled
+        ? shop.stripe_connect_account_id
+        : undefined;
+
     // ── Confirmar pagamento no regresso do Stripe ───────────────────────────
     if (action === "confirm") {
       if (inv.paid_online_at) return json({ paid: true });
       if (!session_id) return json({ error: "Sessão em falta." }, 400);
-      const session = await stripe.checkout.sessions.retrieve(session_id, {
-        stripeAccount: shop?.stripe_connect_account_id ?? undefined,
-      });
+      const session = await stripe.checkout.sessions.retrieve(
+        session_id,
+        connectAccount ? { stripeAccount: connectAccount } : undefined,
+      );
       if (session.payment_status !== "paid") return json({ paid: false });
       await admin.from("invoices").update({
         paid_online_at: new Date().toISOString(),
@@ -72,30 +81,29 @@ Deno.serve(async (req) => {
 
     // ── Criar sessão de pagamento ───────────────────────────────────────────
     if (inv.paid_online_at || inv.status === "paid") return json({ error: "Esta fatura já está paga." }, 400);
-    if (!shop?.stripe_connect_account_id || !shop.stripe_connect_charges_enabled) {
-      return json({ error: "Esta oficina ainda não ativou pagamentos online." }, 400);
-    }
 
     const amount = Math.round(Number(inv.total || 0) * 100);
     if (amount <= 0) return json({ error: "Valor da fatura inválido." }, 400);
 
     const base = origin || req.headers.get("origin") || "https://garageflow.pt";
+    const successBase = return_url || `${base}/invoice/${token}`;
+    const joiner = successBase.includes("?") ? "&" : "?";
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         line_items: [{
           price_data: {
-            currency: String(shop.currency || "EUR").toLowerCase(),
-            product_data: { name: `Fatura ${inv.number} — ${shop.name}` },
+            currency: String(shop?.currency || "EUR").toLowerCase(),
+            product_data: { name: `Fatura ${inv.number} — ${shop?.name ?? ""}` },
             unit_amount: amount,
           },
           quantity: 1,
         }],
-        success_url: `${base}/invoice/${token}?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}/invoice/${token}?canceled=1`,
+        success_url: `${successBase}${joiner}invoice_token=${token}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${successBase}${joiner}canceled=1`,
         metadata: { invoice_id: inv.id, invoice_number: String(inv.number ?? "") },
       },
-      { stripeAccount: shop.stripe_connect_account_id },
+      connectAccount ? { stripeAccount: connectAccount } : undefined,
     );
 
     await admin.from("invoices")
@@ -103,6 +111,7 @@ Deno.serve(async (req) => {
       .eq("id", inv.id);
 
     return json({ url: session.url });
+
   } catch (e: any) {
     console.error("[invoice-pay]", e);
     return json({ error: e?.message || "Erro no pagamento" }, 500);

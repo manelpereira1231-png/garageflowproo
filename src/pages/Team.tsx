@@ -54,6 +54,26 @@ export default function Team() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [shopName, setShopName] = useState("");
 
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const fetchPendingInvites = async (sid?: string | null) => {
+    const target = sid ?? shopId;
+    if (!target) return;
+    const { data, error } = await supabase
+      .from("team_invitations")
+      .select("id, email, role, token, created_at, expires_at")
+      .eq("shop_id", target)
+      .is("accepted_at", null)
+      .is("revoked_at", null)
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load pending invitations:", error);
+      return;
+    }
+    setPendingInvites((data || []) as PendingInvite[]);
+  };
+
   const fetchMembers = async () => {
     if (!shopId) return;
     const { data } = await supabase
@@ -70,6 +90,7 @@ export default function Team() {
     setMembers(data.map(m => ({ ...m, email: emailMap.get(m.user_id) || undefined })));
     setLoading(false);
   };
+
 
   useEffect(() => {
     const init = async () => {

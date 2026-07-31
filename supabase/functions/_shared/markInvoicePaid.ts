@@ -68,6 +68,14 @@ export async function markInvoicePaidFromSession(
     throw new Error(error.message);
   }
 
+  // Pagamento recebido na conta da plataforma → regista repasse manual + comissão.
+  await recordManualPayout(admin, {
+    invoiceId,
+    stripeSessionId: session.id,
+    amountTotalCents: session.amount_total ?? null,
+    currency: session.currency ?? null,
+  }, (m, d) => log(m, d));
+
   log("Fatura marcada como paga via webhook", { invoiceId, session: session.id });
   return { handled: true, already_paid: false, invoice_id: invoiceId };
 }

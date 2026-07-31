@@ -130,24 +130,29 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (jobError || !job) throw jobError || new Error("Não foi possível criar a exportação SAF-T");
 
-      const workerRequest = fetch(req.url, {
-        method: "POST",
-        headers: {
-          "Authorization": authHeader,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...requestBody,
-          action: "process",
-          job_id: job.id,
-          year: fiscalYear,
+      // Processa em background DENTRO da mesma instância (sem sub-request HTTP,
+      // que era frágil e podia nunca chegar a arrancar).
+      const workerRequest = handler(
+        new Request(req.url, {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...requestBody,
+            action: "process",
+            job_id: job.id,
+            year: fiscalYear,
+          }),
         }),
-      }).catch(async (error) => {
+      ).catch(async (error) => {
         await admin.from("saft_export_jobs").update({
           status: "failed",
           error_message: error instanceof Error ? error.message : "Falha ao iniciar geração",
           completed_at: new Date().toISOString(),
         }).eq("id", job.id);
+        return undefined;
       });
       EdgeRuntime.waitUntil(workerRequest);
 

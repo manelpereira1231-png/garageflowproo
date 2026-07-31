@@ -368,13 +368,48 @@ export default function ClientPortal() {
       setQuotes(normalizeWithVehicle(payload.quotes || []));
       setInvoices(normalizeWithVehicle(payload.invoices || []));
       setVehicles(payload.vehicles || []);
-      // Inspections + payments are not exposed publicly; keep empty.
-      setInspections([]);
+      // Inspeções feitas em Modo Oficina (checklists) associadas a este cliente
+      setInspections(
+        (payload.inspections || []).map((i: any) => ({
+          ...i,
+          work_orders: { number: i.work_order_number, vehicles: i.vehicle || null },
+        })),
+      );
       setPayments([]);
       setLoading(false);
     };
     load();
-  }, [token]);
+  }, [token, reloadKey]);
+
+  // Confirmação do pagamento online no regresso do Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invoiceToken = params.get("invoice_token");
+    const sessionId = params.get("session_id");
+    if (params.get("canceled")) {
+      toast.error(t("paymentCanceled"));
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+    if (!invoiceToken || !sessionId) return;
+    (async () => {
+      const { data, error: fnErr } = await supabase.functions.invoke("invoice-pay", {
+        body: { token: invoiceToken, action: "confirm", session_id: sessionId },
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+      if (fnErr || (data as any)?.error) {
+        toast.error((data as any)?.error || t("paymentError"));
+        return;
+      }
+      if ((data as any)?.paid) {
+        toast.success(t("paymentSuccess"));
+        setActiveTab("invoices");
+        setReloadKey((k) => k + 1);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadInvoicePayments = async (invoiceId: string) => {
     const relevant = payments.filter(p => p.invoice_id === invoiceId);

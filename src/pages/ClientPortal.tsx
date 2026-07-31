@@ -1019,7 +1019,29 @@ export default function ClientPortal() {
           )}
         </div>
 
+        {/* Confirmação da decisão sobre o orçamento */}
+        <AlertDialog open={!!quoteDecision} onOpenChange={(o) => !o && setQuoteDecision(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {quoteDecision?.action === 'approved' ? t('confirmApproveTitle') : t('confirmRejectTitle')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {quoteDecision?.quote?.number ? `${quoteDecision.quote.number} · ` : ''}
+                {quoteDecision?.action === 'approved' ? t('confirmApproveBody') : t('confirmRejectBody')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={decisionLoading}>{t('cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmQuoteDecision(); }} disabled={decisionLoading}>
+                {decisionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('confirm')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Footer */}
+
         <div className="text-center py-6 border-t border-border">
           {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="max-h-6 mx-auto mb-2 opacity-50" />}
           <p className="text-xs text-muted-foreground">{shop?.name} · {t('footer')}</p>

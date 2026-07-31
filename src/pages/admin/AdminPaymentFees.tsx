@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, Percent } from "lucide-react";
+import ManualPayoutsReport from "@/components/admin/ManualPayoutsReport";
 import { toast } from "sonner";
 
 export default function AdminPaymentFees() {
@@ -41,7 +42,7 @@ export default function AdminPaymentFees() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-xl mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
       <div>
         <h1 className="text-xl font-bold">Taxas de Pagamento</h1>
         <p className="text-sm text-muted-foreground">
@@ -84,6 +85,8 @@ export default function AdminPaymentFees() {
           )}
         </CardContent>
       </Card>
+
+      <ManualPayoutsReport />
     </div>
   );
 }

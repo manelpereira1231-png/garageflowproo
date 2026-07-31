@@ -473,9 +473,36 @@ export default function Workshop() {
                   </div>
                   <div className="grid grid-cols-1 gap-1.5">
                     {checklistItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-muted/50 rounded-lg p-2.5">
-                        <span className="text-sm">{item.label}</span>
-                        <div className="flex gap-1">
+                      <div key={idx} className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg p-2.5">
+                        <span className="text-sm flex-1 min-w-0 truncate">{item.label}</span>
+                        <div className="flex items-center gap-1">
+                          {item.photo_url && (
+                            <a href={item.photo_url} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={item.photo_url}
+                                alt={`Foto — ${item.label}`}
+                                className="w-8 h-8 rounded object-cover border border-border"
+                              />
+                            </a>
+                          )}
+                          <label
+                            className="cursor-pointer px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/20 min-h-[28px] flex items-center"
+                            title="Adicionar foto (opcional)"
+                          >
+                            {uploadingPhotoIdx === idx ? '…' : '📷'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              disabled={uploadingPhotoIdx !== null}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (f) uploadItemPhoto(idx, f);
+                              }}
+                            />
+                          </label>
                           <button
                             onClick={() => toggleChecklistItem(idx, item.status === 'pass' ? 'pending' : 'pass')}
                             className={`px-2 py-1 rounded text-xs font-medium transition-all ${
@@ -494,6 +521,7 @@ export default function Workshop() {
                           </button>
                         </div>
                       </div>
+
                     ))}
                   </div>
                   <Button

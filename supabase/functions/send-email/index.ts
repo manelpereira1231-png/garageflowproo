@@ -270,7 +270,7 @@ serve(async (req: Request) => {
 
     if (!Deno.env.get("RESEND_API_KEY")) {
       console.error("Email send blocked: RESEND_API_KEY is not configured.");
-      return new Response(JSON.stringify({ error: "EMAIL_PROVIDER_NOT_CONFIGURED" }),
+      return new Response(JSON.stringify({ error: "Serviço de email não configurado (RESEND_API_KEY em falta). Contacte o suporte.", code: "EMAIL_PROVIDER_NOT_CONFIGURED" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 

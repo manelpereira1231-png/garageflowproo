@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     // Ownership check — only the shop owner (or the group owner) may cancel billing.
     const { data: shop, error: shopErr } = await supa
       .from("shops")
-      .select("id, user_id, group_owner_id, is_primary")
+      .select("id, user_id, group_owner_id")
       .eq("id", shopId)
       .maybeSingle();
     if (shopErr) return json({ error: shopErr.message }, 500);

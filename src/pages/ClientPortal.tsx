@@ -890,6 +890,19 @@ export default function ClientPortal() {
                     </p>
                   )}
                   
+                  {/* Pagamento online */}
+                  {(inv.status === 'issued' || inv.status === 'partial') && !inv.paid_online_at && (
+                    <Button
+                      size="sm"
+                      className="w-full min-h-[44px] gap-2"
+                      disabled={payingId === inv.id}
+                      onClick={() => handlePayInvoice(inv)}
+                    >
+                      {payingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                      {t('payNow')}
+                    </Button>
+                  )}
+
                   {/* View payments detail */}
                   {paidAmount > 0 && (
                     <button
@@ -899,6 +912,7 @@ export default function ClientPortal() {
                       <CreditCard className="w-3 h-3" /> {t('paymentHistory')}
                     </button>
                   )}
+
                 </div>
               );
             })

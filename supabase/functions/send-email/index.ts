@@ -128,14 +128,31 @@ serve(async (req: Request) => {
           admin.from("shop_users").select("role").eq("shop_id", shop_id).eq("user_id", callerUser.id).maybeSingle(),
         ]);
         const role = (membership as any)?.role;
-        if (ownedShop || role === "owner" || role === "admin" || role === "manager") {
-          const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
-          if (recipients.length >= 1 && recipients.length <= 5) {
-            isInternal = true; // authorize this send
-          }
+        const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
+        if (!ownedShop && role !== "owner" && role !== "admin" && role !== "manager") {
+          console.error(`Invite blocked: user ${callerUser.id} has role "${role ?? "none"}" on shop ${shop_id}`);
+          return new Response(
+            JSON.stringify({
+              error:
+                "Sem permissão para convidar membros nesta oficina. Apenas o proprietário, administrador ou gestor pode enviar convites.",
+              code: "INVITE_FORBIDDEN",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
         }
+        if (recipients.length < 1 || recipients.length > 5) {
+          return new Response(
+            JSON.stringify({
+              error: "Número de destinatários inválido no convite (1 a 5 emails).",
+              code: "INVITE_INVALID_RECIPIENTS",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
+        }
+        isInternal = true; // authorize this send
       }
     }
+
     if (!isInternal && callerUser) {
       const recipients = (Array.isArray(to) ? to : [to])
         .map((e) => String(e).toLowerCase().trim())
@@ -253,7 +270,7 @@ serve(async (req: Request) => {
 
     if (!Deno.env.get("RESEND_API_KEY")) {
       console.error("Email send blocked: RESEND_API_KEY is not configured.");
-      return new Response(JSON.stringify({ error: "EMAIL_PROVIDER_NOT_CONFIGURED" }),
+      return new Response(JSON.stringify({ error: "Serviço de email não configurado (RESEND_API_KEY em falta). Contacte o suporte.", code: "EMAIL_PROVIDER_NOT_CONFIGURED" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 

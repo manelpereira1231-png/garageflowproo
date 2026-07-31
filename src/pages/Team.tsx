@@ -22,6 +22,16 @@ interface TeamMember {
   email?: string;
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  role: string;
+  token: string;
+  created_at: string;
+  expires_at: string | null;
+}
+
+
 const roleIcons: Record<string, React.ElementType> = {
   owner: Crown,
   admin: Shield,
@@ -54,6 +64,26 @@ export default function Team() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [shopName, setShopName] = useState("");
 
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const fetchPendingInvites = async (sid?: string | null) => {
+    const target = sid ?? shopId;
+    if (!target) return;
+    const { data, error } = await supabase
+      .from("team_invitations")
+      .select("id, email, role, token, created_at, expires_at")
+      .eq("shop_id", target)
+      .is("accepted_at", null)
+      .is("revoked_at", null)
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load pending invitations:", error);
+      return;
+    }
+    setPendingInvites((data || []) as PendingInvite[]);
+  };
+
   const fetchMembers = async () => {
     if (!shopId) return;
     const { data } = await supabase
@@ -71,6 +101,7 @@ export default function Team() {
     setLoading(false);
   };
 
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -80,6 +111,8 @@ export default function Team() {
         if (shop) setShopName(shop.name);
       }
       fetchMembers();
+      fetchPendingInvites(shopId);
+
     };
     init();
   }, [shopId]);
@@ -128,6 +161,7 @@ export default function Team() {
       toast.success(t('team.inviteSent'));
       setInviteEmail("");
       setInviteOpen(false);
+      fetchPendingInvites();
     } catch (err: any) {
       const msg = err?.message || t('team.inviteError');
       toast.error(msg.length > 140 ? msg.slice(0, 140) + '…' : msg);
@@ -136,6 +170,55 @@ export default function Team() {
       setInviting(false);
     }
   };
+
+  const handleResendInvite = async (invite: PendingInvite) => {
+    if (!shopId) return;
+    setResendingId(invite.id);
+    try {
+      // Gera um convite novo (revoga o anterior) para garantir token válido
+      const { data: invData, error: invErr } = await supabase.rpc("create_team_invitation", {
+        _shop_id: shopId,
+        _email: invite.email,
+        _role: invite.role,
+        _name: null,
+        _phone: null,
+      });
+      if (invErr) throw invErr;
+      const token = Array.isArray(invData) ? (invData[0] as any)?.token : (invData as any)?.token;
+      if (!token) throw new Error("Não foi possível gerar um novo token de convite.");
+
+      const inviteUrl = `${window.location.origin}/accept-invite?token=${token}`;
+      await sendEmail({
+        to: invite.email,
+        subject: `${t('team.inviteSubject')} — ${shopName}`,
+        html: inviteUserEmailHtml(inviteUrl, shopName, t(`team.role.${invite.role}`)),
+        invite: true,
+        shop_id: shopId,
+      });
+      toast.success(`Convite reenviado para ${invite.email}`);
+      fetchPendingInvites();
+    } catch (err: any) {
+      const msg = err?.message || "Falha ao reenviar convite.";
+      toast.error(msg.length > 160 ? msg.slice(0, 160) + '…' : msg);
+      console.error("Resend team invite failed:", err);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleRevokeInvite = async (invite: PendingInvite) => {
+    const { error } = await supabase
+      .from("team_invitations")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", invite.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Convite cancelado.");
+      fetchPendingInvites();
+    }
+  };
+
+
 
   const handleForceLogout = async (targetUserId: string) => {
     if (!shopId) return;
@@ -292,7 +375,64 @@ export default function Team() {
         ))}
       </div>
 
+      {/* Pending invitations */}
+      {isOwner && pendingInvites.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">
+                Convites pendentes ({pendingInvites.length})
+              </p>
+            </div>
+            <div className="space-y-2">
+              {pendingInvites.map((inv) => {
+                const expired = inv.expires_at ? new Date(inv.expires_at) < new Date() : false;
+                return (
+                  <div
+                    key={inv.id}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border border-border rounded-lg p-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{inv.email}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t(`team.role.${inv.role}`)} ·{" "}
+                        {expired ? "Convite expirado" : `Enviado em ${new Date(inv.created_at).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={expired ? "border-destructive/40 text-destructive" : ""}>
+                        {expired ? "Expirado" : "Pendente"}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-[36px]"
+                        disabled={resendingId === inv.id}
+                        onClick={() => handleResendInvite(inv)}
+                      >
+                        {resendingId === inv.id ? t('common.loading') : "Reenviar convite"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label="Cancelar convite"
+                        className="min-h-[36px] text-destructive"
+                        onClick={() => handleRevokeInvite(inv)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Members table - Desktop */}
+
       <Card className="hidden sm:block">
         <CardContent className="p-0">
           <Table>

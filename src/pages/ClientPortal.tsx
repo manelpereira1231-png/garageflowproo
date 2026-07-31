@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -241,6 +246,72 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
+/** Chaves adicionais (aprovação digital + pagamento online). */
+const extraTranslations: Record<string, Record<string, string>> = {
+  pt: {
+    approveQuote: "Aprovar", rejectQuote: "Rejeitar",
+    confirmApproveTitle: "Aprovar orçamento?", confirmRejectTitle: "Rejeitar orçamento?",
+    confirmApproveBody: "Ao aprovar, autoriza a oficina a avançar com os trabalhos descritos neste orçamento.",
+    confirmRejectBody: "Ao rejeitar, a oficina será notificada de que não pretende avançar com este orçamento.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Orçamento aprovado. A oficina foi notificada.",
+    quoteRejected: "Orçamento rejeitado.",
+    quoteDecisionError: "Não foi possível registar a sua decisão.",
+    payNow: "Pagar agora",
+    paymentSuccess: "Pagamento confirmado. A fatura está paga.",
+    paymentError: "Não foi possível iniciar o pagamento.",
+    paymentCanceled: "Pagamento cancelado.",
+    photo: "Foto",
+  },
+  "pt-BR": {
+    approveQuote: "Aprovar", rejectQuote: "Recusar",
+    confirmApproveTitle: "Aprovar orçamento?", confirmRejectTitle: "Recusar orçamento?",
+    confirmApproveBody: "Ao aprovar, você autoriza a oficina a executar os serviços descritos neste orçamento.",
+    confirmRejectBody: "Ao recusar, a oficina será avisada de que você não deseja seguir com este orçamento.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Orçamento aprovado. A oficina foi avisada.",
+    quoteRejected: "Orçamento recusado.",
+    quoteDecisionError: "Não foi possível registrar sua decisão.",
+    payNow: "Pagar agora",
+    paymentSuccess: "Pagamento confirmado. A fatura está paga.",
+    paymentError: "Não foi possível iniciar o pagamento.",
+    paymentCanceled: "Pagamento cancelado.",
+    photo: "Foto",
+  },
+  en: {
+    approveQuote: "Approve", rejectQuote: "Reject",
+    confirmApproveTitle: "Approve quote?", confirmRejectTitle: "Reject quote?",
+    confirmApproveBody: "By approving, you authorise the workshop to proceed with the work in this quote.",
+    confirmRejectBody: "By rejecting, the workshop will be notified that you do not wish to proceed.",
+    confirm: "Confirm", cancel: "Cancel",
+    quoteApproved: "Quote approved. The workshop has been notified.",
+    quoteRejected: "Quote rejected.",
+    quoteDecisionError: "We could not record your decision.",
+    payNow: "Pay now",
+    paymentSuccess: "Payment confirmed. The invoice is paid.",
+    paymentError: "We could not start the payment.",
+    paymentCanceled: "Payment canceled.",
+    photo: "Photo",
+  },
+  es: {
+    approveQuote: "Aprobar", rejectQuote: "Rechazar",
+    confirmApproveTitle: "¿Aprobar presupuesto?", confirmRejectTitle: "¿Rechazar presupuesto?",
+    confirmApproveBody: "Al aprobar, autoriza al taller a realizar los trabajos de este presupuesto.",
+    confirmRejectBody: "Al rechazar, el taller sabrá que no desea continuar con este presupuesto.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Presupuesto aprobado. El taller ha sido notificado.",
+    quoteRejected: "Presupuesto rechazado.",
+    quoteDecisionError: "No se pudo registrar su decisión.",
+    payNow: "Pagar ahora",
+    paymentSuccess: "Pago confirmado. La factura está pagada.",
+    paymentError: "No se pudo iniciar el pago.",
+    paymentCanceled: "Pago cancelado.",
+    photo: "Foto",
+  },
+};
+
+
+
 const serviceStatusColors: Record<string, string> = {
   open: "bg-info/10 text-info",
   diagnosis: "bg-warning/10 text-warning",
@@ -299,6 +370,11 @@ export default function ClientPortal() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [quoteDecision, setQuoteDecision] = useState<{ quote: any; action: 'approved' | 'rejected' } | null>(null);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [payingId, setPayingId] = useState<string | null>(null);
+
   const getInitialLang = (): string => {
     try {
       const stored = localStorage.getItem(`garageflow_portal_lang_${token}`);
@@ -341,7 +417,13 @@ export default function ClientPortal() {
   const [bookingData, setBookingData] = useState({ vehicle_id: '', date: '', time: '09:00', service_type: 'revision', notes: '' });
   const [bookingLoading, setBookingLoading] = useState(false);
 
-  const t = (key: string) => translations[lang]?.[key] || translations.pt[key] || key;
+  const t = (key: string) =>
+    translations[lang]?.[key] ||
+    extraTranslations[lang]?.[key] ||
+    translations.pt[key] ||
+    extraTranslations.pt[key] ||
+    key;
+
 
   useEffect(() => {
     const load = async () => {
@@ -368,20 +450,108 @@ export default function ClientPortal() {
       setQuotes(normalizeWithVehicle(payload.quotes || []));
       setInvoices(normalizeWithVehicle(payload.invoices || []));
       setVehicles(payload.vehicles || []);
-      // Inspections + payments are not exposed publicly; keep empty.
-      setInspections([]);
+      // Inspeções feitas em Modo Oficina (checklists) associadas a este cliente
+      setInspections(
+        (payload.inspections || []).map((i: any) => ({
+          ...i,
+          work_orders: { number: i.work_order_number, vehicles: i.vehicle || null },
+        })),
+      );
       setPayments([]);
       setLoading(false);
     };
     load();
-  }, [token]);
+  }, [token, reloadKey]);
+
+  // Confirmação do pagamento online no regresso do Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invoiceToken = params.get("invoice_token");
+    const sessionId = params.get("session_id");
+    if (params.get("canceled")) {
+      toast.error(t("paymentCanceled"));
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+    if (!invoiceToken || !sessionId) return;
+    (async () => {
+      const { data, error: fnErr } = await supabase.functions.invoke("invoice-pay", {
+        body: { token: invoiceToken, action: "confirm", session_id: sessionId },
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+      if (fnErr || (data as any)?.error) {
+        toast.error((data as any)?.error || t("paymentError"));
+        return;
+      }
+      if ((data as any)?.paid) {
+        toast.success(t("paymentSuccess"));
+        setActiveTab("invoices");
+        setReloadKey((k) => k + 1);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadInvoicePayments = async (invoiceId: string) => {
     const relevant = payments.filter(p => p.invoice_id === invoiceId);
     setInvoicePayments(relevant);
   };
 
+  const confirmQuoteDecision = async () => {
+    if (!quoteDecision || !token) return;
+    setDecisionLoading(true);
+    try {
+      const { error: rpcErr } = await supabase.rpc("portal_respond_to_quote", {
+        _portal_token: token,
+        _quote_id: quoteDecision.quote.id,
+        _action: quoteDecision.action,
+        _client_notes: null,
+      });
+      if (rpcErr) throw rpcErr;
+      toast.success(quoteDecision.action === 'approved' ? t('quoteApproved') : t('quoteRejected'));
+      setQuoteDecision(null);
+      setReloadKey((k) => k + 1);
+    } catch (e: any) {
+      toast.error(e?.message === 'already_processed' ? t('quoteDecisionError') : (e?.message || t('quoteDecisionError')));
+    } finally {
+      setDecisionLoading(false);
+    }
+  };
+
+  const handlePayInvoice = async (inv: any) => {
+    if (!token) return;
+    setPayingId(inv.id);
+    try {
+      const { data: prep, error: prepErr } = await supabase.rpc("portal_prepare_invoice_payment", {
+        _portal_token: token,
+        _invoice_id: inv.id,
+      });
+      if (prepErr) throw prepErr;
+      const invoiceToken = (prep as any)?.token;
+      if (!invoiceToken) throw new Error(t('paymentError'));
+
+      const { data, error: fnErr } = await supabase.functions.invoke("invoice-pay", {
+        body: {
+          token: invoiceToken,
+          action: "checkout",
+          origin: window.location.origin,
+          return_url: `${window.location.origin}/portal/${token}`,
+        },
+      });
+      if (fnErr) throw fnErr;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const url = (data as any)?.url;
+      if (!url) throw new Error(t('paymentError'));
+      window.location.assign(url);
+    } catch (e: any) {
+      toast.error(e?.message || t('paymentError'));
+      setPayingId(null);
+    }
+  };
+
   const handleBooking = async () => {
+
     if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time) return;
     setBookingLoading(true);
     try {
@@ -640,17 +810,38 @@ export default function ClientPortal() {
                     {(q.lines as any[]).length > 3 && <p className="text-muted-foreground/50">+{(q.lines as any[]).length - 3} mais...</p>}
                   </div>
                 )}
-                {q.status === 'sent' && q.token && (
-                  <a
-                    href={`${window.location.origin}/quote/${q.token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
-                  >
-                    <CheckCircle className="w-3 h-3" />
-                    {lang === 'en' ? 'Review & Approve' : lang === 'es' ? 'Revisar y Aprobar' : 'Rever e Aprovar'}
-                  </a>
+                {q.status === 'sent' && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                    <Button
+                      size="sm"
+                      className="min-h-[40px] gap-1"
+                      onClick={() => setQuoteDecision({ quote: q, action: 'approved' })}
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      {t('approveQuote')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-[40px] gap-1 text-destructive border-destructive/40"
+                      onClick={() => setQuoteDecision({ quote: q, action: 'rejected' })}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      {t('rejectQuote')}
+                    </Button>
+                    {q.token && (
+                      <a
+                        href={`${window.location.origin}/quote/${q.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                      >
+                        {lang === 'en' ? 'Full detail' : lang === 'es' ? 'Ver detalle' : 'Ver detalhe'}
+                      </a>
+                    )}
+                  </div>
                 )}
+
               </div>
             ))
           )}
@@ -704,6 +895,19 @@ export default function ClientPortal() {
                     </p>
                   )}
                   
+                  {/* Pagamento online */}
+                  {(inv.status === 'issued' || inv.status === 'partial') && !inv.paid_online_at && (
+                    <Button
+                      size="sm"
+                      className="w-full min-h-[44px] gap-2"
+                      disabled={payingId === inv.id}
+                      onClick={() => handlePayInvoice(inv)}
+                    >
+                      {payingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                      {t('payNow')}
+                    </Button>
+                  )}
+
                   {/* View payments detail */}
                   {paidAmount > 0 && (
                     <button
@@ -713,6 +917,7 @@ export default function ClientPortal() {
                       <CreditCard className="w-3 h-3" /> {t('paymentHistory')}
                     </button>
                   )}
+
                 </div>
               );
             })
@@ -798,17 +1003,50 @@ export default function ClientPortal() {
                         ) : (
                           <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                         )}
-                        <span className="truncate">{item.label || item.name}</span>
+                        <span className="truncate flex-1">{item.label || item.name}</span>
+                        {item.photo_url && (
+                          <a href={item.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                            <img
+                              src={item.photo_url}
+                              alt={`${t('photo')} — ${item.label || item.name}`}
+                              loading="lazy"
+                              className="w-8 h-8 rounded object-cover border border-border"
+                            />
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
+
                 </div>
               );
             })
           )}
         </div>
 
+        {/* Confirmação da decisão sobre o orçamento */}
+        <AlertDialog open={!!quoteDecision} onOpenChange={(o) => !o && setQuoteDecision(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {quoteDecision?.action === 'approved' ? t('confirmApproveTitle') : t('confirmRejectTitle')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {quoteDecision?.quote?.number ? `${quoteDecision.quote.number} · ` : ''}
+                {quoteDecision?.action === 'approved' ? t('confirmApproveBody') : t('confirmRejectBody')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={decisionLoading}>{t('cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmQuoteDecision(); }} disabled={decisionLoading}>
+                {decisionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('confirm')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Footer */}
+
         <div className="text-center py-6 border-t border-border">
           {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="max-h-6 mx-auto mb-2 opacity-50" />}
           <p className="text-xs text-muted-foreground">{shop?.name} · {t('footer')}</p>

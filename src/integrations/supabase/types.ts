@@ -10930,6 +10930,19 @@ export type Database = {
         Args: { _feature: string; _plan: string }
         Returns: boolean
       }
+      portal_prepare_invoice_payment: {
+        Args: { _invoice_id: string; _portal_token: string }
+        Returns: Json
+      }
+      portal_respond_to_quote: {
+        Args: {
+          _action: string
+          _client_notes?: string
+          _portal_token: string
+          _quote_id: string
+        }
+        Returns: Json
+      }
       purge_old_rate_limits: { Args: never; Returns: undefined }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       purge_old_stripe_webhook_events: { Args: never; Returns: undefined }

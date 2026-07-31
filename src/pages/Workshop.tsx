@@ -51,6 +51,8 @@ export default function Workshop() {
   const [selected, setSelected] = useState<any>(null);
   const [checklist, setChecklist] = useState<any>(null);
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
+  const [uploadingPhotoIdx, setUploadingPhotoIdx] = useState<number | null>(null);
+
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   
@@ -172,6 +174,38 @@ export default function Workshop() {
   const toggleChecklistItem = (idx: number, status: string) => {
     setChecklistItems(prev => prev.map((item, i) => i === idx ? { ...item, status } : item));
   };
+
+  /** Upload opcional de foto por item do checklist (não bloqueia a gravação). */
+  const uploadItemPhoto = async (idx: number, file: File) => {
+    if (!activeShopId || !selected) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Ficheiro inválido: escolha uma imagem.");
+      return;
+    }
+    setUploadingPhotoIdx(idx);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${activeShopId}/${selected.id}/${Date.now()}-${idx}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("inspection-files")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      // URL assinada de longa duração para poder ser vista no Portal do Cliente.
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("inspection-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (signErr) throw signErr;
+      setChecklistItems(prev =>
+        prev.map((item, i) => (i === idx ? { ...item, photo_path: path, photo_url: signed?.signedUrl } : item)),
+      );
+      toast.success("Foto adicionada. Grave o checklist para publicar no portal.");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao carregar a foto.");
+    } finally {
+      setUploadingPhotoIdx(null);
+    }
+  };
+
 
   const saveChecklist = async (woId: string) => {
     setActionLoading(true);
@@ -439,9 +473,36 @@ export default function Workshop() {
                   </div>
                   <div className="grid grid-cols-1 gap-1.5">
                     {checklistItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-muted/50 rounded-lg p-2.5">
-                        <span className="text-sm">{item.label}</span>
-                        <div className="flex gap-1">
+                      <div key={idx} className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg p-2.5">
+                        <span className="text-sm flex-1 min-w-0 truncate">{item.label}</span>
+                        <div className="flex items-center gap-1">
+                          {item.photo_url && (
+                            <a href={item.photo_url} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={item.photo_url}
+                                alt={`Foto — ${item.label}`}
+                                className="w-8 h-8 rounded object-cover border border-border"
+                              />
+                            </a>
+                          )}
+                          <label
+                            className="cursor-pointer px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/20 min-h-[28px] flex items-center"
+                            title="Adicionar foto (opcional)"
+                          >
+                            {uploadingPhotoIdx === idx ? '…' : '📷'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              disabled={uploadingPhotoIdx !== null}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (f) uploadItemPhoto(idx, f);
+                              }}
+                            />
+                          </label>
                           <button
                             onClick={() => toggleChecklistItem(idx, item.status === 'pass' ? 'pending' : 'pass')}
                             className={`px-2 py-1 rounded text-xs font-medium transition-all ${
@@ -460,6 +521,7 @@ export default function Workshop() {
                           </button>
                         </div>
                       </div>
+
                     ))}
                   </div>
                   <Button

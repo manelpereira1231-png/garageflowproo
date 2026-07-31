@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { markInvoicePaidFromSession } from "../_shared/markInvoicePaid.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2025-08-27.basil",
@@ -465,8 +466,26 @@ serve(async (req) => {
       }
       // ============= END MARKET ESCROW =============
 
+      case "checkout.session.async_payment_succeeded":
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // ── Pagamento de fatura do ERP (Portal do Cliente / text-to-pay) ──
+        // Marca a fatura como paga de forma idempotente, sem depender do
+        // regresso do cliente ao browser (evita cobrança dupla / fatura presa).
+        if (session.metadata?.invoice_id) {
+          const res = await markInvoicePaidFromSession(supabaseAdmin, {
+            id: session.id,
+            payment_status: session.payment_status,
+            payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+            amount_total: session.amount_total,
+            currency: session.currency,
+            metadata: session.metadata as Record<string, string>,
+          }, log);
+          log("Invoice payment webhook result", res);
+          break;
+        }
+
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
         if (!customerId || !subscriptionId) break;

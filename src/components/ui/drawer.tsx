@@ -25,22 +25,36 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
-        className,
-      )}
-      {...props}
-    >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+>(({ className, children, "aria-describedby": ariaDescribedBy, ...props }, ref) => {
+  const autoId = React.useId();
+  const { hasTitle, hasDescription } = useDialogA11y(children);
+  const describedBy = ariaDescribedBy ?? (hasDescription ? undefined : `${autoId}-desc`);
+
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+          className,
+        )}
+        aria-describedby={describedBy}
+        {...props}
+      >
+        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+        {!hasTitle && <DrawerPrimitive.Title className="sr-only">Painel</DrawerPrimitive.Title>}
+        {!hasDescription && !ariaDescribedBy && (
+          <DrawerPrimitive.Description id={`${autoId}-desc`} className="sr-only">
+            Conteúdo do painel deslizante.
+          </DrawerPrimitive.Description>
+        )}
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
+
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

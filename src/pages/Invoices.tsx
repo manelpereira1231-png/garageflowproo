@@ -5,10 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
@@ -138,7 +134,6 @@ export default function Invoices() {
   };
 
   const [saftLoading, setSaftLoading] = useState(false);
-  const [saftConfirmOpen, setSaftConfirmOpen] = useState(false);
   const [saftProgress, setSaftProgress] = useState(0);
   const isBR = (shop?.country_code || "PT").toUpperCase() === "BR";
   const dateLocale = isBR ? 'pt-BR' : 'pt-PT';
@@ -358,7 +353,7 @@ export default function Invoices() {
             </Button>
           )}
           {can("invoices.export") && !isBR && (
-            <Button variant="outline" size="sm" onClick={() => setSaftConfirmOpen(true)} disabled={saftLoading} title="SAF-T PT (informativo)">
+            <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
               {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
               SAF-T
             </Button>
@@ -554,21 +549,6 @@ export default function Invoices() {
       </div>
 
       <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
-
-      <AlertDialog open={saftConfirmOpen} onOpenChange={setSaftConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exportar SAF-T PT do ano atual?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente no provider. Este ficheiro é informativo e não substitui o SAF-T certificado.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleExportSaft}>Iniciar exportação</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

@@ -57,7 +57,7 @@ function parseAddress(address: string | null): { detail: string; city: string; p
 // TODO: production compliance review — ATCUD generation requires AT registration.
 // TODO: AT validation — SoftwareCertificateNumber must be obtained from AT.
 
-Deno.serve(async (req) => {
+const handler = async (req: Request): Promise<Response> => {
   let activeJobId: string | null = null;
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

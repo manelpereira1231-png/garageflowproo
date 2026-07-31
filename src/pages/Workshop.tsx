@@ -392,7 +392,11 @@ export default function Workshop() {
                 </Badge>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detalhes do serviço e checklist de inspeção com 12 pontos.
+            </DialogDescription>
           </DialogHeader>
+
           
           {selected && (
             <div className="space-y-4">

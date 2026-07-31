@@ -22,6 +22,16 @@ interface TeamMember {
   email?: string;
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  role: string;
+  token: string;
+  created_at: string;
+  expires_at: string | null;
+}
+
+
 const roleIcons: Record<string, React.ElementType> = {
   owner: Crown,
   admin: Shield,

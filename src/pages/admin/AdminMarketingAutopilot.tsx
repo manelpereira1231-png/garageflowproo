@@ -45,6 +45,28 @@ type Campaign = {
 const fmtEUR = (v: number | null | undefined) =>
   v == null ? "—" : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 
+// Invoca a edge function e extrai a mensagem de erro REAL (o supabase-js
+// devolve apenas "non-2xx status code" e esconde o corpo da resposta).
+async function invokeAutopilot(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("marketing-autopilot", { body });
+  if (error) {
+    let detail = "";
+    try {
+      const res = (error as any)?.context;
+      if (res && typeof res.json === "function") {
+        const payload = await res.clone().json();
+        detail = payload?.error ?? "";
+      }
+    } catch {
+      /* corpo não-JSON — mantém mensagem genérica */
+    }
+    throw new Error(detail || error.message || "A IA falhou. Tenta de novo.");
+  }
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as any;
+}
+
+
 export default function AdminMarketingAutopilot() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);

@@ -111,6 +111,8 @@ export default function Team() {
         if (shop) setShopName(shop.name);
       }
       fetchMembers();
+      fetchPendingInvites(shopId);
+
     };
     init();
   }, [shopId]);

@@ -412,7 +412,13 @@ export default function ClientPortal() {
   const [bookingData, setBookingData] = useState({ vehicle_id: '', date: '', time: '09:00', service_type: 'revision', notes: '' });
   const [bookingLoading, setBookingLoading] = useState(false);
 
-  const t = (key: string) => translations[lang]?.[key] || translations.pt[key] || key;
+  const t = (key: string) =>
+    translations[lang]?.[key] ||
+    extraTranslations[lang]?.[key] ||
+    translations.pt[key] ||
+    extraTranslations.pt[key] ||
+    key;
+
 
   useEffect(() => {
     const load = async () => {

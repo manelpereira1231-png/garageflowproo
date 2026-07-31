@@ -173,6 +173,38 @@ export default function Workshop() {
     setChecklistItems(prev => prev.map((item, i) => i === idx ? { ...item, status } : item));
   };
 
+  /** Upload opcional de foto por item do checklist (não bloqueia a gravação). */
+  const uploadItemPhoto = async (idx: number, file: File) => {
+    if (!activeShopId || !selected) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Ficheiro inválido: escolha uma imagem.");
+      return;
+    }
+    setUploadingPhotoIdx(idx);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${activeShopId}/${selected.id}/${Date.now()}-${idx}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("inspection-files")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      // URL assinada de longa duração para poder ser vista no Portal do Cliente.
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("inspection-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (signErr) throw signErr;
+      setChecklistItems(prev =>
+        prev.map((item, i) => (i === idx ? { ...item, photo_path: path, photo_url: signed?.signedUrl } : item)),
+      );
+      toast.success("Foto adicionada. Grave o checklist para publicar no portal.");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao carregar a foto.");
+    } finally {
+      setUploadingPhotoIdx(null);
+    }
+  };
+
+
   const saveChecklist = async (woId: string) => {
     setActionLoading(true);
     if (checklist) {

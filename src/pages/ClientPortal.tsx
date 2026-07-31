@@ -241,6 +241,72 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
+/** Chaves adicionais (aprovação digital + pagamento online). */
+const extraTranslations: Record<string, Record<string, string>> = {
+  pt: {
+    approveQuote: "Aprovar", rejectQuote: "Rejeitar",
+    confirmApproveTitle: "Aprovar orçamento?", confirmRejectTitle: "Rejeitar orçamento?",
+    confirmApproveBody: "Ao aprovar, autoriza a oficina a avançar com os trabalhos descritos neste orçamento.",
+    confirmRejectBody: "Ao rejeitar, a oficina será notificada de que não pretende avançar com este orçamento.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Orçamento aprovado. A oficina foi notificada.",
+    quoteRejected: "Orçamento rejeitado.",
+    quoteDecisionError: "Não foi possível registar a sua decisão.",
+    payNow: "Pagar agora",
+    paymentSuccess: "Pagamento confirmado. A fatura está paga.",
+    paymentError: "Não foi possível iniciar o pagamento.",
+    paymentCanceled: "Pagamento cancelado.",
+    photo: "Foto",
+  },
+  "pt-BR": {
+    approveQuote: "Aprovar", rejectQuote: "Recusar",
+    confirmApproveTitle: "Aprovar orçamento?", confirmRejectTitle: "Recusar orçamento?",
+    confirmApproveBody: "Ao aprovar, você autoriza a oficina a executar os serviços descritos neste orçamento.",
+    confirmRejectBody: "Ao recusar, a oficina será avisada de que você não deseja seguir com este orçamento.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Orçamento aprovado. A oficina foi avisada.",
+    quoteRejected: "Orçamento recusado.",
+    quoteDecisionError: "Não foi possível registrar sua decisão.",
+    payNow: "Pagar agora",
+    paymentSuccess: "Pagamento confirmado. A fatura está paga.",
+    paymentError: "Não foi possível iniciar o pagamento.",
+    paymentCanceled: "Pagamento cancelado.",
+    photo: "Foto",
+  },
+  en: {
+    approveQuote: "Approve", rejectQuote: "Reject",
+    confirmApproveTitle: "Approve quote?", confirmRejectTitle: "Reject quote?",
+    confirmApproveBody: "By approving, you authorise the workshop to proceed with the work in this quote.",
+    confirmRejectBody: "By rejecting, the workshop will be notified that you do not wish to proceed.",
+    confirm: "Confirm", cancel: "Cancel",
+    quoteApproved: "Quote approved. The workshop has been notified.",
+    quoteRejected: "Quote rejected.",
+    quoteDecisionError: "We could not record your decision.",
+    payNow: "Pay now",
+    paymentSuccess: "Payment confirmed. The invoice is paid.",
+    paymentError: "We could not start the payment.",
+    paymentCanceled: "Payment canceled.",
+    photo: "Photo",
+  },
+  es: {
+    approveQuote: "Aprobar", rejectQuote: "Rechazar",
+    confirmApproveTitle: "¿Aprobar presupuesto?", confirmRejectTitle: "¿Rechazar presupuesto?",
+    confirmApproveBody: "Al aprobar, autoriza al taller a realizar los trabajos de este presupuesto.",
+    confirmRejectBody: "Al rechazar, el taller sabrá que no desea continuar con este presupuesto.",
+    confirm: "Confirmar", cancel: "Cancelar",
+    quoteApproved: "Presupuesto aprobado. El taller ha sido notificado.",
+    quoteRejected: "Presupuesto rechazado.",
+    quoteDecisionError: "No se pudo registrar su decisión.",
+    payNow: "Pagar ahora",
+    paymentSuccess: "Pago confirmado. La factura está pagada.",
+    paymentError: "No se pudo iniciar el pago.",
+    paymentCanceled: "Pago cancelado.",
+    photo: "Foto",
+  },
+};
+
+
+
 const serviceStatusColors: Record<string, string> = {
   open: "bg-info/10 text-info",
   diagnosis: "bg-warning/10 text-warning",

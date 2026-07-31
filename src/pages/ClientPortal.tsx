@@ -805,17 +805,38 @@ export default function ClientPortal() {
                     {(q.lines as any[]).length > 3 && <p className="text-muted-foreground/50">+{(q.lines as any[]).length - 3} mais...</p>}
                   </div>
                 )}
-                {q.status === 'sent' && q.token && (
-                  <a
-                    href={`${window.location.origin}/quote/${q.token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
-                  >
-                    <CheckCircle className="w-3 h-3" />
-                    {lang === 'en' ? 'Review & Approve' : lang === 'es' ? 'Revisar y Aprobar' : 'Rever e Aprovar'}
-                  </a>
+                {q.status === 'sent' && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                    <Button
+                      size="sm"
+                      className="min-h-[40px] gap-1"
+                      onClick={() => setQuoteDecision({ quote: q, action: 'approved' })}
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      {t('approveQuote')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-[40px] gap-1 text-destructive border-destructive/40"
+                      onClick={() => setQuoteDecision({ quote: q, action: 'rejected' })}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      {t('rejectQuote')}
+                    </Button>
+                    {q.token && (
+                      <a
+                        href={`${window.location.origin}/quote/${q.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                      >
+                        {lang === 'en' ? 'Full detail' : lang === 'es' ? 'Ver detalle' : 'Ver detalhe'}
+                      </a>
+                    )}
+                  </div>
                 )}
+
               </div>
             ))
           )}

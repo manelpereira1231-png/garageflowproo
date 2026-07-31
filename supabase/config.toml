@@ -164,3 +164,6 @@ verify_jwt = false
 
 [functions.invoice-connect-webhook]
 verify_jwt = false
+
+[functions.stripe-connect-selftest]
+verify_jwt = false

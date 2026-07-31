@@ -219,6 +219,7 @@ export default function LandingPage() {
   // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
   const { items: featuredTestimonials, loaded: testimonialsLoaded } = useFeaturedTestimonials();
+  const { stats: platformStats, loaded: platformStatsLoaded } = usePlatformStats();
   const { settings: legal, isConfigured: legalConfigured, contactEmail: legalEmail } = useLegalSettings();
 
   const { getName: getPlanName } = usePlanNames();

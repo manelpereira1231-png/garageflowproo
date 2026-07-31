@@ -493,7 +493,60 @@ export default function ClientPortal() {
     setInvoicePayments(relevant);
   };
 
+  const confirmQuoteDecision = async () => {
+    if (!quoteDecision || !token) return;
+    setDecisionLoading(true);
+    try {
+      const { error: rpcErr } = await supabase.rpc("portal_respond_to_quote", {
+        _portal_token: token,
+        _quote_id: quoteDecision.quote.id,
+        _action: quoteDecision.action,
+        _client_notes: null,
+      });
+      if (rpcErr) throw rpcErr;
+      toast.success(quoteDecision.action === 'approved' ? t('quoteApproved') : t('quoteRejected'));
+      setQuoteDecision(null);
+      setReloadKey((k) => k + 1);
+    } catch (e: any) {
+      toast.error(e?.message === 'already_processed' ? t('quoteDecisionError') : (e?.message || t('quoteDecisionError')));
+    } finally {
+      setDecisionLoading(false);
+    }
+  };
+
+  const handlePayInvoice = async (inv: any) => {
+    if (!token) return;
+    setPayingId(inv.id);
+    try {
+      const { data: prep, error: prepErr } = await supabase.rpc("portal_prepare_invoice_payment", {
+        _portal_token: token,
+        _invoice_id: inv.id,
+      });
+      if (prepErr) throw prepErr;
+      const invoiceToken = (prep as any)?.token;
+      if (!invoiceToken) throw new Error(t('paymentError'));
+
+      const { data, error: fnErr } = await supabase.functions.invoke("invoice-pay", {
+        body: {
+          token: invoiceToken,
+          action: "checkout",
+          origin: window.location.origin,
+          return_url: `${window.location.origin}/portal/${token}`,
+        },
+      });
+      if (fnErr) throw fnErr;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const url = (data as any)?.url;
+      if (!url) throw new Error(t('paymentError'));
+      window.location.assign(url);
+    } catch (e: any) {
+      toast.error(e?.message || t('paymentError'));
+      setPayingId(null);
+    }
+  };
+
   const handleBooking = async () => {
+
     if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time) return;
     setBookingLoading(true);
     try {

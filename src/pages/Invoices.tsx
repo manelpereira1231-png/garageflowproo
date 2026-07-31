@@ -5,6 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
@@ -134,18 +138,23 @@ export default function Invoices() {
   };
 
   const [saftLoading, setSaftLoading] = useState(false);
+  const [saftConfirmOpen, setSaftConfirmOpen] = useState(false);
+  const [saftProgress, setSaftProgress] = useState(0);
   const isBR = (shop?.country_code || "PT").toUpperCase() === "BR";
   const dateLocale = isBR ? 'pt-BR' : 'pt-PT';
   const handleExportSaft = () => {
     if (!can("invoices.export")) return;
     if (!activeShopId) return;
-    if (!confirm("Exportar SAF-T PT do ano atual?\n\nAviso: se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente do InvoiceXpress — este ficheiro é apenas informativo e não substitui o SAF-T do provider certificado.")) return;
     const year = new Date().getFullYear();
-    // Corre em background: a página continua utilizável durante a geração.
+    setSaftLoading(true);
+    setSaftProgress(0);
     exportSaftInBackground({
       shopId: activeShopId,
       year,
       filename: `SAFT_${activeShopId}_${year}.xml`,
+      onProgress: setSaftProgress,
+      onComplete: () => setSaftLoading(false),
+      onError: () => setSaftLoading(false),
     });
   };
 
@@ -349,7 +358,7 @@ export default function Invoices() {
             </Button>
           )}
           {can("invoices.export") && !isBR && (
-            <Button variant="outline" size="sm" onClick={handleExportSaft} disabled={saftLoading} title="SAF-T PT (informativo)">
+            <Button variant="outline" size="sm" onClick={() => setSaftConfirmOpen(true)} disabled={saftLoading} title="SAF-T PT (informativo)">
               {saftLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <FileArchive className="w-4 h-4 mr-1" />}
               SAF-T
             </Button>
@@ -361,6 +370,22 @@ export default function Invoices() {
           )}
         </div>
       </div>
+
+      {saftLoading && (
+        <div className="mb-4 flex items-center gap-3 border border-border bg-card px-3 py-2 text-sm" role="status" aria-live="polite">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <span>A gerar SAF-T em segundo plano</span>
+              <span className="text-muted-foreground">{saftProgress}%</span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary transition-[width] duration-300" style={{ width: `${saftProgress}%` }} />
+            </div>
+          </div>
+          <span className="hidden text-xs text-muted-foreground sm:inline">Pode continuar a trabalhar.</span>
+        </div>
+      )}
 
       {/* Smart filters row */}
       <div className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
@@ -529,6 +554,21 @@ export default function Invoices() {
       </div>
 
       <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
+
+      <AlertDialog open={saftConfirmOpen} onOpenChange={setSaftConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exportar SAF-T PT do ano atual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se emites faturas com InvoiceXpress, exporta o SAF-T oficial diretamente no provider. Este ficheiro é informativo e não substitui o SAF-T certificado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleExportSaft}>Iniciar exportação</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

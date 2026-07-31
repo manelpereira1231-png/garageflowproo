@@ -338,26 +338,30 @@ export default function Billing() {
         await runExternalRedirect(createCustomerPortalUrl);
         return;
       }
-      // For admin-managed plans or fallback — cancel locally WITHOUT assigning
-      // any new plan. The subscription simply loses its active status; the
-      // last known plan value is preserved for reference only.
+      // Admin-managed plans: cancel through a secure Edge Function (direct
+      // client writes to `subscriptions` are blocked by design).
       const shopId = subscription?.shop_id;
-      if (shopId) {
-        const { error } = await supabase.from("subscriptions").update({
-          status: 'canceled',
-          current_period_end: new Date().toISOString(),
-          revenue_type: 'free',
-        }).eq("shop_id", shopId);
-        if (error) throw error;
-        toast.success(t('billing.cancelSuccess'));
+      if (!shopId) {
+        toast.error(t('billing.errorGeneric'));
+        return;
       }
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        body: { shop_id: shopId },
+      });
+      if (error || !data?.success) {
+        const msg = (data as any)?.message || (data as any)?.error || error?.message;
+        toast.error(msg || t('billing.errorGeneric'));
+        return; // keep dialog open so the user sees it did NOT succeed
+      }
+      toast.success(t('billing.cancelSuccess'));
+      setCancelDialogOpen(false);
     } catch (err: any) {
-      toast.error(t('billing.errorGeneric'));
+      toast.error(err?.message || t('billing.errorGeneric'));
     } finally {
       setCanceling(false);
-      setCancelDialogOpen(false);
     }
   };
+
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {

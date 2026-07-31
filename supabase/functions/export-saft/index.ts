@@ -57,7 +57,7 @@ function parseAddress(address: string | null): { detail: string; city: string; p
 // TODO: production compliance review — ATCUD generation requires AT registration.
 // TODO: AT validation — SoftwareCertificateNumber must be obtained from AT.
 
-Deno.serve(async (req) => {
+const handler = async (req: Request): Promise<Response> => {
   let activeJobId: string | null = null;
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -130,24 +130,29 @@ Deno.serve(async (req) => {
 
       if (jobError || !job) throw jobError || new Error("Não foi possível criar a exportação SAF-T");
 
-      const workerRequest = fetch(req.url, {
-        method: "POST",
-        headers: {
-          "Authorization": authHeader,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...requestBody,
-          action: "process",
-          job_id: job.id,
-          year: fiscalYear,
+      // Processa em background DENTRO da mesma instância (sem sub-request HTTP,
+      // que era frágil e podia nunca chegar a arrancar).
+      const workerRequest = handler(
+        new Request(req.url, {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...requestBody,
+            action: "process",
+            job_id: job.id,
+            year: fiscalYear,
+          }),
         }),
-      }).catch(async (error) => {
+      ).catch(async (error) => {
         await admin.from("saft_export_jobs").update({
           status: "failed",
           error_message: error instanceof Error ? error.message : "Falha ao iniciar geração",
           completed_at: new Date().toISOString(),
         }).eq("id", job.id);
+        return undefined;
       });
       EdgeRuntime.waitUntil(workerRequest);
 
@@ -607,4 +612,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+};
+
+Deno.serve(handler);

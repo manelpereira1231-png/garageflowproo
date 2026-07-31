@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlansCatalog, publicPlans } from "@/hooks/usePlansCatalog";
 import { resolvePlanCta, resolvePlanBadge } from "@/lib/planCta";
 import { useFeaturedTestimonials } from "@/hooks/useFeaturedTestimonials";
+import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { useLegalSettings } from "@/hooks/useLegalSettings";
 
 const featureIcons = [FileText, Wrench, Users, BarChart3, Shield, Zap];
@@ -219,6 +220,7 @@ export default function LandingPage() {
   // only `enabled` toggles the icon (✓ vs 🔒). Never split into two arrays.
   const { features: fxFeatures, matrix: fxMatrix } = useFeatureMatrix();
   const { items: featuredTestimonials, loaded: testimonialsLoaded } = useFeaturedTestimonials();
+  const { stats: platformStats, loaded: platformStatsLoaded } = usePlatformStats();
   const { settings: legal, isConfigured: legalConfigured, contactEmail: legalEmail } = useLegalSettings();
 
   const { getName: getPlanName } = usePlanNames();
@@ -914,6 +916,49 @@ export default function LandingPage() {
       </Reveal>
       )}
 
+
+      {/* Métricas reais da plataforma — valores agregados vindos da BD (nunca inventados). */}
+      {platformStatsLoaded && platformStats && platformStats.shops > 0 && (
+        <Reveal>
+        <section aria-labelledby="platform-stats-title" className="py-12 sm:py-16 px-4 border-t border-border bg-muted/10">
+          <div className="max-w-5xl mx-auto text-center">
+            <h2 id="platform-stats-title" className="text-2xl sm:text-3xl font-bold mb-2">
+              {t('landing.stats.title', 'Números reais da plataforma')}
+            </h2>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-8">
+              {t('landing.stats.subtitle', 'Atualizados em tempo real, sem números inventados')}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="text-3xl font-bold text-primary">{platformStats.shops}</div>
+                <div className="text-xs text-muted-foreground mt-1">{t('landing.stats.shops', 'Oficinas registadas')}</div>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="text-3xl font-bold text-primary">{platformStats.work_orders}</div>
+                <div className="text-xs text-muted-foreground mt-1">{t('landing.stats.services', 'Serviços registados')}</div>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="text-3xl font-bold text-primary">{platformStats.vehicles}</div>
+                <div className="text-xs text-muted-foreground mt-1">{t('landing.stats.vehicles', 'Veículos em gestão')}</div>
+              </div>
+              {platformStats.avg_rating != null && platformStats.reviews > 0 ? (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="text-3xl font-bold text-primary">{platformStats.avg_rating.toFixed(1)}<span className="text-base text-muted-foreground">/5</span></div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {t('landing.stats.rating', 'Avaliação média')} ({platformStats.reviews})
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="text-3xl font-bold text-primary">30</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t('landing.stats.trialDays', 'Dias de teste, sem cartão')}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+        </Reveal>
+      )}
 
       {/* Testemunhos aprovados + destacados — entre Preços e FAQ. Só renderiza quando existem. */}
       {testimonialsLoaded && featuredTestimonials.length > 0 && (

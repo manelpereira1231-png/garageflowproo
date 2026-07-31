@@ -4,6 +4,8 @@ import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { useDialogA11y } from "@/components/ui/dialog-a11y";
+
 
 const Sheet = SheetPrimitive.Root;
 

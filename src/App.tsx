@@ -182,6 +182,7 @@ const AdminBusinessMetrics = lazyRetry(() => import("@/pages/admin/AdminBusiness
 const AdminComplaints = lazyRetry(() => import("@/pages/admin/AdminComplaints"));
 const AdminActionQueue = lazyRetry(() => import("@/pages/admin/AdminActionQueue"));
 const AdminRateLimits = lazyRetry(() => import("@/pages/admin/AdminRateLimits"));
+const AdminPaymentFees = lazyRetry(() => import("@/pages/admin/AdminPaymentFees"));
 const AdminMarketingAutopilot = lazyRetry(() => import("@/pages/admin/AdminMarketingAutopilot"));
 const AdminGrowth = lazyRetry(() => import("@/pages/admin/AdminGrowth"));
 const AdminAccounting = lazyRetry(() => import("@/pages/admin/AdminAccounting"));
@@ -443,6 +444,7 @@ const adminRoutes = [
   { path: "/admin/emails", element: <AdminEmailLogs /> },
   { path: "/admin/adoption", element: <AdminFeatureAdoption /> },
   { path: "/admin/settings", element: <AdminSettings /> },
+  { path: "/admin/payment-fees", element: <AdminPaymentFees /> },
   { path: "/admin/features", element: <AdminFeatureMatrix /> },
   { path: "/admin/plans", element: <AdminPlans /> },
   { path: "/admin/ai-control", element: <AdminAIControl /> },

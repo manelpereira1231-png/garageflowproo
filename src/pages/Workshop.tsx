@@ -51,6 +51,8 @@ export default function Workshop() {
   const [selected, setSelected] = useState<any>(null);
   const [checklist, setChecklist] = useState<any>(null);
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
+  const [uploadingPhotoIdx, setUploadingPhotoIdx] = useState<number | null>(null);
+
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   

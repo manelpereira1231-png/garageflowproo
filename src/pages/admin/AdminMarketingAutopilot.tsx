@@ -45,6 +45,28 @@ type Campaign = {
 const fmtEUR = (v: number | null | undefined) =>
   v == null ? "—" : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 
+// Invoca a edge function e extrai a mensagem de erro REAL (o supabase-js
+// devolve apenas "non-2xx status code" e esconde o corpo da resposta).
+async function invokeAutopilot(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke("marketing-autopilot", { body });
+  if (error) {
+    let detail = "";
+    try {
+      const res = (error as any)?.context;
+      if (res && typeof res.json === "function") {
+        const payload = await res.clone().json();
+        detail = payload?.error ?? "";
+      }
+    } catch {
+      /* corpo não-JSON — mantém mensagem genérica */
+    }
+    throw new Error(detail || error.message || "A IA falhou. Tenta de novo.");
+  }
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as any;
+}
+
+
 export default function AdminMarketingAutopilot() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,12 +91,9 @@ export default function AdminMarketingAutopilot() {
   const createCampaign = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: { action: "generate", market, monthlyBudgetEur: Number(budget), count: 3 },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const data = await invokeAutopilot({ action: "generate", market, monthlyBudgetEur: Number(budget), count: 3 });
       toast.success(`${(data as any).campaigns?.length ?? 0} campanhas prontas a publicar`);
+
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");
@@ -390,11 +409,7 @@ function AdvancedTools({ campaigns, onChanged }: { campaigns: Campaign[]; onChan
   const reoptimize = async (id: string) => {
     setBusyId(id);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: { action: "optimize", campaignId: id },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      await invokeAutopilot({ action: "optimize", campaignId: id });
       toast.success("Campanha reescrita pela IA");
       onChanged();
     } catch (e: any) {
@@ -405,17 +420,14 @@ function AdvancedTools({ campaigns, onChanged }: { campaigns: Campaign[]; onChan
   const generateOrganicPosts = async () => {
     setGenPosts(true);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: {
-          action: "generate_posts",
-          market: "Portugal", weeks: 4, postsPerWeek: 3,
-          channels: ["facebook", "instagram"],
-          startDate: new Date().toISOString(),
-        },
+      const data = await invokeAutopilot({
+        action: "generate_posts",
+        market: "Portugal", weeks: 4, postsPerWeek: 3,
+        channels: ["facebook", "instagram"],
+        startDate: new Date().toISOString(),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast.success(`${(data as any).count} posts orgânicos criados`);
+
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");
     } finally { setGenPosts(false); }

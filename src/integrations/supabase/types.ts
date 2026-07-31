@@ -10755,6 +10755,7 @@ export type Database = {
       get_my_supplier_id: { Args: never; Returns: string }
       get_public_inspection: { Args: { _token: string }; Returns: Json }
       get_public_invoice: { Args: { _token: string }; Returns: Json }
+      get_public_platform_stats: { Args: never; Returns: Json }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {

@@ -91,12 +91,9 @@ export default function AdminMarketingAutopilot() {
   const createCampaign = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("marketing-autopilot", {
-        body: { action: "generate", market, monthlyBudgetEur: Number(budget), count: 3 },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const data = await invokeAutopilot({ action: "generate", market, monthlyBudgetEur: Number(budget), count: 3 });
       toast.success(`${(data as any).campaigns?.length ?? 0} campanhas prontas a publicar`);
+
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Falhou");

@@ -18,6 +18,7 @@ import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { getTaxIdLabel, getCountryFiscalConfig } from "@/lib/countryFields";
 import { ActivateMarketplace } from "@/components/settings/ActivateMarketplace";
+import { ShopPaymentsCard } from "@/components/settings/ShopPaymentsCard";
 import { DEFAULT_OPENING_HOURS, type OpeningHours } from "@/lib/schedulingEngine";
 import {
   getDefaultTimezone,
@@ -445,6 +446,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Pagamentos — Stripe Connect da oficina */}
+        <ShopPaymentsCard shopId={shopId} />
 
         {/* Marketplace — Lote A: aderir com a mesma conta */}
         <ActivateMarketplace shopId={shopId} />

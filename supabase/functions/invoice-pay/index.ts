@@ -85,6 +85,17 @@ Deno.serve(async (req) => {
     const amount = Math.round(Number(inv.total || 0) * 100);
     if (amount <= 0) return json({ error: "Valor da fatura inválido." }, 400);
 
+    // Comissão da plataforma (nunca fixa no código) — platform_settings.invoice_payments
+    let feePercent = 3;
+    const { data: feeSetting } = await admin
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "invoice_payments")
+      .maybeSingle();
+    const rawFee = (feeSetting?.value as { platform_fee_percent?: number } | null)?.platform_fee_percent;
+    if (typeof rawFee === "number" && rawFee >= 0 && rawFee <= 30) feePercent = rawFee;
+    const applicationFee = connectAccount ? Math.round((amount * feePercent) / 100) : 0;
+
     const base = origin || req.headers.get("origin") || "https://garageflow.pt";
     const successBase = return_url || `${base}/invoice/${token}`;
     const joiner = successBase.includes("?") ? "&" : "?";
@@ -102,6 +113,9 @@ Deno.serve(async (req) => {
         success_url: `${successBase}${joiner}invoice_token=${token}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${successBase}${joiner}canceled=1`,
         metadata: { invoice_id: inv.id, invoice_number: String(inv.number ?? "") },
+        ...(connectAccount && applicationFee > 0
+          ? { payment_intent_data: { application_fee_amount: applicationFee } }
+          : {}),
       },
       connectAccount ? { stripeAccount: connectAccount } : undefined,
     );

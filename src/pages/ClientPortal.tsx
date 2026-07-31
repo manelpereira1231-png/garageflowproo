@@ -299,6 +299,11 @@ export default function ClientPortal() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [quoteDecision, setQuoteDecision] = useState<{ quote: any; action: 'approved' | 'rejected' } | null>(null);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [payingId, setPayingId] = useState<string | null>(null);
+
   const getInitialLang = (): string => {
     try {
       const stored = localStorage.getItem(`garageflow_portal_lang_${token}`);

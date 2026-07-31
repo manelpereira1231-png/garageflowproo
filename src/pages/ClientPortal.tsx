@@ -998,10 +998,21 @@ export default function ClientPortal() {
                         ) : (
                           <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                         )}
-                        <span className="truncate">{item.label || item.name}</span>
+                        <span className="truncate flex-1">{item.label || item.name}</span>
+                        {item.photo_url && (
+                          <a href={item.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                            <img
+                              src={item.photo_url}
+                              alt={`${t('photo')} — ${item.label || item.name}`}
+                              loading="lazy"
+                              className="w-8 h-8 rounded object-cover border border-border"
+                            />
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
+
                 </div>
               );
             })

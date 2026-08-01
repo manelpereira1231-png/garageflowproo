@@ -375,7 +375,9 @@ export function useSubscription() {
   const lockedStatus = subscription?.status === 'canceled'
     || subscription?.status === 'cancelled'
     || subscription?.status === 'past_due'
+    || subscription?.status === 'expired'
     || subscription?.status === 'trial_expired';
+
 
   // Client-side detection: an admin-managed plan (no stripe_subscription_id)
   // whose current_period_end is in the past must be treated as expired even

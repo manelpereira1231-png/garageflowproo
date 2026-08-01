@@ -198,7 +198,18 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
             emailRedirectTo: window.location.origin,
           }
         });
-        if (error) throw error;
+        if (error) {
+          const m = (error.message || "").toLowerCase();
+          if ((error as any).status === 422 || m.includes("already registered") || m.includes("already been registered") || m.includes("user already exists")) {
+            throw new Error("Já existe uma conta com este email. Inicie sessão ou recupere a palavra-passe.");
+          }
+          throw error;
+        }
+        // Supabase pode devolver 200 com `identities: []` quando o email já existe
+        // (proteção anti-enumeração). Sem isto o registo falhava em silêncio.
+        if (signUpData?.user && Array.isArray((signUpData.user as any).identities) && (signUpData.user as any).identities.length === 0) {
+          throw new Error("Já existe uma conta com este email. Inicie sessão ou recupere a palavra-passe.");
+        }
 
         if (signUpData?.user) {
           await supabase.from("user_roles" as any).insert({ user_id: signUpData.user.id, role: "garage_owner" });

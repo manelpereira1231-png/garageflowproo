@@ -89,14 +89,14 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
         {active ? (
           <>
             <p className="text-sm text-muted-foreground">
-              A sua oficina está inscrita no Marketplace com <strong>a mesma conta do ERP</strong>. Pode receber pedidos de inspecção e vender viaturas ou serviços.
+              A sua oficina está inscrita no Marketplace com <strong>a mesma conta do ERP</strong>. Pode receber pedidos de inspeção e vender viaturas ou serviços.
             </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => window.open("/market/dashboard", "_blank")}>
                 Abrir Marketplace <ExternalLink className="w-3.5 h-3.5 ml-1" />
               </Button>
               <Button variant="outline" size="sm" onClick={() => window.open("/market/opportunities", "_blank")}>
-                Pedidos de inspecção
+                Pedidos de inspeção
               </Button>
             </div>
           </>
@@ -112,10 +112,10 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
               </div>
             )}
             <p className="text-sm text-muted-foreground">
-              Peça adesão ao Marketplace para receber pedidos de inspecção e vender viaturas ou serviços — sem criar nova conta. O pedido é revisto pela equipa GarageFlow antes de ser activado.
+              Peça adesão ao Marketplace para receber pedidos de inspeção e vender viaturas ou serviços — sem criar nova conta. O pedido é revisto pela equipa GarageFlow antes de ser ativado.
             </p>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-              <li>Inspecções pagas por particulares e stands</li>
+              <li>Inspeções pagas por particulares e stands</li>
               <li>Página pública da oficina no Market</li>
               <li>Aprovação manual pelo administrador comercial</li>
             </ul>

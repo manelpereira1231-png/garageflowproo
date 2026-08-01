@@ -136,10 +136,15 @@ export default function Billing() {
     const loadUsage = async () => {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { data: authData } = await supabase.auth.getUser();
+      const ownerId = authData?.user?.id;
       const [quotesRes, teamRes, shopsRes] = await Promise.all([
         supabase.from("quotes").select("id", { count: "exact", head: true }).eq("shop_id", shopId).gte("created_at", monthStart),
         supabase.from("shop_users").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
-        supabase.from("shops").select("id", { count: "exact", head: true }),
+        // Contar SÓ as oficinas deste grupo (dono atual) — nunca o total global da plataforma.
+        ownerId
+          ? supabase.from("shops").select("id", { count: "exact", head: true }).eq("user_id", ownerId)
+          : Promise.resolve({ count: 1 } as any),
       ]);
       setMonthlyQuotes(quotesRes.count || 0);
       setTeamCount(teamRes.count || 0);

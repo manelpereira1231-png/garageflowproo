@@ -435,15 +435,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Linear/Notion-style grouping. Order = workshop daily priority.
   // Inventário fica imediatamente acima da Faturação.
   const NAV_GROUPS: { id: string; label: string; paths: string[] }[] = useMemo(() => [
-    { id: "ops", label: "Operação Diária", paths: ["/clients","/vehicles","/fleets","/quotes","/services","/workshop","/agenda"] },
-    { id: "inventory", label: "Inventário", paths: ["/catalog","/stock","/warranties"] },
-    ...(supplierNetworkEnabled ? [{ id: "supplier", label: "Fornecedor", paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
-    { id: "finance", label: "Faturação", paths: ["/invoices","/financial/reports","/billing"] },
-    { id: "comms", label: "Comunicação", paths: ["/alerts","/chat"] },
-    { id: "growth", label: "Crescimento", paths: ["/marketing","/automations","/loyalty","/referrals"] },
-    { id: "market", label: "Market", paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
-    { id: "admin", label: "Administração", paths: ["/team","/developers","/settings"] },
-  ], [supplierNetworkEnabled]);
+    { id: "ops", label: t("navGroup.ops", "Operação Diária"), paths: ["/clients","/vehicles","/fleets","/quotes","/services","/workshop","/agenda"] },
+    { id: "inventory", label: t("navGroup.inventory", "Inventário"), paths: ["/catalog","/stock","/warranties"] },
+    ...(supplierNetworkEnabled ? [{ id: "supplier", label: t("navGroup.supplier", "Fornecedor"), paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
+    { id: "finance", label: t("navGroup.finance", "Faturação"), paths: ["/invoices","/financial/reports","/billing"] },
+    { id: "comms", label: t("navGroup.comms", "Comunicação"), paths: ["/alerts","/chat"] },
+    { id: "growth", label: t("navGroup.growth", "Crescimento"), paths: ["/marketing","/automations","/loyalty","/referrals"] },
+    { id: "market", label: t("navGroup.market", "Market"), paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
+    { id: "admin", label: t("navGroup.admin", "Administração"), paths: ["/team","/developers","/settings"] },
+  ], [supplierNetworkEnabled, t]);
 
   const handleLogout = async () => {
     sessionStorage.removeItem("garageflow_user_type_cache");

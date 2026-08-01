@@ -222,7 +222,7 @@ serve(async (req) => {
       _nif: userNif,
       _phone: userPhone,
       _stripe_customer_id: customerId || null,
-      _shop_id: shopId ?? null,
+      _shop_id: shopData?.id ?? null,
       _user_id: user.id,
     });
 

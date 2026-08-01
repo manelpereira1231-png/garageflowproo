@@ -2,6 +2,8 @@
 // Requires connected Twilio connector — TWILIO_API_KEY + LOVABLE_API_KEY secrets.
 // Also requires TWILIO_SMS_FROM (E.164 number). Missing config → 503 (caller logs "skipped").
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

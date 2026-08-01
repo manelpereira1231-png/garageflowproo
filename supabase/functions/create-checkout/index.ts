@@ -222,7 +222,10 @@ serve(async (req) => {
       _nif: userNif,
       _phone: userPhone,
       _stripe_customer_id: customerId || null,
+      _shop_id: shopId ?? null,
+      _user_id: user.id,
     });
+
     if (eligibilityError) {
       console.warn("[create-checkout] trial eligibility check failed; continuing without trial", eligibilityError.message);
     }

@@ -10619,7 +10619,9 @@ export type Database = {
           _email: string
           _nif?: string
           _phone?: string
+          _shop_id?: string
           _stripe_customer_id?: string
+          _user_id?: string
         }
         Returns: boolean
       }

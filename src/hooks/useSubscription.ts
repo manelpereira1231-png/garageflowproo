@@ -375,7 +375,9 @@ export function useSubscription() {
   const lockedStatus = subscription?.status === 'canceled'
     || subscription?.status === 'cancelled'
     || subscription?.status === 'past_due'
+    || subscription?.status === 'expired'
     || subscription?.status === 'trial_expired';
+
 
   // Client-side detection: an admin-managed plan (no stripe_subscription_id)
   // whose current_period_end is in the past must be treated as expired even
@@ -394,9 +396,17 @@ export function useSubscription() {
     && !subscription.current_period_end
     && !['active', 'trialing'].includes(subscription.status);
 
+  // Trial whose end date already passed and no Stripe subscription took over:
+  // lock immediately, even before the nightly job flips the status.
+  const trialLapsed = !!subscription
+    && subscription.status === 'trialing'
+    && !!subscription.trial_end
+    && new Date(subscription.trial_end).getTime() < Date.now()
+    && !subscription.stripe_subscription_id;
+
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state
-    : (lockedStatus || adminExpiredClient || noPaidBacking)
+    : (lockedStatus || adminExpiredClient || noPaidBacking || trialLapsed)
       ? 'free'
       : rawPlan;
 
@@ -406,7 +416,8 @@ export function useSubscription() {
   // is only valid until its current_period_end.
   const mustSubscribe = subscriptionLoaded
     && !!subscription
-    && (lockedStatus || adminExpiredClient || noPaidBacking);
+    && (lockedStatus || adminExpiredClient || noPaidBacking || trialLapsed);
+
 
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive
@@ -445,7 +456,13 @@ export function useSubscription() {
   const limits: PlanLimits = mustSubscribe ? LOCKED_LIMITS : baseLimits;
   // Prices are read directly from country_settings via @/lib/regionConfig — see getRegionalPricing().
   const isTrialing = subscription?.status === 'trialing';
-  const isTrialExpired = subscription?.status === 'trial_expired';
+  const isTrialExpired = subscription?.status === 'trial_expired'
+    || subscription?.status === 'expired'
+    || (subscription?.status === 'trialing'
+        && !!subscription?.trial_end
+        && new Date(subscription.trial_end).getTime() < Date.now()
+        && !subscription?.stripe_subscription_id);
+
   const trialDaysLeft = subscription?.trial_end
     ? Math.max(0, Math.ceil((new Date(subscription.trial_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;

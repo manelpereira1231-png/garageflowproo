@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
@@ -113,6 +115,13 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Paid feature: shops without an active subscription cannot export SAF-T.
+    if (!isSuperAdmin) {
+      const denied = await assertActivePlan(shop_id, corsHeaders);
+      if (denied) return denied;
+    }
+
 
     if (action === "enqueue") {
       const fiscalYear = Number(year || new Date().getFullYear());

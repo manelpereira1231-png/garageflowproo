@@ -1,6 +1,8 @@
 // Twilio WhatsApp via Lovable connector gateway.
 // Requires TWILIO_API_KEY + LOVABLE_API_KEY + TWILIO_WHATSAPP_FROM (e.g. "whatsapp:+14155238886").
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,7 +54,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Forbidden" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Paid channel: blocked when the shop has no active subscription.
+      const denied = await assertActivePlan(shop_id, corsHeaders);
+      if (denied) return denied;
     }
+
 
     const toWa = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
     const body = new URLSearchParams({ To: toWa, From: from, Body: message });

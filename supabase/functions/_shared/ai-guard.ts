@@ -3,6 +3,8 @@
 // Do NOT bypass this guard on any AI-invoking edge function.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { checkActivePlan } from "./requireActivePlan.ts";
+
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,6 +73,20 @@ export async function guardAiCall(opts: GuardOptions): Promise<GuardResult> {
   if (!shopId) {
     return { ok: false, response: jsonResponse({ error: "Missing shop_id" }, 400) };
   }
+
+  // Server-side paywall: an expired/canceled shop cannot spend AI credits,
+  // even calling this function directly with a valid JWT.
+  const planCheck = await checkActivePlan(shopId);
+  if (!planCheck.active) {
+    return {
+      ok: false,
+      response: jsonResponse(
+        { error: "subscription_required", reason: planCheck.reason, status: planCheck.status ?? null },
+        402,
+      ),
+    };
+  }
+
 
   const promptHash = await sha256(prompt || "");
   const cacheKey = `${shopId}:${functionName}:${promptHash}`;

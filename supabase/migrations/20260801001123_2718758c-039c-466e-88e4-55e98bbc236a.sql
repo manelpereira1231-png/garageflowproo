@@ -1,0 +1,1 @@
+update public.subscriptions s set status='canceled', updated_at=now() from public.shops sh, auth.users u where s.shop_id=sh.id and sh.user_id=u.id and u.email like 'qa.trialexp.%@garageflow-test.pt';

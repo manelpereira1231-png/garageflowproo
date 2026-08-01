@@ -61,6 +61,11 @@ const ALWAYS_ALLOWED: readonly string[] = [
   "/onboarding",
   "/support",
   "/accept-invite",
+  // Paywall landing. Layout redirects here whenever the group has no active
+  // plan; if it were not allowed, RoleProtectedRoute would bounce back to
+  // /dashboard and the two guards would ping-pong forever (blank screen +
+  // React "fewer hooks" crash in production).
+  "/trial-expired",
 ];
 
 function isAlwaysAllowed(pathname: string): boolean {

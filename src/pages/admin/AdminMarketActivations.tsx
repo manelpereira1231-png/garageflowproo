@@ -79,7 +79,7 @@ export default function AdminMarketActivations() {
         <ShoppingBag className="w-5 h-5" />
         <h1 className="text-2xl font-bold">Adesões ao Marketplace</h1>
       </div>
-      <p className="text-sm text-muted-foreground">Aprove ou recuse pedidos de oficinas para participar no Marketplace (inspecções e vendas).</p>
+      <p className="text-sm text-muted-foreground">Aprove ou recuse pedidos de oficinas para participar no Marketplace (inspeções e vendas).</p>
 
       <div className="flex gap-2 border-b">
         <button

@@ -101,7 +101,7 @@ export function ShopPaymentsCard({ shopId }: Props) {
               <p>
                 Enquanto não ligar a sua conta Stripe, os pagamentos online das suas faturas são
                 recebidos pela plataforma GarageFlow em seu nome e transferidos manualmente.
-                Ligue a sua conta para receber diretamente, no seu IBAN, em 2–7 dias úteis.
+                Ligue a sua conta para receber diretamente, na sua conta bancária, em 2–7 dias úteis.
               </p>
             </div>
             <Button onClick={startOnboarding} disabled={working || !shopId} className="w-full min-h-[44px]">
@@ -131,7 +131,7 @@ export function ShopPaymentsCard({ shopId }: Props) {
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
               <p>
                 Os pagamentos das suas faturas entram diretamente na sua conta Stripe e são
-                transferidos para o seu IBAN segundo o calendário de payouts da Stripe.
+                transferidos para a sua conta bancária segundo o calendário de payouts da Stripe.
               </p>
             </div>
             <Button variant="outline" onClick={refreshStatus} disabled={working} className="w-full min-h-[44px]">

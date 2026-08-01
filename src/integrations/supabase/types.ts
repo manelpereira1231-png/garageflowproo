@@ -10614,27 +10614,17 @@ export type Database = {
         Args: { _email: string; _ip: string }
         Returns: Json
       }
-      check_trial_eligibility:
-        | {
-            Args: {
-              _email: string
-              _nif?: string
-              _phone?: string
-              _stripe_customer_id?: string
-            }
-            Returns: boolean
-          }
-        | {
-            Args: {
-              _email: string
-              _nif?: string
-              _phone?: string
-              _shop_id?: string
-              _stripe_customer_id?: string
-              _user_id?: string
-            }
-            Returns: boolean
-          }
+      check_trial_eligibility: {
+        Args: {
+          _email: string
+          _nif?: string
+          _phone?: string
+          _shop_id?: string
+          _stripe_customer_id?: string
+          _user_id?: string
+        }
+        Returns: boolean
+      }
       claim_next_actions: {
         Args: { _limit?: number }
         Returns: {

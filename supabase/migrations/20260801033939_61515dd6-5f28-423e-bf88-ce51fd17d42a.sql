@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.check_trial_eligibility(text, text, text, text);

@@ -55,7 +55,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Forbidden" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Paid channel: blocked when the shop has no active subscription.
+      const denied = await assertActivePlan(shop_id, corsHeaders);
+      if (denied) return denied;
     }
+
 
     const body = new URLSearchParams({ To: to, From: TWILIO_SMS_FROM, Body: message });
     const resp = await fetch(`${GATEWAY_URL}/Messages.json`, {

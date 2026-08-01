@@ -396,9 +396,17 @@ export function useSubscription() {
     && !subscription.current_period_end
     && !['active', 'trialing'].includes(subscription.status);
 
+  // Trial whose end date already passed and no Stripe subscription took over:
+  // lock immediately, even before the nightly job flips the status.
+  const trialLapsed = !!subscription
+    && subscription.status === 'trialing'
+    && !!subscription.trial_end
+    && new Date(subscription.trial_end).getTime() < Date.now()
+    && !subscription.stripe_subscription_id;
+
   const effectivePlan: Plan = !subscriptionLoaded
     ? 'free' // Will be hidden by loading state
-    : (lockedStatus || adminExpiredClient || noPaidBacking)
+    : (lockedStatus || adminExpiredClient || noPaidBacking || trialLapsed)
       ? 'free'
       : rawPlan;
 
@@ -408,7 +416,8 @@ export function useSubscription() {
   // is only valid until its current_period_end.
   const mustSubscribe = subscriptionLoaded
     && !!subscription
-    && (lockedStatus || adminExpiredClient || noPaidBacking);
+    && (lockedStatus || adminExpiredClient || noPaidBacking || trialLapsed);
+
 
   // Admin-managed overrides (Admin > Platform Settings) merged on top
   // of static defaults — guarantees the toggles in /admin/settings drive

@@ -72,6 +72,20 @@ export async function guardAiCall(opts: GuardOptions): Promise<GuardResult> {
     return { ok: false, response: jsonResponse({ error: "Missing shop_id" }, 400) };
   }
 
+  // Server-side paywall: an expired/canceled shop cannot spend AI credits,
+  // even calling this function directly with a valid JWT.
+  const planCheck = await checkActivePlan(shopId);
+  if (!planCheck.active) {
+    return {
+      ok: false,
+      response: jsonResponse(
+        { error: "subscription_required", reason: planCheck.reason, status: planCheck.status ?? null },
+        402,
+      ),
+    };
+  }
+
+
   const promptHash = await sha256(prompt || "");
   const cacheKey = `${shopId}:${functionName}:${promptHash}`;
 

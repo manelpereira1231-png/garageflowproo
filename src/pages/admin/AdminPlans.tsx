@@ -581,7 +581,11 @@ export default function AdminPlans() {
                               {items.map((limit) => {
                                 const raw = (p.limits ?? {})[limit.key];
                                 const isBool = limit.unit === "boolean";
-                                const numValue = typeof raw === "number" ? raw : (typeof raw === "boolean" ? (raw ? 1 : 0) : 0);
+                                // Chave ausente = sem limite aplicado em runtime → mostrar ∞ (não 0),
+                                // para o painel refletir o que o backend realmente aplica.
+                                const missing = raw === undefined || raw === null;
+                                const fallback = missing && limit.allow_unlimited ? -1 : 0;
+                                const numValue = typeof raw === "number" ? raw : (typeof raw === "boolean" ? (raw ? 1 : 0) : fallback);
                                 const boolValue = typeof raw === "boolean" ? raw : (typeof raw === "number" ? raw !== 0 : false);
                                 const unlimited = !isBool && numValue === -1;
                                 const setLimit = (val: number | boolean) =>

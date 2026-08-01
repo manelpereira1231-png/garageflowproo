@@ -1,6 +1,8 @@
 // Twilio WhatsApp via Lovable connector gateway.
 // Requires TWILIO_API_KEY + LOVABLE_API_KEY + TWILIO_WHATSAPP_FROM (e.g. "whatsapp:+14155238886").
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

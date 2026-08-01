@@ -133,11 +133,34 @@ export function useShopContext() {
       const allShops = realOwnedShops.length > 0
         ? [...realOwnedShops, ...memberShops]
         : [...memberShops, ...realOwnedShops];
-      setShops(allShops);
 
       // Restore or pick default; if the stored active id no longer exists
       // (e.g. shop was deleted), fall back to the primary shop.
       const stored = localStorage.getItem(STORAGE_KEY);
+
+      // Super admin impersonation: the audited shop is not one of their own
+      // memberships, so load it explicitly instead of bouncing the admin back
+      // to their own shop ("Entrar como oficina" was silently reverting).
+      if (stored && !allShops.some((s) => s.id === stored)) {
+        const { data: isAdmin } = await Promise.race([
+          supabase.rpc("is_super_admin", { _user_id: user.id }),
+          timeoutResult({ data: false } as any),
+        ]);
+        if (isAdmin) {
+          const { data: impersonated } = await Promise.race([
+            supabase
+              .from("shops")
+              .select("id, name, logo_url, currency, language")
+              .eq("id", stored)
+              .maybeSingle(),
+            timeoutResult({ data: null } as any),
+          ]);
+          if (impersonated) allShops.unshift(impersonated as Shop);
+        }
+      }
+
+      setShops(allShops);
+
       if (stored && allShops.some(s => s.id === stored)) {
         setActiveShopId(stored);
       } else if (allShops.length > 0) {
@@ -148,6 +171,7 @@ export function useShopContext() {
         setActiveShopId(null);
         localStorage.removeItem(STORAGE_KEY);
       }
+
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 

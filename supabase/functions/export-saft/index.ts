@@ -114,6 +114,13 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Paid feature: shops without an active subscription cannot export SAF-T.
+    if (!isSuperAdmin) {
+      const denied = await assertActivePlan(shop_id, corsHeaders);
+      if (denied) return denied;
+    }
+
+
     if (action === "enqueue") {
       const fiscalYear = Number(year || new Date().getFullYear());
       const { data: job, error: jobError } = await admin

@@ -103,10 +103,16 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+    // NOTA: o resultado de `admin.rpc()` é um thenable do PostgREST, NÃO uma Promise
+    // completa — não tem `.catch()`. Chamar `.catch()` diretamente atirava
+    // "admin.rpc(...).catch is not a function" e devolvia sempre 500 aqui.
     const [{ data: idsRes }, { data: isAdminRes }] = await Promise.all([
-      admin.rpc("get_user_shop_ids", { _user_id: user.id }),
-      admin.rpc("is_super_admin", { _user_id: user.id }).catch(() => ({ data: false })),
+      Promise.resolve(admin.rpc("get_user_shop_ids", { _user_id: user.id })),
+      Promise.resolve(admin.rpc("is_super_admin", { _user_id: user.id })).catch(
+        () => ({ data: false } as { data: boolean }),
+      ),
     ]);
+
     const shopIds: string[] = Array.isArray(idsRes) ? idsRes.map((r: any) => r.get_user_shop_ids ?? r) : [];
     const isSuperAdmin = !!isAdminRes;
     if (!isSuperAdmin && !shopIds.includes(shop_id)) {

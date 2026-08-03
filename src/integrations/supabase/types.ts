@@ -10727,6 +10727,7 @@ export type Database = {
         Returns: number
       }
       enroll_shop_in_market: { Args: { _shop_id: string }; Returns: Json }
+      expire_trials_job: { Args: never; Returns: number }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_recommended_actions: {
         Args: { _entity_type: string; _metadata?: Json; _score: number }

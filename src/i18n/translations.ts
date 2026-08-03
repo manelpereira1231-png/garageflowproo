@@ -631,7 +631,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': '30 dias de trial · Sem cartão de crédito',
+    'landing.badge': '30 dias grátis · Sem cartão de crédito',
     'auth.countryLabel': 'País',
     'auth.otherCountries': 'Outros países',
     'affiliate.haveAccount': 'Já tenho conta — Entrar',
@@ -2666,7 +2666,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'To reply, contact the workshop directly.',
 
     // Landing Page
-    'landing.badge': '30-day trial · No credit card required',
+    'landing.badge': '30 days free · No credit card',
     'auth.countryLabel': 'Country',
     'auth.otherCountries': 'Other countries',
     'affiliate.haveAccount': 'I already have an account — Sign in',
@@ -4555,7 +4555,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, contacte el taller directamente.',
 
     // Landing Page
-    'landing.badge': '30 días de prueba · Sin tarjeta de crédito',
+    'landing.badge': '30 días gratis · Sin tarjeta de crédito',
     'auth.countryLabel': 'País',
     'auth.otherCountries': 'Otros países',
     'affiliate.haveAccount': 'Ya tengo cuenta — Entrar',
@@ -6465,7 +6465,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'chat.emailFooter': 'Para responder, entre em contato com a oficina diretamente.',
 
     // Landing Page
-    'landing.badge': '30 dias de trial · Sem cartão de crédito',
+    'landing.badge': '30 dias grátis · Sem cartão de crédito',
     'auth.countryLabel': 'País',
     'auth.otherCountries': 'Outros países',
     'affiliate.haveAccount': 'Já tenho conta — Entrar',
@@ -7986,7 +7986,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'market.detail.seller': 'विक्रेता',
 
     // Landing page
-    'landing.badge': '30 दिन का ट्रायल · कोई क्रेडिट कार्ड नहीं',
+    'landing.badge': '30 दिन मुफ़्त · कोई क्रेडिट कार्ड नहीं',
     'auth.countryLabel': 'देश',
     'auth.otherCountries': 'अन्य देश',
     'affiliate.haveAccount': 'मेरा पहले से खाता है — साइन इन करें',

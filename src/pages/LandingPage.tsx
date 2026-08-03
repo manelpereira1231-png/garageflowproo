@@ -479,7 +479,7 @@ export default function LandingPage() {
       })()}
 
       {/* Hero */}
-      <header className={`${chooserEnabled ? "pt-10 sm:pt-14" : "pt-28 sm:pt-32"} pb-16 sm:pb-20 px-4 text-center relative overflow-hidden`}>
+      <header className={`${chooserEnabled && erpEnabled === true && marketEnabled === true ? "pt-12 sm:pt-16" : "pt-[116px] sm:pt-[128px]"} pb-16 sm:pb-20 px-4 text-center relative overflow-hidden`}>
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
         <div className="relative max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-6">

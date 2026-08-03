@@ -561,7 +561,7 @@ export default function LandingPage() {
               <WhatsAppMockup />
               <div className="mt-5">
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-primary" /> WhatsApp + SMS
+                  <MessageCircle className="w-5 h-5 text-primary" /> {t('landing.commChannels')}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{t('landing.feat3Desc')}</p>
               </div>

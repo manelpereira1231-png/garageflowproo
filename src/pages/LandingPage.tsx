@@ -340,36 +340,56 @@ export default function LandingPage() {
           </div>
           <div className="md:hidden flex items-center gap-1">
             <ThemeToggle />
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open menu"
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-[85vw] max-w-[300px] sm:max-w-[300px] p-0 flex flex-col bg-background"
+              >
+                <SheetTitle className="sr-only">{t('landing.navFeatures')}</SheetTitle>
+                <div
+                  className="flex items-center gap-2.5 px-4 border-b border-border h-14"
+                  style={{ marginTop: "env(safe-area-inset-top)" }}
+                >
+                  <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+                    <Wrench className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-lg font-bold tracking-tight">
+                    Garage<span className="text-primary">Flow</span>
+                  </span>
+                </div>
+                <div
+                  className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+                  style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+                >
+                  <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
+                  <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
+                  <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>
+                  <div className="py-2">
+                    <LanguageDropdown />
+                  </div>
+                  <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                    <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">{t('landing.login')}</Button>
+                    </Link>
+                    <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
+                    </Link>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-background border-t border-border px-4 py-4 space-y-3 animate-fade-in">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navFeatures')}</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navPricing')}</a>
-            <Link to="/afiliados" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2">{t('landing.navAffiliates')}</Link>
-            <div className="py-2">
-              <LanguageDropdown />
-            </div>
-            <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Link to="/auth?mode=login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full">{t('landing.login')}</Button>
-              </Link>
-              <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full gradient-primary text-primary-foreground">{t('landing.ctaDemo')}</Button>
-              </Link>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Ecosystem strip — compact ERP vs Market chooser (admin-configurable).

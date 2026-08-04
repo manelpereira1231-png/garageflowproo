@@ -5431,8 +5431,10 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          extra_fee_percent: number
           fee_amount: number
           fee_percent: number
+          fixed_fee_amount: number
           gross_amount: number
           id: string
           invoice_id: string
@@ -5448,8 +5450,10 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string
+          extra_fee_percent?: number
           fee_amount?: number
           fee_percent?: number
+          fixed_fee_amount?: number
           gross_amount?: number
           id?: string
           invoice_id: string
@@ -5465,8 +5469,10 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string
+          extra_fee_percent?: number
           fee_amount?: number
           fee_percent?: number
+          fixed_fee_amount?: number
           gross_amount?: number
           id?: string
           invoice_id?: string
@@ -7081,8 +7087,10 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          extra_fee_percent: number
           fee_amount: number
           fee_percent: number
+          fixed_fee_amount: number
           gross_amount: number
           id: string
           invoice_id: string
@@ -7096,8 +7104,10 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string
+          extra_fee_percent?: number
           fee_amount?: number
           fee_percent?: number
+          fixed_fee_amount?: number
           gross_amount?: number
           id?: string
           invoice_id: string
@@ -7111,8 +7121,10 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string
+          extra_fee_percent?: number
           fee_amount?: number
           fee_percent?: number
+          fixed_fee_amount?: number
           gross_amount?: number
           id?: string
           invoice_id?: string

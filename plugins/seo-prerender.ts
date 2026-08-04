@@ -480,7 +480,10 @@ function renderHtml(template: string, doc: PageDoc): string {
     .replace(/<meta\s+property="og:title"[^>]*>/i, "")
     .replace(/<meta\s+property="og:description"[^>]*>/i, "")
     .replace(/<meta\s+name="twitter:title"[^>]*>/i, "")
-    .replace(/<meta\s+name="twitter:description"[^>]*>/i, "");
+    .replace(/<meta\s+name="twitter:description"[^>]*>/i, "")
+    // remover hreflang e canonical estáticos (apontam para a homepage) — cada página emite os seus
+    .replace(/<link\s+rel="alternate"\s+hreflang=[^>]*>/gi, "")
+    .replace(/<link\s+rel="canonical"[^>]*>/gi, "");
 
   html = html.replace("</head>", `  ${head}\n  </head>`);
 

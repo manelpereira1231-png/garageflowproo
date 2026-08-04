@@ -10,7 +10,7 @@
  * Público (sem sessão): a autorização vem do token opaco da fatura.
  */
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import Stripe from "npm:stripe@14.21.0";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { recordManualPayout } from "../_shared/recordManualPayout.ts";
 import { getPlatformFeePercent } from "../_shared/platformFee.ts";
 import { toStripeAmount, feeAmountFromStripeAmount } from "../_shared/stripeCurrency.ts";
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     const { token, action = "checkout", session_id, origin, return_url } = await req.json().catch(() => ({}));
     if (!token) return json({ error: "Link inválido." }, 400);

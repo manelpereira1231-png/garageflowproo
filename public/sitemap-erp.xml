@@ -1,51 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://garageflow.pt/</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/erp</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/afiliados</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/demo</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/gratis-3-meses</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/support</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/legal/privacy</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/legal/terms</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://garageflow.pt/legal/cookies</loc>
-    <lastmod>2026-08-04</lastmod>
-    <priority>0.3</priority>
-  </url>
-  <url>
     <loc>https://garageflow.pt/software-gestao-oficinas</loc>
     <lastmod>2026-08-04</lastmod>
     <priority>0.8</priority>
@@ -1494,5 +1449,50 @@
     <loc>https://garageflow.pt/blog/como-gerir-clientes-recorrentes</loc>
     <lastmod>2026-05-19</lastmod>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/erp</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/demo</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/afiliados</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/support</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/gratis-3-meses</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/legal/privacy</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/legal/terms</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://garageflow.pt/legal/cookies</loc>
+    <lastmod>2026-08-04</lastmod>
+    <priority>0.3</priority>
   </url>
 </urlset>

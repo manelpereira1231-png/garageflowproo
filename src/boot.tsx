@@ -97,3 +97,8 @@ createRoot(document.getElementById("root")!).render(
     </HelmetProvider>
   </RootErrorBoundary>
 );
+
+// Duplo rAF = o primeiro frame com a UI real já foi pintado antes de retirar o splash.
+requestAnimationFrame(() => requestAnimationFrame(dismissBootSplash));
+// Rede de segurança: nunca deixar o splash preso se algo atrasar o rAF.
+window.setTimeout(dismissBootSplash, 8000);

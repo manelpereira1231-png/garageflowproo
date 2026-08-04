@@ -47,6 +47,8 @@ const navSections = [
       { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
+      { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },
+
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
   },

@@ -69,6 +69,7 @@ const ORDERS = [
  * Desktop (sm+): sidebar + fixed 16/10 frame with floating WhatsApp phone.
  */
 export default function HeroMockup() {
+  const today = useToday();
   return (
     <div className="relative w-full max-w-full rounded-2xl overflow-hidden border border-border shadow-2xl bg-card sm:aspect-[16/10]">
       {/* Window chrome */}

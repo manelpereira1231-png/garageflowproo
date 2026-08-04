@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { toStripeAmount } from "../_shared/stripeCurrency.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,9 +140,9 @@ serve(async (req) => {
 
     // Create escrow record (pending)
     const captureMethod = sellerConnectReady ? "manual" : "automatic";
-    const isZeroDecimal = ["jpy", "krw", "vnd", "clp"].includes(currency);
-    const stripeAmount = isZeroDecimal ? Math.round(totalCharge) : Math.round(totalCharge * 100);
-    const stripeAppFee = isZeroDecimal ? Math.round(platformFee) : Math.round(platformFee * 100);
+    // Lista completa de moedas zero-decimal centralizada em _shared/stripeCurrency.ts
+    const stripeAmount = toStripeAmount(totalCharge, currency);
+    const stripeAppFee = toStripeAmount(platformFee, currency);
 
     const { data: escrow, error: escrowError } = await supabaseAdmin
       .from("market_escrow")

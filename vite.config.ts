@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger(), seoPrerender()].filter(Boolean),
   resolve: {
     alias: {
       "@/integrations/supabase/client": path.resolve(__dirname, "./src/integrations/supabase/client-proxy.ts"),

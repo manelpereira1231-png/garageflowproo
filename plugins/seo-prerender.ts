@@ -320,6 +320,130 @@ function buildDocs(data: Awaited<ReturnType<typeof loadData>>): PageDoc[] {
     });
   }
 
+  // ---------- Rotas core (homepage e páginas institucionais) ----------
+  const topPages = data.SEO_PAGES.slice(0, 8).map((p: any) => ({
+    label: p.h1 ?? p.title,
+    to: `/${p.slug}`,
+  }));
+  const topCities = data.SEO_CITIES.slice(0, 10).map((c) => ({
+    label: `Software para oficinas em ${c.name}`,
+    to: `/oficinas/${c.slug}`,
+  }));
+  const topPosts = data.BLOG_POSTS.slice(0, 6).map((b: any) => ({
+    label: b.title,
+    to: `/blog/${b.slug}`,
+  }));
+
+  const CORE_DOCS: PageDoc[] = [
+    {
+      route: "",
+      title: "GarageFlow | Software de Gestão para Oficinas Automóveis",
+      description:
+        "Software completo para oficinas automóveis: orçamentos, ordens de serviço, faturação, stock, agenda e clientes. Teste 30 dias grátis, sem cartão.",
+      ogType: "website",
+      h1: "Software de gestão para oficinas automóveis",
+      priority: "1.0",
+      bodyHtml: [
+        paras([
+          "O GarageFlow é um software de gestão para oficinas automóveis que reúne clientes, viaturas, orçamentos, ordens de serviço, faturação e stock num único sistema, acessível em computador, tablet e telemóvel.",
+          "Foi desenhado para oficinas independentes e redes de oficinas em Portugal, Brasil e Europa, com fluxo de trabalho linear: registar o cliente, associar a viatura, criar o orçamento e converter em serviço aprovado.",
+        ]),
+        `<section><h2>O que o GarageFlow faz</h2>${list([
+          { title: "Orçamentos e aprovação digital", desc: "envio ao cliente, aprovação com assinatura e conversão automática em ordem de serviço." },
+          { title: "Ordens de serviço", desc: "estados de trabalho, mão de obra, peças e histórico completo por viatura." },
+          { title: "Faturação", desc: "documentos com numeração sequencial, impostos por país e exportação contabilística." },
+          { title: "Stock e peças", desc: "inventário, alertas de stock mínimo e consumo automático nos serviços." },
+          { title: "Agenda e marcações online", desc: "portal público de marcação e lembretes automáticos ao cliente." },
+          { title: "Multi-oficina", desc: "gestão de várias oficinas do mesmo grupo com dados isolados e visão consolidada." },
+        ])}</section>`,
+        faqHtml([
+          { q: "O GarageFlow funciona em telemóvel?", a: "Sim. É uma aplicação web responsiva e instalável (PWA), pensada primeiro para uso móvel dentro da oficina." },
+          { q: "Preciso de instalar alguma coisa?", a: "Não. Funciona no navegador, com os dados na cloud e cópias de segurança automáticas." },
+          { q: "Posso experimentar antes de pagar?", a: "Sim, há 30 dias de teste sem necessidade de cartão de crédito." },
+        ]),
+        linksHtml("Guias e soluções", topPages),
+        linksHtml("Oficinas por cidade", topCities),
+        linksHtml("Artigos do blog", topPosts),
+      ].join(""),
+      jsonLd: [ORG_LD, SOFTWARE_LD, crumbs([home])],
+    },
+    {
+      route: "erp",
+      title: "ERP para Oficinas Automóveis | GarageFlow",
+      description:
+        "ERP para oficinas automóveis: clientes, viaturas, orçamentos, serviços, faturação, stock e relatórios num só sistema cloud.",
+      ogType: "website",
+      h1: "ERP para oficinas automóveis",
+      priority: "0.8",
+      bodyHtml: [
+        paras([
+          "O ERP do GarageFlow centraliza toda a operação da oficina: da entrada da viatura à faturação, passando pelo controlo de peças e pela produtividade dos mecânicos.",
+          "Cada módulo comunica com os restantes, o que elimina a duplicação de dados típica das folhas de cálculo e dos cadernos em papel.",
+        ]),
+        `<section><h2>Módulos do ERP</h2>${list([
+          { title: "Operação", desc: "agenda, ordens de serviço, inspeções digitais e histórico por viatura." },
+          { title: "Comercial", desc: "orçamentos, aprovação digital, portal do cliente e lembretes de manutenção." },
+          { title: "Financeiro", desc: "faturação, recebimentos, relatórios e exportações fiscais." },
+          { title: "Inventário", desc: "peças, fornecedores, custos e alertas de reposição." },
+        ])}</section>`,
+        linksHtml("Ver também", [...topPages.slice(0, 5), { label: "Blog GarageFlow", to: "/blog" }]),
+      ].join(""),
+      jsonLd: [ORG_LD, SOFTWARE_LD, crumbs([home, { name: "ERP", url: `${SITE}/erp` }])],
+    },
+    {
+      route: "demo",
+      title: "Demonstração do GarageFlow | Ver o software em ação",
+      description:
+        "Veja como o GarageFlow gere orçamentos, serviços e faturação numa oficina automóvel. Demonstração e teste gratuito de 30 dias.",
+      ogType: "website",
+      h1: "Demonstração do GarageFlow",
+      priority: "0.6",
+      bodyHtml: [
+        paras([
+          "A demonstração mostra o percurso real de uma reparação no GarageFlow: registo do cliente e da viatura, orçamento enviado e aprovado digitalmente, ordem de serviço executada e fatura emitida.",
+          "Pode também criar uma conta de teste e experimentar com dados próprios durante 30 dias, sem cartão de crédito.",
+        ]),
+        linksHtml("Explorar antes da demonstração", [...topPages.slice(0, 4), { label: "Blog GarageFlow", to: "/blog" }]),
+      ].join(""),
+      jsonLd: [ORG_LD, SOFTWARE_LD, crumbs([home, { name: "Demonstração", url: `${SITE}/demo` }])],
+    },
+    {
+      route: "afiliados",
+      title: "Programa de Afiliados GarageFlow | Ganhe comissões",
+      description:
+        "Recomende o GarageFlow a oficinas automóveis e receba comissões recorrentes. Programa de afiliados com painel próprio e acompanhamento de resultados.",
+      ogType: "website",
+      h1: "Programa de afiliados GarageFlow",
+      priority: "0.6",
+      bodyHtml: [
+        paras([
+          "O programa de afiliados do GarageFlow permite a consultores, contabilistas, fornecedores de peças e criadores de conteúdo receberem comissões recorrentes por cada oficina que se torne cliente.",
+          "Cada afiliado tem um link próprio, um painel com métricas de conversão e acompanhamento das comissões geradas.",
+        ]),
+        linksHtml("Saber mais sobre o produto", topPages.slice(0, 4)),
+      ].join(""),
+      jsonLd: [ORG_LD, crumbs([home, { name: "Afiliados", url: `${SITE}/afiliados` }])],
+    },
+    {
+      route: "support",
+      title: "Apoio ao Cliente GarageFlow | Suporte para oficinas",
+      description:
+        "Suporte GarageFlow para oficinas automóveis: abertura de pedidos de ajuda, dúvidas de configuração, faturação e utilização do sistema.",
+      ogType: "website",
+      h1: "Apoio ao cliente GarageFlow",
+      priority: "0.4",
+      bodyHtml: [
+        paras([
+          "A equipa de apoio do GarageFlow ajuda em configuração inicial, importação de dados, faturação, gestão de equipa e utilização diária do sistema.",
+          "Os pedidos são registados com histórico, para que qualquer membro da equipa possa acompanhar o estado da resposta.",
+        ]),
+        linksHtml("Recursos úteis", [{ label: "Blog GarageFlow", to: "/blog" }, ...topPages.slice(0, 3)]),
+      ].join(""),
+      jsonLd: [ORG_LD, crumbs([home, { name: "Apoio ao cliente", url: `${SITE}/support` }])],
+    },
+  ];
+  docs.push(...CORE_DOCS);
+
   return docs;
 }
 

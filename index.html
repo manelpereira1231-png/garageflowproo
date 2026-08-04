@@ -217,10 +217,47 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
+    <!-- Critical CSS do arranque: pinta o fundo da app e o splash ANTES de qualquer CSS/JS
+         do bundle. Elimina o flash do HTML pré-renderizado (SSG/SEO), o FOUC e o ecrã branco. -->
+    <style>
+      html, body { margin: 0; padding: 0; background: #f5f6f8; }
+      html.dark, html.dark body { background: #0d1116; }
+      #root { min-height: 100vh; }
+      #gf-boot {
+        position: fixed; inset: 0; z-index: 2147483647;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+        background: #f5f6f8; color: #1c1f24;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        transition: opacity .18s ease-out;
+      }
+      html.dark #gf-boot { background: #0d1116; color: #f5f5f4; }
+      #gf-boot[data-hiding="1"] { opacity: 0; pointer-events: none; }
+      #gf-boot .gf-logo { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #e8930c; }
+      #gf-boot .gf-spinner {
+        width: 26px; height: 26px; border-radius: 50%;
+        border: 2px solid rgba(232, 147, 12, .22); border-top-color: #e8930c;
+        animation: gf-spin .7s linear infinite;
+      }
+      @keyframes gf-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #gf-boot .gf-spinner { animation-duration: 2s; } }
+    </style>
+    <noscript><style>#gf-boot { display: none !important; }</style></noscript>
+    <!-- Tema aplicado antes do primeiro paint: evita o flash claro→escuro no arranque
+         (mesma fonte de verdade do ThemeProvider: localStorage `garageflow_theme`). -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("garageflow_theme");
+          var dark = t === "dark" || (!t && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (_) {}
+      })();
+    </script>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="gf-boot" aria-hidden="true"><div class="gf-logo">GarageFlow</div><div class="gf-spinner"></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,8 +1,15 @@
 import "./index.css";
 
+/** O #root deixa de estar "vazio": contém o splash `#gf-boot` e, nas rotas SSG, o HTML
+ *  pré-renderizado. Só consideramos a app montada quando existe conteúdo do React. */
+const isAppMounted = () =>
+  !!document.querySelector("#root > :not(#gf-boot):not(main)");
+
 const renderFatalBootError = (error: unknown) => {
   const root = document.getElementById("root");
   if (!root) return;
+  // Se o arranque falhou, o splash tem de sair para o utilizador ver a mensagem.
+  document.getElementById("gf-boot")?.remove();
 
   const message = error instanceof Error ? error.message : "Erro inesperado ao iniciar a aplicação.";
   const escapedMessage = message.replace(/[&<>"]/g, (char) => {
@@ -39,13 +46,11 @@ const renderFatalBootError = (error: unknown) => {
 };
 
 window.addEventListener("error", (event) => {
-  const root = document.getElementById("root");
-  if (!root?.hasChildNodes()) renderFatalBootError(event.error ?? event.message);
+  if (!isAppMounted()) renderFatalBootError(event.error ?? event.message);
 });
 
 window.addEventListener("unhandledrejection", (event) => {
-  const root = document.getElementById("root");
-  if (!root?.hasChildNodes()) renderFatalBootError(event.reason);
+  if (!isAppMounted()) renderFatalBootError(event.reason);
 });
 
 import("./boot").catch(renderFatalBootError);

@@ -487,12 +487,22 @@ function renderHtml(template: string, doc: PageDoc): string {
 
   html = html.replace("</head>", `  ${head}\n  </head>`);
 
+  // O conteúdo SSG vive dentro de #root (o React substitui-o ao montar) mas por baixo do
+  // splash `#gf-boot` do template — assim o utilizador nunca vê o HTML sem estilos, e o
+  // crawler continua a receber o conteúdo completo no primeiro byte.
+  const bootSplash =
+    template.match(/<div id="gf-boot"[\s\S]*?<\/div><\/div>/)?.[0] ?? "";
   const body =
     `<div id="root"><main><article>` +
     `<h1>${esc(doc.h1)}</h1>` +
     doc.bodyHtml +
-    `</article></main></div>`;
-  html = html.replace(/<div id="root"><\/div>/, body);
+    `</article></main>${bootSplash}</div>`;
+  // Substituição por linha (o bloco #root ocupa exatamente uma linha no index.html),
+  // evitando regex frágil com <div> aninhados.
+  html = html
+    .split("\n")
+    .map((line) => (line.includes('<div id="root">') ? `    ${body}` : line))
+    .join("\n");
   return html;
 }
 

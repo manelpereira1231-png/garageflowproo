@@ -1,4 +1,45 @@
+import { useEffect, useState } from "react";
 import { Wrench, FileText, Users, BarChart3, CheckCircle2, Clock, MessageCircle, Bell } from "lucide-react";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** "4 de Agosto" (pt-PT, data local do utilizador) */
+const longDate = (d: Date) =>
+  `${d.getDate()} de ${cap(d.toLocaleDateString("pt-PT", { month: "long" }))}`;
+
+/** "4 Ago" — versão curta usada na barra mobile */
+const shortDate = (d: Date) =>
+  `${d.getDate()} ${cap(d.toLocaleDateString("pt-PT", { month: "short" }).replace(".", ""))}`;
+
+/** Data local do utilizador, com re-render automático à meia-noite (sem deploy). */
+function useToday() {
+  const [today, setToday] = useState(() => new Date());
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleMidnight = () => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      timer = setTimeout(() => {
+        setToday(new Date());
+        scheduleMidnight();
+      }, midnight.getTime() - now.getTime());
+    };
+    scheduleMidnight();
+
+    // separador reaberto/retomado noutro dia → atualiza de imediato
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setToday(new Date());
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  return today;
+}
 
 const NAV = [
   { icon: BarChart3, label: "Dashboard", active: true },

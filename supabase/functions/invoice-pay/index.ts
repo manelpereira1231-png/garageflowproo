@@ -12,6 +12,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@14.21.0";
 import { recordManualPayout } from "../_shared/recordManualPayout.ts";
+import { getPlatformFeePercent } from "../_shared/platformFee.ts";
+import { toStripeAmount, feeAmountFromStripeAmount } from "../_shared/stripeCurrency.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,33 +79,27 @@ Deno.serve(async (req) => {
         status: "paid",
         stripe_payment_session_id: session.id,
       }).eq("id", inv.id);
-      if (!connectAccount) {
-        await recordManualPayout(admin, {
-          invoiceId: inv.id,
-          stripeSessionId: session.id,
-          amountTotalCents: session.amount_total ?? null,
-          currency: session.currency ?? null,
-        }, (m, d) => console.log("[invoice-pay]", m, d));
-      }
+      await recordManualPayout(admin, {
+        invoiceId: inv.id,
+        stripeSessionId: session.id,
+        amountTotalCents: session.amount_total ?? null,
+        currency: session.currency ?? null,
+      }, (m, d) => console.log("[invoice-pay]", m, d));
       return json({ paid: true });
     }
 
     // ── Criar sessão de pagamento ───────────────────────────────────────────
     if (inv.paid_online_at || inv.status === "paid") return json({ error: "Esta fatura já está paga." }, 400);
 
-    const amount = Math.round(Number(inv.total || 0) * 100);
+    const currency = String(shop?.currency || "EUR").toLowerCase();
+    // Moedas zero-decimal (JPY, ...) não são multiplicadas por 100.
+    const amount = toStripeAmount(Number(inv.total || 0), currency);
     if (amount <= 0) return json({ error: "Valor da fatura inválido." }, 400);
 
     // Comissão da plataforma (nunca fixa no código) — platform_settings.invoice_payments
-    let feePercent = 3;
-    const { data: feeSetting } = await admin
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "invoice_payments")
-      .maybeSingle();
-    const rawFee = (feeSetting?.value as { platform_fee_percent?: number } | null)?.platform_fee_percent;
-    if (typeof rawFee === "number" && rawFee >= 0 && rawFee <= 30) feePercent = rawFee;
-    const applicationFee = connectAccount ? Math.round((amount * feePercent) / 100) : 0;
+    const feePercent = await getPlatformFeePercent(admin);
+    const applicationFee = connectAccount ? feeAmountFromStripeAmount(amount, feePercent) : 0;
+
 
     const base = origin || req.headers.get("origin") || "https://garageflow.pt";
     const successBase = return_url || `${base}/invoice/${token}`;
@@ -113,7 +109,7 @@ Deno.serve(async (req) => {
         mode: "payment",
         line_items: [{
           price_data: {
-            currency: String(shop?.currency || "EUR").toLowerCase(),
+            currency,
             product_data: { name: `Fatura ${inv.number} — ${shop?.name ?? ""}` },
             unit_amount: amount,
           },
@@ -121,7 +117,12 @@ Deno.serve(async (req) => {
         }],
         success_url: `${successBase}${joiner}invoice_token=${token}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${successBase}${joiner}canceled=1`,
-        metadata: { invoice_id: inv.id, invoice_number: String(inv.number ?? "") },
+        metadata: {
+          invoice_id: inv.id,
+          invoice_number: String(inv.number ?? ""),
+          platform_fee_percent: String(feePercent),
+          application_fee_amount: String(applicationFee),
+        },
         ...(connectAccount && applicationFee > 0
           ? { payment_intent_data: { application_fee_amount: applicationFee } }
           : {}),

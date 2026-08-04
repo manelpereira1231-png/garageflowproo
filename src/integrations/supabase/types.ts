@@ -7077,6 +7077,54 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_commissions: {
+        Row: {
+          created_at: string
+          currency: string
+          fee_amount: number
+          fee_percent: number
+          gross_amount: number
+          id: string
+          invoice_id: string
+          invoice_number: string | null
+          net_amount: number
+          shop_id: string
+          source: string
+          stripe_account_id: string | null
+          stripe_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount?: number
+          id?: string
+          invoice_id: string
+          invoice_number?: string | null
+          net_amount?: number
+          shop_id: string
+          source?: string
+          stripe_account_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount?: number
+          id?: string
+          invoice_id?: string
+          invoice_number?: string | null
+          net_amount?: number
+          shop_id?: string
+          source?: string
+          stripe_account_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Relationships: []
+      }
       platform_company_info: {
         Row: {
           accountant_email: string | null

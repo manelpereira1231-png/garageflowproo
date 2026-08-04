@@ -1,11 +1,17 @@
 /**
- * Regista o repasse manual devido à oficina quando um pagamento de fatura
- * entra na conta Stripe da PLATAFORMA (oficina sem Stripe Connect ativo).
+ * Regista o resultado financeiro de um pagamento online de fatura.
  *
- * Calcula: valor total recebido, comissão retida (platform_settings
- * .invoice_payments.platform_fee_percent, 3% por defeito) e valor líquido
- * a transferir. Idempotente por invoice_id (UNIQUE + upsert ignore).
+ *  • Oficina COM Stripe Connect ativo → o Stripe retém automaticamente a
+ *    comissão (application_fee) e transfere o resto. Aqui só guardamos o
+ *    registo contabilístico em `platform_commissions`.
+ *  • Oficina SEM Stripe Connect → o dinheiro entra na conta da plataforma e
+ *    fica registado em `manual_payouts` o valor a repassar à oficina.
+ *
+ * Idempotente por invoice_id (UNIQUE em ambas as tabelas).
  */
+import { getPlatformFeePercent } from "./platformFee.ts";
+import { fromStripeAmount } from "./stripeCurrency.ts";
+
 export async function recordManualPayout(
   admin: any,
   args: {
@@ -30,25 +36,22 @@ export async function recordManualPayout(
       .eq("id", inv.shop_id)
       .maybeSingle();
 
-    // Se a oficina recebe diretamente via Connect não há repasse manual.
-    if (shop?.stripe_connect_account_id && shop?.stripe_connect_charges_enabled) return;
+    const currency = String(args.currency || shop?.currency || "EUR");
+    const feePercent = await getPlatformFeePercent(admin);
 
-    let feePercent = 3;
-    const { data: feeSetting } = await admin
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "invoice_payments")
-      .maybeSingle();
-    const rawFee = (feeSetting?.value as { platform_fee_percent?: number } | null)?.platform_fee_percent;
-    if (typeof rawFee === "number" && rawFee >= 0 && rawFee <= 30) feePercent = rawFee;
-
+    // Valor bruto: preferimos sempre o valor real cobrado pelo Stripe.
     const gross = args.amountTotalCents != null
-      ? Number(args.amountTotalCents) / 100
+      ? fromStripeAmount(Number(args.amountTotalCents), currency)
       : Number(inv.total || 0);
+
     const fee = Math.round(gross * feePercent) / 100;
     const net = Math.round((gross - fee) * 100) / 100;
 
-    const { error } = await admin.from("manual_payouts").insert({
+    const usesConnect = Boolean(
+      shop?.stripe_connect_account_id && shop?.stripe_connect_charges_enabled,
+    );
+
+    const row = {
       invoice_id: inv.id,
       shop_id: inv.shop_id,
       invoice_number: inv.number ? String(inv.number) : null,
@@ -56,14 +59,27 @@ export async function recordManualPayout(
       fee_percent: feePercent,
       fee_amount: fee,
       net_amount: net,
-      currency: String(args.currency || shop?.currency || "EUR").toUpperCase(),
+      currency: currency.toUpperCase(),
       stripe_session_id: args.stripeSessionId ?? null,
-      status: "pending",
-    });
+    };
+
+    if (usesConnect) {
+      // Comissão retida automaticamente pelo Stripe — só registo contabilístico.
+      const { error } = await admin.from("platform_commissions").insert({
+        ...row,
+        stripe_account_id: shop?.stripe_connect_account_id ?? null,
+        source: "stripe_connect",
+      });
+      if (error && error.code !== "23505") log("Erro a registar comissão Connect", error.message);
+      else if (!error) log("Comissão Connect registada", { invoice: inv.id, fee, net });
+      return;
+    }
+
+    const { error } = await admin.from("manual_payouts").insert({ ...row, status: "pending" });
     // 23505 = já existia (idempotência)
     if (error && error.code !== "23505") log("Erro a registar repasse manual", error.message);
     else if (!error) log("Repasse manual registado", { invoice: inv.id, fee, net });
   } catch (e) {
-    log("Falha inesperada no repasse manual", (e as Error).message);
+    log("Falha inesperada no registo financeiro", (e as Error).message);
   }
 }

@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
         mode: "payment",
         line_items: [{
           price_data: {
-            currency: String(shop?.currency || "EUR").toLowerCase(),
+            currency,
             product_data: { name: `Fatura ${inv.number} — ${shop?.name ?? ""}` },
             unit_amount: amount,
           },
@@ -117,7 +117,12 @@ Deno.serve(async (req) => {
         }],
         success_url: `${successBase}${joiner}invoice_token=${token}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${successBase}${joiner}canceled=1`,
-        metadata: { invoice_id: inv.id, invoice_number: String(inv.number ?? "") },
+        metadata: {
+          invoice_id: inv.id,
+          invoice_number: String(inv.number ?? ""),
+          platform_fee_percent: String(feePercent),
+          application_fee_amount: String(applicationFee),
+        },
         ...(connectAccount && applicationFee > 0
           ? { payment_intent_data: { application_fee_amount: applicationFee } }
           : {}),

@@ -1,4 +1,45 @@
+import { useEffect, useState } from "react";
 import { Wrench, FileText, Users, BarChart3, CheckCircle2, Clock, MessageCircle, Bell } from "lucide-react";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** "4 de Agosto" (pt-PT, data local do utilizador) */
+const longDate = (d: Date) =>
+  `${d.getDate()} de ${cap(d.toLocaleDateString("pt-PT", { month: "long" }))}`;
+
+/** "4 Ago" — versão curta usada na barra mobile */
+const shortDate = (d: Date) =>
+  `${d.getDate()} ${cap(d.toLocaleDateString("pt-PT", { month: "short" }).replace(".", ""))}`;
+
+/** Data local do utilizador, com re-render automático à meia-noite (sem deploy). */
+function useToday() {
+  const [today, setToday] = useState(() => new Date());
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleMidnight = () => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      timer = setTimeout(() => {
+        setToday(new Date());
+        scheduleMidnight();
+      }, midnight.getTime() - now.getTime());
+    };
+    scheduleMidnight();
+
+    // separador reaberto/retomado noutro dia → atualiza de imediato
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setToday(new Date());
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  return today;
+}
 
 const NAV = [
   { icon: BarChart3, label: "Dashboard", active: true },
@@ -28,6 +69,7 @@ const ORDERS = [
  * Desktop (sm+): sidebar + fixed 16/10 frame with floating WhatsApp phone.
  */
 export default function HeroMockup() {
+  const today = useToday();
   return (
     <div className="relative w-full max-w-full rounded-2xl overflow-hidden border border-border shadow-2xl bg-card sm:aspect-[16/10]">
       {/* Window chrome */}
@@ -47,7 +89,7 @@ export default function HeroMockup() {
             <Wrench className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
           <span className="text-sm font-bold">GarageFlow</span>
-          <span className="ml-auto text-[11px] text-muted-foreground">Hoje · 12 Mai</span>
+          <span className="ml-auto text-[11px] text-muted-foreground">Hoje · {shortDate(today)}</span>
         </div>
 
         {/* Sidebar (desktop) */}
@@ -75,7 +117,7 @@ export default function HeroMockup() {
         <main className="p-3 sm:p-4 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[15px] sm:text-base font-bold">Painel da oficina</h3>
-            <span className="text-[10px] text-muted-foreground hidden sm:block">Hoje · 12 de Maio</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:block">Hoje · {longDate(today)}</span>
           </div>
 
           {/* KPI cards — 2x2 on mobile, 4 columns from sm */}

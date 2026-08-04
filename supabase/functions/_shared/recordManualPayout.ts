@@ -9,7 +9,7 @@
  *
  * Idempotente por invoice_id (UNIQUE em ambas as tabelas).
  */
-import { getPlatformFeePercent } from "./platformFee.ts";
+import { getPaymentFeeSettings } from "./platformFee.ts";
 import { fromStripeAmount } from "./stripeCurrency.ts";
 
 export async function recordManualPayout(

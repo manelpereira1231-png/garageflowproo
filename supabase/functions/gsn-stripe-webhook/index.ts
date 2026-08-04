@@ -17,11 +17,18 @@ serve(async (req) => {
 
     const sig = req.headers.get("stripe-signature");
     const raw = await req.text();
+    if (!secret || !sig) {
+      return new Response(JSON.stringify({ error: "signature_required" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     let event: Stripe.Event;
-    if (secret && sig) {
+    try {
       event = await stripe.webhooks.constructEventAsync(raw, sig, secret);
-    } else {
-      event = JSON.parse(raw) as Stripe.Event;
+    } catch (_e) {
+      return new Response(JSON.stringify({ error: "invalid_signature" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supa = createClient(

@@ -131,6 +131,35 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               </div>
             </div>
           </div>
+          {/* Links internos SEO — evita páginas órfãs (guias, blog e cidades) */}
+          <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-muted-foreground">
+            <nav aria-label="Guias">
+              <p className="font-semibold text-foreground mb-1.5">Guias</p>
+              <ul className="space-y-1">
+                <li><Link to="/software-gestao-oficinas" className="hover:text-foreground transition-colors">Software de gestão de oficinas</Link></li>
+                <li><Link to="/erp-oficina-automovel" className="hover:text-foreground transition-colors">ERP para oficinas automóveis</Link></li>
+                <li><Link to="/alternativa-excel-oficinas" className="hover:text-foreground transition-colors">Alternativa ao Excel</Link></li>
+                <li><Link to="/como-gerir-oficina" className="hover:text-foreground transition-colors">Como gerir uma oficina</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="Cidades">
+              <p className="font-semibold text-foreground mb-1.5">Oficinas por cidade</p>
+              <ul className="space-y-1">
+                <li><Link to="/oficinas/lisboa" className="hover:text-foreground transition-colors">Lisboa</Link></li>
+                <li><Link to="/oficinas/porto" className="hover:text-foreground transition-colors">Porto</Link></li>
+                <li><Link to="/oficinas/braga" className="hover:text-foreground transition-colors">Braga</Link></li>
+                <li><Link to="/oficinas/coimbra" className="hover:text-foreground transition-colors">Coimbra</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="Recursos">
+              <p className="font-semibold text-foreground mb-1.5">Recursos</p>
+              <ul className="space-y-1">
+                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog GarageFlow</Link></li>
+                <li><Link to="/demo" className="hover:text-foreground transition-colors">Ver demonstração</Link></li>
+                <li><Link to="/support" className="hover:text-foreground transition-colors">Suporte</Link></li>
+              </ul>
+            </nav>
+          </div>
           <div className="border-t border-border pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
               <Link to="/legal/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { toStripeAmount } from "../_shared/stripeCurrency.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,7 +59,7 @@ serve(async (req) => {
 
         const currency = (order.currency || "eur").toLowerCase();
         const line_items = (items ?? []).map((it: any) => {
-          const unit = Math.round(Number(it.unit_price) * (1 + Number(it.vat) / 100) * 100);
+          const unit = toStripeAmount(Number(it.unit_price) * (1 + Number(it.vat) / 100), currency);
           return {
             price_data: {
               currency,
@@ -70,8 +71,8 @@ serve(async (req) => {
         });
 
         const useConnect = supplier?.stripe_account_id && supplier?.stripe_charges_enabled;
-        const totalCents = Math.round(Number(order.total) * 100);
-        const feeCents = Math.round(Number(order.commission_total) * 100);
+        const totalCents = toStripeAmount(Number(order.total), currency);
+        const feeCents = toStripeAmount(Number(order.commission_total), currency);
 
         const session = await stripe.checkout.sessions.create({
           mode: "payment",

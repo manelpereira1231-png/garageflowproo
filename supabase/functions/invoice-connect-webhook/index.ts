@@ -22,22 +22,33 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) return new Response(JSON.stringify({ error: "stripe_not_configured" }), { status: 500 });
 
-    const secret =
-      Deno.env.get("INVOICE_STRIPE_WEBHOOK_SECRET") || Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    // O endpoint "Connect" tem um signing secret diferente do endpoint da conta.
+    // Aceitamos ambos para que a validação nunca falhe por causa da configuração.
+    const secrets = [
+      Deno.env.get("INVOICE_STRIPE_WEBHOOK_SECRET"),
+      Deno.env.get("STRIPE_WEBHOOK_SECRET"),
+    ].filter((s): s is string => !!s);
     const sig = req.headers.get("stripe-signature");
     const raw = await req.text();
 
-    if (!secret || !sig) {
+    if (secrets.length === 0 || !sig) {
       log("REJEITADO: assinatura em falta");
       return new Response(JSON.stringify({ error: "signature_required" }), { status: 401 });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    let event: Stripe.Event;
-    try {
-      event = await stripe.webhooks.constructEventAsync(raw, sig, secret);
-    } catch (e) {
-      log("REJEITADO: assinatura inválida", { error: (e as Error).message });
+    let event: Stripe.Event | null = null;
+    let lastErr = "";
+    for (const secret of secrets) {
+      try {
+        event = await stripe.webhooks.constructEventAsync(raw, sig, secret);
+        break;
+      } catch (e) {
+        lastErr = (e as Error).message;
+      }
+    }
+    if (!event) {
+      log("REJEITADO: assinatura inválida", { error: lastErr });
       return new Response(JSON.stringify({ error: "invalid_signature" }), { status: 401 });
     }
 

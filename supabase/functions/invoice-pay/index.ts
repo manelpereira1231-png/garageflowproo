@@ -12,7 +12,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { recordManualPayout } from "../_shared/recordManualPayout.ts";
-import { getPlatformFeePercent } from "../_shared/platformFee.ts";
+import { getPaymentFeeSettings } from "../_shared/platformFee.ts";
 import { toStripeAmount, feeAmountFromStripeAmount } from "../_shared/stripeCurrency.ts";
 
 const corsHeaders = {
@@ -65,6 +65,18 @@ Deno.serve(async (req) => {
         ? shop.stripe_connect_account_id
         : undefined;
 
+    // Configuração global (Super Admin) — fonte única de verdade.
+    const feeSettings = await getPaymentFeeSettings(admin);
+
+    // Interruptor global: pagamentos online só para oficinas com Connect ativo.
+    if (!connectAccount && !feeSettings.allowWithoutConnect) {
+      return json({
+        error:
+          "Esta oficina ainda não concluiu a configuração Stripe Connect, por isso não é possível pagar online. Contacte a oficina para liquidar a fatura.",
+        code: "connect_required",
+      }, 409);
+    }
+
     // ── Confirmar pagamento no regresso do Stripe ───────────────────────────
     if (action === "confirm") {
       if (inv.paid_online_at) return json({ paid: true });
@@ -97,7 +109,7 @@ Deno.serve(async (req) => {
     if (amount <= 0) return json({ error: "Valor da fatura inválido." }, 400);
 
     // Comissão da plataforma (nunca fixa no código) — platform_settings.invoice_payments
-    const feePercent = await getPlatformFeePercent(admin);
+    const feePercent = feeSettings.feePercent;
     const applicationFee = connectAccount ? feeAmountFromStripeAmount(amount, feePercent) : 0;
 
 
@@ -122,6 +134,8 @@ Deno.serve(async (req) => {
           invoice_number: String(inv.number ?? ""),
           platform_fee_percent: String(feePercent),
           application_fee_amount: String(applicationFee),
+          no_connect_extra_percent: String(connectAccount ? 0 : feeSettings.noConnectExtraPercent),
+          no_connect_fixed_fee: String(connectAccount ? 0 : feeSettings.noConnectFixedFee),
         },
         ...(connectAccount && applicationFee > 0
           ? { payment_intent_data: { application_fee_amount: applicationFee } }

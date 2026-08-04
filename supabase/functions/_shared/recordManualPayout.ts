@@ -9,7 +9,7 @@
  *
  * Idempotente por invoice_id (UNIQUE em ambas as tabelas).
  */
-import { getPlatformFeePercent } from "./platformFee.ts";
+import { getPaymentFeeSettings } from "./platformFee.ts";
 import { fromStripeAmount } from "./stripeCurrency.ts";
 
 export async function recordManualPayout(
@@ -37,19 +37,25 @@ export async function recordManualPayout(
       .maybeSingle();
 
     const currency = String(args.currency || shop?.currency || "EUR");
-    const feePercent = await getPlatformFeePercent(admin);
+    const settings = await getPaymentFeeSettings(admin);
+    const feePercent = settings.feePercent;
 
     // Valor bruto: preferimos sempre o valor real cobrado pelo Stripe.
     const gross = args.amountTotalCents != null
       ? fromStripeAmount(Number(args.amountTotalCents), currency)
       : Number(inv.total || 0);
 
-    const fee = Math.round(gross * feePercent) / 100;
-    const net = Math.round((gross - fee) * 100) / 100;
-
     const usesConnect = Boolean(
       shop?.stripe_connect_account_id && shop?.stripe_connect_charges_enabled,
     );
+
+    // Sem Stripe Connect a plataforma processa o pagamento em nome da oficina:
+    // aplica-se a percentagem adicional e a taxa fixa definidas pelo admin.
+    const extraPercent = usesConnect ? 0 : settings.noConnectExtraPercent;
+    const fixedFee = usesConnect ? 0 : settings.noConnectFixedFee;
+
+    const fee = Math.round((gross * (feePercent + extraPercent)) + fixedFee * 100) / 100;
+    const net = Math.round((gross - fee) * 100) / 100;
 
     const row = {
       invoice_id: inv.id,
@@ -57,11 +63,14 @@ export async function recordManualPayout(
       invoice_number: inv.number ? String(inv.number) : null,
       gross_amount: gross,
       fee_percent: feePercent,
+      extra_fee_percent: extraPercent,
+      fixed_fee_amount: fixedFee,
       fee_amount: fee,
       net_amount: net,
       currency: currency.toUpperCase(),
       stripe_session_id: args.stripeSessionId ?? null,
     };
+
 
     if (usesConnect) {
       // Comissão retida automaticamente pelo Stripe — só registo contabilístico.

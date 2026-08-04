@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
-  Package, Inbox, Sparkles, Languages, Coins, Layers,
+  Package, Inbox, Sparkles, Languages, Coins, Layers, Percent,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +47,8 @@ const navSections = [
       { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
+      { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },
+
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
   },

@@ -24,6 +24,7 @@ import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { useShopRole } from "@/hooks/useShopRole";
+import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -50,6 +51,7 @@ export default function Invoices() {
   const [dataLoading, setDataLoading] = useState(!_iCache);
 
   const activeShopId = useActiveShopId();
+  const { allowWithoutConnect } = usePlatformInvoiceFee();
 
   const table = useTableState<InvoicesFilters>({
     storageKey: "table:invoices",
@@ -205,6 +207,23 @@ export default function Invoices() {
   const copyPaymentLink = async (inv: any) => {
     setLinkingInvoice(inv.id);
     try {
+      // Interruptor global: sem Stripe Connect ativo não há pagamentos online.
+      if (!allowWithoutConnect) {
+        const { data: shopRow } = await supabase
+          .from("shops")
+          .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+          .eq("id", activeShopId)
+          .maybeSingle();
+        const connectActive = Boolean(
+          (shopRow as any)?.stripe_connect_account_id && (shopRow as any)?.stripe_connect_charges_enabled,
+        );
+        if (!connectActive) {
+          toast.error("Conclua a configuração do Stripe Connect para poder cobrar online", {
+            description: "Definições → Pagamentos → Ligar conta Stripe.",
+          });
+          return;
+        }
+      }
       const { data, error } = await supabase
         .from("invoices")
         .update({ payment_link_sent_at: new Date().toISOString() } as any)

@@ -13,6 +13,8 @@ interface PayoutRow {
   invoice_number: string | null;
   gross_amount: number;
   fee_percent: number;
+  extra_fee_percent?: number | null;
+  fixed_fee_amount?: number | null;
   fee_amount: number;
   net_amount: number;
   currency: string;
@@ -33,6 +35,14 @@ function money(v: number, currency: string) {
  * Repasses manuais: faturas pagas na conta Stripe da plataforma (oficina sem
  * Stripe Connect). Mostra valor recebido, comissão retida e líquido a transferir.
  */
+/** Detalhe legível das taxas aplicadas (base + adicional sem Connect + fixa). */
+const feeLabel = (r: { fee_percent: number; extra_fee_percent?: number | null; fixed_fee_amount?: number | null }) => {
+  const parts = [`${r.fee_percent}%`];
+  if (Number(r.extra_fee_percent || 0) > 0) parts.push(`+${r.extra_fee_percent}% sem Connect`);
+  if (Number(r.fixed_fee_amount || 0) > 0) parts.push(`+${r.fixed_fee_amount} fixo`);
+  return parts.join(" ");
+};
+
 export default function ManualPayoutsReport() {
   const [rows, setRows] = useState<PayoutRow[]>([]);
   const [shops, setShops] = useState<Record<string, string>>({});
@@ -141,7 +151,7 @@ export default function ManualPayoutsReport() {
                       <td className="text-right">{money(Number(r.gross_amount), r.currency)}</td>
                       <td className="text-right">
                         {money(Number(r.fee_amount), r.currency)}{" "}
-                        <span className="text-xs text-muted-foreground">({r.fee_percent}%)</span>
+                        <span className="text-xs text-muted-foreground">({feeLabel(r)})</span>
                       </td>
                       <td className="text-right font-medium">{money(Number(r.net_amount), r.currency)}</td>
                       <td>
@@ -185,7 +195,7 @@ export default function ManualPayoutsReport() {
                   <p className="text-xs text-muted-foreground">{shops[r.shop_id] || "—"}</p>
                   <p className="text-sm">
                     Recebido {money(Number(r.gross_amount), r.currency)} · Comissão{" "}
-                    {money(Number(r.fee_amount), r.currency)} ({r.fee_percent}%)
+                    {money(Number(r.fee_amount), r.currency)} ({feeLabel(r)})
                   </p>
                   <p className="text-sm font-semibold">
                     Líquido: {money(Number(r.net_amount), r.currency)}

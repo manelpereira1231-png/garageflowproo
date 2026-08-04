@@ -18,7 +18,7 @@ interface Props {
  * Três estados explícitos: sem Stripe ligado / onboarding pendente / ligado e ativo.
  */
 export function ShopPaymentsCard({ shopId }: Props) {
-  const { feePercent } = usePlatformInvoiceFee();
+  const { feePercent, allowWithoutConnect, noConnectExtraPercent, noConnectFixedFee } = usePlatformInvoiceFee();
   const [state, setState] = useState<ConnectState>("none");
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -86,7 +86,11 @@ export function ShopPaymentsCard({ shopId }: Props) {
           Pagamentos
           {state === "active" && <Badge className="bg-green-100 text-green-800 border-green-300">Ligado e ativo</Badge>}
           {state === "pending" && <Badge variant="outline" className="text-amber-700 border-amber-300">Verificação pendente</Badge>}
-          {state === "none" && <Badge variant="outline">Sem Stripe ligado</Badge>}
+          {state === "none" && (
+            allowWithoutConnect
+              ? <Badge variant="outline">Sem Stripe ligado</Badge>
+              : <Badge variant="outline" className="text-red-700 border-red-300">Pagamentos desativados</Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -99,9 +103,20 @@ export function ShopPaymentsCard({ shopId }: Props) {
             <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <p>
-                Enquanto não ligar a sua conta Stripe, os pagamentos online das suas faturas são
-                recebidos pela plataforma GarageFlow em seu nome e transferidos manualmente.
-                Ligue a sua conta para receber diretamente, na sua conta bancária, em 2–7 dias úteis.
+                {allowWithoutConnect ? (
+                  <>
+                    Enquanto não ligar a sua conta Stripe, os pagamentos online das suas faturas são
+                    recebidos pela plataforma GarageFlow em seu nome e transferidos manualmente, com
+                    uma taxa adicional. Ligue a sua conta para receber diretamente, na sua conta
+                    bancária, em 2–7 dias úteis.
+                  </>
+                ) : (
+                  <>
+                    Os pagamentos online estão desativados nesta oficina. Conclua a configuração do
+                    Stripe Connect para poder gerar links de pagamento e cobrar os seus clientes
+                    online.
+                  </>
+                )}
               </p>
             </div>
             <Button onClick={startOnboarding} disabled={working || !shopId} className="w-full min-h-[44px]">
@@ -112,8 +127,10 @@ export function ShopPaymentsCard({ shopId }: Props) {
         ) : state === "pending" ? (
           <>
             <p className="text-sm text-muted-foreground">
-              A conta Stripe foi criada mas a verificação ainda não está concluída. Até lá, os
-              pagamentos continuam a ser recebidos pela plataforma GarageFlow em seu nome.
+              A conta Stripe foi criada mas a verificação ainda não está concluída.{" "}
+              {allowWithoutConnect
+                ? "Até lá, os pagamentos continuam a ser recebidos pela plataforma GarageFlow em seu nome, com uma taxa adicional."
+                : "Até a verificação estar concluída não é possível receber pagamentos online."}
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={startOnboarding} disabled={working} className="flex-1 min-h-[44px]">
@@ -143,6 +160,11 @@ export function ShopPaymentsCard({ shopId }: Props) {
         <p className="text-[11px] text-muted-foreground">
           Comissão da plataforma sobre pagamentos online: <strong>{feePercent}%</strong> por
           transação (além das taxas cobradas pela Stripe).
+          {state !== "active" && allowWithoutConnect && (noConnectExtraPercent > 0 || noConnectFixedFee > 0) && (
+            <> Sem Stripe Connect acresce{noConnectExtraPercent > 0 ? ` ${noConnectExtraPercent}%` : ""}
+              {noConnectExtraPercent > 0 && noConnectFixedFee > 0 ? " e" : ""}
+              {noConnectFixedFee > 0 ? ` ${noConnectFixedFee} por pagamento` : ""}.</>
+          )}
         </p>
       </CardContent>
     </Card>

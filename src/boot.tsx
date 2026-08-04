@@ -80,6 +80,16 @@ if (typeof window.requestIdleCallback === "function") {
   window.setTimeout(bootRegionalConfig, 600);
 }
 
+// Splash de arranque (#gf-boot, definido em index.html): removido só depois do primeiro
+// paint do React. Enquanto existir, o utilizador nunca vê HTML sem estilos nem conteúdo
+// parcial — apenas fundo da app + logo + spinner.
+const dismissBootSplash = () => {
+  const splash = document.getElementById("gf-boot");
+  if (!splash) return;
+  splash.dataset.hiding = "1";
+  window.setTimeout(() => splash.remove(), 200);
+};
+
 createRoot(document.getElementById("root")!).render(
   <RootErrorBoundary>
     <HelmetProvider>

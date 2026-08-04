@@ -554,18 +554,21 @@ export default function seoPrerender(): Plugin {
 
       // ---------- sitemaps ----------
       const today = new Date().toISOString().slice(0, 10);
-      const entries = [
-        ...CORE_ROUTES.map((r) => ({
-          loc: `${SITE}${r.path}`,
-          lastmod: today,
-          priority: r.priority,
-        })),
+      const rawEntries = [
         ...docs.map((d) => ({
           loc: `${SITE}/${d.route}`,
           lastmod: d.lastmod ?? today,
           priority: d.priority,
         })),
+        ...CORE_ROUTES.map((r) => ({
+          loc: `${SITE}${r.path}`,
+          lastmod: today,
+          priority: r.priority,
+        })),
       ];
+      // desduplicar por URL (as rotas core pré-renderizadas já entram via docs)
+      const seen = new Set<string>();
+      const entries = rawEntries.filter((e) => !seen.has(e.loc) && seen.add(e.loc));
       const erpXml = sitemapXml(entries);
       writeFileSync(path.join(dist, "sitemap-erp.xml"), erpXml, "utf8");
       writeFileSync(path.resolve(root, "public/sitemap-erp.xml"), erpXml, "utf8");

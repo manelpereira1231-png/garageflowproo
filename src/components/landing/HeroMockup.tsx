@@ -89,7 +89,7 @@ export default function HeroMockup() {
             <Wrench className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
           <span className="text-sm font-bold">GarageFlow</span>
-          <span className="ml-auto text-[11px] text-muted-foreground">Hoje · 12 Mai</span>
+          <span className="ml-auto text-[11px] text-muted-foreground">Hoje · {shortDate(today)}</span>
         </div>
 
         {/* Sidebar (desktop) */}
@@ -117,7 +117,7 @@ export default function HeroMockup() {
         <main className="p-3 sm:p-4 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[15px] sm:text-base font-bold">Painel da oficina</h3>
-            <span className="text-[10px] text-muted-foreground hidden sm:block">Hoje · 12 de Maio</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:block">Hoje · {longDate(today)}</span>
           </div>
 
           {/* KPI cards — 2x2 on mobile, 4 columns from sm */}

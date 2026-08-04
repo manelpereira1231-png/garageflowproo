@@ -497,7 +497,12 @@ function renderHtml(template: string, doc: PageDoc): string {
     `<h1>${esc(doc.h1)}</h1>` +
     doc.bodyHtml +
     `</article></main>${bootSplash}</div>`;
-  html = html.replace(/<div id="root">[\s\S]*?<\/div><\/div>\s*<\/div>|<div id="root">[\s\S]*?<\/div>\s*(?=\s*<script)/, body);
+  // Substituição por linha (o bloco #root ocupa exatamente uma linha no index.html),
+  // evitando regex frágil com <div> aninhados.
+  html = html
+    .split("\n")
+    .map((line) => (line.includes('<div id="root">') ? `    ${body}` : line))
+    .join("\n");
   return html;
 }
 

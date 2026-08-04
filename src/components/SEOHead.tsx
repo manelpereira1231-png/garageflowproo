@@ -97,10 +97,10 @@ export default function SEOHead({
 
       <link rel="canonical" href={fullUrl} />
 
-      {/* Hreflang — full international map */}
-      {HREFLANG_LOCALES.map(({ code }) => (
-        <link key={code} rel="alternate" hrefLang={code} href={fullUrl} />
-      ))}
+      {/* Hreflang — o site serve um único URL por rota (sem URLs por idioma).
+          Emitir 10 hreflang diferentes para o MESMO href é um conflito que o
+          Google ignora, por isso mantém-se apenas o self-reference + x-default. */}
+      <link rel="alternate" hrefLang={seoLang === "pt-BR" ? "pt-BR" : seoLang} href={fullUrl} />
       <link rel="alternate" hrefLang="x-default" href={fullUrl} />
 
       {/* Open Graph */}

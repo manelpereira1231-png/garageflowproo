@@ -1069,6 +1069,43 @@ export default function LandingPage() {
             <Link to="/support" className="hover:text-foreground transition-colors">{t('landing.support') || 'Suporte'}</Link>
             <LanguageDropdown variant="ghost" size="sm" />
           </div>
+          {/* Links internos SEO — dá acesso rastreável aos guias, blog e páginas por cidade */}
+          <div className="w-full border-t border-border pt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-muted-foreground text-left">
+            <nav aria-label="Guias">
+              <p className="font-semibold text-foreground mb-1.5">Guias</p>
+              <ul className="space-y-1">
+                <li><Link to="/software-gestao-oficinas" className="hover:text-foreground transition-colors">Software de gestão de oficinas</Link></li>
+                <li><Link to="/erp-oficina-automovel" className="hover:text-foreground transition-colors">ERP para oficinas automóveis</Link></li>
+                <li><Link to="/alternativa-excel-oficinas" className="hover:text-foreground transition-colors">Alternativa ao Excel</Link></li>
+                <li><Link to="/como-gerir-oficina" className="hover:text-foreground transition-colors">Como gerir uma oficina</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="Oficinas por cidade">
+              <p className="font-semibold text-foreground mb-1.5">Por cidade</p>
+              <ul className="space-y-1">
+                <li><Link to="/oficinas/lisboa" className="hover:text-foreground transition-colors">Oficinas em Lisboa</Link></li>
+                <li><Link to="/oficinas/porto" className="hover:text-foreground transition-colors">Oficinas no Porto</Link></li>
+                <li><Link to="/oficinas/braga" className="hover:text-foreground transition-colors">Oficinas em Braga</Link></li>
+                <li><Link to="/oficinas/coimbra" className="hover:text-foreground transition-colors">Oficinas em Coimbra</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="Soluções">
+              <p className="font-semibold text-foreground mb-1.5">Soluções</p>
+              <ul className="space-y-1">
+                <li><Link to="/gestao-oficinas/lisboa" className="hover:text-foreground transition-colors">Gestão de oficinas</Link></li>
+                <li><Link to="/software-oficinas/porto" className="hover:text-foreground transition-colors">Software para oficinas</Link></li>
+                <li><Link to="/erp-automovel/lisboa" className="hover:text-foreground transition-colors">ERP automóvel</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="Recursos">
+              <p className="font-semibold text-foreground mb-1.5">Recursos</p>
+              <ul className="space-y-1">
+                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog GarageFlow</Link></li>
+                <li><Link to="/demo" className="hover:text-foreground transition-colors">Ver demonstração</Link></li>
+                <li><Link to="/afiliados" className="hover:text-foreground transition-colors">Programa de afiliados</Link></li>
+              </ul>
+            </nav>
+          </div>
           {legalConfigured ? (
             <p className="text-xs text-muted-foreground max-w-3xl">
               {legal?.company_name}

@@ -55,7 +55,7 @@ ${partsInfo}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-5.6-sol",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Customer reported symptoms: "${symptoms}"\n\nPlease provide a complete diagnosis.` },
@@ -144,7 +144,9 @@ ${partsInfo}`;
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ error: `AI gateway error (${response.status}): ${t.slice(0, 300)}` }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();

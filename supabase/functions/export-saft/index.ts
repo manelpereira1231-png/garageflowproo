@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+import {
+  loadCertificationConfig, loadSeries, loadSigningKey, signDocument,
+  buildHeaderComment, certificateNumberField, type DocumentSeries,
+} from "../_shared/saftCertification.ts";
 
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
@@ -55,9 +59,9 @@ function parseAddress(address: string | null): { detail: string; city: string; p
   return { detail: address, city, postalCode };
 }
 
-// TODO: AT validation — SAF-T hash chain requires AT-certified software.
-// TODO: production compliance review — ATCUD generation requires AT registration.
-// TODO: AT validation — SoftwareCertificateNumber must be obtained from AT.
+// Toda a configuração legal (certificado AT, séries/ATCUD, chave de assinatura)
+// vive em _shared/saftCertification.ts + painel de administração. Este ficheiro
+// contém apenas lógica técnica de geração do XML.
 
 const handler = async (req: Request): Promise<Response> => {
   let activeJobId: string | null = null;
@@ -342,11 +346,18 @@ const handler = async (req: Request): Promise<Response> => {
       return "NOR";
     };
 
+    // ---- Configuração legal (certificação AT) — 100% data-driven ----
+    const certCfg = await loadCertificationConfig(admin);
+    const seriesMap = await loadSeries(admin, shop_id);
+    const signingKey = await loadSigningKey(certCfg);
+    const signingActive = !!signingKey;
+    const hasSeries = Array.from(seriesMap.values()).some((s: DocumentSeries) => !!s.at_validation_code);
+
     // Build invoice entries
     let totalDebit = 0;
     let totalCredit = 0;
 
-    const invoiceXml = (invoices || []).map((inv: any) => {
+    const invoiceXml = (await Promise.all((invoices || []).map(async (inv: any) => {
       const invType = getInvoiceType(inv.type || "invoice");
       const isCreditNote = invType === "NC";
 
@@ -388,6 +399,11 @@ const handler = async (req: Request): Promise<Response> => {
       }).join("");
 
       const invoiceStatus = inv.status === "cancelled" ? "A" : "N";
+      const invSig = await signDocument(admin, certCfg, signingKey, {
+        shopId: shop_id, docType: invType, docId: inv.id, docNumber: inv.number,
+        docDate: formatDate(inv.created_at), systemEntryDate: formatDateTime(inv.created_at),
+        grossTotal: Number(inv.total) || 0, series: seriesMap.get(invType),
+      });
       const invPayments = paymentsByInvoice.get(inv.id) || [];
 
       const getPaymentMechanism = (method: string): string => {
@@ -411,15 +427,15 @@ const handler = async (req: Request): Promise<Response> => {
       return `
         <Invoice>
           <InvoiceNo>${escapeXml(inv.number)}</InvoiceNo>
-          <ATCUD>0</ATCUD>
+          <ATCUD>${escapeXml(invSig.atcud)}</ATCUD>
           <DocumentStatus>
             <InvoiceStatus>${invoiceStatus}</InvoiceStatus>
             <InvoiceStatusDate>${formatDateTime(inv.created_at)}</InvoiceStatusDate>
             <SourceID>${escapeXml(user.email || "GarageFlow")}</SourceID>
             <SourceBilling>P</SourceBilling>
           </DocumentStatus>
-          <Hash>0</Hash>
-          <HashControl>0</HashControl>
+          <Hash>${escapeXml(invSig.hash)}</Hash>
+          <HashControl>${escapeXml(invSig.hash_control)}</HashControl>
           <Period>${new Date(inv.created_at).getMonth() + 1}</Period>
           <InvoiceDate>${formatDate(inv.created_at)}</InvoiceDate>
           <InvoiceType>${invType}</InvoiceType>
@@ -439,11 +455,16 @@ const handler = async (req: Request): Promise<Response> => {
             ${paymentsXml}
           </DocumentTotals>
         </Invoice>`;
-    }).join("");
+    }))).join("");
 
     // WorkingDocuments — quotes/estimates (ORC = Orçamento)
-    const workingDocsXml = (quotes || []).map((q: any) => {
+    const workingDocsXml = (await Promise.all((quotes || []).map(async (q: any) => {
       const qLines = Array.isArray(q.lines) ? q.lines : [];
+      const qSig = await signDocument(admin, certCfg, signingKey, {
+        shopId: shop_id, docType: "ORC", docId: q.id, docNumber: q.number,
+        docDate: formatDate(q.date || q.created_at), systemEntryDate: formatDateTime(q.created_at),
+        grossTotal: Number(q.total) || 0, series: seriesMap.get("ORC"),
+      });
       const qStatus = q.status === "rejected" ? "A" : q.status === "approved" || q.status === "converted" ? "F" : "N";
       
       const linesXml = qLines.map((line: any, idx: number) => {
@@ -476,15 +497,15 @@ const handler = async (req: Request): Promise<Response> => {
       return `
           <WorkDocument>
             <DocumentNumber>${escapeXml(q.number)}</DocumentNumber>
-            <ATCUD>0</ATCUD>
+            <ATCUD>${escapeXml(qSig.atcud)}</ATCUD>
             <DocumentStatus>
               <WorkStatus>${qStatus}</WorkStatus>
               <WorkStatusDate>${formatDateTime(q.created_at)}</WorkStatusDate>
               <SourceID>${escapeXml(user.email || "GarageFlow")}</SourceID>
               <SourceBilling>P</SourceBilling>
             </DocumentStatus>
-            <Hash>0</Hash>
-            <HashControl>0</HashControl>
+            <Hash>${escapeXml(qSig.hash)}</Hash>
+            <HashControl>${escapeXml(qSig.hash_control)}</HashControl>
             <WorkDate>${formatDate(q.date || q.created_at)}</WorkDate>
             <WorkType>ORC</WorkType>
             <SourceID>${escapeXml(user.email || "GarageFlow")}</SourceID>
@@ -497,7 +518,7 @@ const handler = async (req: Request): Promise<Response> => {
               <GrossTotal>${(Number(q.total) || 0).toFixed(2)}</GrossTotal>
             </DocumentTotals>
           </WorkDocument>`;
-    }).join("");
+    }))).join("");
 
     // Tax table entries
     const taxEntries = new Set<number>();
@@ -527,17 +548,13 @@ const handler = async (req: Request): Promise<Response> => {
       </TaxTableEntry>`;
     }).join("");
 
-    // TODO: AT validation — Hash chain (Hash/HashControl) requires AT software certification.
-    // TODO: AT validation — ATCUD series requires registration with AT portal.
-    // TODO: production compliance review — SoftwareCertificateNumber must be obtained from AT.
-
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_1.04_01" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:PT_${certCfg.saft_version}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Header>
-    <AuditFileVersion>1.04_01</AuditFileVersion>
+    <AuditFileVersion>${escapeXml(certCfg.saft_version)}</AuditFileVersion>
     <CompanyID>${escapeXml(taxRegNumber)}</CompanyID>
     <TaxRegistrationNumber>${escapeXml(taxRegNumber)}</TaxRegistrationNumber>
-    <TaxAccountingBasis>F</TaxAccountingBasis>
+    <TaxAccountingBasis>${escapeXml(certCfg.tax_accounting_basis)}</TaxAccountingBasis>
     <CompanyName>${escapeXml(shop.name)}</CompanyName>
     <CompanyAddress>
       <AddressDetail>${escapeXml(shopAddress.detail)}</AddressDetail>
@@ -551,11 +568,13 @@ const handler = async (req: Request): Promise<Response> => {
     <CurrencyCode>${shop.currency || "EUR"}</CurrencyCode>
     <DateCreated>${formatDate(now)}</DateCreated>
     <TaxEntity>Global</TaxEntity>
-    <ProductCompanyTaxID>${escapeXml(taxRegNumber)}</ProductCompanyTaxID>
-    <SoftwareCertificateNumber>0</SoftwareCertificateNumber>
-    <ProductID>GarageFlow</ProductID>
-    <ProductVersion>1.0</ProductVersion>
-    <HeaderComment>Exportação fiscal operacional — Requer validação por software certificado pela AT antes de submissão oficial. Hash/ATCUD não implementados.</HeaderComment>
+    <ProductCompanyTaxID>${escapeXml(certCfg.producer_tax_id || taxRegNumber)}</ProductCompanyTaxID>
+    <SoftwareCertificateNumber>${escapeXml(certificateNumberField(certCfg))}</SoftwareCertificateNumber>
+    <ProductID>${escapeXml(certCfg.producer_company_name ? `${certCfg.product_id}/${certCfg.producer_company_name}` : certCfg.product_id)}</ProductID>
+    <ProductVersion>${escapeXml(certCfg.product_version)}</ProductVersion>${
+      (() => { const c = buildHeaderComment(certCfg, { hasSeries, signing: signingActive });
+        return c ? `\n    <HeaderComment>${escapeXml(c)}</HeaderComment>` : ""; })()
+    }
   </Header>
   <MasterFiles>
     ${productXml}

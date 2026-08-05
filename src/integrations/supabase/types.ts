@@ -2607,6 +2607,140 @@ export type Database = {
         }
         Relationships: []
       }
+      document_series: {
+        Row: {
+          at_validation_code: string | null
+          created_at: string
+          current_sequence: number
+          doc_type: string
+          id: string
+          initial_sequence: number
+          is_active: boolean
+          notes: string | null
+          series_code: string
+          shop_id: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          at_validation_code?: string | null
+          created_at?: string
+          current_sequence?: number
+          doc_type: string
+          id?: string
+          initial_sequence?: number
+          is_active?: boolean
+          notes?: string | null
+          series_code: string
+          shop_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          at_validation_code?: string | null
+          created_at?: string
+          current_sequence?: number
+          doc_type?: string
+          id?: string
+          initial_sequence?: number
+          is_active?: boolean
+          notes?: string | null
+          series_code?: string
+          shop_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_series_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_signatures: {
+        Row: {
+          algorithm: string
+          atcud: string | null
+          created_at: string
+          doc_date: string
+          doc_id: string
+          doc_number: string
+          doc_type: string
+          gross_total: number
+          hash: string
+          hash_control: string
+          id: string
+          key_version: string
+          previous_hash: string | null
+          sequence_number: number | null
+          series_id: string | null
+          shop_id: string
+          source_string: string
+          system_entry_date: string
+        }
+        Insert: {
+          algorithm?: string
+          atcud?: string | null
+          created_at?: string
+          doc_date: string
+          doc_id: string
+          doc_number: string
+          doc_type: string
+          gross_total?: number
+          hash: string
+          hash_control?: string
+          id?: string
+          key_version?: string
+          previous_hash?: string | null
+          sequence_number?: number | null
+          series_id?: string | null
+          shop_id: string
+          source_string: string
+          system_entry_date: string
+        }
+        Update: {
+          algorithm?: string
+          atcud?: string | null
+          created_at?: string
+          doc_date?: string
+          doc_id?: string
+          doc_number?: string
+          doc_type?: string
+          gross_total?: number
+          hash?: string
+          hash_control?: string
+          id?: string
+          key_version?: string
+          previous_hash?: string | null
+          sequence_number?: number | null
+          series_id?: string | null
+          shop_id?: string
+          source_string?: string
+          system_entry_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signatures_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "document_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaign_metrics: {
         Row: {
           campaign_id: string
@@ -7510,6 +7644,66 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      saft_certification_settings: {
+        Row: {
+          created_at: string
+          header_comment_override: string | null
+          id: string
+          is_certified: boolean
+          producer_company_name: string | null
+          producer_tax_id: string | null
+          product_id: string
+          product_version: string
+          saft_version: string
+          signing_enabled: boolean
+          signing_key_secret_name: string
+          signing_key_version: string
+          signing_public_key: string | null
+          singleton: boolean
+          software_certificate_number: string | null
+          tax_accounting_basis: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          header_comment_override?: string | null
+          id?: string
+          is_certified?: boolean
+          producer_company_name?: string | null
+          producer_tax_id?: string | null
+          product_id?: string
+          product_version?: string
+          saft_version?: string
+          signing_enabled?: boolean
+          signing_key_secret_name?: string
+          signing_key_version?: string
+          signing_public_key?: string | null
+          singleton?: boolean
+          software_certificate_number?: string | null
+          tax_accounting_basis?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          header_comment_override?: string | null
+          id?: string
+          is_certified?: boolean
+          producer_company_name?: string | null
+          producer_tax_id?: string | null
+          product_id?: string
+          product_version?: string
+          saft_version?: string
+          signing_enabled?: boolean
+          signing_key_secret_name?: string
+          signing_key_version?: string
+          signing_public_key?: string | null
+          singleton?: boolean
+          software_certificate_number?: string | null
+          tax_accounting_basis?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       saft_export_jobs: {
         Row: {

@@ -4,8 +4,8 @@ import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
-  Package, Inbox, Sparkles, Languages, Coins, Layers, Percent,
-} FileCheck2 } from "lucide-react";
+  Package, Inbox, Sparkles, Languages, Coins, Layers, Percent, FileCheck2,
+} from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";

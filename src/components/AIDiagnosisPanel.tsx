@@ -83,11 +83,21 @@ export default function AIDiagnosisPanel({ vehicle, clientDescription, shopId, o
 
       if (error) {
         // Edge function returns 402/403 with { error: "quota_exceeded" | "plan_no_ai" }
-        const raw = (error as any)?.context?.body ?? (error as any)?.message ?? "";
+        let raw = (error as any)?.context?.body ?? (error as any)?.message ?? "";
+        try {
+          const res = (error as any)?.context;
+          if (res && typeof res.text === "function") raw = await res.text();
+        } catch { /* ignore */ }
         const msg = String(raw);
         if (msg.includes("plan_no_ai")) throw new Error(isPt ? "O seu plano não inclui IA. Faça upgrade para desbloquear." : "Your plan does not include AI. Upgrade to unlock.");
         if (msg.includes("quota_exceeded")) throw new Error(isPt ? "Atingiu o limite mensal de créditos IA do seu plano." : "You've reached your plan's monthly AI credits limit.");
-        throw error;
+        if (msg.includes("rate_limited")) throw new Error(isPt ? "Demasiados pedidos de IA seguidos. Aguarde um momento." : "Too many AI requests. Please wait a moment.");
+        if (msg.includes("subscription_required")) throw new Error(isPt ? "Subscrição inativa — a IA está bloqueada." : "Inactive subscription — AI is blocked.");
+        let detail = msg;
+        try { detail = JSON.parse(msg)?.error || msg; } catch { /* ignore */ }
+        throw new Error(
+          (isPt ? "Erro na IA: " : "AI error: ") + String(detail).slice(0, 200),
+        );
       }
       if (data?.error) throw new Error(data.error);
 

@@ -5,7 +5,7 @@ import {
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
   Package, Inbox, Sparkles, Languages, Coins, Layers, Percent,
-} from "lucide-react";
+} FileCheck2 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
@@ -48,6 +48,7 @@ const navSections = [
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
       { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },
+      { path: "/admin/saft-certification", label: "SAF-T · Certificação", icon: FileCheck2 },
 
       { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],

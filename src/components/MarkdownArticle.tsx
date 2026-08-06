@@ -37,6 +37,8 @@ export default function MarkdownArticle({ content }: { content: string }) {
           [rehypeAutolinkHeadings, { behavior: "wrap" }],
         ]}
         components={{
+          // Evita segundo H1: o H1 da página é o título do artigo.
+          h1: ({ children, ...rest }) => <h2 {...(rest as any)}>{children}</h2>,
           a: ({ href, children, ...rest }) => {
             const url = String(href || "");
             if (isInternal(url) && url.startsWith("/")) {

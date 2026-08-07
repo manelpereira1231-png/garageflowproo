@@ -38,6 +38,6 @@ Deno.serve(async (_req) => {
   out.archive = arch.data ?? arch.error?.message;
 
   return new Response(JSON.stringify(out), {
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

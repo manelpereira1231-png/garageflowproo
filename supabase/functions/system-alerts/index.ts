@@ -97,5 +97,5 @@ Deno.serve(async (req) => {
       `${slaBreached} reclamações em incumprimento de SLA.`, "warn");
   }
 
-  return new Response(JSON.stringify(out), { headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify(out), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

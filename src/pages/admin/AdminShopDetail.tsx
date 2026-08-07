@@ -73,7 +73,7 @@ export default function AdminShopDetail() {
   const fetchAll = useCallback(async () => {
     if (!id) return;
     const [shopRes, subRes, clientsRes, vehiclesRes, quotesRes, woRes, alertsRes, logsRes, teamRes, invoicesRes, servicesRes] = await Promise.all([
-      supabase.from("shops").select("*").eq("id", id).single(),
+      supabase.from("shops").select("*").eq("id", id).maybeSingle(),
       supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id, discount_percent, discount_reason, discount_applied_at, discount_expires_at").eq("shop_id", id).maybeSingle(),
       supabase.from("clients").select("id, name, email, phone, created_at").eq("shop_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(50),
       supabase.from("vehicles").select("id").eq("shop_id", id).is("deleted_at", null),

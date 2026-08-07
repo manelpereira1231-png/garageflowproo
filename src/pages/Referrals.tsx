@@ -55,7 +55,7 @@ export default function Referrals() {
         .from("referral_codes")
         .insert({ user_id: user.id, code: newCode })
         .select()
-        .single();
+        .maybeSingle();
       codeData = created;
     }
 

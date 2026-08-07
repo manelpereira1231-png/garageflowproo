@@ -68,7 +68,7 @@ export default function ServiceForm() {
 
       // Load existing service for editing
       if (editId) {
-        const { data: service } = await supabase.from("work_orders").select("*").eq("id", editId).single();
+        const { data: service } = await supabase.from("work_orders").select("*").eq("id", editId).maybeSingle();
         if (service) {
           setClientId(service.client_id);
           setVehicleId(service.vehicle_id);

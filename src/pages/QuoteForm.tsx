@@ -76,7 +76,7 @@ export default function QuoteForm() {
 
       // Load existing quote for editing
       if (editId) {
-        const { data: quote } = await supabase.from("quotes").select("*").eq("id", editId).single();
+        const { data: quote } = await supabase.from("quotes").select("*").eq("id", editId).maybeSingle();
         if (quote) {
           setClientId(quote.client_id);
           setVehicleId(quote.vehicle_id);

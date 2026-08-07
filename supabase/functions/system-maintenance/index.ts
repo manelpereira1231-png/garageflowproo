@@ -7,14 +7,24 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-internal-token",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (_req) => {
+  if (_req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
   // Auth guard: only the platform (cron / service role) may invoke
   const __auth = (_req.headers.get("Authorization") ?? "").replace("Bearer ", "")
     || (_req.headers.get("x-internal-token") ?? "");
   if (__auth !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
   const out: Record<string, unknown> = {};
@@ -28,6 +38,6 @@ Deno.serve(async (_req) => {
   out.archive = arch.data ?? arch.error?.message;
 
   return new Response(JSON.stringify(out), {
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

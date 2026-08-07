@@ -62,7 +62,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     const load = async () => {
       setLoading(true);
       const [vRes, hRes, woRes] = await Promise.all([
-        supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).single(),
+        supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
         supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
       ]);

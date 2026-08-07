@@ -107,7 +107,7 @@ export default function Team() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
       if (shopId) {
-        const { data: shop } = await supabase.from("shops").select("name").eq("id", shopId).single();
+        const { data: shop } = await supabase.from("shops").select("name").eq("id", shopId).maybeSingle();
         if (shop) setShopName(shop.name);
       }
       fetchMembers();

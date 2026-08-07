@@ -74,13 +74,14 @@ export default function Loyalty() {
 
     const isRedeem = form.type === 'redeem';
     const member = pointsDialog;
+    const currentPoints = Number(member.points) || 0;
 
-    if (isRedeem && pts > member.points) {
+    if (isRedeem && pts > currentPoints) {
       toast.error(t('loyalty.insufficientPoints'));
       return;
     }
 
-    const newPoints = isRedeem ? member.points - pts : member.points + pts;
+    const newPoints = isRedeem ? currentPoints - pts : currentPoints + pts;
     const updates: any = { points: newPoints, tier: getTier(newPoints), updated_at: new Date().toISOString() };
     if (!isRedeem) updates.total_earned = (member.total_earned || 0) + pts;
     else updates.total_redeemed = (member.total_redeemed || 0) + pts;
@@ -95,9 +96,9 @@ export default function Loyalty() {
     // Send loyalty email notification
     const clientEmail = (member.clients as any)?.email;
     if (clientEmail) {
-      const { data: shop } = await supabase.from("shops").select("name").eq("id", activeShopId).single();
+      const { data: shop } = await supabase.from("shops").select("name").eq("id", activeShopId).maybeSingle();
       const shopName = shop?.name || "GarageFlow";
-      const oldTier = member.tier || getTier(member.points);
+      const oldTier = member.tier || getTier(currentPoints);
       const newTier = getTier(newPoints);
       const tierChanged = oldTier !== newTier && !isRedeem;
 

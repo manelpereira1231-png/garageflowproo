@@ -178,7 +178,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
       .select("*")
       .eq("id", id)
       .eq("status", "published")
-      .single();
+      .maybeSingle();
 
     if (!listingData) { setLoading(false); return; }
     setListing({ ...listingData, photos: Array.isArray(listingData.photos) ? listingData.photos : [] });
@@ -204,7 +204,7 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
         damage_photos: Array.isArray(rd.damage_photos) ? rd.damage_photos : [],
       });
       if (rd.shop_id) {
-        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", rd.shop_id).single();
+        const { data: shop } = await supabase.from("shops").select("name, carity_inspections_count, carity_approval_rate, carity_rating").eq("id", rd.shop_id).maybeSingle();
         if (shop) setShopInfo(shop);
       }
     }

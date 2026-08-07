@@ -56,7 +56,17 @@ export default function Referrals() {
         .insert({ user_id: user.id, code: newCode })
         .select()
         .maybeSingle();
-      codeData = created;
+      if (created) {
+        codeData = created;
+      } else {
+        // Corrida (duplo mount / duas tabs): o código já foi criado — reler.
+        const { data: existing } = await supabase
+          .from("referral_codes")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        codeData = existing;
+      }
     }
 
     if (codeData) setReferralCode(codeData as unknown as ReferralCode);

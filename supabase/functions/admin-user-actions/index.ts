@@ -95,9 +95,11 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    const msg = String(e?.message ?? e);
+    const status = /no auth|unauthorized/i.test(msg) ? 401 : /forbidden/i.test(msg) ? 403 : 400;
+    return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status,
     });
   }
 });

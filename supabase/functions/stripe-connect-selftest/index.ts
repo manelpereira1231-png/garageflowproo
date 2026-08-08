@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,34 @@ serve(async (req) => {
 
   const steps: Record<string, unknown> = {};
   try {
+    // AUTHZ: este endpoint cria (e apaga) uma conta Stripe Connect real.
+    // Só super admins autenticados o podem executar.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData } = await userClient.auth.getUser();
+    if (!userData?.user) {
+      return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
+      auth: { persistSession: false },
+    });
+    const { data: isSuper } = await adminClient.rpc("is_super_admin", { _user_id: userData.user.id });
+    if (!isSuper) {
+      return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const key = Deno.env.get("STRIPE_SECRET_KEY") || "";
     if (!key) throw new Error("STRIPE_SECRET_KEY não está definida");
 

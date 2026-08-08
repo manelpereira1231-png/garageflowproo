@@ -34,14 +34,26 @@ const SUPPLIER_NEW: { subject: (n: string) => string; body: (n: string, buyer: s
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    // AUTHZ: função interna — só é invocada server-to-server (gsn-stripe-webhook)
+    // com a service role key. Sem esta verificação qualquer anónimo podia disparar
+    // emails transacionais para compradores/fornecedores.
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const bearer = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
+    if (!serviceKey || bearer !== serviceKey) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supa = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      serviceKey,
       { auth: { persistSession: false } }
     );
 
     const { order_id, event } = await req.json();
     if (!order_id || !event) throw new Error("order_id e event obrigatórios");
+
 
     const { data: order } = await supa
       .from("gsn_orders")

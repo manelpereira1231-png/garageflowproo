@@ -34,14 +34,26 @@ const SUPPLIER_NEW: { subject: (n: string) => string; body: (n: string, buyer: s
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    // AUTHZ: função interna — só é invocada server-to-server (gsn-stripe-webhook)
+    // com a service role key. Sem esta verificação qualquer anónimo podia disparar
+    // emails transacionais para compradores/fornecedores.
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const bearer = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
+    if (!serviceKey || bearer !== serviceKey) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supa = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      serviceKey,
       { auth: { persistSession: false } }
     );
 
     const { order_id, event } = await req.json();
     if (!order_id || !event) throw new Error("order_id e event obrigatórios");
+
 
     const { data: order } = await supa
       .from("gsn_orders")
@@ -68,7 +80,9 @@ serve(async (req) => {
     const { data: buyerUser } = await supa.auth.admin.getUserById(order.buyer_user_id);
     const buyerEmail = buyerUser?.user?.email;
     const tmpl = LABELS[event];
-    const origin = req.headers.get("origin") || "https://garageflow.pt";
+    // Base fixa: nunca usar um header controlado pelo chamador em links de email.
+    const origin = "https://garageflow.pt";
+
     const orderUrl = `${origin}/parts/orders/${order_id}`;
 
     const results: Record<string, unknown> = {};

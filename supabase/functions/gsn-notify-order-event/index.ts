@@ -80,7 +80,9 @@ serve(async (req) => {
     const { data: buyerUser } = await supa.auth.admin.getUserById(order.buyer_user_id);
     const buyerEmail = buyerUser?.user?.email;
     const tmpl = LABELS[event];
-    const origin = req.headers.get("origin") || "https://garageflow.pt";
+    // Base fixa: nunca usar um header controlado pelo chamador em links de email.
+    const origin = "https://garageflow.pt";
+
     const orderUrl = `${origin}/parts/orders/${order_id}`;
 
     const results: Record<string, unknown> = {};

@@ -270,7 +270,7 @@ export default function AdminCarity() {
         .from("carity_seller_profiles")
         .select("location")
         .eq("user_id", listing.seller_id)
-        .single();
+        .maybeSingle();
       // Try to parse location or use listing metadata if available
     }
 

@@ -28,7 +28,7 @@ export default function CarityPayInspection() {
 
   const load = async () => {
     const [{ data: listingData }, { data: { user } }] = await Promise.all([
-      supabase.from("carity_listings").select("*").eq("id", id).single(),
+      supabase.from("carity_listings").select("*").eq("id", id).maybeSingle(),
       supabase.auth.getUser(),
     ]);
     setListing(listingData);

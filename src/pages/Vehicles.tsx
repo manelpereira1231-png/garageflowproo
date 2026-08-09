@@ -19,7 +19,7 @@ import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
-import { normalizePlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
+import { autoFormatPlate, canonicalPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 import ClientCombobox from "@/components/ClientCombobox";
 import { MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useTableState } from "@/hooks/useTableState";
@@ -118,9 +118,10 @@ export default function Vehicles() {
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
     if (!form.client_id) { toast.error(t('vehicles.selectClient')); setLoading(false); return; }
     if (!form.make || !form.model) { toast.error(t('vehicles.make') + ' / ' + t('vehicles.model')); setLoading(false); return; }
-    // A matrícula é validada tal como o utilizador a escreveu (apenas
-    // maiúsculas + remoção de caracteres inválidos). Nunca é "adivinhada".
-    const normalizedPlate = normalizePlate(form.plate);
+    // A matrícula é guardada tal como é apresentada ao utilizador (formatação
+    // automática do país da oficina). A validação ignora separadores, por isso
+    // matrículas antigas sem hífen continuam a ser aceites.
+    const normalizedPlate = autoFormatPlate(form.plate, plateRegion);
     if (!isValidPlate(normalizedPlate, plateRegion)) {
       toast.error(`Matrícula inválida — formato esperado: ${plateExample}`);
       setLoading(false);
@@ -192,8 +193,10 @@ export default function Vehicles() {
   const preFiltered = vehicles.filter((v) => {
     const s = filters.search.toLowerCase();
     if (s) {
-      const hay = `${v.plate} ${v.make} ${v.model} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
-      if (!hay.includes(s)) return false;
+      // A matrícula entra também na forma canónica (sem hífens/espaços) para
+      // que "00AA00" encontre "00-AA-00" e vice-versa.
+      const hay = `${v.plate} ${canonicalPlate(v.plate)} ${v.make} ${v.model} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
+      if (!hay.includes(s) && !hay.includes(canonicalPlate(s).toLowerCase())) return false;
     }
     if (filters.make && v.make !== filters.make) return false;
     if (filters.fuel && v.fuel !== filters.fuel) return false;
@@ -272,7 +275,7 @@ export default function Vehicles() {
                   <Label>{t('vehicles.plate')} *</Label>
                   <Input
                     value={form.plate}
-                    onChange={e => setForm({...form, plate: normalizePlate(e.target.value)})}
+                    onChange={e => setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)})}
                     required
                     placeholder={plateExample}
                     aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}

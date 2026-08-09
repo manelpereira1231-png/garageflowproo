@@ -163,11 +163,19 @@ export default function Opportunities() {
                       {r.clientName || "Sem cliente"}
                       {r.plate ? <span className="text-muted-foreground"> · {r.plate}</span> : null}
                     </span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {r.service_type || "Revisão"}{r.next_service_date ? ` · ${r.next_service_date}` : ""}
+                    <span className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground">
+                        {r.service_type || "Revisão"}{r.next_service_date ? ` · ${r.next_service_date}` : ""}
+                      </span>
+                      {r.vehicleId && (
+                        <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-xs text-primary">
+                          <Link to={`/vehicles?passport=${r.vehicleId}`}>Ver Passaporte</Link>
+                        </Button>
+                      )}
                     </span>
                   </li>
                 ))}
+
               </ul>
             )}
             <div className="mt-3">

@@ -241,8 +241,38 @@ export default function ServiceForm() {
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>{t('services.entryMileage')}</Label><Input type="number" value={entryMileage} onChange={e => setEntryMileage(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('services.technician')}</Label><Input value={technician} onChange={e => setTechnician(e.target.value)} /></div>
+            <div className="space-y-1.5">
+              <Label>{t('services.entryMileage')}</Label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  className="pr-10"
+                  placeholder="0"
+                  value={entryMileage === "" || entryMileage === "0" ? "" : Number(entryMileage).toLocaleString("pt-PT")}
+                  onChange={e => setEntryMileage(e.target.value.replace(/\D/g, "") || "0")}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">km</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('services.technician')}</Label>
+              {technicians.length > 0 ? (
+                <Select value={technician || "__none__"} onValueChange={v => setTechnician(v === "__none__" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar técnico" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Sem técnico atribuído —</SelectItem>
+                    {technicians.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                    {technician && !technicians.includes(technician) && (
+                      <SelectItem value={technician}>{technician}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={technician} onChange={e => setTechnician(e.target.value)} placeholder="Nome do técnico" />
+              )}
+            </div>
+
             <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} max={MAX_LABOR_HOURS} value={laborHours} onChange={e => setLaborHours(e.target.value)} aria-invalid={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS} className={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""} />{(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS && <p className="text-[11px] text-destructive">Máximo {MAX_LABOR_HOURS}h.</p>}</div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>

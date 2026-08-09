@@ -456,6 +456,32 @@ export default function Clients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={duplicates.length > 0} onOpenChange={(o) => { if (!o) setDuplicates([]); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cliente possivelmente duplicado</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Já existem clientes com os mesmos dados nesta oficina:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {duplicates.slice(0, 5).map((d) => (
+                    <li key={d.client.id}>
+                      <span className="font-medium text-foreground">{d.client.name}</span>
+                      {" — "}{d.reasons.join(", ")} igual
+                    </li>
+                  ))}
+                </ul>
+                <p>Queres guardar mesmo assim?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { setDuplicates([]); await persistClient(); }}>Guardar mesmo assim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

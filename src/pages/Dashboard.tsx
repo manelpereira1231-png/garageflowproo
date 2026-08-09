@@ -568,7 +568,7 @@ function OwnerDashboard() {
         {/* Seletor de contexto — visível apenas para a Oficina Mãe (dono) no plano Garage com >1 oficina */}
         {isOwnerOfGroup && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground hidden sm:inline">Contexto</span>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground hidden sm:inline whitespace-nowrap">Contexto</span>
             <Select value={selectedFilter} onValueChange={setSelectedFilter}>
               <SelectTrigger className="h-9 min-w-[180px] text-xs sm:text-sm">
                 <SelectValue />

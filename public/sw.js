@@ -1,6 +1,6 @@
-const CACHE_NAME = 'garageflow-v3-rbac';
+const CACHE_NAME = 'garageflow-v4-brand';
 const STATIC_ASSETS = [
-  '/favicon.ico',
+  '/favicon.png',
   '/manifest.json',
 ];
 

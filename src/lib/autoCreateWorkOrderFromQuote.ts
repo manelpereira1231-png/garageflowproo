@@ -44,6 +44,12 @@ export async function autoCreateWorkOrderFromQuote(quoteId: string): Promise<{
       return { workOrderId: null, created: false, error: "Orçamento sem cliente ou veículo" };
     }
 
+    // Salvaguarda: só um orçamento aprovado (ou já convertido) autoriza a execução do serviço.
+    if (!["approved", "converted"].includes(q.status)) {
+      return { workOrderId: null, created: false, error: "Orçamento ainda não aprovado pelo cliente" };
+    }
+
+
     // 3. Gerar número sequencial
     const { data: countData } = await supabase
       .from("work_orders")

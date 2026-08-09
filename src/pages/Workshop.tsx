@@ -17,6 +17,7 @@ import { sendPushNotification } from "@/lib/pushNotifications";
 import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
+import { consumeWorkOrderParts } from "@/lib/consumeWorkOrderParts";
 
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
@@ -131,6 +132,24 @@ export default function Workshop() {
       }
       // Auto-criar fatura ao concluir o serviço
       if (nextStatus === 'completed') {
+        // Consumo de stock — mesmo mecanismo oficial usado em Serviços (idempotente por OS).
+        try {
+          const { data: woLines } = await supabase
+            .from("work_orders").select("lines").eq("id", wo.id).maybeSingle();
+          const res = await consumeWorkOrderParts({
+            workOrderId: wo.id,
+            shopId: activeShopId,
+            lines: (woLines as any)?.lines,
+            reference: wo.number,
+          });
+          if (res.insufficient.length > 0) {
+            toast.warning(`Stock ficou negativo: ${res.insufficient.join(', ')}`);
+          } else if (res.consumed > 0) {
+            toast.success(`${res.consumed} peça(s) descontada(s) do stock`);
+          }
+        } catch (e) {
+          console.error("Erro ao descontar stock:", e);
+        }
         const invRes = await autoCreateInvoiceFromWorkOrder(wo.id);
         if (invRes.error) toast.error(`Fatura não criada: ${invRes.error}`);
         else if (invRes.created) toast.success("Fatura criada automaticamente");

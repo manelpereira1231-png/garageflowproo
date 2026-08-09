@@ -264,7 +264,7 @@ export default function LandingPage() {
     };
   });
 
-  const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
+  
 
   // Rich SEO JSON-LD gerado a partir do catálogo dinâmico: uma Offer por plano
   // com preço efetivo (aplicando promoções) e moeda regional.
@@ -540,22 +540,6 @@ export default function LandingPage() {
 
 
 
-      {/* Ideal For section */}
-      <Reveal>
-      <section className="py-10 sm:py-14 px-4 border-b border-border">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6">{t('landing.idealForTitle')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left max-w-xl mx-auto">
-            {idealForKeys.map(key => (
-              <div key={key} className="flex items-start gap-2.5">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-muted-foreground">{t(key)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      </Reveal>
 
       {/* Visual showcase: Spreadsheet + WhatsApp */}
       <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background border-b border-border overflow-hidden">

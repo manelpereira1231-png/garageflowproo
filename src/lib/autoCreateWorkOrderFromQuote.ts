@@ -19,15 +19,20 @@ export async function autoCreateWorkOrderFromQuote(quoteId: string): Promise<{
     // 1. Já existe uma OS ligada a este orçamento?
     const { data: existing } = await supabase
       .from("work_orders")
-      .select("id")
+      .select("id, status")
       .eq("quote_id", quoteId)
       .maybeSingle();
 
     if (existing?.id) {
+      // OS criada antes da decisão do cliente fica em 'waiting_approval' — agora é autorizada.
+      if (existing.status === "waiting_approval") {
+        await supabase.from("work_orders").update({ status: "approved" }).eq("id", existing.id);
+      }
       // Garantir que orçamento fica 'converted' também neste caso
       await supabase.from("quotes").update({ status: "converted" }).eq("id", quoteId);
       return { workOrderId: existing.id, created: false };
     }
+
 
     // 2. Carregar orçamento
     const { data: q, error: qErr } = await supabase

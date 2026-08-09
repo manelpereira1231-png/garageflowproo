@@ -27,6 +27,7 @@ export interface StakeQuote {
   validity_date: string | null;
   created_at: string;
   clientName: string | null;
+  clientId: string | null;
 }
 
 export interface StakeInvoice {
@@ -43,9 +44,11 @@ export interface StakeReminder {
   service_type: string | null;
   next_service_date: string | null;
   clientName: string | null;
+  clientId: string | null;
   plate: string | null;
   vehicleId: string | null;
 }
+
 
 export interface MoneyAtStake {
   loading: boolean;

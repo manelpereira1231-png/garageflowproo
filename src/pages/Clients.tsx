@@ -77,6 +77,13 @@ const copyPortalLink = async (clientId: string, portalToken: string | null, succ
 
 export default function Clients() {
   const { t } = useLanguage();
+  const { code: shopCountry } = useShopCountry();
+  const taxIdField = getCountryFiscalConfig(shopCountry).fields.find((f) => f.key === "taxId");
+  const taxIdLabel = getTaxIdLabel(shopCountry);
+  const taxIdInvalid = (() => {
+    const v = (formNifRef.current ?? "").trim();
+    return false;
+  })();
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
   const cacheKey = `clients-all:${activeShopIdInit}`;
   const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);

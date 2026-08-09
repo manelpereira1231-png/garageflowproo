@@ -70,7 +70,7 @@ export default function Opportunities() {
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" />
                 <h2 className="font-semibold text-sm">Orçamentos pendentes</h2>
-                <Badge variant="outline">{stake.quotes.length}</Badge>
+                <Badge variant="outline">{stake.quotes.length} {stake.quotes.length === 1 ? "orçamento" : "orçamentos"}</Badge>
               </div>
               <span className="font-bold tabular-nums text-sm">{formatMoney(stake.quotesValue)}</span>
             </div>
@@ -101,8 +101,8 @@ export default function Opportunities() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Receipt className="w-4 h-4 text-amber-500" />
-                <h2 className="font-semibold text-sm">Pagamentos pendentes</h2>
-                <Badge variant="outline">{stake.invoices.length}</Badge>
+                <h2 className="font-semibold text-sm">Faturas por receber</h2>
+                <Badge variant="outline">{stake.invoices.length} {stake.invoices.length === 1 ? "fatura" : "faturas"}</Badge>
               </div>
               <span className="font-bold tabular-nums text-sm">{formatMoney(stake.paymentsValue)}</span>
             </div>
@@ -129,19 +129,21 @@ export default function Opportunities() {
             )}
           </Card>
 
-          {/* Clientes a recuperar */}
-          <Card className="p-4 sm:p-5">
+          {/* Clientes a recuperar — POTENCIAL ESTIMADO, nunca somado ao valor real */}
+          <Card className="p-4 sm:p-5 border-dashed">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-emerald-500" />
-                <h2 className="font-semibold text-sm">Clientes a recuperar</h2>
-                <Badge variant="outline">{stake.reminders.length}</Badge>
+                <h2 className="font-semibold text-sm">Revisões vencidas</h2>
+                <Badge variant="outline">{stake.reminders.length} {stake.reminders.length === 1 ? "viatura" : "viaturas"}</Badge>
               </div>
-              <span className="font-bold tabular-nums text-sm">{formatMoney(stake.recoveryValue)}</span>
+              <span className="font-bold tabular-nums text-sm text-muted-foreground">
+                {stake.recoveryValue > 0 ? `~${formatMoney(stake.recoveryValue)}` : "—"}
+              </span>
             </div>
             <p className="text-[11px] text-muted-foreground mb-3">
               {stake.avgTicket > 0
-                ? `Revisões em atraso × ticket médio real da oficina (${formatMoney(stake.avgTicket)}).`
+                ? `Potencial estimado com base no ticket médio histórico (${formatMoney(stake.avgTicket)}) — não é dinheiro confirmado.`
                 : "Sem histórico suficiente para estimar valor — mostramos apenas a lista."}
             </p>
             {stake.reminders.length === 0 ? (

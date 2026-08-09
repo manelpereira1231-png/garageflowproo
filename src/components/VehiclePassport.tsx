@@ -56,6 +56,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [warranties, setWarranties] = useState<any[]>([]);
   const [kmFraudWarning, setKmFraudWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,17 +65,20 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     if (!open || !vehicleId) return;
     const load = async () => {
       setLoading(true);
-      const [vRes, hRes, woRes, remRes] = await Promise.all([
+      const [vRes, hRes, woRes, remRes, warRes] = await Promise.all([
         supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
-        supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
+        supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, notes, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
         supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
+        // Garantias — relação direta existente (warranties.vehicle_id). Sem tabela nova.
+        supabase.from("warranties").select("id, type, description, start_date, end_date, status, work_order_id").eq("vehicle_id", vehicleId).order("start_date", { ascending: false }).limit(20),
       ]);
 
       setVehicle(vRes.data);
       setHistory((hRes.data || []) as HistoryEvent[]);
       setWorkOrders(woRes.data || []);
       setReminders(remRes.data || []);
+      setWarranties(warRes.data || []);
 
       // Fotos das intervenções — reutiliza work_order_attachments (RLS por shop_id).
       const woIds = (woRes.data || []).map((w: any) => w.id);
@@ -89,11 +94,31 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         setPhotos([]);
       }
 
+      // Faturas — relação existente invoices.vehicle_id OU invoices.work_order_id.
+      // Deduplicadas por id para nunca listar a mesma fatura duas vezes.
+      const invQueries: any[] = [
+        supabase.from("invoices").select("id, number, status, total, created_at, work_order_id").eq("vehicle_id", vehicleId).limit(100),
+      ];
+      if (woIds.length > 0) {
+        invQueries.push(
+          supabase.from("invoices").select("id, number, status, total, created_at, work_order_id").in("work_order_id", woIds).limit(100)
+        );
+      }
+      const invResults = await Promise.all(invQueries);
+      const invMap = new Map<string, any>();
+      invResults.forEach((r: any) => (r.data || []).forEach((inv: any) => invMap.set(inv.id, inv)));
+      setInvoices(
+        Array.from(invMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
+
       detectKmFraud(woRes.data || []);
       setLoading(false);
     };
     load();
   }, [open, vehicleId]);
+
 
 
   const detectKmFraud = (orders: any[]) => {
@@ -127,6 +152,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       description: h.description,
       mileage: h.mileage,
       parts: h.parts_replaced,
+      note: null as string | null,
     })),
     ...workOrders.map(wo => {
       const label = t(`wo.status.${wo.status}`, wo.status);
@@ -138,6 +164,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         description: wo.diagnosis || null,
         mileage: wo.entry_mileage || null,
         parts: [],
+        // Nota do mecânico — texto existente em work_orders.notes (sem duplicação).
+        note: (wo.notes && String(wo.notes).trim()) || null,
       };
     }),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -149,10 +177,30 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     return true;
   });
 
+  // Peças utilizadas — agregadas a partir das linhas existentes das OS (work_orders.lines).
+  // Apenas apresentação: não altera cálculos financeiros.
+  const usedParts = (() => {
+    const map = new Map<string, { name: string; qty: number; total: number }>();
+    workOrders.forEach((wo: any) => {
+      const lines = Array.isArray(wo.lines) ? wo.lines : [];
+      lines.forEach((l: any) => {
+        if (l?.type && l.type !== "part") return;
+        const name = (l?.name || "").trim();
+        if (!name) return;
+        const qty = Number(l.quantity || 0);
+        const total = qty * Number(l.unit_price || 0);
+        const prev = map.get(name) || { name, qty: 0, total: 0 };
+        map.set(name, { name, qty: prev.qty + qty, total: prev.total + total });
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 30);
+  })();
+
   const mileagePoints = workOrders
     .filter(wo => wo.entry_mileage > 0)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .map(wo => ({ date: wo.created_at, km: wo.entry_mileage }));
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -255,6 +303,77 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 </div>
               )}
 
+              {/* Faturas — relação existente (vehicle_id / work_order_id). Sem secção vazia. */}
+              {invoices.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.invoices", "Faturas")}</h4>
+                  <ul className="space-y-1.5">
+                    {invoices.map((inv: any) => (
+                      <li key={inv.id}>
+                        <a
+                          href={`/invoices/${inv.id}`}
+                          className="flex items-center justify-between gap-2 bg-muted/50 hover:bg-muted rounded-lg px-3 py-2 text-sm"
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-xs text-muted-foreground">{inv.number || "—"}</span>
+                            <Badge variant="outline" className="text-[10px] shrink-0">{t(`invoice.status.${inv.status}`, inv.status)}</Badge>
+                          </span>
+                          <span className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-muted-foreground">
+                              {inv.created_at ? format(new Date(inv.created_at), "dd/MM/yyyy", { locale }) : "—"}
+                            </span>
+                            <span className="font-semibold tabular-nums">{Number(inv.total || 0).toFixed(2)}</span>
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Garantias — tabela warranties existente, ligada por vehicle_id. */}
+              {warranties.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4" />
+                    {t("passport.warranties", "Garantias")}
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {warranties.map((w: any) => (
+                      <li key={w.id} className="bg-muted/50 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-2">
+                        <span className="truncate">{w.description || w.type || t("passport.warranty", "Garantia")}</span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground">
+                            {w.start_date ? format(new Date(w.start_date), "dd/MM/yyyy", { locale }) : "—"}
+                            {w.end_date ? ` → ${format(new Date(w.end_date), "dd/MM/yyyy", { locale })}` : ""}
+                          </span>
+                          <Badge variant={w.status === "active" ? "default" : "outline"} className="text-[10px]">
+                            {t(`warranty.status.${w.status}`, w.status)}
+                          </Badge>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Peças utilizadas — agregadas das linhas das OS existentes. */}
+              {usedParts.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.usedParts", "Peças utilizadas")}</h4>
+                  <ul className="space-y-1.5">
+                    {usedParts.map((p) => (
+                      <li key={p.name} className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2 text-sm">
+                        <span className="truncate">{p.name}</span>
+                        <span className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
+                          <span>{t("passport.qty", "Qtd.")} {p.qty}</span>
+                          <span className="font-semibold text-foreground tabular-nums">{p.total.toFixed(2)}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
 
               <div>
@@ -277,6 +396,12 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                               <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(event.date), "dd/MM/yyyy", { locale })}</span>
                             </div>
                             {event.description && <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>}
+                            {event.note && (
+                              <div className="mt-1 border-l-2 border-primary/40 pl-2">
+                                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t("passport.mechanicNote", "Nota do mecânico")}</p>
+                                <p className="text-xs whitespace-pre-line">{event.note}</p>
+                              </div>
+                            )}
                             <div className="flex gap-2 mt-0.5">
                               {event.mileage && event.mileage > 0 && <span className="text-[10px] text-muted-foreground">{event.mileage.toLocaleString()} km</span>}
                               {event.parts?.length > 0 && <span className="text-[10px] text-muted-foreground">🔧 {event.parts.length} {t("passport.parts", "peças")}</span>}

@@ -27,6 +27,7 @@ export interface StakeQuote {
   validity_date: string | null;
   created_at: string;
   clientName: string | null;
+  clientId: string | null;
 }
 
 export interface StakeInvoice {
@@ -43,9 +44,11 @@ export interface StakeReminder {
   service_type: string | null;
   next_service_date: string | null;
   clientName: string | null;
+  clientId: string | null;
   plate: string | null;
   vehicleId: string | null;
 }
+
 
 export interface MoneyAtStake {
   loading: boolean;
@@ -92,7 +95,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
     const [quotesRes, invoicesRes, remindersRes, deliveredRes] = await Promise.all([
       supabase
         .from("quotes")
-        .select("id, number, total, validity_date, created_at, clients(name)")
+        .select("id, number, total, validity_date, created_at, client_id, clients(name)")
         .in("shop_id", ids)
         .in("status", ["draft", "sent"])
         .order("created_at", { ascending: false })
@@ -106,7 +109,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         .limit(200),
       supabase
         .from("service_reminders")
-        .select("id, service_type, next_service_date, vehicle_id, clients(name), vehicles(plate)")
+        .select("id, service_type, next_service_date, vehicle_id, client_id, clients(name), vehicles(plate)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .lt("next_service_date", today)
@@ -122,8 +125,23 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
     ]);
 
     // --- Orçamentos pendentes (ainda válidos) ---
-    const quotes: StakeQuote[] = ((quotesRes.data as any[]) || [])
-      .filter((q) => !q.validity_date || q.validity_date >= today)
+    const pendingQuotes = ((quotesRes.data as any[]) || []).filter(
+      (q) => !q.validity_date || q.validity_date >= today
+    );
+
+    // DEDUPLICAÇÃO: um orçamento já convertido em fatura não pode ser contado
+    // outra vez. Usa a relação existente invoices.quote_id (sem heurísticas).
+    const invoicedQuoteIds = new Set<string>();
+    if (pendingQuotes.length > 0) {
+      const { data: linked } = await supabase
+        .from("invoices")
+        .select("quote_id")
+        .in("quote_id", pendingQuotes.map((q) => q.id));
+      (linked || []).forEach((r: any) => r.quote_id && invoicedQuoteIds.add(r.quote_id));
+    }
+
+    const quotes: StakeQuote[] = pendingQuotes
+      .filter((q) => !invoicedQuoteIds.has(q.id))
       .map((q) => ({
         id: q.id,
         number: q.number ?? null,
@@ -131,8 +149,10 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         validity_date: q.validity_date ?? null,
         created_at: q.created_at,
         clientName: q.clients?.name ?? null,
+        clientId: q.client_id ?? null,
       }));
     const quotesValue = quotes.reduce((s, q) => s + q.total, 0);
+
 
     // --- Pagamentos pendentes (fatura menos pagamentos registados) ---
     const rawInvoices = (invoicesRes.data as any[]) || [];
@@ -168,6 +188,8 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
       service_type: r.service_type ?? null,
       next_service_date: r.next_service_date ?? null,
       clientName: r.clients?.name ?? null,
+      clientId: r.client_id ?? null,
+
       plate: r.vehicles?.plate ?? null,
       vehicleId: r.vehicle_id ?? null,
     }));

@@ -140,6 +140,7 @@ import SupportFab from "@/components/SupportFab";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useOnboardingRequired } from "@/hooks/useOnboardingRequired";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import PublicRouteTracker from "@/components/PublicRouteTracker";
@@ -411,6 +412,24 @@ const PRIMARY_ONLY_PATHS = new Set<string>([
   "/billing",
   "/settings/billing-integration",
 ]);
+
+/**
+ * Guarda única do /onboarding (fonte de verdade: shops.onboarding_completed_at).
+ *  - a carregar               → loader (nunca decide prematuramente)
+ *  - onboarding pendente      → wizard
+ *  - onboarding concluído     → dashboard
+ *  - utilizador sem oficina própria (convidado/admin) → dashboard
+ */
+function OnboardingRoute() {
+  const { loading, required } = useOnboardingRequired();
+  if (loading) return <PageLoader />;
+  if (!required) return <Navigate to="/dashboard" replace />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <OnboardingWizard onComplete={() => {}} />
+    </Suspense>
+  );
+}
 
 function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -952,7 +971,8 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-            <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+            <Route path="/onboarding" element={<OnboardingRoute />} />
+
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Suspense>
@@ -1016,7 +1036,7 @@ function AuthenticatedRoutes() {
           {publicRoutesGarageAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
-          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+          <Route path="/onboarding" element={<OnboardingRoute />} />
           {/* /market (browse home) renders standalone — CarityMarketplace ships its own hero/nav, so we keep it OUT of MarketLayout to avoid a double navbar. */}
           <Route path="/market" element={<GarageMarketEntryRedirect />} />
           <Route element={<MarketLayout />}>

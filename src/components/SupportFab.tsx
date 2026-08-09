@@ -37,11 +37,12 @@ export default function SupportFab() {
     <Button
       onClick={() => navigate(`/support?context=${context}`)}
       size="sm"
-      className="fixed bottom-20 sm:bottom-4 right-4 z-40 shadow-lg rounded-full h-12 px-4 gap-2 gradient-primary text-primary-foreground hover:opacity-95"
+      className="fixed bottom-24 sm:bottom-6 right-4 z-40 shadow-lg rounded-full h-12 w-12 sm:w-auto sm:px-4 p-0 sm:gap-2 gradient-primary text-primary-foreground hover:opacity-95"
       aria-label={label}
     >
       <HelpCircle className="w-5 h-5" />
       <span className="hidden sm:inline font-medium">{label}</span>
+
     </Button>
   );
 }

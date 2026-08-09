@@ -260,8 +260,7 @@ export default function QuoteForm() {
           </div>
         </div>
 
-          </div>
-        </div>
+
 
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">

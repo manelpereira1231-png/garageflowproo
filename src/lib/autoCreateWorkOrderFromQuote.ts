@@ -19,15 +19,20 @@ export async function autoCreateWorkOrderFromQuote(quoteId: string): Promise<{
     // 1. Já existe uma OS ligada a este orçamento?
     const { data: existing } = await supabase
       .from("work_orders")
-      .select("id")
+      .select("id, status")
       .eq("quote_id", quoteId)
       .maybeSingle();
 
     if (existing?.id) {
+      // OS criada antes da decisão do cliente fica em 'waiting_approval' — agora é autorizada.
+      if (existing.status === "waiting_approval") {
+        await supabase.from("work_orders").update({ status: "approved" }).eq("id", existing.id);
+      }
       // Garantir que orçamento fica 'converted' também neste caso
       await supabase.from("quotes").update({ status: "converted" }).eq("id", quoteId);
       return { workOrderId: existing.id, created: false };
     }
+
 
     // 2. Carregar orçamento
     const { data: q, error: qErr } = await supabase
@@ -43,6 +48,12 @@ export async function autoCreateWorkOrderFromQuote(quoteId: string): Promise<{
     if (!q.client_id || !q.vehicle_id) {
       return { workOrderId: null, created: false, error: "Orçamento sem cliente ou veículo" };
     }
+
+    // Salvaguarda: só um orçamento aprovado (ou já convertido) autoriza a execução do serviço.
+    if (!["approved", "converted"].includes(q.status)) {
+      return { workOrderId: null, created: false, error: "Orçamento ainda não aprovado pelo cliente" };
+    }
+
 
     // 3. Gerar número sequencial
     const { data: countData } = await supabase

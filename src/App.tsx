@@ -140,6 +140,7 @@ import SupportFab from "@/components/SupportFab";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useOnboardingRequired } from "@/hooks/useOnboardingRequired";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import PublicRouteTracker from "@/components/PublicRouteTracker";

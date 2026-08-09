@@ -66,6 +66,24 @@ export default function ServiceForm() {
       const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
       if (pts) setPartsList(pts);
 
+      // Técnicos = membros da equipa desta oficina (nome do perfil, email como fallback)
+      try {
+        const { data: members } = await supabase
+          .from("shop_users")
+          .select("id, user_id, role, shop_user_profiles(name, active)")
+          .eq("shop_id", activeShopId);
+        if (members?.length) {
+          const { data: emailData } = await supabase.rpc("get_shop_member_emails", { _shop_id: activeShopId });
+          const emailMap = new Map((emailData || []).map((e: any) => [e.user_id, e.email]));
+          const names = members
+            .filter((m: any) => (m.shop_user_profiles?.active ?? true))
+            .map((m: any) => (m.shop_user_profiles?.name || emailMap.get(m.user_id) || "").trim())
+            .filter(Boolean);
+          setTechnicians(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)));
+        }
+      } catch { /* lista de técnicos é opcional — nunca bloqueia o formulário */ }
+
+
       // Load existing service for editing
       if (editId) {
         const { data: service } = await supabase.from("work_orders").select("*").eq("id", editId).maybeSingle();

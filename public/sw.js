@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garageflow-v4-brand';
+const CACHE_NAME = 'garageflow-v5-brand';
 const STATIC_ASSETS = [
   '/favicon.png',
   '/manifest.json',

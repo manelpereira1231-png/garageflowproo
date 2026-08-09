@@ -124,12 +124,21 @@ async function loadOnce(): Promise<State> {
         timeoutResult({ data: null }),
       ]),
     ]);
+    const featureRows = (features as any) ?? [];
+    const matrixRows = (matrix as any) ?? [];
+    const complete = featureRows.length > 0 && matrixRows.length > 0;
     cache = {
-      features: (features as any) ?? [],
-      matrix: (matrix as any) ?? [],
-      loaded: true,
+      features: featureRows,
+      matrix: matrixRows,
+      // Never cache an empty result as "loaded": a slow network hitting the
+      // timeout would otherwise leave every pricing card without features.
+      loaded: complete,
     };
     emit();
+    if (!complete) {
+      // Retry shortly so the pricing cards fill in without a page reload.
+      window.setTimeout(() => { void loadOnce(); }, 1500);
+    }
     return cache;
   })();
   try {

@@ -776,7 +776,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.billing.badge.pt': 'Faturação legal em Portugal',
     'landing.billing.badge.br': 'Emissão fiscal no Brasil',
     'landing.billing.badge.other': 'Emissão fiscal no teu país',
-    'landing.billing.title.pt': 'Faturas certificadas, sem trocar de programa',
+    'landing.billing.title.pt': 'Faturas certificadas pela Autoridade Tributária, sem trocar de programa',
     'landing.billing.title.br': 'NF-e, NFS-e e NFC-e emitidas via eNotas, sem sair do GarageFlow',
     'landing.billing.title.other': 'Integração com o teu emissor fiscal oficial',
     'landing.billing.intro.pt': 'O GarageFlow liga-se ao InvoiceXpress, um programa de faturação certificado. Liga a conta em Definições → Faturação Certificada e passa a emitir faturas legais diretamente da ficha de serviço, com ATCUD, QR Code e série sequencial.',

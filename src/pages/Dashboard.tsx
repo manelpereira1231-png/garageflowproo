@@ -106,6 +106,12 @@ function OwnerDashboard() {
 
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
 
+  // Contexto usado pelo cartão "Dinheiro em jogo" — respeita o modo Grupo.
+  const stakeShopIds = useMemo(
+    () => (isGroupMode && groupShopIds.length > 0 ? groupShopIds : activeShopId ? [activeShopId] : []),
+    [isGroupMode, groupShopIds, activeShopId],
+  );
+
 
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
   const [prevKpis, setPrevKpis] = useState<{ revenue: number; profit: number; serviceCount: number; avgTicket: number }>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0 });

@@ -1099,10 +1099,10 @@ function OwnerDashboard() {
 }
 
 /**
- * DINHEIRO EM JOGO — valor potencial de oportunidades reais já existentes
- * (orçamentos por fechar, faturas por receber, revisões em atraso). Não é
- * lucro e não inventa valores: reutiliza o hook useMoneyAtStake, que lê as
- * tabelas existentes. Detalhe completo em /opportunities.
+ * DINHEIRO EM JOGO — valor financeiro REAL já existente no sistema
+ * (orçamentos pendentes + faturas por receber). O POTENCIAL ESTIMADO
+ * (revisões vencidas × ticket médio histórico) é apresentado à parte e
+ * NUNCA somado ao valor real. Fonte única: useMoneyAtStake.
  */
 function MoneyAtStakeCard({ shopIds, fmt }: { shopIds: string[]; fmt: (v: number) => string }) {
   const stake = useMoneyAtStake(shopIds);
@@ -1122,35 +1122,55 @@ function MoneyAtStakeCard({ shopIds, fmt }: { shopIds: string[]; fmt: (v: number
     );
   }
 
-  const rows = [
-    { label: 'Orçamentos pendentes', value: stake.quotesValue, count: stake.quotes.length },
-    { label: 'Clientes a recuperar', value: stake.recoveryValue, count: stake.reminders.length },
-    { label: 'Pagamentos pendentes', value: stake.paymentsValue, count: stake.invoices.length },
-  ].filter((r) => r.count > 0);
-
   return (
-    <div className="card-premium p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="card-premium p-4 sm:p-5 space-y-4">
+      {/* --- VALOR REAL --- */}
+      <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-primary" />
             <h2 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dinheiro em jogo</h2>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold tabular-nums mt-1">{fmt(stake.total)}</p>
-          <p className="text-[11px] text-muted-foreground">Valor potencial — não é lucro.</p>
+          <p className="text-2xl sm:text-3xl font-bold tabular-nums mt-1">{fmt(stake.confirmedTotal)}</p>
+          <p className="text-[11px] text-muted-foreground">Valor real: orçamentos pendentes + faturas por receber.</p>
         </div>
         <Link to="/opportunities">
           <Button size="sm" variant="outline" className="shrink-0">Ver oportunidades</Button>
         </Link>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {rows.map((r) => (
-          <div key={r.label} className="rounded-lg border border-border/60 bg-muted/30 p-3">
-            <div className="text-[11px] text-muted-foreground">{r.label} ({r.count})</div>
-            <div className="text-base font-semibold tabular-nums">{fmt(r.value)}</div>
-          </div>
-        ))}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+          <div className="text-[11px] text-muted-foreground">Orçamentos pendentes</div>
+          <div className="text-base font-semibold tabular-nums">{fmt(stake.quotesValue)}</div>
+          <div className="text-[11px] text-muted-foreground">{stake.quotes.length} {stake.quotes.length === 1 ? 'orçamento' : 'orçamentos'}</div>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+          <div className="text-[11px] text-muted-foreground">Faturas por receber</div>
+          <div className="text-base font-semibold tabular-nums">{fmt(stake.paymentsValue)}</div>
+          <div className="text-[11px] text-muted-foreground">{stake.invoices.length} {stake.invoices.length === 1 ? 'fatura' : 'faturas'}</div>
+        </div>
       </div>
+
+      {/* --- POTENCIAL ESTIMADO (separado, nunca somado ao valor real) --- */}
+      {stake.reminders.length > 0 && (
+        <div className="rounded-lg border border-dashed border-border p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Potencial estimado</div>
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-base font-semibold tabular-nums text-muted-foreground">
+              {stake.estimatedTotal > 0 ? `~${fmt(stake.estimatedTotal)}` : '—'}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Revisões vencidas · {stake.reminders.length} {stake.reminders.length === 1 ? 'viatura' : 'viaturas'}
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {stake.estimatedTotal > 0
+              ? 'Estimativa baseada no ticket médio histórico — não é dinheiro confirmado.'
+              : 'Sem histórico suficiente para estimar valor.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

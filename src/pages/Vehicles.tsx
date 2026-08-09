@@ -446,7 +446,7 @@ export default function Vehicles() {
         <VehiclePassport
           vehicleId={passportId}
           open={!!passportId}
-          onClose={() => setPassportId(null)}
+          onClose={closePassport}
         />
       )}
     </div>

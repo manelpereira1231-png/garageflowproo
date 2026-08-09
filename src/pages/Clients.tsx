@@ -139,16 +139,28 @@ export default function Clients() {
   // Realtime: any INSERT/UPDATE/DELETE on this shop's clients → refetch.
   useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchClients });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Deteção de duplicados (mesmo NIF, email ou telemóvel) na oficina ativa.
+  const normalizePhone = (v: string) => (v || "").replace(/[\s.\-()]/g, "").toLowerCase();
+  const findDuplicates = () => {
+    const nif = (form.nif || "").trim().toLowerCase();
+    const email = (form.email || "").trim().toLowerCase();
+    const phone = normalizePhone(form.phone);
+    return clients
+      .filter((c) => c.id !== editingId)
+      .map((c) => {
+        const reasons: string[] = [];
+        if (nif && (c.nif || "").trim().toLowerCase() === nif) reasons.push(taxIdLabel);
+        if (email && (c.email || "").trim().toLowerCase() === email) reasons.push("Email");
+        if (phone && normalizePhone(c.phone) === phone) reasons.push("Telefone");
+        return { client: c, reasons };
+      })
+      .filter((d) => d.reasons.length > 0);
+  };
+
+  const persistClient = async () => {
     setLoading(true);
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
-    if (!validateTaxId(form.nif)) {
-      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
-      setLoading(false);
-      return;
-    }
 
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
@@ -179,6 +191,25 @@ export default function Clients() {
     }
     setLoading(false);
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const shopId = getActiveShopId();
+    if (!shopId) { toast.error(t('common.configureShop')); return; }
+    if (!validateTaxId(form.nif)) {
+      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
+      return;
+    }
+
+    const dups = findDuplicates();
+    if (dups.length > 0) {
+      setDuplicates(dups);
+      return;
+    }
+    await persistClient();
+  };
+
+
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);

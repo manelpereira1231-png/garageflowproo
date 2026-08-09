@@ -544,8 +544,8 @@ export default function Invoices() {
                   <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
                 </TableCell>
                 <TableCell className="px-3 py-3">
-                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                    {t(`invoices.status_${inv.status}`)}
+                  <Badge variant="secondary" className={isOverdue(inv) ? 'bg-destructive/10 text-destructive' : (statusColors[inv.status] || '')}>
+                    {isOverdue(inv) ? 'Vencida' : t(`invoices.status_${inv.status}`)}
                   </Badge>
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">

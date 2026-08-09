@@ -38,33 +38,49 @@ export function detectRegionFromCurrency(currency?: string | null, country?: str
   return "PT"; // default for EUR / unknown
 }
 
-/** Normalize user input: uppercase, keep only A-Z0-9 and hyphens. */
+/** Normalize user input: uppercase, keep only A-Z0-9, hyphens and spaces. */
 export function normalizePlate(raw: string): string {
-  return (raw || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  return (raw || "").toUpperCase().replace(/[^A-Z0-9 -]/g, "").replace(/\s+/g, " ");
+}
+
+/**
+ * Canonical form used ONLY for comparisons/search: uppercase alphanumerics,
+ * no separators. "00-AA-00", "00aa00" and "00 AA 00" all collapse to "00AA00".
+ * Never persisted — the stored plate keeps its human-readable separators.
+ */
+export function canonicalPlate(raw: string): string {
+  return (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 /**
  * Auto-format while typing.
- * PT: inserts hyphens every 2 chars → AA-00-AA
- * BR: keeps single hyphen for old format only (ABC-1234). Mercosul has no hyphen.
+ * PT: inserts hyphens every 2 chars → AA-00-AA / 00-AA-00 / 00-00-AA
+ * BR: ABC-1234 (old) or ABC1D23 (Mercosul, no separator).
+ * ES: 1234 ABC (modern format, single space).
  * Others: uppercase + strip invalid chars.
+ *
+ * Never truncates: characters beyond the canonical length are kept at the end
+ * so the user's input is never silently destroyed.
  */
 export function autoFormatPlate(raw: string, region: PlateRegion): string {
-  const cleaned = normalizePlate(raw).replace(/-/g, "");
+  const cleaned = canonicalPlate(raw);
+  if (!cleaned) return "";
   if (region === "PT") {
-    // group in 3 blocks of 2
     const parts: string[] = [];
     for (let i = 0; i < cleaned.length && i < 6; i += 2) parts.push(cleaned.slice(i, i + 2));
-    return parts.join("-");
+    return parts.join("-") + cleaned.slice(6);
   }
   if (region === "BR") {
-    // If it looks Mercosul (letter in pos 4), keep unhyphenated ABC1D23.
+    // Mercosul has a letter in position 4 (ABC1D23) → no separator.
     if (cleaned.length >= 5 && /[A-Z]/.test(cleaned[4] || "")) {
-      return cleaned.slice(0, 7);
+      return cleaned.slice(0, 7) + cleaned.slice(7);
     }
-    // Old format: ABC-1234
     if (cleaned.length <= 3) return cleaned;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}` + cleaned.slice(7);
+  }
+  if (region === "ES") {
+    if (cleaned.length <= 4) return cleaned;
+    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)}` + cleaned.slice(7);
   }
   return cleaned.slice(0, 10);
 }

@@ -971,7 +971,8 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-            <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+            <Route path="/onboarding" element={<OnboardingRoute />} />
+
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </Suspense>

@@ -74,7 +74,13 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     const prefill = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: shop } = await supabase.from("shops").select("*").eq("user_id", user.id).maybeSingle();
+      const { data: shops } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      const shop = (shops || [])[0];
       if (shop) {
         setForm(prev => ({
           ...prev,
@@ -171,8 +177,10 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
           .from("shops")
           .select("id,country,currency")
           .eq("user_id", user.id)
-          .maybeSingle();
-        if (data) { shop = data as any; break; }
+          .order("created_at", { ascending: true })
+          .limit(1);
+        const primaryShop = (data || [])[0];
+        if (primaryShop) { shop = primaryShop as any; break; }
         await new Promise(r => setTimeout(r, 1000));
       }
 

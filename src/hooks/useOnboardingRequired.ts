@@ -10,9 +10,10 @@ import { useAuthReady } from "@/hooks/useAuthReady";
  *   - timestamp → onboarding concluído, /onboarding passa a redirecionar
  *
  * Regras:
- *   - Só o DONO de uma oficina (shops.user_id = auth.uid()) pode precisar de
- *     onboarding. Utilizadores convidados (membros via shop_users), admins e
- *     super admins NUNCA são enviados para o wizard.
+ *   - O dono da primeira oficina pode precisar de onboarding. Uma conta nova,
+ *     ainda sem oficina ou convite, também precisa para poder criar a primeira.
+ *   - Utilizadores convidados, admins de plataforma e fornecedores nunca são
+ *     enviados para o wizard.
  *   - Nada é decidido a partir de localStorage.
  *   - Enquanto a sessão/consulta estão a carregar, `loading = true` — os
  *     consumidores devem mostrar loader em vez de redirecionar.
@@ -48,8 +49,35 @@ export function useOnboardingRequired() {
     }
 
     const shop = (data || [])[0] as any;
-    setOwnsShop(Boolean(shop));
-    setRequired(Boolean(shop) && !shop.onboarding_completed_at);
+    if (shop) {
+      setOwnsShop(true);
+      setRequired(!shop.onboarding_completed_at);
+      setLoading(false);
+      return;
+    }
+
+    // No directly-owned shop: distinguish a genuinely new ERP account from
+    // invited members/platform-only users. This prevents both redirect loops
+    // and accidental workshop creation for invited users.
+    const [membershipResult, rolesResult] = await Promise.all([
+      supabase.from("shop_users").select("id").eq("user_id", user.id).limit(1),
+      supabase.from("user_roles").select("role").eq("user_id", user.id),
+    ]);
+    if (membershipResult.error || rolesResult.error) {
+      // Failure to establish eligibility must never force workshop creation.
+      setOwnsShop(false);
+      setRequired(false);
+      setLoading(false);
+      return;
+    }
+
+    const excludedRoles = new Set([
+      "admin", "regional_admin", "super_admin", "commercial_admin", "supplier",
+    ]);
+    const hasMembership = (membershipResult.data || []).length > 0;
+    const hasExcludedRole = (rolesResult.data || []).some(({ role }) => excludedRoles.has(role));
+    setOwnsShop(false);
+    setRequired(!hasMembership && !hasExcludedRole);
     setLoading(false);
   }, [isReady, user]);
 

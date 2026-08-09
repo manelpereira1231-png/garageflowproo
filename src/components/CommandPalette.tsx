@@ -128,11 +128,11 @@ export default function CommandPalette() {
         ]);
 
       const all: SearchResult[] = [
-        ...(clientsRes.data || []).map((c) => ({
+        ...(clientsRes.data || []).map((c: any) => ({
           id: c.id,
           type: "client" as const,
           title: c.name,
-          subtitle: [c.phone, c.email].filter(Boolean).join(" · "),
+          subtitle: [c.company, c.phone, c.email, c.nif].filter(Boolean).join(" · "),
         })),
         ...(vehiclesRes.data || []).map((v) => ({
           id: v.id,

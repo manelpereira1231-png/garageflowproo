@@ -34,6 +34,14 @@ const statusColors: Record<string, string> = {
   partial: "bg-warning/10 text-warning",
 };
 
+// Vencida = emitida/parcial com data de vencimento no passado (estado derivado, não guardado).
+const isOverdue = (inv: { status?: string | null; due_date?: string | null }) => {
+  if (!inv.due_date) return false;
+  if (inv.status !== "issued" && inv.status !== "partial") return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return inv.due_date < today;
+};
+
 const PAGE_SIZE = 50;
 const FETCH_LIMIT = 2000;
 

@@ -9721,6 +9721,7 @@ export type Database = {
       }
       work_order_attachments: {
         Row: {
+          context: string | null
           created_at: string
           file_name: string
           file_size: number
@@ -9731,6 +9732,7 @@ export type Database = {
           work_order_id: string
         }
         Insert: {
+          context?: string | null
           created_at?: string
           file_name: string
           file_size?: number
@@ -9741,6 +9743,7 @@ export type Database = {
           work_order_id: string
         }
         Update: {
+          context?: string | null
           created_at?: string
           file_name?: string
           file_size?: number

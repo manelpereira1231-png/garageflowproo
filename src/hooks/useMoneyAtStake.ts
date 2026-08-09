@@ -44,6 +44,7 @@ export interface StakeReminder {
   next_service_date: string | null;
   clientName: string | null;
   plate: string | null;
+  vehicleId: string | null;
 }
 
 export interface MoneyAtStake {
@@ -105,7 +106,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         .limit(200),
       supabase
         .from("service_reminders")
-        .select("id, service_type, next_service_date, clients(name), vehicles(plate)")
+        .select("id, service_type, next_service_date, vehicle_id, clients(name), vehicles(plate)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .lt("next_service_date", today)
@@ -168,6 +169,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
       next_service_date: r.next_service_date ?? null,
       clientName: r.clients?.name ?? null,
       plate: r.vehicles?.plate ?? null,
+      vehicleId: r.vehicle_id ?? null,
     }));
     // Sem histórico → 0. Nunca inventamos um valor de referência.
     const recoveryValue = avgTicket > 0 ? reminders.length * avgTicket : 0;

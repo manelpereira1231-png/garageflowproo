@@ -22,3 +22,8 @@ Regra semântica (obrigatória): NUNCA somar valor real com estimativa.
 - Cada bloco mostra a origem e a contagem (N orçamentos / N faturas / N viaturas).
 
 Rentabilidade/produtividade relacionadas: `ServiceForm` mostra Receita/Custos/Lucro/Margem % a partir dos cálculos já persistidos; `LaborTimer` aceita `estimatedHours` (work_orders.labor_hours) e mostra Previsto/Real/Desvio.
+
+## Fase 2 — Oficina/Mecânico/Passaporte
+- MechanicPanel (fotos/notas/peças) no diálogo da OS em Workshop; fotos em `work_order_attachments.context`, bucket `inspection-files`.
+- Passaporte da Viatura mostra "Próxima manutenção" (service_reminders pending) e "Fotos das intervenções" (work_order_attachments das OS da viatura).
+- Oportunidades: orçamentos mostram dias sem aprovação; revisões vencidas ligam a `/vehicles?passport=<id>` (Vehicles abre o passaporte via query param).

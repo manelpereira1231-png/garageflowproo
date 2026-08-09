@@ -21,6 +21,7 @@ import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkO
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
 const LaborTimer = lazy(() => import("@/components/LaborTimer"));
+const MechanicPanel = lazy(() => import("@/components/workshop/MechanicPanel"));
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 
@@ -463,6 +464,20 @@ export default function Workshop() {
                   />
                 </Suspense>
               )}
+
+              {/* Ações rápidas do mecânico — foto, nota e peça (sistemas já existentes) */}
+              {activeShopId && (
+                <Suspense fallback={<div className="h-24 bg-muted/40 rounded-xl animate-pulse" />}>
+                  <MechanicPanel
+                    workOrderId={selected.id}
+                    shopId={activeShopId}
+                    technicianName={selected.technician || ''}
+                    onChanged={fetchOrders}
+                  />
+                </Suspense>
+              )}
+
+
 
               {/* Checklist */}
               {checklistItems.length > 0 && (

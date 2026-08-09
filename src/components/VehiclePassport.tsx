@@ -54,6 +54,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [vehicle, setVehicle] = useState<any>(null);
   const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [kmFraudWarning, setKmFraudWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,21 +63,38 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     if (!open || !vehicleId) return;
     const load = async () => {
       setLoading(true);
-      const [vRes, hRes, woRes] = await Promise.all([
+      const [vRes, hRes, woRes, remRes] = await Promise.all([
         supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
         supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
+        supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
       ]);
-      
+
       setVehicle(vRes.data);
       setHistory((hRes.data || []) as HistoryEvent[]);
       setWorkOrders(woRes.data || []);
+      setReminders(remRes.data || []);
+
+      // Fotos das intervenções — reutiliza work_order_attachments (RLS por shop_id).
+      const woIds = (woRes.data || []).map((w: any) => w.id);
+      if (woIds.length > 0) {
+        const { data: att } = await supabase
+          .from("work_order_attachments")
+          .select("id, file_url, file_name, context, created_at")
+          .in("work_order_id", woIds)
+          .order("created_at", { ascending: false })
+          .limit(24);
+        setPhotos(att || []);
+      } else {
+        setPhotos([]);
+      }
 
       detectKmFraud(woRes.data || []);
       setLoading(false);
     };
     load();
   }, [open, vehicleId]);
+
 
   const detectKmFraud = (orders: any[]) => {
     const mileages = orders
@@ -198,6 +217,45 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   </div>
                 </div>
               )}
+
+              {/* Próxima manutenção — apenas quando existe registo real (service_reminders). */}
+              {reminders.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.nextService", "Próxima manutenção")}</h4>
+                  <ul className="space-y-1.5">
+                    {reminders.map((r: any) => (
+                      <li key={r.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2 text-sm">
+                        <span>{r.service_type || t("passport.service", "Revisão")}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {r.next_service_date ? format(new Date(r.next_service_date), "dd/MM/yyyy", { locale }) : "—"}
+                          {r.next_service_km ? ` · ${Number(r.next_service_km).toLocaleString()} km` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Fotos das intervenções (work_order_attachments) */}
+              {photos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.photos", "Fotos das intervenções")}</h4>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    {photos.map((p: any) => (
+                      <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={p.file_url}
+                          alt={p.context || p.file_name || "Foto da intervenção"}
+                          loading="lazy"
+                          className="w-full aspect-square object-cover rounded-lg border border-border"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+
 
               <div>
                 <h4 className="text-sm font-semibold mb-2">{t("passport.fullHistory", "Histórico Completo")}</h4>

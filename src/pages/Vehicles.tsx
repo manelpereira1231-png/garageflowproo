@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,23 @@ export default function Vehicles() {
   const [dataLoading, setDataLoading] = useState(!_vCache);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [passportId, setPassportId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [passportId, setPassportId] = useState<string | null>(searchParams.get("passport"));
+
+  // Abertura direta do Passaporte via ?passport=<vehicleId> (ex.: Oportunidades).
+  useEffect(() => {
+    const p = searchParams.get("passport");
+    if (p) setPassportId(p);
+  }, [searchParams]);
+
+  const closePassport = () => {
+    setPassportId(null);
+    if (searchParams.get("passport")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("passport");
+      setSearchParams(next, { replace: true });
+    }
+  };
   const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
@@ -429,7 +446,7 @@ export default function Vehicles() {
         <VehiclePassport
           vehicleId={passportId}
           open={!!passportId}
-          onClose={() => setPassportId(null)}
+          onClose={closePassport}
         />
       )}
     </div>

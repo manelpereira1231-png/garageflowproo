@@ -87,21 +87,21 @@ export function autoFormatPlate(raw: string, region: PlateRegion): string {
   return cleaned.slice(0, 10);
 }
 
-/** Validate a fully-typed plate against the region rules. */
+/** Validate a fully-typed plate against the region rules (separator-agnostic). */
 export function isValidPlate(value: string, region: PlateRegion): boolean {
-  const v = normalizePlate(value);
+  const v = canonicalPlate(value);
   if (!v) return false;
   switch (region) {
     case "PT": return PT_PATTERNS.some((p) => p.test(v));
     case "BR": return BR_PATTERNS.some((p) => p.test(v));
-    case "ES": return /^\d{4}-?[A-Z]{3}$/.test(v);
-    case "FR": return /^[A-Z]{2}-?\d{3}-?[A-Z]{2}$/.test(v);
-    case "DE": return /^[A-Z]{1,3}-?[A-Z]{1,2}-?\d{1,4}$/.test(v);
-    case "UK": return /^[A-Z]{2}\d{2}\s?[A-Z]{3}$/.test(v);
-    case "IN": return /^[A-Z]{2}-?\d{1,2}-?[A-Z]{1,2}-?\d{1,4}$/.test(v);
+    case "ES": return /^\d{4}[A-Z]{3}$/.test(v);
+    case "FR": return /^[A-Z]{2}\d{3}[A-Z]{2}$/.test(v);
+    case "DE": return /^[A-Z]{2,5}\d{1,4}$/.test(v);
+    case "UK": return /^[A-Z]{2}\d{2}[A-Z]{3}$/.test(v);
+    case "IN": return /^[A-Z]{2}\d{1,2}[A-Z]{1,2}\d{1,4}$/.test(v);
     case "US":
     case "GENERIC":
-    default: return /^[A-Z0-9-]{2,10}$/.test(v);
+    default: return /^[A-Z0-9]{2,10}$/.test(v);
   }
 }
 

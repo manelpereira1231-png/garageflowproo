@@ -542,7 +542,7 @@ export default function LandingPage() {
 
 
       {/* Visual showcase: Spreadsheet + WhatsApp */}
-      <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background border-b border-border overflow-hidden">
+      <section className="pt-16 sm:pt-24 pb-8 sm:pb-12 px-4 bg-gradient-to-b from-background via-muted/20 to-background border-b border-border overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <Reveal className="text-center mb-12">
             <h2 className="text-2xl sm:text-4xl font-bold mb-3">{t('landing.featuresTitle')}</h2>
@@ -574,7 +574,7 @@ export default function LandingPage() {
 
       {/* Features */}
       <Reveal>
-      <section id="features" className="py-16 sm:py-20 px-4">
+      <section id="features" className="pt-8 sm:pt-10 pb-16 sm:pb-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 sm:mb-14">
             <h2 className="text-2xl sm:text-4xl font-bold mb-4">{t('landing.featuresTitle')}</h2>

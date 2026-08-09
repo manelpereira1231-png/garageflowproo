@@ -56,6 +56,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [warranties, setWarranties] = useState<any[]>([]);
   const [kmFraudWarning, setKmFraudWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,17 +65,20 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     if (!open || !vehicleId) return;
     const load = async () => {
       setLoading(true);
-      const [vRes, hRes, woRes, remRes] = await Promise.all([
+      const [vRes, hRes, woRes, remRes, warRes] = await Promise.all([
         supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
-        supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
+        supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, notes, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
         supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
+        // Garantias — relação direta existente (warranties.vehicle_id). Sem tabela nova.
+        supabase.from("warranties").select("id, type, description, start_date, end_date, status, work_order_id").eq("vehicle_id", vehicleId).order("start_date", { ascending: false }).limit(20),
       ]);
 
       setVehicle(vRes.data);
       setHistory((hRes.data || []) as HistoryEvent[]);
       setWorkOrders(woRes.data || []);
       setReminders(remRes.data || []);
+      setWarranties(warRes.data || []);
 
       // Fotos das intervenções — reutiliza work_order_attachments (RLS por shop_id).
       const woIds = (woRes.data || []).map((w: any) => w.id);
@@ -89,11 +94,31 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         setPhotos([]);
       }
 
+      // Faturas — relação existente invoices.vehicle_id OU invoices.work_order_id.
+      // Deduplicadas por id para nunca listar a mesma fatura duas vezes.
+      const invQueries: any[] = [
+        supabase.from("invoices").select("id, number, status, total, created_at, work_order_id").eq("vehicle_id", vehicleId).limit(100),
+      ];
+      if (woIds.length > 0) {
+        invQueries.push(
+          supabase.from("invoices").select("id, number, status, total, created_at, work_order_id").in("work_order_id", woIds).limit(100)
+        );
+      }
+      const invResults = await Promise.all(invQueries);
+      const invMap = new Map<string, any>();
+      invResults.forEach((r: any) => (r.data || []).forEach((inv: any) => invMap.set(inv.id, inv)));
+      setInvoices(
+        Array.from(invMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
+
       detectKmFraud(woRes.data || []);
       setLoading(false);
     };
     load();
   }, [open, vehicleId]);
+
 
 
   const detectKmFraud = (orders: any[]) => {

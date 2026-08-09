@@ -22,7 +22,7 @@ export default function Opportunities() {
     return <div className="p-4 sm:p-6 space-y-4"><Skeleton className="h-28 w-full" /><Skeleton className="h-64 w-full" /></div>;
   }
 
-  const empty = stake.total === 0 && stake.quotes.length === 0 && stake.invoices.length === 0 && stake.reminders.length === 0;
+  const empty = stake.quotes.length === 0 && stake.invoices.length === 0 && stake.reminders.length === 0;
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto">
@@ -33,7 +33,7 @@ export default function Opportunities() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Oportunidades</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Valor potencial já existente no sistema. Não é lucro — cada valor tem origem rastreável.
+            Valor real já existente no sistema, separado do potencial estimado. Cada valor tem origem rastreável.
           </p>
         </div>
       </header>
@@ -44,10 +44,25 @@ export default function Opportunities() {
         </Card>
       ) : (
         <>
-          <Card className="p-5">
-            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Dinheiro em jogo</p>
-            <p className="text-3xl sm:text-4xl font-bold tabular-nums mt-1">{formatMoney(stake.total)}</p>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="p-5">
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Dinheiro em jogo</p>
+              <p className="text-3xl sm:text-4xl font-bold tabular-nums mt-1">{formatMoney(stake.confirmedTotal)}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Valor real: orçamentos pendentes + faturas por receber.</p>
+            </Card>
+            <Card className="p-5 border-dashed">
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Potencial estimado</p>
+              <p className="text-3xl sm:text-4xl font-bold tabular-nums mt-1 text-muted-foreground">
+                {stake.estimatedTotal > 0 ? `~${formatMoney(stake.estimatedTotal)}` : "—"}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {stake.estimatedTotal > 0
+                  ? "Estimativa baseada no ticket médio histórico — não é dinheiro confirmado."
+                  : "Sem histórico suficiente para estimar valor."}
+              </p>
+            </Card>
+          </div>
+
 
           {/* Orçamentos pendentes */}
           <Card className="p-4 sm:p-5">
@@ -55,7 +70,7 @@ export default function Opportunities() {
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" />
                 <h2 className="font-semibold text-sm">Orçamentos pendentes</h2>
-                <Badge variant="outline">{stake.quotes.length}</Badge>
+                <Badge variant="outline">{stake.quotes.length} {stake.quotes.length === 1 ? "orçamento" : "orçamentos"}</Badge>
               </div>
               <span className="font-bold tabular-nums text-sm">{formatMoney(stake.quotesValue)}</span>
             </div>
@@ -86,8 +101,8 @@ export default function Opportunities() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Receipt className="w-4 h-4 text-amber-500" />
-                <h2 className="font-semibold text-sm">Pagamentos pendentes</h2>
-                <Badge variant="outline">{stake.invoices.length}</Badge>
+                <h2 className="font-semibold text-sm">Faturas por receber</h2>
+                <Badge variant="outline">{stake.invoices.length} {stake.invoices.length === 1 ? "fatura" : "faturas"}</Badge>
               </div>
               <span className="font-bold tabular-nums text-sm">{formatMoney(stake.paymentsValue)}</span>
             </div>
@@ -114,19 +129,21 @@ export default function Opportunities() {
             )}
           </Card>
 
-          {/* Clientes a recuperar */}
-          <Card className="p-4 sm:p-5">
+          {/* Clientes a recuperar — POTENCIAL ESTIMADO, nunca somado ao valor real */}
+          <Card className="p-4 sm:p-5 border-dashed">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-emerald-500" />
-                <h2 className="font-semibold text-sm">Clientes a recuperar</h2>
-                <Badge variant="outline">{stake.reminders.length}</Badge>
+                <h2 className="font-semibold text-sm">Revisões vencidas</h2>
+                <Badge variant="outline">{stake.reminders.length} {stake.reminders.length === 1 ? "viatura" : "viaturas"}</Badge>
               </div>
-              <span className="font-bold tabular-nums text-sm">{formatMoney(stake.recoveryValue)}</span>
+              <span className="font-bold tabular-nums text-sm text-muted-foreground">
+                {stake.recoveryValue > 0 ? `~${formatMoney(stake.recoveryValue)}` : "—"}
+              </span>
             </div>
             <p className="text-[11px] text-muted-foreground mb-3">
               {stake.avgTicket > 0
-                ? `Revisões em atraso × ticket médio real da oficina (${formatMoney(stake.avgTicket)}).`
+                ? `Potencial estimado com base no ticket médio histórico (${formatMoney(stake.avgTicket)}) — não é dinheiro confirmado.`
                 : "Sem histórico suficiente para estimar valor — mostramos apenas a lista."}
             </p>
             {stake.reminders.length === 0 ? (

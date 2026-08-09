@@ -16,6 +16,9 @@ UI:
 - Cartão `MoneyAtStakeCard` no fim de `src/pages/Dashboard.tsx` (OwnerDashboard), respeita o modo Grupo via `stakeShopIds`. Estado vazio: "Não existem oportunidades neste momento."
 - Detalhe em `/opportunities` (`src/pages/Opportunities.tsx`), capability `quotes.view` em `rolePaths.ts`.
 
-Regra: não é lucro, não inventar valores, sempre com etiqueta de origem.
+Regra semântica (obrigatória): NUNCA somar valor real com estimativa.
+- `confirmedTotal` = "DINHEIRO EM JOGO" = orçamentos pendentes + faturas por receber (valores reais).
+- `estimatedTotal` = "POTENCIAL ESTIMADO" = revisões vencidas × ticket médio histórico, apresentado à parte, com `~`, em card tracejado e com a nota "não é dinheiro confirmado".
+- Cada bloco mostra a origem e a contagem (N orçamentos / N faturas / N viaturas).
 
 Rentabilidade/produtividade relacionadas: `ServiceForm` mostra Receita/Custos/Lucro/Margem % a partir dos cálculos já persistidos; `LaborTimer` aceita `estimatedHours` (work_orders.labor_hours) e mostra Previsto/Real/Desvio.

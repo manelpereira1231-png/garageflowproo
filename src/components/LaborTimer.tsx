@@ -23,6 +23,8 @@ interface LaborTimerProps {
   shopId: string;
   technicianName?: string;
   laborRate?: number;
+  /** Horas previstas da OS (work_orders.labor_hours). 0/undefined = sem previsão. */
+  estimatedHours?: number;
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -33,7 +35,7 @@ function formatDuration(totalSeconds: number): string {
 }
 
 
-export default function LaborTimer({ workOrderId, shopId, technicianName = '', laborRate = 0 }: LaborTimerProps) {
+export default function LaborTimer({ workOrderId, shopId, technicianName = '', laborRate = 0, estimatedHours = 0 }: LaborTimerProps) {
   const { t } = useLanguage();
   const [timers, setTimers] = useState<TimerEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,6 +196,32 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
           </div>
         </div>
       </div>
+
+      {/* Previsto vs Real — só quando existe previsão na OS. Não inventa dados. */}
+      {estimatedHours > 0 && (
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg border border-border bg-muted/30 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Previsto</div>
+            <div className="text-sm font-semibold">{formatHours(estimatedHours)}</div>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Real</div>
+            <div className="text-sm font-semibold">{formatHours(totalSeconds / 3600)}</div>
+          </div>
+          {(() => {
+            const deviation = totalSeconds / 3600 - estimatedHours;
+            const tone = deviation > 0 ? 'text-destructive' : deviation < 0 ? 'text-success' : 'text-muted-foreground';
+            return (
+              <div className="rounded-lg border border-border bg-muted/30 p-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Desvio</div>
+                <div className={`text-sm font-semibold ${tone}`}>
+                  {deviation > 0 ? '+' : deviation < 0 ? '−' : ''}{formatHours(Math.abs(deviation))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Running timers - support multiple concurrent */}
       {runningTimers.map(timer => (

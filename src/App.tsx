@@ -1036,7 +1036,7 @@ function AuthenticatedRoutes() {
           {publicRoutesGarageAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
-          <Route path="/onboarding" element={<OnboardingWizard onComplete={() => {}} />} />
+          <Route path="/onboarding" element={<OnboardingRoute />} />
           {/* /market (browse home) renders standalone — CarityMarketplace ships its own hero/nav, so we keep it OUT of MarketLayout to avoid a double navbar. */}
           <Route path="/market" element={<GarageMarketEntryRedirect />} />
           <Route element={<MarketLayout />}>

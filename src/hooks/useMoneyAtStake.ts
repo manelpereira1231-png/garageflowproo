@@ -188,6 +188,8 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
       service_type: r.service_type ?? null,
       next_service_date: r.next_service_date ?? null,
       clientName: r.clients?.name ?? null,
+      clientId: r.client_id ?? null,
+
       plate: r.vehicles?.plate ?? null,
       vehicleId: r.vehicle_id ?? null,
     }));

@@ -361,7 +361,7 @@ export default function Clients() {
               <SortableHeader sortKey="name" currentSort={sort} onToggle={toggleSort}>{t('clients.name')}</SortableHeader>
               <SortableHeader sortKey="email" currentSort={sort} onToggle={toggleSort}>{t('clients.contact')}</SortableHeader>
               <SortableHeader sortKey="company" currentSort={sort} onToggle={toggleSort}>{t('clients.company')}</SortableHeader>
-              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{t('clients.nif')}</SortableHeader>
+              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{taxIdLabel}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

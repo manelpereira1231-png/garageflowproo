@@ -218,6 +218,45 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 </div>
               )}
 
+              {/* Próxima manutenção — apenas quando existe registo real (service_reminders). */}
+              {reminders.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.nextService", "Próxima manutenção")}</h4>
+                  <ul className="space-y-1.5">
+                    {reminders.map((r: any) => (
+                      <li key={r.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2 text-sm">
+                        <span>{r.service_type || t("passport.service", "Revisão")}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {r.next_service_date ? format(new Date(r.next_service_date), "dd/MM/yyyy", { locale }) : "—"}
+                          {r.next_service_km ? ` · ${Number(r.next_service_km).toLocaleString()} km` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Fotos das intervenções (work_order_attachments) */}
+              {photos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.photos", "Fotos das intervenções")}</h4>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    {photos.map((p: any) => (
+                      <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={p.file_url}
+                          alt={p.context || p.file_name || "Foto da intervenção"}
+                          loading="lazy"
+                          className="w-full aspect-square object-cover rounded-lg border border-border"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+
+
               <div>
                 <h4 className="text-sm font-semibold mb-2">{t("passport.fullHistory", "Histórico Completo")}</h4>
                 {uniqueTimeline.length === 0 ? (

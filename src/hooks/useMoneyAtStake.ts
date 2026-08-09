@@ -44,6 +44,7 @@ export interface StakeReminder {
   next_service_date: string | null;
   clientName: string | null;
   plate: string | null;
+  vehicleId: string | null;
 }
 
 export interface MoneyAtStake {

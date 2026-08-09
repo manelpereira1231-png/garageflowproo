@@ -422,6 +422,7 @@ export default function Invoices() {
           <option value="issued">{t('invoices.status_issued')}</option>
           <option value="paid">{t('invoices.status_paid')}</option>
           <option value="partial">{t('invoices.status_partial')}</option>
+          <option value="overdue">Vencidas</option>
           <option value="cancelled">{t('invoices.status_cancelled')}</option>
         </select>
         <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">

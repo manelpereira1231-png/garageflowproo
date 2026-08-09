@@ -396,6 +396,12 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                               <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(event.date), "dd/MM/yyyy", { locale })}</span>
                             </div>
                             {event.description && <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>}
+                            {event.note && (
+                              <div className="mt-1 border-l-2 border-primary/40 pl-2">
+                                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t("passport.mechanicNote", "Nota do mecânico")}</p>
+                                <p className="text-xs whitespace-pre-line">{event.note}</p>
+                              </div>
+                            )}
                             <div className="flex gap-2 mt-0.5">
                               {event.mileage && event.mileage > 0 && <span className="text-[10px] text-muted-foreground">{event.mileage.toLocaleString()} km</span>}
                               {event.parts?.length > 0 && <span className="text-[10px] text-muted-foreground">🔧 {event.parts.length} {t("passport.parts", "peças")}</span>}

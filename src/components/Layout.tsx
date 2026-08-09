@@ -517,9 +517,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       >
         <div className="h-14 lg:h-16 flex items-center px-4 lg:px-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-              <Wrench className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src="/icon-192.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />
             <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight">
               Garage<span className="text-sidebar-primary">Flow</span>
             </span>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Mail, Lock, User, ArrowLeft, Building2, Globe, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Building2, Globe, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { setOnboardingStatus } from "@/hooks/useOnboardingStatus";

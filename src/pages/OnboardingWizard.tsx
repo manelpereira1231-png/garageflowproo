@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Wrench, ChevronRight, ChevronLeft, Check, Upload, FileText, Bell, Clock } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Upload, FileText, Bell, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";

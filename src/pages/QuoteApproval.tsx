@@ -679,13 +679,14 @@ export default function QuoteApproval() {
                 <span className="text-muted-foreground">{t('validUntil')}:</span>
                 <span className="font-semibold">{quote.validity_date}</span>
               </div>
-              {totalLaborHours > 0 && (
+              {estimatedMinutes > 0 && (
                 <div className="bg-muted/50 rounded-lg px-4 py-2.5 text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">{t('estimatedTime')}:</span>
-                  <span className="font-semibold">~{totalLaborHours} {t('hours')}</span>
+                  <span className="font-semibold">~{formatDuration(estimatedMinutes)}</span>
                 </div>
               )}
+
             </div>
 
             {quote.notes && (

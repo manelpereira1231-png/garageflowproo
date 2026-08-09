@@ -636,7 +636,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.otherCountries': 'Outros países',
     'affiliate.haveAccount': 'Já tenho conta — Entrar',
     'landing.heroTitle1': 'Gerir a sua oficina não devia depender',
-    'landing.heroTitle2': 'de papel, Excel e WhatsApp',
+    'landing.heroTitle2': 'de Papel, Excel e WhatsApp',
     'landing.heroSubtitle': 'Crie orçamentos em segundos, acompanhe reparações, organize clientes e tenha tudo num só lugar.',
     'landing.cta': 'Testar 30 dias grátis',
     'landing.ctaDemo': 'Ver Demonstração',

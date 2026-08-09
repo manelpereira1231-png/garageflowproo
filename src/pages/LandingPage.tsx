@@ -264,7 +264,7 @@ export default function LandingPage() {
     };
   });
 
-  const idealForKeys = ['landing.idealFor1', 'landing.idealFor2', 'landing.idealFor3', 'landing.idealFor4', 'landing.idealFor5'];
+  
 
   // Rich SEO JSON-LD gerado a partir do catálogo dinâmico: uma Offer por plano
   // com preço efetivo (aplicando promoções) e moeda regional.

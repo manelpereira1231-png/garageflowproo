@@ -75,6 +75,7 @@ const Chat = lazyRetry(() => import("@/pages/Chat"));
 const InvoiceForm = lazyRetry(() => import("@/pages/InvoiceForm"));
 const InvoiceDetail = lazyRetry(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
+const Opportunities = lazyRetry(() => import("@/pages/Opportunities"));
 const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
 const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
 const PublicInspection = lazyRetry(() => import("@/pages/PublicInspection"));

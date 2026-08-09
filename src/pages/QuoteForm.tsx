@@ -20,11 +20,15 @@ import {
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
+import { formatDuration, totalEstMinutes, parseMinutesFromName } from "@/lib/duration";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
   quantity: number; unit_price: number; unit_cost: number; vat_rate: number;
+  /** Tempo previsto (min) por unidade, herdado do catálogo de serviços. */
+  est_minutes?: number;
 }
+
 
 export default function QuoteForm() {
   const navigate = useNavigate();

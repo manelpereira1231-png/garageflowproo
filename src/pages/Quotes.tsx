@@ -162,18 +162,27 @@ export default function Quotes() {
     if (!shopId) { toast.error(t('common.configureShop')); setConverting(null); return; }
     const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopId);
     const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
+    // Enviar ≠ Aprovar: só um orçamento efetivamente aprovado pelo cliente autoriza a execução.
+    // Orçamentos em rascunho/enviados geram uma OS que fica a aguardar aprovação.
+    const clientApproved = quote.status === 'approved';
     const { error: insertError } = await supabase.from("work_orders").insert({
       shop_id: shopId, number: num, origin: 'quote', quote_id: quote.id,
       client_id: quote.client_id, vehicle_id: quote.vehicle_id, entry_mileage: 0,
       lines: quote.lines, labor_hours: quote.labor_hours || 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
-      total: quote.total, cost_total: quote.cost_total, profit: quote.profit, status: 'approved', notes: quote.notes,
+      total: quote.total, cost_total: quote.cost_total, profit: quote.profit,
+      status: clientApproved ? 'approved' : 'waiting_approval', notes: quote.notes,
     });
     if (insertError) { toastError(insertError, "Não foi possível converter em serviço"); setConverting(null); return; }
-    await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
-    toast.success(t('quotes.converted'));
+    // Só marcamos como 'converted' quando o cliente já aprovou — caso contrário o orçamento
+    // continua no pipeline (rascunho/enviado) até haver decisão do cliente.
+    if (clientApproved) {
+      await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
+    }
+    toast.success(clientApproved ? t('quotes.converted') : 'Serviço criado — aguarda aprovação do cliente');
     setConverting(null);
     fetchQuotes();
   };
+
 
   const sendQuoteEmail = async (q: any) => {
     const clientEmail = (q.clients as any)?.email;

@@ -530,7 +530,10 @@ export default function QuoteApproval() {
   const cur = getCurrencySymbol(shop?.currency);
   const shopLocale = getLocaleForCurrency(shop?.currency);
   const vatLabel = getTaxLabelForCurrency(shop?.currency);
-  const totalLaborHours = lines.filter((l: any) => l.type === 'service').reduce((s: number, l: any) => s + (l.quantity || 0), 0);
+  // Tempo estimado real: tempo do catálogo (est_minutes por linha de serviço)
+  // + horas de mão-de-obra extra. NUNCA a quantidade das linhas.
+  const estimatedMinutes = totalEstMinutes(lines, quote.labor_hours);
+
 
 
   return (

@@ -229,6 +229,11 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       if (!shop!.country) updatePayload.country = form.country;
       if (!shop!.currency) updatePayload.currency = form.currency;
       if (logoUrl) updatePayload.logo_url = logoUrl;
+      // Fonte de verdade única: só aqui, após guardar com sucesso, o onboarding
+      // é marcado como concluído no backend. Se este update falhar, o wizard
+      // reaparece no próximo login (nada fica marcado por engano).
+      updatePayload.onboarding_completed_at = new Date().toISOString();
+
 
       console.info("[onboarding] shop update payload", { shopId: shop!.id, updatePayload });
       const { error } = await supabase.from("shops").update(updatePayload).eq("id", shop!.id);

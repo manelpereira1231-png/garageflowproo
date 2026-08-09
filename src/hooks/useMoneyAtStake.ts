@@ -13,6 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
  *  - Pagamentos pendentes  → invoices (issued/partial) menos payments já recebidos
  *  - Clientes a recuperar  → service_reminders vencidos, estimados pelo ticket
  *                            médio real da própria oficina (0 se não houver histórico)
+ *
+ * SEMÂNTICA (não misturar):
+ *  - confirmedTotal = valores financeiros REAIS já existentes (orçamentos + faturas por receber)
+ *  - estimatedTotal = POTENCIAL ESTIMADO (revisões vencidas × ticket médio histórico)
+ * Nunca somar os dois num único número apresentado como dinheiro garantido.
  */
 
 export interface StakeQuote {
@@ -43,7 +48,10 @@ export interface StakeReminder {
 
 export interface MoneyAtStake {
   loading: boolean;
-  total: number;
+  /** Valor REAL: orçamentos pendentes + faturas por receber. */
+  confirmedTotal: number;
+  /** POTENCIAL ESTIMADO: revisões vencidas × ticket médio. Nunca somar ao confirmado. */
+  estimatedTotal: number;
   quotesValue: number;
   paymentsValue: number;
   recoveryValue: number;
@@ -56,7 +64,8 @@ export interface MoneyAtStake {
 
 const EMPTY: Omit<MoneyAtStake, "refresh"> = {
   loading: true,
-  total: 0,
+  confirmedTotal: 0,
+  estimatedTotal: 0,
   quotesValue: 0,
   paymentsValue: 0,
   recoveryValue: 0,
@@ -165,7 +174,8 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
 
     setState({
       loading: false,
-      total: quotesValue + paymentsValue + recoveryValue,
+      confirmedTotal: quotesValue + paymentsValue,
+      estimatedTotal: recoveryValue,
       quotesValue,
       paymentsValue,
       recoveryValue,

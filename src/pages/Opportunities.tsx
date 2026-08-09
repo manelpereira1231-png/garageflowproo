@@ -78,20 +78,27 @@ export default function Opportunities() {
               <p className="text-sm text-muted-foreground">Sem orçamentos por fechar.</p>
             ) : (
               <ul className="divide-y divide-border">
-                {stake.quotes.slice(0, 20).map((q) => (
-                  <li key={q.id}>
-                    <Link to={`/quotes/edit/${q.id}`} className="py-2 flex items-center justify-between gap-2 hover:text-primary">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono text-xs text-muted-foreground">{q.number || "—"}</span>
-                        <span className="truncate text-sm">{q.clientName || "Sem cliente"}</span>
-                      </span>
-                      <span className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm font-semibold tabular-nums">{formatMoney(q.total)}</span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                {stake.quotes.slice(0, 20).map((q) => {
+                  const days = Math.max(0, Math.floor((Date.now() - new Date(q.created_at).getTime()) / 86400000));
+                  return (
+                    <li key={q.id}>
+                      <Link to={`/quotes/edit/${q.id}`} className="py-2 flex items-center justify-between gap-2 hover:text-primary">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-xs text-muted-foreground">{q.number || "—"}</span>
+                          <span className="truncate text-sm">{q.clientName || "Sem cliente"}</span>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {days === 0 ? "hoje" : `${days} ${days === 1 ? "dia" : "dias"} sem aprovação`}
+                          </Badge>
+                        </span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          <span className="text-sm font-semibold tabular-nums">{formatMoney(q.total)}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+
               </ul>
             )}
           </Card>

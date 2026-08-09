@@ -21,6 +21,7 @@ import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkO
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
 const LaborTimer = lazy(() => import("@/components/LaborTimer"));
+const MechanicPanel = lazy(() => import("@/components/workshop/MechanicPanel"));
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 

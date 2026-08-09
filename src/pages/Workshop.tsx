@@ -464,6 +464,20 @@ export default function Workshop() {
                 </Suspense>
               )}
 
+              {/* Ações rápidas do mecânico — foto, nota e peça (sistemas já existentes) */}
+              {activeShopId && (
+                <Suspense fallback={<div className="h-24 bg-muted/40 rounded-xl animate-pulse" />}>
+                  <MechanicPanel
+                    workOrderId={selected.id}
+                    shopId={activeShopId}
+                    technicianName={selected.technician || ''}
+                    onChanged={fetchOrders}
+                  />
+                </Suspense>
+              )}
+
+
+
               {/* Checklist */}
               {checklistItems.length > 0 && (
                 <div>

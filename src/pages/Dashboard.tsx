@@ -822,6 +822,10 @@ function OwnerDashboard() {
         )}
       </div>
 
+      {/* === DINHEIRO EM JOGO === valor potencial rastreável (não é lucro) */}
+      {dataLoaded && <MoneyAtStakeCard shopIds={stakeShopIds} fmt={fmt} />}
+
+
       {/* === Modo Grupo: Rankings + Breakdown por oficina === */}
       {isGroupMode && dataLoaded && perShopBreakdown.length > 0 && (() => {
         const byRevenue = [...perShopBreakdown].sort((a, b) => b.revenue - a.revenue);

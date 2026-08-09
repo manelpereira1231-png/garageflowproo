@@ -72,8 +72,8 @@ export default function Opportunities() {
                 key: `rem-${r.id}`,
                 name: r.clientName || "Sem cliente",
                 reason: `Revisão vencida${r.plate ? ` · ${r.plate}` : ""}${r.next_service_date ? ` (desde ${r.next_service_date})` : ""}`,
-                to: r.clientId ? `/clients?id=${r.clientId}` : r.vehicleId ? `/vehicles?passport=${r.vehicleId}` : "/clients",
-                cta: r.clientId ? "Ver cliente" : "Ver passaporte",
+                to: r.vehicleId ? `/vehicles?passport=${r.vehicleId}` : "/clients",
+                cta: r.vehicleId ? "Ver passaporte" : "Ver cliente",
               });
             });
             stake.quotes.forEach((q) => {

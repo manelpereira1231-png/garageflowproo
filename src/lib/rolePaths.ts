@@ -26,6 +26,7 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/invoices": "invoices.view",
   "/invoices/new": "invoices.create",
   "/financial/reports": "finance.view_profits",
+  "/opportunities": "quotes.view",
   "/billing": "settings.manage",
   "/stock": "stock.view",
   "/catalog": "stock.view",

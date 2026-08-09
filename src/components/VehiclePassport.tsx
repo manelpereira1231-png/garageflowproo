@@ -54,6 +54,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [vehicle, setVehicle] = useState<any>(null);
   const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [kmFraudWarning, setKmFraudWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,21 +63,38 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     if (!open || !vehicleId) return;
     const load = async () => {
       setLoading(true);
-      const [vRes, hRes, woRes] = await Promise.all([
+      const [vRes, hRes, woRes, remRes] = await Promise.all([
         supabase.from("vehicles").select("*, clients(name)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
         supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, lines").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
+        supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
       ]);
-      
+
       setVehicle(vRes.data);
       setHistory((hRes.data || []) as HistoryEvent[]);
       setWorkOrders(woRes.data || []);
+      setReminders(remRes.data || []);
+
+      // Fotos das intervenções — reutiliza work_order_attachments (RLS por shop_id).
+      const woIds = (woRes.data || []).map((w: any) => w.id);
+      if (woIds.length > 0) {
+        const { data: att } = await supabase
+          .from("work_order_attachments")
+          .select("id, file_url, file_name, context, created_at")
+          .in("work_order_id", woIds)
+          .order("created_at", { ascending: false })
+          .limit(24);
+        setPhotos(att || []);
+      } else {
+        setPhotos([]);
+      }
 
       detectKmFraud(woRes.data || []);
       setLoading(false);
     };
     load();
   }, [open, vehicleId]);
+
 
   const detectKmFraud = (orders: any[]) => {
     const mileages = orders

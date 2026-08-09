@@ -347,6 +347,8 @@ export default function QuoteForm() {
                           unit_price: unitPrice,
                           unit_cost: cost,
                           vat_rate: vatRate,
+                          est_minutes: timeMin,
+
                         } : l));
                       }
                     } else {

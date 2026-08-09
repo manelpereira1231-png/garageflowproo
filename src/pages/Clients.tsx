@@ -19,6 +19,8 @@ import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { useShopCountry } from "@/hooks/useShopCountry";
+import { getCountryFiscalConfig, getTaxIdLabel } from "@/lib/countryFields";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {

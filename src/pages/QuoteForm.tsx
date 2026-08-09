@@ -397,7 +397,36 @@ export default function QuoteForm() {
             );
           })}
 
+          {/* Mão-de-obra extra — fica logo a seguir aos serviços e antes dos totais */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Horas de mão-de-obra extra ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
+              <Input
+                className="h-9 text-sm"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min={0}
+                max={MAX_LABOR_HOURS}
+                value={laborHours}
+                onChange={e => setLaborHours(e.target.value)}
+                aria-invalid={laborHoursInvalid}
+              />
+              <p className="text-[11px] text-muted-foreground">Só para tempo além do previsto no catálogo dos serviços acima.</p>
+              {laborHoursInvalid && (
+                <p className="text-[11px] text-destructive">
+                  Valor irrealista. O máximo permitido por orçamento é {MAX_LABOR_HOURS} horas.
+                </p>
+              )}
+            </div>
+            <div className="text-sm sm:text-right">
+              <span className="text-muted-foreground">Tempo estimado total: </span>
+              <strong className="font-mono">{formatDuration(estimatedMinutes)}</strong>
+              <p className="text-[11px] text-muted-foreground">Tempo do catálogo dos serviços + horas extra.</p>
+            </div>
+          </div>
         </div>
+
 
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">

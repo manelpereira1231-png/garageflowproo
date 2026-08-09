@@ -34,6 +34,14 @@ const statusColors: Record<string, string> = {
   partial: "bg-warning/10 text-warning",
 };
 
+// Vencida = emitida/parcial com data de vencimento no passado (estado derivado, não guardado).
+const isOverdue = (inv: { status?: string | null; due_date?: string | null }) => {
+  if (!inv.due_date) return false;
+  if (inv.status !== "issued" && inv.status !== "partial") return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return inv.due_date < today;
+};
+
 const PAGE_SIZE = 50;
 const FETCH_LIMIT = 2000;
 
@@ -100,7 +108,8 @@ export default function Invoices() {
       const hay = `${inv.number ?? ""} ${(inv.clients as any)?.name ?? ""} ${(inv.vehicles as any)?.plate ?? ""}`.toLowerCase();
       if (!hay.includes(s)) return false;
     }
-    if (filters.status !== "all" && inv.status !== filters.status) return false;
+    if (filters.status === "overdue") { if (!isOverdue(inv)) return false; }
+    else if (filters.status !== "all" && inv.status !== filters.status) return false;
     if (filters.clientId && inv.client_id !== filters.clientId) return false;
     if (filters.dateFrom && new Date(inv.created_at) < new Date(filters.dateFrom)) return false;
     if (filters.dateTo && new Date(inv.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
@@ -413,6 +422,7 @@ export default function Invoices() {
           <option value="issued">{t('invoices.status_issued')}</option>
           <option value="paid">{t('invoices.status_paid')}</option>
           <option value="partial">{t('invoices.status_partial')}</option>
+          <option value="overdue">Vencidas</option>
           <option value="cancelled">{t('invoices.status_cancelled')}</option>
         </select>
         <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
@@ -444,8 +454,8 @@ export default function Invoices() {
                 <span className="font-medium mono text-sm">{inv.number}</span>
                 <div className="flex items-center gap-1">
                   <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
-                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                    {t(`invoices.status_${inv.status}`)}
+                  <Badge variant="secondary" className={isOverdue(inv) ? 'bg-destructive/10 text-destructive' : (statusColors[inv.status] || '')}>
+                    {isOverdue(inv) ? 'Vencida' : t(`invoices.status_${inv.status}`)}
                   </Badge>
                 </div>
               </div>
@@ -534,8 +544,8 @@ export default function Invoices() {
                   <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
                 </TableCell>
                 <TableCell className="px-3 py-3">
-                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                    {t(`invoices.status_${inv.status}`)}
+                  <Badge variant="secondary" className={isOverdue(inv) ? 'bg-destructive/10 text-destructive' : (statusColors[inv.status] || '')}>
+                    {isOverdue(inv) ? 'Vencida' : t(`invoices.status_${inv.status}`)}
                   </Badge>
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">

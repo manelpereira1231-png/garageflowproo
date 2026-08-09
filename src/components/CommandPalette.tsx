@@ -77,10 +77,10 @@ export default function CommandPalette() {
         await Promise.all([
           can("clients.view") ? supabase
             .from("clients")
-            .select("id, name, phone, email")
+            .select("id, name, phone, email, nif, company")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
-            .or(`name.ilike.${searchTerm},phone.ilike.${searchTerm},email.ilike.${searchTerm}`)
+            .or(`name.ilike.${searchTerm},phone.ilike.${searchTerm},email.ilike.${searchTerm},nif.ilike.${searchTerm},company.ilike.${searchTerm}`)
             .limit(5) : empty,
           can("vehicles.view") ? supabase
             .from("vehicles")
@@ -128,11 +128,11 @@ export default function CommandPalette() {
         ]);
 
       const all: SearchResult[] = [
-        ...(clientsRes.data || []).map((c) => ({
+        ...(clientsRes.data || []).map((c: any) => ({
           id: c.id,
           type: "client" as const,
           title: c.name,
-          subtitle: [c.phone, c.email].filter(Boolean).join(" · "),
+          subtitle: [c.company, c.phone, c.email, c.nif].filter(Boolean).join(" · "),
         })),
         ...(vehiclesRes.data || []).map((v) => ({
           id: v.id,

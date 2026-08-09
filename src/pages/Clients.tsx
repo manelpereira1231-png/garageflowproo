@@ -95,6 +95,7 @@ export default function Clients() {
   const [dataLoading, setDataLoading] = useState(!cached);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
   const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
@@ -139,16 +140,28 @@ export default function Clients() {
   // Realtime: any INSERT/UPDATE/DELETE on this shop's clients → refetch.
   useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchClients });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Deteção de duplicados (mesmo NIF, email ou telemóvel) na oficina ativa.
+  const normalizePhone = (v: string) => (v || "").replace(/[\s.\-()]/g, "").toLowerCase();
+  const findDuplicates = () => {
+    const nif = (form.nif || "").trim().toLowerCase();
+    const email = (form.email || "").trim().toLowerCase();
+    const phone = normalizePhone(form.phone);
+    return clients
+      .filter((c) => c.id !== editingId)
+      .map((c) => {
+        const reasons: string[] = [];
+        if (nif && (c.nif || "").trim().toLowerCase() === nif) reasons.push(taxIdLabel);
+        if (email && (c.email || "").trim().toLowerCase() === email) reasons.push("Email");
+        if (phone && normalizePhone(c.phone) === phone) reasons.push("Telefone");
+        return { client: c, reasons };
+      })
+      .filter((d) => d.reasons.length > 0);
+  };
+
+  const persistClient = async () => {
     setLoading(true);
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
-    if (!validateTaxId(form.nif)) {
-      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
-      setLoading(false);
-      return;
-    }
 
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
@@ -179,6 +192,25 @@ export default function Clients() {
     }
     setLoading(false);
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const shopId = getActiveShopId();
+    if (!shopId) { toast.error(t('common.configureShop')); return; }
+    if (!validateTaxId(form.nif)) {
+      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
+      return;
+    }
+
+    const dups = findDuplicates();
+    if (dups.length > 0) {
+      setDuplicates(dups);
+      return;
+    }
+    await persistClient();
+  };
+
+
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
@@ -421,6 +453,32 @@ export default function Clients() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">{t('common.delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={duplicates.length > 0} onOpenChange={(o) => { if (!o) setDuplicates([]); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cliente possivelmente duplicado</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Já existem clientes com os mesmos dados nesta oficina:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {duplicates.slice(0, 5).map((d) => (
+                    <li key={d.client.id}>
+                      <span className="font-medium text-foreground">{d.client.name}</span>
+                      {" — "}{d.reasons.join(", ")} igual
+                    </li>
+                  ))}
+                </ul>
+                <p>Queres guardar mesmo assim?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { setDuplicates([]); await persistClient(); }}>Guardar mesmo assim</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

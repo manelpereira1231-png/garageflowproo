@@ -188,6 +188,9 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
               <span>({formatHours(totalSeconds / 3600)} × {formatHourlyRate(rate)})</span>
             </div>
           )}
+          {rate <= 0 && totalSeconds > 0 && (
+            <span className="text-[11px] text-muted-foreground">Preço/hora não configurado</span>
+          )}
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-sm font-mono font-bold text-primary">

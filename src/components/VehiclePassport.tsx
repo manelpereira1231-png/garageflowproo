@@ -303,6 +303,77 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 </div>
               )}
 
+              {/* Faturas — relação existente (vehicle_id / work_order_id). Sem secção vazia. */}
+              {invoices.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.invoices", "Faturas")}</h4>
+                  <ul className="space-y-1.5">
+                    {invoices.map((inv: any) => (
+                      <li key={inv.id}>
+                        <a
+                          href={`/invoices/${inv.id}`}
+                          className="flex items-center justify-between gap-2 bg-muted/50 hover:bg-muted rounded-lg px-3 py-2 text-sm"
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-xs text-muted-foreground">{inv.number || "—"}</span>
+                            <Badge variant="outline" className="text-[10px] shrink-0">{t(`invoice.status.${inv.status}`, inv.status)}</Badge>
+                          </span>
+                          <span className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-muted-foreground">
+                              {inv.created_at ? format(new Date(inv.created_at), "dd/MM/yyyy", { locale }) : "—"}
+                            </span>
+                            <span className="font-semibold tabular-nums">{Number(inv.total || 0).toFixed(2)}</span>
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Garantias — tabela warranties existente, ligada por vehicle_id. */}
+              {warranties.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4" />
+                    {t("passport.warranties", "Garantias")}
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {warranties.map((w: any) => (
+                      <li key={w.id} className="bg-muted/50 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-2">
+                        <span className="truncate">{w.description || w.type || t("passport.warranty", "Garantia")}</span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground">
+                            {w.start_date ? format(new Date(w.start_date), "dd/MM/yyyy", { locale }) : "—"}
+                            {w.end_date ? ` → ${format(new Date(w.end_date), "dd/MM/yyyy", { locale })}` : ""}
+                          </span>
+                          <Badge variant={w.status === "active" ? "default" : "outline"} className="text-[10px]">
+                            {t(`warranty.status.${w.status}`, w.status)}
+                          </Badge>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Peças utilizadas — agregadas das linhas das OS existentes. */}
+              {usedParts.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("passport.usedParts", "Peças utilizadas")}</h4>
+                  <ul className="space-y-1.5">
+                    {usedParts.map((p) => (
+                      <li key={p.name} className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2 text-sm">
+                        <span className="truncate">{p.name}</span>
+                        <span className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
+                          <span>{t("passport.qty", "Qtd.")} {p.qty}</span>
+                          <span className="font-semibold text-foreground tabular-nums">{p.total.toFixed(2)}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
 
               <div>

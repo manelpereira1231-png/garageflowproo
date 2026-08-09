@@ -8497,6 +8497,7 @@ export type Database = {
           longitude: number | null
           name: string
           nif: string | null
+          onboarding_completed_at: string | null
           opening_hours: Json
           phone: string
           primary_color: string | null
@@ -8535,6 +8536,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           nif?: string | null
+          onboarding_completed_at?: string | null
           opening_hours?: Json
           phone?: string
           primary_color?: string | null
@@ -8573,6 +8575,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           nif?: string | null
+          onboarding_completed_at?: string | null
           opening_hours?: Json
           phone?: string
           primary_color?: string | null

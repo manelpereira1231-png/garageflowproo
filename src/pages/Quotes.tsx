@@ -340,7 +340,11 @@ export default function Quotes() {
     new Map(quotes.map((q) => [q.client_id, (q.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
 
-  const getStatusLabel = (status: QuoteStatus) => t(`status.${status}`);
+  // 'sent' num orçamento significa que foi enviado ao cliente e aguarda decisão —
+  // mostramos "Aguarda aprovação" para não ser confundido com "aprovado".
+  const getStatusLabel = (status: QuoteStatus) =>
+    status === 'sent' ? t('status.awaitingApproval') : t(`status.${status}`);
+
 
   return (
     <div>

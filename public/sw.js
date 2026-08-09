@@ -1,6 +1,6 @@
-const CACHE_NAME = 'garageflow-v3-rbac';
+const CACHE_NAME = 'garageflow-v4-brand';
 const STATIC_ASSETS = [
-  '/favicon.ico',
+  '/favicon.png',
   '/manifest.json',
 ];
 
@@ -66,8 +66,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
+      icon: '/icon-192.png',
+      badge: '/favicon.png',
       data: data.url ? { url: data.url } : undefined,
     })
   );

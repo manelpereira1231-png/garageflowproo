@@ -315,9 +315,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Wrench className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src="/icon-192.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain" />
             <span className="text-lg font-bold tracking-tight">
               Garage<span className="text-primary">Flow</span>
             </span>
@@ -360,9 +358,7 @@ export default function LandingPage() {
                   className="flex items-center gap-2.5 px-4 border-b border-border h-14"
                   style={{ marginTop: "env(safe-area-inset-top)" }}
                 >
-                  <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                    <Wrench className="w-4 h-4 text-primary-foreground" />
-                  </div>
+                  <img src="/icon-192.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain" />
                   <span className="text-lg font-bold tracking-tight">
                     Garage<span className="text-primary">Flow</span>
                   </span>
@@ -1055,9 +1051,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-6 sm:py-8 px-4 bg-muted/30 pb-20 sm:pb-8">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4 text-center">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-              <Wrench className="w-3 h-3 text-primary-foreground" />
-            </div>
+            <img src="/icon-192.png" alt="GarageFlow" className="w-6 h-6 rounded-md object-contain" />
             <span className="text-sm font-semibold">GarageFlow</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-muted-foreground">

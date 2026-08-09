@@ -10925,6 +10925,10 @@ export type Database = {
         Args: { _cost?: number; _function_name: string; _metadata?: Json }
         Returns: Json
       }
+      consume_work_order_parts: {
+        Args: { p_lines?: Json; p_reference?: string; p_work_order_id: string }
+        Returns: Json
+      }
       create_team_invitation: {
         Args: {
           _email: string

@@ -136,6 +136,8 @@ export default function QuoteForm() {
   const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
   const laborHoursInvalid = (parseFloat(laborHours) || 0) > MAX_LABOR_HOURS;
   const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const estimatedMinutes = totalEstMinutes(lines, laborHours);
+
   const subtotal = round2(linesSubtotal + laborCharge);
   const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);

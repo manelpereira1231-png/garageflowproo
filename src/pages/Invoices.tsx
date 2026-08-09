@@ -108,7 +108,8 @@ export default function Invoices() {
       const hay = `${inv.number ?? ""} ${(inv.clients as any)?.name ?? ""} ${(inv.vehicles as any)?.plate ?? ""}`.toLowerCase();
       if (!hay.includes(s)) return false;
     }
-    if (filters.status !== "all" && inv.status !== filters.status) return false;
+    if (filters.status === "overdue") { if (!isOverdue(inv)) return false; }
+    else if (filters.status !== "all" && inv.status !== filters.status) return false;
     if (filters.clientId && inv.client_id !== filters.clientId) return false;
     if (filters.dateFrom && new Date(inv.created_at) < new Date(filters.dateFrom)) return false;
     if (filters.dateTo && new Date(inv.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;

@@ -361,7 +361,13 @@ export default function ServiceForm() {
             {laborCharge > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">Mão-de-obra extra ({parseFloat(laborHours) || 0}h × {formatMoney(shopDefaults.labor_rate)}/h)</span><span className="mono">{formatMoney(laborCharge)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{t('totals.vat')}</span><span className="mono">{formatMoney(vatTotal)}</span></div>
             <div className="flex justify-between text-base font-bold border-t border-border pt-2"><span>{t('totals.total')}</span><span className="mono">{formatMoney(total)}</span></div>
-            <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">{formatMoney(profit)}</span></div>
+            {/* Rentabilidade — usa os mesmos cálculos já persistidos (subtotal/cost_total/profit). */}
+            <div className="border-t border-border pt-2 space-y-1">
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Receita (s/ imposto)</span><span className="mono">{formatMoney(subtotal)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Custos</span><span className="mono">{formatMoney(costTotal)}</span></div>
+              <div className="flex justify-between text-success"><span>{t('totals.profit')}</span><span className="mono font-semibold">{formatMoney(profit)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Margem %</span><span className="mono font-semibold">{subtotal > 0 ? `${Math.round((profit / subtotal) * 1000) / 10}%` : '—'}</span></div>
+            </div>
           </div>
         </div>
 

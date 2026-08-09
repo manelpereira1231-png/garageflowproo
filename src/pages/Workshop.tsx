@@ -459,6 +459,7 @@ export default function Workshop() {
                     workOrderId={selected.id}
                     shopId={activeShopId}
                     technicianName={selected.technician || ''}
+                    estimatedHours={Number(selected.labor_hours || 0)}
                   />
                 </Suspense>
               )}

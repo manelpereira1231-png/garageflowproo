@@ -75,6 +75,7 @@ const Chat = lazyRetry(() => import("@/pages/Chat"));
 const InvoiceForm = lazyRetry(() => import("@/pages/InvoiceForm"));
 const InvoiceDetail = lazyRetry(() => import("@/pages/InvoiceDetail"));
 const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
+const Opportunities = lazyRetry(() => import("@/pages/Opportunities"));
 const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
 const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
 const PublicInspection = lazyRetry(() => import("@/pages/PublicInspection"));
@@ -544,6 +545,7 @@ const shopRoutes = [
   { path: "/invoices/new", element: <FeatureGate feature="invoices" requiredPlan="pro"><InvoiceForm /></FeatureGate> },
   { path: "/invoices/:id", element: <FeatureGate feature="invoices" requiredPlan="pro"><InvoiceDetail /></FeatureGate> },
   { path: "/financial/reports", element: <PlanGate feature="basicReports" requiredPlan="pro"><FinancialReports /></PlanGate> },
+  { path: "/opportunities", element: <Opportunities /> },
   { path: "/agenda", element: <FeatureGate feature="agenda" requiredPlan="pro"><Agenda /></FeatureGate> },
   { path: "/catalog", element: <FeatureGate feature="service_catalog" requiredPlan="pro"><ServiceCatalog /></FeatureGate> },
   { path: "/stock", element: <FeatureGate feature="stock" requiredPlan="pro"><Stock /></FeatureGate> },

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight, Building2, Layers } from "lucide-react";
+import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight, Building2, Layers, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, Navigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import MarketActivityCard from "@/components/MarketActivityCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
 import { formatMoney } from "@/lib/money";
 import { getCountryConfig } from "@/lib/regionConfig";
+import { useMoneyAtStake } from "@/hooks/useMoneyAtStake";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.
@@ -105,6 +106,12 @@ function OwnerDashboard() {
 
 
   const groupShopIds = useMemo(() => ownedShops.map((s) => s.id), [ownedShops]);
+
+  // Contexto usado pelo cartão "Dinheiro em jogo" — respeita o modo Grupo.
+  const stakeShopIds = useMemo(
+    () => (isGroupMode && groupShopIds.length > 0 ? groupShopIds : activeShopId ? [activeShopId] : []),
+    [isGroupMode, groupShopIds, activeShopId],
+  );
 
 
   const [kpis, setKpis] = useState<KPIData>({ revenue: 0, profit: 0, serviceCount: 0, avgTicket: 0, openQuotes: 0, activeClients: 0 });
@@ -822,6 +829,10 @@ function OwnerDashboard() {
         )}
       </div>
 
+      {/* === DINHEIRO EM JOGO === valor potencial rastreável (não é lucro) */}
+      {dataLoaded && <MoneyAtStakeCard shopIds={stakeShopIds} fmt={fmt} />}
+
+
       {/* === Modo Grupo: Rankings + Breakdown por oficina === */}
       {isGroupMode && dataLoaded && perShopBreakdown.length > 0 && (() => {
         const byRevenue = [...perShopBreakdown].sort((a, b) => b.revenue - a.revenue);
@@ -1083,6 +1094,63 @@ function OwnerDashboard() {
         )}
       </div>
       </>)}
+    </div>
+  );
+}
+
+/**
+ * DINHEIRO EM JOGO — valor potencial de oportunidades reais já existentes
+ * (orçamentos por fechar, faturas por receber, revisões em atraso). Não é
+ * lucro e não inventa valores: reutiliza o hook useMoneyAtStake, que lê as
+ * tabelas existentes. Detalhe completo em /opportunities.
+ */
+function MoneyAtStakeCard({ shopIds, fmt }: { shopIds: string[]; fmt: (v: number) => string }) {
+  const stake = useMoneyAtStake(shopIds);
+
+  if (stake.loading) return <Skeleton className="h-28 w-full rounded-xl" />;
+
+  const hasAny = stake.quotes.length > 0 || stake.invoices.length > 0 || stake.reminders.length > 0;
+  if (!hasAny) {
+    return (
+      <div className="card-premium p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Target className="w-4 h-4 text-primary" />
+          <h2 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dinheiro em jogo</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">Não existem oportunidades neste momento.</p>
+      </div>
+    );
+  }
+
+  const rows = [
+    { label: 'Orçamentos pendentes', value: stake.quotesValue, count: stake.quotes.length },
+    { label: 'Clientes a recuperar', value: stake.recoveryValue, count: stake.reminders.length },
+    { label: 'Pagamentos pendentes', value: stake.paymentsValue, count: stake.invoices.length },
+  ].filter((r) => r.count > 0);
+
+  return (
+    <div className="card-premium p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-primary" />
+            <h2 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dinheiro em jogo</h2>
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold tabular-nums mt-1">{fmt(stake.total)}</p>
+          <p className="text-[11px] text-muted-foreground">Valor potencial — não é lucro.</p>
+        </div>
+        <Link to="/opportunities">
+          <Button size="sm" variant="outline" className="shrink-0">Ver oportunidades</Button>
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {rows.map((r) => (
+          <div key={r.label} className="rounded-lg border border-border/60 bg-muted/30 p-3">
+            <div className="text-[11px] text-muted-foreground">{r.label} ({r.count})</div>
+            <div className="text-base font-semibold tabular-nums">{fmt(r.value)}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

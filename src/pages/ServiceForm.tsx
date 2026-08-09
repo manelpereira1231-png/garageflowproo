@@ -40,6 +40,8 @@ export default function ServiceForm() {
   const [diagnosis, setDiagnosis] = useState("");
   const [laborHours, setLaborHours] = useState("0");
   const [technician, setTechnician] = useState("");
+  const [technicians, setTechnicians] = useState<string[]>([]);
+
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({

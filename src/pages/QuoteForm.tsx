@@ -257,25 +257,9 @@ export default function QuoteForm() {
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Horas de mão-de-obra ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min={0}
-                max={MAX_LABOR_HOURS}
-                value={laborHours}
-                onChange={e => setLaborHours(e.target.value)}
-                aria-invalid={laborHoursInvalid}
-                className={laborHoursInvalid ? "border-destructive" : ""}
-              />
-              {laborHoursInvalid && (
-                <p className="text-[11px] text-destructive">
-                  Valor irrealista. O máximo permitido por orçamento é {MAX_LABOR_HOURS} horas.
-                </p>
-              )}
-            </div>
+          </div>
+        </div>
+
           </div>
         </div>
 

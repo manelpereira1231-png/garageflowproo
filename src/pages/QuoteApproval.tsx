@@ -10,6 +10,8 @@ import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote
 import SignaturePad from "@/components/SignaturePad";
 import { getCurrencySymbol, getLocaleForCurrency, getTaxLabelForCurrency } from "@/lib/regionLabels";
 import { formatMoney } from "@/lib/money";
+import { totalEstMinutes, formatDuration } from "@/lib/duration";
+
 
 
 const translations: Record<string, Record<string, string>> = {
@@ -530,7 +532,10 @@ export default function QuoteApproval() {
   const cur = getCurrencySymbol(shop?.currency);
   const shopLocale = getLocaleForCurrency(shop?.currency);
   const vatLabel = getTaxLabelForCurrency(shop?.currency);
-  const totalLaborHours = lines.filter((l: any) => l.type === 'service').reduce((s: number, l: any) => s + (l.quantity || 0), 0);
+  // Tempo estimado real: tempo do catálogo (est_minutes por linha de serviço)
+  // + horas de mão-de-obra extra. NUNCA a quantidade das linhas.
+  const estimatedMinutes = totalEstMinutes(lines, quote.labor_hours);
+
 
 
   return (
@@ -674,13 +679,14 @@ export default function QuoteApproval() {
                 <span className="text-muted-foreground">{t('validUntil')}:</span>
                 <span className="font-semibold">{quote.validity_date}</span>
               </div>
-              {totalLaborHours > 0 && (
+              {estimatedMinutes > 0 && (
                 <div className="bg-muted/50 rounded-lg px-4 py-2.5 text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">{t('estimatedTime')}:</span>
-                  <span className="font-semibold">~{totalLaborHours} {t('hours')}</span>
+                  <span className="font-semibold">~{formatDuration(estimatedMinutes)}</span>
                 </div>
               )}
+
             </div>
 
             {quote.notes && (

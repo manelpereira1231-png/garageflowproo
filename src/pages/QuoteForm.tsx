@@ -20,11 +20,15 @@ import {
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
+import { formatDuration, totalEstMinutes, parseMinutesFromName } from "@/lib/duration";
 
 interface LineItem {
   id: string; type: 'service' | 'part'; name: string;
   quantity: number; unit_price: number; unit_cost: number; vat_rate: number;
+  /** Tempo previsto (min) por unidade, herdado do catálogo de serviços. */
+  est_minutes?: number;
 }
+
 
 export default function QuoteForm() {
   const navigate = useNavigate();
@@ -92,7 +96,9 @@ export default function QuoteForm() {
             unit_price: l.unit_price || 0,
             unit_cost: l.unit_cost || 0,
             vat_rate: l.vat_rate ?? 23,
+            est_minutes: Number(l.est_minutes) || parseMinutesFromName(l.name),
           })));
+
           // Calculate validity days from dates
           if (quote.date && quote.validity_date) {
             const diff = Math.round((new Date(quote.validity_date).getTime() - new Date(quote.date).getTime()) / (1000 * 60 * 60 * 24));
@@ -130,6 +136,8 @@ export default function QuoteForm() {
   const laborCharge = round2((parseFloat(laborHours) || 0) * shopDefaults.labor_rate);
   const laborHoursInvalid = (parseFloat(laborHours) || 0) > MAX_LABOR_HOURS;
   const linesSubtotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0));
+  const estimatedMinutes = totalEstMinutes(lines, laborHours);
+
   const subtotal = round2(linesSubtotal + laborCharge);
   const vatTotal = round2(lines.reduce((s, l) => s + l.quantity * l.unit_price * l.vat_rate / 100, 0) + laborCharge * shopDefaults.vat_rate / 100);
   const total = round2(subtotal + vatTotal);
@@ -257,27 +265,10 @@ export default function QuoteForm() {
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Horas de mão-de-obra ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min={0}
-                max={MAX_LABOR_HOURS}
-                value={laborHours}
-                onChange={e => setLaborHours(e.target.value)}
-                aria-invalid={laborHoursInvalid}
-                className={laborHoursInvalid ? "border-destructive" : ""}
-              />
-              {laborHoursInvalid && (
-                <p className="text-[11px] text-destructive">
-                  Valor irrealista. O máximo permitido por orçamento é {MAX_LABOR_HOURS} horas.
-                </p>
-              )}
-            </div>
           </div>
         </div>
+
+
 
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -356,6 +347,8 @@ export default function QuoteForm() {
                           unit_price: unitPrice,
                           unit_cost: cost,
                           vat_rate: vatRate,
+                          est_minutes: timeMin,
+
                         } : l));
                       }
                     } else {
@@ -414,7 +407,36 @@ export default function QuoteForm() {
             );
           })}
 
+          {/* Mão-de-obra extra — fica logo a seguir aos serviços e antes dos totais */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Horas de mão-de-obra extra ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
+              <Input
+                className="h-9 text-sm"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min={0}
+                max={MAX_LABOR_HOURS}
+                value={laborHours}
+                onChange={e => setLaborHours(e.target.value)}
+                aria-invalid={laborHoursInvalid}
+              />
+              <p className="text-[11px] text-muted-foreground">Só para tempo além do previsto no catálogo dos serviços acima.</p>
+              {laborHoursInvalid && (
+                <p className="text-[11px] text-destructive">
+                  Valor irrealista. O máximo permitido por orçamento é {MAX_LABOR_HOURS} horas.
+                </p>
+              )}
+            </div>
+            <div className="text-sm sm:text-right">
+              <span className="text-muted-foreground">Tempo estimado total: </span>
+              <strong className="font-mono">{formatDuration(estimatedMinutes)}</strong>
+              <p className="text-[11px] text-muted-foreground">Tempo do catálogo dos serviços + horas extra.</p>
+            </div>
+          </div>
         </div>
+
 
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="space-y-2 text-sm max-w-xs ml-auto">

@@ -340,7 +340,11 @@ export default function Quotes() {
     new Map(quotes.map((q) => [q.client_id, (q.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
   );
 
-  const getStatusLabel = (status: QuoteStatus) => t(`status.${status}`);
+  // 'sent' num orçamento significa que foi enviado ao cliente e aguarda decisão —
+  // mostramos "Aguarda aprovação" para não ser confundido com "aprovado".
+  const getStatusLabel = (status: QuoteStatus) =>
+    status === 'sent' ? t('status.awaitingApproval') : t(`status.${status}`);
+
 
   return (
     <div>
@@ -387,7 +391,7 @@ export default function Quotes() {
         <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
           <option value="all">Todos os estados</option>
           <option value="draft">{t('status.draft')}</option>
-          <option value="sent">{t('status.sent')}</option>
+          <option value="sent">{t('status.awaitingApproval')}</option>
           <option value="approved">{t('status.approved')}</option>
           <option value="rejected">{t('status.rejected')}</option>
           <option value="expired">{t('status.expired')}</option>

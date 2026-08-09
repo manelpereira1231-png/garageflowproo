@@ -256,6 +256,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Quote Status
     'status.draft': 'Rascunho',
     'status.sent': 'Enviado',
+    'status.awaitingApproval': 'Aguarda aprovação',
     'status.approved': 'Aprovado',
     'status.rejected': 'Rejeitado',
     'status.expired': 'Expirado',
@@ -2312,6 +2313,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'status.draft': 'Draft',
     'status.sent': 'Sent',
+    'status.awaitingApproval': 'Awaiting approval',
     'status.approved': 'Approved',
     'status.rejected': 'Rejected',
     'status.expired': 'Expired',
@@ -4202,6 +4204,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'status.draft': 'Borrador',
     'status.sent': 'Enviado',
+    'status.awaitingApproval': 'Esperando aprobación',
     'status.approved': 'Aprobado',
     'status.rejected': 'Rechazado',
     'status.expired': 'Expirado',
@@ -6100,6 +6103,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Quote Status
     'status.draft': 'Rascunho',
     'status.sent': 'Enviado',
+    'status.awaitingApproval': 'Aguarda aprovação',
     'status.approved': 'Aprovado',
     'status.rejected': 'Rejeitado',
     'status.expired': 'Expirado',
@@ -8492,6 +8496,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'quotes.limitBlocked': 'प्रति माह {limit} कोटेशन की सीमा पहुँच गई। जारी रखने के लिए अपग्रेड करें।',
     'status.draft': 'ड्राफ्ट',
     'status.sent': 'भेजा गया',
+    'status.awaitingApproval': 'अनुमोदन प्रतीक्षित',
     'status.approved': 'अनुमोदित',
     'status.rejected': 'अस्वीकृत',
     'status.expired': 'समाप्त',

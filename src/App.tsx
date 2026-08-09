@@ -412,6 +412,24 @@ const PRIMARY_ONLY_PATHS = new Set<string>([
   "/settings/billing-integration",
 ]);
 
+/**
+ * Guarda única do /onboarding (fonte de verdade: shops.onboarding_completed_at).
+ *  - a carregar               → loader (nunca decide prematuramente)
+ *  - onboarding pendente      → wizard
+ *  - onboarding concluído     → dashboard
+ *  - utilizador sem oficina própria (convidado/admin) → dashboard
+ */
+function OnboardingRoute() {
+  const { loading, required } = useOnboardingRequired();
+  if (loading) return <PageLoader />;
+  if (!required) return <Navigate to="/dashboard" replace />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <OnboardingWizard onComplete={() => {}} />
+    </Suspense>
+  );
+}
+
 function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { role, loading, shopId, can } = useShopRole();

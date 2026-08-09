@@ -169,6 +169,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
       next_service_date: r.next_service_date ?? null,
       clientName: r.clients?.name ?? null,
       plate: r.vehicles?.plate ?? null,
+      vehicleId: r.vehicle_id ?? null,
     }));
     // Sem histórico → 0. Nunca inventamos um valor de referência.
     const recoveryValue = avgTicket > 0 ? reminders.length * avgTicket : 0;

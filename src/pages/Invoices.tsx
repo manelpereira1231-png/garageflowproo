@@ -454,8 +454,8 @@ export default function Invoices() {
                 <span className="font-medium mono text-sm">{inv.number}</span>
                 <div className="flex items-center gap-1">
                   <CertifiedBadge legalStatus={inv.legal_status} atcud={inv.atcud} series={inv.certified_series} />
-                  <Badge variant="secondary" className={statusColors[inv.status] || ''}>
-                    {t(`invoices.status_${inv.status}`)}
+                  <Badge variant="secondary" className={isOverdue(inv) ? 'bg-destructive/10 text-destructive' : (statusColors[inv.status] || '')}>
+                    {isOverdue(inv) ? 'Vencida' : t(`invoices.status_${inv.status}`)}
                   </Badge>
                 </div>
               </div>

@@ -6,22 +6,24 @@
 export type PlateRegion = "PT" | "BR" | "ES" | "FR" | "DE" | "UK" | "US" | "IN" | "GENERIC";
 
 /**
- * Portugal plate patterns (letters/digits ordering used across generations):
+ * Portugal plate patterns (letters/digits ordering used across generations),
+ * expressed WITHOUT separators — validation runs on the canonical form so
+ * "00AA00", "00-AA-00" and "00 aa 00" are equally accepted:
  *   AA-00-AA   (current, since 2020)
  *   00-AA-00   (2005–2020)
  *   00-00-AA   (1992–2005)
  *   AA-00-00   (1937–1992)
  */
 const PT_PATTERNS = [
-  /^[A-Z]{2}-\d{2}-[A-Z]{2}$/,
-  /^\d{2}-[A-Z]{2}-\d{2}$/,
-  /^\d{2}-\d{2}-[A-Z]{2}$/,
-  /^[A-Z]{2}-\d{2}-\d{2}$/,
+  /^[A-Z]{2}\d{2}[A-Z]{2}$/,
+  /^\d{2}[A-Z]{2}\d{2}$/,
+  /^\d{2}\d{2}[A-Z]{2}$/,
+  /^[A-Z]{2}\d{2}\d{2}$/,
 ];
 
-/** Brazil: ABC-1234 (old) or ABC1D23 (Mercosul). */
+/** Brazil (canonical): ABC1234 (old) or ABC1D23 (Mercosul). */
 const BR_PATTERNS = [
-  /^[A-Z]{3}-\d{4}$/,
+  /^[A-Z]{3}\d{4}$/,
   /^[A-Z]{3}\d[A-Z]\d{2}$/,
 ];
 

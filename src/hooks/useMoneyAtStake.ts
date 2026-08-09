@@ -106,7 +106,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         .limit(200),
       supabase
         .from("service_reminders")
-        .select("id, service_type, next_service_date, clients(name), vehicles(plate)")
+        .select("id, service_type, next_service_date, vehicle_id, clients(name), vehicles(plate)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .lt("next_service_date", today)

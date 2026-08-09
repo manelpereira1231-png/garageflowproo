@@ -152,6 +152,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       description: h.description,
       mileage: h.mileage,
       parts: h.parts_replaced,
+      note: null as string | null,
     })),
     ...workOrders.map(wo => {
       const label = t(`wo.status.${wo.status}`, wo.status);
@@ -163,6 +164,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         description: wo.diagnosis || null,
         mileage: wo.entry_mileage || null,
         parts: [],
+        // Nota do mecânico — texto existente em work_orders.notes (sem duplicação).
+        note: (wo.notes && String(wo.notes).trim()) || null,
       };
     }),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -174,10 +177,30 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     return true;
   });
 
+  // Peças utilizadas — agregadas a partir das linhas existentes das OS (work_orders.lines).
+  // Apenas apresentação: não altera cálculos financeiros.
+  const usedParts = (() => {
+    const map = new Map<string, { name: string; qty: number; total: number }>();
+    workOrders.forEach((wo: any) => {
+      const lines = Array.isArray(wo.lines) ? wo.lines : [];
+      lines.forEach((l: any) => {
+        if (l?.type && l.type !== "part") return;
+        const name = (l?.name || "").trim();
+        if (!name) return;
+        const qty = Number(l.quantity || 0);
+        const total = qty * Number(l.unit_price || 0);
+        const prev = map.get(name) || { name, qty: 0, total: 0 };
+        map.set(name, { name, qty: prev.qty + qty, total: prev.total + total });
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 30);
+  })();
+
   const mileagePoints = workOrders
     .filter(wo => wo.entry_mileage > 0)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .map(wo => ({ date: wo.created_at, km: wo.entry_mileage }));
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

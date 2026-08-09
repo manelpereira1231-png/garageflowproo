@@ -391,7 +391,7 @@ export default function Quotes() {
         <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
           <option value="all">Todos os estados</option>
           <option value="draft">{t('status.draft')}</option>
-          <option value="sent">{t('status.sent')}</option>
+          <option value="sent">{t('status.awaitingApproval')}</option>
           <option value="approved">{t('status.approved')}</option>
           <option value="rejected">{t('status.rejected')}</option>
           <option value="expired">{t('status.expired')}</option>

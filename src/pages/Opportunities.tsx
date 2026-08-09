@@ -63,6 +63,55 @@ export default function Opportunities() {
             </Card>
           </div>
 
+          {/* Clientes a recuperar — sem scoring nem IA: apenas motivos reais existentes. */}
+          {(() => {
+            type Row = { key: string; name: string; reason: string; to: string; cta: string };
+            const rows: Row[] = [];
+            stake.reminders.forEach((r) => {
+              rows.push({
+                key: `rem-${r.id}`,
+                name: r.clientName || "Sem cliente",
+                reason: `Revisão vencida${r.plate ? ` · ${r.plate}` : ""}${r.next_service_date ? ` (desde ${r.next_service_date})` : ""}`,
+                to: r.clientId ? `/clients?id=${r.clientId}` : r.vehicleId ? `/vehicles?passport=${r.vehicleId}` : "/clients",
+                cta: r.clientId ? "Ver cliente" : "Ver passaporte",
+              });
+            });
+            stake.quotes.forEach((q) => {
+              const days = Math.max(0, Math.floor((Date.now() - new Date(q.created_at).getTime()) / 86400000));
+              if (days < 7) return;
+              rows.push({
+                key: `q-${q.id}`,
+                name: q.clientName || "Sem cliente",
+                reason: `Orçamento pendente há ${days} ${days === 1 ? "dia" : "dias"}`,
+                to: `/quotes/edit/${q.id}`,
+                cta: "Ver orçamento",
+              });
+            });
+            if (rows.length === 0) return null;
+            return (
+              <Card className="p-4 sm:p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <UserCheck className="w-4 h-4 text-emerald-500" />
+                  <h2 className="font-semibold text-sm">Clientes a recuperar</h2>
+                  <Badge variant="outline">{rows.length}</Badge>
+                </div>
+                <ul className="divide-y divide-border">
+                  {rows.slice(0, 20).map((row) => (
+                    <li key={row.key} className="py-2 flex items-center justify-between gap-2">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium truncate">{row.name}</span>
+                        <span className="block text-xs text-muted-foreground truncate">Motivo: {row.reason}</span>
+                      </span>
+                      <Button asChild size="sm" variant="outline" className="shrink-0">
+                        <Link to={row.to}>{row.cta}</Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            );
+          })()}
+
 
           {/* Orçamentos pendentes */}
           <Card className="p-4 sm:p-5">

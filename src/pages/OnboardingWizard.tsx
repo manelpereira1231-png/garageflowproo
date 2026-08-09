@@ -305,9 +305,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Wrench className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img src="/icon-192.png" alt="GarageFlow" className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
           <h1 className="text-2xl font-bold tracking-tight">
             {t('onboarding.welcome')}
           </h1>

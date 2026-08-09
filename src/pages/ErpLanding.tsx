@@ -64,9 +64,7 @@ export default function ErpLanding() {
       <nav className="fixed top-0 w-full z-50 bg-background/85 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src="/icon-192.png" alt="GarageFlow" className="w-9 h-9 rounded-xl object-contain" />
             <div className="leading-tight">
               <div className="font-bold text-sm sm:text-base">GarageFlow <span className="text-primary">ERP</span></div>
               <div className="text-[10px] text-muted-foreground hidden sm:block">Software de Gestão para Oficinas</div>

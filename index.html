@@ -233,7 +233,7 @@
       }
       html.dark #gf-boot { background: #0d1116; color: #f5f5f4; }
       #gf-boot[data-hiding="1"] { opacity: 0; pointer-events: none; }
-      #gf-boot .gf-logo { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #e8930c; }
+      #gf-boot .gf-logo { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; }
       #gf-boot .gf-spinner {
         width: 26px; height: 26px; border-radius: 50%;
         border: 2px solid rgba(232, 147, 12, .22); border-top-color: #e8930c;
@@ -257,7 +257,7 @@
   </head>
 
   <body>
-    <div id="root"><div id="gf-boot" aria-hidden="true"><div class="gf-logo">GarageFlow</div><div class="gf-spinner"></div></div></div>
+    <div id="root"><div id="gf-boot" aria-hidden="true"><img class="gf-logo" src="/icon-192.png" alt="GarageFlow" /><div class="gf-spinner"></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

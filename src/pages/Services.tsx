@@ -418,7 +418,9 @@ export default function Services() {
         lines: service.lines,
         reference: service.number,
       });
-      if (res.insufficient.length > 0) {
+      if (res.error) {
+        toast.error(`Consumo de stock falhou (nenhuma alteração aplicada): ${res.error}`);
+      } else if (res.insufficient.length > 0) {
         toast.warning(`Stock ficou negativo: ${res.insufficient.join(', ')}`);
       } else if (res.consumed > 0) {
         toast.success(`${res.consumed} peça(s) descontada(s) do stock`);

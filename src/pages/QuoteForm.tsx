@@ -96,7 +96,9 @@ export default function QuoteForm() {
             unit_price: l.unit_price || 0,
             unit_cost: l.unit_cost || 0,
             vat_rate: l.vat_rate ?? 23,
+            est_minutes: Number(l.est_minutes) || parseMinutesFromName(l.name),
           })));
+
           // Calculate validity days from dates
           if (quote.date && quote.validity_date) {
             const diff = Math.round((new Date(quote.validity_date).getTime() - new Date(quote.date).getTime()) / (1000 * 60 * 60 * 24));

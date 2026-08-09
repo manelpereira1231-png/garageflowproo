@@ -19,6 +19,8 @@ import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { useShopCountry } from "@/hooks/useShopCountry";
+import { getCountryFiscalConfig, getTaxIdLabel } from "@/lib/countryFields";
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {
@@ -75,6 +77,15 @@ const copyPortalLink = async (clientId: string, portalToken: string | null, succ
 
 export default function Clients() {
   const { t } = useLanguage();
+  const { code: shopCountry } = useShopCountry();
+  const taxIdField = getCountryFiscalConfig(shopCountry).fields.find((f) => f.key === "taxId");
+  const taxIdLabel = getTaxIdLabel(shopCountry);
+  const validateTaxId = (value: string) => {
+    const v = (value || "").trim();
+    if (!v) return true; // opcional
+    if (!taxIdField?.pattern) return true;
+    return new RegExp(taxIdField.pattern).test(v);
+  };
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
   const cacheKey = `clients-all:${activeShopIdInit}`;
   const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);
@@ -133,6 +144,11 @@ export default function Clients() {
     setLoading(true);
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
+    if (!validateTaxId(form.nif)) {
+      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
@@ -231,8 +247,18 @@ export default function Clients() {
                   <Input value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t('clients.nif')}</Label>
-                  <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} />
+                  <Label>{taxIdLabel}</Label>
+                  <Input
+                    value={form.nif}
+                    inputMode={taxIdField?.pattern?.includes("\\d") ? "numeric" : undefined}
+                    placeholder={taxIdField?.placeholder}
+                    onChange={e => setForm({...form, nif: e.target.value})}
+                    aria-invalid={!validateTaxId(form.nif)}
+                    className={!validateTaxId(form.nif) ? "border-destructive focus-visible:ring-destructive" : undefined}
+                  />
+                  {!validateTaxId(form.nif) && (
+                    <p className="text-xs text-destructive">{taxIdLabel} inválido{taxIdField?.placeholder ? ` — ex.: ${taxIdField.placeholder}` : ""}</p>
+                  )}
                 </div>
               </div>
               <div className="rounded-lg border border-border p-3 space-y-2">
@@ -335,7 +361,7 @@ export default function Clients() {
               <SortableHeader sortKey="name" currentSort={sort} onToggle={toggleSort}>{t('clients.name')}</SortableHeader>
               <SortableHeader sortKey="email" currentSort={sort} onToggle={toggleSort}>{t('clients.contact')}</SortableHeader>
               <SortableHeader sortKey="company" currentSort={sort} onToggle={toggleSort}>{t('clients.company')}</SortableHeader>
-              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{t('clients.nif')}</SortableHeader>
+              <SortableHeader sortKey="nif" currentSort={sort} onToggle={toggleSort}>{taxIdLabel}</SortableHeader>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

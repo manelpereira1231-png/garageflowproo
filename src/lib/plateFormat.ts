@@ -109,7 +109,7 @@ export function plateExampleFor(region: PlateRegion): string {
   switch (region) {
     case "PT": return "AA-00-AA";
     case "BR": return "ABC-1234 ou ABC1D23";
-    case "ES": return "1234-BCD";
+    case "ES": return "1234 ABC";
     case "FR": return "AA-123-BB";
     case "DE": return "M-AB-1234";
     case "UK": return "AB12 CDE";

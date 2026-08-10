@@ -70,7 +70,7 @@ export default function Dashboard() {
 function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
-  const { isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
+  const { isTrialing, trialDaysLeft, isEntryPlan, mustSubscribe, subscription } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();
@@ -173,7 +173,7 @@ function OwnerDashboard() {
           return;
         }
         setCurrency(shop.currency || getCountryConfig().currency || "EUR");
-        setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
+        setShopName(isGroupMode ? '' : (shop.name || ''));
         setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
 
         // Grupo Mode → agregar todas as oficinas do dono (RLS já garante que
@@ -693,9 +693,11 @@ function OwnerDashboard() {
       )}
 
       {/* Plan Banner — celebrates the auto-Pro trial, becomes urgent near the end */}
-      {canSeeCommercial && (isEntryPlan || isTrialing) && (() => {
+      {canSeeCommercial && (isTrialing || mustSubscribe) && (() => {
         const ending = isTrialing && trialDaysLeft <= 5;
-        const expired = isEntryPlan && !isTrialing;
+        // Only when access has really ended (no valid active/paid plan left).
+        const expired = mustSubscribe && !isTrialing;
+        const hadTrial = !!subscription?.trial_end;
         const tone = ending
           ? "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/50"
           : expired
@@ -710,12 +712,14 @@ function OwnerDashboard() {
           ? trialDaysLeft > 0
             ? `🎁 Plano Pro grátis ativo — ${trialDaysLeft} ${trialDaysLeft === 1 ? "dia" : "dias"} restantes`
             : "O teu trial Pro termina hoje"
-          : "O teu trial Pro terminou — escolhe um plano para continuar";
+          : hadTrial
+            ? "O teu trial Pro terminou — escolhe um plano para continuar"
+            : "O teu plano terminou — escolhe um plano para continuar";
         const sub = isTrialing
           ? ending
             ? "Ativa um plano agora para não perderes alertas, automações e relatórios."
             : "Tens acesso total a alertas, equipa, relatórios, exportação e mais. Sem cartão de crédito."
-          : "Mantém tudo o que ganhaste durante o trial. Cancela quando quiseres.";
+          : "Mantém tudo o que ganhaste. Cancela quando quiseres.";
         return (
           <div className={`border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${tone}`}>
             <div className="flex items-center gap-3">

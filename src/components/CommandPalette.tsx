@@ -71,6 +71,20 @@ export default function CommandPalette() {
       setSearching(true);
       const searchTerm = `%${q}%`;
 
+      // Matrícula: pesquisa separator-agnostic (00AA00 ↔ 00-AA-00 ↔ 1234 ABC).
+      const canon = canonicalPlate(q);
+      const plateVariants = new Set<string>([q]);
+      if (canon) {
+        plateVariants.add(canon);
+        (["PT", "BR", "ES"] as const).forEach((r) => {
+          const f = autoFormatPlate(canon, r);
+          if (f) plateVariants.add(f);
+        });
+      }
+      const plateFilters = Array.from(plateVariants)
+        .filter((v) => v && !/[,()]/.test(v))
+        .map((v) => `plate.ilike.%${v}%`);
+
       const empty = Promise.resolve({ data: [] as any[] });
 
       const [clientsRes, vehiclesRes, quotesRes, invoicesRes, partsRes, servicesRes, catalogRes, apptsRes] =

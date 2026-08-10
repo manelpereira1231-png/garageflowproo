@@ -134,12 +134,14 @@ export default function Vehicles() {
       return;
     }
 
-    const modelToSave = form.variant.trim()
-      ? `${form.model} ${form.variant.trim()}`
-      : form.model;
+    // A versão/submodelo passa a ter coluna própria (`version`); o modelo fica
+    // sempre "limpo". Registos antigos com a versão colada ao modelo continuam
+    // a funcionar (ver openEdit).
+    const versionToSave = form.variant.trim() || null;
 
     const payload = {
-      shop_id: shopId, client_id: form.client_id, make: form.make, model: modelToSave,
+      shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
+      version: versionToSave,
       year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: mileageValue, fuel: form.fuel, notes: form.notes || null,
     };
@@ -164,9 +166,9 @@ export default function Vehicles() {
     // Try to split "model variant" back apart using the known model list for that make
     const knownModels: string[] = getModelsForMake(v.make);
     let baseModel: string = v.model || "";
-    let variant = "";
+    let variant: string = v.version || "";
     const stored: string = v.model || "";
-    const match = knownModels
+    const match = !variant && knownModels
       .slice()
       .sort((a, b) => b.length - a.length)
       .find((m) => stored === m || stored.startsWith(m + " "));
@@ -195,7 +197,7 @@ export default function Vehicles() {
     if (s) {
       // A matrícula entra também na forma canónica (sem hífens/espaços) para
       // que "00AA00" encontre "00-AA-00" e vice-versa.
-      const hay = `${v.plate} ${canonicalPlate(v.plate)} ${v.make} ${v.model} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
+      const hay = `${v.plate} ${canonicalPlate(v.plate)} ${v.make} ${v.model} ${v.version ?? ""} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
       if (!hay.includes(s) && !hay.includes(canonicalPlate(s).toLowerCase())) return false;
     }
     if (filters.make && v.make !== filters.make) return false;
@@ -206,7 +208,7 @@ export default function Vehicles() {
   const view = apply(preFiltered, {
     plate: (v) => v.plate,
     make: (v) => v.make,
-    model: (v) => v.model,
+    model: (v) => [v.model, v.version].filter(Boolean).join(' '),
     year: (v) => Number(v.year),
     client: (v) => (v.clients as any)?.name || "",
     mileage: (v) => Number(v.mileage) || 0,
@@ -220,7 +222,7 @@ export default function Vehicles() {
   const handleExportCsv = () => {
     const csvData = vehicles.map(v => ({
       [t('vehicles.make')]: v.make,
-      [t('vehicles.model')]: v.model,
+      [t('vehicles.model')]: [v.model, v.version].filter(Boolean).join(' '),
       [t('vehicles.year')]: v.year,
       [t('vehicles.plate')]: v.plate,
       VIN: v.vin || '',
@@ -358,7 +360,7 @@ export default function Vehicles() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Car className="w-4 h-4 text-primary" />
-                <span className="font-semibold text-sm">{v.make} {v.model} <span className="text-muted-foreground">({v.year})</span></span>
+                <span className="font-semibold text-sm">{v.make} {[v.model, v.version].filter(Boolean).join(' ')} <span className="text-muted-foreground">({v.year})</span></span>
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="sm" onClick={() => setPassportId(v.id)} className="h-7 w-7 p-0 text-primary" title="Vehicle Passport"><ScrollText className="w-3.5 h-3.5" /></Button>
@@ -402,7 +404,7 @@ export default function Vehicles() {
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Car className="w-4 h-4 text-muted-foreground" />
-                    {v.make} {v.model} <span className="text-muted-foreground">({v.year})</span>
+                    {v.make} {[v.model, v.version].filter(Boolean).join(' ')} <span className="text-muted-foreground">({v.year})</span>
                   </div>
                 </TableCell>
                 <TableCell className="mono font-medium">{v.plate}</TableCell>

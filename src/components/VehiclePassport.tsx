@@ -196,6 +196,19 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   })();
   const displayPlate = vehicle?.plate ? autoFormatPlate(canonicalPlate(vehicle.plate), plateRegion) || vehicle.plate : null;
   const notRegistered = t("passport.notRegistered", "Não registado");
+  /** Duração real (work_order_times) — 2h30 / 45min. Nunca estimada. */
+  const fmtDuration = (seconds?: number | null) => {
+    const s = Number(seconds || 0);
+    if (!s || s <= 0) return null;
+    const mins = Math.round(s / 60);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h > 0) return m > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+    return `${m}min`;
+  };
+  /** Tipo de manutenção programada — label humano, sem concatenações técnicas. */
+  const reminderTypeLabel = (type?: string | null) =>
+    type ? t(`passport.reminderType.${type}`, t(`serviceType.${type}`, type)) : t("passport.nextService", "Próxima manutenção");
 
   const detectKmFraud = (orders: any[]) => {
     const mileages = orders

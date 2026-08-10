@@ -6,6 +6,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { formatMoney } from "@/lib/money";
+import { canonicalPlate, autoFormatPlate } from "@/lib/plateFormat";
 import {
   CommandDialog,
   CommandEmpty,

@@ -216,7 +216,9 @@ export default function Quotes() {
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
         status: q.status,
         // Mesmo cálculo usado na app e na página pública do orçamento.
-        estimatedTime: formatDuration(totalEstMinutes(lines, Number(q.labor_hours) || 0)),
+        estimatedTime: totalEstMinutes(lines, Number(q.labor_hours) || 0) > 0
+          ? formatDuration(totalEstMinutes(lines, Number(q.labor_hours) || 0))
+          : undefined,
       });
       await sendEmail({ to: clientEmail, subject, html });
       // Log email send

@@ -390,18 +390,35 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 </div>
               )}
 
-              {/* Próxima manutenção — apenas quando existe registo real (service_reminders). */}
+              {/* Próxima manutenção — apenas registos reais (service_reminders). */}
               {reminders.length > 0 && (
                 <div>
                   <SectionTitle>{t("passport.nextService", "Próxima manutenção")}</SectionTitle>
+                  {duplicateReminders && (
+                    <p className="text-[11px] text-warning mb-1.5 flex items-start gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
+                      {t("passport.duplicateReminders", "Existem manutenções programadas duplicadas na base de dados. Os registos são apresentados tal como estão guardados.")}
+                    </p>
+                  )}
                   <ul className="space-y-1.5">
                     {reminders.map((r: any) => (
-                      <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2 text-sm">
-                        <span className="break-words">{r.service_type || t("passport.nextService", "Próxima manutenção")}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {fmtDate(r.next_service_date) || ""}
-                          {r.next_service_km ? ` · ${fmtKm(r.next_service_km)}` : ""}
-                        </span>
+                      <li key={r.id} className="bg-muted/50 rounded-lg px-3 py-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">{t("passport.reminderTypeLabel", "Tipo")}</span>
+                          <span className="font-medium break-words">{reminderTypeLabel(r.service_type)}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">{t("passport.date", "Data")}</span>
+                          <span className="font-medium">{fmtDate(r.next_service_date) || notRegistered}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">{t("passport.mileage", "Quilometragem")}</span>
+                          <span className="font-medium">{fmtKm(r.next_service_km) || notRegistered}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">{t("passport.state", "Estado")}</span>
+                          <Badge variant="outline" className="text-[10px]">{statusLabel(r.status)}</Badge>
+                        </div>
                       </li>
                     ))}
                   </ul>

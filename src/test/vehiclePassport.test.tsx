@@ -49,7 +49,7 @@ vi.mock("@/integrations/supabase/client", () => {
     });
     return chain;
   };
-  return { supabase: { from: (t: string) => builder(t) } };
+  return { supabase: { from: (t: string) => builder(t), auth: { getUser: async () => ({ data: { user: null } }) } } };
 });
 
 vi.mock("@/lib/regionConfig", () => ({

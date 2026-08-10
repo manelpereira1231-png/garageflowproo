@@ -283,6 +283,170 @@ const SUBMODELS: Record<string, string[]> = {
   "Suzuki|Jimny": ["1.5 Comercial", "Pro"],
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Extensão do catálogo (PT + BR + ES). Aditiva: nunca remove marcas, modelos
+// ou submodelos já existentes; duplicados são eliminados na fusão.
+// ─────────────────────────────────────────────────────────────────────────────
+const EXTRA_MAKES: Record<string, { logo: string; models: string[] }> = {
+  "Chery": { logo: "https://cdn.simpleicons.org/chery", models: ["Tiggo 2", "Tiggo 3X", "Tiggo 5X", "Tiggo 7 Pro", "Tiggo 8 Pro", "Arrizo 6", "Omoda 5"] },
+  "GWM": { logo: "https://cdn.simpleicons.org/greatwallmotors", models: ["Haval H6", "Haval Jolion", "Ora 03", "Poer", "Tank 300"] },
+  "JAC": { logo: "https://cdn.simpleicons.org/jac", models: ["T40", "T60", "T80", "iEV40", "E-JS1"] },
+  "RAM": { logo: "https://cdn.simpleicons.org/ram", models: ["1500", "2500", "3500", "Rampage", "700"] },
+  "Iveco": { logo: "https://cdn.simpleicons.org/iveco", models: ["Daily", "Eurocargo", "Stralis", "S-Way"] },
+  "SsangYong": { logo: "https://cdn.simpleicons.org/ssangyong", models: ["Tivoli", "Korando", "Rexton", "Musso", "Torres"] },
+  "Isuzu": { logo: "https://cdn.simpleicons.org/isuzu", models: ["D-Max", "MU-X", "N-Series"] },
+  "Caoa Chery": { logo: "https://cdn.simpleicons.org/chery", models: ["Tiggo 5X", "Tiggo 7", "Tiggo 8", "Arrizo 6"] },
+};
+
+// Modelos adicionais para marcas já existentes.
+const EXTRA_MODELS: Record<string, string[]> = {
+  "Volkswagen": ["Gol", "Voyage", "Saveiro", "Virtus", "Nivus", "Amarok", "Fox", "Jetta", "Polo Track", "T-Cross Highline", "Crafter", "Touran", "Sharan", "Scirocco", "Beetle"],
+  "Chevrolet": ["Onix", "Onix Plus", "Prisma", "Tracker", "Spin", "Montana", "S10", "Cruze", "Joy", "Cobalt", "Celta", "Captiva"],
+  "Fiat": ["Uno", "Argo", "Cronos", "Mobi", "Strada", "Toro", "Fiorino", "Pulse", "Fastback", "Ducato", "Scudo", "Talento", "Freemont", "Bravo", "Idea", "Palio", "Siena"],
+  "Renault": ["Kwid", "Sandero Stepway", "Logan", "Oroch", "Duster Oroch", "Symbol", "Fluence", "Laguna", "Koleos", "Espace", "Grand Scenic", "Rafale"],
+  "Ford": ["Ka", "Ka+", "Fusion", "Territory", "Maverick", "F-150", "Edge", "Transit Custom", "Transit Connect", "C-Max", "Mondeo"],
+  "Toyota": ["Corolla Cross", "Etios", "SW4", "Yaris Sedan", "Prius", "Avensis", "Auris", "Verso", "Camry", "Land Cruiser Prado"],
+  "Honda": ["Fit", "City", "WR-V", "CR-V Hybrid", "Civic Si", "Insight"],
+  "Hyundai": ["HB20", "HB20S", "Creta", "Elantra", "ix20", "ix35", "i40", "Accent", "Getz", "Palisade"],
+  "Nissan": ["Kicks", "Versa", "March", "Frontier", "Sentra", "Note", "Pulsar", "Primastar"],
+  "Peugeot": ["206", "207", "306", "307", "406", "407", "607", "1007", "Boxer", "Expert", "Traveller", "Landtrek"],
+  "Citroën": ["C2", "C3 Picasso", "C4 Cactus", "C4 Picasso", "C4 SpaceTourer", "C5", "C8", "Xsara", "Saxo", "Jumper", "Jumpy", "Aircross"],
+  "SEAT": ["Alhambra", "Toledo", "Mii", "Altea", "Exeo", "Córdoba"],
+  "Opel": ["Meriva", "Insignia", "Adam", "Karl", "Antara", "Movano", "Agila", "Frontera"],
+  "Mercedes-Benz": ["Sprinter", "Vito", "Citan", "Classe V", "Classe X", "GLK", "SLK", "CLK", "Classe R"],
+  "BMW": ["Série 6", "X8", "i3", "i8", "Série 3 GT", "Série 5 GT"],
+  "Audi": ["A2", "Q4 e-tron", "Q6 e-tron", "A3 Sportback e-tron", "S6", "S7", "S8", "RS Q3"],
+  "Kia": ["Cerato", "Soul", "Carens", "Carnival", "Venga", "Sportage Hybrid", "Optima", "K5"],
+  "Mazda": ["CX-7", "CX-9", "BT-50", "Mazda5", "RX-8"],
+  "Mitsubishi": ["Lancer", "Colt", "Montero", "Triton", "Eclipse", "Grandis"],
+  "Suzuki": ["Alto", "Baleno", "Celerio", "SX4", "Grand Vitara"],
+  "Škoda": { models: [] } as never as string[],
+  "Dacia": ["Lodgy", "Dokker", "Sandero Stepway", "Duster Pick-up", "Bigster"],
+  "Jeep": ["Commander", "Patriot", "Wagoneer"],
+  "Land Rover": ["Freelander", "Range Rover Sport SVR", "Defender 110"],
+  "Volvo": ["V40", "S40", "V50", "XC70", "EX40", "EC40"],
+  "MG": ["MG3", "ZS", "MG5 SW", "Marvel R Electric", "MG ZS Hybrid+"],
+  "BYD": ["Song Pro", "Dolphin Mini", "King", "Shark", "Sealion 7"],
+  "Tesla": ["Roadster", "Model 3 Performance"],
+  "Alfa Romeo": ["Junior", "Brera", "GT", "166"],
+  "MINI": ["Cabrio", "Aceman", "Countryman Electric"],
+  "Lexus": ["CT", "NX Hybrid", "RX Hybrid"],
+};
+
+// Submodelos/versões adicionais — sempre por "Marca|Modelo".
+const EXTRA_SUBMODELS: Record<string, string[]> = {
+  // ── Portugal / Espanha ─────────────────────────────────────────────
+  "Volkswagen|Golf": ["1.0 TSI", "1.5 TSI", "1.5 eTSI", "2.0 TDI", "GTI", "GTD", "GTE", "R", "Variant 2.0 TDI"],
+  "Volkswagen|Polo": ["1.0 MPI", "1.0 TSI", "1.6 TDI", "GTI", "Life", "Style", "R-Line"],
+  "Volkswagen|Passat": ["1.5 TSI", "2.0 TDI", "2.0 TDI SCR", "GTE", "Variant 2.0 TDI", "Alltrack"],
+  "Volkswagen|T-Roc": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "R-Line", "Cabriolet"],
+  "Volkswagen|Tiguan": ["1.5 TSI", "2.0 TDI", "2.0 TDI 4Motion", "eHybrid", "Allspace"],
+  "Volkswagen|Transporter": ["T6.1 2.0 TDI", "Kombi", "Caravelle", "California"],
+  "Volkswagen|Crafter": ["2.0 TDI L3H2", "2.0 TDI L4H3", "e-Crafter"],
+  "Renault|Clio": ["1.0 SCe", "1.0 TCe", "1.5 dCi", "1.5 Blue dCi", "E-Tech Hybrid", "R.S. Line"],
+  "Renault|Megane": ["1.3 TCe", "1.5 Blue dCi", "E-Tech Plug-in", "Sport Tourer dCi", "R.S."],
+  "Renault|Captur": ["1.0 TCe", "1.3 TCe", "1.5 Blue dCi", "E-Tech Full Hybrid"],
+  "Renault|Kangoo": ["1.5 Blue dCi", "Express", "E-Tech Electric"],
+  "Renault|Trafic": ["2.0 dCi L1H1", "2.0 dCi L2H1", "Combi"],
+  "Renault|Master": ["2.3 dCi L2H2", "2.3 dCi L3H2", "Chassis Cabina"],
+  "Peugeot|208": ["1.2 PureTech", "1.5 BlueHDi", "GT Line", "e-208 50 kWh"],
+  "Peugeot|308": ["1.2 PureTech", "1.5 BlueHDi", "1.6 Hybrid 180", "SW BlueHDi", "GT"],
+  "Peugeot|3008": ["1.2 PureTech", "1.5 BlueHDi", "2.0 BlueHDi", "Hybrid 225", "GT Line"],
+  "Peugeot|Partner": ["1.5 BlueHDi L1", "1.5 BlueHDi L2", "e-Partner"],
+  "Peugeot|Boxer": ["2.2 BlueHDi L2H2", "2.2 BlueHDi L3H2", "Chassis Cabine"],
+  "Citroën|C3": ["1.2 PureTech", "1.5 BlueHDi", "Feel", "Shine", "ë-C3"],
+  "Citroën|C4": ["1.2 PureTech", "1.5 BlueHDi", "Feel Pack", "Shine", "ë-C4 50 kWh"],
+  "Citroën|Berlingo": ["1.5 BlueHDi M", "1.5 BlueHDi XL", "ë-Berlingo"],
+  "Citroën|Jumper": ["2.2 BlueHDi L2H2", "2.2 BlueHDi L3H2"],
+  "Opel|Corsa": ["1.2", "1.2 Turbo", "1.5 D", "Corsa-e", "GS Line"],
+  "Opel|Astra": ["1.2 Turbo", "1.5 D", "Hybrid 180", "Sports Tourer"],
+  "Opel|Combo": ["1.5 D L1H1", "1.5 D L2H1", "Combo-e"],
+  "Opel|Vivaro": ["1.5 D L2H1", "2.0 D L3H1", "Vivaro-e"],
+  "Ford|Fiesta": ["1.0 EcoBoost", "1.1 Ti-VCT", "1.5 TDCi", "ST-Line", "ST"],
+  "Ford|Focus": ["1.0 EcoBoost", "1.5 EcoBlue", "2.0 EcoBlue", "SW EcoBlue", "ST"],
+  "Ford|Kuga": ["1.5 EcoBoost", "2.0 EcoBlue", "2.5 PHEV", "ST-Line"],
+  "Ford|Transit": ["2.0 EcoBlue L2H2", "2.0 EcoBlue L3H2", "Chassis Cabine", "E-Transit"],
+  "Ford|Transit Custom": ["2.0 EcoBlue 130cv", "2.0 EcoBlue 170cv", "Trail", "Sport"],
+  "Ford|Ranger": ["2.0 EcoBlue XL", "2.0 EcoBlue Limited", "Wildtrak", "Raptor"],
+  "SEAT|Ibiza": ["1.0 MPI", "1.0 TSI", "1.6 TDI", "FR", "Xcellence"],
+  "SEAT|Leon": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "e-Hybrid", "FR Sportstourer"],
+  "SEAT|Arona": ["1.0 TSI", "1.6 TDI", "FR", "Xperience"],
+  "SEAT|Ateca": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "2.0 TDI 4Drive", "FR"],
+  "Škoda|Octavia": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "Combi 2.0 TDI", "RS", "iV"],
+  "Škoda|Fabia": ["1.0 MPI", "1.0 TSI", "Monte Carlo", "Style"],
+  "Škoda|Superb": ["1.5 TSI", "2.0 TDI", "Combi 2.0 TDI", "iV", "L&K"],
+  "Škoda|Karoq": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "2.0 TDI 4x4", "Sportline"],
+  "Škoda|Kodiaq": ["1.5 TSI", "2.0 TDI", "2.0 TDI 4x4", "RS", "7 lugares"],
+  "Dacia|Sandero": ["1.0 SCe", "1.0 TCe", "1.0 ECO-G", "Stepway TCe"],
+  "Dacia|Duster": ["1.0 TCe", "1.3 TCe", "1.5 Blue dCi", "1.5 Blue dCi 4x4", "ECO-G"],
+  "Toyota|Yaris": ["1.0 VVT-i", "1.5 Hybrid", "1.5 Hybrid GR Sport", "GR Yaris"],
+  "Toyota|Corolla": ["1.8 Hybrid", "2.0 Hybrid", "Touring Sports 1.8 Hybrid", "Sedan 1.8 Hybrid", "GR Sport"],
+  "Toyota|RAV4": ["2.5 Hybrid", "2.5 Plug-in Hybrid", "AWD-i", "GR Sport"],
+  "Toyota|Hilux": ["2.4 D-4D Cabina Dupla", "2.8 D-4D Invincible", "Cabina Simples"],
+  "Toyota|Proace": ["1.5 D-4D L1", "2.0 D-4D L2", "Proace City", "Verso"],
+  "Nissan|Qashqai": ["1.3 DIG-T", "1.5 dCi", "e-Power", "Tekna"],
+  "Nissan|X-Trail": ["1.5 e-Power", "1.6 dCi", "7 lugares"],
+  "Hyundai|i30": ["1.0 T-GDi", "1.5 T-GDi", "1.6 CRDi", "SW 1.6 CRDi", "N"],
+  "Hyundai|Tucson": ["1.6 T-GDi", "1.6 CRDi", "1.6 T-GDi Hybrid", "PHEV"],
+  "Kia|Ceed": ["1.0 T-GDi", "1.5 T-GDi", "1.6 CRDi", "SW 1.6 CRDi", "GT-Line"],
+  "Kia|Sportage": ["1.6 T-GDi", "1.6 CRDi", "1.6 T-GDi HEV", "PHEV"],
+  "Mercedes-Benz|Sprinter": ["311 CDI L2H2", "314 CDI L3H2", "316 CDI", "eSprinter"],
+  "Mercedes-Benz|Vito": ["110 CDI", "114 CDI", "116 CDI", "Tourer", "eVito"],
+  "Fiat|Ducato": ["2.2 MultiJet L2H2", "2.2 MultiJet L3H2", "Chassis Cabine", "E-Ducato"],
+  "Fiat|500": ["1.0 Hybrid", "1.2", "500e 42 kWh", "Cabrio", "Abarth 595"],
+  "Fiat|Panda": ["1.0 Hybrid", "1.2", "4x4", "Cross"],
+  "Iveco|Daily": ["35S14 L2H2", "35S16 L3H2", "50C15", "eDaily"],
+  // ── Brasil ─────────────────────────────────────────────────────────
+  "Volkswagen|Gol": ["1.0 MPI", "1.0 TSI", "1.6 MSI", "Trendline", "Highline"],
+  "Volkswagen|Saveiro": ["1.6 Robust", "1.6 Trendline", "Cross CD"],
+  "Volkswagen|Virtus": ["1.0 TSI", "1.4 TSI", "Comfortline", "Highline", "GTS"],
+  "Volkswagen|Nivus": ["1.0 TSI Comfortline", "1.0 TSI Highline", "Outfit"],
+  "Volkswagen|Amarok": ["2.0 TDI CD 4x4", "3.0 V6 Highline", "Extreme"],
+  "Chevrolet|Onix": ["1.0 MPI", "1.0 Turbo", "LT", "LTZ", "Premier", "RS"],
+  "Chevrolet|Tracker": ["1.0 Turbo LT", "1.2 Turbo Premier", "RS"],
+  "Chevrolet|S10": ["2.8 CTDi LS 4x4", "2.8 CTDi LTZ", "High Country"],
+  "Chevrolet|Montana": ["1.2 Turbo LT", "1.2 Turbo Premier"],
+  "Chevrolet|Spin": ["1.8 LT", "1.8 Premier", "Activ 7 lugares"],
+  "Fiat|Strada": ["1.3 Endurance CS", "1.3 Freedom CD", "1.0 Turbo Volcano", "Ranch"],
+  "Fiat|Toro": ["1.3 Turbo Endurance", "2.0 Diesel Freedom 4x4", "Volcano", "Ultra"],
+  "Fiat|Argo": ["1.0 Firefly Drive", "1.3 Drive", "Trekking"],
+  "Fiat|Mobi": ["1.0 Like", "1.0 Trekking"],
+  "Fiat|Cronos": ["1.0 Drive", "1.3 Drive", "Precision"],
+  "Fiat|Pulse": ["1.3 Drive", "1.0 Turbo Audace", "Impetus", "Abarth"],
+  "Fiat|Fastback": ["1.0 Turbo Audace", "1.3 Turbo Impetus", "Abarth"],
+  "Renault|Kwid": ["1.0 Zen", "1.0 Intense", "Outsider", "E-Tech"],
+  "Renault|Oroch": ["1.3 Turbo Intense", "1.6 Dynamique"],
+  "Hyundai|HB20": ["1.0 Sense", "1.0 Turbo Comfort", "1.0 Turbo Platinum"],
+  "Hyundai|Creta": ["1.0 Turbo Comfort", "1.6 Action", "2.0 Ultimate", "N Line"],
+  "Toyota|Corolla Cross": ["1.8 Hybrid XR", "1.8 Hybrid XRE", "2.0 XRE", "GR-Sport"],
+  "Toyota|SW4": ["2.8 D-4D SRX 4x4", "2.8 D-4D Diamond", "7 lugares"],
+  "Honda|City": ["1.5 EX", "1.5 EXL", "1.5 Touring", "Hatch"],
+  "Honda|WR-V": ["1.5 EX", "1.5 EXL"],
+  "Nissan|Kicks": ["1.6 Sense", "1.6 Advance", "1.6 Exclusive", "Play"],
+  "Nissan|Frontier": ["2.3 Bi-Turbo Attack 4x4", "2.3 Bi-Turbo Pro-4X"],
+  "Jeep|Compass": ["1.3 Turbo Longitude", "2.0 Diesel Limited 4x4", "Série S", "Trailhawk"],
+  "Jeep|Renegade": ["1.3 Turbo Longitude", "1.8 Sport", "2.0 Diesel Trailhawk"],
+  "Jeep|Commander": ["1.3 Turbo Limited", "2.0 Diesel Overland 4x4"],
+  "RAM|Rampage": ["2.0 Turbodiesel Rebel", "2.0 Turbodiesel Laramie", "R/T"],
+  "RAM|2500": ["6.7 Cummins Laramie", "Limited"],
+  "Chery|Tiggo 8 Pro": ["1.6 TGDI", "2.0 TGDI 7 lugares"],
+  "GWM|Haval H6": ["1.5 HEV", "2.0 PHEV19", "2.0 PHEV34"],
+};
+
+// Fusão aditiva (sem duplicados, sem remover nada do catálogo original).
+Object.entries(EXTRA_MAKES).forEach(([mk, data]) => {
+  if (!VEHICLE_DATA[mk]) VEHICLE_DATA[mk] = { logo: data.logo, models: [...data.models] };
+  else VEHICLE_DATA[mk].models = Array.from(new Set([...VEHICLE_DATA[mk].models, ...data.models]));
+});
+Object.entries(EXTRA_MODELS).forEach(([mk, list]) => {
+  const entry = VEHICLE_DATA[mk];
+  if (!entry || !Array.isArray(list)) return;
+  entry.models = Array.from(new Set([...entry.models, ...list]));
+});
+Object.entries(EXTRA_SUBMODELS).forEach(([key, list]) => {
+  SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
+});
+
 const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort();
 
 interface Props {

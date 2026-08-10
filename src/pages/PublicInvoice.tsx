@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, CreditCard, FileText, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { getLocaleForCountry, getTaxLabelForCountry } from "@/lib/regionLabels";
 
 type Item = { description: string; quantity: number; unit_price: number; vat_rate: number };
 type PublicInvoice = {
@@ -36,10 +37,14 @@ export default function PublicInvoice() {
   const [data, setData] = useState<PublicInvoice | null>(null);
 
   const money = (v: number) =>
-    new Intl.NumberFormat(data?.shop.country_code === "BR" ? "pt-BR" : "pt-PT", {
+    new Intl.NumberFormat(getLocaleForCountry(data?.shop.country_code, data?.shop.currency), {
       style: "currency",
       currency: data?.shop.currency || "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(Number(v || 0));
+
+  const taxLabel = getTaxLabelForCountry(data?.shop.country_code, data?.shop.currency);
 
   const load = async () => {
     if (!token) { setLoading(false); return; }
@@ -196,7 +201,7 @@ export default function PublicInvoice() {
                 <span>Subtotal</span><span>{money(data.subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Impostos</span><span>{money(data.tax)}</span>
+                <span>{taxLabel}</span><span>{money(data.tax)}</span>
               </div>
               <div className="flex justify-between font-semibold">
                 <span>Total</span><span>{money(data.total)}</span>

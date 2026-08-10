@@ -191,6 +191,8 @@ interface QuoteEmailData {
   approvalUrl?: string;
   lang?: string;
   status?: string;
+  /** Tempo estimado já formatado (ex.: "3h"), igual ao mostrado na app e na página pública. */
+  estimatedTime?: string;
 }
 
 const emailLabels: Record<string, Record<string, string>> = {
@@ -354,7 +356,7 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
 
         <!-- Validity & Vehicle -->
         <div style="margin-top: 20px; padding: 12px 16px; background-color: #f9fafb; border-radius: 8px; font-size: 13px; color: #6b7280;">
-          <strong>${l.validity}:</strong> ${data.validityDate} &nbsp;|&nbsp; <strong>${l.vehicle}:</strong> ${data.vehicleInfo}
+          <strong>${l.validity}:</strong> ${data.validityDate} &nbsp;|&nbsp; <strong>${l.vehicle}:</strong> ${data.vehicleInfo}${data.estimatedTime ? ` &nbsp;|&nbsp; <strong>${l.estimatedTime}:</strong> ~${data.estimatedTime}` : ''}
         </div>
 
         ${data.notes ? `<div style="margin-top: 16px; padding: 12px 16px; background-color: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; color: #92400e;"><strong>${l.notes}:</strong> ${data.notes}</div>` : ''}

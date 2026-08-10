@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration, totalEstMinutes } from "@/lib/duration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -214,6 +215,8 @@ export default function Quotes() {
         validityDate: q.validity_date, lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total,
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
         status: q.status,
+        // Mesmo cálculo usado na app e na página pública do orçamento.
+        estimatedTime: formatDuration(totalEstMinutes(lines, Number(q.labor_hours) || 0)),
       });
       await sendEmail({ to: clientEmail, subject, html });
       // Log email send

@@ -174,7 +174,18 @@ export default function Clients() {
       : await supabase.from("clients").insert(payload).select("id").single();
     const { error } = result;
 
-    if (error) toastError(error, editingId ? "Não foi possível atualizar o cliente" : "Não foi possível criar o cliente");
+    if (error) {
+      // Proteção de duplicados na base de dados (índices únicos por oficina).
+      if ((error as any).code === "23505") {
+        const msg = (error as any).message || "";
+        const campo = msg.includes("nif") ? taxIdLabel : msg.includes("email") ? "email" : msg.includes("phone") ? "telefone" : "identificador";
+        toast.error("Cliente já existe", { description: `Já existe um cliente nesta oficina com o mesmo ${campo}.` });
+        fetchClients();
+      } else {
+        toastError(error, editingId ? "Não foi possível atualizar o cliente" : "Não foi possível criar o cliente");
+      }
+    }
+
     else {
       if (!editingId && form.email && result.data?.id) {
         void sendLifecycleEmail({

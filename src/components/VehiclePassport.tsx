@@ -358,6 +358,11 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   <div className="min-w-0">
                     <span className="text-xs text-muted-foreground block">{t("passport.services", "Serviços")}</span>
                     <p className="font-semibold">{interventionsLabel}</p>
+                    {workOrders.length !== doneOrders.length && (
+                      <p className="text-[10px] text-muted-foreground">
+                        {t("passport.totalOrders", "{n} registos no total").replace("{n}", String(workOrders.length))}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

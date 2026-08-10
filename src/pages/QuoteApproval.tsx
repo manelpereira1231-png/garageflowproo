@@ -8,7 +8,7 @@ import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User,
 import { sendEmail } from "@/lib/emailService";
 import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote";
 import SignaturePad from "@/components/SignaturePad";
-import { getCurrencySymbol, getLocaleForCurrency, getTaxLabelForCurrency } from "@/lib/regionLabels";
+import { getLocaleForCountry, getTaxLabelForCountry } from "@/lib/regionLabels";
 import { formatMoney } from "@/lib/money";
 import { totalEstMinutes, formatDuration } from "@/lib/duration";
 
@@ -168,6 +168,14 @@ export default function QuoteApproval() {
   const { token } = useParams<{ token: string }>();
   const [quote, setQuote] = useState<any>(null);
   const [shop, setShop] = useState<any>(null);
+  // Moeda sempre no formato do país da oficina (PT: "35,00 €" | BR: "R$ 35,00").
+  const money = (v: any) =>
+    new Intl.NumberFormat(getLocaleForCountry(shop?.country_code, shop?.currency), {
+      style: "currency",
+      currency: shop?.currency || "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(v || 0));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<'approved' | 'rejected' | 'expired' | null>(null);
@@ -442,12 +450,11 @@ export default function QuoteApproval() {
   if (result) {
     const decidedAt = result === 'approved' ? (quote?.signed_at || quote?.updated_at) : quote?.updated_at;
     const decidedDate = decidedAt ? new Date(decidedAt) : new Date();
-    const shopLocale = getLocaleForCurrency(shop?.currency);
+    const shopLocale = getLocaleForCountry(shop?.country_code, shop?.currency);
     const fmtDate = decidedDate.toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : shopLocale);
     const fmtTime = decidedDate.toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : shopLocale, { hour: '2-digit', minute: '2-digit' });
     const veh = quote?.vehicles as any;
     const cli = quote?.clients as any;
-    const cur = getCurrencySymbol(shop?.currency);
 
 
     const labels = {
@@ -500,7 +507,7 @@ export default function QuoteApproval() {
                 <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.vehicle}:</span><span className="font-semibold">{veh.make} {veh.model}{veh.plate ? ` — ${veh.plate}` : ''}</span></div>
               )}
               {typeof quote.total === 'number' && (
-                <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.total}:</span><span className="font-mono font-semibold">{cur}{Number(quote.total).toFixed(2)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-muted-foreground">{L.total}:</span><span className="font-mono font-semibold">{money(quote.total)}</span></div>
               )}
               <div className="flex justify-between gap-3"><span className="text-muted-foreground">{result === 'approved' ? L.decidedOn : L.decidedOnRej}:</span><span className="font-semibold">{fmtDate} {L.at} {fmtTime}</span></div>
               {result === 'approved' && quote?.signer_name && (
@@ -529,9 +536,8 @@ export default function QuoteApproval() {
   }
 
   const lines = (Array.isArray(quote.lines) ? quote.lines : []) as any[];
-  const cur = getCurrencySymbol(shop?.currency);
-  const shopLocale = getLocaleForCurrency(shop?.currency);
-  const vatLabel = getTaxLabelForCurrency(shop?.currency);
+  const shopLocale = getLocaleForCountry(shop?.country_code, shop?.currency);
+  const vatLabel = getTaxLabelForCountry(shop?.country_code, shop?.currency);
   // Tempo estimado real: tempo do catálogo (est_minutes por linha de serviço)
   // + horas de mão-de-obra extra. NUNCA a quantidade das linhas.
   const estimatedMinutes = totalEstMinutes(lines, quote.labor_hours);
@@ -628,8 +634,8 @@ export default function QuoteApproval() {
                           </Badge>
                         </td>
                         <td className="p-3 text-center font-mono text-muted-foreground">{line.quantity}</td>
-                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{cur}{line.unit_price?.toFixed(2)}</td>
-                        <td className="p-3 text-right font-mono font-semibold">{cur}{(line.quantity * line.unit_price).toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(line.unit_price)}</td>
+                        <td className="p-3 text-right font-mono font-semibold">{money(line.quantity * line.unit_price)}</td>
                       </tr>
                     ))}
                     {Number(quote.labor_hours) > 0 && Number(shop?.labor_rate) > 0 && (
@@ -638,15 +644,15 @@ export default function QuoteApproval() {
                           <span className="font-medium">Mão-de-obra</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>
                           <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-                            {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {cur}{Number(shop.labor_rate).toFixed(2)}/h
+                            {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {money(shop.labor_rate)}/h
                           </div>
                         </td>
                         <td className="p-3 text-center font-mono text-muted-foreground">
                           {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
 
                         </td>
-                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{cur}{Number(shop.labor_rate).toFixed(2)}</td>
-                        <td className="p-3 text-right font-mono font-semibold">{cur}{(Number(quote.labor_hours) * Number(shop.labor_rate)).toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(shop.labor_rate)}</td>
+                        <td className="p-3 text-right font-mono font-semibold">{money(Number(quote.labor_hours) * Number(shop.labor_rate))}</td>
                       </tr>
                     )}
                   </tbody>
@@ -659,15 +665,15 @@ export default function QuoteApproval() {
               <div className="w-72 bg-muted/30 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('subtotal')}</span>
-                  <span className="font-mono">{cur}{quote.subtotal?.toFixed(2)}</span>
+                  <span className="font-mono">{money(quote.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{vatLabel}</span>
-                  <span className="font-mono">{cur}{quote.vat_total?.toFixed(2)}</span>
+                  <span className="font-mono">{money(quote.vat_total)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">
                   <span>{t('total')}</span>
-                  <span className="font-mono text-primary">{cur}{quote.total?.toFixed(2)}</span>
+                  <span className="font-mono text-primary">{money(quote.total)}</span>
                 </div>
               </div>
             </div>

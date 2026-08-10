@@ -6,6 +6,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useShopRole } from "@/hooks/useShopRole";
 import { canOpenPath } from "@/lib/rolePaths";
 import { formatMoney } from "@/lib/money";
+import { canonicalPlate, autoFormatPlate } from "@/lib/plateFormat";
 import {
   CommandDialog,
   CommandEmpty,
@@ -71,6 +72,20 @@ export default function CommandPalette() {
       setSearching(true);
       const searchTerm = `%${q}%`;
 
+      // Matrícula: pesquisa separator-agnostic (00AA00 ↔ 00-AA-00 ↔ 1234 ABC).
+      const canon = canonicalPlate(q);
+      const plateVariants = new Set<string>([q]);
+      if (canon) {
+        plateVariants.add(canon);
+        (["PT", "BR", "ES"] as const).forEach((r) => {
+          const f = autoFormatPlate(canon, r);
+          if (f) plateVariants.add(f);
+        });
+      }
+      const plateFilters = Array.from(plateVariants)
+        .filter((v) => v && !/[,()]/.test(v))
+        .map((v) => `plate.ilike.%${v}%`);
+
       const empty = Promise.resolve({ data: [] as any[] });
 
       const [clientsRes, vehiclesRes, quotesRes, invoicesRes, partsRes, servicesRes, catalogRes, apptsRes] =
@@ -87,7 +102,7 @@ export default function CommandPalette() {
             .select("id, make, model, plate, clients(name)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
-            .or(`plate.ilike.${searchTerm},make.ilike.${searchTerm},model.ilike.${searchTerm}`)
+            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`].join(","))
             .limit(5) : empty,
           can("quotes.view") ? supabase
             .from("quotes")

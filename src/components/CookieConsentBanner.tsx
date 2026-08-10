@@ -28,8 +28,8 @@ type Strings = {
 
 const i18n: Record<string, Strings> = {
   pt: {
-    title: "A tua privacidade conta",
-    body: "Usamos cookies essenciais para o funcionamento da plataforma. Com o teu consentimento, usamos também cookies analíticos e de marketing para melhorar o serviço. Consulta a",
+    title: "A sua privacidade conta",
+    body: "Usamos cookies essenciais para o funcionamento da plataforma. Com o seu consentimento, usamos também cookies analíticos e de marketing para melhorar o serviço. Consulte a",
     policyCookies: "Política de Cookies",
     policyPrivacy: "Política de Privacidade",
     acceptAll: "Aceitar tudo",

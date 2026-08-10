@@ -191,6 +191,8 @@ interface QuoteEmailData {
   approvalUrl?: string;
   lang?: string;
   status?: string;
+  /** Tempo estimado já formatado (ex.: "3h"), igual ao mostrado na app e na página pública. */
+  estimatedTime?: string;
 }
 
 const emailLabels: Record<string, Record<string, string>> = {
@@ -200,7 +202,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     intro: 'Segue em anexo o orçamento solicitado para o seu veículo',
     type: 'Tipo', description: 'Descrição', qty: 'Qtd', price: 'Preço', vat: 'IVA', lineTotal: 'Total',
     subtotal: 'Subtotal', vatLabel: 'IVA', total: 'TOTAL',
-    validity: 'Válido até', vehicle: 'Veículo', notes: 'Notas',
+    validity: 'Válido até', vehicle: 'Veículo', notes: 'Notas', estimatedTime: 'Tempo estimado',
     approve: 'Aprovar Orçamento', reject: 'Rejeitar',
     approveOnline: 'Pode aprovar ou rejeitar este orçamento online clicando no botão abaixo:',
     footer: 'Obrigado pela preferência!',
@@ -217,7 +219,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     intro: 'Please find below the quote requested for your vehicle',
     type: 'Type', description: 'Description', qty: 'Qty', price: 'Price', vat: 'VAT', lineTotal: 'Total',
     subtotal: 'Subtotal', vatLabel: 'VAT', total: 'TOTAL',
-    validity: 'Valid until', vehicle: 'Vehicle', notes: 'Notes',
+    validity: 'Valid until', vehicle: 'Vehicle', notes: 'Notes', estimatedTime: 'Estimated time',
     approve: 'Approve Quote', reject: 'Reject',
     approveOnline: 'You can approve or reject this quote online by clicking the button below:',
     footer: 'Thank you for your preference!',
@@ -234,7 +236,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     intro: 'A continuación encontrará el presupuesto solicitado para su vehículo',
     type: 'Tipo', description: 'Descripción', qty: 'Cant', price: 'Precio', vat: 'IVA', lineTotal: 'Total',
     subtotal: 'Subtotal', vatLabel: 'IVA', total: 'TOTAL',
-    validity: 'Válido hasta', vehicle: 'Vehículo', notes: 'Notas',
+    validity: 'Válido hasta', vehicle: 'Vehículo', notes: 'Notas', estimatedTime: 'Tiempo estimado',
     approve: 'Aprobar Presupuesto', reject: 'Rechazar',
     approveOnline: 'Puede aprobar o rechazar este presupuesto online haciendo clic en el botón:',
     footer: '¡Gracias por su preferencia!',
@@ -354,7 +356,7 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
 
         <!-- Validity & Vehicle -->
         <div style="margin-top: 20px; padding: 12px 16px; background-color: #f9fafb; border-radius: 8px; font-size: 13px; color: #6b7280;">
-          <strong>${l.validity}:</strong> ${data.validityDate} &nbsp;|&nbsp; <strong>${l.vehicle}:</strong> ${data.vehicleInfo}
+          <strong>${l.validity}:</strong> ${data.validityDate} &nbsp;|&nbsp; <strong>${l.vehicle}:</strong> ${data.vehicleInfo}${data.estimatedTime ? ` &nbsp;|&nbsp; <strong>${l.estimatedTime}:</strong> ~${data.estimatedTime}` : ''}
         </div>
 
         ${data.notes ? `<div style="margin-top: 16px; padding: 12px 16px; background-color: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; color: #92400e;"><strong>${l.notes}:</strong> ${data.notes}</div>` : ''}

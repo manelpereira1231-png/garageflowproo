@@ -34,3 +34,26 @@ export function getTaxLabelForCurrency(currency?: string | null): string {
     default: return "IVA";
   }
 }
+
+// ─── Variantes por PAÍS (mais precisas que só a moeda) ───────────────
+// Necessárias porque PT e ES partilham EUR mas têm locales distintos
+// (pt-PT: "35,00 €" | es-ES: "35,00 €" com separadores próprios).
+const COUNTRY_LOCALES: Record<string, string> = {
+  PT: "pt-PT", BR: "pt-BR", ES: "es-ES", FR: "fr-FR", DE: "de-DE",
+  GB: "en-GB", UK: "en-GB", US: "en-US", IN: "en-IN",
+};
+
+const COUNTRY_TAX_LABELS: Record<string, string> = {
+  PT: "IVA", ES: "IVA", BR: "Impostos", FR: "TVA", DE: "MwSt",
+  GB: "VAT", UK: "VAT", US: "Tax", IN: "GST",
+};
+
+export function getLocaleForCountry(country?: string | null, currency?: string | null): string {
+  const c = (country || "").toUpperCase();
+  return COUNTRY_LOCALES[c] || getLocaleForCurrency(currency);
+}
+
+export function getTaxLabelForCountry(country?: string | null, currency?: string | null): string {
+  const c = (country || "").toUpperCase();
+  return COUNTRY_TAX_LABELS[c] || getTaxLabelForCurrency(currency);
+}

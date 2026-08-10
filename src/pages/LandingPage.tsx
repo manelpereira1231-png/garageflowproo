@@ -254,7 +254,10 @@ export default function LandingPage() {
       periodKey: (base as number) > 0
         ? (billingCycle === 'monthly' ? 'landing.perMonth' : 'landing.perYear')
         : '',
-      subtitleKey: (isAuthenticated || p.show_trial === false) ? undefined : 'landing.trial30',
+      // A informação "30 dias grátis · sem cartão" está no subtítulo da secção
+      // de preços; repeti-la em cada cartão era ruído visual.
+      subtitleKey: undefined,
+
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
       cta,
       badgeLabel,

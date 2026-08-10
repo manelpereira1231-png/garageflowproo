@@ -197,9 +197,10 @@ export default function Clients() {
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); return; }
     if (!validateTaxId(form.nif)) {
-      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
+      toast.error(`${taxIdLabel} inválido`, { description: taxIdHelp ? `Formato esperado: ${taxIdHelp}` : undefined });
       return;
     }
+
 
     const dups = findDuplicates();
     if (dups.length > 0) {

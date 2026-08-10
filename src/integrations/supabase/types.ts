@@ -9581,6 +9581,7 @@ export type Database = {
           notes: string | null
           plate: string
           shop_id: string
+          version: string | null
           vin: string | null
           year: number
         }
@@ -9596,6 +9597,7 @@ export type Database = {
           notes?: string | null
           plate: string
           shop_id: string
+          version?: string | null
           vin?: string | null
           year?: number
         }
@@ -9611,6 +9613,7 @@ export type Database = {
           notes?: string | null
           plate?: string
           shop_id?: string
+          version?: string | null
           vin?: string | null
           year?: number
         }

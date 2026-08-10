@@ -288,8 +288,9 @@ export default function Clients() {
                     className={!validateTaxId(form.nif) ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                   {!validateTaxId(form.nif) && (
-                    <p className="text-xs text-destructive">{taxIdLabel} inválido{taxIdField?.placeholder ? ` — ex.: ${taxIdField.placeholder}` : ""}</p>
+                    <p className="text-xs text-destructive">{taxIdLabel} inválido{taxIdHelp ? ` — ${taxIdHelp}` : ""}</p>
                   )}
+
                 </div>
               </div>
               <div className="rounded-lg border border-border p-3 space-y-2">

@@ -21,6 +21,8 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import { useShopCountry } from "@/hooks/useShopCountry";
 import { getCountryFiscalConfig, getTaxIdLabel } from "@/lib/countryFields";
+import { isValidTaxId, taxIdHint } from "@/lib/taxIdValidation";
+
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {

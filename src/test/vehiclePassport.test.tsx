@@ -118,4 +118,26 @@ describe("Passaporte do Veículo", () => {
     expect(t).toContain("Emitida");
     expect(t).toContain("86,10 €");
   });
+
+  it("PT: veículo sem serviços, sem faturas e sem fotografias", async () => {
+    shopMeta = { currency: "EUR", country: "PT" };
+    localStorage.setItem("garageflow_language", "pt");
+    vehicle.plate = "41EA97";
+    workOrders.length = 0;
+    invoices.length = 0;
+    await renderPassport();
+    expect(await wait(() => text().includes("Sem intervenções registadas."))).toBe(true);
+    const t = text();
+    expect(t).toContain("Sem fotografias registadas.");
+    expect(t).not.toContain("FAT-");
+    expect(t).toContain("Não registado");
+  });
+
+  it("PT: veículo com VIN mostra o VIN real", async () => {
+    shopMeta = { currency: "EUR", country: "PT" };
+    localStorage.setItem("garageflow_language", "pt");
+    (vehicle as any).vin = "WBAVA31050VS12345";
+    await renderPassport();
+    expect(await wait(() => text().includes("WBAVA31050VS12345"))).toBe(true);
+  });
 });

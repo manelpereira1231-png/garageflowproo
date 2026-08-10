@@ -81,6 +81,15 @@ export function autoFormatPlate(raw: string, region: PlateRegion): string {
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}` + cleaned.slice(7);
   }
   if (region === "ES") {
+    // Formato histórico (pré-2000): 1 ou 2 letras de província + 4 dígitos +
+    // 1-2 letras — ex.: "M 1234 AB", "BI 1234 CD". Detetado pela letra inicial.
+    if (/^[A-Z]/.test(cleaned)) {
+      const m = cleaned.match(/^([A-Z]{1,2})(\d{0,4})([A-Z]{0,2})/);
+      if (m) {
+        return [m[1], m[2], m[3]].filter(Boolean).join(" ") + cleaned.slice(m[0].length);
+      }
+      return cleaned;
+    }
     if (cleaned.length <= 4) return cleaned;
     return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)}` + cleaned.slice(7);
   }
@@ -94,7 +103,8 @@ export function isValidPlate(value: string, region: PlateRegion): boolean {
   switch (region) {
     case "PT": return PT_PATTERNS.some((p) => p.test(v));
     case "BR": return BR_PATTERNS.some((p) => p.test(v));
-    case "ES": return /^\d{4}[A-Z]{3}$/.test(v);
+    // Atual (1234 ABC) ou histórica (M 1234 AB / BI 1234 CD).
+    case "ES": return /^\d{4}[A-Z]{3}$/.test(v) || /^[A-Z]{1,2}\d{4}[A-Z]{1,2}$/.test(v);
     case "FR": return /^[A-Z]{2}\d{3}[A-Z]{2}$/.test(v);
     case "DE": return /^[A-Z]{2,5}\d{1,4}$/.test(v);
     case "UK": return /^[A-Z]{2}\d{2}[A-Z]{3}$/.test(v);
@@ -109,7 +119,7 @@ export function plateExampleFor(region: PlateRegion): string {
   switch (region) {
     case "PT": return "AA-00-AA";
     case "BR": return "ABC-1234 ou ABC1D23";
-    case "ES": return "1234 ABC";
+    case "ES": return "1234 ABC (ou M 1234 AB)";
     case "FR": return "AA-123-BB";
     case "DE": return "M-AB-1234";
     case "UK": return "AB12 CDE";

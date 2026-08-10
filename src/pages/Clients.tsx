@@ -21,6 +21,8 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import { useShopCountry } from "@/hooks/useShopCountry";
 import { getCountryFiscalConfig, getTaxIdLabel } from "@/lib/countryFields";
+import { isValidTaxId, taxIdHint } from "@/lib/taxIdValidation";
+
 
 const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!client.phone) {
@@ -80,12 +82,9 @@ export default function Clients() {
   const { code: shopCountry } = useShopCountry();
   const taxIdField = getCountryFiscalConfig(shopCountry).fields.find((f) => f.key === "taxId");
   const taxIdLabel = getTaxIdLabel(shopCountry);
-  const validateTaxId = (value: string) => {
-    const v = (value || "").trim();
-    if (!v) return true; // opcional
-    if (!taxIdField?.pattern) return true;
-    return new RegExp(taxIdField.pattern).test(v);
-  };
+  const validateTaxId = (value: string) => isValidTaxId(value, shopCountry, taxIdField?.pattern);
+  const taxIdHelp = taxIdHint(shopCountry) ?? taxIdField?.placeholder;
+
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
   const cacheKey = `clients-all:${activeShopIdInit}`;
   const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);
@@ -175,7 +174,18 @@ export default function Clients() {
       : await supabase.from("clients").insert(payload).select("id").single();
     const { error } = result;
 
-    if (error) toastError(error, editingId ? "Não foi possível atualizar o cliente" : "Não foi possível criar o cliente");
+    if (error) {
+      // Proteção de duplicados na base de dados (índices únicos por oficina).
+      if ((error as any).code === "23505") {
+        const msg = (error as any).message || "";
+        const campo = msg.includes("nif") ? taxIdLabel : msg.includes("email") ? "email" : msg.includes("phone") ? "telefone" : "identificador";
+        toast.error("Cliente já existe", { description: `Já existe um cliente nesta oficina com o mesmo ${campo}.` });
+        fetchClients();
+      } else {
+        toastError(error, editingId ? "Não foi possível atualizar o cliente" : "Não foi possível criar o cliente");
+      }
+    }
+
     else {
       if (!editingId && form.email && result.data?.id) {
         void sendLifecycleEmail({
@@ -198,9 +208,10 @@ export default function Clients() {
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); return; }
     if (!validateTaxId(form.nif)) {
-      toast.error(`${taxIdLabel} inválido`, { description: taxIdField?.placeholder ? `Formato esperado: ${taxIdField.placeholder}` : undefined });
+      toast.error(`${taxIdLabel} inválido`, { description: taxIdHelp ? `Formato esperado: ${taxIdHelp}` : undefined });
       return;
     }
+
 
     const dups = findDuplicates();
     if (dups.length > 0) {
@@ -289,8 +300,9 @@ export default function Clients() {
                     className={!validateTaxId(form.nif) ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                   {!validateTaxId(form.nif) && (
-                    <p className="text-xs text-destructive">{taxIdLabel} inválido{taxIdField?.placeholder ? ` — ex.: ${taxIdField.placeholder}` : ""}</p>
+                    <p className="text-xs text-destructive">{taxIdLabel} inválido{taxIdHelp ? ` — ${taxIdHelp}` : ""}</p>
                   )}
+
                 </div>
               </div>
               <div className="rounded-lg border border-border p-3 space-y-2">

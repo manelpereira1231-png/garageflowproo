@@ -1870,6 +1870,7 @@ export type Database = {
           fleet_name: string | null
           id: string
           is_fleet: boolean
+          legacy_dup_ok: boolean
           name: string
           nif: string | null
           notes: string | null
@@ -1886,6 +1887,7 @@ export type Database = {
           fleet_name?: string | null
           id?: string
           is_fleet?: boolean
+          legacy_dup_ok?: boolean
           name: string
           nif?: string | null
           notes?: string | null
@@ -1902,6 +1904,7 @@ export type Database = {
           fleet_name?: string | null
           id?: string
           is_fleet?: boolean
+          legacy_dup_ok?: boolean
           name?: string
           nif?: string | null
           notes?: string | null

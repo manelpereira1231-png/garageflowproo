@@ -437,16 +437,23 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   <p className="text-sm text-muted-foreground">{t("passport.noPhotos", "Sem fotografias registadas.")}</p>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {photos.slice(0, 20).map((p: any) => (
-                      <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer" title={t("passport.openPhoto", "Abrir fotografia")}>
-                        <img
-                          src={p.file_url}
-                          alt={p.context || p.file_name || t("passport.photos", "Fotografias")}
-                          loading="lazy"
-                          className="w-full aspect-square object-cover rounded-lg border border-border hover:opacity-90 transition-opacity"
-                        />
-                      </a>
-                    ))}
+                    {photos.slice(0, 20).map((p: any) => {
+                      const wo = workOrders.find((w: any) => w.id === p.work_order_id);
+                      const ctx = p.context ? t(`passport.photoContext.${p.context}`, p.context) : null;
+                      return (
+                        <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer" title={t("passport.openPhoto", "Abrir fotografia")} className="block">
+                          <img
+                            src={p.file_url}
+                            alt={ctx || p.file_name || t("passport.photos", "Fotografias")}
+                            loading="lazy"
+                            className="w-full aspect-square object-cover rounded-lg border border-border hover:opacity-90 transition-opacity"
+                          />
+                          <span className="block text-[9px] text-muted-foreground truncate mt-0.5">
+                            {[ctx, fmtDate(p.created_at), wo?.number].filter(Boolean).join(" · ")}
+                          </span>
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </div>

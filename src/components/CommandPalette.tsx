@@ -87,7 +87,7 @@ export default function CommandPalette() {
             .select("id, make, model, plate, clients(name)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
-            .or(`plate.ilike.${searchTerm},make.ilike.${searchTerm},model.ilike.${searchTerm}`)
+            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`].join(","))
             .limit(5) : empty,
           can("quotes.view") ? supabase
             .from("quotes")

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
 
 const wait = async (fn: () => boolean, ms = 2000) => {
   const start = Date.now();
@@ -62,15 +63,20 @@ vi.mock("@/lib/regionConfig", () => ({
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import VehiclePassport from "@/components/VehiclePassport";
 
-const renderPassport = () =>
-  render(<LanguageProvider><VehiclePassport vehicleId="v1" open onClose={() => {}} /></LanguageProvider>);
+const renderPassport = async () => {
+  const el = document.createElement("div");
+  document.body.appendChild(el);
+  await act(async () => {
+    createRoot(el).render(<LanguageProvider><VehiclePassport vehicleId="v1" open onClose={() => {}} /></LanguageProvider>);
+  });
+};
 
 describe("Passaporte do Veículo", () => {
   beforeEach(() => { localStorage.setItem("garageflow_language", "pt"); document.body.innerHTML = ""; });
 
   it("PT: matrícula, km, estados, orçamento, fatura e moeda", async () => {
     shopMeta = { currency: "EUR", country: "PT" };
-    renderPassport();
+    await renderPassport();
     expect(await wait(() => text().includes("41-EA-97"))).toBe(true);
     const t = text();
     expect(t).toContain("260.000 km");
@@ -89,7 +95,7 @@ describe("Passaporte do Veículo", () => {
   it("BR: moeda BRL, CPF/CNPJ e km", async () => {
     shopMeta = { currency: "BRL", country: "BR" };
     localStorage.setItem("garageflow_language", "pt-BR");
-    renderPassport();
+    await renderPassport();
     expect(await wait(() => text().includes("R$"))).toBe(true);
     const t = text();
     expect(t).toContain("CPF/CNPJ");
@@ -100,7 +106,7 @@ describe("Passaporte do Veículo", () => {
   it("ES: terminologia e identificador fiscal espanhol", async () => {
     shopMeta = { currency: "EUR", country: "ES" };
     localStorage.setItem("garageflow_language", "es");
-    renderPassport();
+    await renderPassport();
     expect(await wait(() => text().includes("Kilometraje"))).toBe(true);
     const t = text();
     expect(t).toContain("NIF/CIF");

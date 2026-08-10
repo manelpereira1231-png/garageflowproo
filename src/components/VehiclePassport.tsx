@@ -112,6 +112,19 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
           .limit(200);
         setAttachments(att || []);
 
+        // Mão de obra real registada — work_order_times (query única agrupada, sem N+1).
+        const { data: times } = await supabase
+          .from("work_order_times")
+          .select("work_order_id, duration_seconds")
+          .in("work_order_id", woIds)
+          .limit(500);
+        const tMap: Record<string, number> = {};
+        (times || []).forEach((tr: any) => {
+          const s = Number(tr.duration_seconds || 0);
+          if (s > 0) tMap[tr.work_order_id] = (tMap[tr.work_order_id] || 0) + s;
+        });
+        setTimesByWo(tMap);
+
         // Orçamentos relacionados — apenas relações reais (work_orders.quote_id).
         const quoteIds = Array.from(new Set((woRes.data || []).map((w: any) => w.quote_id).filter(Boolean)));
         if (quoteIds.length > 0) {
@@ -128,6 +141,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       } else {
         setAttachments([]);
         setQuotesByWo({});
+        setTimesByWo({});
       }
 
       // Faturas — relação existente invoices.vehicle_id OU invoices.work_order_id.

@@ -8,7 +8,7 @@ import { CheckCircle, XCircle, Clock, Wrench, Loader2, AlertTriangle, Car, User,
 import { sendEmail } from "@/lib/emailService";
 import { autoCreateWorkOrderFromQuote } from "@/lib/autoCreateWorkOrderFromQuote";
 import SignaturePad from "@/components/SignaturePad";
-import { getCurrencySymbol, getLocaleForCurrency, getTaxLabelForCurrency, getLocaleForCountry, getTaxLabelForCountry } from "@/lib/regionLabels";
+import { getLocaleForCountry, getTaxLabelForCountry } from "@/lib/regionLabels";
 import { formatMoney } from "@/lib/money";
 import { totalEstMinutes, formatDuration } from "@/lib/duration";
 
@@ -455,7 +455,6 @@ export default function QuoteApproval() {
     const fmtTime = decidedDate.toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : shopLocale, { hour: '2-digit', minute: '2-digit' });
     const veh = quote?.vehicles as any;
     const cli = quote?.clients as any;
-    const cur = getCurrencySymbol(shop?.currency);
 
 
     const labels = {
@@ -537,7 +536,6 @@ export default function QuoteApproval() {
   }
 
   const lines = (Array.isArray(quote.lines) ? quote.lines : []) as any[];
-  const cur = getCurrencySymbol(shop?.currency);
   const shopLocale = getLocaleForCountry(shop?.country_code, shop?.currency);
   const vatLabel = getTaxLabelForCountry(shop?.country_code, shop?.currency);
   // Tempo estimado real: tempo do catálogo (est_minutes por linha de serviço)

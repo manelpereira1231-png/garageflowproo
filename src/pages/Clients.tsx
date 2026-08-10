@@ -80,12 +80,9 @@ export default function Clients() {
   const { code: shopCountry } = useShopCountry();
   const taxIdField = getCountryFiscalConfig(shopCountry).fields.find((f) => f.key === "taxId");
   const taxIdLabel = getTaxIdLabel(shopCountry);
-  const validateTaxId = (value: string) => {
-    const v = (value || "").trim();
-    if (!v) return true; // opcional
-    if (!taxIdField?.pattern) return true;
-    return new RegExp(taxIdField.pattern).test(v);
-  };
+  const validateTaxId = (value: string) => isValidTaxId(value, shopCountry, taxIdField?.pattern);
+  const taxIdHelp = taxIdHint(shopCountry) ?? taxIdField?.placeholder;
+
   const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
   const cacheKey = `clients-all:${activeShopIdInit}`;
   const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);

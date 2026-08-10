@@ -320,7 +320,7 @@ const EXTRA_MODELS: Record<string, string[]> = {
   "Mazda": ["CX-7", "CX-9", "BT-50", "Mazda5", "RX-8"],
   "Mitsubishi": ["Lancer", "Colt", "Montero", "Triton", "Eclipse", "Grandis"],
   "Suzuki": ["Alto", "Baleno", "Celerio", "SX4", "Grand Vitara"],
-  "Škoda": { models: [] } as never as string[],
+  "Škoda": ["Roomster", "Yeti", "Rapid", "Felicia", "Enyaq Coupé", "Elroq"],
   "Dacia": ["Lodgy", "Dokker", "Sandero Stepway", "Duster Pick-up", "Bigster"],
   "Jeep": ["Commander", "Patriot", "Wagoneer"],
   "Land Rover": ["Freelander", "Range Rover Sport SVR", "Defender 110"],

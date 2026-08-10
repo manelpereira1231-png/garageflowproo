@@ -1,5 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
+
+const wait = async (fn: () => boolean, ms = 2000) => {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    if (fn()) return true;
+    await new Promise(r => setTimeout(r, 20));
+  }
+  return false;
+};
+const text = () => document.body.textContent || "";
 import React from "react";
 
 // ─── Dados reais simulados (estrutura idêntica à BD) ───
@@ -56,42 +66,46 @@ const renderPassport = () =>
   render(<LanguageProvider><VehiclePassport vehicleId="v1" open onClose={() => {}} /></LanguageProvider>);
 
 describe("Passaporte do Veículo", () => {
-  beforeEach(() => { localStorage.setItem("garageflow_language", "pt"); });
+  beforeEach(() => { localStorage.setItem("garageflow_language", "pt"); document.body.innerHTML = ""; });
 
-  it("PT: matrícula, km, estados e moeda", async () => {
+  it("PT: matrícula, km, estados, orçamento, fatura e moeda", async () => {
     shopMeta = { currency: "EUR", country: "PT" };
     renderPassport();
-    await waitFor(() => expect(screen.getByText("41-EA-97")).toBeTruthy());
-    expect(screen.getAllByText("260.000 km").length).toBeGreaterThan(0);
-    expect(screen.getByText("Não registado")).toBeTruthy(); // VIN ausente
-    expect(screen.getByText("1 intervenção")).toBeTruthy();
-    expect(screen.getByText("Concluído")).toBeTruthy();
-    expect(screen.getByText("Emitida")).toBeTruthy();
-    expect(screen.getByText("FAT-2026-0024")).toBeTruthy();
-    expect(screen.getByText("ORC-0031")).toBeTruthy();
-    expect(screen.getByText("Sem fotografias registadas.")).toBeTruthy();
-    expect(document.body.textContent).toContain("86,10 €");
-    expect(document.body.textContent).not.toMatch(/\bissued\b|\bcompleted\b/);
-    expect(document.body.textContent).toContain("NIF: 123456789");
+    expect(await wait(() => text().includes("41-EA-97"))).toBe(true);
+    const t = text();
+    expect(t).toContain("260.000 km");
+    expect(t).toContain("Não registado");      // VIN ausente
+    expect(t).toContain("1 intervenção");
+    expect(t).toContain("Concluído");           // work_orders.status = completed
+    expect(t).toContain("Emitida");             // invoices.status = issued
+    expect(t).toContain("FAT-2026-0024");
+    expect(t).toContain("ORC-0031");            // orçamento relacionado
+    expect(t).toContain("Sem fotografias registadas.");
+    expect(t).toContain("86,10 €");
+    expect(t).toContain("NIF: 123456789");
+    expect(t).not.toMatch(/\bissued\b|\bcompleted\b|\bowner\b|\bmileage\b/i);
   });
 
-  it("BR: placa, moeda BRL e CPF/CNPJ", async () => {
+  it("BR: moeda BRL, CPF/CNPJ e km", async () => {
     shopMeta = { currency: "BRL", country: "BR" };
     localStorage.setItem("garageflow_language", "pt-BR");
     renderPassport();
-    await waitFor(() => expect(screen.getByText("ABC-1234") || true).toBeTruthy(), { timeout: 100 }).catch(() => {});
-    await waitFor(() => expect(document.body.textContent).toContain("R$"));
-    expect(document.body.textContent).toContain("CPF/CNPJ");
-    expect(document.body.textContent).toContain("260.000 km");
+    expect(await wait(() => text().includes("R$"))).toBe(true);
+    const t = text();
+    expect(t).toContain("CPF/CNPJ");
+    expect(t).toContain("260.000 km");
+    expect(t).toContain("R$ 86,10");
   });
 
-  it("ES: matrícula espanhola e terminologia", async () => {
+  it("ES: terminologia e identificador fiscal espanhol", async () => {
     shopMeta = { currency: "EUR", country: "ES" };
     localStorage.setItem("garageflow_language", "es");
     renderPassport();
-    await waitFor(() => expect(document.body.textContent).toContain("Kilometraje"));
-    expect(document.body.textContent).toContain("NIF/CIF");
-    expect(document.body.textContent).toContain("Completado");
-    expect(document.body.textContent).toContain("Emitida");
+    expect(await wait(() => text().includes("Kilometraje"))).toBe(true);
+    const t = text();
+    expect(t).toContain("NIF/CIF");
+    expect(t).toContain("Completado");
+    expect(t).toContain("Emitida");
+    expect(t).toContain("86,10 €");
   });
 });

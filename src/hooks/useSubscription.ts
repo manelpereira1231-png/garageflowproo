@@ -372,8 +372,11 @@ export function useSubscription() {
   // - Only downgrade to free if status is explicitly canceled/past_due
   // - NEVER fallback to free silently for admin-managed plans
   const rawPlan: Plan = (subscription?.plan as Plan) || 'free';
-  const lockedStatus = subscription?.status === 'canceled'
-    || subscription?.status === 'cancelled'
+  // A cancelled subscription keeps full access until the paid period really ends.
+  const periodStillValid = !!subscription?.current_period_end
+    && new Date(subscription.current_period_end).getTime() > Date.now();
+  const lockedStatus = ((subscription?.status === 'canceled'
+      || subscription?.status === 'cancelled') && !periodStillValid)
     || subscription?.status === 'past_due'
     || subscription?.status === 'expired'
     || subscription?.status === 'trial_expired';

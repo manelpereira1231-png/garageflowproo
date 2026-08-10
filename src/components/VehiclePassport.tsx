@@ -158,8 +158,12 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
   const fmtKm = (km?: number | null) => {
     if (km === null || km === undefined || !isFinite(Number(km))) return null;
-    try { return `${new Intl.NumberFormat(numberLocale).format(Number(km))} km`; }
-    catch { return `${Number(km).toLocaleString()} km`; }
+    try {
+      // Alguns locales (pt-PT) usam espaço como separador de milhares; a
+      // convenção esperada nas oficinas PT/BR/ES é o ponto (260.000 km).
+      const n = new Intl.NumberFormat(numberLocale).format(Number(km)).replace(/[\s\u00A0\u202F]/g, ".");
+      return `${n} km`;
+    } catch { return `${Number(km).toLocaleString()} km`; }
   };
   const fmtMoney = (v: any, currency?: string | null) => formatMoney(Number(v || 0), currency || shopMeta?.currency || undefined, numberLocale);
   const fmtDate = (d?: string | null) => (d ? format(new Date(d), "dd/MM/yyyy", { locale }) : null);

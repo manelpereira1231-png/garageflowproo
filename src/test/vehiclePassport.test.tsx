@@ -10,7 +10,7 @@ const wait = async (fn: () => boolean, ms = 2000) => {
   }
   return false;
 };
-const text = () => document.body.textContent || "";
+const text = () => (document.body.textContent || "").replace(/[\u00A0\u202F]/g, " ");
 import React from "react";
 
 // ─── Dados reais simulados (estrutura idêntica à BD) ───
@@ -94,10 +94,12 @@ describe("Passaporte do Veículo", () => {
 
   it("BR: moeda BRL, CPF/CNPJ e km", async () => {
     shopMeta = { currency: "BRL", country: "BR" };
+    vehicle.plate = "ABC1234"; invoices[0].currency = "BRL";
     localStorage.setItem("garageflow_language", "pt-BR");
     await renderPassport();
     expect(await wait(() => text().includes("R$"))).toBe(true);
     const t = text();
+    expect(t).toContain("ABC-1234");
     expect(t).toContain("CPF/CNPJ");
     expect(t).toContain("260.000 km");
     expect(t).toContain("R$ 86,10");
@@ -105,10 +107,12 @@ describe("Passaporte do Veículo", () => {
 
   it("ES: terminologia e identificador fiscal espanhol", async () => {
     shopMeta = { currency: "EUR", country: "ES" };
+    vehicle.plate = "1234ABC"; invoices[0].currency = "EUR";
     localStorage.setItem("garageflow_language", "es");
     await renderPassport();
     expect(await wait(() => text().includes("Kilometraje"))).toBe(true);
     const t = text();
+    expect(t).toContain("1234 ABC");
     expect(t).toContain("NIF/CIF");
     expect(t).toContain("Completado");
     expect(t).toContain("Emitida");

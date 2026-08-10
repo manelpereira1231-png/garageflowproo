@@ -446,76 +446,117 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                 )}
               </div>
 
-              {/* ─── Histórico de intervenções ─── */}
-              <div>
-                <SectionTitle icon={Wrench}>{t("passport.history", "Histórico de intervenções")}</SectionTitle>
-                {workOrders.length === 0 ? (
+              {/* ─── Intervenções (agrupadas pelo estado real da OS) ─── */}
+              {workOrders.length === 0 ? (
+                <div>
+                  <SectionTitle icon={Wrench}>{t("passport.history", "Histórico de intervenções")}</SectionTitle>
                   <p className="text-sm text-muted-foreground">{t("passport.noInterventions", "Sem intervenções registadas.")}</p>
-                ) : (
-                  <div className="space-y-2">
-                    {workOrders.map((wo: any) => {
-                      const woPhotos = photosByWo[wo.id] || [];
-                      const woInvoices = invoicesByWo[wo.id] || [];
-                      const quote = quotesByWo[wo.id];
-                      const desc = wo.diagnosis || wo.client_description || null;
-                      return (
-                        <div key={wo.id} className="rounded-xl border border-border bg-card p-3 space-y-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="flex items-center gap-2 min-w-0">
-                              <span className="font-mono text-sm font-semibold">{wo.number}</span>
-                              <Badge variant="outline" className="text-[10px] shrink-0">{statusLabel(wo.status)}</Badge>
-                            </span>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {fmtDate(wo.completed_at || wo.created_at)}
-                              {wo.entry_mileage > 0 ? ` · ${fmtKm(wo.entry_mileage)}` : ""}
-                            </span>
-                          </div>
+                </div>
+              ) : (
+                <>
+                  {([
+                    { key: "history", icon: Wrench, title: t("passport.history", "Histórico de intervenções"), list: doneOrders },
+                    { key: "ongoing", icon: Wrench, title: t("passport.ongoing", "Em curso"), list: ongoingOrders },
+                    { key: "waiting", icon: FileText, title: t("passport.status.waiting_approval", "Aguarda aprovação"), list: waitingOrders },
+                    { key: "cancelled", icon: FileText, title: t("passport.cancelledOrders", "Cancelados"), list: cancelledOrders },
+                  ] as const).filter(g => g.list.length > 0).map(group => (
+                    <div key={group.key}>
+                      <SectionTitle icon={group.icon}>
+                        {group.title} · {countLabel(group.list.length)}
+                      </SectionTitle>
+                      <div className="space-y-2">
+                        {group.list.map((wo: any) => {
+                          const woPhotos = photosByWo[wo.id] || [];
+                          const woInvoices = invoicesByWo[wo.id] || [];
+                          const quote = quotesByWo[wo.id];
+                          const desc = wo.diagnosis || wo.client_description || null;
+                          const parts = partLines(wo);
+                          const labour = fmtDuration(timesByWo[wo.id]);
+                          return (
+                            <div key={wo.id} className="rounded-xl border border-border bg-card p-3 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="flex items-center gap-2 min-w-0">
+                                  <span className="font-mono text-sm font-semibold">{wo.number}</span>
+                                  <Badge variant="outline" className="text-[10px] shrink-0">{statusLabel(wo.status)}</Badge>
+                                </span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {fmtDate(wo.completed_at || wo.created_at)}
+                                  {" · "}
+                                  {fmtKm(wo.entry_mileage > 0 ? wo.entry_mileage : null) || t("passport.mileageNotRegistered", "Quilometragem não registada")}
+                                </span>
+                              </div>
 
-                          {desc && <p className="text-xs text-muted-foreground whitespace-pre-line break-words">{desc}</p>}
+                              {desc && <p className="text-xs text-muted-foreground whitespace-pre-line break-words">{desc}</p>}
 
-                          {wo.notes && String(wo.notes).trim() && (
-                            <div className="border-l-2 border-primary/40 pl-2">
-                              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t("passport.mechanicNote", "Nota do mecânico")}</p>
-                              <p className="text-xs whitespace-pre-line break-words">{String(wo.notes).trim()}</p>
-                            </div>
-                          )}
+                              {wo.notes && String(wo.notes).trim() && (
+                                <div className="border-l-2 border-primary/40 pl-2">
+                                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t("passport.mechanicNote", "Nota do mecânico")}</p>
+                                  <p className="text-xs whitespace-pre-line break-words">{String(wo.notes).trim()}</p>
+                                </div>
+                              )}
 
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                            {wo.technician && (
-                              <span><span className="text-muted-foreground">{t("passport.technician", "Técnico")}: </span>{wo.technician}</span>
-                            )}
-                            {quote && (
-                              <span><span className="text-muted-foreground">{t("passport.quote", "Orçamento")}: </span><span className="font-mono">{quote.number}</span></span>
-                            )}
-                            {woInvoices.map((inv: any) => (
-                              <a key={inv.id} href={`/invoices/${inv.id}`} className="text-primary hover:underline">
-                                <span className="text-muted-foreground">{t("passport.invoice", "Fatura")}: </span>
-                                <span className="font-mono">{inv.number || "—"}</span>
-                              </a>
-                            ))}
-                            {Number(wo.total) > 0 && (
-                              <span className="font-semibold tabular-nums">{t("passport.total", "Total")}: {fmtMoney(wo.total)}</span>
-                            )}
-                          </div>
+                              {parts.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("passport.usedParts", "Peças utilizadas")}</p>
+                                  <ul className="text-xs space-y-0.5">
+                                    {parts.map((l: any, i: number) => (
+                                      <li key={l.id || i} className="flex flex-wrap justify-between gap-2">
+                                        <span className="break-words">• {String(l.name).trim()} ×{Number(l.quantity || 0)}</span>
+                                        {Number(l.unit_price) > 0 && (
+                                          <span className="tabular-nums text-muted-foreground">
+                                            {fmtMoney(Number(l.quantity || 0) * Number(l.unit_price || 0))}
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
 
-                          {woPhotos.length > 0 && (
-                            <div>
-                              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t("passport.interventionPhotos", "Fotografias da intervenção")}</p>
-                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                                {woPhotos.map((p: any) => (
-                                  <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer" title={t("passport.openPhoto", "Abrir fotografia")}>
-                                    <img src={p.file_url} alt={p.context || p.file_name || wo.number} loading="lazy" className="w-full aspect-square object-cover rounded-md border border-border" />
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                                {wo.technician && (
+                                  <span><span className="text-muted-foreground">{t("passport.technician", "Técnico")}: </span>{wo.technician}</span>
+                                )}
+                                {labour && (
+                                  <span><span className="text-muted-foreground">{t("passport.labour", "Mão de obra")}: </span>{labour}</span>
+                                )}
+                                {quote && (
+                                  <span><span className="text-muted-foreground">{t("passport.quote", "Orçamento")}: </span><span className="font-mono">{quote.number}</span></span>
+                                )}
+                                {woInvoices.map((inv: any) => (
+                                  <a key={inv.id} href={`/invoices/${inv.id}`} className="text-primary hover:underline">
+                                    <span className="text-muted-foreground">{t("passport.invoice", "Fatura")}: </span>
+                                    <span className="font-mono">{inv.number || "—"}</span>
                                   </a>
                                 ))}
+                                {Number(wo.total) > 0 && (
+                                  <span className="font-semibold tabular-nums">{t("passport.total", "Total")}: {fmtMoney(wo.total)}</span>
+                                )}
+                                <a href={`/services?id=${wo.id}`} className="text-primary hover:underline">
+                                  {t("passport.openOrder", "Abrir OS")}
+                                </a>
                               </div>
+
+                              {woPhotos.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t("passport.interventionPhotos", "Fotografias da intervenção")}</p>
+                                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+                                    {woPhotos.map((p: any) => (
+                                      <a key={p.id} href={p.file_url} target="_blank" rel="noopener noreferrer" title={t("passport.openPhoto", "Abrir fotografia")}>
+                                        <img src={p.file_url} alt={p.context || p.file_name || wo.number} loading="lazy" className="w-full aspect-square object-cover rounded-md border border-border" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
 
               {/* ─── Outros eventos do histórico global (inspeções, etc.) ─── */}
               {otherEvents.length > 0 && (

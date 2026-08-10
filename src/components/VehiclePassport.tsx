@@ -446,7 +446,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
               {/* ─── Outros eventos do histórico global (inspeções, etc.) ─── */}
               {otherEvents.length > 0 && (
                 <div>
-                  <SectionTitle icon={ClipboardCheck}>{t("passport.mileageHistory", "Evolução da quilometragem") && t("passport.history", "Histórico de intervenções")}</SectionTitle>
+                  <SectionTitle icon={ClipboardCheck}>{t("passport.otherEvents", "Outros registos")}</SectionTitle>
                   <div className="space-y-2">
                     {otherEvents.map(event => {
                       const Icon = eventIcons[event.event_type] || Wrench;

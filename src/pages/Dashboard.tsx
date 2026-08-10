@@ -70,7 +70,7 @@ export default function Dashboard() {
 function OwnerDashboard() {
   const { t, language } = useLanguage();
   const { isReady, user } = useAuthReady();
-  const { isTrialing, trialDaysLeft, isEntryPlan } = useSubscription();
+  const { isTrialing, trialDaysLeft, isEntryPlan, mustSubscribe, subscription } = useSubscription();
   const { isGuidedMode } = useOnboardingStatus();
   const activeShopId = useActiveShopId();
   const { shops: ownedShops } = useOwnedShops();

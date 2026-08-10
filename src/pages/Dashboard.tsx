@@ -173,7 +173,7 @@ function OwnerDashboard() {
           return;
         }
         setCurrency(shop.currency || getCountryConfig().currency || "EUR");
-        setShopName(isGroupMode ? (t('dashboard.groupTitle') !== 'dashboard.groupTitle' ? t('dashboard.groupTitle') : 'Grupo — Todas as oficinas') : (shop.name || ''));
+        setShopName(isGroupMode ? '' : (shop.name || ''));
         setShopLogoUrl(isGroupMode ? null : (shop.logo_url || null));
 
         // Grupo Mode → agregar todas as oficinas do dono (RLS já garante que

@@ -71,6 +71,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [reminders, setReminders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [warranties, setWarranties] = useState<any[]>([]);
+  const [timesByWo, setTimesByWo] = useState<Record<string, number>>({});
   const [kmFraudWarning, setKmFraudWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

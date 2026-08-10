@@ -246,15 +246,16 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   // Eventos do histórico global que NÃO são ordens de serviço (evita duplicação).
   const otherEvents = history.filter(h => h.event_type !== "service");
 
-  // Peças utilizadas — agregadas a partir das linhas existentes das OS (work_orders.lines).
+  /** Peças reais de uma OS — apenas linhas com type === 'part'. */
+  const partLines = (wo: any) =>
+    (Array.isArray(wo?.lines) ? wo.lines : []).filter((l: any) => l?.type === "part" && String(l?.name || "").trim());
+
+  // Peças utilizadas — agregadas a partir das linhas reais das OS (type = 'part').
   const usedParts = (() => {
     const map = new Map<string, { name: string; qty: number; total: number }>();
     workOrders.forEach((wo: any) => {
-      const lines = Array.isArray(wo.lines) ? wo.lines : [];
-      lines.forEach((l: any) => {
-        if (l?.type && l.type !== "part") return;
-        const name = (l?.name || "").trim();
-        if (!name) return;
+      partLines(wo).forEach((l: any) => {
+        const name = String(l.name).trim();
         const qty = Number(l.quantity || 0);
         const total = qty * Number(l.unit_price || 0);
         const prev = map.get(name) || { name, qty: 0, total: 0 };
@@ -269,9 +270,33 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .map(wo => ({ date: wo.created_at, km: wo.entry_mileage }));
 
-  const interventionsLabel = workOrders.length === 1
-    ? t("passport.interventions_one", "1 intervenção")
-    : t("passport.interventions_other", "{n} intervenções").replace("{n}", String(workOrders.length));
+  // Separação por estado real — nunca contar orçamento/pendente como intervenção concluída.
+  const DONE = new Set(["completed", "delivered"]);
+  const WAITING = new Set(["waiting_approval"]);
+  const CANCELLED = new Set(["cancelled", "canceled"]);
+  const doneOrders = workOrders.filter((w: any) => DONE.has(w.status));
+  const waitingOrders = workOrders.filter((w: any) => WAITING.has(w.status));
+  const cancelledOrders = workOrders.filter((w: any) => CANCELLED.has(w.status));
+  const ongoingOrders = workOrders.filter(
+    (w: any) => !DONE.has(w.status) && !WAITING.has(w.status) && !CANCELLED.has(w.status)
+  );
+
+  const countLabel = (n: number) =>
+    n === 1
+      ? t("passport.interventions_one", "1 intervenção")
+      : t("passport.interventions_other", "{n} intervenções").replace("{n}", String(n));
+  const interventionsLabel = countLabel(doneOrders.length);
+
+  // Manutenções programadas duplicadas na origem — sinalizar, nunca esconder/apagar.
+  const duplicateReminders = (() => {
+    const seen = new Map<string, number>();
+    reminders.forEach((r: any) => {
+      const k = `${r.service_type}|${r.next_service_date}|${r.next_service_km ?? ""}`;
+      seen.set(k, (seen.get(k) || 0) + 1);
+    });
+    return Array.from(seen.values()).some(n => n > 1);
+  })();
+
 
   const SectionTitle = ({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) => (
     <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">

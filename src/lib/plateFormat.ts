@@ -58,7 +58,7 @@ export function canonicalPlate(raw: string): string {
  * Auto-format while typing.
  * PT: inserts hyphens every 2 chars → AA-00-AA / 00-AA-00 / 00-00-AA
  * BR: ABC-1234 (old) or ABC1D23 (Mercosul, no separator).
- * ES: 1234 ABC (modern format, single space).
+ * ES: 0000-AAA (modern format, hyphen).
  * Others: uppercase + strip invalid chars.
  *
  * Never truncates: characters beyond the canonical length are kept at the end
@@ -91,7 +91,7 @@ export function autoFormatPlate(raw: string, region: PlateRegion): string {
       return cleaned;
     }
     if (cleaned.length <= 4) return cleaned;
-    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)}` + cleaned.slice(7);
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 7)}` + cleaned.slice(7);
   }
   return cleaned.slice(0, 10);
 }
@@ -119,7 +119,7 @@ export function plateExampleFor(region: PlateRegion): string {
   switch (region) {
     case "PT": return "AA-00-AA";
     case "BR": return "ABC-1234 ou ABC1D23";
-    case "ES": return "1234 ABC (ou M 1234 AB)";
+    case "ES": return "0000-AAA (ou M 1234 AB)";
     case "FR": return "AA-123-BB";
     case "DE": return "M-AB-1234";
     case "UK": return "AB12 CDE";

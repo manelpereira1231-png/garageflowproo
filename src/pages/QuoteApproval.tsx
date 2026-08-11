@@ -346,7 +346,7 @@ export default function QuoteApproval() {
           if (!subjectTpl) subjectTpl = def.subject;
           if (!bodyTpl) bodyTpl = def.body;
 
-          const nowStr = new Date().toLocaleString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : getLocaleForCurrency(shop?.currency), { dateStyle: 'short', timeStyle: 'short' });
+          const nowStr = new Date().toLocaleString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : getLocaleForCountry(shop?.country_code, shop?.currency), { dateStyle: 'short', timeStyle: 'short' });
           const vars: Record<string, string> = {
             cliente_nome: clientName,
             nome_oficina: shop.name || '',

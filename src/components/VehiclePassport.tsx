@@ -287,15 +287,24 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       : t("passport.interventions_other", "{n} intervenções").replace("{n}", String(n));
   const interventionsLabel = countLabel(doneOrders.length);
 
-  // Manutenções programadas duplicadas na origem — sinalizar, nunca esconder/apagar.
-  const duplicateReminders = (() => {
-    const seen = new Map<string, number>();
-    reminders.forEach((r: any) => {
-      const k = `${r.service_type}|${r.next_service_date}|${r.next_service_km ?? ""}`;
-      seen.set(k, (seen.get(k) || 0) + 1);
-    });
-    return Array.from(seen.values()).some(n => n > 1);
+  // Manutenções programadas: mostrar cada tipo de manutenção apenas uma vez
+  // (a mais próxima). Nenhum registo é alterado ou apagado na base de dados —
+  // apenas a apresentação é desduplicada. Se existirem registos extra, é
+  // sinalizado ao utilizador.
+  const uniqueReminders = (() => {
+    const byType = new Map<string, any>();
+    [...reminders]
+      .sort((a: any, b: any) =>
+        String(a.next_service_date || "").localeCompare(String(b.next_service_date || ""))
+      )
+      .forEach((r: any) => {
+        const k = String(r.service_type || "").toLowerCase().trim();
+        if (!byType.has(k)) byType.set(k, r);
+      });
+    return Array.from(byType.values());
   })();
+  const duplicateReminders = uniqueReminders.length < reminders.length;
+
 
 
   const SectionTitle = ({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) => (

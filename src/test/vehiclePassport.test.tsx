@@ -112,7 +112,7 @@ describe("Passaporte do Veículo", () => {
     await renderPassport();
     expect(await wait(() => text().includes("Kilometraje"))).toBe(true);
     const t = text();
-    expect(t).toContain("1234 ABC");
+    expect(t).toContain("1234-ABC");
     expect(t).toContain("NIF/CIF");
     expect(t).toContain("Completado");
     expect(t).toContain("Emitida");

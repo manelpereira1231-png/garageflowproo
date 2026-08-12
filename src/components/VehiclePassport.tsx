@@ -335,7 +335,9 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
               <div className="bg-muted rounded-xl p-4 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="text-lg font-bold break-words">{vehicle.make} {vehicle.model}</h3>
+                    <h3 className="text-lg font-bold break-words">
+                      {vehicle.make} {[vehicle.model, vehicle.version].filter(Boolean).join(" ")}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       {[vehicle.year, vehicle.fuel].filter(Boolean).join(" · ")}
                     </p>

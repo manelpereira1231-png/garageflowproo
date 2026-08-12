@@ -18,8 +18,7 @@ import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 import { consumeWorkOrderParts } from "@/lib/consumeWorkOrderParts";
-import { openWhatsApp } from "@/lib/whatsapp";
-import { sendEmail, clientNotificationEmailHtml, isValidEmail } from "@/lib/emailService";
+import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
@@ -59,7 +58,8 @@ export default function Workshop() {
 
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [commsOpen, setCommsOpen] = useState(false);
+  const [shopName, setShopName] = useState<string>("");
   
 
   const isPt = language === 'pt';
@@ -103,6 +103,15 @@ export default function Workshop() {
   }, [activeShopId, filter]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  // Nome da oficina ativa — usado na assinatura das comunicações ao cliente.
+  useEffect(() => {
+    if (!activeShopId) { setShopName(""); return; }
+    let cancelled = false;
+    supabase.from("shops").select("name").eq("id", activeShopId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setShopName((data as any)?.name || ""); });
+    return () => { cancelled = true; };
+  }, [activeShopId]);
 
   // Realtime: work order status changes / new orders reflect without refresh.
   useRealtimeTable("work_orders", { shopId: activeShopId, onChange: fetchOrders });
@@ -438,58 +447,19 @@ export default function Workshop() {
                 </div>
               </div>
 
-              {/* Comunicação com o cliente — usa os sistemas já existentes
-                  (WhatsApp partilhado + serviço transacional de email). */}
+              {/* Comunicação com o cliente — camada partilhada (lib/clientComms.ts):
+                  WhatsApp existente + serviço de email existente + email_logs.
+                  Nunca altera o estado da OS. */}
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   className="min-h-[40px]"
-                  disabled={!(selected.clients as any)?.phone}
-                  onClick={() => openWhatsApp({
-                    phone: (selected.clients as any)?.phone,
-                    clientName: (selected.clients as any)?.name,
-                    type: 'service',
-                    number: selected.number,
-                    plate: (selected.vehicles as any)?.plate,
-                    model: `${(selected.vehicles as any)?.make || ''} ${(selected.vehicles as any)?.model || ''}`.trim(),
-                    serviceStage: selected.status,
-                    total: Number(selected.total || 0),
-                  })}
+                  disabled={!(selected.clients as any)?.phone && !(selected.clients as any)?.email}
+                  onClick={() => setCommsOpen(true)}
                 >
                   <MessageSquare className="w-4 h-4 mr-1.5" />
-                  WhatsApp
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="min-h-[40px]"
-                  disabled={sendingEmail || !isValidEmail((selected.clients as any)?.email)}
-                  onClick={async () => {
-                    const to = (selected.clients as any)?.email;
-                    if (!isValidEmail(to)) return;
-                    setSendingEmail(true);
-                    try {
-                      const stage = statusConfig[selected.status]?.label || selected.status;
-                      await sendEmail({
-                        to,
-                        subject: `Ordem de Serviço ${selected.number} — ${stage}`,
-                        html: clientNotificationEmailHtml(
-                          `Ordem de Serviço ${selected.number}`,
-                          `Estado atual: <strong>${stage}</strong>.<br/>Viatura: ${(selected.vehicles as any)?.make || ''} ${(selected.vehicles as any)?.model || ''} ${(selected.vehicles as any)?.plate ? `(${(selected.vehicles as any).plate})` : ''}`,
-                        ),
-                        shop_id: activeShopId || undefined,
-                      });
-                      toast.success("Email enviado ao cliente.");
-                    } catch (e: any) {
-                      toast.error(e?.message || "Não foi possível enviar o email.");
-                    } finally {
-                      setSendingEmail(false);
-                    }
-                  }}
-                >
-                  <Mail className="w-4 h-4 mr-1.5" />
-                  Email
+                  Comunicar com o cliente
                 </Button>
               </div>
 
@@ -649,6 +619,29 @@ export default function Workshop() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Comunicação mecânico ↔ cliente (camada partilhada) */}
+      {selected && activeShopId && (
+        <ClientCommsDialog
+          open={commsOpen}
+          onOpenChange={setCommsOpen}
+          ctx={{
+            workOrderId: selected.id,
+            number: selected.number,
+            status: selected.status,
+            shopId: activeShopId,
+            shopName,
+            clientName: (selected.clients as any)?.name,
+            clientPhone: (selected.clients as any)?.phone,
+            clientEmail: (selected.clients as any)?.email,
+            vehicleMake: (selected.vehicles as any)?.make,
+            vehicleModel: (selected.vehicles as any)?.model,
+            plate: (selected.vehicles as any)?.plate,
+            total: Number(selected.total || 0),
+            lang: language,
+          }}
+        />
+      )}
 
     </div>
   );

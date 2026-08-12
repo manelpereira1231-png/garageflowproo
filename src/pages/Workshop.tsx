@@ -11,6 +11,8 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { Mail, Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import TechnicianSelect from "@/components/TechnicianSelect";
+import { useShopTechnicians, technicianDisplay } from "@/hooks/useShopTechnicians";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
 import type { ServiceStatus } from "@/types/garage";
 import { sendPushNotification } from "@/lib/pushNotifications";
@@ -40,6 +42,7 @@ const getStatusConfig = (t: (key: string) => string) => ({
 export default function Workshop() {
   const { language, t } = useLanguage();
   const { activeShopId } = useShopContext();
+  const { byEmail: technicianByEmail } = useShopTechnicians(activeShopId);
   const statusConfig = getStatusConfig(t);
   const filterTabs = [
     { key: 'active', label: t('workshop.filterActive') },
@@ -361,7 +364,7 @@ export default function Workshop() {
 
               {/* Quick info */}
               <div className="flex gap-3 text-xs text-muted-foreground">
-                {wo.technician && <span className="flex items-center gap-1">🔧 {wo.technician}</span>}
+                {wo.technician && <span className="flex items-center gap-1">🔧 {technicianDisplay(wo.technician, technicianByEmail)}</span>}
                 {wo.entry_mileage > 0 && <span>{wo.entry_mileage.toLocaleString()} km</span>}
                 {wo.labor_hours > 0 && <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{wo.labor_hours}h</span>}
               </div>
@@ -445,7 +448,40 @@ export default function Workshop() {
                   {(selected.clients as any)?.name}
                   {(selected.clients as any)?.phone && <span>📞 {(selected.clients as any).phone}</span>}
                 </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Wrench className="w-4 h-4" />
+                  <span>Técnico:</span>
+                  <span className="font-medium text-foreground">
+                    {technicianDisplay(selected.technician, technicianByEmail) || "Por atribuir"}
+                  </span>
+                </div>
               </div>
+
+              {/* Atribuição do técnico — apenas técnicos registados na oficina */}
+              {selected.status !== 'delivered' && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Técnico responsável</Label>
+                  <TechnicianSelect
+                    shopId={activeShopId}
+                    value={selected.technician || ''}
+                    onChange={async (v) => {
+                      const prev = selected.technician || '';
+                      setSelected({ ...selected, technician: v || null });
+                      const { error } = await supabase
+                        .from('work_orders')
+                        .update({ technician: v || null })
+                        .eq('id', selected.id);
+                      if (error) {
+                        setSelected({ ...selected, technician: prev || null });
+                        toast.error('Não foi possível atribuir o técnico.');
+                        return;
+                      }
+                      toast.success(v ? 'Técnico atribuído.' : 'Técnico removido.');
+                      fetchOrders();
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Comunicação com o cliente — camada partilhada (lib/clientComms.ts):
                   WhatsApp existente + serviço de email existente + email_logs.
@@ -508,7 +544,7 @@ export default function Workshop() {
                   <LaborTimer
                     workOrderId={selected.id}
                     shopId={activeShopId}
-                    technicianName={selected.technician || ''}
+                    technicianName={technicianDisplay(selected.technician, technicianByEmail)}
                     estimatedHours={Number(selected.labor_hours || 0)}
                   />
                 </Suspense>
@@ -520,7 +556,7 @@ export default function Workshop() {
                   <MechanicPanel
                     workOrderId={selected.id}
                     shopId={activeShopId}
-                    technicianName={selected.technician || ''}
+                    technicianName={technicianDisplay(selected.technician, technicianByEmail)}
                     onChanged={fetchOrders}
                   />
                 </Suspense>

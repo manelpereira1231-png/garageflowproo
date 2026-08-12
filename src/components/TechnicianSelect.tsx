@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useShopTechnicians } from "@/hooks/useShopTechnicians";
+import { useShopTechnicians, technicianDisplay } from "@/hooks/useShopTechnicians";
 
 interface Props {
   shopId?: string | null;
@@ -26,7 +26,8 @@ export default function TechnicianSelect({
   placeholder = "Selecionar técnico",
   className,
 }: Props) {
-  const { technicians, loading } = useShopTechnicians(shopId);
+  const { technicians, byEmail, loading } = useShopTechnicians(shopId);
+  const current = technicianDisplay(value, byEmail);
 
   if (!loading && technicians.length === 0) {
     return (
@@ -52,7 +53,7 @@ export default function TechnicianSelect({
           <SelectItem key={n} value={n}>{n}</SelectItem>
         ))}
         {value && !technicians.includes(value) && (
-          <SelectItem value={value}>{value} (histórico)</SelectItem>
+          <SelectItem value={value}>{current} (histórico)</SelectItem>
         )}
       </SelectContent>
     </Select>

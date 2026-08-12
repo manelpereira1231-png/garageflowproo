@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
-import { Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";
+import { Mail, Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import WorkshopTimeline from "@/components/WorkshopTimeline";
@@ -18,6 +18,8 @@ import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 import { consumeWorkOrderParts } from "@/lib/consumeWorkOrderParts";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { sendEmail, clientNotificationEmailHtml, isValidEmail } from "@/lib/emailService";
 
 // Lazy-load heavy panels — only when the detail dialog is opened
 const AIDiagnosisPanel = lazy(() => import("@/components/AIDiagnosisPanel"));
@@ -57,6 +59,7 @@ export default function Workshop() {
 
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   
 
   const isPt = language === 'pt';
@@ -75,7 +78,7 @@ export default function Workshop() {
     let query = supabase
       .from("work_orders")
       // Drop heavy `lines` JSON from list — only fetched on demand for the dialog
-      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, clients(name, phone), vehicles(make, model, plate, year, fuel)")
+      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, clients(name, phone, email), vehicles(make, model, plate, year, fuel)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -433,6 +436,61 @@ export default function Workshop() {
                   {(selected.clients as any)?.name}
                   {(selected.clients as any)?.phone && <span>📞 {(selected.clients as any).phone}</span>}
                 </div>
+              </div>
+
+              {/* Comunicação com o cliente — usa os sistemas já existentes
+                  (WhatsApp partilhado + serviço transacional de email). */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-[40px]"
+                  disabled={!(selected.clients as any)?.phone}
+                  onClick={() => openWhatsApp({
+                    phone: (selected.clients as any)?.phone,
+                    clientName: (selected.clients as any)?.name,
+                    type: 'service',
+                    number: selected.number,
+                    plate: (selected.vehicles as any)?.plate,
+                    model: `${(selected.vehicles as any)?.make || ''} ${(selected.vehicles as any)?.model || ''}`.trim(),
+                    serviceStage: selected.status,
+                    total: Number(selected.total || 0),
+                  })}
+                >
+                  <MessageSquare className="w-4 h-4 mr-1.5" />
+                  WhatsApp
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-[40px]"
+                  disabled={sendingEmail || !isValidEmail((selected.clients as any)?.email)}
+                  onClick={async () => {
+                    const to = (selected.clients as any)?.email;
+                    if (!isValidEmail(to)) return;
+                    setSendingEmail(true);
+                    try {
+                      const stage = statusConfig[selected.status]?.label || selected.status;
+                      await sendEmail({
+                        to,
+                        subject: `Ordem de Serviço ${selected.number} — ${stage}`,
+                        html: clientNotificationEmailHtml(
+                          `Ordem de Serviço ${selected.number}`,
+                          `Estado atual: <strong>${stage}</strong>.<br/>Viatura: ${(selected.vehicles as any)?.make || ''} ${(selected.vehicles as any)?.model || ''} ${(selected.vehicles as any)?.plate ? `(${(selected.vehicles as any).plate})` : ''}`,
+                        ),
+                        shop_id: activeShopId || undefined,
+                      });
+                      toast.success("Email enviado ao cliente.");
+                    } catch (e: any) {
+                      toast.error(e?.message || "Não foi possível enviar o email.");
+                    } finally {
+                      setSendingEmail(false);
+                    }
+                  }}
+                >
+                  <Mail className="w-4 h-4 mr-1.5" />
+                  Email
+                </Button>
               </div>
 
               {/* Diagnosis input for 'open' status */}

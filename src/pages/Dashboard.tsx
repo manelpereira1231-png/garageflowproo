@@ -711,15 +711,15 @@ function OwnerDashboard() {
         const title = isTrialing
           ? trialDaysLeft > 0
             ? `🎁 Plano Pro grátis ativo — ${trialDaysLeft} ${trialDaysLeft === 1 ? "dia" : "dias"} restantes`
-            : "O teu trial Pro termina hoje"
+            : "O seu período de 30 dias grátis termina hoje"
           : hadTrial
-            ? "O teu trial Pro terminou — escolhe um plano para continuar"
-            : "O teu plano terminou — escolhe um plano para continuar";
+            ? "O seu período de 30 dias grátis terminou — escolha um plano para continuar"
+            : "O seu plano terminou — escolha um plano para continuar";
         const sub = isTrialing
           ? ending
-            ? "Ativa um plano agora para não perderes alertas, automações e relatórios."
-            : "Tens acesso total a alertas, equipa, relatórios, exportação e mais. Sem cartão de crédito."
-          : "Mantém tudo o que ganhaste. Cancela quando quiseres.";
+            ? "Ative um plano agora para não perder alertas, automações e relatórios."
+            : "Tem acesso total a alertas, equipa, relatórios, exportação e mais. Sem cartão de crédito."
+          : "Mantenha tudo o que já construiu. Cancele quando quiser.";
         return (
           <div className={`border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${tone}`}>
             <div className="flex items-center gap-3">

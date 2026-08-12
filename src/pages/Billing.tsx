@@ -402,7 +402,7 @@ export default function Billing() {
                 {isTrialing && !noActivePlan && (
                   <Badge variant="secondary" className="bg-warning/10 text-warning">
                     <Clock className="w-3 h-3 mr-1" />
-                    Trial — {trialDaysLeft} {t('billing.daysLeft')}
+                    {t('billing.freePeriod') || 'Período grátis'} — {trialDaysLeft} {t('billing.daysLeft')}
                   </Badge>
                 )}
                 {noActivePlan && (

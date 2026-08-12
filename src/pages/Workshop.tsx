@@ -58,7 +58,8 @@ export default function Workshop() {
 
   const [diagnosisText, setDiagnosisText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [commsOpen, setCommsOpen] = useState(false);
+  const [shopName, setShopName] = useState<string>("");
   
 
   const isPt = language === 'pt';
@@ -609,6 +610,29 @@ export default function Workshop() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Comunicação mecânico ↔ cliente (camada partilhada) */}
+      {selected && activeShopId && (
+        <ClientCommsDialog
+          open={commsOpen}
+          onOpenChange={setCommsOpen}
+          ctx={{
+            workOrderId: selected.id,
+            number: selected.number,
+            status: selected.status,
+            shopId: activeShopId,
+            shopName,
+            clientName: (selected.clients as any)?.name,
+            clientPhone: (selected.clients as any)?.phone,
+            clientEmail: (selected.clients as any)?.email,
+            vehicleMake: (selected.vehicles as any)?.make,
+            vehicleModel: (selected.vehicles as any)?.model,
+            plate: (selected.vehicles as any)?.plate,
+            total: Number(selected.total || 0),
+            lang: language,
+          }}
+        />
+      )}
 
     </div>
   );

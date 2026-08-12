@@ -1,6 +1,7 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import TechnicianSelect from "@/components/TechnicianSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +41,6 @@ export default function ServiceForm() {
   const [diagnosis, setDiagnosis] = useState("");
   const [laborHours, setLaborHours] = useState("0");
   const [technician, setTechnician] = useState("");
-  const [technicians, setTechnicians] = useState<string[]>([]);
 
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
@@ -68,22 +68,6 @@ export default function ServiceForm() {
       const { data: pts } = await supabase.from("parts").select("id, name, sale_price, internal_cost, vat_rate").eq("shop_id", activeShopId).eq("active", true).order("name");
       if (pts) setPartsList(pts);
 
-      // Técnicos = membros da equipa desta oficina (nome do perfil, email como fallback)
-      try {
-        const { data: members } = await supabase
-          .from("shop_users")
-          .select("id, user_id, role, shop_user_profiles(name, active)")
-          .eq("shop_id", activeShopId);
-        if (members?.length) {
-          const { data: emailData } = await supabase.rpc("get_shop_member_emails", { _shop_id: activeShopId });
-          const emailMap = new Map((emailData || []).map((e: any) => [e.user_id, e.email]));
-          const names = members
-            .filter((m: any) => (m.shop_user_profiles?.active ?? true))
-            .map((m: any) => (m.shop_user_profiles?.name || emailMap.get(m.user_id) || "").trim())
-            .filter(Boolean);
-          setTechnicians(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)));
-        }
-      } catch { /* lista de técnicos é opcional — nunca bloqueia o formulário */ }
 
 
       // Load existing service for editing

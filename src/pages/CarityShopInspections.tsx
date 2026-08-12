@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import TechnicianSelect from "@/components/TechnicianSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useShopMarketStatus } from "@/hooks/useShopMarketStatus";
@@ -726,12 +727,13 @@ export default function CarityShopInspections() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label>Nome completo do técnico *</Label>
-              <Input
+              <Label>Técnico responsável *</Label>
+              <TechnicianSelect
+                shopId={shopId}
                 value={technicianName}
-                onChange={e => setTechnicianName(e.target.value)}
-                placeholder="Ex: João Silva"
+                onChange={setTechnicianName}
                 disabled={reportLocked}
+                allowEmpty={false}
                 className={reportLocked ? "opacity-60" : ""}
               />
               {!technicianName.trim() && !reportLocked && (

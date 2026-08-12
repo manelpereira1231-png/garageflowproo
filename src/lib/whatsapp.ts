@@ -33,6 +33,8 @@ export interface WhatsAppMessageParams {
   invoiceStatus?: 'draft' | 'issued' | 'paid' | 'partial' | 'cancelled';
   /** Optional shop name appended to the signature. */
   shopName?: string;
+  /** Overrides the generated text (used by the workshop client-comms dialog). */
+  customMessage?: string;
 }
 
 function vehicleLabel(p: WhatsAppMessageParams): string {
@@ -90,6 +92,7 @@ function cleanPhone(phone: string, defaultCountry: 'PT' | 'BR' | 'ES' | 'other' 
 }
 
 function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }): string {
+  if (p.customMessage && p.customMessage.trim()) return p.customMessage.trim();
   const includeLink = opts?.includeLink !== false; // default true for email; WhatsApp forces false
   const greeting = `Olá${p.clientName ? ` ${p.clientName}` : ''},`;
   const vehicleRef = p.plate || p.model ? ` referente ao veículo ${[p.plate, p.model].filter(Boolean).join(' - ')}` : '';

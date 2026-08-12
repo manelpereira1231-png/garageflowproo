@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ListSkeleton from "@/components/ListSkeleton";
+import TechnicianSelect from "@/components/TechnicianSelect";
 import { pageCache } from "@/lib/pageCache";
 
 interface ChecklistItem {
@@ -800,7 +801,7 @@ export default function Inspections() {
                 </div>
                 <div>
                   <Label className="text-xs font-medium">{t('inspections.technician')}</Label>
-                  <Input value={technician} onChange={e => setTechnician(e.target.value)} className="mt-1" placeholder={t('inspections.technicianPlaceholder')} />
+                  <div className="mt-1"><TechnicianSelect shopId={activeShopId} value={technician} onChange={setTechnician} /></div>
                 </div>
                 <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">Modelo de checklist</Label>

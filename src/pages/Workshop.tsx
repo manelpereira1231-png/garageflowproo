@@ -104,6 +104,15 @@ export default function Workshop() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  // Nome da oficina ativa — usado na assinatura das comunicações ao cliente.
+  useEffect(() => {
+    if (!activeShopId) { setShopName(""); return; }
+    let cancelled = false;
+    supabase.from("shops").select("name").eq("id", activeShopId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setShopName((data as any)?.name || ""); });
+    return () => { cancelled = true; };
+  }, [activeShopId]);
+
   // Realtime: work order status changes / new orders reflect without refresh.
   useRealtimeTable("work_orders", { shopId: activeShopId, onChange: fetchOrders });
 

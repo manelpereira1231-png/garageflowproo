@@ -49,7 +49,9 @@ Deno.serve(async (req) => {
       .eq("public_token", token)
       .maybeSingle();
 
-    if (!inv || !inv.payment_link_sent_at) return json({ error: "Fatura não encontrada." }, 404);
+    // O token público é o segredo do link: basta a fatura existir. Não exigimos
+    // `payment_link_sent_at` (faturas emitidas antes do envio do link também pagam).
+    if (!inv) return json({ error: "Fatura não encontrada." }, 404);
 
     const { data: shop } = await admin
       .from("shops")

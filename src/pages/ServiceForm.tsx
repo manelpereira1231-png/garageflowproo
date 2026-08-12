@@ -257,21 +257,9 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5">
               <Label>{t('services.technician')}</Label>
-              {technicians.length > 0 ? (
-                <Select value={technician || "__none__"} onValueChange={v => setTechnician(v === "__none__" ? "" : v)}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar técnico" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">— Sem técnico atribuído —</SelectItem>
-                    {technicians.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                    {technician && !technicians.includes(technician) && (
-                      <SelectItem value={technician}>{technician}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input value={technician} onChange={e => setTechnician(e.target.value)} placeholder="Nome do técnico" />
-              )}
+              <TechnicianSelect shopId={activeShopId} value={technician} onChange={setTechnician} />
             </div>
+
 
             <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} max={MAX_LABOR_HOURS} value={laborHours} onChange={e => setLaborHours(e.target.value)} aria-invalid={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS} className={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""} />{(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS && <p className="text-[11px] text-destructive">Máximo {MAX_LABOR_HOURS}h.</p>}</div>
           </div>

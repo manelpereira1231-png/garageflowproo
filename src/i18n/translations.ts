@@ -530,6 +530,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'billing.manage': 'Gerir Subscrição',
     'billing.trial30': '30 dias grátis',
+    'billing.freePeriod': 'Período grátis',
     'billing.trial15': '15 dias grátis',
     'billing.paymentSuccess': 'Pagamento confirmado! O seu plano foi atualizado.',
     'billing.paymentCanceled': 'Pagamento cancelado.',
@@ -2640,6 +2641,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'billing.manage': 'Manage Subscription',
     'billing.trial30': '30 days free',
+    'billing.freePeriod': 'Free period',
     'billing.paymentSuccess': 'Payment confirmed! Your plan has been updated.',
     'billing.paymentCanceled': 'Payment canceled.',
     'billing.errorCheckout': 'Error creating checkout. Please try again.',
@@ -4594,6 +4596,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     'billing.manage': 'Gestionar Suscripción',
     'billing.trial30': '30 días gratis',
+    'billing.freePeriod': 'Período gratuito',
     'billing.paymentSuccess': '¡Pago confirmado! Tu plan ha sido actualizado.',
     'billing.paymentCanceled': 'Pago cancelado.',
     'billing.errorCheckout': 'Error al crear el checkout. Inténtalo de nuevo.',

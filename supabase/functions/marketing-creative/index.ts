@@ -2,6 +2,7 @@
 // Estratégia: insere registo "generating", devolve já ao cliente, e processa em background
 // via EdgeRuntime.waitUntil para evitar timeouts em qualidade alta.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sanitizeUntrusted } from "../_shared/untrustedText.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -179,8 +180,10 @@ Deno.serve(async (req) => {
         : "google/gemini-2.5-flash-image";
 
     const basePrompt = CREATIVE_TEMPLATES[creativeType] ?? CREATIVE_TEMPLATES.modern_shop;
-    const finalPrompt = customPrompt
-      ? `${customPrompt}\n\n${STYLE_BASE}`
+    // Prompt livre é limitado em tamanho e sanitizado antes de chegar ao modelo.
+    const safeCustom = customPrompt ? sanitizeUntrusted(customPrompt, 1200) : "";
+    const finalPrompt = safeCustom
+      ? `${safeCustom}\n\n${STYLE_BASE}`
       : basePrompt;
 
     const { data: created, error: insErr } = await supa.from("marketing_creatives").insert({

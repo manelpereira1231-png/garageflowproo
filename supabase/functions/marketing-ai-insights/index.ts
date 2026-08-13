@@ -1,6 +1,7 @@
 // Marketing AI Insights — analyzes real shop data and generates ready-to-send campaign suggestions.
 // Uses Lovable AI Gateway (Gemini Flash) for copy generation. All numbers come from real DB queries.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { wrapUntrusted, sanitizeUntrusted, UNTRUSTED_SYSTEM_RULE } from "../_shared/untrustedText.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,6 +189,7 @@ Devolve APENAS JSON válido com este schema exato:
           ],
           response_format: { type: "json_object" },
         }),
+        signal: AbortSignal.timeout(45_000),
       });
 
       if (aiRes.status === 429) return json({ error: "rate_limited", message: "IA temporariamente indisponível. Tenta novamente em breve." }, 429);

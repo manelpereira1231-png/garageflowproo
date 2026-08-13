@@ -162,7 +162,7 @@ export default function ServiceForm() {
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, notes: notes || null,
-      }).eq("id", editId);
+      }).eq("id", editId).eq("shop_id", shopId);
 
       if (error) toast.error(error.message);
       else { toast.success(t('services.updated')); navigate("/services"); }

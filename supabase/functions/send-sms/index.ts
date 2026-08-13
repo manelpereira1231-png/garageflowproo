@@ -3,6 +3,7 @@
 // Also requires TWILIO_SMS_FROM (E.164 number). Missing config → 503 (caller logs "skipped").
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { assertActivePlan } from "../_shared/requireActivePlan.ts";
+import { assertShopRecipient } from "../_shared/assertShopRecipient.ts";
 
 
 const corsHeaders = {
@@ -60,6 +61,9 @@ Deno.serve(async (req) => {
       // Paid channel: blocked when the shop has no active subscription.
       const denied = await assertActivePlan(shop_id, corsHeaders);
       if (denied) return denied;
+      // O destinatário tem de ser cliente (ou a própria oficina) desta oficina.
+      const badRecipient = await assertShopRecipient(shop_id, to, corsHeaders);
+      if (badRecipient) return badRecipient;
     }
 
 

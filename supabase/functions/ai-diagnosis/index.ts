@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { guardAiCall, corsHeaders } from "../_shared/ai-guard.ts";
+import { wrapUntrusted, UNTRUSTED_SYSTEM_RULE } from "../_shared/untrustedText.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -46,7 +47,9 @@ ALWAYS respond in the SAME LANGUAGE as the symptoms input. If symptoms are in Po
 You must return a JSON response using the tool provided. Be specific, practical, and cost-aware.
 ${vehicleInfo}
 ${catalogInfo}
-${partsInfo}`;
+${partsInfo}
+
+${UNTRUSTED_SYSTEM_RULE}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -58,7 +61,7 @@ ${partsInfo}`;
         model: "openai/gpt-5.6-sol",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Customer reported symptoms: "${symptoms}"\n\nPlease provide a complete diagnosis.` },
+          { role: "user", content: `Customer reported symptoms:\n${wrapUntrusted("customer_symptoms", symptoms)}\n\nPlease provide a complete diagnosis.` },
         ],
         tools: [
           {

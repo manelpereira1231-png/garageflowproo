@@ -72,7 +72,17 @@ export default function ServiceForm() {
 
       // Load existing service for editing
       if (editId) {
-        const { data: service } = await supabase.from("work_orders").select("*").eq("id", editId).maybeSingle();
+        // Isolamento multi-oficina: só é possível abrir/editar uma OS que
+        // pertença à oficina ativa (mesmo dentro do mesmo grupo).
+        const { data: service } = await supabase
+          .from("work_orders").select("*")
+          .eq("id", editId).eq("shop_id", activeShopId).maybeSingle();
+        if (!service) {
+          toast.error("Este serviço pertence a outra oficina. Mude de oficina para o abrir.");
+          setLoadingData(false);
+          navigate("/services");
+          return;
+        }
         if (service) {
           setClientId(service.client_id);
           setVehicleId(service.vehicle_id);
@@ -152,7 +162,7 @@ export default function ServiceForm() {
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, notes: notes || null,
-      }).eq("id", editId);
+      }).eq("id", editId).eq("shop_id", shopId);
 
       if (error) toast.error(error.message);
       else { toast.success(t('services.updated')); navigate("/services"); }

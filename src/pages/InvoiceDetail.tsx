@@ -99,11 +99,14 @@ export default function InvoiceDetail() {
 
   const loadData = async () => {
     if (!id) return;
-    const { data: inv } = await supabase
+    // Isolamento multi-oficina: a fatura tem de pertencer à oficina ativa.
+    const activeShopId = localStorage.getItem("garageflow_active_shop");
+    let query = supabase
       .from("invoices")
       .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
-      .eq("id", id)
-      .maybeSingle();
+      .eq("id", id);
+    if (activeShopId) query = query.eq("shop_id", activeShopId);
+    const { data: inv } = await query.maybeSingle();
     if (!inv) { navigate("/invoices"); return; }
     setInvoice(inv);
 

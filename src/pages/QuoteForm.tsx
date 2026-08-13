@@ -195,7 +195,7 @@ export default function QuoteForm() {
         lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         notes: notes || null,
-      }).eq("id", editId);
+      }).eq("id", editId).eq("shop_id", activeShopId);
 
       if (error) toast.error(error.message);
       else { toast.success(t('quotes.updated')); navigate("/quotes"); }

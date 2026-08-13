@@ -1,6 +1,7 @@
 // Marketing AI Insights — analyzes real shop data and generates ready-to-send campaign suggestions.
 // Uses Lovable AI Gateway (Gemini Flash) for copy generation. All numbers come from real DB queries.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { wrapUntrusted, sanitizeUntrusted, UNTRUSTED_SYSTEM_RULE } from "../_shared/untrustedText.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -145,12 +146,16 @@ Deno.serve(async (req) => {
     }
 
     // --- AI copy generation (single call, JSON output) ---
+    // O nome da oficina é texto escrito por um utilizador → tratado como dados,
+    // nunca como instruções (mitigação de prompt injection).
     const prompt = `És um especialista em marketing para oficinas automóveis em Portugal.
-A oficina chama-se "${shopName}".
+${UNTRUSTED_SYSTEM_RULE}
+Nome da oficina: ${wrapUntrusted("shop_name", shopName, 120)}
 Para CADA segmento abaixo, gera uma sugestão de campanha em português europeu, prática e curta.
 
 Segmentos reais:
-${rawSegments.map(s => `- ${s.id}: ${s.count} clientes. ${s.theme}`).join("\n")}
+${rawSegments.map(s => `- ${s.id}: ${s.count} clientes. ${sanitizeUntrusted(s.theme, 300)}`).join("\n")}
+
 
 Regras:
 - Assunto máximo 60 caracteres, sem clickbait.
@@ -184,6 +189,7 @@ Devolve APENAS JSON válido com este schema exato:
           ],
           response_format: { type: "json_object" },
         }),
+        signal: AbortSignal.timeout(45_000),
       });
 
       if (aiRes.status === 429) return json({ error: "rate_limited", message: "IA temporariamente indisponível. Tenta novamente em breve." }, 429);

@@ -4973,6 +4973,7 @@ export type Database = {
           provider_pdf_url: string | null
           provider_permalink: string | null
           public_token: string | null
+          public_token_revoked_at: string | null
           qr_code: string | null
           quote_id: string | null
           shop_id: string
@@ -5010,6 +5011,7 @@ export type Database = {
           provider_pdf_url?: string | null
           provider_permalink?: string | null
           public_token?: string | null
+          public_token_revoked_at?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id: string
@@ -5047,6 +5049,7 @@ export type Database = {
           provider_pdf_url?: string | null
           provider_permalink?: string | null
           public_token?: string | null
+          public_token_revoked_at?: string | null
           qr_code?: string | null
           quote_id?: string | null
           shop_id?: string
@@ -7405,6 +7408,7 @@ export type Database = {
           status: string
           subtotal: number
           token: string | null
+          token_revoked_at: string | null
           total: number
           validity_date: string
           vat_total: number
@@ -7430,6 +7434,7 @@ export type Database = {
           status?: string
           subtotal?: number
           token?: string | null
+          token_revoked_at?: string | null
           total?: number
           validity_date?: string
           vat_total?: number
@@ -7455,6 +7460,7 @@ export type Database = {
           status?: string
           subtotal?: number
           token?: string | null
+          token_revoked_at?: string | null
           total?: number
           validity_date?: string
           vat_total?: number
@@ -10709,6 +10715,10 @@ export type Database = {
         Args: { _default: number; _key: string }
         Returns: number
       }
+      _public_token_throttle: {
+        Args: { _key: string; _max?: number; _window_seconds?: number }
+        Returns: boolean
+      }
       accept_team_invitation: {
         Args: { _token: string }
         Returns: {
@@ -11132,6 +11142,14 @@ export type Database = {
         }[]
       }
       get_user_shop_ids: { Args: { _user_id: string }; Returns: string[] }
+      group_shop_counts: {
+        Args: { _shop_ids: string[] }
+        Returns: {
+          clients_count: number
+          shop_id: string
+          vehicles_count: number
+        }[]
+      }
       gsn_accept_invite: { Args: { _token: string }; Returns: string }
       gsn_approve_application: {
         Args: { _app_id: string; _commission?: number; _owner_user_id: string }

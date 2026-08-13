@@ -45,13 +45,21 @@ Deno.serve(async (req) => {
 
     const { data: inv } = await admin
       .from("invoices")
-      .select("id, number, total, status, paid_online_at, payment_link_sent_at, shop_id, stripe_payment_session_id")
+      .select("id, number, total, status, paid_online_at, payment_link_sent_at, shop_id, stripe_payment_session_id, public_token_revoked_at, created_at")
       .eq("public_token", token)
       .maybeSingle();
 
     // O token público é o segredo do link: basta a fatura existir. Não exigimos
     // `payment_link_sent_at` (faturas emitidas antes do envio do link também pagam).
     if (!inv) return json({ error: "Fatura não encontrada." }, 404);
+
+    // Revogação / cancelamento / TTL do link público (365 dias).
+    const ttlMs = 365 * 24 * 60 * 60 * 1000;
+    const expired = inv.created_at ? Date.now() - new Date(inv.created_at).getTime() > ttlMs : false;
+    if (inv.public_token_revoked_at || inv.status === "cancelled" || expired) {
+      return json({ error: "Este link de pagamento já não está ativo. Contacte a oficina.", code: "link_inactive" }, 410);
+    }
+
 
     const { data: shop } = await admin
       .from("shops")

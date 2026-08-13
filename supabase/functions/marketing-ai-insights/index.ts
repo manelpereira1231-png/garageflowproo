@@ -145,12 +145,16 @@ Deno.serve(async (req) => {
     }
 
     // --- AI copy generation (single call, JSON output) ---
+    // O nome da oficina é texto escrito por um utilizador → tratado como dados,
+    // nunca como instruções (mitigação de prompt injection).
     const prompt = `És um especialista em marketing para oficinas automóveis em Portugal.
-A oficina chama-se "${shopName}".
+${UNTRUSTED_SYSTEM_RULE}
+Nome da oficina: ${wrapUntrusted("shop_name", shopName, 120)}
 Para CADA segmento abaixo, gera uma sugestão de campanha em português europeu, prática e curta.
 
 Segmentos reais:
-${rawSegments.map(s => `- ${s.id}: ${s.count} clientes. ${s.theme}`).join("\n")}
+${rawSegments.map(s => `- ${s.id}: ${s.count} clientes. ${sanitizeUntrusted(s.theme, 300)}`).join("\n")}
+
 
 Regras:
 - Assunto máximo 60 caracteres, sem clickbait.

@@ -399,19 +399,18 @@ function OwnerDashboard() {
         // Query única extra por métrica (2 queries agregadas totais para clientes
         // e veículos), calculando o resto em JS a partir dos dados já obtidos.
         if (isGroupMode && groupShopIds.length > 0) {
-          const [clientsPerShopRes, vehiclesPerShopRes] = await Promise.all([
-            supabase.from("clients")
-              .select("shop_id")
-              .in("shop_id", groupShopIds)
-              .is("deleted_at", null),
-            supabase.from("vehicles")
-              .select("shop_id")
-              .in("shop_id", groupShopIds),
-          ]);
+          // Contagens agregadas no servidor (1 RPC) — não transfere as linhas
+          // todas de clientes/veículos para o browser.
+          const { data: countsRes } = await supabase.rpc("group_shop_counts", {
+            _shop_ids: groupShopIds,
+          });
           const cliCount = new Map<string, number>();
-          (clientsPerShopRes.data || []).forEach((r: any) => cliCount.set(r.shop_id, (cliCount.get(r.shop_id) || 0) + 1));
           const vehCount = new Map<string, number>();
-          (vehiclesPerShopRes.data || []).forEach((r: any) => vehCount.set(r.shop_id, (vehCount.get(r.shop_id) || 0) + 1));
+          ((countsRes as any[]) || []).forEach((r: any) => {
+            cliCount.set(r.shop_id, Number(r.clients_count || 0));
+            vehCount.set(r.shop_id, Number(r.vehicles_count || 0));
+          });
+
 
           // Faturação/lucro/serviços do mês corrente por oficina
           const currRev = new Map<string, number>();

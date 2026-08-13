@@ -129,7 +129,8 @@ serve(async (req: Request) => {
         ]);
         const role = (membership as any)?.role;
         const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
-        if (!ownedShop && role !== "owner" && role !== "admin" && role !== "manager") {
+        // Coerente com a RPC create_team_invitation: apenas owner/admin.
+        if (!ownedShop && role !== "owner" && role !== "admin") {
           console.error(`Invite blocked: user ${callerUser.id} has role "${role ?? "none"}" on shop ${shop_id}`);
           return new Response(
             JSON.stringify({

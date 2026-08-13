@@ -80,7 +80,16 @@ export default function QuoteForm() {
 
       // Load existing quote for editing
       if (editId) {
-        const { data: quote } = await supabase.from("quotes").select("*").eq("id", editId).maybeSingle();
+        // Isolamento multi-oficina: só orçamentos da oficina ativa.
+        const { data: quote } = await supabase
+          .from("quotes").select("*")
+          .eq("id", editId).eq("shop_id", activeShopId).maybeSingle();
+        if (!quote) {
+          toast.error("Este orçamento pertence a outra oficina. Mude de oficina para o abrir.");
+          setLoadingData(false);
+          navigate("/quotes");
+          return;
+        }
         if (quote) {
           setClientId(quote.client_id);
           setVehicleId(quote.vehicle_id);

@@ -214,35 +214,22 @@ export default function Vehicles() {
     setDeleteId(null);
   };
 
-  const preFiltered = vehicles.filter((v) => {
-    const s = filters.search.toLowerCase();
-    if (s) {
-      // A matrícula entra também na forma canónica (sem hífens/espaços) para
-      // que "00AA00" encontre "00-AA-00" e vice-versa.
-      const hay = `${v.plate} ${canonicalPlate(v.plate)} ${v.make} ${v.model} ${v.version ?? ""} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
-      if (!hay.includes(s) && !hay.includes(canonicalPlate(s).toLowerCase())) return false;
-    }
-    if (filters.make && v.make !== filters.make) return false;
-    if (filters.fuel && v.fuel !== filters.fuel) return false;
-    if (filters.clientId && v.client_id !== filters.clientId) return false;
-    return true;
-  });
-  const view = apply(preFiltered, {
-    plate: (v) => v.plate,
-    make: (v) => v.make,
-    model: (v) => [v.model, v.version].filter(Boolean).join(' '),
-    year: (v) => Number(v.year),
-    client: (v) => (v.clients as any)?.name || "",
-    mileage: (v) => Number(v.mileage) || 0,
-    fuel: (v) => v.fuel,
-    created_at: (v) => new Date(v.created_at).getTime(),
-  });
-  const filtered = view.rows;
-  const totalCount = vehicles.length;
-  const makeOptions = Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort() as string[];
+  // Filtering, sorting and paging are done by the database (useServerList).
+  const filtered = vehicles;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
-  const handleExportCsv = () => {
-    const csvData = vehicles.map(v => ({
+  // Export reads the full list from the server (the grid only holds one page).
+  const handleExportCsv = async () => {
+    if (!activeShopId) return;
+    const { data } = await supabase
+      .from("vehicles")
+      .select("*, clients(name)")
+      .eq("shop_id", activeShopId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    const csvData = (data || []).map((v: any) => ({
       [t('vehicles.make')]: v.make,
       [t('vehicles.model')]: [v.model, v.version].filter(Boolean).join(' '),
       [t('vehicles.year')]: v.year,
@@ -256,6 +243,7 @@ export default function Vehicles() {
     exportToCsv(csvData, 'veiculos');
     toast.success(t('common.exported'));
   };
+
 
   return (
     <div>

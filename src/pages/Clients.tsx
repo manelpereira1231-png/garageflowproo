@@ -229,7 +229,7 @@ export default function Clients() {
     }
 
 
-    const dups = findDuplicates();
+    const dups = await findDuplicates();
     if (dups.length > 0) {
       setDuplicates(dups);
       return;

@@ -288,7 +288,7 @@ export default function InvoiceDetail() {
     const newTotalPaid = totalPaid + payAmount;
     const isFullyPaid = newTotalPaid >= Number(invoice.total);
     const newStatus = isFullyPaid ? 'paid' : 'partial';
-    await supabase.from("invoices").update({ status: newStatus }).eq("id", invoice.id);
+    await supabase.from("invoices").update({ status: newStatus }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
 
     toast.success(t('invoices.paymentRegistered'));
     setShowPayment(false);
@@ -357,7 +357,7 @@ export default function InvoiceDetail() {
         return;
       }
     } else {
-      await supabase.from("invoices").update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq("id", invoice.id);
+      await supabase.from("invoices").update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
       toast.success(t('invoices.cancelled'));
     }
     loadData();
@@ -365,7 +365,7 @@ export default function InvoiceDetail() {
 
   const handleIssue = async () => {
     if (!invoice) return;
-    await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id);
+    await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
     toast.success(t('invoices.issued'));
     // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
     await sendInvoiceEmailAuto('issued');

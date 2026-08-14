@@ -17,8 +17,8 @@ import VehicleMakeModelSelector, { getModelsForMake } from "@/components/Vehicle
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
-import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useServerList } from "@/hooks/useServerList";
 import { autoFormatPlate, canonicalPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 import ClientCombobox from "@/components/ClientCombobox";
 import { MAX_MILEAGE } from "@/lib/sanityLimits";
@@ -36,13 +36,10 @@ const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId
 
 export default function Vehicles() {
   const { t, language } = useLanguage();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _vCache = pageCache.get<{ rows: any[]; clients: any[] }>(`vehicles-all:${_shopInit}`);
-  const [vehicles, setVehicles] = useState<any[]>(_vCache?.rows ?? []);
-  const [clients, setClients] = useState<any[]>(_vCache?.clients ?? []);
+  const [clients, setClients] = useState<any[]>([]);
+  const [makeOptions, setMakeOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(!_vCache);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();

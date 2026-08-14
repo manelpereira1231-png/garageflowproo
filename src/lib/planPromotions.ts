@@ -58,7 +58,7 @@ async function loadPromotions(): Promise<Map<string, PromoRow>> {
   cachePromise = (async () => {
     const map = new Map<string, PromoRow>();
     const { data } = await supabase
-      .from("plan_promotions")
+      .from("plan_promotions_public" as any)
       .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
     (data as Omit<PromoRow, "stripe_price_id">[] | null)?.forEach((row) => {
       map.set(key(row.country_code, row.plan, row.cycle), { ...row, stripe_price_id: null });
@@ -108,7 +108,7 @@ export async function ensurePromotionsLoaded() {
 /** Full row for admin UI (all promos, including inactive/scheduled). */
 export async function listAllPromotions(): Promise<PromoRow[]> {
   const { data } = await supabase
-    .from("plan_promotions")
+    .from("plan_promotions_public" as any)
     .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
   return ((data as Omit<PromoRow, "stripe_price_id">[] | null) ?? []).map((r) => ({ ...r, stripe_price_id: null }));
 }

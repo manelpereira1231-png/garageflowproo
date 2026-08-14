@@ -16,7 +16,7 @@ async function loadPlanNames() {
   // Only surface names of active, non-archived plans so a deactivated plan
   // never leaks its label into Landing / Billing / Upgrade dialogs.
   const { data } = await supabase
-    .from("plans")
+    .from("plans_public" as any)
     .select("slug, name, active, archived_at")
     .eq("active", true)
     .is("archived_at", null);

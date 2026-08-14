@@ -22,11 +22,11 @@ import { formatLocalDate } from "@/lib/marketPrice";
 import { format } from "date-fns";
 import ListSkeleton from "@/components/ListSkeleton";
 import EmptyState from "@/components/EmptyState";
-import { pageCache } from "@/lib/pageCache";
 import { autoCreateInvoiceFromWorkOrder } from "@/lib/autoCreateInvoiceFromWorkOrder";
 import { consumeWorkOrderParts } from "@/lib/consumeWorkOrderParts";
 import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
 import { useTableState } from "@/hooks/useTableState";
+import { useServerList } from "@/hooks/useServerList";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { useShopRole } from "@/hooks/useShopRole";
@@ -57,7 +57,6 @@ const statusIcons: Record<ServiceStatus, any> = {
 
 const statusFlow: ServiceStatus[] = ['open', 'diagnosis', 'waiting_approval', 'approved', 'in_progress', 'completed', 'delivered'];
 const PAGE_SIZE = 50;
-const FETCH_LIMIT = 2000;
 
 type ServicesFilters = {
   search: string;
@@ -108,14 +107,13 @@ export default function Services() {
   const { t } = useLanguage();
   const { limits, plan, canUseFeature } = useSubscription();
   const { can } = useShopRole();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _sCache = pageCache.get<{ rows: any[]; shop: any }>(`services-all:${_shopInit}`);
-  const [services, setServices] = useState<any[]>(_sCache?.rows ?? []);
-  const [shop, setShop] = useState<any>(_sCache?.shop ?? null);
+  const [shop, setShop] = useState<any>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [technicianOptions, setTechnicianOptions] = useState<string[]>([]);
+  const [clientOptions, setClientOptions] = useState<[string, string][]>([]);
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
-  const [dataLoading, setDataLoading] = useState(!_sCache);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
@@ -126,7 +124,7 @@ export default function Services() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
   const statusFilter = filters.status;
 
@@ -341,35 +339,74 @@ export default function Services() {
     setMonthRevenue(Number(result.month_revenue ?? 0));
   };
 
-  const fetchServices = async () => {
-    if (!activeShopId) { setDataLoading(false); return; }
-    const key = `services-all:${activeShopId}`;
-    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
-    if (cc) {
-      setServices(cc.rows); setShop(cc.shop); setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
-    try {
+  const SORT_COLUMNS: Record<string, string> = {
+    number: "number", created_at: "created_at", total: "total", status: "status",
+  };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
+
+  const compare = [
+    filters.dateFrom ? { col: "created_at", op: "gte" as const, value: filters.dateFrom } : null,
+    filters.dateTo ? { col: "created_at", op: "lte" as const, value: `${filters.dateTo}T23:59:59` } : null,
+  ].filter(Boolean) as { col: string; op: "gte" | "lte"; value: string }[];
+
+  const searchExtraClauses = useCallback(async (term: string) => {
+    if (!activeShopId) return [];
+    const [{ data: cs }, { data: vs }] = await Promise.all([
+      supabase.from("clients").select("id").eq("shop_id", activeShopId).ilike("name", `%${term}%`).limit(50),
+      supabase.from("vehicles").select("id").eq("shop_id", activeShopId)
+        .or(`plate.ilike.%${term}%,make.ilike.%${term}%,model.ilike.%${term}%`).limit(50),
+    ]);
+    const clauses: string[] = [];
+    if (cs?.length) clauses.push(`client_id.in.(${cs.map((c: any) => c.id).join(",")})`);
+    if (vs?.length) clauses.push(`vehicle_id.in.(${vs.map((v: any) => v.id).join(",")})`);
+    return clauses;
+  }, [activeShopId]);
+
+  const {
+    rows: services,
+    total: totalCount,
+    loading: dataLoading,
+  } = useServerList<any>({
+    table: "work_orders",
+    shopId: activeShopId,
+    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["number", "technician"],
+    searchExtraClauses,
+    eq: {
+      client_id: filters.clientId || undefined,
+      technician: filters.technician || undefined,
+    },
+    inFilters: { status: filters.status !== "all" ? [filters.status] : undefined },
+    compare,
+    refreshKey,
+  });
+
+  const fetchServices = () => setRefreshKey((k) => k + 1);
+
+  useEffect(() => {
+    if (!activeShopId) return;
+    let alive = true;
+    (async () => {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (!alive) return;
       if (shopData) setShop(shopData);
 
-      const { data } = await supabase
-        .from("work_orders")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)")
-        .eq("shop_id", activeShopId)
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
+      const { data: cs } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000);
+      if (!alive) return;
+      setClientOptions(((cs || []) as any[]).map((c) => [c.id, c.name] as [string, string]));
 
-      if (data) setServices(data);
-      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchServices(); }, [activeShopId]);
-  useEffect(() => { if (activeShopId) fetchStats(activeShopId); }, [activeShopId]);
+      const { data: tech } = await supabase.from("work_orders").select("technician").eq("shop_id", activeShopId).not("technician", "is", null).limit(2000);
+      if (!alive) return;
+      setTechnicianOptions(Array.from(new Set(((tech || []) as any[]).map((r) => r.technician).filter(Boolean))) as string[]);
+    })();
+    return () => { alive = false; };
+  }, [activeShopId, refreshKey]);
 
   const advanceStatus = async (service: any) => {
     const currentIdx = statusFlow.indexOf(service.status);
@@ -509,39 +546,12 @@ export default function Services() {
     toast.success(t('common.exported'));
   };
 
-  // Client-side filtering (search + status + technician + client + date range)
-  const preFiltered = services.filter((s) => {
-    const q = filters.search.toLowerCase();
-    if (q) {
-      const hay = `${s.number ?? ""} ${(s.clients as any)?.name ?? ""} ${(s.vehicles as any)?.plate ?? ""} ${(s.vehicles as any)?.make ?? ""} ${(s.vehicles as any)?.model ?? ""} ${s.technician ?? ""}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    if (filters.status !== "all" && s.status !== filters.status) return false;
-    if (filters.technician && (s.technician || "").toLowerCase() !== filters.technician.toLowerCase()) return false;
-    if (filters.clientId && s.client_id !== filters.clientId) return false;
-    if (filters.dateFrom && new Date(s.created_at) < new Date(filters.dateFrom)) return false;
-    if (filters.dateTo && new Date(s.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
-    return true;
-  });
+  // Filtering, sorting and paging are handled by Postgres (useServerList).
+  const filtered = services;
+  const totalFiltered = totalCount;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
-  const sortAccessors: Record<string, (s: any) => any> = {
-    number: (s) => s.number,
-    created_at: (s) => new Date(s.created_at).getTime(),
-    client: (s) => (s.clients as any)?.name || "",
-    vehicle: (s) => `${(s.vehicles as any)?.make || ""} ${(s.vehicles as any)?.model || ""}`,
-    total: (s) => Number(s.total) || 0,
-    status: (s) => s.status,
-  };
-  const view = apply(preFiltered, sortAccessors);
-  const totalCount = services.length;
-  const filtered = view.rows;
-  const totalFiltered = view.total;
-
-  // Distinct technicians / clients for filter dropdowns
-  const technicianOptions = Array.from(new Set(services.map((s) => s.technician).filter(Boolean))) as string[];
-  const clientOptions: [string, string][] = Array.from(
-    new Map(services.map((s) => [s.client_id, (s.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
-  );
 
   return (
     <div className="w-full min-w-0">
@@ -857,11 +867,11 @@ export default function Services() {
       </div>
 
       <TablePagination
-        page={view.page}
-        totalPages={view.totalPages}
-        total={view.total}
-        pageSize={view.pageSize}
-        start={view.start}
+        page={safePage}
+        totalPages={totalPages}
+        total={totalCount}
+        pageSize={PAGE_SIZE}
+        start={safePage * PAGE_SIZE}
         onPageChange={setPage}
         labelOf={t('common.of') || 'de'}
       />

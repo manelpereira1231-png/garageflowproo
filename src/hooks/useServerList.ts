@@ -27,6 +27,13 @@ export interface ServerListOptions {
   eq?: Record<string, string | number | boolean | null | undefined>;
   /** `IN (...)` filters. Empty/undefined arrays are ignored. */
   inFilters?: Record<string, (string | number)[] | undefined>;
+  /**
+   * Resolves extra PostgREST `or=` clauses for the search term (e.g. matching
+   * client/vehicle ids), so search can span related tables without joins.
+   */
+  searchExtraClauses?: (term: string) => Promise<string[]>;
+  /** Comparison filters, e.g. [{ col: "created_at", op: "gte", value: "2024-01-01" }]. */
+  compare?: { col: string; op: "gte" | "lte" | "gt" | "lt"; value: string | number }[];
   /** Adds `deleted_at IS NULL`. */
   notDeleted?: boolean;
   /** Bump to force a refetch (e.g. realtime signal). */
@@ -59,7 +66,8 @@ function escapeIlike(term: string) {
 export function useServerList<T = any>(opts: ServerListOptions): ServerListResult<T> {
   const {
     table, shopId, select, page, pageSize, orderBy, ascending = false,
-    search = "", searchColumns = [], searchTransform, eq, inFilters, notDeleted, refreshKey,
+    search = "", searchColumns = [], searchTransform, searchExtraClauses,
+    eq, inFilters, compare, notDeleted, refreshKey,
     debounceMs = 300,
   } = opts;
 
@@ -77,6 +85,7 @@ export function useServerList<T = any>(opts: ServerListOptions): ServerListResul
   const eqKey = JSON.stringify(eq ?? {});
   const inKey = JSON.stringify(inFilters ?? {});
   const searchColsKey = searchColumns.join(",");
+  const compareKey = JSON.stringify(compare ?? []);
 
   const run = useCallback(async () => {
     if (!shopId) { setRows([]); setTotal(0); setLoading(false); return; }
@@ -102,6 +111,12 @@ export function useServerList<T = any>(opts: ServerListOptions): ServerListResul
         q = q.in(col, vals as any);
       }
 
+      const cmp: { col: string; op: "gte" | "lte" | "gt" | "lt"; value: any }[] = JSON.parse(compareKey);
+      for (const c of cmp) {
+        if (c.value === undefined || c.value === null || c.value === "") continue;
+        q = (q as any)[c.op](c.col, c.value);
+      }
+
       const term = escapeIlike(debouncedSearch || "");
       if (term && searchColumns.length > 0) {
         const terms = Array.from(
@@ -109,6 +124,10 @@ export function useServerList<T = any>(opts: ServerListOptions): ServerListResul
         );
         const clauses: string[] = [];
         for (const c of searchColumns) for (const tt of terms) clauses.push(`${c}.ilike.%${tt}%`);
+        if (searchExtraClauses) {
+          try { clauses.push(...(await searchExtraClauses(term))); } catch { /* search degrades to columns only */ }
+        }
+        if (myId !== requestId.current) return;
         q = q.or(clauses.join(","));
       }
 
@@ -127,7 +146,7 @@ export function useServerList<T = any>(opts: ServerListOptions): ServerListResul
       if (myId === requestId.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table, shopId, select, page, pageSize, orderBy, ascending, debouncedSearch, searchColsKey, eqKey, inKey, notDeleted, refreshKey]);
+  }, [table, shopId, select, page, pageSize, orderBy, ascending, debouncedSearch, searchColsKey, eqKey, inKey, compareKey, notDeleted, refreshKey]);
 
   useEffect(() => { void run(); }, [run]);
 

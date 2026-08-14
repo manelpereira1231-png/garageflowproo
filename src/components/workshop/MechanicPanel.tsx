@@ -76,7 +76,7 @@ export default function MechanicPanel({ workOrderId, shopId, technicianName = ""
         .eq("work_order_id", workOrderId)
         .order("created_at", { ascending: false })
         .limit(40),
-      supabase.from("work_orders").select("notes, lines").eq("id", workOrderId).maybeSingle(),
+      supabase.from("work_orders").select("notes, lines").eq("id", workOrderId).eq("shop_id", shopId).maybeSingle(),
       supabase
         .from("parts")
         .select("id, name, sale_price, internal_cost, vat_rate")
@@ -141,7 +141,7 @@ export default function MechanicPanel({ workOrderId, shopId, technicianName = ""
       const who = technicianName ? ` · ${technicianName}` : "";
       const line = `[${stamp}${who}] ${text}`;
       const next = notes ? `${notes}\n${line}` : line;
-      const { error } = await supabase.from("work_orders").update({ notes: next }).eq("id", workOrderId);
+      const { error } = await supabase.from("work_orders").update({ notes: next }).eq("id", workOrderId).eq("shop_id", shopId);
       if (error) throw error;
       setNotes(next);
       setNoteDraft("");
@@ -162,7 +162,7 @@ export default function MechanicPanel({ workOrderId, shopId, technicianName = ""
     setBusy(true);
     try {
       const [{ data: wo, error: woErr }, { data: shop }] = await Promise.all([
-        supabase.from("work_orders").select("lines, labor_hours").eq("id", workOrderId).maybeSingle(),
+        supabase.from("work_orders").select("lines, labor_hours").eq("id", workOrderId).eq("shop_id", shopId).maybeSingle(),
         supabase.from("shops").select("labor_rate, vat_rate").eq("id", shopId).maybeSingle(),
       ]);
       if (woErr) throw woErr;

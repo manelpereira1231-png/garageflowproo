@@ -355,14 +355,14 @@ export default function Agenda() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("appointments").delete().eq("id", id);
+    await supabase.from("appointments").delete().eq("id", id).eq("shop_id", activeShopId);
     setDeleteConfirm(null);
     toast({ title: t('agenda.deleted') });
     loadData();
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from("appointments").update({ status } as any).eq("id", id);
+    await supabase.from("appointments").update({ status } as any).eq("id", id).eq("shop_id", activeShopId);
     loadData();
   };
 

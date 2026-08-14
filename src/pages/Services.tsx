@@ -447,7 +447,7 @@ export default function Services() {
 
   const cancelService = async (id: string) => {
     if (!can("work_orders.delete")) return;
-    const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id);
+    const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id).eq("shop_id", activeShopId);
     if (error) toastError(error, "Não foi possível cancelar o serviço");
     else { toast.success(t('service.cancelled')); fetchServices(); }
   };

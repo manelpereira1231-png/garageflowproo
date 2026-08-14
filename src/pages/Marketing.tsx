@@ -282,13 +282,13 @@ export default function Marketing() {
   };
 
   const cancelCampaign = async (id: string) => {
-    await supabase.from("campaigns").update({ status: 'cancelled' } as any).eq("id", id);
+    await supabase.from("campaigns").update({ status: 'cancelled' } as any).eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('marketing.campaignCancelled'));
     load();
   };
 
   const deleteCampaign = async (id: string) => {
-    await supabase.from("campaigns").delete().eq("id", id);
+    await supabase.from("campaigns").delete().eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('common.deleted'));
     load();
   };

@@ -224,7 +224,7 @@ export default function Inspections() {
   };
 
   const handleComplete = async (id: string) => {
-    await supabase.from("inspection_checklists").update({ completed_at: new Date().toISOString() } as any).eq("id", id);
+    await supabase.from("inspection_checklists").update({ completed_at: new Date().toISOString() } as any).eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('inspections.completed'));
     load();
   };

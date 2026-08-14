@@ -129,12 +129,12 @@ export default function Automations() {
   };
 
   const toggleRule = async (id: string, active: boolean) => {
-    await supabase.from("automation_rules").update({ active: !active }).eq("id", id);
+    await supabase.from("automation_rules").update({ active: !active }).eq("id", id).eq("shop_id", activeShopId);
     load();
   };
 
   const deleteRule = async (id: string) => {
-    await supabase.from("automation_rules").delete().eq("id", id);
+    await supabase.from("automation_rules").delete().eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('automations.deleted'));
     load();
   };

@@ -174,8 +174,8 @@ export default function Stock() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("stock_movements").delete().eq("part_id", id);
-    await supabase.from("parts").delete().eq("id", id);
+    await supabase.from("stock_movements").delete().eq("part_id", id).eq("shop_id", activeShopId);
+    await supabase.from("parts").delete().eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('common.deleted'));
     load();
   };

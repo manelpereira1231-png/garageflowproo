@@ -168,7 +168,7 @@ export default function Vehicles() {
     };
 
     const { error } = editingId
-      ? await supabase.from("vehicles").update(payload).eq("id", editingId)
+      ? await supabase.from("vehicles").update(payload).eq("id", editingId).eq("shop_id", activeShopId)
       : await supabase.from("vehicles").insert(payload);
 
     if (error) toastError(error, editingId ? "Não foi possível atualizar o veículo" : "Não foi possível criar o veículo");
@@ -207,7 +207,7 @@ export default function Vehicles() {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase.from("vehicles").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId);
+    const { error } = await supabase.from("vehicles").update({ deleted_at: new Date().toISOString() }).eq("id", deleteId).eq("shop_id", activeShopId);
     if (error) toastError(error, "Não foi possível eliminar o veículo");
     else { toast.success(t('vehicles.deleted')); fetchData(); }
     setDeleteId(null);

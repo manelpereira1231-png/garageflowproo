@@ -187,7 +187,7 @@ export default function Clients() {
     };
 
     const result = editingId
-      ? await supabase.from("clients").update(payload).eq("id", editingId).select("id").single()
+      ? await supabase.from("clients").update(payload).eq("id", editingId).eq("shop_id", activeShopId).select("id").single()
       : await supabase.from("clients").insert(payload).select("id").single();
     const { error } = result;
 

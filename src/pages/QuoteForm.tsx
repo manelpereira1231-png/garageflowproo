@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -204,18 +205,18 @@ export default function QuoteForm() {
       const now = new Date();
       const validity = new Date(now);
       validity.setDate(validity.getDate() + parseInt(validityDays));
-      const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "ORC" });
-      const num = numData || `ORC-${Date.now()}`;
-
-      const { data: inserted, error } = await supabase.from("quotes").insert({
+      const { data: inserted, number: num, error } = await insertWithNumber<{ id: string }>({
+        getNumber: () => nextDocNumber(shopId, "ORC"),
+        insert: (num) => supabase.from("quotes").insert({
         shop_id: shopId, number: num, date: now.toISOString().split('T')[0],
         validity_date: validity.toISOString().split('T')[0], client_id: clientId, vehicle_id: vehicleId,
         lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),
-      }).select("id").single();
+        }).select("id").single() as any,
+      });
 
-      if (error) toast.error(error.message);
+      if (error) toast.error(friendlyDocError(error));
       else {
         completeOnboarding();
         toast.success(t('quotes.created'));

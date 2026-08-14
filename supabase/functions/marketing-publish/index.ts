@@ -52,6 +52,7 @@ async function ensureCampaignImage(supa: any, campaignId: string, c: any, primar
     const imgPrompt = `Criativo premium para anúncio Meta Ads do SaaS "GarageFlow" para oficinas auto. Campanha: ${c.title}. Mensagem: ${primaryText}. Oficina real moderna, mecânico a usar tablet com dashboard de gestão, carro no elevador, iluminação profissional, estética industrial charcoal e âmbar, fotorrealista, sem texto sobreposto, composição limpa para Facebook e Instagram, 1200x628.`;
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
+      signal: AbortSignal.timeout(60000),
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3.1-flash-image-preview",

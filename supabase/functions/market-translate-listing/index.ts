@@ -28,6 +28,17 @@ Deno.serve(async (req) => {
     }
     const admin = createClient(SUPABASE_URL, SERVICE);
 
+    // Rate limit por IP — endpoint público que consome IA (proteção de custos).
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const { data: rlOk } = await admin.rpc("check_and_bump_rate_limit", {
+      _identifier: ip, _action: "market-translate-listing", _max: 20, _window_seconds: 60,
+    });
+    if (rlOk === false) {
+      return new Response(JSON.stringify({ error: "rate_limited" }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // 1) Cache lookup
     const { data: cached } = await admin
       .from("carity_listing_translations")
@@ -59,6 +70,7 @@ Deno.serve(async (req) => {
     // 3) Call Lovable AI Gateway
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
+      signal: AbortSignal.timeout(60000),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${LOVABLE_API_KEY}`,

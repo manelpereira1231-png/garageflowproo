@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { invalidateOwnedShops } from "@/hooks/useOwnedShops";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,6 +161,7 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('common.sessionExpired') || "Sessão expirada"); setLoading(false); return; }
       const { data, error } = await supabase.from("shops").insert({ ...payload, user_id: user.id }).select().single();
+      invalidateOwnedShops();
       if (error) toast.error(error.message);
       else {
         setShopId(data.id);

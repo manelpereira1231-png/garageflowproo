@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { insertWithNumber, nextInvoiceNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,10 +167,9 @@ export default function InvoiceForm() {
     const activeId = localStorage.getItem("garageflow_active_shop");
     if (!activeId) { setSaving(false); return; }
 
-    const { data: numData } = await supabase.rpc('next_invoice_number', { _shop_id: activeId });
-    const number = numData || `FAT-${new Date().getFullYear()}-0001`;
-
-    const { data: invoice, error } = await supabase.from("invoices").insert({
+    const { data: invoice, number, error } = await insertWithNumber<{ id: string }>({
+      getNumber: () => nextInvoiceNumber(activeId),
+      insert: (number) => supabase.from("invoices").insert({
       shop_id: activeId,
       client_id: clientId,
       vehicle_id: vehicleId || null,
@@ -184,10 +184,11 @@ export default function InvoiceForm() {
       currency: shop?.currency || 'EUR',
       due_date: dueDate || null,
       notes: notes || null,
-    }).select().single();
+      }).select().single() as any,
+    });
 
     if (error || !invoice) {
-      toast.error(error?.message || t('common.error'));
+      toast.error(friendlyDocError(error) || t('common.error'));
       setSaving(false);
       return;
     }

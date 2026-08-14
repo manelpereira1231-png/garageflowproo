@@ -96,6 +96,7 @@ function extractJSON(text: string): any {
 async function callAI(systemPrompt: string, userPrompt: string, temperature = 0.7) {
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
+      signal: AbortSignal.timeout(60000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
     body: JSON.stringify({
       model: MODEL,

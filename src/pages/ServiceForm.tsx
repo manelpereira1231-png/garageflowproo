@@ -1,6 +1,7 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import TechnicianSelect from "@/components/TechnicianSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,18 +168,18 @@ export default function ServiceForm() {
       if (error) toast.error(error.message);
       else { toast.success(t('services.updated')); navigate("/services"); }
     } else {
-      const { data: numData } = await supabase.rpc("next_number", { _shop_id: shopId, _prefix: "SRV" });
-      const num = numData || `SRV-${Date.now()}`;
-
-      const { data: inserted, error } = await supabase.from("work_orders").insert({
+      const { data: inserted, number: num, error } = await insertWithNumber<{ id: string }>({
+        getNumber: () => nextDocNumber(shopId, "SRV"),
+        insert: (num) => supabase.from("work_orders").insert({
         shop_id: shopId, number: num, origin: 'manual', client_id: clientId, vehicle_id: vehicleId,
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
         profit, status: 'open', notes: notes || null,
-      }).select("id").single();
+        }).select("id").single() as any,
+      });
 
-      if (error) toast.error(error.message);
+      if (error) toast.error(friendlyDocError(error));
       else {
         toast.success(t('services.created'));
         try {

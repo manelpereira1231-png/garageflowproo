@@ -52,7 +52,7 @@ export default function Chat() {
     if (!shopId) return;
     const load = async () => {
       const [clientsRes, shopRes] = await Promise.all([
-        supabase.from("clients").select("id, name, email").eq("shop_id", shopId).is("deleted_at", null).order("name"),
+        supabase.from("clients").select("id, name, email").eq("shop_id", shopId).is("deleted_at", null).order("name").limit(1000),
         supabase.from("shops").select("name").eq("id", shopId).maybeSingle(),
       ]);
       if (clientsRes.data) setClients(clientsRes.data);

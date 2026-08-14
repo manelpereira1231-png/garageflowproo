@@ -79,7 +79,8 @@ export default function Alerts() {
         .from("alerts")
         .select("*, clients(name), vehicles(make, model, plate)")
         .eq("shop_id", shopId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(300);
       if (data) { setAlerts(data); pageCache.set(key, data); }
     } finally {
       setDataLoading(false);

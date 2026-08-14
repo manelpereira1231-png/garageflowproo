@@ -50,9 +50,9 @@ export default function Warranties() {
   const fetchData = useCallback(async () => {
     if (!activeShopId) return;
     const [wRes, cRes, vRes] = await Promise.all([
-      supabase.from("warranties").select("*, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name"),
-      supabase.from("vehicles").select("id, make, model, plate, client_id").eq("shop_id", activeShopId).is("deleted_at", null),
+      supabase.from("warranties").select("*, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(300),
+      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
+      supabase.from("vehicles").select("id, make, model, plate, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
     ]);
     setWarranties(wRes.data || []);
     setClients(cRes.data || []);

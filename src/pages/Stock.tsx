@@ -275,22 +275,27 @@ export default function Stock() {
       p.name.trim().toLowerCase() === o.part_name.trim().toLowerCase()
     );
     const qty = Number(o.quantity) || 0;
-    const { error: upErr } = await supabase.from('parts_orders')
+    // Idempotente: só a primeira confirmação altera a encomenda; um segundo clique
+    // (ou dois utilizadores em simultâneo) não devolve linhas e não repõe stock 2x.
+    const { data: updated, error: upErr } = await supabase.from('parts_orders')
       .update({ status: 'delivered', delivered_at: new Date().toISOString() } as any)
-      .eq('id', o.id);
+      .eq('id', o.id)
+      .eq('shop_id', activeShopId)
+      .neq('status', 'delivered')
+      .select('id');
     if (upErr) { toast.error(upErr.message); return; }
+    if (!updated || updated.length === 0) { toast.info("Encomenda já estava confirmada"); load(); return; }
     if (match && qty > 0) {
-      await supabase.from('parts')
-        .update({ stock_quantity: (Number(match.stock_quantity) || 0) + qty } as any)
-        .eq('id', match.id);
-      await supabase.from('stock_movements').insert({
-        shop_id: activeShopId,
-        part_id: match.id,
-        type: 'in',
-        quantity: qty,
-        reason: `Entrega de encomenda${o.part_reference ? ` (${o.part_reference})` : ''}`,
+      const { error: stockErr } = await supabase.rpc("adjust_part_stock", {
+        _shop_id: activeShopId,
+        _part_id: match.id,
+        _delta: qty,
+        _type: 'in',
+        _reason: `Entrega de encomenda${o.part_reference ? ` (${o.part_reference})` : ''}`,
       } as any);
+      if (stockErr) { toast.error(stockErr.message); return; }
       toast.success(`Entrega confirmada — +${qty} em stock (${match.name})`);
+
     } else {
       toast.success(t('stock.orders.deliveryConfirmed'));
       if (qty > 0) toast.info("Peça não corresponde a nenhum artigo em stock — não foi reposto automaticamente");

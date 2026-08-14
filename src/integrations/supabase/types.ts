@@ -10730,6 +10730,17 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: Json
       }
+      adjust_part_stock: {
+        Args: {
+          _delta: number
+          _part_id: string
+          _reason?: string
+          _shop_id: string
+          _type: string
+          _work_order_id?: string
+        }
+        Returns: number
+      }
       admin_force_logout: {
         Args: { _shop_id: string; _target_user_id: string }
         Returns: boolean

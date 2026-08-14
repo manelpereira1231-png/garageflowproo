@@ -18,6 +18,11 @@ export interface ServerListOptions {
   search?: string;
   /** Columns matched with ILIKE against `search` (OR). */
   searchColumns?: string[];
+  /**
+   * Expands the typed term into several terms (e.g. a plate in canonical form),
+   * all OR-ed across `searchColumns`.
+   */
+  searchTransform?: (term: string) => string[];
   /** Equality filters. Undefined/null/"" values are ignored. */
   eq?: Record<string, string | number | boolean | null | undefined>;
   /** `IN (...)` filters. Empty/undefined arrays are ignored. */
@@ -54,7 +59,7 @@ function escapeIlike(term: string) {
 export function useServerList<T = any>(opts: ServerListOptions): ServerListResult<T> {
   const {
     table, shopId, select, page, pageSize, orderBy, ascending = false,
-    search = "", searchColumns = [], eq, inFilters, notDeleted, refreshKey,
+    search = "", searchColumns = [], searchTransform, eq, inFilters, notDeleted, refreshKey,
     debounceMs = 300,
   } = opts;
 
@@ -99,7 +104,12 @@ export function useServerList<T = any>(opts: ServerListOptions): ServerListResul
 
       const term = escapeIlike(debouncedSearch || "");
       if (term && searchColumns.length > 0) {
-        q = q.or(searchColumns.map((c) => `${c}.ilike.%${term}%`).join(","));
+        const terms = Array.from(
+          new Set([term, ...(searchTransform ? searchTransform(term) : [])].map(escapeIlike).filter(Boolean)),
+        );
+        const clauses: string[] = [];
+        for (const c of searchColumns) for (const tt of terms) clauses.push(`${c}.ilike.%${tt}%`);
+        q = q.or(clauses.join(","));
       }
 
       const from = page * pageSize;

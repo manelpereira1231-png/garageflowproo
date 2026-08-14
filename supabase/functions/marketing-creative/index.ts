@@ -66,6 +66,7 @@ async function processGeneration(opts: {
         : "https://ai.gateway.lovable.dev/v1/images/generations",
       {
         method: "POST",
+      signal: AbortSignal.timeout(60000),
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
         body: JSON.stringify(body),
       },

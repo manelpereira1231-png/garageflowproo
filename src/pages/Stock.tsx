@@ -84,10 +84,10 @@ export default function Stock() {
     }
     try {
       const [partsRes, movRes, ordersRes, openWoRes] = await Promise.all([
-        supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name"),
+        supabase.from("parts").select("*").eq("shop_id", activeShopId).order("name").limit(1000),
         supabase.from("stock_movements").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
         supabase.from("parts_orders").select("*, suppliers(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(200),
-        supabase.from("work_orders").select("lines").eq("shop_id", activeShopId).in("status", ["open","diagnosis","waiting_approval","approved","in_progress"]),
+        supabase.from("work_orders").select("lines").eq("shop_id", activeShopId).in("status", ["open","diagnosis","waiting_approval","approved","in_progress"]).limit(500),
       ]);
       const p = (partsRes.data ?? []) as Part[];
       const m = (movRes.data ?? []) as StockMovement[];

@@ -346,7 +346,7 @@ export default function Vehicles() {
         <ListSkeleton rows={5} />
       )}
 
-      {!dataLoading && totalCount === 0 && (
+      {!dataLoading && totalCount === 0 && !hasActiveFilters && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">🚗</span>
           <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || 'Ainda sem veículos'}</h3>
@@ -441,7 +441,7 @@ export default function Vehicles() {
       </div>
       )}
 
-      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
+      <TablePagination page={safePage} totalPages={totalPages} total={totalCount} pageSize={PAGE_SIZE} start={safePage * PAGE_SIZE} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

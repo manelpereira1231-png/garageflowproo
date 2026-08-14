@@ -10413,6 +10413,51 @@ export type Database = {
           },
         ]
       }
+      plan_promotions_public: {
+        Row: {
+          active: boolean | null
+          country_code: string | null
+          created_at: string | null
+          currency: string | null
+          cycle: string | null
+          ends_at: string | null
+          id: string | null
+          notes: string | null
+          plan: string | null
+          promo_price: number | null
+          starts_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          country_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          cycle?: string | null
+          ends_at?: string | null
+          id?: string | null
+          notes?: string | null
+          plan?: string | null
+          promo_price?: number | null
+          starts_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          country_code?: string | null
+          created_at?: string | null
+          currency?: string | null
+          cycle?: string | null
+          ends_at?: string | null
+          id?: string | null
+          notes?: string | null
+          plan?: string | null
+          promo_price?: number | null
+          starts_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       plans_public: {
         Row: {
           active: boolean | null

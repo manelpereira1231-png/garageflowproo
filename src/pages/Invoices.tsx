@@ -18,8 +18,8 @@ import { getCurrencySymbol, getTaxLabelLocal } from "@/lib/marketPrice";
 import { useSubscription } from "@/hooks/useSubscription";
 import ListSkeleton from "@/components/ListSkeleton";
 import CertifiedBadge from "@/components/CertifiedBadge";
-import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useServerList } from "@/hooks/useServerList";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
@@ -43,7 +43,6 @@ const isOverdue = (inv: { status?: string | null; due_date?: string | null }) =>
 };
 
 const PAGE_SIZE = 50;
-const FETCH_LIMIT = 2000;
 
 type InvoicesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string; minTotal: string; maxTotal: string };
 const defaultInvoicesFilters: InvoicesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "", minTotal: "", maxTotal: "" };
@@ -52,11 +51,9 @@ export default function Invoices() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { can } = useShopRole();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _iCache = pageCache.get<{ rows: any[]; shop: any }>(`invoices-all:${_shopInit}`);
-  const [invoices, setInvoices] = useState<any[]>(_iCache?.rows ?? []);
-  const [shop, setShop] = useState<any>(_iCache?.shop ?? null);
-  const [dataLoading, setDataLoading] = useState(!_iCache);
+  const [shop, setShop] = useState<any>(null);
+  const [clientOptions, setClientOptions] = useState<[string, string][]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const activeShopId = useActiveShopId();
   const { allowWithoutConnect } = usePlatformInvoiceFee();
@@ -67,75 +64,97 @@ export default function Invoices() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
 
-  const fetchInvoices = async () => {
-    if (!activeShopId) { setDataLoading(false); return; }
-    const key = `invoices-all:${activeShopId}`;
-    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
-    if (cc) {
-      setInvoices(cc.rows); setShop(cc.shop); setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
-    try {
-      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
-      if (shopData) setShop(shopData);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
-      const { data } = await supabase
-        .from("invoices")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
-        .eq("shop_id", activeShopId)
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (data) setInvoices(data);
-      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
-    } finally {
-      setDataLoading(false);
-    }
+  const SORT_COLUMNS: Record<string, string> = {
+    number: "number", created_at: "created_at", total: "total",
+    due_date: "due_date", status: "status",
   };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
 
-  useEffect(() => { fetchInvoices(); }, [activeShopId]);
+  const compare = [
+    filters.dateFrom ? { col: "created_at", op: "gte" as const, value: filters.dateFrom } : null,
+    filters.dateTo ? { col: "created_at", op: "lte" as const, value: `${filters.dateTo}T23:59:59` } : null,
+    filters.minTotal ? { col: "total", op: "gte" as const, value: Number(filters.minTotal) } : null,
+    filters.maxTotal ? { col: "total", op: "lte" as const, value: Number(filters.maxTotal) } : null,
+    filters.status === "overdue" ? { col: "due_date", op: "lt" as const, value: todayIso } : null,
+  ].filter(Boolean) as { col: string; op: "gte" | "lte" | "lt"; value: string | number }[];
+
+  const searchExtraClauses = useCallback(async (term: string) => {
+    if (!activeShopId) return [];
+    const [{ data: cs }, { data: vs }] = await Promise.all([
+      supabase.from("clients").select("id").eq("shop_id", activeShopId).ilike("name", `%${term}%`).limit(50),
+      supabase.from("vehicles").select("id").eq("shop_id", activeShopId).ilike("plate", `%${term}%`).limit(50),
+    ]);
+    const clauses: string[] = [];
+    if (cs?.length) clauses.push(`client_id.in.(${cs.map((c: any) => c.id).join(",")})`);
+    if (vs?.length) clauses.push(`vehicle_id.in.(${vs.map((v: any) => v.id).join(",")})`);
+    return clauses;
+  }, [activeShopId]);
+
+  const {
+    rows: invoices,
+    total: totalCount,
+    loading: dataLoading,
+  } = useServerList<any>({
+    table: "invoices",
+    shopId: activeShopId,
+    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate)",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["number"],
+    searchExtraClauses,
+    eq: { client_id: filters.clientId || undefined },
+    inFilters: {
+      status: filters.status === "overdue"
+        ? ["issued", "partial"]
+        : filters.status !== "all" ? [filters.status] : undefined,
+    },
+    compare,
+    refreshKey,
+  });
+
+  const fetchInvoices = () => setRefreshKey((k) => k + 1);
+
+  useEffect(() => {
+    if (!activeShopId) return;
+    let alive = true;
+    (async () => {
+      const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (!alive) return;
+      if (shopData) setShop(shopData);
+      const { data: cs } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000);
+      if (!alive) return;
+      setClientOptions(((cs || []) as any[]).map((c) => [c.id, c.name] as [string, string]));
+    })();
+    return () => { alive = false; };
+  }, [activeShopId]);
 
   // Realtime: invoices + payments changes (issued, paid, refunded) reflect immediately.
   useRealtimeTable("invoices", { shopId: activeShopId, onChange: fetchInvoices });
   useRealtimeTable("payments", { shopId: activeShopId, onChange: fetchInvoices });
 
-  const preFiltered = invoices.filter((inv) => {
-    const s = filters.search.toLowerCase();
-    if (s) {
-      const hay = `${inv.number ?? ""} ${(inv.clients as any)?.name ?? ""} ${(inv.vehicles as any)?.plate ?? ""}`.toLowerCase();
-      if (!hay.includes(s)) return false;
-    }
-    if (filters.status === "overdue") { if (!isOverdue(inv)) return false; }
-    else if (filters.status !== "all" && inv.status !== filters.status) return false;
-    if (filters.clientId && inv.client_id !== filters.clientId) return false;
-    if (filters.dateFrom && new Date(inv.created_at) < new Date(filters.dateFrom)) return false;
-    if (filters.dateTo && new Date(inv.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
-    if (filters.minTotal && Number(inv.total) < Number(filters.minTotal)) return false;
-    if (filters.maxTotal && Number(inv.total) > Number(filters.maxTotal)) return false;
-    return true;
-  });
-  const view = apply(preFiltered, {
-    number: (i) => i.number,
-    created_at: (i) => new Date(i.created_at).getTime(),
-    client: (i) => (i.clients as any)?.name || "",
-    vehicle: (i) => `${(i.vehicles as any)?.make || ""} ${(i.vehicles as any)?.model || ""}`,
-    total: (i) => Number(i.total) || 0,
-    due_date: (i) => i.due_date || "",
-    status: (i) => i.status,
-  });
-  const filtered = view.rows;
-  const totalCount = invoices.length;
+  // Filtering, sorting and paging are handled by Postgres (useServerList).
+  const filtered = invoices;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
-  const clientOptions: [string, string][] = Array.from(
-    new Map(invoices.map((i) => [i.client_id, (i.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
-  );
-
-  const handleExportCsv = () => {
-    if (!can("invoices.export")) return;
-    const csvData = invoices.map(inv => ({
+  const handleExportCsv = async () => {
+    if (!can("invoices.export") || !activeShopId) return;
+    const { data: all } = await supabase
+      .from("invoices")
+      .select("*, clients(name)")
+      .eq("shop_id", activeShopId)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    const csvData = (all || []).map((inv: any) => ({
       Número: inv.number, Cliente: (inv.clients as any)?.name,
       Status: inv.status, Subtotal: inv.subtotal, [getTaxLabelLocal()]: inv.vat_total,
       Total: inv.total, Vencimento: inv.due_date, Data: inv.created_at?.slice(0, 10),
@@ -577,7 +596,7 @@ export default function Invoices() {
         </Table>
       </div>
 
-      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
+      <TablePagination page={safePage} totalPages={totalPages} total={totalCount} pageSize={PAGE_SIZE} start={safePage * PAGE_SIZE} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
     </div>
   );
 }

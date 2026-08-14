@@ -17,8 +17,8 @@ import VehicleMakeModelSelector, { getModelsForMake } from "@/components/Vehicle
 import { useLanguage } from "@/i18n/LanguageContext";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import ListSkeleton from "@/components/ListSkeleton";
-import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useServerList } from "@/hooks/useServerList";
 import { autoFormatPlate, canonicalPlate, isValidPlate, detectRegionFromCurrency, plateExampleFor } from "@/lib/plateFormat";
 import ClientCombobox from "@/components/ClientCombobox";
 import { MAX_MILEAGE } from "@/lib/sanityLimits";
@@ -29,20 +29,16 @@ import { TablePagination } from "@/components/table/TablePagination";
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
 const PAGE_SIZE = 50;
-const FETCH_LIMIT = 2000;
 
 type VehiclesFilters = { search: string; make: string; clientId: string; fuel: string };
 const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId: "", fuel: "" };
 
 export default function Vehicles() {
   const { t, language } = useLanguage();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _vCache = pageCache.get<{ rows: any[]; clients: any[] }>(`vehicles-all:${_shopInit}`);
-  const [vehicles, setVehicles] = useState<any[]>(_vCache?.rows ?? []);
-  const [clients, setClients] = useState<any[]>(_vCache?.clients ?? []);
+  const [clients, setClients] = useState<any[]>([]);
+  const [makeOptions, setMakeOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(!_vCache);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,33 +79,58 @@ export default function Vehicles() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
 
-  const fetchData = async () => {
-    if (!activeShopId) { setDataLoading(false); return; }
-    const key = `vehicles-all:${activeShopId}`;
-    const cc = pageCache.get<{ rows: any[]; clients: any[] }>(key);
-    if (cc) { setVehicles(cc.rows); setClients(cc.clients); setDataLoading(false); }
-    else { setDataLoading(true); }
-    try {
-      const { data: v } = await supabase.from("vehicles").select("*, clients(name)").eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(FETCH_LIMIT);
-      if (v) setVehicles(v);
-      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
-      if (c) setClients(c);
-      const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
-      if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
-      pageCache.set(key, { rows: v ?? [], clients: c ?? [] });
-    } finally {
-      setDataLoading(false);
-    }
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const SORT_COLUMNS: Record<string, string> = {
+    plate: "plate", make: "make", model: "model", year: "year",
+    mileage: "mileage", fuel: "fuel", created_at: "created_at",
+  };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
+
+  const {
+    rows: vehicles,
+    total: totalCount,
+    loading: dataLoading,
+    refetch: refetchVehicles,
+  } = useServerList<any>({
+    table: "vehicles",
+    shopId: activeShopId,
+    select: "*, clients(name)",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["plate", "make", "model", "version", "vin"],
+    searchTransform: (term) => [canonicalPlate(term)],
+    eq: { make: filters.make || undefined, fuel: filters.fuel || undefined, client_id: filters.clientId || undefined },
+    notDeleted: true,
+    refreshKey,
+  });
+
+  // Reference data (clients for the form/filter, shop meta, distinct makes).
+  const fetchRefData = async () => {
+    if (!activeShopId) return;
+    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000);
+    if (c) setClients(c);
+    const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
+    if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
+    const { data: mk } = await supabase.from("vehicles").select("make").eq("shop_id", activeShopId).is("deleted_at", null).limit(2000);
+    if (mk) setMakeOptions(Array.from(new Set(mk.map((r: any) => r.make).filter(Boolean))).sort() as string[]);
   };
 
-  useEffect(() => { fetchData(); }, [activeShopId]);
+  const fetchData = () => { setRefreshKey((k) => k + 1); void fetchRefData(); };
+
+  useEffect(() => { void fetchRefData(); }, [activeShopId]);
 
   // Realtime: keep the list in sync when vehicles change from anywhere.
   useRealtimeTable("vehicles", { shopId: activeShopId, onChange: fetchData });
-  useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchData });
+  useRealtimeTable("clients", { shopId: activeShopId, onChange: () => void fetchRefData() });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,35 +213,22 @@ export default function Vehicles() {
     setDeleteId(null);
   };
 
-  const preFiltered = vehicles.filter((v) => {
-    const s = filters.search.toLowerCase();
-    if (s) {
-      // A matrícula entra também na forma canónica (sem hífens/espaços) para
-      // que "00AA00" encontre "00-AA-00" e vice-versa.
-      const hay = `${v.plate} ${canonicalPlate(v.plate)} ${v.make} ${v.model} ${v.version ?? ""} ${v.vin ?? ""} ${(v.clients as any)?.name ?? ""}`.toLowerCase();
-      if (!hay.includes(s) && !hay.includes(canonicalPlate(s).toLowerCase())) return false;
-    }
-    if (filters.make && v.make !== filters.make) return false;
-    if (filters.fuel && v.fuel !== filters.fuel) return false;
-    if (filters.clientId && v.client_id !== filters.clientId) return false;
-    return true;
-  });
-  const view = apply(preFiltered, {
-    plate: (v) => v.plate,
-    make: (v) => v.make,
-    model: (v) => [v.model, v.version].filter(Boolean).join(' '),
-    year: (v) => Number(v.year),
-    client: (v) => (v.clients as any)?.name || "",
-    mileage: (v) => Number(v.mileage) || 0,
-    fuel: (v) => v.fuel,
-    created_at: (v) => new Date(v.created_at).getTime(),
-  });
-  const filtered = view.rows;
-  const totalCount = vehicles.length;
-  const makeOptions = Array.from(new Set(vehicles.map((v) => v.make).filter(Boolean))).sort() as string[];
+  // Filtering, sorting and paging are done by the database (useServerList).
+  const filtered = vehicles;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
-  const handleExportCsv = () => {
-    const csvData = vehicles.map(v => ({
+  // Export reads the full list from the server (the grid only holds one page).
+  const handleExportCsv = async () => {
+    if (!activeShopId) return;
+    const { data } = await supabase
+      .from("vehicles")
+      .select("*, clients(name)")
+      .eq("shop_id", activeShopId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    const csvData = (data || []).map((v: any) => ({
       [t('vehicles.make')]: v.make,
       [t('vehicles.model')]: [v.model, v.version].filter(Boolean).join(' '),
       [t('vehicles.year')]: v.year,
@@ -234,6 +242,7 @@ export default function Vehicles() {
     exportToCsv(csvData, 'veiculos');
     toast.success(t('common.exported'));
   };
+
 
   return (
     <div>
@@ -336,7 +345,7 @@ export default function Vehicles() {
         <ListSkeleton rows={5} />
       )}
 
-      {!dataLoading && totalCount === 0 && (
+      {!dataLoading && totalCount === 0 && !hasActiveFilters && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">🚗</span>
           <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || 'Ainda sem veículos'}</h3>
@@ -431,7 +440,7 @@ export default function Vehicles() {
       </div>
       )}
 
-      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
+      <TablePagination page={safePage} totalPages={totalPages} total={totalCount} pageSize={PAGE_SIZE} start={safePage * PAGE_SIZE} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

@@ -1,3 +1,5 @@
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useServerList } from "@/hooks/useServerList";
 import { useState, useEffect, useCallback } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +23,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import ListSkeleton from "@/components/ListSkeleton";
-import { pageCache } from "@/lib/pageCache";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
@@ -38,7 +39,6 @@ const statusColors: Record<QuoteStatus, string> = {
 };
 
 const PAGE_SIZE = 50;
-const FETCH_LIMIT = 2000;
 
 type QuotesFilters = { search: string; status: string; clientId: string; dateFrom: string; dateTo: string };
 const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientId: "", dateFrom: "", dateTo: "" };
@@ -47,15 +47,13 @@ export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { limits, plan, shopId, checkQuoteLimit, canUseFeature, isEntryPlan } = useSubscription();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _qCache = pageCache.get<{ rows: any[]; shop: any }>(`quotes-all:${_shopInit}`);
-  const [quotes, setQuotes] = useState<any[]>(_qCache?.rows ?? []);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [clientOptions, setClientOptions] = useState<[string, string][]>([]);
   const [converting, setConverting] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
-  const [shop, setShop] = useState<any>(_qCache?.shop ?? null);
+  const [shop, setShop] = useState<any>(null);
   const [monthlyUsed, setMonthlyUsed] = useState(0);
   const [showLimitModal, setShowLimitModal] = useState(false);
-  const [dataLoading, setDataLoading] = useState(!_qCache);
 
   const activeShopId = useActiveShopId();
 
@@ -65,30 +63,68 @@ export default function Quotes() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
 
-  const fetchQuotes = useCallback(async () => {
-    if (!activeShopId) { setDataLoading(false); return; }
-    const key = `quotes-all:${activeShopId}`;
-    const cc = pageCache.get<{ rows: any[]; shop: any }>(key);
-    if (cc) {
-      setQuotes(cc.rows); setShop(cc.shop); setDataLoading(false);
-    } else {
-      setDataLoading(true);
-    }
-    try {
+  const SORT_COLUMNS: Record<string, string> = {
+    number: "number", created_at: "created_at", total: "total",
+    profit: "profit", status: "status",
+  };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
+
+  const compare = [
+    filters.dateFrom ? { col: "created_at", op: "gte" as const, value: filters.dateFrom } : null,
+    filters.dateTo ? { col: "created_at", op: "lte" as const, value: `${filters.dateTo}T23:59:59` } : null,
+  ].filter(Boolean) as { col: string; op: "gte" | "lte"; value: string }[];
+
+  const searchExtraClauses = useCallback(async (term: string) => {
+    if (!activeShopId) return [];
+    const [{ data: cs }, { data: vs }] = await Promise.all([
+      supabase.from("clients").select("id").eq("shop_id", activeShopId).ilike("name", `%${term}%`).limit(50),
+      supabase.from("vehicles").select("id").eq("shop_id", activeShopId)
+        .or(`plate.ilike.%${term}%,make.ilike.%${term}%,model.ilike.%${term}%`).limit(50),
+    ]);
+    const clauses: string[] = [];
+    if (cs?.length) clauses.push(`client_id.in.(${cs.map((c: any) => c.id).join(",")})`);
+    if (vs?.length) clauses.push(`vehicle_id.in.(${vs.map((v: any) => v.id).join(",")})`);
+    return clauses;
+  }, [activeShopId]);
+
+  const {
+    rows: quotes,
+    total: totalCount,
+    loading: dataLoading,
+  } = useServerList<any>({
+    table: "quotes",
+    shopId: activeShopId,
+    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate)",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["number"],
+    searchExtraClauses,
+    eq: { client_id: filters.clientId || undefined },
+    inFilters: { status: filters.status !== "all" ? [filters.status] : undefined },
+    compare,
+    refreshKey,
+  });
+
+  const fetchQuotes = useCallback(() => { setRefreshKey((k) => k + 1); }, []);
+
+  useEffect(() => {
+    if (!activeShopId) return;
+    let alive = true;
+    (async () => {
       const { data: shopData } = await supabase.from("shops").select("*").eq("id", activeShopId).maybeSingle();
+      if (!alive) return;
       if (shopData) setShop(shopData);
 
-      const { data } = await supabase
-        .from("quotes")
-        .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
-        .eq("shop_id", activeShopId)
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (data) setQuotes(data);
-      pageCache.set(key, { rows: data ?? [], shop: shopData ?? null });
+      const { data: cs } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000);
+      if (!alive) return;
+      setClientOptions(((cs || []) as any[]).map((c) => [c.id, c.name] as [string, string]));
 
       if (limits.maxQuotesPerMonth !== Infinity) {
         const now = new Date();
@@ -98,32 +134,13 @@ export default function Quotes() {
           .select("id", { count: "exact", head: true })
           .eq("shop_id", activeShopId)
           .gte("created_at", monthStart);
-        setMonthlyUsed(monthCount || 0);
+        if (alive) setMonthlyUsed(monthCount || 0);
       }
-    } finally {
-      setDataLoading(false);
-    }
-  }, [activeShopId, limits.maxQuotesPerMonth]);
+    })();
+    return () => { alive = false; };
+  }, [activeShopId, limits.maxQuotesPerMonth, refreshKey]);
 
-  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
-
-  useEffect(() => {
-    if (!activeShopId) return;
-
-    const channel = supabase
-      .channel(`quotes-list-${activeShopId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "quotes", filter: `shop_id=eq.${activeShopId}` },
-        () => {
-          pageCache.clear(`quotes-all:${activeShopId}`);
-          fetchQuotes();
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [activeShopId, fetchQuotes]);
+  useRealtimeTable("quotes", { shopId: activeShopId, onChange: fetchQuotes });
 
   const isLimitReached = isEntryPlan && monthlyUsed >= limits.maxQuotesPerMonth;
 
@@ -314,8 +331,15 @@ export default function Quotes() {
     });
   };
 
-  const handleExportCsv = () => {
-    const csvData = quotes.map(q => ({
+  const handleExportCsv = async () => {
+    if (!activeShopId) return;
+    const { data: all } = await supabase
+      .from("quotes")
+      .select("*, clients(name), vehicles(make, model, plate)")
+      .eq("shop_id", activeShopId)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    const csvData = (all || []).map((q: any) => ({
       Número: q.number, Cliente: (q.clients as any)?.name,
       Veículo: `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model}`,
       Matrícula: (q.vehicles as any)?.plate, Status: q.status, Subtotal: q.subtotal,
@@ -325,34 +349,10 @@ export default function Quotes() {
     toast.success(t('common.exported'));
   };
 
-  const preFiltered = quotes.filter((q) => {
-    const s = filters.search.toLowerCase();
-    if (s) {
-      const hay = `${q.number ?? ""} ${(q.clients as any)?.name ?? ""} ${(q.vehicles as any)?.plate ?? ""} ${(q.vehicles as any)?.make ?? ""} ${(q.vehicles as any)?.model ?? ""}`.toLowerCase();
-      if (!hay.includes(s)) return false;
-    }
-    if (filters.status !== "all" && q.status !== filters.status) return false;
-    if (filters.clientId && q.client_id !== filters.clientId) return false;
-    if (filters.dateFrom && new Date(q.created_at) < new Date(filters.dateFrom)) return false;
-    if (filters.dateTo && new Date(q.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
-    return true;
-  });
-
-  const view = apply(preFiltered, {
-    number: (q) => q.number,
-    created_at: (q) => new Date(q.created_at).getTime(),
-    client: (q) => (q.clients as any)?.name || "",
-    vehicle: (q) => `${(q.vehicles as any)?.make || ""} ${(q.vehicles as any)?.model || ""}`,
-    total: (q) => Number(q.total) || 0,
-    profit: (q) => Number(q.profit) || 0,
-    status: (q) => q.status,
-  });
-  const filtered = view.rows;
-  const totalCount = quotes.length;
-
-  const clientOptions: [string, string][] = Array.from(
-    new Map(quotes.map((q) => [q.client_id, (q.clients as any)?.name]).filter(([id, n]) => id && n) as [string, string][]).entries()
-  );
+  // Filtering, sorting and paging are handled by Postgres (useServerList).
+  const filtered = quotes;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
   // 'sent' num orçamento significa que foi enviado ao cliente e aguarda decisão —
   // mostramos "Aguarda aprovação" para não ser confundido com "aprovado".
@@ -605,7 +605,7 @@ export default function Quotes() {
       </div>
       )}
 
-      <TablePagination page={view.page} totalPages={view.totalPages} total={view.total} pageSize={view.pageSize} start={view.start} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
+      <TablePagination page={safePage} totalPages={totalPages} total={totalCount} pageSize={PAGE_SIZE} start={safePage * PAGE_SIZE} onPageChange={setPage} labelOf={t('common.of') || 'de'} />
 
       {/* Upgrade Modal */}
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

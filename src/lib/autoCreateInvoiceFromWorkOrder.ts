@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { insertWithNumber, nextInvoiceNumber } from "@/lib/insertWithNumber";
 
 /**
  * Cria automaticamente uma fatura (rascunho) a partir de uma Ordem de Serviço concluída.
@@ -40,9 +41,6 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
       return { invoiceId: null, created: false, error: "OS sem cliente associado" };
     }
 
-    // 3. Gerar número via RPC (sequencial atómico)
-    const { data: numData } = await supabase.rpc("next_invoice_number", { _shop_id: wo.shop_id });
-    const number = numData || `FAT-${new Date().getFullYear()}-0001`;
 
     // 4. Preparar linhas
     const lines = Array.isArray(wo.lines) ? (wo.lines as any[]) : [];
@@ -68,7 +66,9 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
     }
 
     // 5. Inserir fatura
-    const { data: invoice, error: invErr } = await supabase
+    const { data: invoice, error: invErr } = await insertWithNumber<any>({
+      getNumber: () => nextInvoiceNumber(wo.shop_id),
+      insert: (number) => supabase
       .from("invoices")
       .insert({
         shop_id: wo.shop_id,
@@ -85,7 +85,8 @@ export async function autoCreateInvoiceFromWorkOrder(workOrderId: string): Promi
         notes: wo.notes || null,
       })
       .select()
-      .single();
+      .single() as any,
+    });
 
     if (invErr || !invoice) {
       return { invoiceId: null, created: false, error: invErr?.message || "Falha a criar fatura" };

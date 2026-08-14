@@ -86,30 +86,55 @@ export default function Vehicles() {
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
   const search = filters.search;
 
-  const fetchData = async () => {
-    if (!activeShopId) { setDataLoading(false); return; }
-    const key = `vehicles-all:${activeShopId}`;
-    const cc = pageCache.get<{ rows: any[]; clients: any[] }>(key);
-    if (cc) { setVehicles(cc.rows); setClients(cc.clients); setDataLoading(false); }
-    else { setDataLoading(true); }
-    try {
-      const { data: v } = await supabase.from("vehicles").select("*, clients(name)").eq("shop_id", activeShopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(FETCH_LIMIT);
-      if (v) setVehicles(v);
-      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
-      if (c) setClients(c);
-      const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
-      if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
-      pageCache.set(key, { rows: v ?? [], clients: c ?? [] });
-    } finally {
-      setDataLoading(false);
-    }
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const SORT_COLUMNS: Record<string, string> = {
+    plate: "plate", make: "make", model: "model", year: "year",
+    mileage: "mileage", fuel: "fuel", created_at: "created_at",
+  };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
+
+  const {
+    rows: vehicles,
+    total: totalCount,
+    loading: dataLoading,
+    refetch: refetchVehicles,
+  } = useServerList<any>({
+    table: "vehicles",
+    shopId: activeShopId,
+    select: "*, clients(name)",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["plate", "make", "model", "version", "vin"],
+    searchTransform: (term) => [canonicalPlate(term)],
+    eq: { make: filters.make || undefined, fuel: filters.fuel || undefined, client_id: filters.clientId || undefined },
+    notDeleted: true,
+    refreshKey,
+  });
+
+  // Reference data (clients for the form/filter, shop meta, distinct makes).
+  const fetchRefData = async () => {
+    if (!activeShopId) return;
+    const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000);
+    if (c) setClients(c);
+    const { data: s } = await supabase.from("shops").select("currency, country").eq("id", activeShopId).maybeSingle();
+    if (s) setShopMeta({ currency: (s as any).currency, country: (s as any).country });
+    const { data: mk } = await supabase.from("vehicles").select("make").eq("shop_id", activeShopId).is("deleted_at", null).limit(2000);
+    if (mk) setMakeOptions(Array.from(new Set(mk.map((r: any) => r.make).filter(Boolean))).sort() as string[]);
   };
 
-  useEffect(() => { fetchData(); }, [activeShopId]);
+  const fetchData = () => { setRefreshKey((k) => k + 1); void fetchRefData(); };
+
+  useEffect(() => { void fetchRefData(); }, [activeShopId]);
 
   // Realtime: keep the list in sync when vehicles change from anywhere.
   useRealtimeTable("vehicles", { shopId: activeShopId, onChange: fetchData });
-  useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchData });
+  useRealtimeTable("clients", { shopId: activeShopId, onChange: () => void fetchRefData() });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

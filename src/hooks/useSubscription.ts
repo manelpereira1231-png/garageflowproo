@@ -323,15 +323,9 @@ export function useSubscription() {
         // Setup Realtime for this specific shop
         setupRealtime(sid);
 
-        // Background Stripe sync — only if shop has stripe_subscription_id
-        const { data: sub } = await Promise.race([
-          supabase
-            .from("subscriptions")
-            .select("stripe_subscription_id")
-            .eq("shop_id", sid)
-            .maybeSingle(),
-          timeoutResult({ data: null }),
-        ]);
+        // Background Stripe sync — only if shop has stripe_subscription_id.
+        // Usa a linha já carregada em cache (evita segunda query idêntica).
+        const sub = await fetchSubscriptionForShop(sid);
 
         if (sub?.stripe_subscription_id) {
           supabase.functions.invoke('check-subscription').then(() => {

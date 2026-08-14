@@ -332,23 +332,13 @@ export default function Services() {
   const activeShopId = useActiveShopId();
 
   const fetchStats = async (shopId: string) => {
-    const { data: allRows } = await supabase
-      .from("work_orders")
-      .select("status, total, completed_at")
-      .eq("shop_id", shopId)
-      .limit(2000);
-    if (!allRows) return;
-    const counts: Record<string, number> = {};
-    let revenue = 0;
-    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-    for (const r of allRows as any[]) {
-      counts[r.status] = (counts[r.status] || 0) + 1;
-      if ((r.status === 'completed' || r.status === 'delivered') && r.completed_at && new Date(r.completed_at) >= monthStart) {
-        revenue += Number(r.total || 0);
-      }
-    }
-    setStatusCountsAll(counts);
-    setMonthRevenue(revenue);
+    // Agregação feita no servidor (RPC) — evita descarregar milhares de OS
+    // para o browser só para contar estados e somar a receita do mês.
+    const { data, error } = await supabase.rpc("work_order_status_stats" as any, { _shop_id: shopId });
+    if (error || !data) return;
+    const result = data as any;
+    setStatusCountsAll((result.counts ?? {}) as Record<string, number>);
+    setMonthRevenue(Number(result.month_revenue ?? 0));
   };
 
   const fetchServices = async () => {

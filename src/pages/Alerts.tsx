@@ -106,13 +106,13 @@ export default function Alerts() {
   }, [shopId]);
 
   const resolveAlert = async (id: string) => {
-    const { error } = await supabase.from("alerts").update({ status: 'resolved' }).eq("id", id);
+    const { error } = await supabase.from("alerts").update({ status: 'resolved' }).eq("id", id).eq("shop_id", shopId);
     if (error) toast.error(error.message);
     else { toast.success(t('alerts.resolved')); fetchAlerts(); }
   };
 
   const dismissAlert = async (id: string) => {
-    const { error } = await supabase.from("alerts").update({ status: 'dismissed' }).eq("id", id);
+    const { error } = await supabase.from("alerts").update({ status: 'dismissed' }).eq("id", id).eq("shop_id", shopId);
     if (error) toast.error(error.message);
     else fetchAlerts();
   };

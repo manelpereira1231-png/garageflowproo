@@ -347,13 +347,13 @@ export default function ServiceCatalog() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("service_catalog").delete().eq("id", id);
+    await supabase.from("service_catalog").delete().eq("id", id).eq("shop_id", activeShopId);
     toast.success(t('common.deleted'));
     load();
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    await supabase.from("service_catalog").update({ active } as any).eq("id", id);
+    await supabase.from("service_catalog").update({ active } as any).eq("id", id).eq("shop_id", activeShopId);
     load();
   };
 

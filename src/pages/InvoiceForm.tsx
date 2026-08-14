@@ -96,7 +96,7 @@ export default function InvoiceForm() {
 
       // Pre-fill from quote
       if (fromQuote) {
-        const { data: quote } = await supabase.from("quotes").select("*").eq("id", fromQuote).maybeSingle();
+        const { data: quote } = await supabase.from("quotes").select("*").eq("id", fromQuote).eq("shop_id", activeId).maybeSingle();
         if (quote) {
           setClientId(quote.client_id);
           setVehicleId(quote.vehicle_id);
@@ -113,7 +113,7 @@ export default function InvoiceForm() {
 
       // Pre-fill from work order
       if (fromWorkOrder) {
-        const { data: wo } = await supabase.from("work_orders").select("*").eq("id", fromWorkOrder).maybeSingle();
+        const { data: wo } = await supabase.from("work_orders").select("*").eq("id", fromWorkOrder).eq("shop_id", activeId).maybeSingle();
         if (wo) {
           setClientId(wo.client_id);
           setVehicleId(wo.vehicle_id);

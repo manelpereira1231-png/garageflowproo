@@ -88,7 +88,7 @@ export default function Warranties() {
 
     let error;
     if (editingId) {
-      ({ error } = await supabase.from("warranties").update(payload).eq("id", editingId));
+      ({ error } = await supabase.from("warranties").update(payload).eq("id", editingId).eq("shop_id", activeShopId));
     } else {
       ({ error } = await supabase.from("warranties").insert(payload));
     }

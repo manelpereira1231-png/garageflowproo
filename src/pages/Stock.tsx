@@ -157,17 +157,20 @@ export default function Stock() {
   const handleMovement = async () => {
     if (!activeShopId || !movementDialog) return;
     const qty = movForm.type === "out" ? -Math.abs(movForm.quantity) : Math.abs(movForm.quantity);
-    
-    const { error } = await supabase.from("stock_movements").insert({
-      shop_id: activeShopId, part_id: movementDialog, type: movForm.type,
-      quantity: Math.abs(movForm.quantity), reason: movForm.reason || null,
+
+    // Atómico: bloqueia a peça, valida stock negativo, grava movimento + quantidade
+    // numa só transação. Evita perdas de atualização com dois utilizadores em simultâneo.
+    const { error } = await supabase.rpc("adjust_part_stock", {
+      _shop_id: activeShopId,
+      _part_id: movementDialog,
+      _delta: qty,
+      _type: movForm.type,
+      _reason: movForm.reason || null,
     } as any);
 
-    if (!error) {
-      const part = parts.find(p => p.id === movementDialog);
-      if (part) {
-        await supabase.from("parts").update({ stock_quantity: part.stock_quantity + qty } as any).eq("id", movementDialog);
-      }
+    if (error) {
+      toast.error(error.message.includes("negative_stock") ? "Stock não pode ficar negativo" : error.message);
+    } else {
       toast.success(t('stock.movementRegistered'));
     }
     setMovementDialog(null); setMovForm({ type: "in", quantity: 1, reason: "" }); load();
@@ -180,21 +183,25 @@ export default function Stock() {
     load();
   };
 
-  // Ajuste rápido de stock (+1 / -1) — grava movimento e atualiza quantidade.
+  // Ajuste rápido de stock (+1 / -1) — movimento e quantidade numa operação atómica.
   const quickAdjust = async (part: Part, delta: number) => {
     if (!activeShopId) return;
-    const newQty = part.stock_quantity + delta;
-    if (newQty < 0) { toast.error("Stock não pode ficar negativo"); return; }
-    const type = delta > 0 ? "in" : "out";
-    await supabase.from("stock_movements").insert({
-      shop_id: activeShopId, part_id: part.id, type,
-      quantity: Math.abs(delta), reason: "Ajuste rápido",
+    const { data, error } = await supabase.rpc("adjust_part_stock", {
+      _shop_id: activeShopId,
+      _part_id: part.id,
+      _delta: delta,
+      _type: delta > 0 ? "in" : "out",
+      _reason: "Ajuste rápido",
     } as any);
-    await supabase.from("parts").update({ stock_quantity: newQty } as any).eq("id", part.id);
-    // Otimista: atualiza local sem esperar reload completo
+    if (error) {
+      toast.error(error.message.includes("negative_stock") ? "Stock não pode ficar negativo" : error.message);
+      return;
+    }
+    const newQty = Number(data);
     setParts(prev => prev.map(p => p.id === part.id ? { ...p, stock_quantity: newQty } : p));
     load();
   };
+
 
   // Consumo dos últimos 30 dias por peça (soma de saídas)
   const cutoff30d = Date.now() - 30 * 86400000;

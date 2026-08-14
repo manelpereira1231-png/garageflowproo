@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { invalidateOwnedShops } from "@/hooks/useOwnedShops";
 import { supabase } from "@/integrations/supabase/client";
 import { clearActiveShopAndSync } from "@/lib/shopContextSync";
 import { toast } from "sonner";
@@ -191,6 +192,7 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
     setDeletingId(shop.id);
     try {
       const { data, error } = await supabase.rpc('delete_child_shop', { _shop_id: shop.id });
+      invalidateOwnedShops();
       if (error) {
         if (error.message?.includes('PRIMARY_SHOP_UNDELETABLE')) {
           toast.error("A Oficina Mãe não pode ser eliminada.");

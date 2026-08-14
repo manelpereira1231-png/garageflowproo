@@ -1,56 +1,35 @@
-# GarageFlow — Arnês de teste de carga e concorrência
+# Teste de carga reproduzível — GarageFlow
 
-Estes scripts **não correm sozinhos no ambiente do agente**: exigem credenciais de
-utilizadores reais (ou de teste) porque quase todo o ERP está protegido por RLS.
-Sem sessão autenticada só é possível medir o caminho anónimo.
+Objetivo: medir a API (PostgREST + RLS) com N sessões autenticadas em paralelo,
+sem tocar em dados de produção (apenas leituras) ou contra um projeto de staging.
 
-## Pré-requisitos
+## Requisitos
+- `k6` (https://k6.io)
+- Um ficheiro `users.json` com tokens de sessão de contas de teste:
+  `[{"token":"<access_token>","shopId":"<uuid>"}, ...]`
+  (gerar com login normal em contas de teste; nunca usar contas reais de clientes)
 
-Criar um ficheiro `.env.loadtest` (não committar):
+## Executar
 
-```
-SUPABASE_URL=https://<projeto>.supabase.co
-SUPABASE_ANON_KEY=<anon key>
-# N utilizadores de teste, um por linha: email:password:shop_id
-LOAD_USERS_FILE=./users.txt
-```
-
-Cada linha de `users.txt` representa uma oficina simulada.
-
-## 1. Rampa de leitura (sem escrita)
-
-```
-bun scripts/loadtest/read_ramp.mjs
+```bash
+k6 run -e BASE_URL=https://<projeto>.supabase.co \
+       -e ANON_KEY=<anon_key> \
+       -e VUS=100 -e DURATION=90s \
+       scripts/loadtest/api-load.js
 ```
 
-Mede p50/p95/p99, throughput e erros em concorrência 1→400 no caminho
-PostgREST → Postgres.
+## Critérios de aprovação (definidos, ainda não executados a esta escala)
+| Métrica | Aprovação |
+|---|---|
+| erros HTTP | 0% |
+| p95 leitura de lista (50 registos) | < 400 ms |
+| p99 | < 800 ms |
+| ligações Postgres | < 70% do máximo |
+| memória do servidor | < 85% sustentado |
+| rollbacks | sem crescimento acelerado face ao baseline |
 
-## 2. Carga autenticada mista (dashboard, pesquisa, clientes, veículos, OS)
-
-```
-bun scripts/loadtest/auth_mixed.mjs --shops 1000 --minutes 30
-```
-
-Cada "oficina" faz login uma vez e depois executa operações aleatórias
-representativas. Reporta métricas por tipo de operação.
-
-## 3. Concorrência crítica (escreve dados — usar ambiente de teste)
-
-```
-bun scripts/loadtest/concurrency.mjs --work-order <uuid> --quote <uuid> --n 50
-```
-
-Testa:
-- N chamadas simultâneas a `consume_work_order_parts` na mesma OS/peça
-  (esperado: stock decrementado **uma** vez, sem movimentos duplicados);
-- N aprovações simultâneas do mesmo orçamento (esperado: 1 aprovação, restantes rejeitadas);
-- N conversões simultâneas do mesmo orçamento (esperado: 1 OS criada).
-
-O script imprime o estado final de `parts.stock_quantity`, a contagem de
-`stock_movements` e o número de OS criadas — números verificáveis, não estimativas.
-
-## Aviso
-
-Os scripts 2 e 3 **escrevem** na base de dados. Executar apenas contra um
-projeto de teste/staging, nunca contra dados reais de clientes.
+## O que falta para provar "1000 oficinas"
+1. Projeto de staging com dados sintéticos: 1000 oficinas × (200 clientes,
+   300 viaturas, 500 orçamentos, 500 OS, 300 faturas, 2000 movimentos de stock).
+2. 200–400 sessões simultâneas distribuídas por oficinas diferentes (não a mesma).
+3. Repetir `EXPLAIN (ANALYZE, BUFFERS)` das listas principais com esse volume.

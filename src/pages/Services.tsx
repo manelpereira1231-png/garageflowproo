@@ -533,10 +533,18 @@ export default function Services() {
     }
   };
 
-  const handleExportCsv = () => {
-    if (!can("work_orders.export")) return;
-    const csvData = services.map(s => ({
+  const handleExportCsv = async () => {
+    if (!can("work_orders.export") || !activeShopId) return;
+    // A grelha só tem uma página — a exportação lê a lista completa no servidor.
+    const { data: all } = await supabase
+      .from("work_orders")
+      .select("*, clients(name), vehicles(make, model, plate)")
+      .eq("shop_id", activeShopId)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    const csvData = (all || []).map((s: any) => ({
       Número: s.number, Cliente: (s.clients as any)?.name,
+
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
       Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
       [getTaxLabel()]: s.vat_total, Total: s.total, Lucro: s.profit,

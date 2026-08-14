@@ -16,7 +16,6 @@ import { toastError } from "@/lib/errorMessages";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { openWhatsApp } from "@/lib/whatsapp";
 import ListSkeleton from "@/components/ListSkeleton";
-import { pageCache } from "@/lib/pageCache";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useServerList } from "@/hooks/useServerList";
 
@@ -355,7 +354,7 @@ export default function Clients() {
         <ListSkeleton rows={5} />
       )}
 
-      {!dataLoading && totalCount === 0 && (
+      {!dataLoading && totalCount === 0 && !search && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">👤</span>
           <h3 className="text-lg font-bold mb-1">{t('clients.empty') || 'Ainda sem clientes'}</h3>
@@ -484,7 +483,7 @@ export default function Clients() {
                     </li>
                   ))}
                 </ul>
-                <p>Queres guardar mesmo assim?</p>
+                <p>Pretende guardar mesmo assim?</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

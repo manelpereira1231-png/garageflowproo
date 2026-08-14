@@ -27,32 +27,69 @@ const num = (v: unknown, fallback: number) => {
 };
 
 /**
+ * Cache de módulo: esta configuração é global (não depende da oficina) e era
+ * lida a cada montagem do hook, gerando dezenas de milhares de pedidos.
+ * TTL curto + invalidação por evento mantêm-na fresca.
+ */
+let feeCache: { value: PaymentFeeSettings; at: number } | null = null;
+let feeInflight: Promise<PaymentFeeSettings> | null = null;
+const FEE_TTL_MS = 5 * 60 * 1000;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("garageflow:platform-settings-updated", () => {
+    feeCache = null;
+    feeInflight = null;
+  });
+}
+
+async function fetchFeeSettings(force: boolean): Promise<PaymentFeeSettings> {
+  if (!force && feeCache && Date.now() - feeCache.at < FEE_TTL_MS) return feeCache.value;
+  if (!force && feeInflight) return feeInflight;
+  feeInflight = (async () => {
+    try {
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "invoice_payments")
+        .maybeSingle();
+      const raw = (data?.value as Record<string, unknown> | null) ?? {};
+      const value: PaymentFeeSettings = {
+        feePercent: num(raw.platform_fee_percent, DEFAULT_INVOICE_FEE_PERCENT),
+        allowWithoutConnect: raw.allow_without_connect !== false,
+        noConnectExtraPercent: num(raw.no_connect_extra_percent, 0),
+        noConnectFixedFee: num(raw.no_connect_fixed_fee, 0),
+      };
+      feeCache = { value, at: Date.now() };
+      return value;
+    } catch {
+      return feeCache?.value ?? FALLBACK_FEE_SETTINGS;
+    } finally {
+      feeInflight = null;
+    }
+  })();
+  return feeInflight;
+}
+
+/**
  * Configuração global de comissões dos pagamentos online de faturas.
  * Fonte única de verdade: `platform_settings.invoice_payments`
  * (editável apenas pelo Super Admin em /admin/payment-fees).
  */
 export function usePlatformInvoiceFee() {
-  const [settings, setSettings] = useState<PaymentFeeSettings>(FALLBACK_FEE_SETTINGS);
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<PaymentFeeSettings>(
+    () => feeCache?.value ?? FALLBACK_FEE_SETTINGS,
+  );
+  const [loading, setLoading] = useState(!feeCache);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "invoice_payments")
-      .maybeSingle();
-    const raw = (data?.value as Record<string, unknown> | null) ?? {};
-    setSettings({
-      feePercent: num(raw.platform_fee_percent, DEFAULT_INVOICE_FEE_PERCENT),
-      allowWithoutConnect: raw.allow_without_connect !== false,
-      noConnectExtraPercent: num(raw.no_connect_extra_percent, 0),
-      noConnectFixedFee: num(raw.no_connect_fixed_fee, 0),
-    });
+  const load = useCallback(async (force = false) => {
+    if (!feeCache) setLoading(true);
+    const value = await fetchFeeSettings(force);
+    setSettings(value);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  return { ...settings, settings, loading, reload: load };
+  return { ...settings, settings, loading, reload: () => load(true) };
 }
+

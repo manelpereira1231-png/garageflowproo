@@ -37,6 +37,19 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // IDEMPOTENCY: Stripe retries deliveries; without this guard the same event
+    // can transition an order (and its payment row) twice.
+    const { error: dupErr } = await supa
+      .from("stripe_webhook_events")
+      .insert({ event_id: event.id, event_type: event.type });
+    if (dupErr && (dupErr as any).code === "23505") {
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
+
     const markPaid = async (orderId: string, pi?: string | null) => {
       await supa.rpc("gsn_order_transition" as any, {
         _order_id: orderId, _new_state: "paid", _note: "Stripe payment received",

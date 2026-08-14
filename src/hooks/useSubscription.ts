@@ -262,15 +262,10 @@ export function useSubscription() {
     try {
       const sid = shopId || activeShopId || await resolveShopId();
       if (sid) {
-        const { data: sub } = await Promise.race([
-          supabase
-            .from("subscriptions")
-            .select("stripe_subscription_id")
-            .eq("shop_id", sid)
-            .maybeSingle(),
-          timeoutResult({ data: null }),
-        ]);
-        
+        // Reutiliza a subscrição já em cache (mesma linha, mesmo conteúdo) em vez
+        // de repetir a query a `subscriptions` — evita 1 pedido extra por sessão.
+        const sub = await fetchSubscriptionForShop(sid);
+
         // CRITICAL: Skip sync if no stripe_subscription_id (admin-managed plan)
         if (!sub?.stripe_subscription_id) {
           console.log("[useSubscription] Skipping Stripe sync — no stripe_subscription_id (admin-managed)");

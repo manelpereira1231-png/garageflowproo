@@ -29,7 +29,6 @@ import { TablePagination } from "@/components/table/TablePagination";
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
 const PAGE_SIZE = 50;
-const FETCH_LIMIT = 2000;
 
 type VehiclesFilters = { search: string; make: string; clientId: string; fuel: string };
 const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId: "", fuel: "" };
@@ -80,7 +79,7 @@ export default function Vehicles() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
 
   const [refreshKey, setRefreshKey] = useState(0);

@@ -11423,6 +11423,7 @@ export type Database = {
         Returns: boolean
       }
       verify_inspection_certificate: { Args: { _token: string }; Returns: Json }
+      work_order_status_stats: { Args: { _shop_id: string }; Returns: Json }
     }
     Enums: {
       app_role:

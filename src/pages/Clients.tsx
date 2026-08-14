@@ -85,21 +85,17 @@ export default function Clients() {
   const validateTaxId = (value: string) => isValidTaxId(value, shopCountry, taxIdField?.pattern);
   const taxIdHelp = taxIdHint(shopCountry) ?? taxIdField?.placeholder;
 
-  const activeShopIdInit = (typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null);
-  const cacheKey = `clients-all:${activeShopIdInit}`;
-  const cached = pageCache.get<{ rows: ClientRow[] }>(cacheKey);
-  const [clients, setClients] = useState<ClientRow[]>(cached?.rows ?? []);
+  const activeShopId = useActiveShopId();
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(!cached);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
   const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
-
-  const activeShopId = useActiveShopId();
 
   const getActiveShopId = (): string | null => activeShopId;
 
@@ -109,53 +105,73 @@ export default function Clients() {
     defaultSort: { key: "created_at", dir: "desc" },
     pageSize: PAGE_SIZE,
   });
-  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage, apply } = table;
+  const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
 
-  const fetchClients = async () => {
-    const shopId = getActiveShopId();
-    if (!shopId) { setDataLoading(false); return; }
-    const key = `clients-all:${shopId}`;
-    const c = pageCache.get<{ rows: ClientRow[] }>(key);
-    if (c) { setClients(c.rows); setDataLoading(false); }
-    else { setDataLoading(true); }
-    try {
-      const { data } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("shop_id", shopId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(FETCH_LIMIT);
-      if (data) setClients(data);
-      pageCache.set(key, { rows: data ?? [] });
-    } finally {
-      setDataLoading(false);
-    }
+  // Server-side sort: the table header keys map 1:1 to real columns.
+  const SORT_COLUMNS: Record<string, string> = {
+    name: "name", email: "email", company: "company", nif: "nif", created_at: "created_at",
   };
+  const orderBy = (sort.key && SORT_COLUMNS[sort.key]) || "created_at";
+  const ascending = sort.key && sort.dir ? sort.dir === "asc" : false;
 
-  useEffect(() => { fetchClients(); }, [activeShopId]);
+  const {
+    rows: clients,
+    total: totalCount,
+    loading: dataLoading,
+    refetch: fetchClients,
+  } = useServerList<ClientRow>({
+    table: "clients",
+    shopId: activeShopId,
+    select: "*",
+    page,
+    pageSize: PAGE_SIZE,
+    orderBy,
+    ascending,
+    search,
+    searchColumns: ["name", "email", "phone", "nif", "company"],
+    notDeleted: true,
+    refreshKey,
+  });
+
+  const filtered = clients;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
 
   // Realtime: any INSERT/UPDATE/DELETE on this shop's clients → refetch.
-  useRealtimeTable("clients", { shopId: activeShopId, onChange: fetchClients });
+  useRealtimeTable("clients", { shopId: activeShopId, onChange: () => setRefreshKey((k) => k + 1) });
 
-  // Deteção de duplicados (mesmo NIF, email ou telemóvel) na oficina ativa.
-  const normalizePhone = (v: string) => (v || "").replace(/[\s.\-()]/g, "").toLowerCase();
-  const findDuplicates = () => {
-    const nif = (form.nif || "").trim().toLowerCase();
-    const email = (form.email || "").trim().toLowerCase();
-    const phone = normalizePhone(form.phone);
-    return clients
-      .filter((c) => c.id !== editingId)
-      .map((c) => {
+  // Duplicate detection now runs on the server (the browser only holds one page).
+  const findDuplicates = async (): Promise<{ client: ClientRow; reasons: string[] }[]> => {
+    const shopId = getActiveShopId();
+    if (!shopId) return [];
+    const nif = (form.nif || "").trim();
+    const email = (form.email || "").trim();
+    const phone = (form.phone || "").trim();
+    const ors: string[] = [];
+    if (nif) ors.push(`nif.ilike.${nif}`);
+    if (email) ors.push(`email.ilike.${email}`);
+    if (phone) ors.push(`phone.ilike.${phone}`);
+    if (ors.length === 0) return [];
+    const { data } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("shop_id", shopId)
+      .is("deleted_at", null)
+      .or(ors.join(","))
+      .limit(5);
+    return (data || [])
+      .filter((c: any) => c.id !== editingId)
+      .map((c: any) => {
         const reasons: string[] = [];
-        if (nif && (c.nif || "").trim().toLowerCase() === nif) reasons.push(taxIdLabel);
-        if (email && (c.email || "").trim().toLowerCase() === email) reasons.push("Email");
-        if (phone && normalizePhone(c.phone) === phone) reasons.push("Telefone");
-        return { client: c, reasons };
+        if (nif && (c.nif || "").trim().toLowerCase() === nif.toLowerCase()) reasons.push(taxIdLabel);
+        if (email && (c.email || "").trim().toLowerCase() === email.toLowerCase()) reasons.push("Email");
+        if (phone && (c.phone || "").trim() === phone) reasons.push("Telefone");
+        return { client: c as ClientRow, reasons };
       })
       .filter((d) => d.reasons.length > 0);
   };
+
 
   const persistClient = async () => {
     setLoading(true);

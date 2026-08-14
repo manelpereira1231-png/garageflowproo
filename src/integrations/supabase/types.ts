@@ -11406,6 +11406,7 @@ export type Database = {
         Args: { _feature: string; _user_id: string }
         Returns: boolean
       }
+      user_has_shop_access: { Args: { _shop_id: string }; Returns: boolean }
       user_is_shop_member: {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean

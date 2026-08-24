@@ -559,8 +559,8 @@ export default function Services() {
 
   return (
     <div className="w-full min-w-0">
-      <div className="page-header">
-        <div>
+      <div className="page-header flex-wrap gap-2">
+        <div className="min-w-0 flex-1">
           <h1 className="page-title">{t('services.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
             <span className="font-medium text-foreground">Gestão administrativa</span> · {totalCount} ordens · emitir faturas, imprimir, exportar
@@ -570,7 +570,7 @@ export default function Services() {
             <Link to="/workshop" className="text-primary hover:underline font-medium">Abrir Modo Oficina →</Link>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap shrink-0">
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
             <FileDown className="w-4 h-4 mr-1" />CSV
           </Button>
@@ -581,7 +581,7 @@ export default function Services() {
       </div>
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 mb-4">
         <div className="bg-card border border-border rounded-xl p-3">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t('service.in_progress')}</p>
           <p className="text-2xl font-bold mt-1">{statusCountsAll.in_progress || 0}</p>
@@ -632,8 +632,8 @@ export default function Services() {
       </div>
 
       {/* Smart filters row */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-4">
-        <div className="relative md:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2 mb-4">
+        <div className="relative sm:col-span-2 xl:col-span-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder={t('services.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
         </div>
@@ -742,8 +742,8 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-hidden sticky-thead">
-        <Table className="table-fixed">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
+        <Table className="table-fixed min-w-[880px]">
           <colgroup>
             <col className="w-[7%]" />
             <col className="w-[23%]" />

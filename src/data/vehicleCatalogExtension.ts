@@ -85,7 +85,6 @@ export const EXT_MODELS: Record<string, string[]> = {
   "Dacia": ["Nova", "SuperNova", "Solenza", "Spring Electric 65"],
   "Fiat": ["Seicento", "Cinquecento", "Multipla", "Stilo", "Croma", "Marea", "Barchetta", "Qubo", "Fullback", "Grande Panda", "Titano", "500 Abarth"],
   "Alfa Romeo": ["145", "155", "156", "164", "166", "Spider", "GTV", "Stelvio Quadrifoglio", "Giulia Quadrifoglio"],
-  "Lancia": [],
   "Toyota": ["Aygo", "Urban Cruiser", "Corolla Verso", "Previa", "Proace City", "Mirai", "Crown", "Starlet", "Celica", "MR2", "iQ", "Verso-S"],
   "Honda": ["Honda e", "Prologue", "Legend", "S2000", "NSX", "Stream", "CR-Z", "FR-V", "Concerto"],
   "Nissan": ["Primera", "Almera", "Almera Tino", "Terrano", "Patrol", "Murano", "Townstar", "Interstar", "NV200", "e-NV200", "Pathfinder", "Qashqai+2", "Note", "Primastar"],
@@ -119,7 +118,6 @@ export const EXT_MODELS: Record<string, string[]> = {
   "Porsche": ["Cayman", "Boxster", "928", "944", "968", "Macan EV"],
   "Lotus": ["Elise", "Exige", "Evora", "Emeya"],
   "McLaren": ["570S", "600LT", "750S", "Senna"],
-  "Iveco": { length: 0 } as unknown as string[], // placeholder removido abaixo
   "SsangYong": ["Actyon", "Kyron", "Rodius", "XLV"],
   "Isuzu": ["Trooper", "Rodeo", "D-Max V-Cross"],
   "JAC": ["S2", "S3", "T6", "iEV7S"],
@@ -129,10 +127,6 @@ export const EXT_MODELS: Record<string, string[]> = {
   "Infiniti": ["Q30", "QX30", "FX37", "M35h"],
   "DS": ["DS 3 Crossback", "DS 4 Crossback", "DS 5", "DS 7 Crossback", "DS N°8"],
 };
-
-// Remove o placeholder inválido (mantém o objeto tipado corretamente).
-delete (EXT_MODELS as Record<string, unknown>)["Iveco"];
-delete (EXT_MODELS as Record<string, unknown>)["Lancia"];
 
 /** Versões/submodelos em falta — chave "Marca|Modelo". */
 export const EXT_SUBMODELS: Record<string, string[]> = {

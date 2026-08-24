@@ -205,7 +205,18 @@ function openUrl(url: string, sameTab: boolean) {
   a.remove();
 }
 
+/**
+ * Documentos já entregues ao disco nesta sessão (chave = nome + tamanho do
+ * ficheiro). Serve para não repetir a mesma transferência automática quando o
+ * utilizador partilha o mesmo documento várias vezes (ex.: WhatsApp em cada
+ * fase do serviço). Se o documento for regenerado com informação diferente,
+ * o tamanho muda e o download volta a acontecer.
+ */
+const deliveredDocs = new Set<string>();
+
 function downloadPdfBlob(blob: Blob, filename: string) {
+  const key = `${filename}:${blob.size}`;
+  if (deliveredDocs.has(key)) return false;
   try {
     const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -215,10 +226,14 @@ function downloadPdfBlob(blob: Blob, filename: string) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    deliveredDocs.add(key);
+    return true;
   } catch (err) {
     console.warn('[whatsapp] pdf download failed', err);
+    return false;
   }
 }
+
 
 async function copyToClipboardSilent(text: string) {
   try {

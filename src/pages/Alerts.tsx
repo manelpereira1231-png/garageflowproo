@@ -393,6 +393,12 @@ export default function Alerts() {
                 {(a.vehicles as any) && <span>🚗 {(a.vehicles as any).make} {(a.vehicles as any).model}</span>}
                 <span>📅 {a.due_date || new Date(a.created_at).toLocaleDateString()}</span>
               </div>
+              {(a.clients as any)?.name && a.client_id && (
+                <Button variant="outline" size="sm" className="w-full text-xs h-9 gap-1" onClick={() => setCommsAlert(a)}>
+                  <Phone className="w-3.5 h-3.5" />
+                  {t('alerts.contact') || 'Contactar'}
+                </Button>
+              )}
               {a.status === 'pending' && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => resolveAlert(a.id)} className="flex-1 text-xs text-success h-9">

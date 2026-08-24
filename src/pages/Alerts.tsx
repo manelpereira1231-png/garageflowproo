@@ -16,6 +16,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -61,6 +62,7 @@ export default function Alerts() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [commsAlert, setCommsAlert] = useState<any | null>(null);
   const [dataLoading, setDataLoading] = useState(!_aCache);
   const [newAlert, setNewAlert] = useState({
     title: "",
@@ -77,7 +79,7 @@ export default function Alerts() {
     try {
       const { data } = await supabase
         .from("alerts")
-        .select("*, clients(name), vehicles(make, model, plate)")
+        .select("*, clients(name, phone, email), vehicles(make, model, plate)")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
         .limit(300);

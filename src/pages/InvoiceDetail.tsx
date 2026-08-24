@@ -365,12 +365,23 @@ export default function InvoiceDetail() {
 
   const handleIssue = async () => {
     if (!invoice) return;
-    await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
-    toast.success(t('invoices.issued'));
-    // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
-    await sendInvoiceEmailAuto('issued');
-    loadData();
+    // Lock contra duplo-clique: sem isto, dois cliques emitem duas vezes e
+    // geram/enviam o mesmo PDF da fatura em duplicado.
+    if (issuingRef.current) return;
+    issuingRef.current = true;
+    setIssuing(true);
+    try {
+      await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
+      toast.success(t('invoices.issued'));
+      // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
+      await sendInvoiceEmailAuto('issued');
+      await loadData();
+    } finally {
+      issuingRef.current = false;
+      setIssuing(false);
+    }
   };
+
 
   // Helper — gera o PDF da fatura como Blob (partilhado por Email/WhatsApp manuais)
   const buildInvoiceBlob = async (): Promise<Blob | null> => {

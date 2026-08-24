@@ -36,6 +36,7 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [shopName, setShopName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,12 +52,21 @@ export default function Chat() {
   useEffect(() => {
     if (!shopId) return;
     const load = async () => {
-      const [clientsRes, shopRes] = await Promise.all([
+      const [clientsRes, shopRes, membersRes] = await Promise.all([
         supabase.from("clients").select("id, name, email").eq("shop_id", shopId).is("deleted_at", null).order("name").limit(1000),
         supabase.from("shops").select("name").eq("id", shopId).maybeSingle(),
+        supabase.from("shop_users").select("user_id, role, shop_user_profiles(name)").eq("shop_id", shopId),
       ]);
       if (clientsRes.data) setClients(clientsRes.data);
       if (shopRes.data) setShopName(shopRes.data.name || "");
+      if (membersRes.data) {
+        const map: Record<string, string> = {};
+        (membersRes.data as any[]).forEach((m) => {
+          const name = (m.shop_user_profiles?.name || "").trim();
+          if (m.user_id) map[m.user_id] = name || (m.role || "Equipa");
+        });
+        setMemberNames(map);
+      }
     };
     load();
   }, [shopId]);
@@ -96,6 +106,9 @@ export default function Chat() {
 
       if (selectedClient !== "all") {
         query = query.eq("client_id", selectedClient);
+      } else {
+        // Chat de equipa: apenas mensagens internas (sem cliente associado)
+        query = query.is("client_id", null);
       }
 
       const { data } = await query;
@@ -126,8 +139,9 @@ export default function Chat() {
         filter: `shop_id=eq.${shopId}`,
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
-        if (selectedClient === "all" || newMsg.client_id === selectedClient) {
-          setMessages(prev => [...prev, newMsg]);
+        const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
+        if (belongs) {
+          setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
         }
       })
       .subscribe();
@@ -334,9 +348,11 @@ export default function Chat() {
                   <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
                     isMe ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
                   }`}>
-                    {!isMe && msg.client_id && (
+                    {!isMe && (
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {clients.find(c => c.id === msg.client_id)?.name || msg.client_id?.slice(0, 8)}
+                        {msg.client_id
+                          ? (clients.find(c => c.id === msg.client_id)?.name || msg.client_id?.slice(0, 8))
+                          : (msg.sender_id ? (memberNames[msg.sender_id] || "Equipa") : "Equipa")}
                       </p>
                     )}
                     <p className="whitespace-pre-wrap">{msg.message}</p>

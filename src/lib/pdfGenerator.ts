@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { laborCharge, laborChargeLine } from './laborLine';
 import autoTable from "jspdf-autotable";
 import { getCurrencySymbol, getTaxLabelForCurrency } from "@/lib/regionLabels";
 
@@ -197,22 +198,16 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   // este valor já está incluído em `data.subtotal`/`data.vatTotal` a montante.
   const laborH = Number(data.laborHours || 0);
   const laborR = Number(data.laborRate || 0);
-  const laborCharge = laborH > 0 && laborR > 0 ? +(laborH * laborR).toFixed(2) : 0;
-  // IVA aplicado às linhas maioritárias (fallback 23% se não conseguir inferir)
-  const laborVat = data.lines[0]?.vat_rate ?? 23;
+  // Helper partilhado com o email e a página pública (fonte única de verdade).
+  const laborLine = laborChargeLine(
+    data.lines,
+    laborH,
+    laborR,
+    `${tl('laborType')} (${laborH}h × ${cur} ${laborR.toFixed(2)}/h)`,
+  );
 
-  const linesForTable: PdfLine[] = laborCharge > 0
-    ? [
-        ...data.lines,
-        {
-          type: 'labor',
-          name: `${tl('laborType')} (${laborH}h × ${cur} ${laborR.toFixed(2)}/h)`,
-          quantity: laborH,
-          unit_price: laborR,
-          unit_cost: 0,
-          vat_rate: laborVat,
-        },
-      ]
+  const linesForTable: PdfLine[] = laborLine
+    ? [...data.lines, { ...(laborLine as unknown as PdfLine), unit_cost: 0 }]
     : data.lines;
 
   const typeCell = (t: string) =>
@@ -257,7 +252,9 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   const summaryLines: Array<[string, number]> = [];
   if (partsSum > 0) summaryLines.push([tl('partsSubtotal'), partsSum]);
   if (servicesSum > 0) summaryLines.push([tl('servicesSubtotal'), servicesSum]);
-  if (laborCharge > 0) summaryLines.push([tl('laborSubtotal'), laborCharge]);
+  const laborSum = laborCharge(laborH, laborR);
+  if (laborSum > 0) summaryLines.push([tl('laborSubtotal'), laborSum]);
+
 
   // Totals
   let finalY = (doc as any).lastAutoTable.finalY + 10;

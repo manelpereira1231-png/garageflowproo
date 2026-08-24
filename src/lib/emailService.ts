@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/money";
+import { withLaborLine, type DocumentLine } from './laborLine';
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmailAttachment {
@@ -193,6 +194,10 @@ interface QuoteEmailData {
   status?: string;
   /** Tempo estimado já formatado (ex.: "3h"), igual ao mostrado na app e na página pública. */
   estimatedTime?: string;
+  /** Horas extra de mão de obra do documento (`labor_hours`). */
+  laborHours?: number;
+  /** Preço/hora da oficina (`shops.labor_rate`). */
+  laborRate?: number;
 }
 
 const emailLabels: Record<string, Record<string, string>> = {
@@ -206,7 +211,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     approve: 'Aprovar Orçamento', reject: 'Rejeitar',
     approveOnline: 'Pode aprovar ou rejeitar este orçamento online clicando no botão abaixo:',
     footer: 'Obrigado pela preferência!',
-    service: 'Serviço', part: 'Peça',
+    service: 'Serviço', part: 'Peça', labor: 'Mão de obra',
     contact: 'Contacto',
     alreadyApproved: 'Este orçamento já foi aprovado. Obrigado pela sua confirmação — iremos avançar com a intervenção.',
     alreadyRejected: 'Este orçamento foi rejeitado. Se pretender rever, contacte-nos.',
@@ -223,7 +228,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     approve: 'Approve Quote', reject: 'Reject',
     approveOnline: 'You can approve or reject this quote online by clicking the button below:',
     footer: 'Thank you for your preference!',
-    service: 'Service', part: 'Part',
+    service: 'Service', part: 'Part', labor: 'Labour',
     contact: 'Contact',
     alreadyApproved: 'This quote has already been approved. Thank you — we will proceed with the work.',
     alreadyRejected: 'This quote has been rejected. Contact us if you want to revisit it.',
@@ -240,7 +245,7 @@ const emailLabels: Record<string, Record<string, string>> = {
     approve: 'Aprobar Presupuesto', reject: 'Rechazar',
     approveOnline: 'Puede aprobar o rechazar este presupuesto online haciendo clic en el botón:',
     footer: '¡Gracias por su preferencia!',
-    service: 'Servicio', part: 'Pieza',
+    service: 'Servicio', part: 'Pieza', labor: 'Mano de obra',
     contact: 'Contacto',
     alreadyApproved: 'Este presupuesto ya ha sido aprobado. Gracias — procederemos con la intervención.',
     alreadyRejected: 'Este presupuesto ha sido rechazado. Contáctenos si desea revisarlo.',
@@ -253,11 +258,16 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
   const l = emailLabels[data.lang || 'pt'] || emailLabels.pt;
 
 
-  const linesHtml = data.lines.map((line, i) => `
+  // Mão de obra extra é uma linha virtual (não persistida): o seu valor já está
+  // incluído no subtotal/total, por isso reutilizamos o helper partilhado com o
+  // PDF e a página pública em vez de recalcular aqui.
+  const allLines = withLaborLine(data.lines, data.laborHours, data.laborRate, l.labor);
+
+  const linesHtml = allLines.map((line: DocumentLine, i: number) => `
     <tr style="background-color: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
-      <td style="padding: 10px 12px; font-size: 13px; color: #6b7280;">${line.type === 'service' ? l.service : l.part}</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937;">${line.name}</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: center;">${line.quantity}</td>
+      <td style="padding: 10px 12px; font-size: 13px; color: #6b7280;">${line.type === 'service' ? l.service : line.type === 'labor' ? l.labor : l.part}</td>
+      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937;">${line.name}${line.type === 'labor' ? `<br/><span style="font-size:11px;color:#6b7280;">${line.quantity}h × ${formatMoney(line.unit_price, data.currency)}/h</span>` : ''}</td>
+      <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: center;">${line.type === 'labor' ? `${line.quantity}h` : line.quantity}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; text-align: right;">${formatMoney(line.unit_price, data.currency)}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #6b7280; text-align: center;">${line.vat_rate}%</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #1f2937; font-weight: 600; text-align: right;">${formatMoney((line.quantity * line.unit_price), data.currency)}</td>

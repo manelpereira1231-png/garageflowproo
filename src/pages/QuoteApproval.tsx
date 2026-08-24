@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { laborChargeLine } from "@/lib/laborLine";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -541,6 +542,8 @@ export default function QuoteApproval() {
   // Tempo estimado real: tempo do catálogo (est_minutes por linha de serviço)
   // + horas de mão-de-obra extra. NUNCA a quantidade das linhas.
   const estimatedMinutes = totalEstMinutes(lines, quote.labor_hours);
+  // Linha virtual de mão de obra — mesmo helper usado pelo email e pelo PDF.
+  const laborLine = laborChargeLine(lines, quote.labor_hours, shop?.labor_rate);
 
 
 
@@ -638,21 +641,20 @@ export default function QuoteApproval() {
                         <td className="p-3 text-right font-mono font-semibold">{money(line.quantity * line.unit_price)}</td>
                       </tr>
                     ))}
-                    {Number(quote.labor_hours) > 0 && Number(shop?.labor_rate) > 0 && (
+                    {laborLine && (
                       <tr className="border-t border-border/50 bg-primary/5">
                         <td className="p-3">
-                          <span className="font-medium">Mão-de-obra</span>
+                          <span className="font-medium">{laborLine.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>
                           <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-                            {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {money(shop.labor_rate)}/h
+                            {laborLine.quantity.toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {money(laborLine.unit_price)}/h
                           </div>
                         </td>
                         <td className="p-3 text-center font-mono text-muted-foreground">
-                          {Number(quote.labor_hours).toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
-
+                          {laborLine.quantity.toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
                         </td>
-                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(shop.labor_rate)}</td>
-                        <td className="p-3 text-right font-mono font-semibold">{money(Number(quote.labor_hours) * Number(shop.labor_rate))}</td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(laborLine.unit_price)}</td>
+                        <td className="p-3 text-right font-mono font-semibold">{money(laborLine.quantity * laborLine.unit_price)}</td>
                       </tr>
                     )}
                   </tbody>

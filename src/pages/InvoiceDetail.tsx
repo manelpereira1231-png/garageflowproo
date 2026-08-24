@@ -20,6 +20,7 @@ import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
+import { claimInvoiceDelivery, releaseInvoiceDelivery, logInvoiceEmail } from "@/lib/invoiceDelivery";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
 import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
@@ -60,6 +61,8 @@ const { id } = useParams<{ id: string }>();
   const [issuing, setIssuing] = useState(false);
   const issuingRef = useRef(false);
   const pdfBusyRef = useRef(false);
+  const sendBusyRef = useRef(false);
+  const autoSentRef = useRef(false);
 
 
   const handleEmitCertified = async () => {
@@ -233,24 +236,31 @@ const { id } = useParams<{ id: string }>();
         currency: shop.currency || getCountryConfig().currency,
       });
       if (channels.email && clientEmail) {
-        await sendEmail({
-          to: clientEmail,
-          subject,
-          html,
-          attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
-        });
-        await supabase.from('email_logs').insert({
-          shop_id: shop.id, to_email: clientEmail,
-          subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-        });
-        toast.success(variant === 'paid'
-          ? 'Confirmação de pagamento enviada ao cliente por email.'
-          : 'Fatura enviada ao cliente por email.');
+        // Guarda anti-duplicação: só um envio do mesmo documento/variante por janela curta.
+        if (!claimInvoiceDelivery(invoice.id, 'email', variant)) {
+          console.info('[invoice] envio de email ignorado (duplicado)', invoice.number, variant);
+        } else {
+          try {
+            await sendEmail({
+              to: clientEmail,
+              subject,
+              html,
+              attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+            });
+          } catch (sendErr) {
+            releaseInvoiceDelivery(invoice.id, 'email', variant);
+            throw sendErr;
+          }
+          await logInvoiceEmail({ shopId: shop.id, toEmail: clientEmail, subject, invoiceId: invoice.id });
+          toast.success(variant === 'paid'
+            ? 'Confirmação de pagamento enviada ao cliente por email.'
+            : 'Fatura enviada ao cliente por email.');
+        }
       }
 
       // Envio via WhatsApp (mesmo PDF do email) quando escolhido e o cliente tem telefone.
       const clientPhone = (invoice.clients as any)?.phone as string | undefined;
-      if (channels.whatsapp && clientPhone) {
+      if (channels.whatsapp && clientPhone && claimInvoiceDelivery(invoice.id, 'whatsapp', variant)) {
         try {
           await openWhatsApp({
             phone: clientPhone,
@@ -267,6 +277,7 @@ const { id } = useParams<{ id: string }>();
             pdfFilename: `${invoice.number}.pdf`,
           });
         } catch (waErr) {
+          releaseInvoiceDelivery(invoice.id, 'whatsapp', variant);
           console.warn('[invoice] auto WhatsApp failed', waErr);
         }
       }
@@ -274,14 +285,34 @@ const { id } = useParams<{ id: string }>();
       console.warn('[invoice] auto email failed', e);
       toast.error(`${variant === 'paid' ? 'Pagamento registado' : 'Fatura emitida'}, mas o envio do email falhou: ${e?.message || 'erro desconhecido'}. Pode reenviar manualmente.`);
       if (shop?.id) {
-        void supabase.from('email_logs').insert({
-          shop_id: shop.id, to_email: (invoice?.clients as any)?.email || '',
-          subject: `Fatura ${invoice?.number ?? ''}`, status: 'failed',
-          entity_type: 'invoice', entity_id: invoice?.id,
+        void logInvoiceEmail({
+          shopId: shop.id,
+          toEmail: (invoice?.clients as any)?.email || '',
+          subject: `Fatura ${invoice?.number ?? ''}`,
+          invoiceId: invoice?.id,
+          status: 'failed',
         });
       }
     }
   };
+
+  /**
+   * Fatura criada já como "emitida" no formulário → o envio ao cliente é feito
+   * aqui (uma única vez), com PDF anexado e link de pagamento, em vez de um
+   * email genérico sem documento. O parâmetro é consumido imediatamente para
+   * que um refresh não reenvie nada.
+   */
+  useEffect(() => {
+    if (!invoice || !shop) return;
+    if (autoSentRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autosend') !== '1') return;
+    autoSentRef.current = true;
+    window.history.replaceState({}, '', window.location.pathname);
+    if (invoice.status !== 'issued') return;
+    void sendInvoiceEmailAuto('issued', undefined, { email: true, whatsapp: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice?.id, shop?.id]);
 
 
   const handlePayment = async () => {
@@ -465,13 +496,18 @@ const { id } = useParams<{ id: string }>();
 
   const handleSendEmail = async () => {
     if (!invoice || !shop) return;
+    // Lock síncrono: `setSending` só se reflete no próximo render, por isso
+    // dois cliques rápidos passavam ambos e enviavam o mesmo PDF duas vezes.
+    if (sendBusyRef.current) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) { toast.error('Cliente sem email'); return; }
     if (!isValidEmail(clientEmail)) {
       toast.error(`Email do cliente inválido ("${clientEmail}"). Corrija a ficha do cliente antes de enviar.`);
       return;
     }
+    sendBusyRef.current = true;
     setSending("email");
+
 
     try {
       const pdfBlob = await buildInvoiceBlob();
@@ -526,23 +562,23 @@ const { id } = useParams<{ id: string }>();
         html,
         attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
       });
-      await supabase.from('email_logs').insert({
-        shop_id: shop.id, to_email: clientEmail,
-        subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-      });
+      await logInvoiceEmail({ shopId: shop.id, toEmail: clientEmail, subject, invoiceId: invoice.id });
       toast.success('Fatura enviada por email.');
     } catch (e: any) {
       console.error('[invoice] manual email error', e);
       toast.error('Erro ao enviar email: ' + (e?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSending(null);
     }
   };
 
   const handleSendWhatsApp = async () => {
     if (!invoice || !shop) return;
+    if (sendBusyRef.current) return;
     const phone = (invoice.clients as any)?.phone as string | undefined;
     if (!phone) { toast.error('Cliente sem telefone'); return; }
+    sendBusyRef.current = true;
     setSending("whatsapp");
     try {
       const pdfBlob = await buildInvoiceBlob();
@@ -568,6 +604,7 @@ const { id } = useParams<{ id: string }>();
       console.error('[invoice] manual whatsapp error', e);
       toast.error('Erro ao abrir WhatsApp: ' + (e?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSending(null);
     }
   };

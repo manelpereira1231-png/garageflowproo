@@ -12,7 +12,6 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/pushNotifications";
-import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
@@ -212,6 +211,7 @@ export default function InvoiceForm() {
 
     toast.success(issueNow ? t('invoices.issued') : t('invoices.saved'));
     // Push notification for new invoice
+    let autoSend = false;
     if (issueNow && activeId) {
       const client = clients.find(c => c.id === clientId);
       const clientName = client?.name || '';
@@ -221,14 +221,11 @@ export default function InvoiceForm() {
         `${clientName} — ${formatMoney(total, invoiceCurrency)}`,
         `/invoices/${invoice.id}`
       );
-      if (client?.email) {
-        void sendLifecycleEmail({
-          shopId: activeId, templateKey: "invoice_created", entityId: invoice.id, recipient: client.email,
-          data: { client_name: clientName, invoice_number: number, total: formatMoney(total, invoiceCurrency) },
-        });
-      }
+      // O email ao cliente é enviado na página de detalhe (uma única vez), com
+      // o PDF anexado e o link de pagamento — em vez de um aviso sem documento.
+      autoSend = !!client?.email;
     }
-    navigate(`/invoices/${invoice.id}`);
+    navigate(`/invoices/${invoice.id}${autoSend ? '?autosend=1' : ''}`);
     setSaving(false);
   };
 

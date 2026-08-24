@@ -1,5 +1,5 @@
 import { exportSaftInBackground } from "@/lib/saftExport";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
+import { logInvoiceEmail } from "@/lib/invoiceDelivery";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -230,6 +231,8 @@ export default function Invoices() {
 
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null);
   const [linkingInvoice, setLinkingInvoice] = useState<string | null>(null);
+  /** Lock síncrono — `disabled` via estado só existe no render seguinte. */
+  const sendBusyRef = useRef(false);
 
   /** Ativa e copia o link público de pagamento da fatura (text-to-pay). */
   const copyPaymentLink = async (inv: any) => {
@@ -278,8 +281,10 @@ export default function Invoices() {
 
 
   const sendInvoiceOnWhatsApp = async (inv: any) => {
+    if (sendBusyRef.current) return;
     const phone = (inv.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone')); return; }
+    sendBusyRef.current = true;
     setSendingInvoice(inv.id);
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
@@ -302,14 +307,17 @@ export default function Invoices() {
         pdfFilename: `${inv.number}.pdf`,
       });
     } finally {
+      sendBusyRef.current = false;
       setSendingInvoice(null);
     }
   };
 
   const sendInvoiceByEmail = async (inv: any) => {
+    if (sendBusyRef.current) return;
     const email = (inv.clients as any)?.email;
     if (!email) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
     if (!shop) { toast.error('Dados da oficina não carregados'); return; }
+    sendBusyRef.current = true;
     setSendingInvoice(inv.id);
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
@@ -377,17 +385,13 @@ export default function Invoices() {
         html,
         attachments: [{ filename: `${inv.number}.pdf`, content: base64, content_type: 'application/pdf' }],
       });
-      if (activeShopId) {
-        await supabase.from("email_logs").insert({
-          shop_id: activeShopId, to_email: email, subject, status: 'sent',
-          entity_type: 'invoice', entity_id: inv.id,
-        });
-      }
+      await logInvoiceEmail({ shopId: activeShopId, toEmail: email, subject, invoiceId: inv.id });
       toast.success(isPaid ? 'Confirmação de pagamento enviada.' : 'Fatura enviada por email.');
     } catch (err: any) {
       console.error('[invoices] email error', err);
       toast.error('Erro ao enviar email: ' + (err?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSendingInvoice(null);
     }
   };

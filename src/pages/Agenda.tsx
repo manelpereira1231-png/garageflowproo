@@ -547,9 +547,9 @@ export default function Agenda() {
       {/* Calendar grid */}
       <Card>
         <CardContent className="p-0 overflow-x-auto">
-          <div className="min-w-[700px]">
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
-              <div className="p-2 text-xs text-muted-foreground" />
+          <div className="min-w-[640px] sm:min-w-[700px]">
+            <div className="grid grid-cols-[52px_repeat(7,minmax(84px,1fr))] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border">
+              <div className="p-2 text-xs text-muted-foreground sticky left-0 z-20 bg-card" />
               {weekDays.map((day, i) => {
                 const isToday = isSameDay(day, new Date());
                 const count = getDayAppCount(day);
@@ -564,10 +564,11 @@ export default function Agenda() {
             </div>
 
             {HOURS.map(hour => (
-              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/50 min-h-[60px]">
-                <div className="p-2 text-xs text-muted-foreground text-right pr-3 pt-1">
+              <div key={hour} className="grid grid-cols-[52px_repeat(7,minmax(84px,1fr))] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border/50 min-h-[60px]">
+                <div className="p-1 sm:p-2 text-[11px] sm:text-xs text-muted-foreground text-right pr-2 sm:pr-3 pt-1 sticky left-0 z-20 bg-card border-r border-border/50">
                   {String(hour).padStart(2, "0")}:00
                 </div>
+
                 {weekDays.map((day, di) => {
                   const apps = getFilteredAppsForDayHour(day, hour);
                   const isToday = isSameDay(day, new Date());

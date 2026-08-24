@@ -96,6 +96,9 @@ export default function Chat() {
 
       if (selectedClient !== "all") {
         query = query.eq("client_id", selectedClient);
+      } else {
+        // Chat de equipa: apenas mensagens internas (sem cliente associado)
+        query = query.is("client_id", null);
       }
 
       const { data } = await query;
@@ -126,8 +129,9 @@ export default function Chat() {
         filter: `shop_id=eq.${shopId}`,
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
-        if (selectedClient === "all" || newMsg.client_id === selectedClient) {
-          setMessages(prev => [...prev, newMsg]);
+        const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
+        if (belongs) {
+          setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
         }
       })
       .subscribe();

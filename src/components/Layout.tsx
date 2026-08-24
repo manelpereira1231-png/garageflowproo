@@ -38,6 +38,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
+import { useResizableSidebar } from "@/hooks/useResizableSidebar";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
@@ -134,6 +135,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     !primaryShopLoading && activeShopId && !isPrimaryShopActive,
   );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
+  const { width: sidebarWidth, resizing: sidebarResizing, startResize, compact: sidebarCompact } = useResizableSidebar();
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
   // Single source of truth for Market enrollment. Subscribes to realtime
@@ -546,16 +548,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       <aside
-        className={`fixed lg:static top-0 left-0 z-50 h-screen w-[270px] lg:w-64 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+        style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
+        className={`fixed lg:relative top-0 left-0 z-50 h-screen w-[270px] lg:w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="h-14 lg:h-16 flex items-center px-4 lg:px-5 border-b border-sidebar-border shrink-0">
-          <div className="flex items-center gap-2.5">
+        {/* Pega de arrasto (apenas desktop) — redimensiona o menu lateral */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionar menu lateral"
+          onPointerDown={startResize}
+          onDoubleClick={() => window.localStorage.removeItem("garageflow_sidebar_width")}
+          className={`hidden lg:block absolute top-0 right-0 h-full w-1.5 cursor-col-resize z-10 hover:bg-sidebar-primary/40 ${
+            sidebarResizing ? "bg-sidebar-primary/60" : ""
+          }`}
+        />
+        <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
             <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />
-            <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight">
-              Garage<span className="text-sidebar-primary">Flow</span>
-            </span>
+            {!sidebarCompact && (
+              <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight truncate">
+                Garage<span className="text-sidebar-primary">Flow</span>
+              </span>
+            )}
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -636,8 +652,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onPointerUp={handlePointerUp}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
-                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : undefined}
-                  className={`flex min-h-11 touch-manipulation select-none items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : item.label}
+                  className={`relative flex min-h-11 touch-manipulation select-none items-center rounded-lg text-sm font-medium transition-all duration-150 ${
+                    sidebarCompact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+                  } ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                       : item.locked
@@ -646,27 +664,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <item.icon className="w-[18px] h-[18px] shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                  <span className="ml-auto flex items-center gap-1 shrink-0">
-                    {item.planBadge && (
-                      <span
-                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                          isActive
-                            ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
-                            : "bg-sidebar-accent text-sidebar-foreground/70"
-                        }`}
-                      >
-                        {item.planBadge}
-                      </span>
-                    )}
-                    {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
-                    {showBadge ? (
-                      <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {sidebarCompact ? (
+                    showBadge ? (
+                      <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
                         {item.badge! > 99 ? "99+" : item.badge}
                       </span>
-                    ) : null}
-                    {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
-                  </span>
+                    ) : null
+                  ) : (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      <span className="ml-auto flex items-center gap-1 shrink-0">
+                        {item.planBadge && (
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                              isActive
+                                ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
+                                : "bg-sidebar-accent text-sidebar-foreground/70"
+                            }`}
+                          >
+                            {item.planBadge}
+                          </span>
+                        )}
+                        {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                        {showBadge ? (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {item.badge! > 99 ? "99+" : item.badge}
+                          </span>
+                        ) : null}
+                        {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
+                      </span>
+                    </>
+                  )}
                 </Link>
               );
 
@@ -681,9 +709,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <>
                 {favoriteItems.length > 0 && (
                   <div className="mb-2">
-                    <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
-                      <StarIcon className="w-3 h-3 fill-current" /> Favoritos
-                    </div>
+                    {!sidebarCompact && (
+                      <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
+                        <StarIcon className="w-3 h-3 fill-current" /> Favoritos
+                      </div>
+                    )}
                     {favoriteItems.map((it) => renderItem(it))}
                     <div className="mt-2 border-t border-sidebar-border/60" />
                   </div>
@@ -716,18 +746,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       const totalBadge = groupItems.reduce((sum, i) => sum + (!sidebarPrefs.isMuted(i.path) && i.badge ? i.badge : 0), 0);
                       return (
                         <div key={group.id} className="mb-1">
-                          <div
-                            className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
-                              hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55"
-                            }`}
-                          >
-                            <span className="flex-1 text-left">{group.label}</span>
-                            {totalBadge > 0 && (
-                              <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
-                                {totalBadge > 99 ? "99+" : totalBadge}
-                              </span>
-                            )}
-                          </div>
+                          {sidebarCompact ? (
+                            <div className="my-1.5 border-t border-sidebar-border/60" />
+                          ) : (
+                            <div
+                              className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
+                                hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55"
+                              }`}
+                            >
+                              <span className="flex-1 text-left">{group.label}</span>
+                              {totalBadge > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                                  {totalBadge > 99 ? "99+" : totalBadge}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="space-y-0.5 mt-0.5">
                             {groupItems.map((it) => renderItem(it))}
                           </div>
@@ -739,7 +773,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })()}
         </nav>
 
-        {!isGuidedMode && (
+        {!isGuidedMode && !sidebarCompact && (
           <div className="px-2.5 pt-1 border-t border-sidebar-border">
             <SidebarCustomizer
               shopId={activeShopId}
@@ -751,7 +785,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Toggle Lite/Pro só faz sentido para papéis com menu extenso.
             Técnico/Receção/Comercial já têm sidebar naturalmente reduzida pelo RBAC,
             portanto o toggle seria confuso e sem efeito prático. */}
-        {(role === "owner" || role === "admin" || role === "manager" || role === "super_admin") && (
+        {!sidebarCompact && (role === "owner" || role === "admin" || role === "manager" || role === "super_admin") && (
           <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
             <AppModeToggle className="w-full justify-between" />
           </div>
@@ -762,15 +796,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link
               to="/admin"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+              title={t("nav.adminPanel")}
+              className={`flex items-center py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all ${
+                sidebarCompact ? "justify-center px-2" : "gap-3 px-3"
+              }`}
             >
               <Shield className="w-[18px] h-[18px] shrink-0" />
-              {t("nav.adminPanel")}
+              {!sidebarCompact && t("nav.adminPanel")}
             </Link>
           </div>
         )}
 
-        {isGroupOwner && (
+        {isGroupOwner && !sidebarCompact && (
           <ShopSwitcher
             shops={ownedShops.map((s) => ({ id: s.id, name: s.name ?? "", logo_url: s.logo_url ?? null }))}
             activeShopId={activeShopId}
@@ -784,31 +821,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <div className="px-2.5 pb-1.5">
-          <div className="flex items-center gap-2 px-3 py-1.5">
-            <Globe className="w-4 h-4 text-sidebar-foreground shrink-0" />
-            <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-              <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pt">🇵🇹 Português</SelectItem>
-                <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
-                <SelectItem value="en">🇬🇧 English</SelectItem>
-                <SelectItem value="es">🇪🇸 Español</SelectItem>
-                <SelectItem value="hi">🇮🇳 हिन्दी</SelectItem>
-              </SelectContent>
-            </Select>
+        {!sidebarCompact && (
+          <div className="px-2.5 pb-1.5">
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <Globe className="w-4 h-4 text-sidebar-foreground shrink-0" />
+              <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                  <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
+                  <SelectItem value="en">🇬🇧 English</SelectItem>
+                  <SelectItem value="es">🇪🇸 Español</SelectItem>
+                  <SelectItem value="hi">🇮🇳 हिन्दी</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="p-2.5 border-t border-sidebar-border shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-destructive hover:bg-destructive/10 transition-all"
+            title={t("auth.logout")}
+            className={`flex items-center py-2.5 rounded-lg text-sm font-medium w-full text-destructive hover:bg-destructive/10 transition-all ${
+              sidebarCompact ? "justify-center px-2" : "gap-3 px-3"
+            }`}
           >
             <LogOut className="w-[18px] h-[18px] shrink-0" />
-            {t("auth.logout")}
+            {!sidebarCompact && t("auth.logout")}
           </button>
         </div>
       </aside>

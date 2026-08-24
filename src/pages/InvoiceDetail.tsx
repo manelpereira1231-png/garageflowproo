@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useShopRole } from "@/hooks/useShopRole";
@@ -51,6 +51,10 @@ export default function InvoiceDetail() {
   const [emitting, setEmitting] = useState(false);
   const [billingProvider, setBillingProvider] = useState<"invoicexpress" | "moloni" | "enotas" | null>(null);
   const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
+  const [issuing, setIssuing] = useState(false);
+  const issuingRef = useRef(false);
+  const pdfBusyRef = useRef(false);
+
 
   const handleEmitCertified = async () => {
     if (!can("invoices.create")) return;
@@ -365,12 +369,23 @@ export default function InvoiceDetail() {
 
   const handleIssue = async () => {
     if (!invoice) return;
-    await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
-    toast.success(t('invoices.issued'));
-    // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
-    await sendInvoiceEmailAuto('issued');
-    loadData();
+    // Lock contra duplo-clique: sem isto, dois cliques emitem duas vezes e
+    // geram/enviam o mesmo PDF da fatura em duplicado.
+    if (issuingRef.current) return;
+    issuingRef.current = true;
+    setIssuing(true);
+    try {
+      await supabase.from("invoices").update({ status: 'issued' }).eq("id", invoice.id).eq("shop_id", invoice.shop_id);
+      toast.success(t('invoices.issued'));
+      // Auto-envio ao cliente da fatura emitida (com PDF anexado e linhas discriminadas)
+      await sendInvoiceEmailAuto('issued');
+      await loadData();
+    } finally {
+      issuingRef.current = false;
+      setIssuing(false);
+    }
   };
+
 
   // Helper — gera o PDF da fatura como Blob (partilhado por Email/WhatsApp manuais)
   const buildInvoiceBlob = async (): Promise<Blob | null> => {
@@ -496,6 +511,9 @@ export default function InvoiceDetail() {
       toast.error("Dados não carregados. Recarregue a página.");
       return;
     }
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await generateInvoicePdf({
         invoice, items, shop,
@@ -513,6 +531,8 @@ export default function InvoiceDetail() {
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 
@@ -583,7 +603,11 @@ export default function InvoiceDetail() {
             })()
           )}
           {can("invoices.create") && invoice.status === 'draft' && (
-            <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>
+            <Button size="sm" onClick={handleIssue} disabled={issuing}>
+              {issuing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              {t('invoices.issueInvoice')}
+            </Button>
+
           )}
           {can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
             <Button size="sm" onClick={() => { setPayAmount(remaining); setShowPayment(true); }}>

@@ -1,6 +1,6 @@
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useServerList } from "@/hooks/useServerList";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDuration, totalEstMinutes } from "@/lib/duration";
@@ -56,6 +56,7 @@ export default function Quotes() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   const activeShopId = useActiveShopId();
+  const pdfBusyRef = useRef(false);
 
   const table = useTableState<QuotesFilters>({
     storageKey: "table:quotes",
@@ -293,12 +294,17 @@ export default function Quotes() {
       toast.error("Dados da oficina não carregados. Recarregue a página.");
       return;
     }
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await buildQuotePdfDoc(q);
       doc.save(`${q.number}.pdf`);
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 

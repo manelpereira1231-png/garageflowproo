@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -330,6 +330,7 @@ export default function Services() {
   };
 
   const activeShopId = useActiveShopId();
+  const pdfBusyRef = useRef(false);
 
   const fetchStats = async (shopId: string) => {
     // Agregação feita no servidor (RPC) — evita descarregar milhares de OS
@@ -515,12 +516,17 @@ export default function Services() {
   const downloadPdf = async (s: any) => {
     if (!can("work_orders.print")) return;
     if (!shop) return;
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await buildServicePdfDoc(s);
       doc.save(`${s.number}.pdf`);
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 

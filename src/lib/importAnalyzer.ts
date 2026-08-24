@@ -122,9 +122,22 @@ const SYNONYMS: Record<FieldKey, string[]> = {
   vehicle_year: ["ano", "year", "ano viatura", "ano modelo", "ano fabrico", "ano de fabrico"],
   vehicle_mileage: ["km", "kms", "quilometros", "kilometros", "mileage", "odometro", "quilometragem", "km atuais"],
   vehicle_fuel: ["combustivel", "fuel", "carburante", "tipo combustivel", "energia"],
-  vehicle_date: ["data", "data matricula", "data registo", "data 1 matricula", "primeira matricula", "date", "data entrada"],
-  vehicle_notes: ["observacoes", "obs", "notas", "notes", "comentarios", "descricao", "observacoes viatura"],
+  vehicle_date: ["data matricula", "data registo", "data 1 matricula", "primeira matricula", "data 1a matricula", "ano matricula"],
+  vehicle_notes: ["observacoes viatura", "obs viatura", "notas viatura"],
+  service_date: ["data intervencao", "data servico", "data reparacao", "data entrada", "data assistencia", "data obra", "data visita", "data", "date"],
+  service_description: ["servico", "servicos", "intervencao", "intervencoes", "trabalho", "tipo servico", "tipo de servico", "reparacao", "descricao servico", "descricao dos trabalhos", "descricao", "obra", "service", "job", "avaria"],
+  service_diagnosis: ["diagnostico", "diagnosis", "anomalia", "problema", "sintoma", "causa"],
+  service_work_done: ["trabalho realizado", "trabalhos realizados", "trabalhos", "execucao", "mao de obra", "work done", "servico realizado"],
+  service_parts: ["pecas", "peca", "parts", "material", "materiais", "referencias", "artigos", "consumiveis"],
+  service_mileage: ["km intervencao", "km servico", "km entrada", "quilometragem intervencao", "km na intervencao"],
+  service_total: ["valor", "total", "preco", "montante", "custo", "valor servico", "valor total", "amount", "price", "faturado"],
+  service_document: ["fatura", "n fatura", "numero fatura", "orcamento", "n orcamento", "documento", "recibo", "invoice", "quote"],
+  service_payment: ["pagamento", "estado pagamento", "pago", "forma pagamento", "metodo pagamento", "payment"],
+  service_warranty: ["garantia", "warranty", "validade garantia", "garantia meses"],
+  service_technician: ["tecnico", "mecanico", "responsavel", "executante", "technician"],
+  service_notes: ["observacoes", "obs", "notas", "notes", "comentarios", "observacoes intervencao"],
 };
+
 
 export type ColumnStat = {
   index: number;

@@ -447,7 +447,24 @@ Object.entries(EXTRA_SUBMODELS).forEach(([key, list]) => {
   SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
 });
 
-const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort();
+// Fusão da extensão global do catálogo (src/data/vehicleCatalogExtension.ts).
+Object.entries(EXT_MAKES).forEach(([mk, data]) => {
+  if (!VEHICLE_DATA[mk]) VEHICLE_DATA[mk] = { logo: data.logo, models: [...data.models] };
+  else VEHICLE_DATA[mk].models = Array.from(new Set([...VEHICLE_DATA[mk].models, ...data.models]));
+});
+Object.entries(EXT_MODELS).forEach(([mk, list]) => {
+  const entry = VEHICLE_DATA[mk];
+  if (!entry || !Array.isArray(list)) return;
+  entry.models = Array.from(new Set([...entry.models, ...list]));
+});
+Object.entries(EXT_SUBMODELS).forEach(([key, list]) => {
+  const [mk, mdl] = key.split("|");
+  if (!VEHICLE_DATA[mk] || !VEHICLE_DATA[mk].models.includes(mdl)) return;
+  SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
+});
+
+const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort((a, b) => a.localeCompare(b, "pt"));
+
 
 interface Props {
   make: string;

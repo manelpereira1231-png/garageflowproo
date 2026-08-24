@@ -652,8 +652,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onPointerUp={handlePointerUp}
                   onMouseEnter={() => handlePrefetch(item.path)}
                   onFocus={() => handlePrefetch(item.path)}
-                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : undefined}
-                  className={`flex min-h-11 touch-manipulation select-none items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  title={item.locked ? "Bloqueado pelo seu plano — clique para fazer upgrade" : item.label}
+                  className={`relative flex min-h-11 touch-manipulation select-none items-center rounded-lg text-sm font-medium transition-all duration-150 ${
+                    sidebarCompact ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+                  } ${
                     isActive
                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                       : item.locked
@@ -662,27 +664,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <item.icon className="w-[18px] h-[18px] shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                  <span className="ml-auto flex items-center gap-1 shrink-0">
-                    {item.planBadge && (
-                      <span
-                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                          isActive
-                            ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
-                            : "bg-sidebar-accent text-sidebar-foreground/70"
-                        }`}
-                      >
-                        {item.planBadge}
-                      </span>
-                    )}
-                    {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
-                    {showBadge ? (
-                      <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {sidebarCompact ? (
+                    showBadge ? (
+                      <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
                         {item.badge! > 99 ? "99+" : item.badge}
                       </span>
-                    ) : null}
-                    {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
-                  </span>
+                    ) : null
+                  ) : (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      <span className="ml-auto flex items-center gap-1 shrink-0">
+                        {item.planBadge && (
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                              isActive
+                                ? "bg-sidebar-primary-foreground/10 text-sidebar-primary-foreground/80"
+                                : "bg-sidebar-accent text-sidebar-foreground/70"
+                            }`}
+                          >
+                            {item.planBadge}
+                          </span>
+                        )}
+                        {item.locked && <Lock className="w-3.5 h-3.5 opacity-70" />}
+                        {showBadge ? (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {item.badge! > 99 ? "99+" : item.badge}
+                          </span>
+                        ) : null}
+                        {isActive ? <ChevronRight className="w-3.5 h-3.5" /> : null}
+                      </span>
+                    </>
+                  )}
                 </Link>
               );
 

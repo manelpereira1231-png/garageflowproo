@@ -36,6 +36,7 @@ import {
   Wallet,
   Star as StarIcon,
   TrendingUp,
+  GripVertical,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import { useResizableSidebar } from "@/hooks/useResizableSidebar";

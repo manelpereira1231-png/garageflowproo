@@ -230,6 +230,8 @@ export default function Invoices() {
 
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null);
   const [linkingInvoice, setLinkingInvoice] = useState<string | null>(null);
+  /** Lock síncrono — `disabled` via estado só existe no render seguinte. */
+  const sendBusyRef = useRef(false);
 
   /** Ativa e copia o link público de pagamento da fatura (text-to-pay). */
   const copyPaymentLink = async (inv: any) => {

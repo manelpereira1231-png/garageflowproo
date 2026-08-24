@@ -38,6 +38,7 @@ export default function NotificationsBell() {
       .select("id,type,title,message,link,read,created_at")
       .in("shop_id", ids)
       .is("archived_at", null)
+      .eq("read", false)
       .order("created_at", { ascending: false })
       .limit(30);
     setItems((data as any) ?? []);
@@ -55,14 +56,15 @@ export default function NotificationsBell() {
   }, [ids.join(","), load]);
 
   const markRead = async (id: string) => {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    // Sai imediatamente da lista — o sino só mostra notificações por ler
+    setItems((prev) => prev.filter((n) => n.id !== id));
     await supabase.from("notifications").update({ read: true } as any).eq("id", id);
   };
 
   const markAllRead = async () => {
-    const unread = items.filter((n) => !n.read).map((n) => n.id);
+    const unread = items.map((n) => n.id);
     if (!unread.length) return;
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setItems([]);
     await supabase.from("notifications").update({ read: true } as any).in("id", unread);
   };
 
@@ -104,7 +106,7 @@ export default function NotificationsBell() {
           )}
         </div>
         {items.length === 0 ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">Sem notificações</div>
+          <div className="p-6 text-center text-sm text-muted-foreground">Sem notificações por ler</div>
         ) : (
           <div className="divide-y divide-border/60">
             {items.map((n) => {
@@ -134,6 +136,15 @@ export default function NotificationsBell() {
             })}
           </div>
         )}
+        <div className="border-t border-border/60 p-2">
+          <Link
+            to="/notifications"
+            onClick={() => setOpen(false)}
+            className="block text-center text-xs text-muted-foreground hover:text-foreground py-1"
+          >
+            Ver todas as notificações
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -16,6 +16,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
 import { pageCache } from "@/lib/pageCache";
+import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -61,6 +62,7 @@ export default function Alerts() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [commsAlert, setCommsAlert] = useState<any | null>(null);
   const [dataLoading, setDataLoading] = useState(!_aCache);
   const [newAlert, setNewAlert] = useState({
     title: "",
@@ -77,7 +79,7 @@ export default function Alerts() {
     try {
       const { data } = await supabase
         .from("alerts")
-        .select("*, clients(name), vehicles(make, model, plate)")
+        .select("*, clients(name, phone, email), vehicles(make, model, plate)")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
         .limit(300);
@@ -338,12 +340,10 @@ export default function Alerts() {
                         </Link>
                       )}
                       {(a.clients as any)?.name && a.client_id && (
-                        <Link to="/clients">
-                          <Button variant="ghost" size="sm" className="text-xs gap-1">
-                            <Phone className="w-3.5 h-3.5" />
-                            {t('alerts.contact') || 'Contactar'}
-                          </Button>
-                        </Link>
+                        <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => setCommsAlert(a)}>
+                          <Phone className="w-3.5 h-3.5" />
+                          {t('alerts.contact') || 'Contactar'}
+                        </Button>
                       )}
                       {a.status === 'pending' && (
                         <>
@@ -393,6 +393,12 @@ export default function Alerts() {
                 {(a.vehicles as any) && <span>🚗 {(a.vehicles as any).make} {(a.vehicles as any).model}</span>}
                 <span>📅 {a.due_date || new Date(a.created_at).toLocaleDateString()}</span>
               </div>
+              {(a.clients as any)?.name && a.client_id && (
+                <Button variant="outline" size="sm" className="w-full text-xs h-9 gap-1" onClick={() => setCommsAlert(a)}>
+                  <Phone className="w-3.5 h-3.5" />
+                  {t('alerts.contact') || 'Contactar'}
+                </Button>
+              )}
               {a.status === 'pending' && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => resolveAlert(a.id)} className="flex-1 text-xs text-success h-9">
@@ -408,6 +414,26 @@ export default function Alerts() {
           );
         })}
       </div>
+
+      {/* Comunicação com o cliente do alerta */}
+      {commsAlert && shopId && (
+        <ClientCommsDialog
+          open={!!commsAlert}
+          onOpenChange={(v) => { if (!v) setCommsAlert(null); }}
+          ctx={{
+            workOrderId: commsAlert.id,
+            number: commsAlert.title || '—',
+            status: 'pending',
+            shopId,
+            clientName: (commsAlert.clients as any)?.name,
+            clientPhone: (commsAlert.clients as any)?.phone,
+            clientEmail: (commsAlert.clients as any)?.email,
+            vehicleMake: (commsAlert.vehicles as any)?.make,
+            vehicleModel: (commsAlert.vehicles as any)?.model,
+            plate: (commsAlert.vehicles as any)?.plate,
+          }}
+        />
+      )}
 
       {/* Create Alert Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

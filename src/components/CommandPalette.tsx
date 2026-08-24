@@ -102,10 +102,10 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("vehicles.view") ? supabase
             .from("vehicles")
-            .select("id, make, model, plate, clients(name)")
+            .select("id, make, model, plate, vin, clients(name)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
-            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`].join(","))
+            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`, `vin.ilike.${searchTerm}`].join(","))
             .limit(5) : empty,
           can("quotes.view") ? supabase
             .from("quotes")
@@ -295,6 +295,12 @@ export default function CommandPalette() {
     { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new", capability: "invoices.create" as const },
   ].filter((action) => canAccess(action.path) && can(action.capability)), [can, canAccess, isPt]);
 
+  const matchingPages = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return pages.filter((p) => p.label.toLowerCase().includes(q)).slice(0, 5);
+  }, [pages, query]);
+
   const searchableEntities = useMemo(() => {
     if (!permissionsReady) return "";
     return [
@@ -348,6 +354,18 @@ export default function CommandPalette() {
                 </CommandItem>
               );
             })}
+          </CommandGroup>
+        )}
+
+        {/* Matching pages while typing (cmdk filtering is disabled) */}
+        {query.trim().length >= 1 && matchingPages.length > 0 && (
+          <CommandGroup heading={isPt ? "Navegar" : "Navigate"}>
+            {matchingPages.map((p) => (
+              <CommandItem key={`nav-${p.path}`} onSelect={() => handleNav(p.path)} className="cursor-pointer">
+                <p.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>{p.label}</span>
+              </CommandItem>
+            ))}
           </CommandGroup>
         )}
 

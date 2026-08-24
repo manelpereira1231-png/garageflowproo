@@ -20,6 +20,7 @@ import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
+import { claimInvoiceDelivery, releaseInvoiceDelivery, logInvoiceEmail } from "@/lib/invoiceDelivery";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
 import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";

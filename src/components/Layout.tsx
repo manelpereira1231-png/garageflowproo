@@ -49,6 +49,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
+import SupportFab from "@/components/SupportFab";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
 import AppointmentsBell from "@/components/AppointmentsBell";

@@ -544,23 +544,23 @@ const { id } = useParams<{ id: string }>();
         html,
         attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
       });
-      await supabase.from('email_logs').insert({
-        shop_id: shop.id, to_email: clientEmail,
-        subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-      });
+      await logInvoiceEmail({ shopId: shop.id, toEmail: clientEmail, subject, invoiceId: invoice.id });
       toast.success('Fatura enviada por email.');
     } catch (e: any) {
       console.error('[invoice] manual email error', e);
       toast.error('Erro ao enviar email: ' + (e?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSending(null);
     }
   };
 
   const handleSendWhatsApp = async () => {
     if (!invoice || !shop) return;
+    if (sendBusyRef.current) return;
     const phone = (invoice.clients as any)?.phone as string | undefined;
     if (!phone) { toast.error('Cliente sem telefone'); return; }
+    sendBusyRef.current = true;
     setSending("whatsapp");
     try {
       const pdfBlob = await buildInvoiceBlob();
@@ -586,6 +586,7 @@ const { id } = useParams<{ id: string }>();
       console.error('[invoice] manual whatsapp error', e);
       toast.error('Erro ao abrir WhatsApp: ' + (e?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSending(null);
     }
   };

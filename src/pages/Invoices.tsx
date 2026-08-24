@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
+import { logInvoiceEmail } from "@/lib/invoiceDelivery";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";

@@ -1,6 +1,6 @@
-const CACHE_NAME = 'garageflow-v6-brand';
+const CACHE_NAME = 'garageflow-v7-logo';
 const STATIC_ASSETS = [
-  '/favicon.png',
+  '/favicon-v7.png',
   '/manifest.json',
 ];
 
@@ -67,7 +67,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: '/icon-192.png',
-      badge: '/favicon.png',
+      badge: '/favicon-v7.png',
       data: data.url ? { url: data.url } : undefined,
     })
   );

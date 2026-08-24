@@ -423,6 +423,8 @@ export interface InvoiceEmailData {
   paymentMethod?: string;
   currency?: string;
   viewUrl?: string;
+  /** Link público de pagamento (text-to-pay). Só é mostrado em faturas por liquidar. */
+  payUrl?: string;
 }
 
 export function invoiceEmailHtml(data: InvoiceEmailData): string {
@@ -512,6 +514,17 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
           </tr>
         </tbody>
       </table>
+    </div>` : '';
+
+  const payHtml = (!isPaid && data.payUrl) ? `
+    <div style="text-align:center;margin:24px 0 8px;">
+      <a href="${data.payUrl}" style="display:inline-block;background-color:#ffb41e;color:#262626;padding:14px 32px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:800;letter-spacing:0.3px;">
+        Pagar Agora
+      </a>
+      <p style="color:#6b7280;font-size:12px;margin:10px 0 0;line-height:1.5;">
+        Pagamento seguro online. Se o botão não funcionar, copie este link:<br/>
+        <a href="${data.payUrl}" style="color:#9a3412;word-break:break-all;">${data.payUrl}</a>
+      </p>
     </div>` : '';
 
   const ctaHtml = data.viewUrl ? `

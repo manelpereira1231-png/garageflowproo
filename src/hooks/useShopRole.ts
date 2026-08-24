@@ -79,7 +79,8 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
   technician: new Set([
     "dashboard.view",
     "work_orders.view","work_orders.edit","work_orders.complete","work_orders.print",
-    "vehicles.view",
+    "work_orders.send_email","work_orders.send_whatsapp",
+    "clients.view","vehicles.view",
     "agenda.view",
     "chat.view",
   ]),

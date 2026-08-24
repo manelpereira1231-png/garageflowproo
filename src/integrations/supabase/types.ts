@@ -10919,6 +10919,10 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string }
         Returns: Json
       }
+      can_access_work_order: {
+        Args: { _shop_id: string; _technician: string }
+        Returns: boolean
+      }
       cascade_delete_shop: { Args: { _shop_id: string }; Returns: undefined }
       check_and_bump_rate_limit: {
         Args: {
@@ -11309,6 +11313,7 @@ export type Database = {
         Args: { _country_code: string; _user_id: string }
         Returns: boolean
       }
+      is_shop_technician: { Args: { _shop_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       mark_public_inspection_viewed: {
         Args: { _token: string }
@@ -11331,6 +11336,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_technician_labels: { Args: { _shop_id: string }; Returns: string[] }
       next_invoice_number: { Args: { _shop_id: string }; Returns: string }
       next_number: {
         Args: { _prefix: string; _shop_id: string }

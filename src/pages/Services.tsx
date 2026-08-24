@@ -524,6 +524,8 @@ export default function Services() {
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 

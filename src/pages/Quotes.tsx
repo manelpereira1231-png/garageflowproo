@@ -293,12 +293,17 @@ export default function Quotes() {
       toast.error("Dados da oficina não carregados. Recarregue a página.");
       return;
     }
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await buildQuotePdfDoc(q);
       doc.save(`${q.number}.pdf`);
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 

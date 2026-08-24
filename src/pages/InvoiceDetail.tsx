@@ -53,6 +53,7 @@ export default function InvoiceDetail() {
   const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
   const [issuing, setIssuing] = useState(false);
   const issuingRef = useRef(false);
+  const pdfBusyRef = useRef(false);
 
 
   const handleEmitCertified = async () => {
@@ -530,6 +531,8 @@ export default function InvoiceDetail() {
     } catch (err: any) {
       console.error('PDF error', err);
       toast.error(`Falha a gerar PDF: ${err?.message || err}`);
+    } finally {
+      pdfBusyRef.current = false;
     }
   };
 

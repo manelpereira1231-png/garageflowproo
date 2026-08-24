@@ -339,9 +339,41 @@ export type ParsedRecord = {
   rowNumber: number;
   client: Record<string, string>;
   vehicle: Record<string, string>;
+  /** Intervenção (histórico) detetada na linha — só existe se o ficheiro a contiver. */
+  service: Record<string, string>;
   errors: string[];
   warnings: string[];
 };
+
+/** Converte "1.234,56 €" / "1,234.56" / "150" em número, ou "" se não for um valor. */
+export function parseAmount(v: string): string {
+  const raw = v.replace(/[^\d.,-]/g, "").trim();
+  if (!raw) return "";
+  let s = raw;
+  if (s.includes(",") && s.includes(".")) {
+    s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (s.includes(",")) {
+    s = s.replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? String(n) : "";
+}
+
+/** Normaliza uma data para ISO (YYYY-MM-DD) quando é reconhecível. */
+export function parseDateISO(v: string): string {
+  const t = v.trim();
+  if (!t) return "";
+  let m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+  if (m) {
+    const year = m[3].length === 2 ? `20${m[3]}` : m[3];
+    return `${year}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  const d = new Date(t);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
 
 export function normalizePlate(v: string): string {
   return v.toUpperCase().replace(/[^A-Z0-9]/g, "");

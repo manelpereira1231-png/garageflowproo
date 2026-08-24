@@ -8,7 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2, X, MoreVertical } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { ensureQuoteTokenForWorkOrder } from "@/lib/ensureQuoteForWorkOrder";
 
@@ -75,9 +81,9 @@ const defaultServicesFilters: ServicesFilters = {
 
 function RepairTimeline({ status }: { status: ServiceStatus }) {
   const currentIdx = statusFlow.indexOf(status);
-  
+
   return (
-    <div className="flex items-center gap-0.5 overflow-x-auto py-1">
+    <div className="flex items-center gap-0 overflow-x-auto py-1">
       {statusFlow.map((s, i) => {
         const Icon = statusIcons[s];
         // When the WO is already delivered, the flow is complete — paint every step as done (green).
@@ -85,10 +91,10 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
         const isActive = !isFinal && i === currentIdx;
         const isDone = isFinal || i < currentIdx;
         const isCancelled = status === 'cancelled';
-        
+
         return (
           <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-7 h-7 rounded-full border-2 transition-all shrink-0
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all shrink-0
               ${isCancelled ? 'border-destructive/30 bg-destructive/5' :
                 isActive ? 'border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/20' :
                 isDone ? 'border-success bg-success/10 text-success' :
@@ -97,7 +103,7 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
               <Icon className="w-3 h-3" />
             </div>
             {i < statusFlow.length - 1 && (
-              <div className={`w-3 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
+              <div className={`w-2 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
             )}
           </div>
         );
@@ -746,13 +752,13 @@ export default function Services() {
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
         <Table className="table-fixed min-w-[1100px]">
           <colgroup>
-            <col className="w-[11%]" />
-            <col className="w-[19%]" />
+            <col className="w-[10%]" />
+            <col className="w-[17%]" />
             <col className="w-[16%]" />
-            <col className="w-[16%]" />
+            <col className="w-[20%]" />
             <col className="w-[9%]" />
             <col className="w-[14%]" />
-            <col className="w-[15%]" />
+            <col className="w-[14%]" />
           </colgroup>
           <TableHeader>
             <TableRow>
@@ -813,7 +819,7 @@ export default function Services() {
                     <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-3 overflow-hidden">
+                <TableCell className="hidden lg:table-cell px-2 py-3 min-w-0">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
                 <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
@@ -823,34 +829,13 @@ export default function Services() {
                   </Badge>
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
-                  <div className="flex items-center gap-0.5 justify-end flex-wrap">
-
+                  <div className="inline-flex items-center justify-end gap-0.5">
                     {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>
-                        <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8" title={t('common.edit') || 'Editar'}>
+                        <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8 shrink-0" title={t('common.edit') || 'Editar'}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
-                    )}
-                    {can("work_orders.print") && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(s)} title="PDF">
-                        <FileDown className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    {can("work_orders.send_email") && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} title="Email">
-                        {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                      </Button>
-                    )}
-                    {can("work_orders.send_whatsapp") && (
-                      <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                      <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-8 w-8" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </Button>
                     )}
                     {(can("work_orders.complete") || can("work_orders.delete")) && !['delivered', 'cancelled'].includes(s.status) && (
                       <>
@@ -859,7 +844,7 @@ export default function Services() {
                             variant="default"
                             size="icon"
                             onClick={() => advanceStatus(s)}
-                            className="h-8 w-8"
+                            className="h-8 w-8 shrink-0"
                             aria-label={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
                             title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
                           >
@@ -867,11 +852,46 @@ export default function Services() {
                           </Button>
                         )}
                         {can("work_orders.delete") && (
-                          <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                          <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                             <XCircle className="w-3.5 h-3.5" />
                           </Button>
                         )}
                       </>
+                    )}
+                    {(can("work_orders.print") || can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="Mais ações" className="h-8 w-8 shrink-0" title="Mais ações">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {can("work_orders.print") && (
+                            <DropdownMenuItem onClick={() => downloadPdf(s)}>
+                              <FileDown className="w-4 h-4 mr-2" />
+                              PDF
+                            </DropdownMenuItem>
+                          )}
+                          {can("work_orders.send_email") && (
+                            <DropdownMenuItem onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
+                              {sendingEmail === s.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
+                              Email
+                            </DropdownMenuItem>
+                          )}
+                          {can("work_orders.send_whatsapp") && (
+                            <DropdownMenuItem onClick={() => sendServiceWhatsApp(s)}>
+                              <MessageCircle className="w-4 h-4 mr-2 text-green-600" />
+                              WhatsApp
+                            </DropdownMenuItem>
+                          )}
+                          {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                            <DropdownMenuItem onClick={() => setCommsService(s)}>
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Comunicar com cliente
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </TableCell>

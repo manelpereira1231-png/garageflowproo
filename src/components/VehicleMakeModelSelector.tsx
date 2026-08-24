@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Search, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { EXT_MAKES, EXT_MODELS, EXT_SUBMODELS } from "@/data/vehicleCatalogExtension";
+
 
 const VEHICLE_DATA: Record<string, { logo: string; models: string[] }> = {
   "Abarth": { logo: "https://cdn.simpleicons.org/abarth", models: ["500", "595", "695", "Punto"] },
@@ -113,7 +115,7 @@ const SUBMODELS: Record<string, string[]> = {
   "Volkswagen|ID.5": ["Pro", "Pro Performance", "GTX"],
   "Volkswagen|T-Cross": ["1.0 TSI", "1.0 TSI Life", "1.0 TSI Style", "1.5 TSI R-Line"],
   "Volkswagen|T-Roc": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "2.0 TSI 4MOTION R-Line", "R", "Cabriolet"],
-  "Volkswagen|Tiguan": ["1.5 eTSI", "2.0 TDI", "2.0 TDI 4MOTION", "1.4 eHybrid", "R-Line", "Allspace 2.0 TDI"],
+  "Volkswagen|Tiguan": ["1.5 eTSI", "2.0 TDI", "2.0 TDI 4Motion", "1.4 eHybrid", "R-Line", "Allspace 2.0 TDI"],
   "Volkswagen|Passat": ["Variant 2.0 TDI", "Variant 1.5 eTSI", "Variant 1.4 eHybrid", "GTE"],
   "Volkswagen|Arteon": ["2.0 TDI", "2.0 TSI 4MOTION R-Line", "Shooting Brake eHybrid", "R"],
   "Volkswagen|Caddy": ["2.0 TDI", "1.5 TSI", "Cargo", "Life", "Style", "Maxi"],
@@ -447,7 +449,24 @@ Object.entries(EXTRA_SUBMODELS).forEach(([key, list]) => {
   SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
 });
 
-const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort();
+// Fusão da extensão global do catálogo (src/data/vehicleCatalogExtension.ts).
+Object.entries(EXT_MAKES).forEach(([mk, data]) => {
+  if (!VEHICLE_DATA[mk]) VEHICLE_DATA[mk] = { logo: data.logo, models: [...data.models] };
+  else VEHICLE_DATA[mk].models = Array.from(new Set([...VEHICLE_DATA[mk].models, ...data.models]));
+});
+Object.entries(EXT_MODELS).forEach(([mk, list]) => {
+  const entry = VEHICLE_DATA[mk];
+  if (!entry || !Array.isArray(list)) return;
+  entry.models = Array.from(new Set([...entry.models, ...list]));
+});
+Object.entries(EXT_SUBMODELS).forEach(([key, list]) => {
+  const [mk, mdl] = key.split("|");
+  if (!VEHICLE_DATA[mk] || !VEHICLE_DATA[mk].models.includes(mdl)) return;
+  SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
+});
+
+const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort((a, b) => a.localeCompare(b, "pt"));
+
 
 interface Props {
   make: string;

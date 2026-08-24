@@ -60,7 +60,7 @@ async function loadPromotions(): Promise<Map<string, PromoRow>> {
     const { data } = await supabase
       .from("plan_promotions_public" as any)
       .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
-    (data as Omit<PromoRow, "stripe_price_id">[] | null)?.forEach((row) => {
+    (data as unknown as Omit<PromoRow, "stripe_price_id">[] | null)?.forEach((row) => {
       map.set(key(row.country_code, row.plan, row.cycle), { ...row, stripe_price_id: null });
     });
     cache = map;
@@ -110,7 +110,7 @@ export async function listAllPromotions(): Promise<PromoRow[]> {
   const { data } = await supabase
     .from("plan_promotions_public" as any)
     .select("country_code, plan, cycle, promo_price, currency, active, starts_at, ends_at");
-  return ((data as Omit<PromoRow, "stripe_price_id">[] | null) ?? []).map((r) => ({ ...r, stripe_price_id: null }));
+  return ((data as unknown as Omit<PromoRow, "stripe_price_id">[] | null) ?? []).map((r) => ({ ...r, stripe_price_id: null }));
 }
 
 

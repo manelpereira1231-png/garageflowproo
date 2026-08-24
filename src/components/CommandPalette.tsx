@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -63,10 +63,13 @@ export default function CommandPalette() {
   }, []);
 
   // Search across tables
+  const reqIdRef = useRef(0);
   const doSearch = useCallback(
     async (q: string) => {
-      if (!q || q.length < 2 || !activeShopId || !permissionsReady) {
+      const reqId = ++reqIdRef.current;
+      if (!q || q.trim().length < 2 || !activeShopId || !permissionsReady) {
         setResults([]);
+        setSearching(false);
         return;
       }
       setSearching(true);
@@ -99,10 +102,10 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("vehicles.view") ? supabase
             .from("vehicles")
-            .select("id, make, model, plate, clients(name)")
+            .select("id, make, model, plate, vin, clients(name)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
-            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`].join(","))
+            .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`, `vin.ilike.${searchTerm}`].join(","))
             .limit(5) : empty,
           can("quotes.view") ? supabase
             .from("quotes")
@@ -193,6 +196,8 @@ export default function CommandPalette() {
         })),
       ];
 
+      // Ignore out-of-order responses (stale query still in flight).
+      if (reqId !== reqIdRef.current) return;
       setResults(all);
       setSearching(false);
     },
@@ -200,9 +205,25 @@ export default function CommandPalette() {
   );
 
   useEffect(() => {
-    const timer = setTimeout(() => doSearch(query), 250);
+    const timer = setTimeout(() => doSearch(query), 150);
     return () => clearTimeout(timer);
   }, [query, doSearch]);
+
+  // Reset state when closing so the next open starts clean.
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setResults([]);
+      setSearching(false);
+      reqIdRef.current++;
+    }
+  }, [open]);
+
+  // Switching shop invalidates any results from the previous shop.
+  useEffect(() => {
+    reqIdRef.current++;
+    setResults([]);
+  }, [activeShopId]);
 
   const handleSelect = (type: string, id: string) => {
     setOpen(false);
@@ -274,6 +295,12 @@ export default function CommandPalette() {
     { label: isPt ? "Nova Fatura" : "New Invoice", icon: Plus, path: "/invoices/new", capability: "invoices.create" as const },
   ].filter((action) => canAccess(action.path) && can(action.capability)), [can, canAccess, isPt]);
 
+  const matchingPages = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return pages.filter((p) => p.label.toLowerCase().includes(q)).slice(0, 5);
+  }, [pages, query]);
+
   const searchableEntities = useMemo(() => {
     if (!permissionsReady) return "";
     return [
@@ -288,14 +315,19 @@ export default function CommandPalette() {
   }, [can, isPt, permissionsReady]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
       <CommandInput
         placeholder={searchableEntities ? (isPt ? "Pesquisar cliente, matrícula, VIN, orçamento, serviço ou fatura…" : `Search ${searchableEntities}…`) : (isPt ? "Pesquisa indisponível" : "Search unavailable")}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>
+        {query.trim().length >= 2 && (searching || (results.length === 0 && matchingPages.length === 0)) && (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {searching ? (isPt ? "A pesquisar..." : "Searching...") : (isPt ? "Sem resultados." : "No results found.")}
+          </div>
+        )}
+        <CommandEmpty className="hidden">
           {searching
             ? (isPt ? "A pesquisar..." : "Searching...")
             : (isPt ? "Sem resultados." : "No results found.")}
@@ -322,6 +354,18 @@ export default function CommandPalette() {
                 </CommandItem>
               );
             })}
+          </CommandGroup>
+        )}
+
+        {/* Matching pages while typing (cmdk filtering is disabled) */}
+        {query.trim().length >= 1 && matchingPages.length > 0 && (
+          <CommandGroup heading={isPt ? "Navegar" : "Navigate"}>
+            {matchingPages.map((p) => (
+              <CommandItem key={`nav-${p.path}`} onSelect={() => handleNav(p.path)} className="cursor-pointer">
+                <p.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>{p.label}</span>
+              </CommandItem>
+            ))}
           </CommandGroup>
         )}
 

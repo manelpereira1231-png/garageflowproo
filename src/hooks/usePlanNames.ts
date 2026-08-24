@@ -21,7 +21,7 @@ async function loadPlanNames() {
     .eq("active", true)
     .is("archived_at", null);
   const map: Record<string, string> = {};
-  (data as Array<{ slug: string; name: string }> | null)?.forEach((r) => {
+  (data as unknown as Array<{ slug: string; name: string }> | null)?.forEach((r) => {
     if (r.slug && r.name) map[r.slug] = r.name;
   });
   cache = map;

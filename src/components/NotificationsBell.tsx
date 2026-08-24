@@ -136,6 +136,15 @@ export default function NotificationsBell() {
             })}
           </div>
         )}
+        <div className="border-t border-border/60 p-2">
+          <Link
+            to="/notifications"
+            onClick={() => setOpen(false)}
+            className="block text-center text-xs text-muted-foreground hover:text-foreground py-1"
+          >
+            Ver todas as notificações
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -37,7 +37,10 @@ export default function InvoiceDetail() {
   const { plan } = useSubscription();
   const { can } = useShopRole();
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+const { id } = useParams<{ id: string }>();
+  const activeShopId = useActiveShopId();
+  const { allowWithoutConnect } = usePlatformInvoiceFee();
+  const [linking, setLinking] = useState(false);
   const [invoice, setInvoice] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);

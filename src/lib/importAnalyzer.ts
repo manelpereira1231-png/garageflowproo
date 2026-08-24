@@ -416,8 +416,10 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
       const rowNumber = (sheet.headerRowIndex >= 0 ? sheet.headerRowIndex + 2 : 1) + idx;
       const client: Record<string, string> = {};
       const vehicle: Record<string, string> = {};
+      const service: Record<string, string> = {};
       const errors: string[] = [];
       const warnings: string[] = [];
+
 
       for (const [colIdx, field] of entries) {
         const raw = (row[Number(colIdx)] ?? "").trim();

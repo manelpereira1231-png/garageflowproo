@@ -755,10 +755,10 @@ export default function Services() {
             <col className="w-[9%]" />
             <col className="w-[15%]" />
             <col className="w-[15%]" />
-            <col className="w-[29%]" />
+            <col className="w-[28%]" />
             <col className="w-[8%]" />
-            <col className="w-[8%]" />
-            <col className="w-[16%]" />
+            <col className="w-[10%]" />
+            <col className="w-[15%]" />
           </colgroup>
           <TableHeader>
             <TableRow>

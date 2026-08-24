@@ -28,7 +28,19 @@ export type FieldKey =
   | "vehicle_mileage"
   | "vehicle_fuel"
   | "vehicle_date"
-  | "vehicle_notes";
+  | "vehicle_notes"
+  | "service_date"
+  | "service_description"
+  | "service_diagnosis"
+  | "service_work_done"
+  | "service_parts"
+  | "service_mileage"
+  | "service_total"
+  | "service_document"
+  | "service_payment"
+  | "service_warranty"
+  | "service_technician"
+  | "service_notes";
 
 export const FIELD_LABELS: Record<FieldKey, string> = {
   client_name: "Cliente · Nome",
@@ -50,6 +62,18 @@ export const FIELD_LABELS: Record<FieldKey, string> = {
   vehicle_fuel: "Viatura · Combustível",
   vehicle_date: "Viatura · Data (matrícula/registo)",
   vehicle_notes: "Viatura · Observações",
+  service_date: "Intervenção · Data",
+  service_description: "Intervenção · Serviço/Trabalho",
+  service_diagnosis: "Intervenção · Diagnóstico",
+  service_work_done: "Intervenção · Trabalho realizado",
+  service_parts: "Intervenção · Peças",
+  service_mileage: "Intervenção · Quilómetros na entrada",
+  service_total: "Intervenção · Valor",
+  service_document: "Intervenção · Orçamento/Fatura (ref.)",
+  service_payment: "Intervenção · Pagamento",
+  service_warranty: "Intervenção · Garantia",
+  service_technician: "Intervenção · Técnico",
+  service_notes: "Intervenção · Observações",
 };
 
 export const CLIENT_FIELDS: FieldKey[] = [
@@ -60,6 +84,12 @@ export const VEHICLE_FIELDS: FieldKey[] = [
   "vehicle_plate", "vehicle_vin", "vehicle_make", "vehicle_model", "vehicle_version",
   "vehicle_year", "vehicle_mileage", "vehicle_fuel", "vehicle_date", "vehicle_notes",
 ];
+export const SERVICE_FIELDS: FieldKey[] = [
+  "service_date", "service_description", "service_diagnosis", "service_work_done",
+  "service_parts", "service_mileage", "service_total", "service_document",
+  "service_payment", "service_warranty", "service_technician", "service_notes",
+];
+
 
 export const SUPPORTED_EXTENSIONS = ["csv", "xlsx", "xls", "ods", "txt", "tsv", "xlsm", "fods", "dif", "prn"];
 

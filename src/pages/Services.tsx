@@ -81,9 +81,9 @@ const defaultServicesFilters: ServicesFilters = {
 
 function RepairTimeline({ status }: { status: ServiceStatus }) {
   const currentIdx = statusFlow.indexOf(status);
-  
+
   return (
-    <div className="flex items-center gap-0.5 overflow-x-auto py-1">
+    <div className="flex items-center gap-0 overflow-x-auto py-1">
       {statusFlow.map((s, i) => {
         const Icon = statusIcons[s];
         // When the WO is already delivered, the flow is complete — paint every step as done (green).
@@ -91,10 +91,10 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
         const isActive = !isFinal && i === currentIdx;
         const isDone = isFinal || i < currentIdx;
         const isCancelled = status === 'cancelled';
-        
+
         return (
           <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-7 h-7 rounded-full border-2 transition-all shrink-0
+            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all shrink-0
               ${isCancelled ? 'border-destructive/30 bg-destructive/5' :
                 isActive ? 'border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/20' :
                 isDone ? 'border-success bg-success/10 text-success' :
@@ -103,7 +103,7 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
               <Icon className="w-3 h-3" />
             </div>
             {i < statusFlow.length - 1 && (
-              <div className={`w-3 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
+              <div className={`w-2 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
             )}
           </div>
         );

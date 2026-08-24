@@ -36,12 +36,11 @@ import {
   Wallet,
   Star as StarIcon,
   TrendingUp,
-  GripVertical,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
-import { useResizableSidebar, SIDEBAR_MIN_WIDTH, SIDEBAR_DEFAULT_WIDTH } from "@/hooks/useResizableSidebar";
+import { useResizableSidebar } from "@/hooks/useResizableSidebar";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
@@ -138,8 +137,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     !primaryShopLoading && activeShopId && !isPrimaryShopActive,
   );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
-  const { width: sidebarWidth, resizing: sidebarResizing, startResize, compact: sidebarCompact, setWidth: setSidebarWidth } = useResizableSidebar();
-  const toggleSidebarCollapse = () => setSidebarWidth(sidebarCompact ? SIDEBAR_DEFAULT_WIDTH : SIDEBAR_MIN_WIDTH);
+  const { width: sidebarWidth, compact: sidebarCompact, toggle: toggleSidebarCollapse } = useResizableSidebar();
+
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
   // Single source of truth for Market enrollment. Subscribes to realtime
@@ -553,27 +552,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <aside
         style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
-        className={`fixed md:relative top-0 left-0 z-50 h-screen w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+        className={`fixed md:relative top-0 left-0 z-50 h-screen w-[var(--gf-sb-w)] max-w-[85vw] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 overflow-x-hidden transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        {/* Pega de arrasto — redimensiona o menu lateral.
-            No mobile é uma zona tátil larga e visível à direita para evitar
-            que o arrasto seja interpretado em qualquer ponto do menu. */}
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Redimensionar menu lateral"
-          onPointerDown={startResize}
-          onDoubleClick={() => window.localStorage.removeItem("garageflow_sidebar_width")}
-          className={`absolute top-0 right-0 h-full z-10 cursor-col-resize touch-none select-none flex items-center justify-center transition-colors w-5 md:w-1.5 ${
-            sidebarResizing
-              ? "bg-sidebar-primary/60"
-              : "bg-sidebar-border/40 md:bg-transparent hover:bg-sidebar-primary/40"
-          }`}
-        >
-          <GripVertical className="w-4 h-4 text-sidebar-foreground/50 md:hidden" />
-        </div>
+
         <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />

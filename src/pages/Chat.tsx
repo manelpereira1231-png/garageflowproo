@@ -220,19 +220,20 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary" />
-            {t('chat.title')}
+    <div className="flex flex-col h-[calc(100dvh-9rem)] min-h-[420px] md:h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary shrink-0" />
+            <span className="truncate">{t('chat.title')}</span>
             {totalUnread > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{totalUnread}</Badge>}
           </h1>
-          <p className="text-sm text-muted-foreground">{t('chat.subtitle')}</p>
+          <p className="text-xs md:text-sm text-muted-foreground truncate">{t('chat.subtitle')}</p>
         </div>
       </div>
 
-      <div className="flex-1 flex border border-border rounded-xl overflow-hidden bg-card">
+      <div className="flex-1 min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
+
         {/* Sidebar - Client list */}
         <div className="w-[260px] border-r border-border flex flex-col shrink-0 hidden md:flex">
           <div className="p-3 border-b border-border">
@@ -295,34 +296,34 @@ export default function Chat() {
         </div>
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col">
           {/* Chat header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="px-3 md:px-4 py-2.5 md:py-3 border-b border-border flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {isTeamChat ? (
                 <>
-                  <UsersRound className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{t('chat.teamChat')}</span>
-                  <Badge variant="outline" className="text-[10px]">{t('chat.teamOnly')}</Badge>
+                  <UsersRound className="w-5 h-5 text-primary shrink-0" />
+                  <span className="font-medium truncate">{t('chat.teamChat')}</span>
+                  <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{t('chat.teamOnly')}</Badge>
                 </>
               ) : selectedClientObj ? (
                 <>
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                  <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                     {selectedClientObj.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="font-medium">{selectedClientObj.name}</span>
+                  <span className="font-medium truncate">{selectedClientObj.name}</span>
                   {selectedClientObj.email && (
-                    <Badge variant="outline" className="gap-1 text-[10px]"><Mail className="w-3 h-3" />{t('chat.sendsEmail')}</Badge>
+                    <Badge variant="outline" className="gap-1 text-[10px] hidden sm:inline-flex"><Mail className="w-3 h-3" />{t('chat.sendsEmail')}</Badge>
                   )}
                 </>
               ) : null}
             </div>
             {/* Mobile client selector */}
-            <div className="md:hidden">
+            <div className="md:hidden shrink-0">
               <select
                 value={selectedClient}
                 onChange={e => setSelectedClient(e.target.value)}
-                className="text-sm bg-muted rounded px-2 py-1 border border-border"
+                className="text-xs bg-muted rounded-lg px-2 py-1.5 border border-border max-w-[42vw] truncate"
               >
                 <option value="all">{t('chat.teamChat')}</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -331,7 +332,8 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4 space-y-3">
+
             {messagesLoading && messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -345,7 +347,7 @@ export default function Chat() {
               const isMe = msg.sender_id === currentUserId;
               return (
                 <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
+                  <div className={`max-w-[85%] md:max-w-[70%] px-3.5 md:px-4 py-2.5 rounded-2xl text-sm break-words ${
                     isMe ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
                   }`}>
                     {!isMe && (

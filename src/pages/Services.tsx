@@ -823,7 +823,7 @@ export default function Services() {
                   </Badge>
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
-                  <div className="flex items-center gap-0.5 justify-end flex-nowrap">
+                  <div className="flex items-center gap-0.5 justify-end flex-wrap">
 
                     {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                       <Link to={`/services/edit/${s.id}`}>

@@ -138,7 +138,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     !primaryShopLoading && activeShopId && !isPrimaryShopActive,
   );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
-  const { width: sidebarWidth, resizing: sidebarResizing, startResize, compact: sidebarCompact } = useResizableSidebar();
+  const { width: sidebarWidth, resizing: sidebarResizing, startResize, compact: sidebarCompact, setWidth: setSidebarWidth } = useResizableSidebar();
+  const toggleSidebarCollapse = () => setSidebarWidth(sidebarCompact ? SIDEBAR_DEFAULT_WIDTH : SIDEBAR_MIN_WIDTH);
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 
   // Single source of truth for Market enrollment. Subscribes to realtime

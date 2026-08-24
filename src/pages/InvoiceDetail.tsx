@@ -476,13 +476,18 @@ const { id } = useParams<{ id: string }>();
 
   const handleSendEmail = async () => {
     if (!invoice || !shop) return;
+    // Lock síncrono: `setSending` só se reflete no próximo render, por isso
+    // dois cliques rápidos passavam ambos e enviavam o mesmo PDF duas vezes.
+    if (sendBusyRef.current) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
     if (!clientEmail) { toast.error('Cliente sem email'); return; }
     if (!isValidEmail(clientEmail)) {
       toast.error(`Email do cliente inválido ("${clientEmail}"). Corrija a ficha do cliente antes de enviar.`);
       return;
     }
+    sendBusyRef.current = true;
     setSending("email");
+
 
     try {
       const pdfBlob = await buildInvoiceBlob();

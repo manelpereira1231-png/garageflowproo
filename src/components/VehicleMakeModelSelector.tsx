@@ -115,7 +115,7 @@ const SUBMODELS: Record<string, string[]> = {
   "Volkswagen|ID.5": ["Pro", "Pro Performance", "GTX"],
   "Volkswagen|T-Cross": ["1.0 TSI", "1.0 TSI Life", "1.0 TSI Style", "1.5 TSI R-Line"],
   "Volkswagen|T-Roc": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "2.0 TSI 4MOTION R-Line", "R", "Cabriolet"],
-  "Volkswagen|Tiguan": ["1.5 eTSI", "2.0 TDI", "2.0 TDI 4MOTION", "1.4 eHybrid", "R-Line", "Allspace 2.0 TDI"],
+  "Volkswagen|Tiguan": ["1.5 eTSI", "2.0 TDI", "2.0 TDI 4Motion", "1.4 eHybrid", "R-Line", "Allspace 2.0 TDI"],
   "Volkswagen|Passat": ["Variant 2.0 TDI", "Variant 1.5 eTSI", "Variant 1.4 eHybrid", "GTE"],
   "Volkswagen|Arteon": ["2.0 TDI", "2.0 TSI 4MOTION R-Line", "Shooting Brake eHybrid", "R"],
   "Volkswagen|Caddy": ["2.0 TDI", "1.5 TSI", "Cargo", "Life", "Style", "Maxi"],

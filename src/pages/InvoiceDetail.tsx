@@ -491,8 +491,12 @@ const { id } = useParams<{ id: string }>();
       const subject = isPaid
         ? `Pagamento Confirmado — ${invoice.number}`
         : `Nova Fatura Disponível — ${invoice.number}`;
+      const manualPayUrl = isPaid ? null : await getInvoicePaymentUrl({
+        invoiceId: invoice.id, shopId: shop.id, status: invoice.status, allowWithoutConnect,
+      });
       const html = invoiceEmailHtml({
         variant: isPaid ? 'paid' : 'issued',
+        payUrl: manualPayUrl || undefined,
         shopName: shop.name,
         shopEmail: shop.email,
         shopPhone: shop.phone,
@@ -543,8 +547,12 @@ const { id } = useParams<{ id: string }>();
     try {
       const pdfBlob = await buildInvoiceBlob();
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF.'); return; }
+      const waPayUrl = await getInvoicePaymentUrl({
+        invoiceId: invoice.id, shopId: shop.id, status: invoice.status, allowWithoutConnect,
+      });
       await openWhatsApp({
         phone,
+        link: waPayUrl || undefined,
         clientName: (invoice.clients as any)?.name || '',
         type: 'invoice',
         number: invoice.number,

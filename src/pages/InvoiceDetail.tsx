@@ -597,7 +597,11 @@ export default function InvoiceDetail() {
             })()
           )}
           {can("invoices.create") && invoice.status === 'draft' && (
-            <Button size="sm" onClick={handleIssue}>{t('invoices.issueInvoice')}</Button>
+            <Button size="sm" onClick={handleIssue} disabled={issuing}>
+              {issuing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              {t('invoices.issueInvoice')}
+            </Button>
+
           )}
           {can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
             <Button size="sm" onClick={() => { setPayAmount(remaining); setShowPayment(true); }}>

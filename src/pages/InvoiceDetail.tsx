@@ -661,9 +661,15 @@ const { id } = useParams<{ id: string }>();
             </Button>
 
           )}
-          {can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
+{can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
             <Button size="sm" onClick={() => { setPayAmount(remaining); setShowPayment(true); }}>
               <CreditCard className="w-4 h-4 mr-1" />{t('invoices.registerPayment')}
+            </Button>
+          )}
+          {can("invoices.send_email") && ['issued', 'partial'].includes(invoice.status) && (
+            <Button variant="outline" size="sm" onClick={copyPaymentLink} disabled={linking}>
+              {linking ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Link2 className="w-4 h-4 mr-1" />}
+              Link de pagamento
             </Button>
           )}
           {invoice.credit_note_pdf_url && (

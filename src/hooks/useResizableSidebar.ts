@@ -21,8 +21,20 @@ export function useResizableSidebar() {
     return Number.isFinite(parsed) ? clamp(parsed) : SIDEBAR_DEFAULT_WIDTH;
   });
   const [resizing, setResizing] = useState(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : true
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsDesktop(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const widthRef = useRef(width);
   widthRef.current = width;
+
 
   const startResize = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -70,10 +82,10 @@ export function useResizableSidebar() {
   }, []);
 
   return {
-    width,
+    width: isDesktop ? width : SIDEBAR_DEFAULT_WIDTH,
     resizing,
     startResize,
     setWidth: setWidthPersisted,
-    compact: width < SIDEBAR_COMPACT_THRESHOLD,
+    compact: isDesktop && width < SIDEBAR_COMPACT_THRESHOLD,
   };
 }

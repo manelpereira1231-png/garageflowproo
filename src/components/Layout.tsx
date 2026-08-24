@@ -549,7 +549,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <aside
         style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
-        className={`fixed lg:static top-0 left-0 z-50 h-screen w-[270px] lg:w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+        className={`fixed lg:relative top-0 left-0 z-50 h-screen w-[270px] lg:w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >

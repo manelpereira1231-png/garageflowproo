@@ -632,7 +632,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const muted = sidebarPrefs.isMuted(item.path);
               const showBadge = !muted && item.badge && item.badge > 0;
               const closeMobileSidebar = () => {
-                if (window.matchMedia("(max-width: 1023px)").matches) {
+                if (window.matchMedia("(max-width: 767px)").matches) {
                   setSidebarOpen(false);
                 }
               };

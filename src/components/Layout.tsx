@@ -548,13 +548,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen flex w-full bg-background overflow-hidden">
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside
         style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
-        className={`fixed lg:relative top-0 left-0 z-50 h-screen w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed md:relative top-0 left-0 z-50 h-screen w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Pega de arrasto — redimensiona o menu lateral.
@@ -566,13 +566,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           aria-label="Redimensionar menu lateral"
           onPointerDown={startResize}
           onDoubleClick={() => window.localStorage.removeItem("garageflow_sidebar_width")}
-          className={`absolute top-0 right-0 h-full z-10 cursor-col-resize touch-none select-none flex items-center justify-center transition-colors w-5 lg:w-1.5 ${
+          className={`absolute top-0 right-0 h-full z-10 cursor-col-resize touch-none select-none flex items-center justify-center transition-colors w-5 md:w-1.5 ${
             sidebarResizing
               ? "bg-sidebar-primary/60"
-              : "bg-sidebar-border/40 lg:bg-transparent hover:bg-sidebar-primary/40"
+              : "bg-sidebar-border/40 md:bg-transparent hover:bg-sidebar-primary/40"
           }`}
         >
-          <GripVertical className="w-4 h-4 text-sidebar-foreground/50 lg:hidden" />
+          <GripVertical className="w-4 h-4 text-sidebar-foreground/50 md:hidden" />
         </div>
         <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
@@ -586,7 +586,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setSidebarOpen(false)}
             aria-label={t("common.close") || "Fechar menu"}
-            className="ml-auto lg:hidden p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground min-h-11 min-w-11 flex items-center justify-center"
+            className="ml-auto md:hidden p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground min-h-11 min-w-11 flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -595,7 +595,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               onClick={toggleSidebarCollapse}
               aria-label="Recolher menu lateral"
               title="Recolher menu (ganhar espaço)"
-              className="ml-auto hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
+              className="ml-auto hidden md:flex p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
             >
               <PanelLeftClose className="w-4.5 h-4.5" />
             </button>
@@ -606,7 +606,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             onClick={toggleSidebarCollapse}
             aria-label="Expandir menu lateral"
             title="Expandir menu"
-            className="hidden lg:flex mx-auto mt-2 p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
+            className="hidden md:flex mx-auto mt-2 p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
           >
             <PanelLeftOpen className="w-4.5 h-4.5" />
           </button>
@@ -893,13 +893,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             variant="ghost"
             size="icon"
             aria-label="Abrir menu"
-            className="lg:hidden mr-2 shrink-0 h-11 w-11"
+            className="md:hidden mr-2 shrink-0 h-11 w-11"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </Button>
 
-          <span className="text-sm font-semibold truncate lg:hidden">{pageTitle}</span>
+          <span className="text-sm font-semibold truncate md:hidden">{pageTitle}</span>
 
           <span className="text-sm font-medium text-muted-foreground hidden lg:block truncate tracking-tight">{shopName}</span>
 

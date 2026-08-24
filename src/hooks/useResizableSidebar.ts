@@ -22,11 +22,11 @@ export function useResizableSidebar() {
   });
   const [resizing, setResizing] = useState(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(() =>
-    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : true
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : true
   );
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 1024px)");
+    const mq = window.matchMedia("(min-width: 768px)");
     const onChange = () => setIsDesktop(mq.matches);
     onChange();
     mq.addEventListener("change", onChange);

@@ -594,6 +594,8 @@ export function invoiceEmailHtml(data: InvoiceEmailData): string {
           📎 PDF da fatura em anexo${isPaid ? ' para o seu arquivo.' : '.'}
         </div>
 
+        ${payHtml}
+
         ${ctaHtml}
 
         ${closing}

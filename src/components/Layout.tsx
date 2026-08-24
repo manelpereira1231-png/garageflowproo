@@ -36,12 +36,11 @@ import {
   Wallet,
   Star as StarIcon,
   TrendingUp,
-  GripVertical,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
-import { useResizableSidebar, SIDEBAR_MIN_WIDTH, SIDEBAR_DEFAULT_WIDTH } from "@/hooks/useResizableSidebar";
+import { useResizableSidebar } from "@/hooks/useResizableSidebar";
 import SidebarCustomizer from "@/components/SidebarCustomizer";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";

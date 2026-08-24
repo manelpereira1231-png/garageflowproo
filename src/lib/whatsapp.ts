@@ -116,7 +116,9 @@ function buildMessage(p: WhatsAppMessageParams, opts?: { includeLink?: boolean }
       msg += `\n\n🧾 Fatura:${num || ' —'}`;
       msg += `\n🚗 Veículo: ${veh}`;
       if (totalStr) msg += `\n💰 Total: ${totalStr}`;
-      msg += `\n\nSegue em anexo o PDF da fatura.\n\nCaso tenha alguma dúvida estaremos totalmente disponíveis.\n\nObrigado pela confiança.${signature}`;
+      msg += `\n\nSegue em anexo o PDF da fatura.`;
+      if (p.link) msg += `\n\n💳 Pagar online (seguro):\n${p.link}`;
+      msg += `\n\nCaso tenha alguma dúvida estaremos totalmente disponíveis.\n\nObrigado pela confiança.${signature}`;
       return msg;
     }
     case 'quote': {

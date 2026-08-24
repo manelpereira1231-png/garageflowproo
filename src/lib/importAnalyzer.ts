@@ -211,7 +211,7 @@ export type SheetAnalysis = {
   totalRows: number;
   mapping: Record<number, FieldKey | null>;
   suggestions: Record<number, Suggestion>;
-  kind: "clients" | "vehicles" | "mixed" | "unknown";
+  kind: "clients" | "vehicles" | "mixed" | "history" | "unknown";
   include: boolean;
 };
 

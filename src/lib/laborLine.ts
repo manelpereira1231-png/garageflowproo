@@ -12,14 +12,13 @@
  * financeiras paralelas — nunca altera totais, apenas descreve a linha.
  */
 
-export interface DocumentLine {
+export type DocumentLine = {
   type: string;
   name: string;
   quantity: number;
   unit_price: number;
   vat_rate: number;
-  [k: string]: unknown;
-}
+};
 
 /** IVA aplicado à mão de obra: herda o das linhas do documento (fallback 23%). */
 export function laborVatRate(lines: unknown[]): number {

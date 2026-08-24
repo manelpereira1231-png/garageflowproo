@@ -1,5 +1,5 @@
 import { formatMoney } from "@/lib/money";
-import { withLaborLine } from './laborLine';
+import { withLaborLine, type DocumentLine } from './laborLine';
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmailAttachment {
@@ -261,9 +261,9 @@ export function quoteEmailHtml(data: QuoteEmailData): string {
   // Mão de obra extra é uma linha virtual (não persistida): o seu valor já está
   // incluído no subtotal/total, por isso reutilizamos o helper partilhado com o
   // PDF e a página pública em vez de recalcular aqui.
-  const allLines = withLaborLine(data.lines as any, data.laborHours, data.laborRate, l.labor);
+  const allLines = withLaborLine(data.lines, data.laborHours, data.laborRate, l.labor);
 
-  const linesHtml = allLines.map((line: any, i: number) => `
+  const linesHtml = allLines.map((line: DocumentLine, i: number) => `
     <tr style="background-color: ${i % 2 === 0 ? '#f9fafb' : '#ffffff'};">
       <td style="padding: 10px 12px; font-size: 13px; color: #6b7280;">${line.type === 'service' ? l.service : line.type === 'labor' ? l.labor : l.part}</td>
       <td style="padding: 10px 12px; font-size: 13px; color: #1f2937;">${line.name}${line.type === 'labor' ? `<br/><span style="font-size:11px;color:#6b7280;">${line.quantity}h × ${formatMoney(line.unit_price, data.currency)}/h</span>` : ''}</td>

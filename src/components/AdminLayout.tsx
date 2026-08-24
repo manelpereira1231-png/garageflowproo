@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
   CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
-  Package, Inbox, Sparkles, Languages, Coins, Layers, Percent, FileCheck2,
+  Package, Inbox, Sparkles, Languages, Coins, Layers, Percent, FileCheck2, Upload,
 } from "lucide-react";
 import SystemBroadcastBanner from "@/components/SystemBroadcastBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +94,7 @@ const navSections = [
     label: "Operações",
     items: [
       { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
+      { path: "/admin/import", label: "Importar Clientes & Viaturas", icon: Upload },
       { path: "/admin/supplier-network", label: "Rede de Fornecedores", icon: Store },
     ],
   },

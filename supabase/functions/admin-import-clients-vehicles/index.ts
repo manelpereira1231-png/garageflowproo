@@ -14,6 +14,7 @@ type IncomingRecord = {
   sheet: string;
   client: Record<string, string>;
   vehicle: Record<string, string>;
+  service?: Record<string, string>;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -24,6 +25,23 @@ const normName = (v: string) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 const normPhone = (v: string) => (v || "").replace(/[^\d]/g, "").slice(-9);
 const str = (v: unknown, max = 300) => String(v ?? "").trim().slice(0, max);
+const num = (v: unknown) => {
+  const n = Number(String(v ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** Impressão digital estável de uma intervenção, para nunca duplicar histórico. */
+const serviceFingerprint = (date: string, description: string, total: number) =>
+  `${date || "sd"}|${normName(description).slice(0, 60)}|${total.toFixed(2)}`;
+
+/** Divide um campo livre de peças em itens ("Filtro óleo; Pastilhas x2"). */
+const splitParts = (v: string): string[] =>
+  str(v, 1000)
+    .split(/[;\n|]+|,(?=\s*[A-Za-zÀ-ÿ])/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 1)
+    .slice(0, 30);
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

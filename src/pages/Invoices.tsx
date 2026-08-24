@@ -280,8 +280,10 @@ export default function Invoices() {
 
 
   const sendInvoiceOnWhatsApp = async (inv: any) => {
+    if (sendBusyRef.current) return;
     const phone = (inv.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone')); return; }
+    sendBusyRef.current = true;
     setSendingInvoice(inv.id);
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
@@ -304,14 +306,17 @@ export default function Invoices() {
         pdfFilename: `${inv.number}.pdf`,
       });
     } finally {
+      sendBusyRef.current = false;
       setSendingInvoice(null);
     }
   };
 
   const sendInvoiceByEmail = async (inv: any) => {
+    if (sendBusyRef.current) return;
     const email = (inv.clients as any)?.email;
     if (!email) { toast.error(t('quotes.noClientEmail') || 'Cliente sem email'); return; }
     if (!shop) { toast.error('Dados da oficina não carregados'); return; }
+    sendBusyRef.current = true;
     setSendingInvoice(inv.id);
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);

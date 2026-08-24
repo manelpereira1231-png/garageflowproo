@@ -709,9 +709,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <>
                 {favoriteItems.length > 0 && (
                   <div className="mb-2">
-                    <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
-                      <StarIcon className="w-3 h-3 fill-current" /> Favoritos
-                    </div>
+                    {!sidebarCompact && (
+                      <div className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50 flex items-center gap-1.5">
+                        <StarIcon className="w-3 h-3 fill-current" /> Favoritos
+                      </div>
+                    )}
                     {favoriteItems.map((it) => renderItem(it))}
                     <div className="mt-2 border-t border-sidebar-border/60" />
                   </div>

@@ -220,19 +220,20 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary" />
-            {t('chat.title')}
+    <div className="flex flex-col h-[calc(100dvh-9rem)] min-h-[420px] md:h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary shrink-0" />
+            <span className="truncate">{t('chat.title')}</span>
             {totalUnread > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{totalUnread}</Badge>}
           </h1>
-          <p className="text-sm text-muted-foreground">{t('chat.subtitle')}</p>
+          <p className="text-xs md:text-sm text-muted-foreground truncate">{t('chat.subtitle')}</p>
         </div>
       </div>
 
-      <div className="flex-1 flex border border-border rounded-xl overflow-hidden bg-card">
+      <div className="flex-1 min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
+
         {/* Sidebar - Client list */}
         <div className="w-[260px] border-r border-border flex flex-col shrink-0 hidden md:flex">
           <div className="p-3 border-b border-border">

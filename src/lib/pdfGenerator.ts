@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { laborChargeLine } from './laborLine';
+import { laborCharge, laborChargeLine } from './laborLine';
 import autoTable from "jspdf-autotable";
 import { getCurrencySymbol, getTaxLabelForCurrency } from "@/lib/regionLabels";
 

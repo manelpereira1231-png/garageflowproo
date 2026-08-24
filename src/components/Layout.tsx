@@ -111,6 +111,7 @@ const isEssentialPath = (pathname: string) =>
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [pendingQuoteApprovalCount, setPendingQuoteApprovalCount] = useState(0);
   const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");
@@ -194,6 +195,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [activeShopId]);
+
+  // Badge de Notificações — conta apenas as por ler (persistido na BD).
+  useEffect(() => {
+    if (!activeShopId) { setUnreadNotifCount(0); return; }
+    let cancelled = false;
+    const loadNotifCount = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeShopId)
+        .eq("read", false)
+        .is("archived_at", null);
+      if (!cancelled) setUnreadNotifCount(count || 0);
+    };
+    loadNotifCount();
+    const ch = supabase
+      .channel(`global-notifications-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `shop_id=eq.${activeShopId}` },
+        () => loadNotifCount(),
+      )
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [activeShopId]);
 
   // Global realtime: quote approvals from the public client link.
@@ -388,6 +414,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       badge: pendingAlertCount,
       featureSlug: "alerts_basic",
     },
+    {
+      path: "/notifications",
+      label: "Notificações",
+      icon: BellRing,
+      badge: unreadNotifCount,
+    },
     { path: "/chat", label: t("nav.chat"), icon: MessageCircle, featureSlug: "chat" },
 
     // ── Crescimento ──
@@ -420,7 +452,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
+  ], [pendingAlertCount, unreadNotifCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —
@@ -442,7 +474,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { id: "inventory", label: t("navGroup.inventory", "Inventário"), paths: ["/catalog","/stock","/warranties"] },
     ...(supplierNetworkEnabled ? [{ id: "supplier", label: t("navGroup.supplier", "Fornecedor"), paths: ["/parts","/parts/suppliers","/parts/orders","/parts/favorites"] }] : []),
     { id: "finance", label: t("navGroup.finance", "Faturação"), paths: ["/invoices","/financial/reports","/billing"] },
-    { id: "comms", label: t("navGroup.comms", "Comunicação"), paths: ["/alerts","/chat"] },
+    { id: "comms", label: t("navGroup.comms", "Comunicação"), paths: ["/alerts","/notifications","/chat"] },
     { id: "growth", label: t("navGroup.growth", "Crescimento"), paths: ["/marketing","/automations","/loyalty","/referrals"] },
     { id: "market", label: t("navGroup.market", "Market"), paths: ["/market","/market/opportunities","/market/inspections","/market/offers","/market/wallet","/market/history","/market/stats"] },
     { id: "admin", label: t("navGroup.admin", "Administração"), paths: ["/team","/developers","/settings"] },

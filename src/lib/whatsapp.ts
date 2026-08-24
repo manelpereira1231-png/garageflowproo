@@ -231,7 +231,7 @@ function downloadPdfBlob(blob: Blob, filename: string) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-    deliveredDocs.add(key);
+    deliveredDocs.set(key, Date.now());
     return true;
   } catch (err) {
     console.warn('[whatsapp] pdf download failed', err);

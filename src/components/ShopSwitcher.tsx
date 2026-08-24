@@ -220,11 +220,11 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
   const deletableShops = shops.filter(s => s.id !== primaryShopId);
 
   return (
-    <div className="px-3 pb-2">
+    <div className="px-3 pb-2 space-y-2">
       <div className="flex items-center gap-2 px-1 py-1.5">
         <Building2 className="w-4 h-4 text-sidebar-foreground flex-shrink-0" />
         <Select value={activeShopId || ""} onValueChange={onSwitch}>
-          <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1">
+          <SelectTrigger className="h-9 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1 min-w-0">
             <SelectValue placeholder={t('shop.select')} />
           </SelectTrigger>
           <SelectContent>
@@ -242,59 +242,74 @@ export default function ShopSwitcher({ shops, activeShopId, onSwitch, showCreate
             ))}
           </SelectContent>
         </Select>
-        {showCreate && deletableShops.length > 0 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 flex-shrink-0"
-            title="Gerir oficinas"
-            onClick={() => setManageOpen(true)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        )}
-        {showCreate && !atLimit && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" title={t('shop.createNew')}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle>{t('shop.createNew')}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <p className="text-xs text-muted-foreground">
-                  Vamos criar uma conta independente para a nova oficina. O responsável vai receber um email com um link seguro para definir a palavra-passe.
-                </p>
-                <div className="space-y-1.5">
-                  <Label>{t('settings.shopName')} *</Label>
-                  <Input value={newShopName} onChange={e => setNewShopName(e.target.value)} placeholder="Ex: Oficina Norte" autoFocus />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Email do responsável *</Label>
-                  <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="responsavel@oficina.pt" />
-                </div>
-                <Button onClick={handleCreateShop} disabled={!newShopName.trim() || !newShopEmail.trim() || creating} className="w-full">
-                  {creating ? "A criar e a enviar convite..." : "Criar oficina e enviar convite"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-        {showCreate && atLimit && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 flex-shrink-0 opacity-40 cursor-not-allowed"
-            title={limitMsg}
-            onClick={() => toast.error(limitMsg)}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        )}
       </div>
+
+      {/* Ações de oficina: sempre por baixo do seletor, visíveis e bem formatadas */}
+      {showCreate && (
+        <div className="grid grid-cols-2 gap-2">
+          {deletableShops.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-full border-sidebar-border bg-sidebar-accent/50 hover:bg-sidebar-accent text-sidebar-foreground text-xs"
+              title="Gerir oficinas"
+              onClick={() => setManageOpen(true)}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Gerir
+            </Button>
+          ) : (
+            <div />
+          )}
+          {!atLimit ? (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-full border-sidebar-primary/40 bg-sidebar-primary/10 hover:bg-sidebar-primary/20 text-sidebar-primary text-xs"
+                  title={t('shop.createNew')}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Adicionar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle>{t('shop.createNew')}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Vamos criar uma conta independente para a nova oficina. O responsável vai receber um email com um link seguro para definir a palavra-passe.
+                  </p>
+                  <div className="space-y-1.5">
+                    <Label>{t('settings.shopName')} *</Label>
+                    <Input value={newShopName} onChange={e => setNewShopName(e.target.value)} placeholder="Ex: Oficina Norte" autoFocus />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Email do responsável *</Label>
+                    <Input type="email" value={newShopEmail} onChange={e => setNewShopEmail(e.target.value)} placeholder="responsavel@oficina.pt" />
+                  </div>
+                  <Button onClick={handleCreateShop} disabled={!newShopName.trim() || !newShopEmail.trim() || creating} className="w-full">
+                    {creating ? "A criar e a enviar convite..." : "Criar oficina e enviar convite"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-full opacity-50 cursor-not-allowed text-sidebar-foreground/60 text-xs"
+              title={limitMsg}
+              onClick={() => toast.error(limitMsg)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Adicionar
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Gerir oficinas — só aparece para a Oficina Mãe */}
       <Dialog open={manageOpen} onOpenChange={setManageOpen}>

@@ -283,10 +283,12 @@ const { id } = useParams<{ id: string }>();
       console.warn('[invoice] auto email failed', e);
       toast.error(`${variant === 'paid' ? 'Pagamento registado' : 'Fatura emitida'}, mas o envio do email falhou: ${e?.message || 'erro desconhecido'}. Pode reenviar manualmente.`);
       if (shop?.id) {
-        void supabase.from('email_logs').insert({
-          shop_id: shop.id, to_email: (invoice?.clients as any)?.email || '',
-          subject: `Fatura ${invoice?.number ?? ''}`, status: 'failed',
-          entity_type: 'invoice', entity_id: invoice?.id,
+        void logInvoiceEmail({
+          shopId: shop.id,
+          toEmail: (invoice?.clients as any)?.email || '',
+          subject: `Fatura ${invoice?.number ?? ''}`,
+          invoiceId: invoice?.id,
+          status: 'failed',
         });
       }
     }

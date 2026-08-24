@@ -819,7 +819,7 @@ export default function Services() {
                     <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-3 overflow-hidden">
+                <TableCell className="hidden lg:table-cell px-2 py-3 min-w-0">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
                 <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>

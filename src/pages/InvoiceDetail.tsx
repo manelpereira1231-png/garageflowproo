@@ -234,24 +234,31 @@ const { id } = useParams<{ id: string }>();
         currency: shop.currency || getCountryConfig().currency,
       });
       if (channels.email && clientEmail) {
-        await sendEmail({
-          to: clientEmail,
-          subject,
-          html,
-          attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
-        });
-        await supabase.from('email_logs').insert({
-          shop_id: shop.id, to_email: clientEmail,
-          subject, status: 'sent', entity_type: 'invoice', entity_id: invoice.id,
-        });
-        toast.success(variant === 'paid'
-          ? 'Confirmação de pagamento enviada ao cliente por email.'
-          : 'Fatura enviada ao cliente por email.');
+        // Guarda anti-duplicação: só um envio do mesmo documento/variante por janela curta.
+        if (!claimInvoiceDelivery(invoice.id, 'email', variant)) {
+          console.info('[invoice] envio de email ignorado (duplicado)', invoice.number, variant);
+        } else {
+          try {
+            await sendEmail({
+              to: clientEmail,
+              subject,
+              html,
+              attachments: [{ filename: `${invoice.number}.pdf`, content: base64, content_type: 'application/pdf' }],
+            });
+          } catch (sendErr) {
+            releaseInvoiceDelivery(invoice.id, 'email', variant);
+            throw sendErr;
+          }
+          await logInvoiceEmail({ shopId: shop.id, toEmail: clientEmail, subject, invoiceId: invoice.id });
+          toast.success(variant === 'paid'
+            ? 'Confirmação de pagamento enviada ao cliente por email.'
+            : 'Fatura enviada ao cliente por email.');
+        }
       }
 
       // Envio via WhatsApp (mesmo PDF do email) quando escolhido e o cliente tem telefone.
       const clientPhone = (invoice.clients as any)?.phone as string | undefined;
-      if (channels.whatsapp && clientPhone) {
+      if (channels.whatsapp && clientPhone && claimInvoiceDelivery(invoice.id, 'whatsapp', variant)) {
         try {
           await openWhatsApp({
             phone: clientPhone,
@@ -268,6 +275,7 @@ const { id } = useParams<{ id: string }>();
             pdfFilename: `${invoice.number}.pdf`,
           });
         } catch (waErr) {
+          releaseInvoiceDelivery(invoice.id, 'whatsapp', variant);
           console.warn('[invoice] auto WhatsApp failed', waErr);
         }
       }

@@ -300,7 +300,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
       <div className="w-full max-w-md">
         {/* Header — always GarageFlow ERP branding */}
         <div className="text-center mb-8">
-          <img src="/icon-192.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
+          <img src="/icon-192-v8.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
           <h1 className="text-2xl font-bold">{t('app.name')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {mode === 'signup' ? t('auth.signupTagline', 'Software de gestão para oficinas') : t('app.tagline')}

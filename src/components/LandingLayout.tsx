@@ -18,7 +18,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src="/icon-192.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain" />
+            <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain" />
             <span className="text-lg font-bold tracking-tight">
               Garage<span className="text-primary">Flow</span>
             </span>
@@ -104,7 +104,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
         <div className="max-w-6xl mx-auto flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/icon-192.png" alt="GarageFlow" className="w-6 h-6 rounded-md object-contain" />
+              <img src="/icon-192-v8.png" alt="GarageFlow" className="w-6 h-6 rounded-md object-contain" />
               <span className="text-sm font-semibold">GarageFlow</span>
             </Link>
             <div className="flex items-center gap-4 sm:gap-6 text-sm text-muted-foreground">

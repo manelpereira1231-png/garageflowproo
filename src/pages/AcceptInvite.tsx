@@ -205,7 +205,7 @@ export default function AcceptInvite() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/icon-192.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
+          <img src="/icon-192-v8.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
           <h1 className="text-2xl font-bold">Bem-vindo ao GarageFlow</h1>
           <p className="text-muted-foreground text-sm mt-2">
             Foi convidado para integrar a oficina:

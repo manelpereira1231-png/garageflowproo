@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText, Mail, MessageCircle } from "lucide-react";
+import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText, Mail, MessageCircle, Link2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
+import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -35,7 +37,10 @@ export default function InvoiceDetail() {
   const { plan } = useSubscription();
   const { can } = useShopRole();
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+const { id } = useParams<{ id: string }>();
+  const activeShopId = useActiveShopId();
+  const { allowWithoutConnect } = usePlatformInvoiceFee();
+  const [linking, setLinking] = useState(false);
   const [invoice, setInvoice] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -405,6 +410,53 @@ export default function InvoiceDetail() {
     return doc.output('blob') as Blob;
   };
 
+/** Ativa e copia o link público de pagamento da fatura (text-to-pay).
+   *  Reutiliza exatamente a mesma lógica do link de pagamento da lista de
+   *  faturas (Invoices.tsx): interruptor global, public_token e URL /invoice/:token. */
+  const copyPaymentLink = async () => {
+    if (!invoice) return;
+    setLinking(true);
+    try {
+      if (!allowWithoutConnect) {
+        const { data: shopRow } = await supabase
+          .from("shops")
+          .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+          .eq("id", invoice.shop_id)
+          .maybeSingle();
+        const connectActive = Boolean(
+          (shopRow as any)?.stripe_connect_account_id && (shopRow as any)?.stripe_connect_charges_enabled,
+        );
+        if (!connectActive) {
+          toast.error("Conclua a configuração do Stripe Connect para poder cobrar online", {
+            description: "Definições → Pagamentos → Ligar conta Stripe.",
+          });
+          return;
+        }
+      }
+      const { data, error } = await supabase
+        .from("invoices")
+        .update({ payment_link_sent_at: new Date().toISOString() } as any)
+        .eq("id", invoice.id)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link.");
+      const url = `${window.location.origin}/invoice/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link de pagamento copiado", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Link de pagamento aberto numa nova janela");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar link de pagamento");
+    } finally {
+      setLinking(false);
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;
@@ -609,9 +661,15 @@ export default function InvoiceDetail() {
             </Button>
 
           )}
-          {can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
+{can("finance.view_costs") && ['issued', 'partial'].includes(invoice.status) && (
             <Button size="sm" onClick={() => { setPayAmount(remaining); setShowPayment(true); }}>
               <CreditCard className="w-4 h-4 mr-1" />{t('invoices.registerPayment')}
+            </Button>
+          )}
+          {can("invoices.send_email") && ['issued', 'partial'].includes(invoice.status) && (
+            <Button variant="outline" size="sm" onClick={copyPaymentLink} disabled={linking}>
+              {linking ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Link2 className="w-4 h-4 mr-1" />}
+              Link de pagamento
             </Button>
           )}
           {invoice.credit_note_pdf_url && (

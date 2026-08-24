@@ -506,8 +506,14 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
         else if (hasVehicle) errors.push("Cliente sem nome — indique o nome ou remova a linha");
         else errors.push("Linha sem nome de cliente");
       }
-      if (hasVehicle && !vehicle.make) errors.push("Viatura sem marca — campo obrigatório");
-      if (hasVehicle && !vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
+      if (hasVehicle && vehicle.plate && (!vehicle.make || !vehicle.model)) {
+        if (hasService) warnings.push("Viatura sem marca/modelo — só será associada se a matrícula já existir na oficina");
+        else {
+          if (!vehicle.make) errors.push("Viatura sem marca — campo obrigatório");
+          if (!vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
+        }
+      }
+
       if (!client.phone && !client.email) warnings.push("Cliente sem telefone nem email");
 
       // Intervenções: nada é inventado. Sem viatura identificável não há histórico.

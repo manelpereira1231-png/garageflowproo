@@ -590,7 +590,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <X className="w-5 h-5" />
           </button>
+          {!sidebarCompact && (
+            <button
+              onClick={toggleSidebarCollapse}
+              aria-label="Recolher menu lateral"
+              title="Recolher menu (ganhar espaço)"
+              className="ml-auto hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
+            >
+              <PanelLeftClose className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
+        {sidebarCompact && (
+          <button
+            onClick={toggleSidebarCollapse}
+            aria-label="Expandir menu lateral"
+            title="Expandir menu"
+            className="hidden lg:flex mx-auto mt-2 p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground items-center justify-center"
+          >
+            <PanelLeftOpen className="w-4.5 h-4.5" />
+          </button>
+        )}
 
         <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
           {isGuidedMode && (

@@ -773,7 +773,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })()}
         </nav>
 
-        {!isGuidedMode && (
+        {!isGuidedMode && !sidebarCompact && (
           <div className="px-2.5 pt-1 border-t border-sidebar-border">
             <SidebarCustomizer
               shopId={activeShopId}
@@ -785,7 +785,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Toggle Lite/Pro só faz sentido para papéis com menu extenso.
             Técnico/Receção/Comercial já têm sidebar naturalmente reduzida pelo RBAC,
             portanto o toggle seria confuso e sem efeito prático. */}
-        {(role === "owner" || role === "admin" || role === "manager" || role === "super_admin") && (
+        {!sidebarCompact && (role === "owner" || role === "admin" || role === "manager" || role === "super_admin") && (
           <div className="px-2.5 pt-2 pb-1 border-t border-sidebar-border">
             <AppModeToggle className="w-full justify-between" />
           </div>
@@ -796,15 +796,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link
               to="/admin"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+              title={t("nav.adminPanel")}
+              className={`flex items-center py-2.5 rounded-lg text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all ${
+                sidebarCompact ? "justify-center px-2" : "gap-3 px-3"
+              }`}
             >
               <Shield className="w-[18px] h-[18px] shrink-0" />
-              {t("nav.adminPanel")}
+              {!sidebarCompact && t("nav.adminPanel")}
             </Link>
           </div>
         )}
 
-        {isGroupOwner && (
+        {isGroupOwner && !sidebarCompact && (
           <ShopSwitcher
             shops={ownedShops.map((s) => ({ id: s.id, name: s.name ?? "", logo_url: s.logo_url ?? null }))}
             activeShopId={activeShopId}
@@ -818,31 +821,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <div className="px-2.5 pb-1.5">
-          <div className="flex items-center gap-2 px-3 py-1.5">
-            <Globe className="w-4 h-4 text-sidebar-foreground shrink-0" />
-            <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-              <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pt">🇵🇹 Português</SelectItem>
-                <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
-                <SelectItem value="en">🇬🇧 English</SelectItem>
-                <SelectItem value="es">🇪🇸 Español</SelectItem>
-                <SelectItem value="hi">🇮🇳 हिन्दी</SelectItem>
-              </SelectContent>
-            </Select>
+        {!sidebarCompact && (
+          <div className="px-2.5 pb-1.5">
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <Globe className="w-4 h-4 text-sidebar-foreground shrink-0" />
+              <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground text-xs flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                  <SelectItem value="pt-BR">🇧🇷 Brasileiro</SelectItem>
+                  <SelectItem value="en">🇬🇧 English</SelectItem>
+                  <SelectItem value="es">🇪🇸 Español</SelectItem>
+                  <SelectItem value="hi">🇮🇳 हिन्दी</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="p-2.5 border-t border-sidebar-border shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-destructive hover:bg-destructive/10 transition-all"
+            title={t("auth.logout")}
+            className={`flex items-center py-2.5 rounded-lg text-sm font-medium w-full text-destructive hover:bg-destructive/10 transition-all ${
+              sidebarCompact ? "justify-center px-2" : "gap-3 px-3"
+            }`}
           >
             <LogOut className="w-[18px] h-[18px] shrink-0" />
-            {t("auth.logout")}
+            {!sidebarCompact && t("auth.logout")}
           </button>
         </div>
       </aside>

@@ -415,6 +415,26 @@ export default function Alerts() {
         })}
       </div>
 
+      {/* Comunicação com o cliente do alerta */}
+      {commsAlert && shopId && (
+        <ClientCommsDialog
+          open={!!commsAlert}
+          onOpenChange={(v) => { if (!v) setCommsAlert(null); }}
+          ctx={{
+            workOrderId: commsAlert.id,
+            number: commsAlert.title || '—',
+            status: 'pending',
+            shopId,
+            clientName: (commsAlert.clients as any)?.name,
+            clientPhone: (commsAlert.clients as any)?.phone,
+            clientEmail: (commsAlert.clients as any)?.email,
+            vehicleMake: (commsAlert.vehicles as any)?.make,
+            vehicleModel: (commsAlert.vehicles as any)?.model,
+            plate: (commsAlert.vehicles as any)?.plate,
+          }}
+        />
+      )}
+
       {/* Create Alert Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-[480px]">

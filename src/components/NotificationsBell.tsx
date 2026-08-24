@@ -38,6 +38,7 @@ export default function NotificationsBell() {
       .select("id,type,title,message,link,read,created_at")
       .in("shop_id", ids)
       .is("archived_at", null)
+      .eq("read", false)
       .order("created_at", { ascending: false })
       .limit(30);
     setItems((data as any) ?? []);

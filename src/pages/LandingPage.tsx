@@ -845,9 +845,9 @@ export default function LandingPage() {
                     </Button>
                   ) : plan.cta.external ? (
                     <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
-                      <Button
-                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                        variant={plan.ctaPrimary ? "default" : "outline"}
+<Button
+                        className="w-full gradient-primary text-primary-foreground"
+                        variant="default"
                       >
                         {plan.cta.label}
                       </Button>

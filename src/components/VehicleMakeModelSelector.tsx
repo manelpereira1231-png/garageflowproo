@@ -5,6 +5,9 @@ import { Search, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { EXT_MAKES, EXT_MODELS, EXT_SUBMODELS } from "@/data/vehicleCatalogExtension";
+import { DEPTH_SUBMODELS_EU } from "@/data/vehicleCatalogDepthEu";
+import { DEPTH_SUBMODELS_WORLD } from "@/data/vehicleCatalogDepthWorld";
+import { DEPTH_SUBMODELS_GAPS } from "@/data/vehicleCatalogDepthGaps";
 
 
 const VEHICLE_DATA: Record<string, { logo: string; models: string[] }> = {
@@ -464,6 +467,16 @@ Object.entries(EXT_SUBMODELS).forEach(([key, list]) => {
   if (!VEHICLE_DATA[mk] || !VEHICLE_DATA[mk].models.includes(mdl)) return;
   SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
 });
+
+// Fusão da camada de PROFUNDIDADE (versões/submodelos) — estritamente aditiva.
+[DEPTH_SUBMODELS_EU, DEPTH_SUBMODELS_WORLD, DEPTH_SUBMODELS_GAPS].forEach((layer) => {
+  Object.entries(layer).forEach(([key, list]) => {
+    const [mk, mdl] = key.split("|");
+    if (!VEHICLE_DATA[mk] || !VEHICLE_DATA[mk].models.includes(mdl)) return;
+    SUBMODELS[key] = Array.from(new Set([...(SUBMODELS[key] || []), ...list]));
+  });
+});
+
 
 const MAKE_NAMES = Object.keys(VEHICLE_DATA).sort((a, b) => a.localeCompare(b, "pt"));
 

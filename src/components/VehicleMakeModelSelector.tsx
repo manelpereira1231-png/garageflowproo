@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Search, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { EXT_MAKES, EXT_MODELS, EXT_SUBMODELS } from "@/data/vehicleCatalogExtension";
+
 
 const VEHICLE_DATA: Record<string, { logo: string; models: string[] }> = {
   "Abarth": { logo: "https://cdn.simpleicons.org/abarth", models: ["500", "595", "695", "Punto"] },

@@ -746,18 +746,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       const totalBadge = groupItems.reduce((sum, i) => sum + (!sidebarPrefs.isMuted(i.path) && i.badge ? i.badge : 0), 0);
                       return (
                         <div key={group.id} className="mb-1">
-                          <div
-                            className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
-                              hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55"
-                            }`}
-                          >
-                            <span className="flex-1 text-left">{group.label}</span>
-                            {totalBadge > 0 && (
-                              <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
-                                {totalBadge > 99 ? "99+" : totalBadge}
-                              </span>
-                            )}
-                          </div>
+                          {sidebarCompact ? (
+                            <div className="my-1.5 border-t border-sidebar-border/60" />
+                          ) : (
+                            <div
+                              className={`flex items-center w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-md ${
+                                hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/55"
+                              }`}
+                            >
+                              <span className="flex-1 text-left">{group.label}</span>
+                              {totalBadge > 0 && (
+                                <span className="bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                                  {totalBadge > 99 ? "99+" : totalBadge}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="space-y-0.5 mt-0.5">
                             {groupItems.map((it) => renderItem(it))}
                           </div>

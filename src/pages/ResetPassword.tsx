@@ -215,7 +215,7 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/icon-192.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
+          <img src="/icon-192-v8.png" alt="GarageFlow" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4 shadow-lg" />
           <h1 className="text-2xl font-bold tracking-tight">
             Garage<span className="text-primary">Flow</span>
           </h1>

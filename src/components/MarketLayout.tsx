@@ -192,7 +192,7 @@ export default function MarketLayout({ children, variant }: { children?: React.R
         <nav className={`${isDealer ? "bg-zinc-950/95 border-b border-amber-500/20" : "bg-slate-950/95 border-b border-white/[0.06]"} backdrop-blur-xl text-white px-4 py-3 sticky top-0 z-50 shadow-lg`}>
           <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
             <Link to={isWorkshopPanel ? "/market/inspections" : isDealer ? "/market/dealer-dashboard" : "/market"} className="flex items-center gap-2.5 group shrink-0 min-w-0">
-              <img src="/icon-192.png" alt="GarageFlow" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
+              <img src="/icon-192-v8.png" alt="GarageFlow" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
               <span className="text-lg font-bold tracking-tight whitespace-nowrap">
                 GarageFlow <span className="text-amber-400">{isWorkshopPanel ? "Oficina" : isDealer ? "Stand" : "Market"}</span>
               </span>

@@ -823,8 +823,8 @@ export default function Services() {
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
                 <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
-                <TableCell className="px-3 py-3 overflow-hidden">
-                  <Badge variant="secondary" className={`${statusColors[s.status as ServiceStatus]} whitespace-normal text-center leading-tight`}>
+                <TableCell className="px-2 py-3 overflow-hidden">
+                  <Badge variant="secondary" className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap truncate text-xs inline-block max-w-full`}>
                     {t(`service.${s.status}`)}
                   </Badge>
                 </TableCell>

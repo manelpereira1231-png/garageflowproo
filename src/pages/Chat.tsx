@@ -36,6 +36,7 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [shopName, setShopName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);

@@ -836,7 +836,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'landing.principle2Title': 'Os seus dados são seus',
     'landing.principle2Desc': 'RGPD, encriptação ponta-a-ponta, exporte tudo quando quiser.',
     'landing.principle3Title': 'Sem fidelização',
-    'landing.principle3Desc': 'Subscrição mensal ou anual, sem contrato de permanência. Cancela na área de faturação quando quiser.',
+    'landing.principle3Desc': 'Subscrição mensal ou anual, sem contrato de permanência. Cancele na área de faturação quando quiser.',
     'landing.billing.badge.pt': 'Faturação legal em Portugal',
     'landing.billing.badge.br': 'Emissão fiscal no Brasil',
     'landing.billing.badge.other': 'Emissão fiscal no seu país',

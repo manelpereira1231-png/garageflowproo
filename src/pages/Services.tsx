@@ -32,6 +32,7 @@ import { useServerList } from "@/hooks/useServerList";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { useShopRole } from "@/hooks/useShopRole";
+import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 
@@ -119,6 +120,8 @@ export default function Services() {
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  // Comunicação com o cliente da OS (reutiliza a camada partilhada lib/clientComms.ts)
+  const [commsService, setCommsService] = useState<any>(null);
 
   const table = useTableState<ServicesFilters>({
     storageKey: "table:services",
@@ -721,6 +724,11 @@ export default function Services() {
                     <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
                   </Button>
                 )}
+                {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setCommsService(s)}>
+                    <MessageCircle className="w-3 h-3 mr-1" />Cliente
+                  </Button>
+                )}
                 {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
                     <ChevronRightIcon className="w-3 h-3" />
@@ -838,6 +846,11 @@ export default function Services() {
                         <MessageCircle className="w-3.5 h-3.5" />
                       </Button>
                     )}
+                    {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                      <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-8 w-8" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     {(can("work_orders.complete") || can("work_orders.delete")) && !['delivered', 'cancelled'].includes(s.status) && (
                       <>
                         {can("work_orders.complete") && (
@@ -876,6 +889,28 @@ export default function Services() {
         onPageChange={setPage}
         labelOf={t('common.of') || 'de'}
       />
+
+      {/* Comunicação com o cliente da OS — camada partilhada, cliente sempre o do serviço */}
+      {commsService && activeShopId && (
+        <ClientCommsDialog
+          open={!!commsService}
+          onOpenChange={(v) => { if (!v) setCommsService(null); }}
+          ctx={{
+            workOrderId: commsService.id,
+            number: commsService.number,
+            status: commsService.status,
+            shopId: activeShopId,
+            shopName: shop?.name,
+            clientName: (commsService.clients as any)?.name,
+            clientPhone: (commsService.clients as any)?.phone,
+            clientEmail: (commsService.clients as any)?.email,
+            vehicleMake: (commsService.vehicles as any)?.make,
+            vehicleModel: (commsService.vehicles as any)?.model,
+            plate: (commsService.vehicles as any)?.plate,
+            total: Number(commsService.total || 0),
+          }}
+        />
+      )}
 
       {/* Reminder Dialog */}
       <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && setReminderDialog(null)}>

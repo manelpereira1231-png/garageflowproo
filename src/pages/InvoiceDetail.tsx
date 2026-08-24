@@ -296,6 +296,24 @@ const { id } = useParams<{ id: string }>();
     }
   };
 
+  /**
+   * Fatura criada já como "emitida" no formulário → o envio ao cliente é feito
+   * aqui (uma única vez), com PDF anexado e link de pagamento, em vez de um
+   * email genérico sem documento. O parâmetro é consumido imediatamente para
+   * que um refresh não reenvie nada.
+   */
+  useEffect(() => {
+    if (!invoice || !shop) return;
+    if (autoSentRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autosend') !== '1') return;
+    autoSentRef.current = true;
+    window.history.replaceState({}, '', window.location.pathname);
+    if (invoice.status !== 'issued') return;
+    void sendInvoiceEmailAuto('issued', undefined, { email: true, whatsapp: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice?.id, shop?.id]);
+
 
   const handlePayment = async () => {
     if (!invoice || !shop) return;

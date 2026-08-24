@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -63,10 +63,13 @@ export default function CommandPalette() {
   }, []);
 
   // Search across tables
+  const reqIdRef = useRef(0);
   const doSearch = useCallback(
     async (q: string) => {
-      if (!q || q.length < 2 || !activeShopId || !permissionsReady) {
+      const reqId = ++reqIdRef.current;
+      if (!q || q.trim().length < 2 || !activeShopId || !permissionsReady) {
         setResults([]);
+        setSearching(false);
         return;
       }
       setSearching(true);
@@ -193,6 +196,8 @@ export default function CommandPalette() {
         })),
       ];
 
+      // Ignore out-of-order responses (stale query still in flight).
+      if (reqId !== reqIdRef.current) return;
       setResults(all);
       setSearching(false);
     },
@@ -200,9 +205,25 @@ export default function CommandPalette() {
   );
 
   useEffect(() => {
-    const timer = setTimeout(() => doSearch(query), 250);
+    const timer = setTimeout(() => doSearch(query), 150);
     return () => clearTimeout(timer);
   }, [query, doSearch]);
+
+  // Reset state when closing so the next open starts clean.
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setResults([]);
+      setSearching(false);
+      reqIdRef.current++;
+    }
+  }, [open]);
+
+  // Switching shop invalidates any results from the previous shop.
+  useEffect(() => {
+    reqIdRef.current++;
+    setResults([]);
+  }, [activeShopId]);
 
   const handleSelect = (type: string, id: string) => {
     setOpen(false);
@@ -288,14 +309,19 @@ export default function CommandPalette() {
   }, [can, isPt, permissionsReady]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
       <CommandInput
         placeholder={searchableEntities ? (isPt ? "Pesquisar cliente, matrícula, VIN, orçamento, serviço ou fatura…" : `Search ${searchableEntities}…`) : (isPt ? "Pesquisa indisponível" : "Search unavailable")}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>
+        {query.trim().length >= 2 && (searching || results.length === 0) && (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {searching ? (isPt ? "A pesquisar..." : "Searching...") : (isPt ? "Sem resultados." : "No results found.")}
+          </div>
+        )}
+        <CommandEmpty className="hidden">
           {searching
             ? (isPt ? "A pesquisar..." : "Searching...")
             : (isPt ? "Sem resultados." : "No results found.")}

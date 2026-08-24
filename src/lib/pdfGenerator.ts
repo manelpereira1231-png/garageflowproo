@@ -252,7 +252,9 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   const summaryLines: Array<[string, number]> = [];
   if (partsSum > 0) summaryLines.push([tl('partsSubtotal'), partsSum]);
   if (servicesSum > 0) summaryLines.push([tl('servicesSubtotal'), servicesSum]);
-  if (laborCharge > 0) summaryLines.push([tl('laborSubtotal'), laborCharge]);
+  const laborSum = laborCharge(laborH, laborR);
+  if (laborSum > 0) summaryLines.push([tl('laborSubtotal'), laborSum]);
+
 
   // Totals
   let finalY = (doc as any).lastAutoTable.finalY + 10;

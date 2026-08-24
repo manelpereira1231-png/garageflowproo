@@ -824,7 +824,11 @@ export default function Services() {
                 </TableCell>
                 <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
                 <TableCell className="px-2 py-3 overflow-hidden">
-                  <Badge variant="secondary" className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap truncate text-xs inline-block max-w-full`}>
+                  <Badge
+                    variant="secondary"
+                    title={t(`service.${s.status}`)}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap truncate text-[10px] leading-tight px-1.5 py-0.5 inline-block max-w-full`}
+                  >
                     {t(`service.${s.status}`)}
                   </Badge>
                 </TableCell>

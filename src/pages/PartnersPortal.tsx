@@ -197,7 +197,7 @@ export default function PartnersPortal() {
                     <TableHead>Convertidos</TableHead>
                     <TableHead>Taxa</TableHead>
                     <TableHead>Total Ganho</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Link</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -248,7 +248,7 @@ export default function PartnersPortal() {
                     <TableHead>Email</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Comissão</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Data</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -309,7 +309,7 @@ export default function PartnersPortal() {
                   <TableRow>
                     <TableHead>Parceiro</TableHead>
                     <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Pago em</TableHead>
                   </TableRow>

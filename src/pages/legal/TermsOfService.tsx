@@ -13,7 +13,7 @@ export default function TermsOfService() {
     <LegalPage pageKey="terms">
       <hr />
       <p className="text-sm">
-        {sa}: <Link to="/legal/privacy">Privacy</Link> ·{" "}
+        {sa}: <Link to="/legal/privacy">Privacidade</Link> ·{" "}
         <Link to="/legal/cookies">Cookies</Link> ·{" "}
         <Link to="/legal/market-terms">Market Terms</Link>
       </p>

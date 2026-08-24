@@ -13,8 +13,8 @@ export default function DPA() {
     <LegalPage pageKey="dpa">
       <hr />
       <p className="text-sm">
-        {sa}: <Link to="/legal/privacy">Privacy</Link> ·{" "}
-        <Link to="/legal/terms">Terms</Link>
+        {sa}: <Link to="/legal/privacy">Privacidade</Link> ·{" "}
+        <Link to="/legal/terms">Termos e Condições</Link>
       </p>
     </LegalPage>
   );

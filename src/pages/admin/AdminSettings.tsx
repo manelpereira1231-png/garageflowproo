@@ -72,7 +72,7 @@ const ALL_FEATURES = [
   { key: "quote_approval", label: "Aprovação Online" },
   { key: "client_portal", label: "Portal do Cliente" },
   { key: "service_catalog", label: "Catálogo de Serviços" },
-  { key: "automations", label: "Automações Avançadas" },
+  { key: "automations", label: "Automatizações Avançadas" },
 ];
 
 const DEFAULT_FREE_FEATURES = ["quotes", "work_orders", "clients", "invoices", "service_catalog"];
@@ -370,7 +370,7 @@ export default function AdminSettings() {
       {/* Notifications & Automations */}
       <div className="stat-card space-y-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Bell className="w-5 h-5 text-primary" /> Alertas, Notificações & Automações
+          <Bell className="w-5 h-5 text-primary" /> Alertas, Notificações & Automatizações
         </h2>
         <div className="space-y-3">
           <div className="flex items-center justify-between">

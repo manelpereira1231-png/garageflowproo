@@ -322,7 +322,7 @@ export default function AdminPartners() {
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead><TableHead>Parceiro</TableHead><TableHead>Código</TableHead>
                   <TableHead>Oficinas</TableHead><TableHead>Total Ganho</TableHead><TableHead>Pendente</TableHead>
-                  <TableHead>Pagamento</TableHead><TableHead>Status</TableHead>
+                  <TableHead>Pagamento</TableHead><TableHead>Estado</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {rankings.map((p, i) => {
@@ -363,7 +363,7 @@ export default function AdminPartners() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Nome</TableHead><TableHead>Código</TableHead><TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead><TableHead>Pagamento</TableHead><TableHead>Oficinas</TableHead><TableHead>Status</TableHead><TableHead>Ações</TableHead>
+                  <TableHead>Telefone</TableHead><TableHead>Pagamento</TableHead><TableHead>Oficinas</TableHead><TableHead>Estado</TableHead><TableHead>Ações</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {partners.map(p => {
@@ -419,7 +419,7 @@ export default function AdminPartners() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Parceiro</TableHead><TableHead>Oficina</TableHead><TableHead>Email</TableHead>
-                  <TableHead>Plano</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead>
+                  <TableHead>Plano</TableHead><TableHead>Estado</TableHead><TableHead>Data</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {invites.map(inv => {
@@ -511,7 +511,7 @@ export default function AdminPartners() {
             <CardContent className="pt-4 overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Parceiro</TableHead><TableHead>Valor</TableHead><TableHead>Status</TableHead>
+                  <TableHead>Parceiro</TableHead><TableHead>Valor</TableHead><TableHead>Estado</TableHead>
                   <TableHead>Criado</TableHead><TableHead>Pago em</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>

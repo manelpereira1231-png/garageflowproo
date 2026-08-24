@@ -89,7 +89,7 @@ export default function AdminActionQueue() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
-              <tr><th className="text-left py-2">Quando</th><th className="text-left">Tipo</th><th className="text-left">Entidade</th><th className="text-left">Status</th><th className="text-right">Tentativas</th><th className="text-left">Erro</th></tr>
+              <tr><th className="text-left py-2">Quando</th><th className="text-left">Tipo</th><th className="text-left">Entidade</th><th className="text-left">Estado</th><th className="text-right">Tentativas</th><th className="text-left">Erro</th></tr>
             </thead>
             <tbody>
               {queue.map(a => (

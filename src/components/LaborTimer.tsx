@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatMoney, formatHours, formatHourlyRate } from "@/lib/money";
+import TechnicianSelect from "@/components/TechnicianSelect";
 
 interface TimerEntry {
   id: string;
@@ -285,12 +286,16 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
       {/* Start new timer - always available for multi-technician */}
       {(!hasActiveOrPaused || showAddNew) && (
         <div className="flex gap-2">
-          <Input
-            placeholder={t('workshop.timer.technician')}
-            value={techName}
-            onChange={e => setTechName(e.target.value)}
-            className="flex-1 text-sm"
-          />
+          <div className="flex-1">
+            <TechnicianSelect
+              shopId={shopId}
+              value={techName}
+              onChange={setTechName}
+              allowEmpty={false}
+              placeholder={t('workshop.timer.technician')}
+              className="text-sm"
+            />
+          </div>
           <Button size="sm" onClick={startTimer} className="shrink-0">
             <Play className="w-4 h-4 mr-1" />
             {t('workshop.timer.start')}

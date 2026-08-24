@@ -705,9 +705,10 @@ export default function Services() {
               </p>
             </div>
             <RepairTimeline status={s.status as ServiceStatus} />
-            <div className="flex items-center justify-between pt-1 border-t border-border">
-              <span className="text-sm font-semibold mono">{formatMoney(s.total)}</span>
-              <div className="flex gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border">
+              <span className="text-sm font-semibold mono whitespace-nowrap shrink-0">{formatMoney(s.total)}</span>
+              <div className="flex flex-wrap items-center gap-1 justify-end min-w-0">
+
                 {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                   <Link to={`/services/edit/${s.id}`}>
                     <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>

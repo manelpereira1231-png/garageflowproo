@@ -1226,7 +1226,7 @@ const App = () => (
           </Suspense>
           <PublicRouteTracker />
           <AppRoutes />
-          <SupportFab />
+          
           <CookieConsentBanner />
           <IndiaLanguagePrompt />
         </BrowserRouter>

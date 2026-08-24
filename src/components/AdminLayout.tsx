@@ -68,7 +68,7 @@ const navSections = [
   {
     label: "Marketing",
     items: [
-      { path: "/admin/marketing", label: "Campanhas & Automações", icon: Megaphone },
+      { path: "/admin/marketing", label: "Campanhas & Automatizações", icon: Megaphone },
       { path: "/admin/seo", label: "SEO", icon: Search },
       { path: "/admin/seo-blog", label: "Blog", icon: FileText },
     ],

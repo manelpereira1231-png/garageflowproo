@@ -79,7 +79,7 @@ const PRODUCT_MAP: GroupDef[] = [
     title: "Crescimento", emoji: "🟪",
     items: [
       { label: "Marketing", slug: "marketing", icon: Megaphone },
-      { label: "Automações", slug: "automations", icon: Zap },
+      { label: "Automatizações", slug: "automations", icon: Zap },
       { label: "Fidelização", slug: "loyalty", icon: Star },
       { label: "Referências", slug: "referrals", icon: Gift },
     ],

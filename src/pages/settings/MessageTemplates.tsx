@@ -271,7 +271,7 @@ export default function MessageTemplates() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-base">Automação</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base">Automatização</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>

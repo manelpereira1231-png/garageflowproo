@@ -78,7 +78,7 @@ export default function AdminSystemHealth() {
     // 4. Automações
     const { count: automationCount } = await supabase.from("automation_rules").select("id", { count: "exact", head: true }).eq("active", true);
     results.push({
-      name: "Automações",
+      name: "Automatizações",
       status: "healthy",
       details: `${automationCount || 0} regras ativas`,
       icon: Zap,

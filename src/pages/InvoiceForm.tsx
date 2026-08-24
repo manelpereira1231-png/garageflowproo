@@ -12,7 +12,6 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/pushNotifications";
-import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";

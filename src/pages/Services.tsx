@@ -795,30 +795,30 @@ export default function Services() {
               </TableRow>
             ) : filtered.map(s => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell className="px-3 py-3">
+                <TableCell className="px-3 py-3 overflow-hidden">
                   <div className="min-w-0">
-                    <span className="font-medium mono">{s.number}</span>
-                    <p className="text-xs text-muted-foreground">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
+                    <span className="font-medium mono whitespace-nowrap">{s.number}</span>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
                   </div>
                 </TableCell>
-                <TableCell className="px-3 py-3 whitespace-normal">
+                <TableCell className="px-3 py-3 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
                     <span className="font-medium break-words">{(s.clients as any)?.name}</span>
-                    {s.technician && <p className="text-xs text-muted-foreground">🔧 {s.technician}</p>}
+                    {s.technician && <p className="text-xs text-muted-foreground break-words">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
+                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
                     <span className="break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
                     <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-3">
+                <TableCell className="hidden lg:table-cell px-2 py-3 overflow-hidden">
                   <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono">{formatMoney(s.total)}</TableCell>
-                <TableCell className="px-3 py-3">
-                  <Badge variant="secondary" className={statusColors[s.status as ServiceStatus]}>
+                <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
+                <TableCell className="px-3 py-3 overflow-hidden">
+                  <Badge variant="secondary" className={`${statusColors[s.status as ServiceStatus]} whitespace-normal text-center leading-tight`}>
                     {t(`service.${s.status}`)}
                   </Badge>
                 </TableCell>

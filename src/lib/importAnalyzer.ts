@@ -244,11 +244,15 @@ function classifySheet(mapping: Record<number, FieldKey | null>): SheetAnalysis[
   const fields = Object.values(mapping).filter(Boolean) as FieldKey[];
   const hasClient = fields.some((f) => CLIENT_FIELDS.includes(f));
   const hasVehicle = fields.some((f) => VEHICLE_FIELDS.includes(f));
+  const hasService = fields.some((f) => SERVICE_FIELDS.includes(f) && f !== "service_date");
+  if ((hasClient || hasVehicle) && hasService) return "history";
   if (hasClient && hasVehicle) return "mixed";
   if (hasClient) return "clients";
   if (hasVehicle) return "vehicles";
+  if (hasService) return "history";
   return "unknown";
 }
+
 
 export function analyzeMatrix(name: string, matrix: string[][]): SheetAnalysis {
   const cleaned = matrix.map((r) => r.map(cellToString));

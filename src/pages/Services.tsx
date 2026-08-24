@@ -142,21 +142,16 @@ export default function Services() {
     if (!shop) { toast.error('Dados da oficina não carregados'); return; }
     setSendingEmail(s.id);
     try {
-      // Resolver token do orçamento associado (para o botão Aprovar).
-      let quoteToken: string | undefined = (s.quotes as any)?.token || undefined;
+      // Resolver token do orçamento **desta** OS (para o botão Aprovar).
+      // Nunca reutilizar o último orçamento do cliente — podia estar já
+      // aprovado/convertido e a página pública mostrava "Aprovado".
+      const quoteToken: string | undefined = (await ensureQuoteTokenForWorkOrder(s)) || undefined;
       let quoteRow: any = null;
-      if (!quoteToken) {
-        const clientId = s.client_id;
-        const vehicleId = s.vehicle_id;
-        const shopId = s.shop_id || localStorage.getItem('garageflow_active_shop');
-        if (clientId && shopId) {
-          let qb = supabase.from('quotes').select('*').eq('shop_id', shopId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(1);
-          if (vehicleId) qb = qb.eq('vehicle_id', vehicleId) as any;
-          const { data: qData } = await qb.maybeSingle();
-          quoteRow = qData || null;
-          quoteToken = quoteRow?.token || undefined;
-        }
+      if (quoteToken) {
+        const { data: qData } = await supabase.from('quotes').select('*').eq('token', quoteToken).maybeSingle();
+        quoteRow = qData || null;
       }
+
 
       const approvalUrl = quoteToken && canUseFeature('quoteApproval')
         ? `${window.location.origin}/quote/${quoteToken}`

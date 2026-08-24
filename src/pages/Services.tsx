@@ -727,39 +727,45 @@ export default function Services() {
                 {s.technician && <span> · 🔧 {s.technician}</span>}
               </p>
             </div>
-            <RepairTimeline status={s.status as ServiceStatus} />
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border">
-              <span className="text-sm font-semibold mono whitespace-nowrap shrink-0">{formatMoney(s.total)}</span>
-              <div className="flex flex-wrap items-center gap-1 justify-end min-w-0">
-
-                {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
-                  <Link to={`/services/edit/${s.id}`}>
-                    <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>
-                  </Link>
-                )}
-                {can("work_orders.print") && <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>}
-                {can("work_orders.send_email") && (
-                  <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
-                    {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
-                  </Button>
-                )}
-                {can("work_orders.send_whatsapp") && (
-                  <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
-                    <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
-                  </Button>
-                )}
-                {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setCommsService(s)}>
-                    <MessageCircle className="w-3 h-3 mr-1" />Cliente
-                  </Button>
-                )}
-                {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
-                  <Button variant="default" size="sm" onClick={() => advanceStatus(s)} className="text-xs h-7 gap-1">
-                    <ChevronRightIcon className="w-3 h-3" />
-                    {t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}
-                  </Button>
-                )}
+            <RepairTimeline
+              status={s.status as ServiceStatus}
+              onAdvance={() => advanceStatus(s)}
+              showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
+            />
+            <div className="flex flex-col gap-2 pt-1 border-t border-border">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold mono whitespace-nowrap shrink-0">{formatMoney(s.total)}</span>
+                <div className="flex flex-wrap items-center gap-1 justify-end min-w-0">
+                  {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
+                    <Link to={`/services/edit/${s.id}`}>
+                      <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>
+                    </Link>
+                  )}
+                  {can("work_orders.print") && <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>}
+                  {can("work_orders.send_email") && (
+                    <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
+                      {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
+                    </Button>
+                  )}
+                  {can("work_orders.send_whatsapp") && (
+                    <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
+                      <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
+                    </Button>
+                  )}
+                  {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setCommsService(s)}>
+                      <MessageCircle className="w-3 h-3 mr-1" />Cliente
+                    </Button>
+                  )}
+                </div>
               </div>
+              {can("work_orders.delete") && (
+                <div className="flex justify-end">
+                  <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive" onClick={() => cancelService(s.id)}>
+                    <XCircle className="w-3 h-3 mr-1" />Cancelar
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import MarketPendingPaymentBanner from "@/components/MarketPendingPaymentBanner";
 import LegalFooter from "@/components/LegalFooter";
 import ThemeToggle from "@/components/ThemeToggle";
+import SupportFab from "@/components/SupportFab";
 import { useTheme } from "@/components/ThemeProvider";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useMarketT } from "@/i18n/marketTranslations";

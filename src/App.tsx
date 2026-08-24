@@ -136,7 +136,7 @@ const MyData = lazyRetry(() => import("@/pages/legal/MyData"));
 const MarketTerms = lazyRetry(() => import("@/pages/legal/MarketTerms"));
 const Support = lazyRetry(() => import("@/pages/Support"));
 import CookieConsentBanner from "@/components/CookieConsentBanner";
-import SupportFab from "@/components/SupportFab";
+
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";

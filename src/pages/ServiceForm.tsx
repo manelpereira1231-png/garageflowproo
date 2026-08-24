@@ -256,7 +256,6 @@ export default function ServiceForm() {
             </div>
 
 
-            <div className="space-y-1.5"><Label>{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label><Input type="number" inputMode="decimal" step="0.5" min={0} max={MAX_LABOR_HOURS} value={laborHours} onChange={e => setLaborHours(e.target.value)} aria-invalid={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS} className={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""} />{(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS && <p className="text-[11px] text-destructive">Máximo {MAX_LABOR_HOURS}h.</p>}</div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>
@@ -386,6 +385,38 @@ export default function ServiceForm() {
             </div>
             );
           })}
+
+          {/* Mão-de-obra extra — mesmo padrão visual da secção Orçamentos:
+              fica logo a seguir às linhas de serviço e antes dos totais. */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t('services.laborHours')} ({formatMoney(shopDefaults.labor_rate)}/h)</Label>
+              <Input
+                className={`h-9 text-sm ${(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""}`}
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min={0}
+                max={MAX_LABOR_HOURS}
+                value={laborHours}
+                onChange={e => setLaborHours(e.target.value)}
+                aria-invalid={(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS}
+              />
+              <p className="text-[11px] text-muted-foreground">Só para tempo além do previsto no catálogo dos serviços acima.</p>
+              {(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS && (
+                <p className="text-[11px] text-destructive">Máximo {MAX_LABOR_HOURS}h.</p>
+              )}
+            </div>
+            {laborCharge > 0 && (
+              <div className="text-sm sm:text-right">
+                <span className="text-muted-foreground">Mão-de-obra extra: </span>
+                <strong className="font-mono">{formatMoney(laborCharge)}</strong>
+                <p className="text-[11px] text-muted-foreground">
+                  {parseFloat(laborHours) || 0}h × {formatMoney(shopDefaults.labor_rate)}/h
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-5">

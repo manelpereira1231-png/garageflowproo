@@ -330,6 +330,7 @@ export default function Services() {
   };
 
   const activeShopId = useActiveShopId();
+  const pdfBusyRef = useRef(false);
 
   const fetchStats = async (shopId: string) => {
     // Agregação feita no servidor (RPC) — evita descarregar milhares de OS

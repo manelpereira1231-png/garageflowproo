@@ -56,6 +56,7 @@ export default function Quotes() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   const activeShopId = useActiveShopId();
+  const pdfBusyRef = useRef(false);
 
   const table = useTableState<QuotesFilters>({
     storageKey: "table:quotes",

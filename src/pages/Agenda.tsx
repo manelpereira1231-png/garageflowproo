@@ -584,7 +584,7 @@ export default function Agenda() {
                             {app.duration_minutes > 0 && <span>({app.duration_minutes}m)</span>}
                             {app.client_name && <span>· {app.client_name}</span>}
                           </div>
-                          <div className="flex gap-1 mt-0.5">
+                          <div className="flex flex-wrap gap-1 mt-0.5">
                             {app.status === "scheduled" && (
                               <button onClick={() => updateStatus(app.id, "confirmed")} className="text-[9px] bg-green-500/20 text-green-700 px-1 rounded hover:bg-green-500/30">✓</button>
                             )}

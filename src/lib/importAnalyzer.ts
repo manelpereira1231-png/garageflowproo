@@ -393,16 +393,16 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
       const hasVehicle = Object.keys(vehicle).length > 0;
       if (!hasClient && !hasVehicle) return; // linha vazia
 
-      if (hasVehicle && !vehicle.plate && !vehicle.vin) {
-        errors.push("Viatura sem matrícula nem VIN — não é possível identificar o veículo");
+      if (hasVehicle && !vehicle.plate) {
+        errors.push("Viatura sem matrícula — campo obrigatório para criar o veículo");
       }
       if (!client.name) {
         if (client.company) { client.name = client.company; warnings.push("Nome em falta — usada a empresa como nome do cliente"); }
         else if (hasVehicle) errors.push("Cliente sem nome — indique o nome ou remova a linha");
         else errors.push("Linha sem nome de cliente");
       }
-      if (hasVehicle && !vehicle.make) warnings.push("Marca em falta — ficará por preencher");
-      if (hasVehicle && !vehicle.model) warnings.push("Modelo em falta — ficará por preencher");
+      if (hasVehicle && !vehicle.make) errors.push("Viatura sem marca — campo obrigatório");
+      if (hasVehicle && !vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
       if (!client.phone && !client.email) warnings.push("Cliente sem telefone nem email");
 
       out.push({ sheet: sheet.name, rowNumber, client, vehicle, errors, warnings });

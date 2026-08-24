@@ -82,7 +82,7 @@ export function useResizableSidebar() {
   }, []);
 
   return {
-    width: isDesktop ? width : SIDEBAR_DEFAULT_WIDTH,
+    width,
     resizing,
     startResize,
     setWidth: setWidthPersisted,

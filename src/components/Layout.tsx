@@ -36,6 +36,7 @@ import {
   Wallet,
   Star as StarIcon,
   TrendingUp,
+  GripVertical,
 } from "lucide-react";
 import { useSidebarPrefs } from "@/hooks/useSidebarPrefs";
 import { useResizableSidebar } from "@/hooks/useResizableSidebar";
@@ -549,21 +550,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <aside
         style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
-        className={`fixed lg:relative top-0 left-0 z-50 h-screen w-[270px] lg:w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+        className={`fixed lg:relative top-0 left-0 z-50 h-screen w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Pega de arrasto (apenas desktop) — redimensiona o menu lateral */}
+        {/* Pega de arrasto — redimensiona o menu lateral.
+            No mobile é uma zona tátil larga e visível à direita para evitar
+            que o arrasto seja interpretado em qualquer ponto do menu. */}
         <div
           role="separator"
           aria-orientation="vertical"
           aria-label="Redimensionar menu lateral"
           onPointerDown={startResize}
           onDoubleClick={() => window.localStorage.removeItem("garageflow_sidebar_width")}
-          className={`hidden lg:block absolute top-0 right-0 h-full w-1.5 cursor-col-resize z-10 hover:bg-sidebar-primary/40 ${
-            sidebarResizing ? "bg-sidebar-primary/60" : ""
+          className={`absolute top-0 right-0 h-full z-10 cursor-col-resize touch-none select-none flex items-center justify-center transition-colors w-5 lg:w-1.5 ${
+            sidebarResizing
+              ? "bg-sidebar-primary/60"
+              : "bg-sidebar-border/40 lg:bg-transparent hover:bg-sidebar-primary/40"
           }`}
-        />
+        >
+          <GripVertical className="w-4 h-4 text-sidebar-foreground/50 lg:hidden" />
+        </div>
         <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />

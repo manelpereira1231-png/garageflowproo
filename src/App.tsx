@@ -70,6 +70,7 @@ const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
 const TrialExpired = lazyRetry(() => import("@/pages/TrialExpired"));
 const Alerts = lazyRetry(() => import("@/pages/Alerts"));
+const Notifications = lazyRetry(() => import("@/pages/Notifications"));
 const Team = lazyRetry(() => import("@/pages/Team"));
 const Chat = lazyRetry(() => import("@/pages/Chat"));
 const InvoiceForm = lazyRetry(() => import("@/pages/InvoiceForm"));
@@ -560,6 +561,7 @@ const shopRoutes = [
   { path: "/settings/testimonials", element: <SettingsTestimonials /> },
   { path: "/billing", element: <Billing /> },
   { path: "/trial-expired", element: <TrialExpired /> },
+  { path: "/notifications", element: <Notifications /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },
   { path: "/chat", element: <PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate> },

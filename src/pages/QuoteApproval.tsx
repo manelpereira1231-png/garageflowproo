@@ -292,26 +292,29 @@ export default function QuoteApproval() {
     setResult(action);
     setSubmitting(false);
 
-    // On rejection: alerta imediato à oficina (o sino interno é gravado pelo
-    // trigger `tg_quotes_notify_approval`; aqui reforçamos com email).
-    if (action === 'rejected' && shop?.email) {
+    // Aviso à oficina — igual para aprovação e rejeição (o sino interno é
+    // gravado pelo trigger `tg_quotes_notify_approval`; aqui reforçamos por email).
+    if (shop?.email) {
       try {
         const veh = quote.vehicles as any;
         const vehicleLabel = `${veh?.make || ''} ${veh?.model || ''}`.trim();
         const plate = veh?.plate || '';
         const clientName = (quote.clients as any)?.name || 'Cliente';
+        const approved = action === 'approved';
+        const title = approved ? 'Orçamento aprovado' : 'Orçamento rejeitado';
+        const verb = approved ? 'aprovou' : 'rejeitou';
         await sendEmail({
           to: shop.email,
           shop_id: shop.id,
-          subject: `❌ Orçamento ${quote.number} rejeitado pelo cliente`,
+          subject: `${approved ? '✅' : '❌'} Orçamento ${quote.number} ${approved ? 'aprovado' : 'rejeitado'} pelo cliente`,
           html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111">
-            <h2 style="margin:0 0 12px">Orçamento rejeitado</h2>
-            <p>O cliente <strong>${clientName}</strong> rejeitou o orçamento <strong>${quote.number}</strong>.</p>
+            <h2 style="margin:0 0 12px">${title}</h2>
+            <p>O cliente <strong>${clientName}</strong> ${verb} o orçamento <strong>${quote.number}</strong>.</p>
             <p>${vehicleLabel}${plate ? ` (${plate})` : ''}</p>
-            ${clientComment.trim() ? `<p><strong>Motivo indicado:</strong> ${clientComment.trim()}</p>` : ''}
+            ${clientComment.trim() ? `<p><strong>Comentário do cliente:</strong> ${clientComment.trim()}</p>` : ''}
           </div>`,
         });
-      } catch (e) { console.error('reject notify email error', e); }
+      } catch (e) { console.error('quote decision notify email error', e); }
     }
 
     // On approval: auto-create work order and send the single approval-confirmation email to client

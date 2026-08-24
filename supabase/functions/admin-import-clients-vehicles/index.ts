@@ -191,7 +191,7 @@ serve(async (req) => {
         action: "admin.import_clients_vehicles",
         entity_type: "shop",
         entity_id: shopId,
-        metadata: { shop: shop.name, ...summary, total: records.length },
+        details: { shop: shop.name, ...summary, total: records.length },
       }).then(({ error }) => { if (error) console.error("audit_logs insert failed", error.message); });
     }
 

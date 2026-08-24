@@ -51,12 +51,21 @@ export default function Chat() {
   useEffect(() => {
     if (!shopId) return;
     const load = async () => {
-      const [clientsRes, shopRes] = await Promise.all([
+      const [clientsRes, shopRes, membersRes] = await Promise.all([
         supabase.from("clients").select("id, name, email").eq("shop_id", shopId).is("deleted_at", null).order("name").limit(1000),
         supabase.from("shops").select("name").eq("id", shopId).maybeSingle(),
+        supabase.from("shop_users").select("user_id, role, shop_user_profiles(name)").eq("shop_id", shopId),
       ]);
       if (clientsRes.data) setClients(clientsRes.data);
       if (shopRes.data) setShopName(shopRes.data.name || "");
+      if (membersRes.data) {
+        const map: Record<string, string> = {};
+        (membersRes.data as any[]).forEach((m) => {
+          const name = (m.shop_user_profiles?.name || "").trim();
+          if (m.user_id) map[m.user_id] = name || (m.role || "Equipa");
+        });
+        setMemberNames(map);
+      }
     };
     load();
   }, [shopId]);

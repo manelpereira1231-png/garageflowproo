@@ -15,6 +15,7 @@ import {
   Globe,
   CreditCard,
   Bell,
+  TriangleAlert,
   Shield,
   UserPlus,
   MessageCircle,
@@ -53,6 +54,7 @@ import SupportFab from "@/components/SupportFab";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
 import AppointmentsBell from "@/components/AppointmentsBell";
+import NotificationsBell from "@/components/NotificationsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { pageCache } from "@/lib/pageCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

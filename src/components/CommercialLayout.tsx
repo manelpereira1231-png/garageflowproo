@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, KanbanSquare, CalendarClock, HeartHandshake,
-  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase, Sparkles,
-} from "lucide-react";
+  Lightbulb, FileBarChart2, Target, LogOut, Menu, X, ChevronRight, Briefcase, Sparkles, Upload } from "lucide-react";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
@@ -17,6 +16,7 @@ const nav = [
   { path: "/commercial/intelligence", label: "Inteligência Comercial", icon: Lightbulb },
   { path: "/commercial/reports", label: "Relatórios", icon: FileBarChart2 },
   { path: "/commercial/objectives", label: "Objetivos", icon: Target },
+  { path: "/commercial/import", label: "Importar Clientes & Viaturas", icon: Upload },
 ];
 
 export default function CommercialLayout() {

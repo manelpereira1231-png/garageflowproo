@@ -174,6 +174,7 @@ const AdminSystemControl = lazyRetry(() => import("@/pages/admin/AdminSystemCont
 const AdminCoupons = lazyRetry(() => import("@/pages/admin/AdminCoupons"));
 const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"));
 const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesGlobal"));
+const AdminDataImport = lazyRetry(() => import("@/pages/admin/AdminDataImport"));
 const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
 const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
 const AdminMarketActivations = lazyRetry(() => import("@/pages/admin/AdminMarketActivations"));
@@ -203,6 +204,7 @@ const CommercialIntelligence = lazyRetry(() => import("@/pages/commercial/Commer
 const CommercialReports = lazyRetry(() => import("@/pages/commercial/CommercialReports"));
 const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/CommercialObjectives"));
 const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDemos"));
+const CommercialDataImport = lazyRetry(() => import("@/pages/commercial/CommercialDataImport"));
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
@@ -486,6 +488,7 @@ const adminRoutes = [
   { path: "/admin/coupons", element: <AdminCoupons /> },
   { path: "/admin/risk-engine", element: <AdminRiskEngine /> },
   { path: "/admin/vehicles", element: <AdminVehiclesGlobal /> },
+  { path: "/admin/import", element: <AdminDataImport /> },
   { path: "/admin/market-listings", element: <AdminMarketListings /> },
   { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
   { path: "/admin/market-activations", element: <AdminMarketActivations /> },
@@ -921,6 +924,7 @@ function AuthenticatedRoutes() {
               <Route path="/commercial/reports" element={<CommercialReports />} />
               <Route path="/commercial/objectives" element={<CommercialObjectives />} />
               <Route path="/commercial/demos" element={<CommercialDemos />} />
+              <Route path="/commercial/import" element={<CommercialDataImport />} />
             </Route>
             <Route path="/auth" element={<Navigate to="/commercial" replace />} />
             <Route path="/" element={<Navigate to="/commercial" replace />} />

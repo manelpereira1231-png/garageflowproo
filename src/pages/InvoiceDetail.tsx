@@ -510,6 +510,9 @@ export default function InvoiceDetail() {
       toast.error("Dados não carregados. Recarregue a página.");
       return;
     }
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await generateInvoicePdf({
         invoice, items, shop,

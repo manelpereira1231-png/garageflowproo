@@ -515,6 +515,9 @@ export default function Services() {
   const downloadPdf = async (s: any) => {
     if (!can("work_orders.print")) return;
     if (!shop) return;
+    // Evita que um duplo-clique gere e transfira o mesmo PDF duas vezes.
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
     try {
       const doc = await buildServicePdfDoc(s);
       doc.save(`${s.number}.pdf`);

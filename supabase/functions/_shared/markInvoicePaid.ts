@@ -38,7 +38,7 @@ export async function markInvoicePaidFromSession(
 
   const { data: inv } = await admin
     .from("invoices")
-    .select("id, status, paid_online_at, shop_id, number")
+    .select("id, status, paid_online_at, shop_id, number, total, client_id")
     .eq("id", invoiceId)
     .maybeSingle();
 
@@ -76,6 +76,79 @@ export async function markInvoicePaidFromSession(
     currency: session.currency ?? null,
   }, (m, d) => log(m, d));
 
+  // Notificar a OFICINA (in-app + email) — o cliente já recebe a confirmação dele.
+  await notifyShopInvoicePaid(admin, inv, session, log);
+
   log("Fatura marcada como paga via webhook", { invoiceId, session: session.id });
   return { handled: true, already_paid: false, invoice_id: invoiceId };
+}
+
+
+/** Notifica a oficina que o cliente liquidou a fatura (sino + email aos membros). */
+async function notifyShopInvoicePaid(
+  admin: any,
+  inv: { id: string; shop_id: string; number?: string | null; total?: number | null; client_id?: string | null },
+  session: { amount_total?: number | null; currency?: string | null },
+  log: (msg: string, data?: unknown) => void = () => {},
+): Promise<void> {
+  try {
+    const amount = typeof session.amount_total === "number"
+      ? session.amount_total / 100
+      : Number(inv.total || 0);
+    const currency = (session.currency || "eur").toUpperCase();
+    const amountStr = `${amount.toFixed(2)} ${currency}`;
+    const docNumber = inv.number || inv.id.slice(0, 8);
+
+    let clientName = "";
+    if (inv.client_id) {
+      const { data: c } = await admin.from("clients").select("name").eq("id", inv.client_id).maybeSingle();
+      clientName = (c as any)?.name || "";
+    }
+
+    const title = "Pagamento recebido";
+    const message = `A fatura ${docNumber}${clientName ? ` (${clientName})` : ""} foi paga online — ${amountStr}.`;
+
+    await admin.from("notifications").insert({
+      shop_id: inv.shop_id,
+      title,
+      message,
+      type: "payment",
+      link: `/invoices/${inv.id}`,
+      data: { invoice_id: inv.id, amount, currency },
+    });
+
+    // Email aos membros da oficina (best-effort).
+    let emails: string[] = [];
+    try {
+      const { data: members } = await admin.rpc("get_shop_member_emails", { _shop_id: inv.shop_id });
+      emails = (members || [])
+        .map((m: any) => m?.email)
+        .filter((e: any) => typeof e === "string" && e.includes("@"));
+    } catch { /* rpc indisponível → ignora */ }
+    if (!emails.length) {
+      const { data: shopRow } = await admin.from("shops").select("email").eq("id", inv.shop_id).maybeSingle();
+      if ((shopRow as any)?.email) emails = [(shopRow as any).email];
+    }
+
+    if (emails.length) {
+      const html = `
+        <h2 style="margin:0 0 8px;">Pagamento recebido</h2>
+        <p style="margin:0 0 16px;">A fatura <strong>${docNumber}</strong>${clientName ? ` do cliente <strong>${clientName}</strong>` : ""} foi liquidada online.</p>
+        <p style="margin:0 0 16px;font-size:18px;"><strong>${amountStr}</strong></p>
+        <p style="margin:0;">Pode consultar os detalhes na área de Faturas do GarageFlow.</p>
+      `;
+      await admin.functions.invoke("send-email", {
+        body: {
+          to: emails,
+          subject: `Pagamento recebido — Fatura ${docNumber} (${amountStr})`,
+          html,
+          branded: true,
+          brand: "garageflow",
+          preheader: `${docNumber} paga — ${amountStr}`,
+        },
+      }).catch((e: unknown) => log("send-email falhou", { error: String(e) }));
+    }
+  } catch (e) {
+    log("Falha a notificar a oficina do pagamento", { error: String(e) });
+  }
 }

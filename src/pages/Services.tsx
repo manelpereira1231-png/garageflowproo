@@ -256,6 +256,8 @@ export default function Services() {
           notes: s.notes || s.diagnosis || undefined,
           approvalUrl,
           lang,
+          laborHours: Number(s.labor_hours ?? quoteRow?.labor_hours) || 0,
+          laborRate: Number(shop.labor_rate) || 0,
         });
       }
 

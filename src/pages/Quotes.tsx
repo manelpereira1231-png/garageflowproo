@@ -232,6 +232,8 @@ export default function Quotes() {
         validityDate: q.validity_date, lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total,
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
         status: q.status,
+        // Mão de obra extra: mesma origem de dados da página pública e do PDF.
+        laborHours: Number(q.labor_hours) || 0, laborRate: Number(shop.labor_rate) || 0,
         // Mesmo cálculo usado na app e na página pública do orçamento.
         estimatedTime: totalEstMinutes(lines, Number(q.labor_hours) || 0) > 0
           ? formatDuration(totalEstMinutes(lines, Number(q.labor_hours) || 0))

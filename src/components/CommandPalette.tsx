@@ -322,7 +322,7 @@ export default function CommandPalette() {
         onValueChange={setQuery}
       />
       <CommandList>
-        {query.trim().length >= 2 && (searching || results.length === 0) && (
+        {query.trim().length >= 2 && (searching || (results.length === 0 && matchingPages.length === 0)) && (
           <div className="py-6 text-center text-sm text-muted-foreground">
             {searching ? (isPt ? "A pesquisar..." : "Searching...") : (isPt ? "Sem resultados." : "No results found.")}
           </div>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, FileDown, Eye, Receipt, MessageCircle, FileArchive, Loader2, Mail, X, Link as LinkIcon } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
 import { sendEmail, invoiceEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -283,7 +284,11 @@ export default function Invoices() {
     try {
       const pdfBlob = await buildInvoicePdfBlob(inv);
       if (!pdfBlob) { toast.error('Não foi possível gerar o PDF da fatura.'); return; }
+      const payUrl = await getInvoicePaymentUrl({
+        invoiceId: inv.id, shopId: activeShopId, status: inv.status, allowWithoutConnect,
+      });
       await openWhatsApp({
+        link: payUrl || undefined,
         phone,
         clientName: (inv.clients as any)?.name,
         type: 'invoice',
@@ -340,8 +345,12 @@ export default function Invoices() {
           }
         } catch { /* ignore */ }
       }
+      const emailPayUrl = isPaid ? null : await getInvoicePaymentUrl({
+        invoiceId: inv.id, shopId: activeShopId, status: inv.status, allowWithoutConnect,
+      });
       const html = invoiceEmailHtml({
         variant: isPaid ? 'paid' : 'issued',
+        payUrl: emailPayUrl || undefined,
         shopName: shop.name,
         shopEmail: shop.email,
         shopPhone: shop.phone,

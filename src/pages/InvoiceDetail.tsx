@@ -19,6 +19,7 @@ import { getCurrencySymbol, getTaxLabelLocal, formatLocalDate } from "@/lib/mark
 import CertifiedBadge from "@/components/CertifiedBadge";
 import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { getInvoicePaymentUrl } from "@/lib/invoicePaymentLink";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
 import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
@@ -195,8 +196,12 @@ const { id } = useParams<{ id: string }>();
       const subject = variant === 'paid'
         ? `Pagamento Confirmado — ${invoice.number}`
         : `Nova Fatura Disponível — ${invoice.number}`;
+      const payUrl = variant === 'paid' ? null : await getInvoicePaymentUrl({
+        invoiceId: invoice.id, shopId: shop.id, status: 'issued', allowWithoutConnect,
+      });
       const html = invoiceEmailHtml({
         variant,
+        payUrl: payUrl || undefined,
         shopName: shop.name,
         shopEmail: shop.email,
         shopPhone: shop.phone,
@@ -249,6 +254,7 @@ const { id } = useParams<{ id: string }>();
         try {
           await openWhatsApp({
             phone: clientPhone,
+            link: payUrl || undefined,
             clientName: (invoice.clients as any)?.name || '',
             type: 'invoice',
             number: invoice.number,

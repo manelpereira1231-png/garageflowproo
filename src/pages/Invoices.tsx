@@ -384,17 +384,13 @@ export default function Invoices() {
         html,
         attachments: [{ filename: `${inv.number}.pdf`, content: base64, content_type: 'application/pdf' }],
       });
-      if (activeShopId) {
-        await supabase.from("email_logs").insert({
-          shop_id: activeShopId, to_email: email, subject, status: 'sent',
-          entity_type: 'invoice', entity_id: inv.id,
-        });
-      }
+      await logInvoiceEmail({ shopId: activeShopId, toEmail: email, subject, invoiceId: inv.id });
       toast.success(isPaid ? 'Confirmação de pagamento enviada.' : 'Fatura enviada por email.');
     } catch (err: any) {
       console.error('[invoices] email error', err);
       toast.error('Erro ao enviar email: ' + (err?.message || 'desconhecido'));
     } finally {
+      sendBusyRef.current = false;
       setSendingInvoice(null);
     }
   };

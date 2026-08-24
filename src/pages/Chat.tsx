@@ -347,7 +347,7 @@ export default function Chat() {
               const isMe = msg.sender_id === currentUserId;
               return (
                 <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
+                  <div className={`max-w-[85%] md:max-w-[70%] px-3.5 md:px-4 py-2.5 rounded-2xl text-sm break-words ${
                     isMe ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
                   }`}>
                     {!isMe && (

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { CalendarClock, Check, Clock, FileCheck2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { CalendarClock, Check, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "@/hooks/useShopContext";
@@ -7,8 +7,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useShopRole } from "@/hooks/useShopRole";
-import { formatMoney } from "@/lib/money";
-import { getCountryConfig } from "@/lib/regionConfig";
 
 type Appt = {
   id: string;
@@ -21,24 +19,6 @@ type Appt = {
   notes: string | null;
 };
 
-type ApprovedQuote = {
-  id: string;
-  number: string;
-  total: number;
-  status: string;
-  client_name: string | null;
-  created_at: string;
-  work_order_id?: string | null;
-};
-
-const DISMISS_KEY = "gf_dismissed_quote_approvals";
-const getDismissed = (): Set<string> => {
-  try { return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) || "[]")); } catch { return new Set(); }
-};
-const saveDismissed = (s: Set<string>) => {
-  try { localStorage.setItem(DISMISS_KEY, JSON.stringify([...s].slice(-200))); } catch {}
-};
-
 export default function AppointmentsBell() {
   const { activeShopId, shops } = useShopContext();
   const { role, can, loading: roleLoading } = useShopRole();
@@ -46,20 +26,15 @@ export default function AppointmentsBell() {
   const [items, setItems] = useState<Appt[]>([]);
   const [marketInspections, setMarketInspections] = useState<number>(0);
   const [marketOffers, setMarketOffers] = useState<number>(0);
-  const [approvedQuotes, setApprovedQuotes] = useState<ApprovedQuote[]>([]);
   const [open, setOpen] = useState(false);
-  const seenApprovalsRef = useRef<Set<string>>(new Set());
 
 
   const load = useCallback(async () => {
     if (!ids.length || roleLoading || !role) return;
-    const dismissed = getDismissed();
-    const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     const canAgenda = can("agenda.view");
-    const canQuotes = can("quotes.view");
     const canMarketSales = can("marketplace.view");
     const canMarketOps = can("marketplace.manage");
-    const [appts, insp, listings, quotes] = await Promise.all([
+    const [appts, insp, listings] = await Promise.all([
       canAgenda ? supabase
         .from("appointments")
         .select("id,client_name,client_phone,service_type,date,time,source,notes")
@@ -73,14 +48,6 @@ export default function AppointmentsBell() {
         .in("shop_id", ids)
         .eq("status", "offered") : Promise.resolve({ count: 0 }),
       canMarketSales ? supabase.from("carity_listings").select("id").in("shop_id", ids) : Promise.resolve({ data: [] as any[] }),
-      canQuotes ? supabase
-        .from("quotes")
-        .select("id, number, total, status, created_at, clients(name)")
-        .in("shop_id", ids)
-        .in("status", ["approved", "converted"])
-        .gte("created_at", since)
-        .order("created_at", { ascending: false })
-        .limit(20) : Promise.resolve({ data: [] as any[] }),
     ]);
     setItems((appts.data as any) ?? []);
     setMarketInspections(insp.count || 0);
@@ -97,32 +64,6 @@ export default function AppointmentsBell() {
       setMarketOffers(0);
     }
 
-    const quoteRows = (quotes.data as any[] | null) ?? [];
-    const filtered: ApprovedQuote[] = quoteRows
-      .filter((q) => canQuotes && !dismissed.has(q.id))
-      .map((q) => ({
-        id: q.id,
-        number: q.number,
-        total: Number(q.total || 0),
-        status: q.status,
-        client_name: q.clients?.name ?? null,
-        created_at: q.created_at,
-      }));
-
-    // Fire toast for freshly-approved quotes we hadn't seen yet in this session
-    const knownIds = seenApprovalsRef.current;
-    if (knownIds.size > 0) {
-      for (const q of filtered) {
-        if (!knownIds.has(q.id)) {
-          toast.success(`Orçamento ${q.number} aprovado por ${q.client_name || "cliente"}`, {
-            description: `Valor: ${formatMoney(q.total)} · toque no sino para ver`,
-            duration: 8000,
-          });
-        }
-      }
-    }
-    seenApprovalsRef.current = new Set(filtered.map((q) => q.id));
-    setApprovedQuotes(filtered);
   }, [ids.join(","), role, roleLoading, can]);
 
   useEffect(() => { load(); }, [load]);
@@ -134,10 +75,6 @@ export default function AppointmentsBell() {
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "carity_inspection_offers" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "carity_offers" }, () => load())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "quotes" }, (payload: any) => {
-        const s = payload?.new?.status;
-        if (s === "approved" || s === "converted") load();
-      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ids.join(","), load]);
@@ -152,14 +89,9 @@ export default function AppointmentsBell() {
     setItems((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const dismissQuote = (id: string) => {
-    const s = getDismissed(); s.add(id); saveDismissed(s);
-    setApprovedQuotes((prev) => prev.filter((q) => q.id !== id));
-  };
+  const count = items.length + marketInspections + marketOffers;
 
-  const count = items.length + marketInspections + marketOffers + approvedQuotes.length;
-
-  if (roleLoading || !role || count === 0 && !can("agenda.view") && !can("quotes.view") && !can("marketplace.view") && !can("marketplace.manage")) {
+  if (roleLoading || !role || count === 0 && !can("agenda.view") && !can("marketplace.view") && !can("marketplace.manage")) {
     return null;
   }
 
@@ -198,38 +130,6 @@ export default function AppointmentsBell() {
           </div>
         ) : (
           <div className="divide-y divide-border/60">
-            {approvedQuotes.length > 0 && (
-              <div className="p-3 bg-emerald-500/5">
-                <div className="text-xs font-semibold text-emerald-500 mb-2 flex items-center gap-1">
-                  <FileCheck2 className="w-3.5 h-3.5" /> Orçamentos aprovados pelo cliente
-                </div>
-                {approvedQuotes.map((q) => (
-                  <div key={q.id} className="flex items-center justify-between gap-2 py-1.5 px-2 -mx-2 rounded hover:bg-muted/40">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {q.number} · {q.client_name || "Cliente"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatMoney(q.total)} · {new Date(q.created_at).toLocaleString(getCountryConfig().locale, { dateStyle: "short", timeStyle: "short" })}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setOpen(false); dismissQuote(q.id); }}>
-                        <Link to="/services">Ver</Link>
-                      </Button>
-                      <button
-                        aria-label="Dispensar"
-                        onClick={() => dismissQuote(q.id)}
-                        className="text-muted-foreground hover:text-foreground text-xs px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {(marketInspections > 0 || marketOffers > 0) && (
               <div className="p-3 bg-amber-500/5">
                 <div className="text-xs font-semibold text-amber-500 mb-2">GarageFlow Market</div>

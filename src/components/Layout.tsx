@@ -15,6 +15,7 @@ import {
   Globe,
   CreditCard,
   Bell,
+  TriangleAlert,
   Shield,
   UserPlus,
   MessageCircle,
@@ -53,6 +54,7 @@ import SupportFab from "@/components/SupportFab";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
 import AppointmentsBell from "@/components/AppointmentsBell";
+import NotificationsBell from "@/components/NotificationsBell";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { pageCache } from "@/lib/pageCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -815,9 +817,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-<ThemeToggle className="mr-1" />
-
+          {/* Ordem fixa: Suporte → Lua/Sol → Notificações → Agenda */}
           <SupportFab className="mr-1" />
+
+          <ThemeToggle className="mr-1" />
+
+          <NotificationsBell />
 
           <AppointmentsBell />
 
@@ -827,12 +832,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               aria-label={`${pendingAlertCount} alertas pendentes`}
               className="relative p-2 rounded-lg hover:bg-muted transition-colors mr-1 group"
             >
-              <Bell className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <TriangleAlert className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
               <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-background">
                 {pendingAlertCount > 9 ? "9+" : pendingAlertCount}
               </span>
             </Link>
           )}
+
 
           <Button
             variant="ghost"

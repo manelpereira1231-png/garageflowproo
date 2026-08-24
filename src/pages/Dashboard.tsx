@@ -656,7 +656,6 @@ function OwnerDashboard() {
       {/* Quick Actions — full mode */}
       {!isGuidedMode && (
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{t('dashboard.quickActions')}</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {[
               { label: t('dashboard.newClient'), href: "/clients", emoji: "👤" },

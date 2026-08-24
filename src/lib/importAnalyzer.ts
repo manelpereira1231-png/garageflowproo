@@ -467,12 +467,36 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
             if (!vehicle.year) { const y = parseYear(raw); if (y) vehicle.year = y; }
             break;
           case "vehicle_notes": vehicle.notes = [vehicle.notes, raw].filter(Boolean).join(" | "); break;
+          case "service_date": {
+            const d = parseDateISO(raw);
+            if (d) service.date = d; else service.date_raw = raw;
+            break;
+          }
+          case "service_description": service.description = raw; break;
+          case "service_diagnosis": service.diagnosis = raw; break;
+          case "service_work_done": service.work_done = raw; break;
+          case "service_parts": service.parts = raw; break;
+          case "service_mileage": { const km = parseInt0(raw); if (km) service.mileage = km; break; }
+          case "service_total": {
+            const amount = parseAmount(raw);
+            if (amount) service.total = amount;
+            else warnings.push(`Valor "${raw}" não reconhecido — intervenção fica sem valor`);
+            break;
+          }
+          case "service_document": service.document = raw; break;
+          case "service_payment": service.payment = raw; break;
+          case "service_warranty": service.warranty = raw; break;
+          case "service_technician": service.technician = raw; break;
+          case "service_notes": service.notes = [service.notes, raw].filter(Boolean).join(" | "); break;
         }
       }
 
       const hasClient = Object.keys(client).length > 0;
       const hasVehicle = Object.keys(vehicle).length > 0;
-      if (!hasClient && !hasVehicle) return; // linha vazia
+      const serviceContent = ["description", "diagnosis", "work_done", "parts", "total", "document", "warranty"]
+        .filter((k) => service[k]);
+      const hasService = serviceContent.length > 0;
+      if (!hasClient && !hasVehicle && !hasService) return; // linha vazia
 
       if (hasVehicle && !vehicle.plate) {
         errors.push("Viatura sem matrícula — campo obrigatório para criar o veículo");
@@ -486,7 +510,25 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
       if (hasVehicle && !vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
       if (!client.phone && !client.email) warnings.push("Cliente sem telefone nem email");
 
-      out.push({ sheet: sheet.name, rowNumber, client, vehicle, errors, warnings });
+      // Intervenções: nada é inventado. Sem viatura identificável não há histórico.
+      if (hasService && !vehicle.plate && !vehicle.vin) {
+        warnings.push("Intervenção sem matrícula/VIN — necessita de confirmação, não será associada ao Passaporte");
+        for (const k of Object.keys(service)) delete service[k];
+      } else if (hasService) {
+        if (!service.description) {
+          service.description = service.work_done || service.diagnosis || "Intervenção importada";
+        }
+        if (!service.date) warnings.push("Intervenção sem data — será registada sem data original");
+      } else {
+        // Só existia a data: não cria intervenção fictícia, guarda como nota da viatura.
+        if (service.date || service.date_raw) {
+          vehicle.notes = [vehicle.notes, `Data: ${service.date || service.date_raw}`].filter(Boolean).join(" | ");
+        }
+        for (const k of Object.keys(service)) delete service[k];
+      }
+
+      out.push({ sheet: sheet.name, rowNumber, client, vehicle, service, errors, warnings });
+
     });
   }
   return out;

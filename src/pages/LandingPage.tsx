@@ -854,9 +854,9 @@ export default function LandingPage() {
                     </a>
                   ) : (
                     <Link to={plan.cta.href}>
-                      <Button
-                        className={`w-full ${plan.ctaPrimary ? "gradient-primary text-primary-foreground" : ""}`}
-                        variant={plan.ctaPrimary ? "default" : "outline"}
+<Button
+                        className="w-full gradient-primary text-primary-foreground"
+                        variant="default"
                       >
                         {plan.cta.label}
                       </Button>

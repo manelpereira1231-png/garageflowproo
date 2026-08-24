@@ -82,10 +82,11 @@ export function useResizableSidebar() {
   }, []);
 
   return {
-    width: isDesktop ? width : SIDEBAR_DEFAULT_WIDTH,
+    width,
     resizing,
     startResize,
     setWidth: setWidthPersisted,
     compact: isDesktop && width < SIDEBAR_COMPACT_THRESHOLD,
+    isDesktop,
   };
 }

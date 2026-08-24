@@ -548,16 +548,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       <aside
-        className={`fixed lg:static top-0 left-0 z-50 h-screen w-[270px] lg:w-64 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
+        style={{ ["--gf-sb-w" as string]: `${sidebarWidth}px` } as React.CSSProperties}
+        className={`fixed lg:static top-0 left-0 z-50 h-screen w-[270px] lg:w-[var(--gf-sb-w)] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="h-14 lg:h-16 flex items-center px-4 lg:px-5 border-b border-sidebar-border shrink-0">
-          <div className="flex items-center gap-2.5">
+        {/* Pega de arrasto (apenas desktop) — redimensiona o menu lateral */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionar menu lateral"
+          onPointerDown={startResize}
+          onDoubleClick={() => window.localStorage.removeItem("garageflow_sidebar_width")}
+          className={`hidden lg:block absolute top-0 right-0 h-full w-1.5 cursor-col-resize z-10 hover:bg-sidebar-primary/40 ${
+            sidebarResizing ? "bg-sidebar-primary/60" : ""
+          }`}
+        />
+        <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
             <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />
-            <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight">
-              Garage<span className="text-sidebar-primary">Flow</span>
-            </span>
+            {!sidebarCompact && (
+              <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight truncate">
+                Garage<span className="text-sidebar-primary">Flow</span>
+              </span>
+            )}
           </div>
           <button
             onClick={() => setSidebarOpen(false)}

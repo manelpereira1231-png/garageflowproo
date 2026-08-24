@@ -87,6 +87,5 @@ export function useResizableSidebar() {
     startResize,
     setWidth: setWidthPersisted,
     compact: isDesktop && width < SIDEBAR_COMPACT_THRESHOLD,
-    isDesktop,
   };
 }

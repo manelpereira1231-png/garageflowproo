@@ -814,7 +814,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <ThemeToggle className="mr-1" />
+<ThemeToggle className="mr-1" />
+
+          <SupportFab className="mr-1" />
 
           <AppointmentsBell />
 

@@ -269,9 +269,10 @@ export default function MarketLayout({ children, variant }: { children?: React.R
                   <Wrench className="h-3.5 w-3.5" /> <span className="hidden 2xl:inline">Voltar ao ERP</span>
                 </button>
               )}
-              <div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
+<div className="ml-1 [&_button]:text-white/65 [&_button:hover]:text-white [&_button:hover]:bg-white/[0.08]">
                 <ThemeToggle />
               </div>
+              <SupportFab className="text-white/65 hover:text-white hover:bg-white/[0.08]" />
               <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/[0.08] ml-1" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>

@@ -410,6 +410,53 @@ const { id } = useParams<{ id: string }>();
     return doc.output('blob') as Blob;
   };
 
+/** Ativa e copia o link público de pagamento da fatura (text-to-pay).
+   *  Reutiliza exatamente a mesma lógica do link de pagamento da lista de
+   *  faturas (Invoices.tsx): interruptor global, public_token e URL /invoice/:token. */
+  const copyPaymentLink = async () => {
+    if (!invoice) return;
+    setLinking(true);
+    try {
+      if (!allowWithoutConnect) {
+        const { data: shopRow } = await supabase
+          .from("shops")
+          .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+          .eq("id", invoice.shop_id)
+          .maybeSingle();
+        const connectActive = Boolean(
+          (shopRow as any)?.stripe_connect_account_id && (shopRow as any)?.stripe_connect_charges_enabled,
+        );
+        if (!connectActive) {
+          toast.error("Conclua a configuração do Stripe Connect para poder cobrar online", {
+            description: "Definições → Pagamentos → Ligar conta Stripe.",
+          });
+          return;
+        }
+      }
+      const { data, error } = await supabase
+        .from("invoices")
+        .update({ payment_link_sent_at: new Date().toISOString() } as any)
+        .eq("id", invoice.id)
+        .select("public_token")
+        .maybeSingle();
+      if (error) throw error;
+      const token = (data as any)?.public_token;
+      if (!token) throw new Error("Não foi possível gerar o link.");
+      const url = `${window.location.origin}/invoice/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link de pagamento copiado", { description: url });
+      } catch {
+        window.open(url, "_blank", "noopener");
+        toast.success("Link de pagamento aberto numa nova janela");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar link de pagamento");
+    } finally {
+      setLinking(false);
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!invoice || !shop) return;
     const clientEmail = (invoice.clients as any)?.email as string | undefined;

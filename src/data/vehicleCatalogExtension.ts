@@ -372,7 +372,7 @@ export const EXT_SUBMODELS: Record<string, string[]> = {
   "GWM|Ora 03": ["48 kWh First Edition", "63 kWh GT"],
   "Iveco|Eurocargo": ["75E", "120E", "160E"],
   "RAM|1500": ["3.6 V6 Big Horn", "5.7 HEMI Laramie", "TRX", "Limited"],
-  "MG|Marvel R": ["Comfort", "Luxury", "Performance AWD"],,
+  "MG|Marvel R": ["Comfort", "Luxury", "Performance AWD"],
 
   // ── Versões para marcas de nicho / recém-adicionadas ─────────────────────
   "Bugatti|Chiron": ["Sport", "Pur Sport", "Super Sport 300+"],

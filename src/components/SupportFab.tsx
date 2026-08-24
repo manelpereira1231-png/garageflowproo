@@ -12,10 +12,15 @@ const labels: Record<string, string> = {
 };
 
 /**
- * Floating Support Action Button — visible across both ERP and Market.
- * Hidden on /support itself and on auth/checkout pages where it would obstruct.
+ * Support button rendered inline in the app header (next to the theme
+ * toggle, beside the search bar) — for both ERP and Market layouts.
+ *
+ * It deliberately is NOT a fixed/floating element: a floating FAB overlapped
+ * the table pagination arrows on list pages (e.g. Services). Placing it in
+ * the sticky topbar keeps it always accessible on desktop and mobile,
+ * without covering any content and without creating a new fixed element.
  */
-export default function SupportFab() {
+export default function SupportFab({ className = "" }: { className?: string }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -35,14 +40,15 @@ export default function SupportFab() {
 
   return (
     <Button
+      type="button"
+      variant="ghost"
+      size="icon"
       onClick={() => navigate(`/support?context=${context}`)}
-      size="sm"
-      className="fixed bottom-24 sm:bottom-6 right-4 z-40 shadow-lg rounded-full h-12 w-12 sm:w-auto sm:px-4 p-0 sm:gap-2 gradient-primary text-primary-foreground hover:opacity-95"
+      className={`h-9 w-9 ${className}`}
       aria-label={label}
+      title={label}
     >
-      <HelpCircle className="w-5 h-5" />
-      <span className="hidden sm:inline font-medium">{label}</span>
-
+      <HelpCircle className="h-4 w-4" />
     </Button>
   );
 }

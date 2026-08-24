@@ -106,7 +106,7 @@ export default function NotificationsBell() {
           )}
         </div>
         {items.length === 0 ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">Sem notificações</div>
+          <div className="p-6 text-center text-sm text-muted-foreground">Sem notificações por ler</div>
         ) : (
           <div className="divide-y divide-border/60">
             {items.map((n) => {

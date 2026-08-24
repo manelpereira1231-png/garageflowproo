@@ -79,7 +79,15 @@ const defaultServicesFilters: ServicesFilters = {
   search: "", status: "all", technician: "", clientId: "", dateFrom: "", dateTo: "",
 };
 
-function RepairTimeline({ status }: { status: ServiceStatus }) {
+function RepairTimeline({
+  status,
+  onAdvance,
+  showAdvance,
+}: {
+  status: ServiceStatus;
+  onAdvance?: () => void;
+  showAdvance?: boolean;
+}) {
   const currentIdx = statusFlow.indexOf(status);
 
   return (
@@ -108,6 +116,21 @@ function RepairTimeline({ status }: { status: ServiceStatus }) {
           </div>
         );
       })}
+      {showAdvance && onAdvance && status !== 'cancelled' && status !== 'delivered' && (
+        <>
+          <div className={`w-2 h-0.5 ${currentIdx >= statusFlow.length - 1 ? 'bg-success' : 'bg-border'}`} />
+          <Button
+            variant="default"
+            size="icon"
+            onClick={onAdvance}
+            className="h-6 w-6 shrink-0 ml-0.5"
+            aria-label={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
+            title={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
+          >
+            <ChevronRightIcon className="w-3 h-3" />
+          </Button>
+        </>
+      )}
     </div>
   );
 }

@@ -10,14 +10,14 @@ import {
   Loader2, ArrowRight, ArrowLeft, Search, RefreshCw,
 } from "lucide-react";
 import {
-  analyzeFile, extractRecords, FIELD_LABELS, CLIENT_FIELDS, VEHICLE_FIELDS,
+  analyzeFile, extractRecords, FIELD_LABELS, CLIENT_FIELDS, VEHICLE_FIELDS, SERVICE_FIELDS,
   SUPPORTED_EXTENSIONS, type FieldKey, type FileAnalysis, type ParsedRecord, type SheetAnalysis,
 } from "@/lib/importAnalyzer";
 
 type Shop = { id: string; name: string; email: string | null };
 type RowResult = {
   rowNumber: number; sheet: string; status: "imported" | "skipped" | "error";
-  clientAction?: string; vehicleAction?: string; message?: string;
+  clientAction?: string; vehicleAction?: string; serviceAction?: string; partsCount?: number; message?: string;
 };
 
 const STEPS = ["Oficina", "Ficheiro", "Mapeamento", "Pré-visualização", "Resultado"];
@@ -99,7 +99,7 @@ export default function DataImportWizard() {
           body: {
             shopId: shop.id,
             dryRun,
-            records: chunk.map((r) => ({ rowNumber: r.rowNumber, sheet: r.sheet, client: r.client, vehicle: r.vehicle })),
+            records: chunk.map((r) => ({ rowNumber: r.rowNumber, sheet: r.sheet, client: r.client, vehicle: r.vehicle, service: r.service })),
           },
         });
         if (error) throw new Error((error as any)?.message || "Falha na importação");
@@ -130,10 +130,10 @@ export default function DataImportWizard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Importação de Clientes e Viaturas</h1>
+        <h1 className="text-2xl font-bold">Importação de Clientes, Viaturas e Histórico</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Carregue o ficheiro da oficina tal como ele existe. O sistema analisa a estrutura, sugere o mapeamento
-          e só grava depois da sua confirmação.
+          Carregue o ficheiro da oficina tal como ele existe — clientes, viaturas e histórico de intervenções.
+          O sistema analisa a estrutura, sugere o mapeamento e só grava depois da sua confirmação.
         </p>
       </div>
 
@@ -226,7 +226,8 @@ export default function DataImportWizard() {
                     {sheet.name}
                     <Badge variant="outline">
                       {sheet.kind === "clients" ? "Clientes" : sheet.kind === "vehicles" ? "Viaturas"
-                        : sheet.kind === "mixed" ? "Clientes + Viaturas" : "Estrutura não reconhecida"}
+                        : sheet.kind === "mixed" ? "Clientes + Viaturas"
+                        : sheet.kind === "history" ? "Histórico de intervenções" : "Estrutura não reconhecida"}
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -271,6 +272,9 @@ export default function DataImportWizard() {
                                 <optgroup label="Viatura">
                                   {VEHICLE_FIELDS.map((f) => <option key={f} value={f}>{FIELD_LABELS[f]}</option>)}
                                 </optgroup>
+                                <optgroup label="Intervenção / Histórico">
+                                  {SERVICE_FIELDS.map((f) => <option key={f} value={f}>{FIELD_LABELS[f]}</option>)}
+                                </optgroup>
                               </select>
                             </td>
                             <td className="py-2 text-xs text-muted-foreground">
@@ -312,7 +316,8 @@ export default function DataImportWizard() {
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b">
                     <th className="py-2 pr-3">Linha</th><th className="py-2 pr-3">Cliente</th>
-                    <th className="py-2 pr-3">Contactos</th><th className="py-2 pr-3">Viatura</th><th className="py-2">Avisos</th>
+                    <th className="py-2 pr-3">Contactos</th><th className="py-2 pr-3">Viatura</th>
+                    <th className="py-2 pr-3">Intervenção</th><th className="py-2">Avisos</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,6 +328,11 @@ export default function DataImportWizard() {
                       <td className="py-2 pr-3 text-xs">{[r.client.phone, r.client.email].filter(Boolean).join(" · ") || "—"}</td>
                       <td className="py-2 pr-3 text-xs">
                         {r.vehicle.plate ? `${r.vehicle.plate} · ${[r.vehicle.make, r.vehicle.model, r.vehicle.version].filter(Boolean).join(" ")}` : "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-xs">
+                        {r.service && Object.keys(r.service).length
+                          ? [r.service.date, r.service.description, r.service.total ? `${r.service.total} €` : ""].filter(Boolean).join(" · ")
+                          : "—"}
                       </td>
                       <td className="py-2 text-xs text-amber-500">{r.warnings.join(" · ")}</td>
                     </tr>
@@ -364,8 +374,9 @@ export default function DataImportWizard() {
               <div className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Simulação (nada foi gravado)</div>
               <div className="text-sm text-muted-foreground">
                 Novos clientes: {summary.clientsCreated || 0} · Novas viaturas: {summary.vehiclesCreated || 0} ·
+                Intervenções: {summary.servicesCreated || 0} · Peças associadas: {summary.partsLinked || 0} ·
                 Já existentes: {summary.skipped || 0} · Viaturas duplicadas ignoradas: {summary.duplicateVehicles || 0} ·
-                Erros: {summary.errors || 0}
+                Intervenções já existentes: {summary.duplicateServices || 0} · Erros: {summary.errors || 0}
               </div>
             </Card>
           )}
@@ -391,6 +402,8 @@ export default function DataImportWizard() {
             <Card className="p-4"><div className="text-xs text-muted-foreground">Já existentes</div><div className="text-2xl font-bold">{summary.skipped || 0}</div></Card>
             <Card className="p-4"><div className="text-xs text-muted-foreground">Com erro</div><div className="text-2xl font-bold text-destructive">{summary.errors || 0}</div></Card>
             <Card className="p-4"><div className="text-xs text-muted-foreground">Novas viaturas</div><div className="text-2xl font-bold">{summary.vehiclesCreated || 0}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Intervenções importadas</div><div className="text-2xl font-bold text-primary">{summary.servicesCreated || 0}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Peças associadas</div><div className="text-2xl font-bold">{summary.partsLinked || 0}</div></Card>
           </div>
 
           <Card className="p-5 space-y-3">

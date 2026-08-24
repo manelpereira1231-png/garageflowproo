@@ -28,7 +28,19 @@ export type FieldKey =
   | "vehicle_mileage"
   | "vehicle_fuel"
   | "vehicle_date"
-  | "vehicle_notes";
+  | "vehicle_notes"
+  | "service_date"
+  | "service_description"
+  | "service_diagnosis"
+  | "service_work_done"
+  | "service_parts"
+  | "service_mileage"
+  | "service_total"
+  | "service_document"
+  | "service_payment"
+  | "service_warranty"
+  | "service_technician"
+  | "service_notes";
 
 export const FIELD_LABELS: Record<FieldKey, string> = {
   client_name: "Cliente · Nome",
@@ -50,6 +62,18 @@ export const FIELD_LABELS: Record<FieldKey, string> = {
   vehicle_fuel: "Viatura · Combustível",
   vehicle_date: "Viatura · Data (matrícula/registo)",
   vehicle_notes: "Viatura · Observações",
+  service_date: "Intervenção · Data",
+  service_description: "Intervenção · Serviço/Trabalho",
+  service_diagnosis: "Intervenção · Diagnóstico",
+  service_work_done: "Intervenção · Trabalho realizado",
+  service_parts: "Intervenção · Peças",
+  service_mileage: "Intervenção · Quilómetros na entrada",
+  service_total: "Intervenção · Valor",
+  service_document: "Intervenção · Orçamento/Fatura (ref.)",
+  service_payment: "Intervenção · Pagamento",
+  service_warranty: "Intervenção · Garantia",
+  service_technician: "Intervenção · Técnico",
+  service_notes: "Intervenção · Observações",
 };
 
 export const CLIENT_FIELDS: FieldKey[] = [
@@ -60,6 +84,12 @@ export const VEHICLE_FIELDS: FieldKey[] = [
   "vehicle_plate", "vehicle_vin", "vehicle_make", "vehicle_model", "vehicle_version",
   "vehicle_year", "vehicle_mileage", "vehicle_fuel", "vehicle_date", "vehicle_notes",
 ];
+export const SERVICE_FIELDS: FieldKey[] = [
+  "service_date", "service_description", "service_diagnosis", "service_work_done",
+  "service_parts", "service_mileage", "service_total", "service_document",
+  "service_payment", "service_warranty", "service_technician", "service_notes",
+];
+
 
 export const SUPPORTED_EXTENSIONS = ["csv", "xlsx", "xls", "ods", "txt", "tsv", "xlsm", "fods", "dif", "prn"];
 
@@ -92,9 +122,22 @@ const SYNONYMS: Record<FieldKey, string[]> = {
   vehicle_year: ["ano", "year", "ano viatura", "ano modelo", "ano fabrico", "ano de fabrico"],
   vehicle_mileage: ["km", "kms", "quilometros", "kilometros", "mileage", "odometro", "quilometragem", "km atuais"],
   vehicle_fuel: ["combustivel", "fuel", "carburante", "tipo combustivel", "energia"],
-  vehicle_date: ["data", "data matricula", "data registo", "data 1 matricula", "primeira matricula", "date", "data entrada"],
-  vehicle_notes: ["observacoes", "obs", "notas", "notes", "comentarios", "descricao", "observacoes viatura"],
+  vehicle_date: ["data matricula", "data registo", "data 1 matricula", "primeira matricula", "data 1a matricula", "ano matricula"],
+  vehicle_notes: ["observacoes viatura", "obs viatura", "notas viatura"],
+  service_date: ["data intervencao", "data servico", "data reparacao", "data entrada", "data assistencia", "data obra", "data visita", "data", "date"],
+  service_description: ["servico", "servicos", "intervencao", "intervencoes", "trabalho", "tipo servico", "tipo de servico", "reparacao", "descricao servico", "descricao dos trabalhos", "descricao", "obra", "service", "job", "avaria"],
+  service_diagnosis: ["diagnostico", "diagnosis", "anomalia", "problema", "sintoma", "causa"],
+  service_work_done: ["trabalho realizado", "trabalhos realizados", "trabalhos", "execucao", "mao de obra", "work done", "servico realizado"],
+  service_parts: ["pecas", "peca", "parts", "material", "materiais", "referencias", "artigos", "consumiveis"],
+  service_mileage: ["km intervencao", "km servico", "km entrada", "quilometragem intervencao", "km na intervencao"],
+  service_total: ["valor", "total", "preco", "montante", "custo", "valor servico", "valor total", "amount", "price", "faturado"],
+  service_document: ["fatura", "n fatura", "numero fatura", "orcamento", "n orcamento", "documento", "recibo", "invoice", "quote"],
+  service_payment: ["pagamento", "estado pagamento", "pago", "forma pagamento", "metodo pagamento", "payment"],
+  service_warranty: ["garantia", "warranty", "validade garantia", "garantia meses"],
+  service_technician: ["tecnico", "mecanico", "responsavel", "executante", "technician"],
+  service_notes: ["observacoes", "obs", "notas", "notes", "comentarios", "observacoes intervencao"],
 };
+
 
 export type ColumnStat = {
   index: number;
@@ -168,7 +211,7 @@ export type SheetAnalysis = {
   totalRows: number;
   mapping: Record<number, FieldKey | null>;
   suggestions: Record<number, Suggestion>;
-  kind: "clients" | "vehicles" | "mixed" | "unknown";
+  kind: "clients" | "vehicles" | "mixed" | "history" | "unknown";
   include: boolean;
 };
 
@@ -201,11 +244,15 @@ function classifySheet(mapping: Record<number, FieldKey | null>): SheetAnalysis[
   const fields = Object.values(mapping).filter(Boolean) as FieldKey[];
   const hasClient = fields.some((f) => CLIENT_FIELDS.includes(f));
   const hasVehicle = fields.some((f) => VEHICLE_FIELDS.includes(f));
+  const hasService = fields.some((f) => SERVICE_FIELDS.includes(f) && f !== "service_date");
+  if ((hasClient || hasVehicle) && hasService) return "history";
   if (hasClient && hasVehicle) return "mixed";
   if (hasClient) return "clients";
   if (hasVehicle) return "vehicles";
+  if (hasService) return "history";
   return "unknown";
 }
+
 
 export function analyzeMatrix(name: string, matrix: string[][]): SheetAnalysis {
   const cleaned = matrix.map((r) => r.map(cellToString));
@@ -292,9 +339,41 @@ export type ParsedRecord = {
   rowNumber: number;
   client: Record<string, string>;
   vehicle: Record<string, string>;
+  /** Intervenção (histórico) detetada na linha — só existe se o ficheiro a contiver. */
+  service: Record<string, string>;
   errors: string[];
   warnings: string[];
 };
+
+/** Converte "1.234,56 €" / "1,234.56" / "150" em número, ou "" se não for um valor. */
+export function parseAmount(v: string): string {
+  const raw = v.replace(/[^\d.,-]/g, "").trim();
+  if (!raw) return "";
+  let s = raw;
+  if (s.includes(",") && s.includes(".")) {
+    s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (s.includes(",")) {
+    s = s.replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? String(n) : "";
+}
+
+/** Normaliza uma data para ISO (YYYY-MM-DD) quando é reconhecível. */
+export function parseDateISO(v: string): string {
+  const t = v.trim();
+  if (!t) return "";
+  let m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+  if (m) {
+    const year = m[3].length === 2 ? `20${m[3]}` : m[3];
+    return `${year}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  const d = new Date(t);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
 
 export function normalizePlate(v: string): string {
   return v.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -337,8 +416,10 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
       const rowNumber = (sheet.headerRowIndex >= 0 ? sheet.headerRowIndex + 2 : 1) + idx;
       const client: Record<string, string> = {};
       const vehicle: Record<string, string> = {};
+      const service: Record<string, string> = {};
       const errors: string[] = [];
       const warnings: string[] = [];
+
 
       for (const [colIdx, field] of entries) {
         const raw = (row[Number(colIdx)] ?? "").trim();
@@ -386,12 +467,36 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
             if (!vehicle.year) { const y = parseYear(raw); if (y) vehicle.year = y; }
             break;
           case "vehicle_notes": vehicle.notes = [vehicle.notes, raw].filter(Boolean).join(" | "); break;
+          case "service_date": {
+            const d = parseDateISO(raw);
+            if (d) service.date = d; else service.date_raw = raw;
+            break;
+          }
+          case "service_description": service.description = raw; break;
+          case "service_diagnosis": service.diagnosis = raw; break;
+          case "service_work_done": service.work_done = raw; break;
+          case "service_parts": service.parts = raw; break;
+          case "service_mileage": { const km = parseInt0(raw); if (km) service.mileage = km; break; }
+          case "service_total": {
+            const amount = parseAmount(raw);
+            if (amount) service.total = amount;
+            else warnings.push(`Valor "${raw}" não reconhecido — intervenção fica sem valor`);
+            break;
+          }
+          case "service_document": service.document = raw; break;
+          case "service_payment": service.payment = raw; break;
+          case "service_warranty": service.warranty = raw; break;
+          case "service_technician": service.technician = raw; break;
+          case "service_notes": service.notes = [service.notes, raw].filter(Boolean).join(" | "); break;
         }
       }
 
       const hasClient = Object.keys(client).length > 0;
       const hasVehicle = Object.keys(vehicle).length > 0;
-      if (!hasClient && !hasVehicle) return; // linha vazia
+      const serviceContent = ["description", "diagnosis", "work_done", "parts", "total", "document", "warranty"]
+        .filter((k) => service[k]);
+      const hasService = serviceContent.length > 0;
+      if (!hasClient && !hasVehicle && !hasService) return; // linha vazia
 
       if (hasVehicle && !vehicle.plate) {
         errors.push("Viatura sem matrícula — campo obrigatório para criar o veículo");
@@ -401,11 +506,35 @@ export function extractRecords(sheets: SheetAnalysis[]): ParsedRecord[] {
         else if (hasVehicle) errors.push("Cliente sem nome — indique o nome ou remova a linha");
         else errors.push("Linha sem nome de cliente");
       }
-      if (hasVehicle && !vehicle.make) errors.push("Viatura sem marca — campo obrigatório");
-      if (hasVehicle && !vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
+      if (hasVehicle && vehicle.plate && (!vehicle.make || !vehicle.model)) {
+        if (hasService) warnings.push("Viatura sem marca/modelo — só será associada se a matrícula já existir na oficina");
+        else {
+          if (!vehicle.make) errors.push("Viatura sem marca — campo obrigatório");
+          if (!vehicle.model) errors.push("Viatura sem modelo — campo obrigatório");
+        }
+      }
+
       if (!client.phone && !client.email) warnings.push("Cliente sem telefone nem email");
 
-      out.push({ sheet: sheet.name, rowNumber, client, vehicle, errors, warnings });
+      // Intervenções: nada é inventado. Sem viatura identificável não há histórico.
+      if (hasService && !vehicle.plate && !vehicle.vin) {
+        warnings.push("Intervenção sem matrícula/VIN — necessita de confirmação, não será associada ao Passaporte");
+        for (const k of Object.keys(service)) delete service[k];
+      } else if (hasService) {
+        if (!service.description) {
+          service.description = service.work_done || service.diagnosis || "Intervenção importada";
+        }
+        if (!service.date) warnings.push("Intervenção sem data — será registada sem data original");
+      } else {
+        // Só existia a data: não cria intervenção fictícia, guarda como nota da viatura.
+        if (service.date || service.date_raw) {
+          vehicle.notes = [vehicle.notes, `Data: ${service.date || service.date_raw}`].filter(Boolean).join(" | ");
+        }
+        for (const k of Object.keys(service)) delete service[k];
+      }
+
+      out.push({ sheet: sheet.name, rowNumber, client, vehicle, service, errors, warnings });
+
     });
   }
   return out;

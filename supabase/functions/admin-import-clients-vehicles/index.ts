@@ -14,6 +14,7 @@ type IncomingRecord = {
   sheet: string;
   client: Record<string, string>;
   vehicle: Record<string, string>;
+  service?: Record<string, string>;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -24,6 +25,23 @@ const normName = (v: string) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 const normPhone = (v: string) => (v || "").replace(/[^\d]/g, "").slice(-9);
 const str = (v: unknown, max = 300) => String(v ?? "").trim().slice(0, max);
+const num = (v: unknown) => {
+  const n = Number(String(v ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** Impressão digital estável de uma intervenção, para nunca duplicar histórico. */
+const serviceFingerprint = (date: string, description: string, total: number) =>
+  `${date || "sd"}|${normName(description).slice(0, 60)}|${total.toFixed(2)}`;
+
+/** Divide um campo livre de peças em itens ("Filtro óleo; Pastilhas x2"). */
+const splitParts = (v: string): string[] =>
+  str(v, 1000)
+    .split(/[;\n|]+|,(?=\s*[A-Za-zÀ-ÿ])/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 1)
+    .slice(0, 30);
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -79,11 +97,25 @@ serve(async (req) => {
       if (v.vin) byVin.set(String(v.vin).toUpperCase(), v.id);
     }
 
+    // Histórico já existente (nunca é apagado nem duplicado)
+    const { data: existingOrders } = await admin
+      .from("work_orders")
+      .select("id, vehicle_id, created_at, client_description, total")
+      .eq("shop_id", shopId);
+    const orderFingerprints = new Set<string>();
+    for (const o of existingOrders || []) {
+      orderFingerprints.add(
+        `${o.vehicle_id}::${serviceFingerprint(String(o.created_at || "").slice(0, 10), String(o.client_description || ""), num(o.total))}`,
+      );
+    }
+
     const results: {
       rowNumber: number; sheet: string; status: "imported" | "skipped" | "error";
       clientAction?: "created" | "matched"; vehicleAction?: "created" | "duplicate" | "none";
+      serviceAction?: "created" | "duplicate" | "none"; partsCount?: number;
       message?: string;
     }[] = [];
+
 
     for (const rec of records) {
       const rowNumber = Number(rec?.rowNumber) || 0;
@@ -105,8 +137,18 @@ serve(async (req) => {
       const model = str(v.model, 120);
       const wantsVehicle = !!(plate || vin || make || model);
 
+      const s = rec?.service || {};
+      const svcDescription = str(s.description, 300);
+      const svcDiagnosis = str(s.diagnosis, 1000);
+      const svcWorkDone = str(s.work_done, 1000);
+      const svcPartsRaw = str(s.parts, 1000);
+      const svcTotal = s.total !== undefined && s.total !== "" ? num(s.total) : 0;
+      const svcDate = /^\d{4}-\d{2}-\d{2}$/.test(str(s.date, 10)) ? str(s.date, 10) : "";
+      const wantsService = !!(svcDescription || svcDiagnosis || svcWorkDone || svcPartsRaw || svcTotal || s.document || s.warranty);
+
       if (!name) { results.push({ rowNumber, sheet, status: "error", message: "Cliente sem nome" }); continue; }
-      if (wantsVehicle && (!plate || !make || !model)) {
+      const plateKnown = !!plate && byPlate.has(normPlate(plate));
+      if (wantsVehicle && (!plate || ((!make || !model) && !plateKnown))) {
         results.push({ rowNumber, sheet, status: "error", message: "Viatura incompleta (matrícula, marca e modelo obrigatórios)" });
         continue;
       }
@@ -137,39 +179,107 @@ serve(async (req) => {
           byName.set(normName(name), clientId!);
         }
 
-        // 2) Viatura
+        // 2) Viatura — a mesma matrícula é sempre a mesma viatura
         let vehicleAction: "created" | "duplicate" | "none" = "none";
+        let vehicleId: string | undefined;
         if (wantsVehicle) {
           const key = normPlate(plate);
           const existing = byPlate.get(key) || (vin ? byVin.get(vin) : undefined);
           if (existing) {
             vehicleAction = "duplicate";
+            vehicleId = existing;
           } else {
-            if (!dryRun) {
-              const { error: vErr } = await admin.from("vehicles").insert({
+            if (dryRun) {
+              vehicleId = `dry-v-${rowNumber}`;
+            } else {
+              const { data: insertedV, error: vErr } = await admin.from("vehicles").insert({
                 shop_id: shopId, client_id: clientId, make, model,
                 version: str(v.version, 120) || null,
                 year: Number(v.year) || new Date().getFullYear(),
                 plate, vin, mileage: Number(v.mileage) || 0,
                 fuel: str(v.fuel, 40) || "Gasolina",
                 notes: str(v.notes, 500) || null,
-              });
+              }).select("id").single();
               if (vErr) throw new Error(vErr.message);
+              vehicleId = insertedV.id;
             }
-            byPlate.set(key, `new-${rowNumber}`);
-            if (vin) byVin.set(vin, `new-${rowNumber}`);
+            byPlate.set(key, vehicleId!);
+            if (vin) byVin.set(vin, vehicleId!);
             vehicleAction = "created";
           }
         }
 
-        const skipped = clientAction === "matched" && vehicleAction !== "created";
+        // 3) Intervenção (histórico) — só quando o ficheiro a contém e a viatura é identificável
+        let serviceAction: "created" | "duplicate" | "none" = "none";
+        let partsCount = 0;
+        if (wantsService && vehicleId) {
+          const description = svcDescription || svcWorkDone || svcDiagnosis;
+          const fp = `${vehicleId}::${serviceFingerprint(svcDate, description, svcTotal)}`;
+          if (orderFingerprints.has(fp)) {
+            serviceAction = "duplicate";
+          } else {
+            const partItems = splitParts(svcPartsRaw);
+            partsCount = partItems.length;
+            const lines = [
+              ...(description
+                ? [{ id: crypto.randomUUID(), type: "service", name: description.slice(0, 200), quantity: 1, unit_price: svcTotal, unit_cost: 0, vat_rate: 0 }]
+                : []),
+              ...partItems.map((p) => ({
+                id: crypto.randomUUID(), type: "part", name: p.slice(0, 200),
+                quantity: 1, unit_price: 0, unit_cost: 0, vat_rate: 0,
+              })),
+            ];
+            const notes = [
+              svcWorkDone && svcWorkDone !== description ? `Trabalho realizado: ${svcWorkDone}` : "",
+              svcPartsRaw ? `Peças: ${svcPartsRaw}` : "",
+              s.document ? `Documento: ${str(s.document, 120)}` : "",
+              s.payment ? `Pagamento: ${str(s.payment, 120)}` : "",
+              s.warranty ? `Garantia: ${str(s.warranty, 200)}` : "",
+              s.technician ? `Técnico: ${str(s.technician, 120)}` : "",
+              s.notes ? str(s.notes, 800) : "",
+              "Registo importado do histórico da oficina",
+            ].filter(Boolean).join(" | ");
+
+            if (!dryRun) {
+              const { data: numberData } = await admin.rpc("next_number", { _shop_id: shopId, _prefix: "SRV" });
+              const number = numberData || `SRV-IMP-${Date.now()}-${rowNumber}`;
+              const ts = svcDate ? new Date(`${svcDate}T12:00:00Z`).toISOString() : new Date().toISOString();
+              const { error: wErr } = await admin.from("work_orders").insert({
+                shop_id: shopId, number, origin: "manual",
+                client_id: clientId, vehicle_id: vehicleId,
+                entry_mileage: Number(s.mileage) || Number(v.mileage) || 0,
+                client_description: description ? description.slice(0, 500) : null,
+                diagnosis: svcDiagnosis || null,
+                lines, labor_hours: 0,
+                technician: str(s.technician, 120) || null,
+                subtotal: svcTotal, vat_total: 0, total: svcTotal, cost_total: 0, profit: svcTotal,
+                status: "delivered", notes,
+                created_at: ts, completed_at: ts, delivered_at: ts,
+              });
+              if (wErr) throw new Error(wErr.message);
+            }
+            orderFingerprints.add(fp);
+            serviceAction = "created";
+          }
+        } else if (wantsService && !vehicleId) {
+          serviceAction = "none";
+        }
+
+        const somethingNew = clientAction === "created" || vehicleAction === "created" || serviceAction === "created";
+        const parts: string[] = [
+          clientAction === "created" ? "Cliente criado" : "Cliente existente",
+          vehicleAction === "created" ? "Viatura criada" : vehicleAction === "duplicate" ? "Viatura existente" : "",
+          serviceAction === "created"
+            ? `1 intervenção importada${partsCount ? ` · ${partsCount} peça(s)` : ""}`
+            : serviceAction === "duplicate" ? "Intervenção já existia" : "",
+          wantsService && !vehicleId ? "Intervenção sem viatura identificável — não associada" : "",
+        ].filter(Boolean);
+
         results.push({
           rowNumber, sheet,
-          status: skipped ? "skipped" : "imported",
-          clientAction, vehicleAction,
-          message: skipped
-            ? (vehicleAction === "duplicate" ? "Cliente e viatura já existiam" : "Cliente já existia")
-            : undefined,
+          status: somethingNew ? "imported" : "skipped",
+          clientAction, vehicleAction, serviceAction, partsCount,
+          message: parts.join(" · "),
         });
       } catch (e) {
         results.push({ rowNumber, sheet, status: "error", message: (e as Error).message });
@@ -183,7 +293,11 @@ serve(async (req) => {
       clientsCreated: results.filter((r) => r.clientAction === "created" && r.status !== "error").length,
       vehiclesCreated: results.filter((r) => r.vehicleAction === "created" && r.status !== "error").length,
       duplicateVehicles: results.filter((r) => r.vehicleAction === "duplicate").length,
+      servicesCreated: results.filter((r) => r.serviceAction === "created").length,
+      duplicateServices: results.filter((r) => r.serviceAction === "duplicate").length,
+      partsLinked: results.reduce((acc, r) => acc + (r.serviceAction === "created" ? (r.partsCount || 0) : 0), 0),
     };
+
 
     if (!dryRun) {
       await admin.from("audit_logs").insert({

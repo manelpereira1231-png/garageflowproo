@@ -81,6 +81,7 @@ const MATRIX: Record<Exclude<ShopRole, null>, Set<string> | "*"> = {
     "work_orders.view","work_orders.edit","work_orders.complete","work_orders.print",
     "vehicles.view",
     "agenda.view",
+    "chat.view",
   ]),
 };
 

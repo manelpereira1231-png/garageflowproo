@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText, Mail, MessageCircle } from "lucide-react";
+import { ArrowLeft, FileDown, Ban, CreditCard, Printer, ShieldCheck, ExternalLink, Loader2, FileText, Mail, MessageCircle, Link2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import { sendEmail, invoiceEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
+import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
+import { useActiveShopId } from "@/hooks/useActiveShopId";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",

@@ -351,7 +351,7 @@ export default function AffiliateDashboard() {
                             <TableHead>{t('affiliate.workshop') || "Oficina"}</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>{t('affiliate.plan') || "Plano"}</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Estado</TableHead>
                             <TableHead>{t('affiliate.date') || "Data"}</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -430,7 +430,7 @@ export default function AffiliateDashboard() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Estado</TableHead>
                             <TableHead>{t('affiliate.date') || "Data"}</TableHead>
                             <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
                           </TableRow>
@@ -673,7 +673,7 @@ export default function AffiliateDashboard() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>{t('affiliate.amount') || "Valor"}</TableHead>
-                              <TableHead>Status</TableHead>
+                              <TableHead>Estado</TableHead>
                               <TableHead>{t('affiliate.date') || "Data"}</TableHead>
                               <TableHead>{t('affiliate.paidAt') || "Pago em"}</TableHead>
                             </TableRow>

@@ -18,8 +18,8 @@ export default function MarketTerms() {
     >
       <hr />
       <p className="text-sm">
-        {sa}: <Link to="/legal/terms">Terms</Link> ·{" "}
-        <Link to="/legal/privacy">Privacy</Link> ·{" "}
+        {sa}: <Link to="/legal/terms">Termos e Condições</Link> ·{" "}
+        <Link to="/legal/privacy">Privacidade</Link> ·{" "}
         <Link to="/legal/cookies">Cookies</Link> ·{" "}
         <Link to="/legal/my-data">My Data</Link>
       </p>

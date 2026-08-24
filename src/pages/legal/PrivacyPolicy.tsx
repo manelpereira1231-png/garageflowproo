@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
     <LegalPage pageKey="privacy">
       <hr />
       <p className="text-sm">
-        {sa}: <Link to="/legal/terms">Terms</Link> ·{" "}
+        {sa}: <Link to="/legal/terms">Termos e Condições</Link> ·{" "}
         <Link to="/legal/cookies">Cookies</Link> ·{" "}
         <Link to="/legal/dpa">DPA</Link>
       </p>

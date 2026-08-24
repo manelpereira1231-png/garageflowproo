@@ -514,19 +514,20 @@ export default function ClientPortal() {
         _client_notes: null,
       });
       if (rpcErr) throw rpcErr;
-      // Rejeição: reforço por email à oficina (o sino interno é gravado pelo trigger da BD)
-      if (quoteDecision.action === 'rejected' && shop?.email) {
+      // Aviso à oficina — igual para aprovação e rejeição (o sino é gravado pelo trigger da BD)
+      if (shop?.email) {
         try {
+          const approved = quoteDecision.action === 'approved';
           await sendEmail({
             to: shop.email,
             shop_id: shop.id,
-            subject: `❌ Orçamento ${quoteDecision.quote.number} rejeitado pelo cliente`,
+            subject: `${approved ? '✅' : '❌'} Orçamento ${quoteDecision.quote.number} ${approved ? 'aprovado' : 'rejeitado'} pelo cliente`,
             html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111">
-              <h2 style="margin:0 0 12px">Orçamento rejeitado</h2>
-              <p>O cliente rejeitou o orçamento <strong>${quoteDecision.quote.number}</strong> através do portal.</p>
+              <h2 style="margin:0 0 12px">Orçamento ${approved ? 'aprovado' : 'rejeitado'}</h2>
+              <p>O cliente ${approved ? 'aprovou' : 'rejeitou'} o orçamento <strong>${quoteDecision.quote.number}</strong> através do portal.</p>
             </div>`,
           });
-        } catch (e) { console.error('reject notify email error', e); }
+        } catch (e) { console.error('quote decision notify email error', e); }
       }
       toast.success(quoteDecision.action === 'approved' ? t('quoteApproved') : t('quoteRejected'));
       setQuoteDecision(null);

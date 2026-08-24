@@ -860,69 +860,42 @@ export default function Services() {
                   </Badge>
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
-                  <div className="inline-flex items-center justify-end gap-0.5">
-                    {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
-                      <Link to={`/services/edit/${s.id}`}>
-                        <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8 shrink-0" title={t('common.edit') || 'Editar'}>
-                          <Pencil className="w-3.5 h-3.5" />
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
+                      {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
+                        <Link to={`/services/edit/${s.id}`}>
+                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8 shrink-0" title={t('common.edit') || 'Editar'}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        </Link>
+                      )}
+                      {can("work_orders.print") && (
+                        <Button variant="ghost" size="icon" aria-label="PDF" className="h-8 w-8 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
+                          <FileDown className="w-3.5 h-3.5" />
                         </Button>
-                      </Link>
-                    )}
-                    {(can("work_orders.complete") || can("work_orders.delete")) && !['delivered', 'cancelled'].includes(s.status) && (
-                      <>
-                        {can("work_orders.complete") && (
-                          <Button
-                            variant="default"
-                            size="icon"
-                            onClick={() => advanceStatus(s)}
-                            className="h-8 w-8 shrink-0"
-                            aria-label={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
-                            title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
-                          >
-                            <ChevronRightIcon className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        {can("work_orders.delete") && (
-                          <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
-                            <XCircle className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                    {(can("work_orders.print") || can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Mais ações" className="h-8 w-8 shrink-0" title="Mais ações">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          {can("work_orders.print") && (
-                            <DropdownMenuItem onClick={() => downloadPdf(s)}>
-                              <FileDown className="w-4 h-4 mr-2" />
-                              PDF
-                            </DropdownMenuItem>
-                          )}
-                          {can("work_orders.send_email") && (
-                            <DropdownMenuItem onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
-                              {sendingEmail === s.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-                              Email
-                            </DropdownMenuItem>
-                          )}
-                          {can("work_orders.send_whatsapp") && (
-                            <DropdownMenuItem onClick={() => sendServiceWhatsApp(s)}>
-                              <MessageCircle className="w-4 h-4 mr-2 text-green-600" />
-                              WhatsApp
-                            </DropdownMenuItem>
-                          )}
-                          {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                            <DropdownMenuItem onClick={() => setCommsService(s)}>
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Comunicar com cliente
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      )}
+                      {can("work_orders.send_email") && (
+                        <Button variant="ghost" size="icon" aria-label="Email" className="h-8 w-8 shrink-0" title="Email" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
+                          {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        </Button>
+                      )}
+                      {can("work_orders.send_whatsapp") && (
+                        <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 shrink-0 text-green-600" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
+                        <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-8 w-8 shrink-0" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    {can("work_orders.delete") && (
+                      <div className="inline-flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                          <XCircle className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </TableCell>

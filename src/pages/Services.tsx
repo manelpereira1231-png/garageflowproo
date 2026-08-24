@@ -744,14 +744,14 @@ export default function Services() {
 
       {/* Desktop: Table view */}
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
-        <Table className="table-fixed min-w-[880px]">
+        <Table className="table-fixed min-w-[1100px]">
           <colgroup>
-            <col className="w-[7%]" />
-            <col className="w-[23%]" />
-            <col className="w-[17%]" />
-            <col className="w-[19%]" />
-            <col className="w-[8%]" />
             <col className="w-[11%]" />
+            <col className="w-[19%]" />
+            <col className="w-[16%]" />
+            <col className="w-[16%]" />
+            <col className="w-[9%]" />
+            <col className="w-[14%]" />
             <col className="w-[15%]" />
           </colgroup>
           <TableHeader>

@@ -276,20 +276,20 @@ export default function Workshop() {
     <div className="min-h-screen bg-background">
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-primary" />
-            <div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Wrench className="w-5 h-5 text-primary shrink-0" />
+            <div className="min-w-0">
               <h1 className="text-lg font-bold leading-tight">{t('nav.workshop')}</h1>
               <p className="text-[11px] text-muted-foreground leading-tight">Execução na bancada · timer, checklist, fotos</p>
             </div>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 w-full sm:w-auto">
             {filterTabs.map(ft => (
               <button
                 key={ft.key}
                 onClick={() => setFilter(ft.key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 sm:flex-none min-h-[40px] px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                   filter === ft.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
                 }`}
               >
@@ -298,6 +298,7 @@ export default function Workshop() {
             ))}
           </div>
         </div>
+
         <p className="text-[11px] text-muted-foreground mt-2">
           Quer emitir faturas, imprimir OS ou exportar CSV?{" "}
           <a href="/services" className="text-primary hover:underline font-medium">Abrir Serviços (gestão) →</a>

@@ -97,11 +97,25 @@ serve(async (req) => {
       if (v.vin) byVin.set(String(v.vin).toUpperCase(), v.id);
     }
 
+    // Histórico já existente (nunca é apagado nem duplicado)
+    const { data: existingOrders } = await admin
+      .from("work_orders")
+      .select("id, vehicle_id, created_at, client_description, total")
+      .eq("shop_id", shopId);
+    const orderFingerprints = new Set<string>();
+    for (const o of existingOrders || []) {
+      orderFingerprints.add(
+        `${o.vehicle_id}::${serviceFingerprint(String(o.created_at || "").slice(0, 10), String(o.client_description || ""), num(o.total))}`,
+      );
+    }
+
     const results: {
       rowNumber: number; sheet: string; status: "imported" | "skipped" | "error";
       clientAction?: "created" | "matched"; vehicleAction?: "created" | "duplicate" | "none";
+      serviceAction?: "created" | "duplicate" | "none"; partsCount?: number;
       message?: string;
     }[] = [];
+
 
     for (const rec of records) {
       const rowNumber = Number(rec?.rowNumber) || 0;

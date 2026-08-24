@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, FileDown, ChevronRight as ChevronRightIcon, Pencil, CalendarClock, Wrench, Clock, CheckCircle, Truck, XCircle, Stethoscope, ThumbsUp, Play, MessageCircle, Mail, Loader2, X } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { ensureQuoteTokenForWorkOrder } from "@/lib/ensureQuoteForWorkOrder";
+
 import { sendEmail, quoteEmailHtml } from "@/lib/emailService";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";

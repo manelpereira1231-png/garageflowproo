@@ -61,6 +61,8 @@ const { id } = useParams<{ id: string }>();
   const [issuing, setIssuing] = useState(false);
   const issuingRef = useRef(false);
   const pdfBusyRef = useRef(false);
+  const sendBusyRef = useRef(false);
+  const autoSentRef = useRef(false);
 
 
   const handleEmitCertified = async () => {

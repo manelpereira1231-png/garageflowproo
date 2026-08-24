@@ -348,9 +348,11 @@ export default function Chat() {
                   <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
                     isMe ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
                   }`}>
-                    {!isMe && msg.client_id && (
+                    {!isMe && (
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {clients.find(c => c.id === msg.client_id)?.name || msg.client_id?.slice(0, 8)}
+                        {msg.client_id
+                          ? (clients.find(c => c.id === msg.client_id)?.name || msg.client_id?.slice(0, 8))
+                          : (msg.sender_id ? (memberNames[msg.sender_id] || "Equipa") : "Equipa")}
                       </p>
                     )}
                     <p className="whitespace-pre-wrap">{msg.message}</p>

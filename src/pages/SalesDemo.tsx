@@ -6,7 +6,6 @@
  * e faz deep-link para as páginas existentes. Nenhuma credencial aqui.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Rocket, BarChart3, Target, Check, ChevronRight, ChevronLeft, RotateCcw,
   Eye, EyeOff, Presentation, Lightbulb, MessageSquareWarning, ClipboardCopy,
@@ -297,15 +296,15 @@ export default function SalesDemo() {
         </div>
       )}
 
-      {!presentation && (
+      {!presentation && phase === "run" && (
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1 mb-2">Atalhos conta Demo</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1 mb-2">Saltar para</p>
           <div className="grid grid-cols-2 gap-1.5">
-            {[["Cliente", "/clients"], ["Viatura", "/vehicles"], ["Orçamento", "/quotes"], ["Reparação", "/services"]].map(([l, to]) => (
-              <a key={to} href={to} target="_blank" rel="noreferrer"
+            {(["client", "vehicle", "quote", "repair"] as StepKey[]).filter((k) => steps.includes(k)).map((k) => (
+              <button key={k} onClick={() => { setStepIdx(steps.indexOf(k)); setRailOpen(false); }}
                 className="text-xs px-2 py-2 rounded-lg border border-border hover:bg-accent text-center">
-                ⭐ {l}
-              </a>
+                ⭐ {STEP_META[k].label}
+              </button>
             ))}
           </div>
         </div>
@@ -329,7 +328,7 @@ export default function SalesDemo() {
             Garage<span className="text-primary">Flow</span>
             <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">Sales Demo</span>
           </span>
-          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">DEMO MODE</Badge>
+          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">DEMO · sem login</Badge>
           <div className="flex-1" />
           {!presentation && (
             <Button variant="ghost" size="sm" onClick={() => setShowScript((v) => !v)}>
@@ -472,8 +471,8 @@ export default function SalesDemo() {
                 <Card>
                   <CardHeader className="pb-2"><CardTitle>🚀 Pronto para começar?</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-3">
-                    <Button asChild><Link to="/auth">Criar conta e começar</Link></Button>
-                    <Button asChild variant="outline"><Link to="/demo">Pedir acompanhamento</Link></Button>
+                    <Button asChild><a href="/auth" target="_blank" rel="noreferrer">Criar conta da oficina <ExternalLink className="w-4 h-4 ml-1" /></a></Button>
+                    <Button asChild variant="outline"><a href="/demo" target="_blank" rel="noreferrer">Pedir acompanhamento</a></Button>
                     <Button variant="ghost" onClick={() => setPhase("summary")}>Ver resumo da demonstração</Button>
                   </CardContent>
                 </Card>
@@ -495,11 +494,9 @@ export default function SalesDemo() {
                 ) : (
                   <Button onClick={() => setPhase("summary")}>Ver resumo <ChevronRight className="w-4 h-4 ml-1" /></Button>
                 )}
-                {STEP_META[current].link && !presentation && (
-                  <Button asChild variant="ghost" size="sm">
-                    <a href={STEP_META[current].link} target="_blank" rel="noreferrer">
-                      Abrir na conta Demo <ExternalLink className="w-4 h-4 ml-1" />
-                    </a>
+                {!presentation && (
+                  <Button variant="ghost" size="sm" onClick={resetDemo}>
+                    <RotateCcw className="w-4 h-4 mr-1" /> Nova demonstração
                   </Button>
                 )}
               </div>
@@ -597,7 +594,7 @@ export default function SalesDemo() {
                 <Button variant="outline" onClick={() => { navigator.clipboard.writeText(summaryText()); toast.success("Resumo copiado"); }}>
                   <ClipboardCopy className="w-4 h-4 mr-2" /> Copiar resumo
                 </Button>
-                <Button asChild><Link to="/auth">🚀 Começar agora</Link></Button>
+                <Button asChild><a href="/auth" target="_blank" rel="noreferrer">🚀 Começar agora <ExternalLink className="w-4 h-4 ml-1" /></a></Button>
                 <Button variant="ghost" onClick={resetDemo}><RotateCcw className="w-4 h-4 mr-2" /> Reset Demo · nova oficina</Button>
               </div>
             </section>

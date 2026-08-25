@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "garageflow_sidebar_collapsed";
-export const SIDEBAR_MIN_WIDTH = 76;
-export const SIDEBAR_DEFAULT_WIDTH = 256;
+export const SIDEBAR_MIN_WIDTH = 64;
+export const SIDEBAR_DEFAULT_WIDTH = 208;
 
 /**
- * Menu lateral com largura fixa (256px) e um modo compacto (só ícones) no
+ * Menu lateral com largura fixa (208px) e um modo compacto (só ícones) no
  * desktop, alternado por botão. Sem arrasto — o menu deslizante foi removido
  * por pedido do utilizador.
  */

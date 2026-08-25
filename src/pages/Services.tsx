@@ -727,45 +727,52 @@ export default function Services() {
                 {s.technician && <span> · 🔧 {s.technician}</span>}
               </p>
             </div>
-            <RepairTimeline
-              status={s.status as ServiceStatus}
-              onAdvance={() => advanceStatus(s)}
-              showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
-            />
+            <RepairTimeline status={s.status as ServiceStatus} />
             <div className="flex flex-col gap-2 pt-1 border-t border-border">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-semibold mono whitespace-nowrap shrink-0">{formatMoney(s.total)}</span>
                 <div className="flex flex-wrap items-center gap-1 justify-end min-w-0">
                   {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                     <Link to={`/services/edit/${s.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs h-7"><Pencil className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="text-xs h-8 px-2"><Pencil className="w-3 h-3" /></Button>
                     </Link>
                   )}
-                  {can("work_orders.print") && <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-7">PDF</Button>}
+                  {can("work_orders.print") && <Button variant="ghost" size="sm" onClick={() => downloadPdf(s)} className="text-xs h-8 px-2">PDF</Button>}
                   {can("work_orders.send_email") && (
-                    <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-7">
+                    <Button variant="ghost" size="sm" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id} className="text-xs h-8 px-2">
                       {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Mail className="w-3 h-3 mr-1" />Email</>}
                     </Button>
                   )}
                   {can("work_orders.send_whatsapp") && (
-                    <Button variant="ghost" size="sm" className="text-xs h-7 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
+                    <Button variant="ghost" size="sm" className="text-xs h-8 px-2 text-green-600" onClick={() => sendServiceWhatsApp(s)}>
                       <MessageCircle className="w-3 h-3 mr-1" />WhatsApp
                     </Button>
                   )}
                   {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setCommsService(s)}>
+                    <Button variant="ghost" size="sm" className="text-xs h-8 px-2" onClick={() => setCommsService(s)}>
                       <MessageCircle className="w-3 h-3 mr-1" />Cliente
                     </Button>
                   )}
                 </div>
               </div>
-              {can("work_orders.delete") && (
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive" onClick={() => cancelService(s.id)}>
-                    <XCircle className="w-3 h-3 mr-1" />Cancelar
+              {/* Baixo: apenas progresso e cancelamento */}
+              <div className="flex items-center justify-end gap-2 flex-wrap">
+                {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
+                  <Button
+                    size="sm"
+                    className="h-9 px-3 text-xs min-w-0"
+                    onClick={() => advanceStatus(s)}
+                  >
+                    <ChevronRightIcon className="w-4 h-4 mr-1 shrink-0" />
+                    <span className="truncate">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                   </Button>
-                </div>
-              )}
+                )}
+                {can("work_orders.delete") && (
+                  <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => cancelService(s.id)}>
+                    <XCircle className="w-4 h-4 mr-1" />Cancelar
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -843,11 +850,7 @@ export default function Services() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell px-2 py-3 min-w-0">
-                  <RepairTimeline
-                    status={s.status as ServiceStatus}
-                    onAdvance={() => advanceStatus(s)}
-                    showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
-                  />
+                  <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
                 <TableCell className="hidden xl:table-cell px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
                 <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">
@@ -861,6 +864,7 @@ export default function Services() {
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
                   <div className="flex flex-col items-end gap-1">
+                    {/* Topo: gestão e comunicação */}
                     <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
                       {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Link to={`/services/edit/${s.id}`}>
@@ -890,13 +894,26 @@ export default function Services() {
                         </Button>
                       )}
                     </div>
-                    {can("work_orders.delete") && (
-                      <div className="inline-flex items-center justify-end gap-0.5">
+                    {/* Baixo: apenas progresso e cancelamento */}
+                    <div className="inline-flex items-center justify-end gap-0.5">
+                      {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] shrink-0"
+                          onClick={() => advanceStatus(s)}
+                          title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                        >
+                          <ChevronRightIcon className="w-3 h-3 mr-1" />
+                          <span className="truncate max-w-[86px]">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
+                        </Button>
+                      )}
+                      {can("work_orders.delete") && (
                         <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                           <XCircle className="w-3 h-3" />
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>

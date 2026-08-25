@@ -405,12 +405,12 @@ export default function Quotes() {
       )}
 
       {/* Smart filters row */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-4">
-        <div className="relative md:col-span-2">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
+        <div className="relative col-span-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder={t('quotes.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
         </div>
-        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="col-span-2 md:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
           <option value="all">Todos os estados</option>
           <option value="draft">{t('status.draft')}</option>
           <option value="sent">{t('status.awaitingApproval')}</option>
@@ -419,18 +419,25 @@ export default function Quotes() {
           <option value="expired">{t('status.expired')}</option>
           <option value="converted">{t('status.converted')}</option>
         </select>
-        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="h-10 px-3 rounded-md bg-background border border-input text-sm">
+        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="col-span-2 md:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
           <option value="">Todos os clientes</option>
           {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
         </select>
-        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
-        <div className="flex gap-1">
-          <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} title="Limpar filtros"><X className="w-4 h-4" /></Button>
-          )}
+        <div className="space-y-1">
+          <label className="text-[11px] text-muted-foreground md:sr-only">Data desde</label>
+          <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" className="w-full" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[11px] text-muted-foreground md:sr-only">Data até</label>
+          <div className="flex gap-1">
+            <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" className="w-full" />
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros"><X className="w-4 h-4" /></Button>
+            )}
+          </div>
         </div>
       </div>
+
 
       {/* Empty state CTA */}
       {dataLoading && quotes.length === 0 && (

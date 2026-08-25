@@ -595,7 +595,7 @@ export default function SalesDemo() {
                 <Button variant="outline" onClick={() => { navigator.clipboard.writeText(summaryText()); toast.success("Resumo copiado"); }}>
                   <ClipboardCopy className="w-4 h-4 mr-2" /> Copiar resumo
                 </Button>
-                <Button asChild><Link to="/auth">🚀 Começar agora</Link></Button>
+                <Button asChild><a href="/auth" target="_blank" rel="noreferrer">🚀 Começar agora <ExternalLink className="w-4 h-4 ml-1" /></a></Button>
                 <Button variant="ghost" onClick={resetDemo}><RotateCcw className="w-4 h-4 mr-2" /> Reset Demo · nova oficina</Button>
               </div>
             </section>

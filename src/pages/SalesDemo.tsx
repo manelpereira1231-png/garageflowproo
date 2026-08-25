@@ -297,15 +297,15 @@ export default function SalesDemo() {
         </div>
       )}
 
-      {!presentation && (
+      {!presentation && phase === "run" && (
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1 mb-2">Atalhos conta Demo</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1 mb-2">Saltar para</p>
           <div className="grid grid-cols-2 gap-1.5">
-            {[["Cliente", "/clients"], ["Viatura", "/vehicles"], ["Orçamento", "/quotes"], ["Reparação", "/services"]].map(([l, to]) => (
-              <a key={to} href={to} target="_blank" rel="noreferrer"
+            {(["client", "vehicle", "quote", "repair"] as StepKey[]).filter((k) => steps.includes(k)).map((k) => (
+              <button key={k} onClick={() => { setStepIdx(steps.indexOf(k)); setRailOpen(false); }}
                 className="text-xs px-2 py-2 rounded-lg border border-border hover:bg-accent text-center">
-                ⭐ {l}
-              </a>
+                ⭐ {STEP_META[k].label}
+              </button>
             ))}
           </div>
         </div>

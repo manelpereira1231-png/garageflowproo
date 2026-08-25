@@ -843,11 +843,7 @@ export default function Services() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell px-2 py-3 min-w-0">
-                  <RepairTimeline
-                    status={s.status as ServiceStatus}
-                    onAdvance={() => advanceStatus(s)}
-                    showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
-                  />
+                  <RepairTimeline status={s.status as ServiceStatus} />
                 </TableCell>
                 <TableCell className="hidden xl:table-cell px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
                 <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">

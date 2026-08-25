@@ -85,7 +85,7 @@ function RepairTimeline({
   const currentIdx = statusFlow.indexOf(status);
 
   return (
-    <div className="flex items-center gap-0 overflow-x-auto py-1">
+    <div className="flex items-center gap-0 py-1">
       {statusFlow.map((s, i) => {
         const Icon = statusIcons[s];
         // When the WO is already delivered, the flow is complete — paint every step as done (green).
@@ -96,32 +96,32 @@ function RepairTimeline({
 
         return (
           <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all shrink-0
+            <div className={`flex items-center justify-center w-[18px] h-[18px] rounded-full border-2 transition-all shrink-0
               ${isCancelled ? 'border-destructive/30 bg-destructive/5' :
                 isActive ? 'border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/20' :
                 isDone ? 'border-success bg-success/10 text-success' :
                 'border-border bg-muted/30 text-muted-foreground/40'}`}
             >
-              <Icon className="w-3 h-3" />
+              <Icon className="w-2 h-2" />
             </div>
             {i < statusFlow.length - 1 && (
-              <div className={`w-2 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
+              <div className={`w-1 h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
             )}
           </div>
         );
       })}
       {showAdvance && onAdvance && status !== 'cancelled' && status !== 'delivered' && (
         <>
-          <div className={`w-2 h-0.5 ${currentIdx >= statusFlow.length - 1 ? 'bg-success' : 'bg-border'}`} />
+          <div className={`w-1 h-0.5 ${currentIdx >= statusFlow.length - 1 ? 'bg-success' : 'bg-border'}`} />
           <Button
             variant="default"
             size="icon"
             onClick={onAdvance}
-            className="h-6 w-6 shrink-0 ml-0.5"
+            className="h-[18px] w-[18px] shrink-0 ml-0.5"
             aria-label={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
             title={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
           >
-            <ChevronRightIcon className="w-3 h-3" />
+            <ChevronRightIcon className="w-2 h-2" />
           </Button>
         </>
       )}
@@ -773,24 +773,24 @@ export default function Services() {
 
       {/* Desktop: Table view */}
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
-        <Table className="table-fixed min-w-[1100px]">
+        <Table className="table-fixed min-w-[640px]">
           <colgroup>
-            <col className="w-[9%]" />
-            <col className="w-[15%]" />
-            <col className="w-[15%]" />
-            <col className="w-[28%]" />
-            <col className="w-[8%]" />
-            <col className="w-[10%]" />
-            <col className="w-[15%]" />
+            <col className="w-[12%]" />
+            <col className="w-[14%]" />
+            <col className="w-[13%] hidden xl:table-column" />
+            <col className="w-[32%]" />
+            <col className="w-[7%] hidden xl:table-column" />
+            <col className="w-[8%] hidden xl:table-column" />
+            <col className="w-[22%]" />
           </colgroup>
           <TableHeader>
             <TableRow>
               <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('quotes.number')}</SortableHeader>
               <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
-              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('quotes.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
-              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
-              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.total')}</SortableHeader>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -836,7 +836,7 @@ export default function Services() {
                     {s.technician && <p className="text-xs text-muted-foreground break-words">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-3 py-3 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
                     <span className="break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
                     <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
@@ -849,8 +849,8 @@ export default function Services() {
                     showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
                   />
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
-                <TableCell className="px-2 py-3 overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
+                <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
@@ -864,36 +864,36 @@ export default function Services() {
                     <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
                       {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Link to={`/services/edit/${s.id}`}>
-                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8 shrink-0" title={t('common.edit') || 'Editar'}>
-                            <Pencil className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-7 w-7 shrink-0" title={t('common.edit') || 'Editar'}>
+                            <Pencil className="w-3 h-3" />
                           </Button>
                         </Link>
                       )}
                       {can("work_orders.print") && (
-                        <Button variant="ghost" size="icon" aria-label="PDF" className="h-8 w-8 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
-                          <FileDown className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="PDF" className="h-7 w-7 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
+                          <FileDown className="w-3 h-3" />
                         </Button>
                       )}
                       {can("work_orders.send_email") && (
-                        <Button variant="ghost" size="icon" aria-label="Email" className="h-8 w-8 shrink-0" title="Email" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
-                          {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        <Button variant="ghost" size="icon" aria-label="Email" className="h-7 w-7 shrink-0" title="Email" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
+                          {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
                         </Button>
                       )}
                       {can("work_orders.send_whatsapp") && (
-                        <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 shrink-0 text-green-600" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
-                          <MessageCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-7 w-7 shrink-0 text-green-600" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
+                          <MessageCircle className="w-3 h-3" />
                         </Button>
                       )}
                       {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                        <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-8 w-8 shrink-0" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
-                          <MessageCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-7 w-7 shrink-0" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
+                          <MessageCircle className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
                     {can("work_orders.delete") && (
                       <div className="inline-flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
-                          <XCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                          <XCircle className="w-3 h-3" />
                         </Button>
                       </div>
                     )}

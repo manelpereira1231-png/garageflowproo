@@ -53,6 +53,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
+import SalesDemoBar from "@/components/salesdemo/SalesDemoBar";
 import SupportFab from "@/components/SupportFab";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
@@ -949,6 +950,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </main>
+      <SalesDemoBar />
     </div>
+
   );
 }

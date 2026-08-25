@@ -472,8 +472,8 @@ export default function SalesDemo() {
                 <Card>
                   <CardHeader className="pb-2"><CardTitle>🚀 Pronto para começar?</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-3">
-                    <Button asChild><Link to="/auth">Criar conta e começar</Link></Button>
-                    <Button asChild variant="outline"><Link to="/demo">Pedir acompanhamento</Link></Button>
+                    <Button asChild><a href="/auth" target="_blank" rel="noreferrer">Criar conta da oficina <ExternalLink className="w-4 h-4 ml-1" /></a></Button>
+                    <Button asChild variant="outline"><a href="/demo" target="_blank" rel="noreferrer">Pedir acompanhamento</a></Button>
                     <Button variant="ghost" onClick={() => setPhase("summary")}>Ver resumo da demonstração</Button>
                   </CardContent>
                 </Card>

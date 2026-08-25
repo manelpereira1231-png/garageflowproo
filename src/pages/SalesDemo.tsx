@@ -495,11 +495,9 @@ export default function SalesDemo() {
                 ) : (
                   <Button onClick={() => setPhase("summary")}>Ver resumo <ChevronRight className="w-4 h-4 ml-1" /></Button>
                 )}
-                {STEP_META[current].link && !presentation && (
-                  <Button asChild variant="ghost" size="sm">
-                    <a href={STEP_META[current].link} target="_blank" rel="noreferrer">
-                      Abrir na conta Demo <ExternalLink className="w-4 h-4 ml-1" />
-                    </a>
+                {!presentation && (
+                  <Button variant="ghost" size="sm" onClick={resetDemo}>
+                    <RotateCcw className="w-4 h-4 mr-1" /> Nova demonstração
                   </Button>
                 )}
               </div>

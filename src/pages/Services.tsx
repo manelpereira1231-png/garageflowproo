@@ -859,10 +859,11 @@ export default function Services() {
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap truncate text-[10px] leading-tight px-1.5 py-0.5 inline-block max-w-full`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-normal break-words text-[10px] leading-tight px-1.5 py-0.5 inline-block max-w-full text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>
+
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
                   <div className="flex flex-col items-end gap-1">

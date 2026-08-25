@@ -790,15 +790,13 @@ export default function Services() {
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
         <Table className="table-fixed min-w-[640px]">
           <colgroup>
-            <col className="w-[11%]" />
+            <col className="w-[10%]" />
             <col className="w-[16%]" />
             <col className="w-[15%] hidden xl:table-column" />
             <col className="w-[18%]" />
             <col className="w-[8%] hidden xl:table-column" />
-            <col className="w-[12%] hidden xl:table-column" />
-            <col className="w-[20%]" />
-
-
+            <col className="w-[15%] hidden xl:table-column" />
+            <col className="w-[18%]" />
           </colgroup>
           <TableHeader>
             <TableRow>
@@ -808,8 +806,7 @@ export default function Services() {
               <TableHead className="hidden lg:table-cell px-3">{t('services.timeline')}</TableHead>
               <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.total')}</SortableHeader>
               <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.status')}</SortableHeader>
-              <TableHead className="px-3 text-right">{t('common.actions')}</TableHead>
-
+              <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -870,13 +867,12 @@ export default function Services() {
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-normal break-words text-[11px] font-semibold leading-tight px-2 py-0.5 inline-block max-w-full text-center`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 inline-flex items-center justify-center text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>
-
                 </TableCell>
-                <TableCell className="px-3 py-1.5 align-middle text-right">
+                <TableCell className="px-2 py-3 align-middle text-right">
                   <div className="flex flex-col items-end gap-0.5">
                     {/* Topo: PDF | Email | WhatsApp | Comunicar com cliente | Editar */}
                     <div className="inline-flex items-center justify-end gap-0 flex-nowrap">

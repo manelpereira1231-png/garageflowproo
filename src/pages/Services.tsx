@@ -790,13 +790,13 @@ export default function Services() {
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
         <Table className="table-fixed min-w-[640px]">
           <colgroup>
-            <col className="w-[10%]" />
+            <col className="w-[9%]" />
             <col className="w-[16%]" />
             <col className="w-[15%] hidden xl:table-column" />
             <col className="w-[18%]" />
             <col className="w-[8%] hidden xl:table-column" />
-            <col className="w-[15%] hidden xl:table-column" />
-            <col className="w-[18%]" />
+            <col className="w-[18%] hidden xl:table-column" />
+            <col className="w-[16%]" />
           </colgroup>
           <TableHeader>
             <TableRow>

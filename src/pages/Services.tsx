@@ -767,7 +767,7 @@ export default function Services() {
                     <span className="truncate">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                   </Button>
                 )}
-                {can("work_orders.delete") && (
+                {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
                   <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => cancelService(s.id)}>
                     <XCircle className="w-4 h-4 mr-1" />Cancelar
                   </Button>
@@ -908,7 +908,7 @@ export default function Services() {
                           <span className="truncate max-w-[86px]">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
                       )}
-                      {can("work_orders.delete") && (
+                      {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
                         <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                           <XCircle className="w-3 h-3" />
                         </Button>

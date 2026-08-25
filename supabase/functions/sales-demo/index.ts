@@ -124,7 +124,7 @@ serve(async (req) => {
       .from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId);
 
     if (action === "reset" || !clientCount) {
-      if (action === "reset") await wipe();
+      await wipe();
       await seed(admin, shopId);
     }
 

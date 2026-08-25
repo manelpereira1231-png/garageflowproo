@@ -52,6 +52,12 @@ export async function startDemo(plan: DemoPlan) {
   const { error } = await supabase.auth.setSession(res.session);
   if (error) throw new Error(error.message);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);
+  // Demonstração: ERP completo em português, sem ecrãs de onboarding.
+  localStorage.setItem("garageflow_app_mode", "pro");
+  localStorage.setItem("garageflow_onboarding_status", "completed");
+  localStorage.setItem("garageflow_onboarding_completed", "true");
+  localStorage.setItem("gf_auto_onboarding_dismissed", "1");
+  localStorage.setItem("garageflow_language", "pt");
   sessionStorage.setItem(DEMO_FLAG, "1");
   sessionStorage.setItem(DEMO_PLAN_KEY, plan);
   return res.shop_id;

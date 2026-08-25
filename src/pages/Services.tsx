@@ -791,12 +791,12 @@ export default function Services() {
         <Table className="table-fixed min-w-[640px]">
           <colgroup>
             <col className="w-[9%]" />
-            <col className="w-[16%]" />
-            <col className="w-[15%] hidden xl:table-column" />
+            <col className="w-[14%]" />
+            <col className="w-[13%] hidden xl:table-column" />
             <col className="w-[18%]" />
             <col className="w-[8%] hidden xl:table-column" />
             <col className="w-[18%] hidden xl:table-column" />
-            <col className="w-[16%]" />
+            <col className="w-[20%]" />
           </colgroup>
           <TableHeader>
             <TableRow>

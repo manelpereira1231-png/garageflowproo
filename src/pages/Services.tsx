@@ -787,7 +787,7 @@ export default function Services() {
             <TableRow>
               <SortableHeader sortKey="number" currentSort={sort} onToggle={toggleSort}>{t('quotes.number')}</SortableHeader>
               <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
-              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden md:table-cell">{t('quotes.vehicle')}</SortableHeader>
+              <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
               <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
               <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
@@ -836,7 +836,7 @@ export default function Services() {
                     {s.technician && <p className="text-xs text-muted-foreground break-words">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-3 py-3 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
                     <span className="break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
                     <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>

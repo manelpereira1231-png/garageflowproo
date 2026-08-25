@@ -864,15 +864,8 @@ export default function Services() {
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
                   <div className="flex flex-col items-end gap-1">
-                    {/* Topo: gestão e comunicação */}
-                    <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
-                      {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
-                        <Link to={`/services/edit/${s.id}`}>
-                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-7 w-7 shrink-0" title={t('common.edit') || 'Editar'}>
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      )}
+                    {/* Topo: PDF | Email | WhatsApp | Comunicar com cliente | Editar */}
+                    <div className="inline-flex items-center justify-end gap-0 flex-nowrap">
                       {can("work_orders.print") && (
                         <Button variant="ghost" size="icon" aria-label="PDF" className="h-7 w-7 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
                           <FileDown className="w-3 h-3" />
@@ -893,9 +886,16 @@ export default function Services() {
                           <MessageCircle className="w-3 h-3" />
                         </Button>
                       )}
+                      {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
+                        <Link to={`/services/edit/${s.id}`}>
+                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-7 w-7 shrink-0" title={t('common.edit') || 'Editar'}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      )}
                     </div>
-                    {/* Baixo: apenas progresso e cancelamento */}
-                    <div className="inline-flex items-center justify-end gap-0.5">
+                    {/* Baixo: Avançar no progresso | Cancelar serviço */}
+                    <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
                       {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Button
                           variant="default"

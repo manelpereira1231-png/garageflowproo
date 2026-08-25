@@ -656,15 +656,15 @@ export default function Services() {
       </div>
 
       {/* Smart filters row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2 mb-4">
-        <div className="relative sm:col-span-2 xl:col-span-2">
+      <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-6 gap-2 mb-4">
+        <div className="relative col-span-2 xl:col-span-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder={t('services.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
         </div>
         <select
           value={filters.clientId}
           onChange={(e) => updateFilter('clientId', e.target.value)}
-          className="h-10 px-3 rounded-md bg-background border border-input text-sm"
+          className="col-span-2 xl:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm"
         >
           <option value="">Todos os clientes</option>
           {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
@@ -672,21 +672,28 @@ export default function Services() {
         <select
           value={filters.technician}
           onChange={(e) => updateFilter('technician', e.target.value)}
-          className="h-10 px-3 rounded-md bg-background border border-input text-sm"
+          className="col-span-2 xl:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm"
         >
           <option value="">Todos os técnicos</option>
           {technicianOptions.map(tName => <option key={tName} value={tName}>{tName}</option>)}
         </select>
-        <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" />
-        <div className="flex gap-1">
-          <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" />
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros">
-              <X className="w-4 h-4" />
-            </Button>
-          )}
+        <div className="space-y-1">
+          <label className="text-[11px] text-muted-foreground xl:sr-only">Data desde</label>
+          <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" className="w-full" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[11px] text-muted-foreground xl:sr-only">Data até</label>
+          <div className="flex gap-1">
+            <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" className="w-full" />
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros">
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
 
 
       {/* Mobile: Card view */}

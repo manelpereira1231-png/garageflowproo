@@ -328,7 +328,7 @@ export default function SalesDemo() {
             Garage<span className="text-primary">Flow</span>
             <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">Sales Demo</span>
           </span>
-          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">DEMO MODE</Badge>
+          <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">DEMO · sem login</Badge>
           <div className="flex-1" />
           {!presentation && (
             <Button variant="ghost" size="sm" onClick={() => setShowScript((v) => !v)}>

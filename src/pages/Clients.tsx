@@ -431,11 +431,11 @@ export default function Clients() {
                 <TableCell>
                   <div className="flex gap-1 items-center">
                     {client.phone ? (
-                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500" title="WhatsApp">
+                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500 w-[110px] justify-start" title="WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
                       </Button>
                     ) : (
-                      <span className="text-xs text-muted-foreground px-3 inline-flex items-center gap-1 whitespace-nowrap" title="Sem WhatsApp">
+                      <span className="text-xs text-muted-foreground px-3 w-[110px] inline-flex items-center gap-1 whitespace-nowrap" title="Sem WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 opacity-40" />—
                       </span>
                     )}

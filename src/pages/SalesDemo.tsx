@@ -1,70 +1,78 @@
 /**
  * GARAGEFLOW SALES DEMO — /demo-demonstracao
  *
- * Porta de entrada comercial: o comercial escolhe o contexto (Free / Pro / Garage)
- * e entra no GarageFlow REAL, com a oficina de demonstração "AutoPrime Lisboa".
- * Não duplica páginas nem componentes do ERP — apenas prepara a sessão.
+ * Entrada da apresentação comercial: escolher o contexto (Start / Pro / Garage)
+ * e começar. 100% simulada — sem login, sem conta real, sem faturação.
  */
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { Loader2, Rocket, Check, ChevronDown, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { startDemo, type DemoPlan } from "@/lib/salesDemo";
-import { clearSalesState } from "@/lib/salesDemoSales";
+import { Badge } from "@/components/ui/badge";
+import { PLAN_LABEL, type DemoPlan } from "@/lib/salesDemo";
+import { PLAN_ORDER } from "@/lib/salesDemoTour";
+import {
+  loadSalesState, saveSalesState, clearSalesState, NEEDS,
+} from "@/lib/salesDemoSales";
+import { getCountryConfig, loadCountriesFromDB, formatPrice } from "@/lib/regionConfig";
 import { trackEvent } from "@/lib/trackEvent";
-
-const OPTIONS: { plan: DemoPlan; name: string; tagline: string; points: string[] }[] = [
-  {
-    plan: "free",
-    name: "Free",
-    tagline: "Demonstração do plano Free",
-    points: ["Clientes e viaturas", "Orçamentos essenciais", "Arranque imediato"],
-  },
-  {
-    plan: "pro",
-    name: "Pro",
-    tagline: "Demonstração do plano Pro",
-    points: ["Reparações e stock", "Faturação e PDFs", "Métricas da oficina"],
-  },
-  {
-    plan: "garage",
-    name: "Garage",
-    tagline: "Demonstração do plano Garage",
-    points: ["Multi-oficina", "Equipa e permissões", "Automações e IA"],
-  },
-];
-
-/** Notas opcionais — o comercial pode ignorar por completo. */
-const NOTE_KEY = "gf_sales_demo_notes";
+import GuidedDemo from "@/components/salesdemo/GuidedDemo";
 
 export default function SalesDemo() {
-  const navigate = useNavigate();
   const [plan, setPlan] = useState<DemoPlan>("pro");
+  const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
-  const [notes, setNotes] = useState(() => {
-    try { return sessionStorage.getItem(NOTE_KEY) || ""; } catch { return ""; }
-  });
+  const [showSetup, setShowSetup] = useState(false);
+  const [priceTick, setPriceTick] = useState(0);
+  const [state, setState] = useState(loadSalesState);
 
-  const start = async () => {
-    setLoading(true);
-    try {
-      await startDemo(plan);
-      clearSalesState();
-      trackEvent("sales_demo_started", { plan });
-      navigate("/dashboard", { replace: true });
-    } catch (e) {
-      toast.error((e as Error).message || "Não foi possível iniciar a demonstração");
-      setLoading(false);
-    }
+  useEffect(() => {
+    let alive = true;
+    loadCountriesFromDB().then(() => { if (alive) setPriceTick((t) => t + 1); });
+    return () => { alive = false; };
+  }, []);
+
+  const price = (p: DemoPlan) => {
+    void priceTick;
+    const cfg = getCountryConfig();
+    const monthly = cfg.saas?.[p]?.monthly ?? 0;
+    return monthly ? `${formatPrice(monthly, cfg.code)}/mês` : "—";
   };
+
+  const update = (next: typeof state) => { setState(next); saveSalesState(next); };
+
+  const toggleNeed = (id: string) => {
+    const needs = state.needs.includes(id) ? state.needs.filter((n) => n !== id) : [...state.needs, id];
+    update({ ...state, needs });
+  };
+
+  const start = () => {
+    setLoading(true);
+    trackEvent("sales_demo_started", { plan });
+    setStarted(true);
+    setLoading(false);
+  };
+
+  if (started) {
+    return (
+      <GuidedDemo
+        plan={plan}
+        onPlanChange={setPlan}
+        onExit={() => setStarted(false)}
+        onRestart={() => {
+          clearSalesState();
+          setState(loadSalesState());
+          setStarted(false);
+          setShowSetup(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="flex-1 w-full max-w-5xl mx-auto px-6 py-16 sm:py-24 flex flex-col justify-center">
+      <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-16 sm:py-24 flex flex-col justify-center">
         <header className="mb-12">
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-8">
             <span className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
               <Wrench className="w-4 h-4 text-primary" />
             </span>
@@ -74,42 +82,30 @@ export default function SalesDemo() {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-            Apresente o GarageFlow<br className="hidden sm:block" /> à sua próxima oficina.
+            Escolha o contexto<br className="hidden sm:block" /> da apresentação.
           </h1>
-          <p className="mt-4 text-muted-foreground max-w-xl">
-            Escolha o contexto da apresentação e entre diretamente no GarageFlow, com a oficina
-            de demonstração AutoPrime Lisboa já preparada.
-          </p>
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {OPTIONS.map((o) => {
-            const active = plan === o.plan;
+        <div className="grid gap-3 sm:grid-cols-3">
+          {PLAN_ORDER.map((p) => {
+            const active = plan === p;
             return (
               <button
-                key={o.plan}
+                key={p}
                 type="button"
-                onClick={() => setPlan(o.plan)}
+                onClick={() => setPlan(p)}
                 aria-pressed={active}
-                className={`text-left rounded-2xl border p-5 transition-all min-h-[176px] ${
+                className={`text-left rounded-2xl border p-5 transition-all ${
                   active
                     ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
                     : "border-border bg-card hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xl font-bold uppercase tracking-wide">{o.name}</span>
+                  <span className="text-lg font-bold uppercase tracking-wide">{PLAN_LABEL[p]}</span>
                   {active && <Check className="w-4 h-4 text-primary" />}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{o.tagline}</p>
-                <ul className="mt-4 space-y-1.5">
-                  {o.points.map((p) => (
-                    <li key={p} className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span className="w-1 h-1 rounded-full bg-primary/70" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-2xl font-bold mt-2 tabular-nums">{price(p)}</p>
               </button>
             );
           })}
@@ -122,34 +118,51 @@ export default function SalesDemo() {
           </Button>
           <button
             type="button"
-            onClick={() => setShowNotes((v) => !v)}
+            onClick={() => setShowSetup((v) => !v)}
             className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 self-start sm:self-auto"
           >
-            Personalizar apresentação
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showNotes ? "rotate-180" : ""}`} />
+            🎯 Personalizar apresentação
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSetup ? "rotate-180" : ""}`} />
           </button>
         </div>
 
-        {showNotes && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-4 max-w-xl">
-            <p className="text-xs text-muted-foreground mb-2">
-              Opcional — notas sobre a oficina (dimensão, software atual, dores). Ficam apenas neste dispositivo.
-            </p>
-            <textarea
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                try { sessionStorage.setItem(NOTE_KEY, e.target.value); } catch { /* noop */ }
-              }}
-              rows={4}
-              className="w-full bg-background border border-border rounded-lg p-3 text-sm outline-none focus:border-primary/60"
-              placeholder="Ex.: 6 colaboradores, 30 viaturas/semana, usa folhas de Excel…"
-            />
+        {showSetup && (
+          <div className="mt-6 rounded-2xl border border-border bg-card p-5 space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { k: "shopName" as const, ph: "Nome da oficina" },
+                { k: "users" as const, ph: "Utilizadores" },
+                { k: "vehiclesMonth" as const, ph: "Viaturas/mês" },
+              ].map((f) => (
+                <input
+                  key={f.k}
+                  value={state.profile[f.k]}
+                  onChange={(e) => update({ ...state, profile: { ...state.profile, [f.k]: e.target.value } })}
+                  placeholder={f.ph}
+                  className="bg-background border border-border rounded-lg px-3 h-10 text-sm outline-none focus:border-primary/60"
+                />
+              ))}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Necessidades da oficina (opcional)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {NEEDS.map((n) => (
+                  <button key={n.id} type="button" onClick={() => toggleNeed(n.id)}>
+                    <Badge
+                      variant={state.needs.includes(n.id) ? "default" : "outline"}
+                      className="text-[11px] cursor-pointer"
+                    >
+                      {n.label}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         <p className="mt-12 text-xs text-muted-foreground">
-          Dados fictícios de demonstração. Nenhuma conta real, faturação ou subscrição é criada ou alterada.
+          Dados fictícios de demonstração · AutoPrime Lisboa
         </p>
       </div>
     </div>

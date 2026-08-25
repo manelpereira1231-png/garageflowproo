@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { Loader2, Rocket, Check, ChevronDown, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startDemo, type DemoPlan } from "@/lib/salesDemo";
+import { clearSalesState } from "@/lib/salesDemoSales";
+import { trackEvent } from "@/lib/trackEvent";
 
 const OPTIONS: { plan: DemoPlan; name: string; tagline: string; points: string[] }[] = [
   {
@@ -49,6 +51,8 @@ export default function SalesDemo() {
     setLoading(true);
     try {
       await startDemo(plan);
+      clearSalesState();
+      trackEvent("sales_demo_started", { plan });
       navigate("/dashboard", { replace: true });
     } catch (e) {
       toast.error((e as Error).message || "Não foi possível iniciar a demonstração");

@@ -861,6 +861,7 @@ export default function Services() {
                 </TableCell>
                 <TableCell className="px-2 py-3 text-right">
                   <div className="flex flex-col items-end gap-1">
+                    {/* Topo: gestão e comunicação */}
                     <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
                       {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Link to={`/services/edit/${s.id}`}>
@@ -890,13 +891,26 @@ export default function Services() {
                         </Button>
                       )}
                     </div>
-                    {can("work_orders.delete") && (
-                      <div className="inline-flex items-center justify-end gap-0.5">
+                    {/* Baixo: apenas progresso e cancelamento */}
+                    <div className="inline-flex items-center justify-end gap-0.5">
+                      {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] shrink-0"
+                          onClick={() => advanceStatus(s)}
+                          title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
+                        >
+                          <ChevronRightIcon className="w-3 h-3 mr-1" />
+                          <span className="truncate max-w-[86px]">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
+                        </Button>
+                      )}
+                      {can("work_orders.delete") && (
                         <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
                           <XCircle className="w-3 h-3" />
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>

@@ -867,13 +867,12 @@ export default function Services() {
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-normal break-words text-[11px] font-semibold leading-tight px-2 py-0.5 inline-block max-w-full text-center`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 inline-flex items-center justify-center text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>
-
                 </TableCell>
-                <TableCell className="px-3 py-1.5 align-middle text-right">
+                <TableCell className="px-2 py-3 align-middle text-right">
                   <div className="flex flex-col items-end gap-0.5">
                     {/* Topo: PDF | Email | WhatsApp | Comunicar com cliente | Editar */}
                     <div className="inline-flex items-center justify-end gap-0 flex-nowrap">

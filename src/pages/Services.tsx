@@ -790,7 +790,7 @@ export default function Services() {
               <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
               <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
-              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort}>{t('quotes.status')}</SortableHeader>
+              <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -850,7 +850,7 @@ export default function Services() {
                   />
                 </TableCell>
                 <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
-                <TableCell className="px-2 py-3 overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}

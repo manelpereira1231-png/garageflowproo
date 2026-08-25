@@ -789,7 +789,7 @@ export default function Services() {
               <SortableHeader sortKey="client" currentSort={sort} onToggle={toggleSort}>{t('quotes.client')}</SortableHeader>
               <SortableHeader sortKey="vehicle" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.vehicle')}</SortableHeader>
               <TableHead className="hidden lg:table-cell px-2">{t('services.timeline')}</TableHead>
-              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort}>{t('quotes.total')}</SortableHeader>
+              <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.total')}</SortableHeader>
               <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.status')}</SortableHeader>
               <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>

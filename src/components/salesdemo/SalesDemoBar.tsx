@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3 } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   currentDemoPlan, isDemoSession, resetDemo, switchDemoPlan, endDemo,
@@ -13,6 +13,9 @@ import {
 } from "@/lib/salesDemo";
 import { getCountryConfig, loadCountriesFromDB, formatPrice } from "@/lib/regionConfig";
 import DemoPlanCompare from "./DemoPlanCompare";
+import SalesConsole from "./SalesConsole";
+import { clearSalesState } from "@/lib/salesDemoSales";
+import { trackEvent } from "@/lib/trackEvent";
 
 const PLANS: DemoPlan[] = ["free", "pro", "garage"];
 
@@ -21,6 +24,7 @@ export default function SalesDemoBar() {
   const [plan, setPlan] = useState<DemoPlan>(currentDemoPlan());
   const [busy, setBusy] = useState<string | null>(null);
   const [compare, setCompare] = useState(false);
+  const [console_, setConsole] = useState(false);
   const [priceTick, setPriceTick] = useState(0);
   const [hidden, setHidden] = useState(() => {
     try { return sessionStorage.getItem(DEMO_BAR_HIDDEN) === "1"; } catch { return false; }
@@ -51,8 +55,8 @@ export default function SalesDemoBar() {
     return (
       <button
         onClick={() => toggleHidden(false)}
-        title="Mostrar controlo de demonstração"
-        aria-label="Mostrar controlo de demonstração"
+        title="Sair do modo cliente"
+        aria-label="Sair do modo cliente"
         className="fixed bottom-3 left-3 z-50 w-8 h-8 rounded-full bg-card/70 border border-border/60 text-muted-foreground hover:text-foreground backdrop-blur flex items-center justify-center"
       >
         <Eye className="w-3.5 h-3.5" />
@@ -65,6 +69,7 @@ export default function SalesDemoBar() {
     setBusy(p);
     try {
       await switchDemoPlan(p);
+      trackEvent("sales_demo_plan_viewed", { plan: p });
       setPlan(p);
       window.location.reload();
     } catch (e) {
@@ -78,6 +83,7 @@ export default function SalesDemoBar() {
     setBusy("reset");
     try {
       await resetDemo(plan);
+      clearSalesState();
       toast.success("Demonstração reposta");
       window.location.reload();
     } catch (e) {
@@ -119,7 +125,13 @@ export default function SalesDemoBar() {
         ))}
         <Button
           variant="ghost" size="sm" className="h-7 px-2 text-xs whitespace-nowrap"
-          onClick={() => setCompare(true)}
+          onClick={() => setConsole(true)}
+        >
+          <Target className="w-3.5 h-3.5 mr-1" />Consola
+        </Button>
+        <Button
+          variant="ghost" size="sm" className="h-7 px-2 text-xs whitespace-nowrap"
+          onClick={() => { trackEvent("sales_demo_compare_opened", { plan }); setCompare(true); }}
         >
           <BarChart3 className="w-3.5 h-3.5 mr-1" />Comparar planos
         </Button>
@@ -127,7 +139,7 @@ export default function SalesDemoBar() {
           {busy === "reset" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 mr-1" />}
           Reset
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" title="Esconder" aria-label="Esconder" onClick={() => toggleHidden(true)}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" title="Modo cliente (esconder)" aria-label="Modo cliente" onClick={() => toggleHidden(true)}>
           <EyeOff className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -138,6 +150,14 @@ export default function SalesDemoBar() {
         plan={plan}
         priceLabel={priceLabel}
         onSelect={changePlan}
+      />
+
+      <SalesConsole
+        open={console_}
+        onOpenChange={setConsole}
+        plan={plan}
+        priceLabel={priceLabel}
+        onSelectPlan={changePlan}
       />
     </>
   );

@@ -208,6 +208,7 @@ const CommercialDemos = lazyRetry(() => import("@/pages/commercial/CommercialDem
 const CommercialDataImport = lazyRetry(() => import("@/pages/commercial/CommercialDataImport"));
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
+const SalesDemoPage = lazyRetry(() => import("@/pages/SalesDemo"));
 const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
 const AdminTestimonials = lazyRetry(() => import("@/pages/admin/AdminTestimonials"));
 const SettingsTestimonials = lazyRetry(() => import("@/pages/settings/Testimonials"));
@@ -1203,6 +1204,7 @@ function AppRoutes() {
             <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
             <Route path="/demo" element={<Suspense fallback={<PageLoader />}><DemoRequestPage /></Suspense>} />
+            <Route path="/demo-demonstracao" element={<Suspense fallback={<PageLoader />}><SalesDemoPage /></Suspense>} />
             {publicSeoRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}

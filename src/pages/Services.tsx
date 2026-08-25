@@ -849,7 +849,7 @@ export default function Services() {
                     showAdvance={can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status)}
                   />
                 </TableCell>
-                <TableCell className="px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
+                <TableCell className="hidden xl:table-cell px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
                 <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">
                   <Badge
                     variant="secondary"

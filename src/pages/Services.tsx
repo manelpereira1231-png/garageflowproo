@@ -864,36 +864,36 @@ export default function Services() {
                     <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
                       {can("work_orders.edit") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Link to={`/services/edit/${s.id}`}>
-                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-8 w-8 shrink-0" title={t('common.edit') || 'Editar'}>
-                            <Pencil className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" aria-label={t('common.edit') || 'Editar'} className="h-7 w-7 shrink-0" title={t('common.edit') || 'Editar'}>
+                            <Pencil className="w-3 h-3" />
                           </Button>
                         </Link>
                       )}
                       {can("work_orders.print") && (
-                        <Button variant="ghost" size="icon" aria-label="PDF" className="h-8 w-8 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
-                          <FileDown className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="PDF" className="h-7 w-7 shrink-0" title="PDF" onClick={() => downloadPdf(s)}>
+                          <FileDown className="w-3 h-3" />
                         </Button>
                       )}
                       {can("work_orders.send_email") && (
-                        <Button variant="ghost" size="icon" aria-label="Email" className="h-8 w-8 shrink-0" title="Email" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
-                          {sendingEmail === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        <Button variant="ghost" size="icon" aria-label="Email" className="h-7 w-7 shrink-0" title="Email" onClick={() => sendServiceEmail(s)} disabled={sendingEmail === s.id}>
+                          {sendingEmail === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
                         </Button>
                       )}
                       {can("work_orders.send_whatsapp") && (
-                        <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-8 w-8 shrink-0 text-green-600" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
-                          <MessageCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="WhatsApp" className="h-7 w-7 shrink-0 text-green-600" title="WhatsApp" onClick={() => sendServiceWhatsApp(s)}>
+                          <MessageCircle className="w-3 h-3" />
                         </Button>
                       )}
                       {(can("work_orders.send_email") || can("work_orders.send_whatsapp")) && (
-                        <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-8 w-8 shrink-0" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
-                          <MessageCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label="Comunicar com cliente" className="h-7 w-7 shrink-0" title="Comunicar com cliente" onClick={() => setCommsService(s)}>
+                          <MessageCircle className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
                     {can("work_orders.delete") && (
                       <div className="inline-flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-8 w-8 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
-                          <XCircle className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                          <XCircle className="w-3 h-3" />
                         </Button>
                       </div>
                     )}

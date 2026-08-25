@@ -16,7 +16,7 @@ export const DEMO_BAR_HIDDEN = "gf_sales_demo_bar_hidden";
 const ACTIVE_SHOP_KEY = "garageflow_active_shop";
 
 export const PLAN_LABEL: Record<DemoPlan, string> = {
-  free: "Free",
+  free: "Start",
   pro: "Pro",
   garage: "Garage",
 };

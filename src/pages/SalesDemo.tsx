@@ -6,7 +6,6 @@
  * e faz deep-link para as páginas existentes. Nenhuma credencial aqui.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Rocket, BarChart3, Target, Check, ChevronRight, ChevronLeft, RotateCcw,
   Eye, EyeOff, Presentation, Lightbulb, MessageSquareWarning, ClipboardCopy,

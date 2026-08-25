@@ -806,8 +806,7 @@ export default function Services() {
               <TableHead className="hidden lg:table-cell px-3">{t('services.timeline')}</TableHead>
               <SortableHeader sortKey="total" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.total')}</SortableHeader>
               <SortableHeader sortKey="status" currentSort={sort} onToggle={toggleSort} className="hidden xl:table-cell">{t('quotes.status')}</SortableHeader>
-              <TableHead className="px-3 text-right">{t('common.actions')}</TableHead>
-
+              <TableHead className="px-2 text-right">{t('common.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

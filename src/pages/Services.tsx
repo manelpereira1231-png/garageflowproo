@@ -841,39 +841,41 @@ export default function Services() {
               </TableRow>
             ) : filtered.map(s => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell className="px-3 py-3 overflow-hidden">
-                  <div className="min-w-0">
+                <TableCell className="px-2.5 py-2 overflow-hidden">
+                  <div className="min-w-0 leading-tight">
                     <span className="font-medium mono whitespace-nowrap">{s.number}</span>
                     <p className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(s.created_at), 'dd/MM/yyyy')}</p>
                   </div>
                 </TableCell>
-                <TableCell className="px-3 py-3 whitespace-normal overflow-hidden">
+                <TableCell className="px-2.5 py-2 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
                     <span className="font-medium break-words">{(s.clients as any)?.name}</span>
                     {s.technician && <p className="text-xs text-muted-foreground break-words">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="hidden xl:table-cell px-3 py-3 whitespace-normal overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-2.5 py-2 whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
-                    <span className="break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
-                    <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(s.vehicles as any)?.plate})</span>
+                    <span className="block font-medium break-words">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</span>
+                    <span className="block mono text-xs text-muted-foreground truncate">({(s.vehicles as any)?.plate})</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-3 min-w-0">
-                  <RepairTimeline status={s.status as ServiceStatus} />
+                <TableCell className="hidden lg:table-cell px-2 py-2 min-w-0">
+                  <div className="max-w-[190px] min-w-0">
+                    <RepairTimeline status={s.status as ServiceStatus} />
+                  </div>
                 </TableCell>
-                <TableCell className="hidden xl:table-cell px-3 py-3 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
-                <TableCell className="hidden xl:table-cell px-2 py-3 overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-2.5 py-2 font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
+                <TableCell className="hidden xl:table-cell px-2 py-2 overflow-hidden">
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-normal break-words text-[10px] leading-tight px-1.5 py-0.5 inline-block max-w-full text-center`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-normal break-words text-[11px] font-semibold leading-tight px-2 py-0.5 inline-block max-w-full text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>
 
                 </TableCell>
-                <TableCell className="px-2 py-3 text-right">
+                <TableCell className="px-2 py-2 text-right">
                   <div className="flex flex-col items-end gap-1">
                     {/* Topo: PDF | Email | WhatsApp | Comunicar com cliente | Editar */}
                     <div className="inline-flex items-center justify-end gap-0 flex-nowrap">

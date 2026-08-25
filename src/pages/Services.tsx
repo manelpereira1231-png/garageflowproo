@@ -915,8 +915,8 @@ export default function Services() {
                           onClick={() => advanceStatus(s)}
                           title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
                         >
-                          <ChevronRightIcon className="w-3 h-3 mr-1" />
-                          <span className="truncate max-w-[86px]">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
+                          <ChevronRightIcon className="w-3 h-3 mr-1 shrink-0" />
+                          <span className="whitespace-nowrap">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
                       )}
                       {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (

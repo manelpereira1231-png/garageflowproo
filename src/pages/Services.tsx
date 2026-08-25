@@ -790,13 +790,13 @@ export default function Services() {
       <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
         <Table className="table-fixed min-w-[640px]">
           <colgroup>
-            <col className="w-[10%]" />
-            <col className="w-[16%]" />
-            <col className="w-[15%] hidden xl:table-column" />
+            <col className="w-[9%]" />
+            <col className="w-[14%]" />
+            <col className="w-[13%] hidden xl:table-column" />
             <col className="w-[18%]" />
             <col className="w-[8%] hidden xl:table-column" />
-            <col className="w-[15%] hidden xl:table-column" />
-            <col className="w-[18%]" />
+            <col className="w-[18%] hidden xl:table-column" />
+            <col className="w-[20%]" />
           </colgroup>
           <TableHeader>
             <TableRow>
@@ -915,8 +915,8 @@ export default function Services() {
                           onClick={() => advanceStatus(s)}
                           title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
                         >
-                          <ChevronRightIcon className="w-3 h-3 mr-1" />
-                          <span className="truncate max-w-[86px]">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
+                          <ChevronRightIcon className="w-3 h-3 mr-1 shrink-0" />
+                          <span className="whitespace-nowrap">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
                       )}
                       {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (

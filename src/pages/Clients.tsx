@@ -429,12 +429,17 @@ export default function Clients() {
                 </TableCell>
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
-                    {client.phone && (
-                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500" title="WhatsApp">
+                  <div className="flex gap-1 items-center">
+                    {client.phone ? (
+                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500 w-[110px] justify-start" title="WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp
                       </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground px-3 w-[110px] inline-flex items-center gap-1 whitespace-nowrap" title="Sem WhatsApp">
+                        <MessageCircle className="w-3.5 h-3.5 opacity-40" />—
+                      </span>
                     )}
+
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>

@@ -777,11 +777,11 @@ export default function Services() {
           <colgroup>
             <col className="w-[9%]" />
             <col className="w-[15%]" />
-            <col className="w-[15%]" />
-            <col className="w-[28%]" />
-            <col className="w-[8%]" />
-            <col className="w-[10%]" />
-            <col className="w-[15%]" />
+            <col className="w-[14%]" />
+            <col className="w-[24%]" />
+            <col className="w-[7%]" />
+            <col className="w-[9%]" />
+            <col className="w-[22%]" />
           </colgroup>
           <TableHeader>
             <TableRow>

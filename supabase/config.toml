@@ -170,3 +170,6 @@ verify_jwt = false
 
 [functions.cancel-subscription]
 verify_jwt = true
+
+[functions.sales-demo]
+verify_jwt = false

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDuration, totalEstMinutes } from "@/lib/duration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, AlertTriangle, Copy, Receipt, MessageCircle, X } from "lucide-react";

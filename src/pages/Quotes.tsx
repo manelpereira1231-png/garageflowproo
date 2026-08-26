@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDuration, totalEstMinutes } from "@/lib/duration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, ArrowRightLeft, FileDown, Pencil, Mail, Loader2, AlertTriangle, Copy, Receipt, MessageCircle, X } from "lucide-react";
@@ -404,39 +405,62 @@ export default function Quotes() {
         </div>
       )}
 
-      {/* Smart filters row */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
-        <div className="relative col-span-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t('quotes.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
-        </div>
-        <select value={filters.status} onChange={e => updateFilter('status', e.target.value)} className="col-span-2 md:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
-          <option value="all">Todos os estados</option>
-          <option value="draft">{t('status.draft')}</option>
-          <option value="sent">{t('status.awaitingApproval')}</option>
-          <option value="approved">{t('status.approved')}</option>
-          <option value="rejected">{t('status.rejected')}</option>
-          <option value="expired">{t('status.expired')}</option>
-          <option value="converted">{t('status.converted')}</option>
-        </select>
-        <select value={filters.clientId} onChange={e => updateFilter('clientId', e.target.value)} className="col-span-2 md:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm">
-          <option value="">Todos os clientes</option>
-          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-        </select>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground md:sr-only">Data desde</label>
-          <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" className="w-full" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground md:sr-only">Data até</label>
-          <div className="flex gap-1">
-            <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" className="w-full" />
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros"><X className="w-4 h-4" /></Button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Filtros compactos (mesma lógica, apresentação condensada) */}
+      <CompactFilterBar
+        activeCount={[
+          filters.status !== 'all',
+          !!filters.clientId,
+          !!filters.dateFrom,
+          !!filters.dateTo,
+        ].filter(Boolean).length}
+        onClear={hasActiveFilters ? clearFilters : undefined}
+        search={
+          <>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t('quotes.search') || 'Pesquisar…'}
+              value={search}
+              onChange={e => updateFilter('search', e.target.value)}
+              className="pl-9 h-10 md:h-9"
+            />
+          </>
+        }
+        filters={(stacked) => (
+          <>
+            <FilterCombobox
+              fullWidth={stacked}
+              value={filters.status}
+              onChange={(v) => updateFilter('status', v)}
+              placeholder="Todos os estados"
+              searchPlaceholder="Estado…"
+              options={[
+                { value: 'all', label: 'Todos os estados' },
+                { value: 'draft', label: t('status.draft') },
+                { value: 'sent', label: t('status.awaitingApproval') },
+                { value: 'approved', label: t('status.approved') },
+                { value: 'rejected', label: t('status.rejected') },
+                { value: 'expired', label: t('status.expired') },
+                { value: 'converted', label: t('status.converted') },
+              ]}
+            />
+            <FilterCombobox
+              fullWidth={stacked}
+              value={filters.clientId}
+              onChange={(v) => updateFilter('clientId', v)}
+              placeholder="Todos os clientes"
+              searchPlaceholder="Pesquisar cliente…"
+              options={[{ value: '', label: 'Todos os clientes' }, ...clientOptions.map(([id, name]) => ({ value: id as string, label: name as string }))]}
+            />
+            <FilterDateRange
+              fullWidth={stacked}
+              from={filters.dateFrom}
+              to={filters.dateTo}
+              onFrom={(v) => updateFilter('dateFrom', v)}
+              onTo={(v) => updateFilter('dateTo', v)}
+            />
+          </>
+        )}
+      />
 
 
       {/* Empty state CTA */}

@@ -3,6 +3,7 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -626,73 +627,69 @@ export default function Services() {
         )}
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-        <Button
-          variant={statusFilter === "all" ? "default" : "outline"}
-          size="sm"
-          onClick={() => updateFilter("status", "all")}
-          className="text-xs shrink-0"
-        >
-          {t('services.allStatuses') || 'Todos'} ({Object.values(statusCountsAll).reduce((a,b)=>a+b,0) || totalCount})
-        </Button>
-        {statusFlow.filter(s => s !== 'cancelled').map(s => {
-          const Icon = statusIcons[s];
-          const c = statusCountsAll[s] || 0;
-          return (
-            <Button
-              key={s}
-              variant={statusFilter === s ? "default" : "outline"}
-              size="sm"
-              onClick={() => updateFilter("status", s)}
-              className="text-xs shrink-0 gap-1"
-            >
-              <Icon className="w-3 h-3" />
-              {t(`service.${s}`)}
-              {c > 0 && <span className="ml-1 opacity-70">({c})</span>}
-            </Button>
-          );
-        })}
-      </div>
-
-      {/* Smart filters row */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-6 gap-2 mb-4">
-        <div className="relative col-span-2 xl:col-span-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t('services.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />
-        </div>
-        <select
-          value={filters.clientId}
-          onChange={(e) => updateFilter('clientId', e.target.value)}
-          className="col-span-2 xl:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm"
-        >
-          <option value="">Todos os clientes</option>
-          {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-        </select>
-        <select
-          value={filters.technician}
-          onChange={(e) => updateFilter('technician', e.target.value)}
-          className="col-span-2 xl:col-span-1 h-10 px-3 rounded-md bg-background border border-input text-sm"
-        >
-          <option value="">Todos os técnicos</option>
-          {technicianOptions.map(tName => <option key={tName} value={tName}>{tName}</option>)}
-        </select>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground xl:sr-only">Data desde</label>
-          <Input type="date" value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="Data desde" className="w-full" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground xl:sr-only">Data até</label>
-          <div className="flex gap-1">
-            <Input type="date" value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="Data até" className="w-full" />
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0" title="Limpar filtros">
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Filtros compactos (mesma lógica, apresentação condensada) */}
+      <CompactFilterBar
+        activeCount={[
+          filters.status !== 'all',
+          !!filters.clientId,
+          !!filters.technician,
+          !!filters.dateFrom,
+          !!filters.dateTo,
+        ].filter(Boolean).length}
+        onClear={hasActiveFilters ? clearFilters : undefined}
+        search={
+          <>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t('services.search') || 'Pesquisar…'}
+              value={search}
+              onChange={e => updateFilter('search', e.target.value)}
+              className="pl-9 h-10 md:h-9"
+            />
+          </>
+        }
+        filters={(stacked) => (
+          <>
+            <FilterCombobox
+              fullWidth={stacked}
+              value={filters.status}
+              onChange={(v) => updateFilter('status', v)}
+              placeholder="Estado"
+              searchPlaceholder="Estado…"
+              options={[
+                { value: 'all', label: `${t('services.allStatuses') || 'Todos'} (${Object.values(statusCountsAll).reduce((a, b) => a + b, 0) || totalCount})` },
+                ...statusFlow.filter(s => s !== 'cancelled').map(s => ({
+                  value: s,
+                  label: `${t(`service.${s}`)}${statusCountsAll[s] ? ` (${statusCountsAll[s]})` : ''}`,
+                })),
+              ]}
+            />
+            <FilterCombobox
+              fullWidth={stacked}
+              value={filters.clientId}
+              onChange={(v) => updateFilter('clientId', v)}
+              placeholder="Todos os clientes"
+              searchPlaceholder="Pesquisar cliente…"
+              options={[{ value: '', label: 'Todos os clientes' }, ...clientOptions.map(([id, name]) => ({ value: id as string, label: name as string }))]}
+            />
+            <FilterCombobox
+              fullWidth={stacked}
+              value={filters.technician}
+              onChange={(v) => updateFilter('technician', v)}
+              placeholder="Todos os técnicos"
+              searchPlaceholder="Pesquisar técnico…"
+              options={[{ value: '', label: 'Todos os técnicos' }, ...technicianOptions.map(n => ({ value: n, label: n }))]}
+            />
+            <FilterDateRange
+              fullWidth={stacked}
+              from={filters.dateFrom}
+              to={filters.dateTo}
+              onFrom={(v) => updateFilter('dateFrom', v)}
+              onTo={(v) => updateFilter('dateTo', v)}
+            />
+          </>
+        )}
+      />
 
 
 

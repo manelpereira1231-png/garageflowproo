@@ -31,13 +31,16 @@ import { trackEvent } from "@/lib/trackEvent";
 const AUTO_MS = 30000;
 
 export default function GuidedDemo({
-  plan, onPlanChange, onExit, onRestart,
+  plan, onPlanChange, onExit, onRestart, mode = "sales",
 }: {
   plan: DemoPlan;
   onPlanChange: (p: DemoPlan) => void;
   onExit: () => void;
   onRestart: () => void;
+  /** "sales" = demo comercial (/demo-demonstracao) · "self" = demo autónoma (/demo) */
+  mode?: "sales" | "self";
 }) {
+  const isSelf = mode === "self";
   const [idx, setIdx] = useState(0);
   const [auto, setAuto] = useState(false);
   const [compare, setCompare] = useState(false);
@@ -47,6 +50,7 @@ export default function GuidedDemo({
 
   const step = TOUR[idx];
   const last = idx === TOUR.length - 1;
+
 
   useEffect(() => {
     let alive = true;

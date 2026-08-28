@@ -31,13 +31,16 @@ import { trackEvent } from "@/lib/trackEvent";
 const AUTO_MS = 30000;
 
 export default function GuidedDemo({
-  plan, onPlanChange, onExit, onRestart,
+  plan, onPlanChange, onExit, onRestart, mode = "sales",
 }: {
   plan: DemoPlan;
   onPlanChange: (p: DemoPlan) => void;
   onExit: () => void;
   onRestart: () => void;
+  /** "sales" = demo comercial (/demo-demonstracao) · "self" = demo autónoma (/demo) */
+  mode?: "sales" | "self";
 }) {
+  const isSelf = mode === "self";
   const [idx, setIdx] = useState(0);
   const [auto, setAuto] = useState(false);
   const [compare, setCompare] = useState(false);
@@ -47,6 +50,7 @@ export default function GuidedDemo({
 
   const step = TOUR[idx];
   const last = idx === TOUR.length - 1;
+
 
   useEffect(() => {
     let alive = true;
@@ -119,8 +123,9 @@ export default function GuidedDemo({
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold tracking-wide">GarageFlow</span>
           <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded-full px-2 py-0.5">
-            Sales Demo
+            {isSelf ? "Demonstração" : "Sales Demo"}
           </span>
+
 
           <div className="ml-auto flex items-center gap-1">
             {/* Seletor de contexto — troca instantânea, sem sair da demo */}
@@ -142,6 +147,7 @@ export default function GuidedDemo({
               <BarChart3 className="w-3.5 h-3.5 mr-1" />Comparar
             </Button>
 
+            {!isSelf && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
@@ -167,6 +173,8 @@ export default function GuidedDemo({
                 </ScrollArea>
               </PopoverContent>
             </Popover>
+            )}
+
 
             <Button variant="ghost" size="icon" className="h-8 w-8" title="Reset" aria-label="Reset" onClick={restart}>
               <RotateCcw className="w-3.5 h-3.5" />
@@ -192,6 +200,14 @@ export default function GuidedDemo({
             </Badge>
           )}
         </div>
+
+        {isSelf && (step.context || step.before) && (
+          <div className="mb-4 rounded-xl border border-border bg-card p-3">
+            {step.before && <p className="text-[11px] text-muted-foreground">{step.before}</p>}
+            {step.context && <p className="text-sm mt-0.5">{step.context}</p>}
+          </div>
+        )}
+
 
         <div key={`${step.id}-${plan}`} className="animate-fade-in">
           {step.stage === "plans" ? (
@@ -231,7 +247,14 @@ export default function GuidedDemo({
       {/* Guião + controlos — discretos, fixos */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <p className="flex-1 text-sm text-muted-foreground italic line-clamp-2">“{step.say}”</p>
+          {isSelf ? (
+            <p className="flex-1 text-sm text-muted-foreground line-clamp-2">
+              {step.value || step.context || ""}
+            </p>
+          ) : (
+            <p className="flex-1 text-sm text-muted-foreground italic line-clamp-2">“{step.say}”</p>
+          )}
+
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-9 w-9" title="Voltar" aria-label="Voltar" onClick={() => go(-1)} disabled={idx === 0}>
               <ArrowLeft className="w-4 h-4" />

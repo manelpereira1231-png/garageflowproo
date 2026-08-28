@@ -209,6 +209,8 @@ const CommercialDataImport = lazyRetry(() => import("@/pages/commercial/Commerci
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 const SalesDemoPage = lazyRetry(() => import("@/pages/SalesDemo"));
+const SelfDemoPage = lazyRetry(() => import("@/pages/SelfDemo"));
+
 const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
 const AdminTestimonials = lazyRetry(() => import("@/pages/admin/AdminTestimonials"));
 const SettingsTestimonials = lazyRetry(() => import("@/pages/settings/Testimonials"));
@@ -893,14 +895,29 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
-  // Public "Marcar Demonstração" page — sempre acessível, seja qual for a sessão.
-  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+  // Páginas públicas de demonstração — sempre acessíveis, seja qual for a sessão.
+  if (typeof window !== "undefined" && window.location.pathname === "/marcar-demonstracao") {
     return (
       <Suspense fallback={<PageLoader />}>
         <DemoRequestPage />
       </Suspense>
     );
   }
+  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SelfDemoPage />
+      </Suspense>
+    );
+  }
+  if (typeof window !== "undefined" && window.location.pathname === "/demo-demonstracao") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SalesDemoPage />
+      </Suspense>
+    );
+  }
+
 
   if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
@@ -1203,8 +1220,10 @@ function AppRoutes() {
             <Route path="/legal/my-data" element={<Suspense fallback={<PageLoader />}><MyData /></Suspense>} />
             <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
-            <Route path="/demo" element={<Suspense fallback={<PageLoader />}><DemoRequestPage /></Suspense>} />
+            <Route path="/demo" element={<Suspense fallback={<PageLoader />}><SelfDemoPage /></Suspense>} />
+            <Route path="/marcar-demonstracao" element={<Suspense fallback={<PageLoader />}><DemoRequestPage /></Suspense>} />
             <Route path="/demo-demonstracao" element={<Suspense fallback={<PageLoader />}><SalesDemoPage /></Suspense>} />
+
             {publicSeoRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}

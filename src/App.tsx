@@ -209,6 +209,8 @@ const CommercialDataImport = lazyRetry(() => import("@/pages/commercial/Commerci
 const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequests"));
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 const SalesDemoPage = lazyRetry(() => import("@/pages/SalesDemo"));
+const SelfDemoPage = lazyRetry(() => import("@/pages/SelfDemo"));
+
 const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
 const AdminTestimonials = lazyRetry(() => import("@/pages/admin/AdminTestimonials"));
 const SettingsTestimonials = lazyRetry(() => import("@/pages/settings/Testimonials"));

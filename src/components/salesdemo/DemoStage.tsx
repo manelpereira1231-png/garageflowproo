@@ -407,7 +407,71 @@ export function DemoStage({ step }: { step: string }) {
         </>
       );
 
+    case "notify":
+      return (
+        <>
+          <AppWindow active="Alertas" title="Notificação e aprovação" subtitle="ORC-2026/118 · Rui Marques">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {/* telemóvel do cliente */}
+              <div className="rounded-xl border border-border bg-background p-3">
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mb-2">
+                  <Marker n={1} /> O que o cliente recebe
+                </p>
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <MessageCircle className="w-3.5 h-3.5 text-primary" /> AutoPrime Lisboa
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Olá Rui, o orçamento para o Golf VII (12-AB-34) está pronto: 308,50 € c/ IVA.
+                    Pode aprovar aqui.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground text-[11px] font-semibold px-2.5 py-1.5">
+                      <Check className="w-3 h-3" /> Aprovar
+                    </span>
+                    <span className="inline-flex items-center rounded-md border border-border text-[11px] px-2.5 py-1.5 text-muted-foreground">
+                      Recusar
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* lado da oficina */}
+              <div className="rounded-xl border border-border bg-background p-3">
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mb-2">
+                  <Marker n={2} /> O que a oficina vê
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-primary shrink-0" />
+                    <span className="flex-1">Orçamento ORC-2026/118 aprovado</span>
+                    <Badge className="text-[10px] shrink-0">Novo</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4 shrink-0" />
+                    <span className="text-xs">18/08/2026 · 16:24 · aprovação digital registada</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span className="text-xs">Assinatura do cliente guardada com o documento</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                  <Marker n={3} /> O serviço OS-2041 é criado a partir do orçamento aprovado.
+                </p>
+              </div>
+            </div>
+          </AppWindow>
+          <Legend items={[
+            "O cliente recebe o orçamento por email e WhatsApp e responde no telemóvel.",
+            "A oficina é notificada de imediato — sem telefonemas a perguntar.",
+            "A aprovação fica registada com data, hora e assinatura digital, e dá origem ao serviço.",
+          ]} />
+        </>
+      );
+
     case "conversion":
+
       return (
         <>
           <AppWindow active="Definições" title="Arranque" subtitle="O que acontece depois de dizer que sim">

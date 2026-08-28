@@ -201,6 +201,14 @@ export default function GuidedDemo({
           )}
         </div>
 
+        {isSelf && (step.context || step.before) && (
+          <div className="mb-4 rounded-xl border border-border bg-card p-3">
+            {step.before && <p className="text-[11px] text-muted-foreground">{step.before}</p>}
+            {step.context && <p className="text-sm mt-0.5">{step.context}</p>}
+          </div>
+        )}
+
+
         <div key={`${step.id}-${plan}`} className="animate-fade-in">
           {step.stage === "plans" ? (
             <PlansStep plan={plan} price={price} onSelect={changePlan} onCompare={() => setCompare(true)} />

@@ -247,7 +247,14 @@ export default function GuidedDemo({
       {/* Guião + controlos — discretos, fixos */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <p className="flex-1 text-sm text-muted-foreground italic line-clamp-2">“{step.say}”</p>
+          {isSelf ? (
+            <p className="flex-1 text-sm text-muted-foreground line-clamp-2">
+              {step.value || step.context || ""}
+            </p>
+          ) : (
+            <p className="flex-1 text-sm text-muted-foreground italic line-clamp-2">“{step.say}”</p>
+          )}
+
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-9 w-9" title="Voltar" aria-label="Voltar" onClick={() => go(-1)} disabled={idx === 0}>
               <ArrowLeft className="w-4 h-4" />

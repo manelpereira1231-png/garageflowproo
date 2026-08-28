@@ -895,14 +895,29 @@ function AuthenticatedRoutes() {
     };
   }, [authReady, isAffiliate, isCarityUser, isSuperAdmin, user]);
 
-  // Public "Marcar Demonstração" page — sempre acessível, seja qual for a sessão.
-  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+  // Páginas públicas de demonstração — sempre acessíveis, seja qual for a sessão.
+  if (typeof window !== "undefined" && window.location.pathname === "/marcar-demonstracao") {
     return (
       <Suspense fallback={<PageLoader />}>
         <DemoRequestPage />
       </Suspense>
     );
   }
+  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SelfDemoPage />
+      </Suspense>
+    );
+  }
+  if (typeof window !== "undefined" && window.location.pathname === "/demo-demonstracao") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SalesDemoPage />
+      </Suspense>
+    );
+  }
+
 
   if (adminLoading || commercialLoading || !authReady || !ready) {
     return (

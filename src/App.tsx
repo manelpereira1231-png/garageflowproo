@@ -1220,8 +1220,10 @@ function AppRoutes() {
             <Route path="/legal/my-data" element={<Suspense fallback={<PageLoader />}><MyData /></Suspense>} />
             <Route path="/legal/market-terms" element={<Suspense fallback={<PageLoader />}><MarketTerms /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<PageLoader />}><Support /></Suspense>} />
-            <Route path="/demo" element={<Suspense fallback={<PageLoader />}><DemoRequestPage /></Suspense>} />
+            <Route path="/demo" element={<Suspense fallback={<PageLoader />}><SelfDemoPage /></Suspense>} />
+            <Route path="/marcar-demonstracao" element={<Suspense fallback={<PageLoader />}><DemoRequestPage /></Suspense>} />
             <Route path="/demo-demonstracao" element={<Suspense fallback={<PageLoader />}><SalesDemoPage /></Suspense>} />
+
             {publicSeoRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}

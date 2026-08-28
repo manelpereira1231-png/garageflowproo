@@ -123,8 +123,9 @@ export default function GuidedDemo({
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold tracking-wide">GarageFlow</span>
           <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground border border-border rounded-full px-2 py-0.5">
-            Sales Demo
+            {isSelf ? "Demonstração" : "Sales Demo"}
           </span>
+
 
           <div className="ml-auto flex items-center gap-1">
             {/* Seletor de contexto — troca instantânea, sem sair da demo */}

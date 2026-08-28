@@ -147,6 +147,7 @@ export default function GuidedDemo({
               <BarChart3 className="w-3.5 h-3.5 mr-1" />Comparar
             </Button>
 
+            {!isSelf && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
@@ -172,6 +173,8 @@ export default function GuidedDemo({
                 </ScrollArea>
               </PopoverContent>
             </Popover>
+            )}
+
 
             <Button variant="ghost" size="icon" className="h-8 w-8" title="Reset" aria-label="Reset" onClick={restart}>
               <RotateCcw className="w-3.5 h-3.5" />

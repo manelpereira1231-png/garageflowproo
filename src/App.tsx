@@ -444,9 +444,13 @@ function RoleProtectedRoute({ children }: { children: ReactNode }) {
 
   if (loading || primaryLoading) return <PageLoader />;
   // Sem oficina/role (afiliados, convidados por confirmar, contas novas) não
-  // se força o onboarding — evita o ciclo de redirects.
-  if (!shopId) return <Navigate to="/dashboard" replace />;
-  if (!role) return <Navigate to="/dashboard" replace />;
+  // se força o onboarding — evita o ciclo de redirects. O Dashboard fica sempre
+  // acessível como home segura do perfil.
+  if (!shopId || !role) {
+    return location.pathname === "/dashboard"
+      ? <>{children}</>
+      : <Navigate to="/dashboard" replace />;
+  }
 
   // Group-admin surfaces (Billing, Stripe integration, …) are reserved for the
   // Oficina Mãe. Even if the current user has role=owner/admin inside a child

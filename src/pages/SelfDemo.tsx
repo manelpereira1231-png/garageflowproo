@@ -53,7 +53,7 @@ export default function SelfDemo() {
         <title>Ver demonstração — GarageFlow</title>
         <meta
           name="description"
-          content="Veja o GarageFlow a funcionar: cliente, viatura, orçamento aprovado no telemóvel, reparação e relatórios. Demonstração simulada, sem registo."
+          content="Veja o GarageFlow a funcionar: cliente, veículo, orçamento aprovado no telemóvel, reparação e relatórios. Demonstração simulada, sem registo."
         />
       </Helmet>
 
@@ -72,7 +72,7 @@ export default function SelfDemo() {
             Veja o GarageFlow<br className="hidden sm:block" /> a funcionar.
           </h1>
           <p className="text-muted-foreground mt-4 max-w-xl">
-            Um caso real do princípio ao fim: o cliente chega, a viatura entra, o orçamento
+            Um caso real do princípio ao fim: o cliente chega, a veículo entra, o orçamento
             é aprovado no telemóvel, a reparação avança e o mês fecha com números.
             Avança ao seu ritmo — nada aqui são dados reais.
           </p>

@@ -38,7 +38,7 @@ export const EMPTY_STATE: SalesState = {
 export const NEEDS: { id: string; label: string; route: string; plan: DemoPlan }[] = [
   { id: "organizacao", label: "Organização", route: "/dashboard", plan: "free" },
   { id: "clientes", label: "Clientes", route: "/clients", plan: "free" },
-  { id: "viaturas", label: "Veículos", route: "/vehicles", plan: "free" },
+  { id: "veículos", label: "Veículos", route: "/vehicles", plan: "free" },
   { id: "historico", label: "Histórico", route: "/vehicles", plan: "free" },
   { id: "orcamentos", label: "Orçamentos", route: "/quotes", plan: "free" },
   { id: "reparacoes", label: "Reparações", route: "/services", plan: "free" },
@@ -60,11 +60,11 @@ export function needLabel(id: string) {
 export const SCRIPT: { area: string; route: string; line: string }[] = [
   { area: "Dashboard", route: "/dashboard", line: "Vamos começar por perceber rapidamente o estado da oficina." },
   { area: "Clientes", route: "/clients", line: "Aqui centralizamos a informação do cliente e o contacto." },
-  { area: "Viaturas", route: "/vehicles", line: "Vamos abrir esta viatura para ver o histórico completo." },
+  { area: "Veículos", route: "/vehicles", line: "Vamos abrir esta veículo para ver o histórico completo." },
   { area: "Orçamentos", route: "/quotes", line: "Agora vamos acompanhar o processo do orçamento até à aprovação." },
   { area: "Reparações", route: "/services", line: "Depois, acompanhamos a reparação por estados até à entrega." },
   { area: "Faturação", route: "/invoices", line: "A fatura sai do serviço, sem voltar a escrever nada." },
-  { area: "Agenda", route: "/agenda", line: "A marcação fica ligada ao cliente e à viatura." },
+  { area: "Agenda", route: "/agenda", line: "A marcação fica ligada ao cliente e à veículo." },
   { area: "Inventário", route: "/inventory", line: "As peças consumidas saem do stock automaticamente." },
   { area: "Equipa", route: "/team", line: "Cada pessoa vê o que lhe diz respeito, com permissões próprias." },
 ];
@@ -73,7 +73,7 @@ export const SCRIPT: { area: string; route: string; line: string }[] = [
 export const VALUE_MOMENTS: { title: string; body: string; route: string }[] = [
   {
     title: "Cliente + Viatura + Histórico",
-    body: "Toda a informação relevante fica organizada no contexto da viatura, incluindo intervenções anteriores.",
+    body: "Toda a informação relevante fica organizada no contexto da veículo, incluindo intervenções anteriores.",
     route: "/vehicles",
   },
   {
@@ -113,7 +113,7 @@ export const OBJECTIONS: { id: string; label: string; answer: string; route?: st
     id: "ja-tenho",
     label: "Já tenho software.",
     answer:
-      "Podemos comparar em concreto: histórico por viatura, orçamento que se transforma em reparação e faturação a partir do serviço. Se já tem tudo isso, não precisa de mudar.",
+      "Podemos comparar em concreto: histórico por veículo, orçamento que se transforma em reparação e faturação a partir do serviço. Se já tem tudo isso, não precisa de mudar.",
     route: "/services",
   },
   {
@@ -211,7 +211,7 @@ export function recommend(state: SalesState): Recommendation {
     reasons.push(`Dificuldade indicada: ${profile.mainPain.trim()}.`);
   }
   if (reasons.length === 0) {
-    reasons.push("Sem informação adicional, o plano de entrada cobre clientes, viaturas, histórico e orçamentos.");
+    reasons.push("Sem informação adicional, o plano de entrada cobre clientes, veículos, histórico e orçamentos.");
   }
 
   const filled =
@@ -251,7 +251,7 @@ export function buildSummary(state: SalesState, rec: Recommendation, price: stri
   lines.push(`Oficina: ${state.profile.shopName || "—"}`);
   if (state.profile.people.trim()) lines.push(`Pessoas: ${state.profile.people}`);
   if (state.profile.users.trim()) lines.push(`Utilizadores: ${state.profile.users}`);
-  if (state.profile.vehiclesMonth.trim()) lines.push(`Viaturas/mês: ${state.profile.vehiclesMonth}`);
+  if (state.profile.vehiclesMonth.trim()) lines.push(`Veículos/mês: ${state.profile.vehiclesMonth}`);
   if (state.profile.currentSoftware.trim()) lines.push(`Software atual: ${state.profile.currentSoftware}`);
   lines.push("");
   lines.push("Necessidades:");

@@ -249,13 +249,13 @@ export function DemoStage({ step }: { step: string }) {
               <Kpi n={1} label="Serviços do mês" value="38" sub="+12% vs mês anterior" />
               <Kpi n={2} label="Faturado" value="14 250 €" sub="+8%" />
               <Kpi n={3} label="Orçamentos por aprovar" value="6" sub="2 490 € em jogo" />
-              <Kpi n={4} label="Viaturas na oficina" value="9" sub="3 prontas a entregar" />
+              <Kpi n={4} label="Veículos na oficina" value="9" sub="3 prontas a entregar" />
             </div>
             <div className="mt-4 rounded-lg border border-border overflow-hidden">
               <div className="px-3 py-2 border-b border-border text-xs font-semibold flex items-center gap-2">
                 <Marker n={5} /> Serviços recentes
               </div>
-              <TH cols={["Nº", "Viatura", "Estado", "Valor"]} />
+              <TH cols={["Nº", "Veículo", "Estado", "Valor"]} />
               <Row cols={["OS-2041", "Golf VII · 12-AB-34", <Badge className="text-[10px]">Em reparação</Badge>, "480,00 €"]} />
               <Row cols={["OS-2040", "Clio IV · 45-CD-67", <Badge variant="secondary" className="text-[10px]">Aguarda aprovação</Badge>, "215,50 €"]} />
               <Row cols={["OS-2039", "Astra · 89-EF-01", <Badge variant="outline" className="text-[10px]">Entregue</Badge>, "132,90 €"]} muted />
@@ -265,7 +265,7 @@ export function DemoStage({ step }: { step: string }) {
             "Serviços do mês: quantos trabalhos a oficina fechou, comparados com o mês anterior.",
             "Faturado: dinheiro faturado no mês, somado automaticamente a partir das faturas emitidas.",
             "Orçamentos por aprovar: dinheiro que está à espera de uma resposta do cliente.",
-            "Viaturas na oficina: carros que estão fisicamente lá dentro, e quantos já podem sair.",
+            "Veículos na oficina: carros que estão fisicamente lá dentro, e quantos já podem sair.",
             "Serviços recentes: os últimos trabalhos com o estado atual — clicando abre a ficha.",
           ]} />
         </>
@@ -284,14 +284,14 @@ export function DemoStage({ step }: { step: string }) {
               <Badge variant="outline" className="ml-auto shrink-0">Cliente desde 2022</Badge>
             </div>
             <div className="grid sm:grid-cols-3 gap-3 mt-4 text-sm">
-              <Kpi n={2} label="Viaturas" value="2" />
+              <Kpi n={2} label="Veículos" value="2" />
               <Kpi n={3} label="Serviços" value="11" />
               <Kpi n={4} label="Total faturado" value="3 180 €" />
             </div>
           </AppWindow>
           <Legend items={[
             "Contactos do cliente: telefone, email e NIF usados nos orçamentos e faturas — escritos uma só vez.",
-            "Viaturas: todos os carros deste cliente ficam ligados à ficha dele.",
+            "Veículos: todos os carros deste cliente ficam ligados à ficha dele.",
             "Serviços: quantas intervenções já fez na oficina.",
             "Total faturado: quanto vale este cliente desde que entrou.",
           ]} />
@@ -301,7 +301,7 @@ export function DemoStage({ step }: { step: string }) {
     case "vehicle":
       return (
         <>
-          <AppWindow active="Viaturas" title="12-AB-34 · VW Golf VII 1.6 TDI" subtitle="Ficha da viatura" action="Nova viatura">
+          <AppWindow active="Veículos" title="12-AB-34 · VW Golf VII 1.6 TDI" subtitle="Ficha da veículo" action="Nova veículo">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-lg bg-primary/15 flex items-center justify-center"><Car className="w-5 h-5 text-primary" /></div>
               <div>
@@ -316,10 +316,10 @@ export function DemoStage({ step }: { step: string }) {
             </div>
           </AppWindow>
           <Legend items={[
-            "Identificação da viatura: matrícula, marca, ano, combustível e quilómetros atuais.",
+            "Identificação da veículo: matrícula, marca, ano, combustível e quilómetros atuais.",
             "Última visita: quando o carro esteve cá pela última vez.",
             "Próxima revisão: a data que o sistema usa para avisar o cliente sozinho.",
-            "Intervenções: número de trabalhos feitos nesta viatura.",
+            "Intervenções: número de trabalhos feitos nesta veículo.",
           ]} />
         </>
       );
@@ -327,7 +327,7 @@ export function DemoStage({ step }: { step: string }) {
     case "history":
       return (
         <>
-          <AppWindow active="Viaturas" title="Histórico · 12-AB-34" subtitle="Todas as intervenções desta viatura">
+          <AppWindow active="Veículos" title="Histórico · 12-AB-34" subtitle="Todas as intervenções desta veículo">
             {[
               ["03/2026", "Revisão + filtros", "185,00 €"],
               ["11/2025", "Pastilhas travão frente", "142,50 €"],
@@ -344,7 +344,7 @@ export function DemoStage({ step }: { step: string }) {
           </AppWindow>
           <Legend items={[
             "Cada linha é um trabalho já feito, com data, descrição e valor cobrado.",
-            "O histórico fica na viatura: se o carro mudar de dono ou de técnico, a informação não se perde.",
+            "O histórico fica na veículo: se o carro mudar de dono ou de técnico, a informação não se perde.",
           ]} />
         </>
       );
@@ -413,7 +413,7 @@ export function DemoStage({ step }: { step: string }) {
               <Timeline active={step === "repair" ? 3 : 2} />
             </div>
             <div className="rounded-lg border border-border overflow-hidden">
-              <TH cols={["Nº", "Viatura", "Estado", "Valor"]} />
+              <TH cols={["Nº", "Veículo", "Estado", "Valor"]} />
               <Row cols={["OS-2041", "Golf VII", <Badge className="text-[10px]">Reparação</Badge>, "480,00 €"]} />
               <Row cols={["OS-2040", "Clio IV", <Badge variant="secondary" className="text-[10px]">Aprovação</Badge>, "215,50 €"]} muted />
               <Row cols={["OS-2038", "Astra", <Badge variant="outline" className="text-[10px]">Diagnóstico</Badge>, "—"]} muted />
@@ -541,7 +541,7 @@ export function DemoStage({ step }: { step: string }) {
         <>
           <AppWindow active="Definições" title="Arranque" subtitle="O que acontece depois de dizer que sim">
             <div className="space-y-2 text-sm">
-              {["Criar conta da oficina", "Importar clientes e viaturas (Excel/CSV)", "Emitir o primeiro orçamento", "Acompanhar a primeira reparação"].map((s, i) => (
+              {["Criar conta da oficina", "Importar clientes e veículos (Excel/CSV)", "Emitir o primeiro orçamento", "Acompanhar a primeira reparação"].map((s, i) => (
                 <div key={s} className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">{i + 1}</span>
                   <span>{s}</span>

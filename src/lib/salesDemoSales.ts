@@ -72,7 +72,7 @@ export const SCRIPT: { area: string; route: string; line: string }[] = [
 /** Momentos de valor — descrições factuais do funcionamento real. */
 export const VALUE_MOMENTS: { title: string; body: string; route: string }[] = [
   {
-    title: "Cliente + Viatura + Histórico",
+    title: "Cliente + Veículo + Histórico",
     body: "Toda a informação relevante fica organizada no contexto da veículo, incluindo intervenções anteriores.",
     route: "/vehicles",
   },

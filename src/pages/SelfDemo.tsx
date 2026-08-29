@@ -1,7 +1,7 @@
 /**
  * DEMO AUTÓNOMA — /demo
  *
- * Percurso guiado que o próprio visitante conduz (Cliente → Viatura →
+ * Percurso guiado que o próprio visitante conduz (Cliente → Veículo →
  * Orçamento → Notificação → Reparação → Relatórios). 100% simulada:
  * sem login, sem conta real, sem dados reais.
  */

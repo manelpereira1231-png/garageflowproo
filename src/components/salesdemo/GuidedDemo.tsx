@@ -267,8 +267,12 @@ export default function GuidedDemo({
             </Button>
             {last ? (
               <Button asChild size="sm" className="h-9 px-4 font-semibold">
-                <Link to="/#pricing" onClick={() => trackEvent("sales_demo_cta", { plan: rec.plan })}>
-                  Próximo passo
+                <Link
+                  to={isSelf ? "/auth?mode=signup" : "/#pricing"}
+                  onClick={() => trackEvent(isSelf ? "self_demo_cta_signup" : "sales_demo_cta", { plan: rec.plan })}
+                >
+                  {isSelf ? "Criar conta grátis" : "Próximo passo"}
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
               </Button>
             ) : (

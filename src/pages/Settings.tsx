@@ -250,7 +250,7 @@ export default function SettingsPage() {
                 onClick={() => fileRef.current?.click()}
               >
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" onError={() => setLogoPreview(null)} />
                 ) : (
                   <Upload className="w-6 h-6 text-muted-foreground" />
                 )}

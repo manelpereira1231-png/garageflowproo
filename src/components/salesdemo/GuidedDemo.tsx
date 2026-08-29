@@ -117,7 +117,7 @@ export default function GuidedDemo({
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="dark min-h-screen bg-background text-foreground flex flex-col">
       {/* Topo — discreto */}
       <header className="border-b border-border/70 bg-card/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
@@ -267,8 +267,12 @@ export default function GuidedDemo({
             </Button>
             {last ? (
               <Button asChild size="sm" className="h-9 px-4 font-semibold">
-                <Link to="/#pricing" onClick={() => trackEvent("sales_demo_cta", { plan: rec.plan })}>
-                  Próximo passo
+                <Link
+                  to={isSelf ? "/auth?mode=signup" : "/#pricing"}
+                  onClick={() => trackEvent(isSelf ? "self_demo_cta_signup" : "sales_demo_cta", { plan: rec.plan })}
+                >
+                  {isSelf ? "Criar conta grátis" : "Próximo passo"}
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
               </Button>
             ) : (

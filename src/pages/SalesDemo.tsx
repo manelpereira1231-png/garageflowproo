@@ -69,7 +69,7 @@ export default function SalesDemo() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="dark min-h-screen bg-background text-foreground flex flex-col">
       <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-16 sm:py-24 flex flex-col justify-center">
         <header className="mb-12">
           <div className="flex items-center gap-2 mb-8">
@@ -132,7 +132,7 @@ export default function SalesDemo() {
               {[
                 { k: "shopName" as const, ph: "Nome da oficina" },
                 { k: "users" as const, ph: "Utilizadores" },
-                { k: "vehiclesMonth" as const, ph: "Viaturas/mês" },
+                { k: "vehiclesMonth" as const, ph: "Veículos/mês" },
               ].map((f) => (
                 <input
                   key={f.k}

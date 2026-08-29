@@ -75,7 +75,7 @@ export default function ErpLanding() {
             <Link to="/auth?mode=login" className="hidden sm:block">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
-            <Link to="/demo">
+            <Link to="/marcar-demonstracao">
               <Button variant="outline" size="sm" className="hidden sm:inline-flex">Pedir Demo</Button>
             </Link>
             <Link to="/auth?mode=signup" onClick={() => trackCtaClick("erp_nav_signup")}>
@@ -107,7 +107,7 @@ export default function ErpLanding() {
             </Link>
             <Link to="/demo" onClick={() => trackCtaClick("erp_hero_demo")}>
               <Button size="lg" variant="outline" className="text-base px-8 h-14 w-full sm:w-auto">
-                Pedir demonstração
+                Ver demonstração
               </Button>
             </Link>
           </div>
@@ -172,7 +172,7 @@ export default function ErpLanding() {
                 Criar conta grátis <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link to="/demo">
+            <Link to="/marcar-demonstracao">
               <Button size="lg" variant="outline" className="text-base px-8 h-14">Falar com a equipa</Button>
             </Link>
           </div>

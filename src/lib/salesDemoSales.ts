@@ -38,7 +38,7 @@ export const EMPTY_STATE: SalesState = {
 export const NEEDS: { id: string; label: string; route: string; plan: DemoPlan }[] = [
   { id: "organizacao", label: "Organização", route: "/dashboard", plan: "free" },
   { id: "clientes", label: "Clientes", route: "/clients", plan: "free" },
-  { id: "viaturas", label: "Viaturas", route: "/vehicles", plan: "free" },
+  { id: "viaturas", label: "Veículos", route: "/vehicles", plan: "free" },
   { id: "historico", label: "Histórico", route: "/vehicles", plan: "free" },
   { id: "orcamentos", label: "Orçamentos", route: "/quotes", plan: "free" },
   { id: "reparacoes", label: "Reparações", route: "/services", plan: "free" },
@@ -199,9 +199,9 @@ export function recommend(state: SalesState): Recommendation {
   if (users >= 3) reasons.push(`Equipa de ${users} utilizadores — justifica acessos e permissões distintas.`);
   if (volume >= 80 && plan === "free") {
     plan = "pro";
-    reasons.push(`Volume de cerca de ${volume} viaturas/mês exige acompanhamento e relatórios.`);
+    reasons.push(`Volume de cerca de ${volume} veículos/mês exige acompanhamento e relatórios.`);
   } else if (volume > 0) {
-    reasons.push(`Volume indicado: cerca de ${volume} viaturas/mês.`);
+    reasons.push(`Volume indicado: cerca de ${volume} veículos/mês.`);
   }
 
   if (profile.currentSoftware.trim()) {

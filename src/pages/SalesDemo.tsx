@@ -132,7 +132,7 @@ export default function SalesDemo() {
               {[
                 { k: "shopName" as const, ph: "Nome da oficina" },
                 { k: "users" as const, ph: "Utilizadores" },
-                { k: "vehiclesMonth" as const, ph: "Viaturas/mês" },
+                { k: "vehiclesMonth" as const, ph: "Veículos/mês" },
               ].map((f) => (
                 <input
                   key={f.k}

@@ -119,7 +119,7 @@ export default function SalesConsole({ open, onOpenChange, plan, priceLabel, onS
                 onChange={(e) => update({ profile: { ...state.profile, people: e.target.value } })} />
               <Input placeholder="Nº de utilizadores" value={state.profile.users}
                 onChange={(e) => update({ profile: { ...state.profile, users: e.target.value } })} />
-              <Input placeholder="Viaturas/mês" value={state.profile.vehiclesMonth}
+              <Input placeholder="Veículos/mês" value={state.profile.vehiclesMonth}
                 onChange={(e) => update({ profile: { ...state.profile, vehiclesMonth: e.target.value } })} />
               <Input className="col-span-2" placeholder="Software atual" value={state.profile.currentSoftware}
                 onChange={(e) => update({ profile: { ...state.profile, currentSoftware: e.target.value } })} />

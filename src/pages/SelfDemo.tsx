@@ -48,7 +48,7 @@ export default function SelfDemo() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="dark min-h-screen bg-background text-foreground flex flex-col">
       <Helmet>
         <title>Ver demonstração — GarageFlow</title>
         <meta

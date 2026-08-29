@@ -7,6 +7,8 @@ import {
   Car, User, FileText, Wrench, Package, ListChecks, TrendingUp, Check,
   Clock, Euro, CalendarDays, ShieldCheck, LayoutDashboard, Users, HardHat,
   Receipt, Bell, MessageCircle, Search, Settings, Plus, Filter, Zap,
+  PanelLeftClose, Star, Sun, LifeBuoy, Globe, LogOut, ChevronRight, Sparkles,
+  Building2, ChevronsUpDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 const NAV: { group: string; items: { label: string; icon: any }[] }[] = [
   { group: "Operação Diária", items: [
     { label: "Clientes", icon: Users },
-    { label: "Viaturas", icon: Car },
+    { label: "Veículos", icon: Car },
     { label: "Orçamentos", icon: FileText },
     { label: "Serviços", icon: Wrench },
     { label: "Modo Oficina", icon: HardHat },
@@ -32,16 +34,21 @@ const NAV: { group: string; items: { label: string; icon: any }[] }[] = [
   { group: "Crescimento", items: [{ label: "Automações", icon: Zap }] },
 ];
 
-/** Janela do ERP: menu lateral + topbar + conteúdo da página. */
+/**
+ * Janela do ERP — réplica fiel do Layout real: sidebar (tokens `sidebar-*`,
+ * item ativo em laranja sólido, personalizar, Lite/Pro, workspace, idioma e
+ * sair) + topbar (nome da oficina, pesquisa ⌘K, ajuda, tema, notificações,
+ * agenda). Sempre em tema escuro, como a aplicação.
+ */
 const AppWindow = ({
   active, title, subtitle, action, children,
 }: {
   active: string; title: string; subtitle?: string; action?: string;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
+  <div className="dark rounded-xl border border-border bg-background text-foreground overflow-hidden shadow-lg">
     {/* barra do browser */}
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/40">
+    <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card">
       <span className="w-2.5 h-2.5 rounded-full bg-destructive/60" />
       <span className="w-2.5 h-2.5 rounded-full bg-primary/60" />
       <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
@@ -52,45 +59,103 @@ const AppWindow = ({
 
     <div className="flex">
       {/* menu lateral real */}
-      <aside className="hidden md:block w-44 shrink-0 border-r border-border bg-muted/20 py-2">
-        <div className="flex items-center gap-2 px-3 pb-2 mb-1 border-b border-border">
-          <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
-            <Wrench className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <span className="text-xs font-bold">GarageFlow</span>
+      <aside className="hidden md:flex w-52 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="h-12 flex items-center gap-2.5 px-3 border-b border-sidebar-border">
+          <img src="/icon-192-v8.png" alt="GarageFlow" className="w-7 h-7 rounded-lg object-contain shrink-0" />
+          <span className="text-sm font-bold tracking-tight truncate">
+            Garage<span className="text-sidebar-primary">Flow</span>
+          </span>
+          <PanelLeftClose className="w-3.5 h-3.5 ml-auto text-sidebar-foreground/60" />
         </div>
-        <div className="px-2">
-          <div className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] ${
-            active === "Dashboard" ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground"}`}>
+
+        <div className="flex-1 py-2 px-2">
+          <div className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-medium ${
+            active === "Dashboard"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+              : "text-sidebar-foreground"}`}>
             <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+            {active === "Dashboard" && <ChevronRight className="w-3 h-3 ml-auto" />}
+          </div>
+          {NAV.map((g) => (
+            <div key={g.group} className="mt-2">
+              <p className="px-2.5 text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/50 mb-0.5">{g.group}</p>
+              {g.items.map((it) => (
+                <div key={it.label} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-medium ${
+                  it.label === active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                    : "text-sidebar-foreground"}`}>
+                  <it.icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{it.label}</span>
+                  {it.label === active && <ChevronRight className="w-3 h-3 ml-auto" />}
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="mt-2 flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-medium text-sidebar-foreground">
+            <Settings className="w-3.5 h-3.5" /> Definições
           </div>
         </div>
-        {NAV.map((g) => (
-          <div key={g.group} className="mt-2 px-2">
-            <p className="px-2 text-[9px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">{g.group}</p>
-            {g.items.map((it) => (
-              <div key={it.label} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] ${
-                it.label === active ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground"}`}>
-                <it.icon className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{it.label}</span>
-              </div>
-            ))}
+
+        {/* Personalizar */}
+        <div className="px-2 py-1.5 border-t border-sidebar-border">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-sidebar-foreground/80">
+            <Star className="w-3.5 h-3.5" /> Personalizar
           </div>
-        ))}
-        <div className="mt-2 px-4 py-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-          <Settings className="w-3.5 h-3.5" /> Definições
+        </div>
+
+        {/* Toggle Lite/Pro */}
+        <div className="px-2 py-1.5 border-t border-sidebar-border">
+          <div className="flex items-center justify-between rounded-lg bg-sidebar-accent px-2.5 py-1.5">
+            <span className="text-[11px] font-medium text-sidebar-foreground flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-sidebar-primary" /> Lite
+            </span>
+            <span className="rounded-md bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-bold px-1.5 py-0.5">Pro</span>
+          </div>
+        </div>
+
+        {/* Workspace (oficina ativa) */}
+        <div className="px-2 py-1.5 border-t border-sidebar-border">
+          <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent px-2.5 py-1.5 text-[11px] text-sidebar-foreground">
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">AutoPrime Lisboa</span>
+            <ChevronsUpDown className="w-3 h-3 ml-auto opacity-70" />
+          </div>
+        </div>
+
+        {/* Idioma */}
+        <div className="px-2 py-1.5">
+          <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent px-2.5 py-1.5 text-[11px] text-sidebar-foreground">
+            <Globe className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">🇵🇹 Português</span>
+            <ChevronsUpDown className="w-3 h-3 ml-auto opacity-70" />
+          </div>
+        </div>
+
+        {/* Sair */}
+        <div className="px-2 py-2 border-t border-sidebar-border">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-medium text-destructive">
+            <LogOut className="w-3.5 h-3.5" /> Sair
+          </div>
         </div>
       </aside>
 
       {/* conteúdo */}
       <div className="flex-1 min-w-0">
-        {/* topbar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground max-w-[220px]">
-            <Search className="w-3 h-3" /> Pesquisar cliente, matrícula…
+        {/* topbar — igual à app */}
+        <div className="h-12 flex items-center gap-2 px-3 border-b border-border bg-card/70">
+          <span className="text-[11px] font-medium text-muted-foreground truncate hidden lg:block">AutoPrime Lisboa</span>
+          <div className="flex-1 flex justify-center px-2 min-w-0">
+            <div className="flex items-center gap-1.5 w-full max-w-[260px] rounded-lg border border-border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+              <Search className="w-3 h-3 shrink-0" />
+              <span className="truncate flex-1">Pesquisar…</span>
+              <kbd className="text-[9px] font-mono border border-border/60 rounded px-1 py-0.5">⌘K</kbd>
+            </div>
           </div>
+          <LifeBuoy className="w-4 h-4 text-muted-foreground" />
+          <Sun className="w-4 h-4 text-muted-foreground" />
           <Bell className="w-4 h-4 text-muted-foreground" />
-          <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">AP</div>
+          <CalendarDays className="w-4 h-4 text-muted-foreground" />
+          <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">AP</div>
         </div>
 
         <div className="p-4">

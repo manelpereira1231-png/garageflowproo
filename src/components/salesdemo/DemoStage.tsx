@@ -535,6 +535,86 @@ export function DemoStage({ step }: { step: string }) {
         </>
       );
 
+    case "agenda":
+      return (
+        <>
+          <AppWindow active="Agenda" title="Agenda" subtitle="Semana de 17 a 23 de agosto · AutoPrime Lisboa" action="Nova marcação">
+            <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+              {[["Todas", "12"], ["Marcadas", "5"], ["Confirmadas", "4"], ["Concluídas", "3"]].map(([l, c], i) => (
+                <span key={l} className={`rounded-md px-2.5 h-7 inline-flex items-center text-[11px] font-medium ${
+                  i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{l} ({c})</span>
+              ))}
+            </div>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <TH cols={["Hora", "Cliente", "Veículo", "Estado"]} />
+              <Row cols={["18/08 · 09:00", "Rui Marques", "Golf VII · 12-AB-34", <Badge className="text-[10px]">Em curso</Badge>]} />
+              <Row cols={["18/08 · 11:30", "Ana Silva", "Clio IV · 45-CD-67", <Badge variant="secondary" className="text-[10px]">Confirmada</Badge>]} />
+              <Row cols={["19/08 · 14:00", "Paulo Costa", "Astra · 89-EF-01", <Badge variant="outline" className="text-[10px]">Marcada</Badge>]} muted />
+            </div>
+          </AppWindow>
+          <Legend items={[
+            "A semana da oficina com a carga real de trabalho por dia.",
+            "As marcações feitas pelo cliente no portal online entram diretamente aqui.",
+            "Cada marcação tem estado próprio: marcada, confirmada, em curso e concluída.",
+          ]} />
+        </>
+      );
+
+    case "invoices":
+      return (
+        <>
+          <AppWindow active="Faturas" title="Faturas" subtitle="Agosto 2026" action="Nova fatura">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Kpi n={1} label="Faturado no mês" value="14 250 €" sub="18 documentos" />
+              <Kpi n={2} label="Por receber" value="1 830 €" sub="3 faturas" />
+              <Kpi n={3} label="Ticket médio" value="375 €" />
+              <Kpi n={4} label="Prazo médio" value="4 dias" />
+            </div>
+            <div className="mt-4 rounded-lg border border-border overflow-hidden">
+              <TH cols={["Documento", "Cliente", "Estado", "Total"]} />
+              <Row cols={["FT 2026/214", "Rui Marques", <Badge className="text-[10px]">Paga</Badge>, "480,00 €"]} />
+              <Row cols={["FT 2026/213", "Ana Silva", <Badge variant="secondary" className="text-[10px]">Enviada</Badge>, "215,50 €"]} />
+              <Row cols={["FT 2026/212", "Paulo Costa", <Badge variant="outline" className="text-[10px]">Paga</Badge>, "132,90 €"]} muted />
+            </div>
+          </AppWindow>
+          <Legend items={[
+            "A fatura é criada a partir do serviço concluído — sem reescrever peças nem mão de obra.",
+            "Numeração sequencial automática, com o registo de quem emitiu.",
+            "O cliente recebe o documento e pode pagar por link, sem passar pela oficina.",
+            "O que está por receber fica sempre visível.",
+          ]} />
+        </>
+      );
+
+    case "alerts":
+      return (
+        <>
+          <AppWindow active="Alertas" title="Alertas" subtitle="O que precisa de atenção hoje">
+            <div className="space-y-2">
+              {[
+                [Clock, "2 orçamentos sem resposta há mais de 3 dias", "1 240 € em jogo"],
+                [CalendarDays, "Revisão do Clio IV · 45-CD-67 a vencer", "Contactar Ana Silva"],
+                [Package, "Pastilhas dianteiras abaixo do stock mínimo", "Restam 2 unidades"],
+              ].map(([Icon, title, sub]: any) => (
+                <div key={title} className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+                  <Icon className="w-4 h-4 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{sub}</p>
+                  </div>
+                  <span className="ml-auto shrink-0 rounded-md border border-border px-2 py-1 text-[11px]">Contactar</span>
+                </div>
+              ))}
+            </div>
+          </AppWindow>
+          <Legend items={[
+            "A aplicação avisa em vez de depender da memória de alguém.",
+            "Cada alerta tem ação direta: contactar o cliente ou repor stock.",
+            "Revisões e inspeções a vencer trazem clientes de volta à oficina.",
+          ]} />
+        </>
+      );
+
     case "conversion":
 
       return (

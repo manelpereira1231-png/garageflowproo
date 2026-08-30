@@ -64,7 +64,9 @@ export default function Dashboard() {
   if (role === "commercial") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><CommercialDashboard /></Suspense>;
   if (role === "manager") return <Suspense fallback={<div className="p-6"><Skeleton className="h-64 w-full" /></div>}><ManagerDashboard /></Suspense>;
   if (role === "owner" || role === "admin" || role === "super_admin") return <OwnerDashboard />;
-  return <Navigate to="/onboarding" replace />;
+  // Sem role atribuído (conta nova, convite por confirmar) — dashboard do dono
+  // em estado vazio. Nunca enviamos para /onboarding.
+  return <OwnerDashboard />;
 }
 
 function OwnerDashboard() {

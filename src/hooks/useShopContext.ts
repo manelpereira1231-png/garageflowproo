@@ -212,9 +212,9 @@ export function useShopContext() {
       // Kick a full reload of shops list so RLS-affected memberships settle.
       void loadShops();
 
-      // If the user now has zero shops, route them to onboarding.
+      // Sem oficinas, o utilizador fica no dashboard (nunca /onboarding).
       if (remaining.length === 0) {
-        try { navigate("/onboarding", { replace: true }); } catch { /* noop */ }
+        try { navigate("/dashboard", { replace: true }); } catch { /* noop */ }
       }
     };
 

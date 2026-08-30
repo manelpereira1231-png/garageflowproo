@@ -38,6 +38,12 @@ export interface TourStep {
   value?: string;
   /** plano mínimo em que a área está incluída */
   minPlan: DemoPlan;
+  /** etapa exclusiva da demo comercial (planos, recomendação) */
+  commercial?: boolean;
+  /** assistência discreta ao comercial: pontos a destacar */
+  highlights?: string[];
+  /** assistência discreta ao comercial: perguntas sugeridas */
+  questions?: string[];
   /** necessidade correspondente (ver NEEDS em salesDemoSales) */
   need?: string;
 }
@@ -53,6 +59,8 @@ export const TOUR: TourStep[] = [
     value: "Tudo o que está em curso — serviços, orçamentos por aprovar e veículos em oficina — numa só vista.",
     minPlan: "free",
     need: "organizacao",
+    highlights: ["Tudo numa vista, sem abrir folhas de cálculo", "Comparação automática com o mês anterior"],
+    questions: ["Hoje, como sabe o que está em oficina?", "Quanto tempo perde a juntar estes números?"],
   },
   {
     id: "client",
@@ -97,6 +105,8 @@ export const TOUR: TourStep[] = [
     value: "O orçamento é enviado ao cliente e aprovado digitalmente, ficando registado.",
     minPlan: "free",
     need: "orcamentos",
+    highlights: ["Orçamento em minutos, com peças e mão de obra", "Envio por email e WhatsApp num clique"],
+    questions: ["Quantos orçamentos faz por semana?", "Quantos ficam sem resposta?"],
   },
   {
     id: "notify",
@@ -108,6 +118,8 @@ export const TOUR: TourStep[] = [
     value: "Sem telefonemas a perguntar: a resposta do cliente fica registada com data e hora.",
     minPlan: "free",
     need: "comunicacao",
+    highlights: ["Aprovação digital com data, hora e assinatura", "Fim dos telefonemas a perguntar"],
+    questions: ["Já teve discussões sobre o que foi autorizado?"],
   },
   {
     id: "repair",
@@ -141,6 +153,44 @@ export const TOUR: TourStep[] = [
     value: "O consumo de peças no serviço atualiza o inventário, sem contagem manual.",
     minPlan: "pro",
     need: "inventario",
+    highlights: ["Stock atualizado pelo próprio serviço", "Alertas de mínimos"],
+    questions: ["Com que frequência faz inventário à mão?"],
+  },
+  {
+    id: "agenda",
+    stage: "agenda",
+    area: "Agenda",
+    context: "A semana da oficina, com as entradas marcadas e a OS-2041 em curso.",
+    before: "A reparação precisa de espaço na box.",
+    say: "A agenda mostra a carga real da oficina.",
+    value: "Marcações, confirmações e conclusões na mesma vista semanal.",
+    minPlan: "free",
+    need: "organizacao",
+    highlights: ["Marcação online do cliente cai aqui", "Estado por marcação: marcada, confirmada, concluída"],
+  },
+  {
+    id: "invoices",
+    stage: "invoices",
+    area: "Faturação",
+    context: `Fatura do serviço ${DEMO_CASE.order}, gerada a partir do trabalho concluído.`,
+    before: "Veículo entregue ao cliente.",
+    say: "A fatura sai do serviço, sem reescrever nada.",
+    value: "Documento numerado sequencialmente e enviado ao cliente com link de pagamento.",
+    minPlan: "free",
+    need: "faturacao",
+    highlights: ["Numeração sequencial automática", "Link de pagamento e envio automático"],
+    questions: ["Quem trata da faturação hoje?"],
+  },
+  {
+    id: "alerts",
+    stage: "alerts",
+    area: "Alertas",
+    context: "O que a oficina não pode deixar cair: orçamentos por responder, revisões e stock.",
+    say: "Os alertas evitam que trabalho e dinheiro fiquem esquecidos.",
+    value: "A aplicação avisa em vez de depender da memória de alguém.",
+    minPlan: "free",
+    need: "comunicacao",
+    highlights: ["Revisões e inspeções a vencer geram retorno de clientes"],
   },
   {
     id: "metrics",
@@ -160,6 +210,7 @@ export const TOUR: TourStep[] = [
     context: "O que está incluído em cada plano do GarageFlow.",
     say: "Vamos ver qual o plano que faz sentido para a sua oficina.",
     minPlan: "free",
+    commercial: true,
   },
   {
     id: "recommendation",
@@ -168,6 +219,7 @@ export const TOUR: TourStep[] = [
     context: "Sugestão de plano com base nas áreas que viu nesta demonstração.",
     say: "Com base no que falámos, esta é a nossa recomendação.",
     minPlan: "free",
+    commercial: true,
   },
   {
     id: "conversion",
@@ -184,3 +236,6 @@ export const PLAN_STEP_NOTE: Record<DemoPlan, string> = {
   pro: "Esta área não está incluída no Pro.",
   garage: "",
 };
+
+/** Percurso da demo autónoma (/demo): sem etapas comerciais. */
+export const SELF_TOUR: TourStep[] = TOUR.filter((s) => !s.commercial);

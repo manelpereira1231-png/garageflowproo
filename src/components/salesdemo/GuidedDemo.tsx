@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Pause, Play, RotateCcw, X, BarChart3,
-  MessageCircleQuestion, Lightbulb, Lock, SkipForward, Check, Target,
+  MessageCircleQuestion, Lightbulb, Lock, SkipForward, Check, Target, Compass, HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DemoStage } from "./DemoStage";
 import DemoPlanCompare from "./DemoPlanCompare";
 import { PLAN_LABEL, type DemoPlan } from "@/lib/salesDemo";
-import { TOUR, PLAN_ORDER, planRank, PLAN_STEP_NOTE } from "@/lib/salesDemoTour";
+import { TOUR, SELF_TOUR, PLAN_ORDER, planRank, PLAN_STEP_NOTE } from "@/lib/salesDemoTour";
 import {
   loadSalesState, saveSalesState, clearSalesState, recommend,
   OBJECTIONS, needLabel, CONFIDENCE_LABEL,
@@ -48,8 +48,9 @@ export default function GuidedDemo({
   const [objection, setObjection] = useState<string | null>(null);
   const [state, setState] = useState(loadSalesState);
 
-  const step = TOUR[idx];
-  const last = idx === TOUR.length - 1;
+  const steps = isSelf ? SELF_TOUR : TOUR;
+  const step = steps[idx];
+  const last = idx === steps.length - 1;
 
 
   useEffect(() => {
@@ -77,8 +78,8 @@ export default function GuidedDemo({
   }, [step.need]);
 
   const go = useCallback((n: number) => {
-    setIdx((i) => Math.min(TOUR.length - 1, Math.max(0, i + n)));
-  }, []);
+    setIdx((i) => Math.min(steps.length - 1, Math.max(0, i + n)));
+  }, [steps.length]);
 
   useEffect(() => {
     if (!auto || last) return;
@@ -104,9 +105,10 @@ export default function GuidedDemo({
     trackEvent("sales_demo_plan_switch", { plan: p, step: step.id });
   };
 
-  const locked = planRank(plan) < planRank(step.minPlan);
+  // Na demo autónoma não há gating comercial: o visitante explora tudo.
+  const locked = !isSelf && planRank(plan) < planRank(step.minPlan);
   const rec = useMemo(() => recommend(state), [state]);
-  const progress = ((idx + 1) / TOUR.length) * 100;
+  const progress = ((idx + 1) / steps.length) * 100;
 
   const restart = () => {
     clearSalesState();
@@ -128,7 +130,8 @@ export default function GuidedDemo({
 
 
           <div className="ml-auto flex items-center gap-1">
-            {/* Seletor de contexto — troca instantânea, sem sair da demo */}
+            {/* Seletor de contexto — apenas na demo comercial */}
+            {!isSelf && (
             <div className="flex items-center rounded-lg border border-border overflow-hidden">
               {PLAN_ORDER.map((p) => (
                 <button
@@ -142,10 +145,13 @@ export default function GuidedDemo({
                 </button>
               ))}
             </div>
+            )}
 
+            {!isSelf && (
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setCompare(true)}>
               <BarChart3 className="w-3.5 h-3.5 mr-1" />Comparar
             </Button>
+            )}
 
             {!isSelf && (
             <Popover>
@@ -192,7 +198,7 @@ export default function GuidedDemo({
       {/* Palco */}
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 pb-40">
         <div className="flex items-center gap-2 mb-4">
-          <Badge variant="outline" className="text-[10px]">{idx + 1}/{TOUR.length}</Badge>
+          <Badge variant="outline" className="text-[10px]">{idx + 1}/{steps.length}</Badge>
           <h1 className="text-2xl font-bold tracking-tight">{step.area}</h1>
           {locked && (
             <Badge variant="secondary" className="ml-2 text-[10px]">
@@ -200,6 +206,29 @@ export default function GuidedDemo({
             </Badge>
           )}
         </div>
+
+        {isSelf && (
+          <div className="mb-4 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1 mr-1">
+              <Compass className="w-3.5 h-3.5" /> Explore à vontade:
+            </span>
+            {steps.map((st, i) => (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => { setIdx(i); setAuto(false); }}
+                aria-current={i === idx}
+                className={`rounded-full border px-2.5 h-7 text-[11px] transition-colors ${
+                  i === idx
+                    ? "border-primary bg-primary text-primary-foreground font-semibold"
+                    : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                {st.area}
+              </button>
+            ))}
+          </div>
+        )}
 
         {isSelf && (step.context || step.before) && (
           <div className="mb-4 rounded-xl border border-border bg-card p-3">
@@ -233,6 +262,42 @@ export default function GuidedDemo({
           )}
         </div>
 
+        {!isSelf && !locked && (step.highlights || step.questions) && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {step.highlights && (
+              <div className="rounded-xl border border-border bg-card p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-primary" /> Pontos a destacar
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {step.highlights.map((h) => (
+                    <li key={h} className="text-xs text-muted-foreground flex gap-2">
+                      <span className="w-1 h-1 rounded-full bg-primary/70 mt-1.5 shrink-0" />{h}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {step.questions && (
+              <div className="rounded-xl border border-border bg-card p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                  <HelpCircle className="w-3.5 h-3.5 text-primary" /> Perguntas sugeridas
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {step.questions.map((q) => (
+                    <li key={q} className="text-xs text-muted-foreground italic">“{q}”</li>
+                  ))}
+                </ul>
+                {idx < steps.length - 1 && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    Sequência recomendada: a seguir mostre <strong>{steps[idx + 1].area}</strong>.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {step.value && !locked && (
           <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-3 flex gap-2">
             <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -240,6 +305,19 @@ export default function GuidedDemo({
               <p className="text-xs font-semibold">O que isto resolve</p>
               <p className="text-xs text-muted-foreground mt-0.5">{step.value}</p>
             </div>
+          </div>
+        )}
+        {isSelf && last && (
+          <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
+            <h2 className="text-xl font-bold">Experimentar o GarageFlow gratuitamente</h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-lg mx-auto">
+              Crie a conta da sua oficina e faça o primeiro orçamento hoje mesmo.
+            </p>
+            <Button asChild size="lg" className="mt-4 h-11 px-6 font-semibold">
+              <Link to="/auth?mode=signup" onClick={() => trackEvent("self_demo_cta_signup", { step: step.id })}>
+                Experimentar gratuitamente <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </Button>
           </div>
         )}
       </main>
@@ -271,7 +349,7 @@ export default function GuidedDemo({
                   to={isSelf ? "/auth?mode=signup" : "/#pricing"}
                   onClick={() => trackEvent(isSelf ? "self_demo_cta_signup" : "sales_demo_cta", { plan: rec.plan })}
                 >
-                  {isSelf ? "Criar conta grátis" : "Próximo passo"}
+                  {isSelf ? "Experimentar gratuitamente" : "Próximo passo"}
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
               </Button>

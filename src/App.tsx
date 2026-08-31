@@ -64,7 +64,6 @@ const BillingIntegration = lazyRetry(() => import("@/pages/settings/BillingInteg
 const EmailTemplates = lazyRetry(() => import("@/pages/EmailTemplates"));
 const Agenda = lazyRetry(() => import("@/pages/Agenda"));
 const Invoices = lazyRetry(() => import("@/pages/Invoices"));
-const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
@@ -141,7 +140,6 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
-import { useOnboardingRequired } from "@/hooks/useOnboardingRequired";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import PublicRouteTracker from "@/components/PublicRouteTracker";

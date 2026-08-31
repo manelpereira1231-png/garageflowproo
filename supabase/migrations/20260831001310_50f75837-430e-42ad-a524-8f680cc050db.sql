@@ -1,0 +1,1 @@
+GRANT SELECT (api_key, payout_iban, payout_mbway_phone) ON public.partners TO authenticated;

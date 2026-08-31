@@ -64,7 +64,6 @@ const BillingIntegration = lazyRetry(() => import("@/pages/settings/BillingInteg
 const EmailTemplates = lazyRetry(() => import("@/pages/EmailTemplates"));
 const Agenda = lazyRetry(() => import("@/pages/Agenda"));
 const Invoices = lazyRetry(() => import("@/pages/Invoices"));
-const OnboardingWizard = lazyRetry(() => import("@/pages/OnboardingWizard"));
 const QuoteForm = lazyRetry(() => import("@/pages/QuoteForm"));
 const ServiceForm = lazyRetry(() => import("@/pages/ServiceForm"));
 const Billing = lazyRetry(() => import("@/pages/Billing"));
@@ -141,7 +140,6 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
-import { useOnboardingRequired } from "@/hooks/useOnboardingRequired";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import PublicRouteTracker from "@/components/PublicRouteTracker";
@@ -773,6 +771,7 @@ type CachedUserType = {
   isAffiliate: boolean;
   isCarityUser: boolean;
   hasGarageAccess?: boolean;
+  hasShopAccess?: boolean;
 };
 
 function readCachedUserType(userId: string | undefined): CachedUserType | null {
@@ -813,6 +812,7 @@ function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(cached?.isAffiliate ?? false);
   const [isCarityUser, setIsCarityUser] = useState(cached?.isCarityUser ?? false);
   const [hasGarageAccess, setHasGarageAccess] = useState(cached?.hasGarageAccess ?? false);
+  const [hasShopAccess, setHasShopAccess] = useState(cached?.hasShopAccess ?? false);
   const [ready, setReady] = useState(hasCompleteCache);
 
   // Touch activity once when user is hydrated (login + page reloads).
@@ -849,8 +849,9 @@ function AuthenticatedRoutes() {
       setIsAffiliate(isAff);
       setIsCarityUser(isCarity);
       setHasGarageAccess(hasGarage);
+      setHasShopAccess(accessProfile.hasShopAccess);
       setReady(true);
-      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity, hasGarageAccess: hasGarage });
+      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity, hasGarageAccess: hasGarage, hasShopAccess: accessProfile.hasShopAccess });
     };
 
     void checkUserState();
@@ -1007,6 +1008,26 @@ function AuthenticatedRoutes() {
     : shouldUseMarketRoutes
       ? "/market/dashboard"
       : "/dashboard";
+
+  // Afiliado sem oficina — área EXCLUSIVA de parceiro. Nunca monta o ERP.
+  if (isAffiliate && !hasShopAccess) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+            <Route path="/auth" element={<AuthRouteRedirect fallback="/affiliate-dashboard" realm="garage" />} />
+            <Route path="/affiliate-login" element={<Navigate to="/affiliate-dashboard" replace />} />
+            {publicRoutesAuthed.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+            <Route path="*" element={<Navigate to="/affiliate-dashboard" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
 
   if (shouldUseMarketRoutes) {
     return (

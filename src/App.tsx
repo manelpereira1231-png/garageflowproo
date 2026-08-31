@@ -773,6 +773,7 @@ type CachedUserType = {
   isAffiliate: boolean;
   isCarityUser: boolean;
   hasGarageAccess?: boolean;
+  hasShopAccess?: boolean;
 };
 
 function readCachedUserType(userId: string | undefined): CachedUserType | null {
@@ -813,6 +814,7 @@ function AuthenticatedRoutes() {
   const [isAffiliate, setIsAffiliate] = useState(cached?.isAffiliate ?? false);
   const [isCarityUser, setIsCarityUser] = useState(cached?.isCarityUser ?? false);
   const [hasGarageAccess, setHasGarageAccess] = useState(cached?.hasGarageAccess ?? false);
+  const [hasShopAccess, setHasShopAccess] = useState(cached?.hasShopAccess ?? false);
   const [ready, setReady] = useState(hasCompleteCache);
 
   // Touch activity once when user is hydrated (login + page reloads).
@@ -849,8 +851,9 @@ function AuthenticatedRoutes() {
       setIsAffiliate(isAff);
       setIsCarityUser(isCarity);
       setHasGarageAccess(hasGarage);
+      setHasShopAccess(accessProfile.hasShopAccess);
       setReady(true);
-      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity, hasGarageAccess: hasGarage });
+      writeCachedUserType({ userId: user.id, isAffiliate: isAff, isCarityUser: isCarity, hasGarageAccess: hasGarage, hasShopAccess: accessProfile.hasShopAccess });
     };
 
     void checkUserState();

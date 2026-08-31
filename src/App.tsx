@@ -989,7 +989,6 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
-            <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
@@ -1055,7 +1054,6 @@ function AuthenticatedRoutes() {
             <Route path="/settings" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/billing" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="/invoices/*" element={<Navigate to="/market/dashboard" replace />} />
-            <Route path="/onboarding" element={<Navigate to="/market/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/market/dashboard" replace />} />
           </Routes>
         </Suspense>
@@ -1074,7 +1072,6 @@ function AuthenticatedRoutes() {
           {publicRoutesGarageAuthed.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
-          <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
           {/* /market (browse home) renders standalone — CarityMarketplace ships its own hero/nav, so we keep it OUT of MarketLayout to avoid a double navbar. */}
           <Route path="/market" element={<GarageMarketEntryRedirect />} />
           <Route element={<MarketLayout />}>

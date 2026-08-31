@@ -1011,6 +1011,26 @@ function AuthenticatedRoutes() {
       ? "/market/dashboard"
       : "/dashboard";
 
+  // Afiliado sem oficina — área EXCLUSIVA de parceiro. Nunca monta o ERP.
+  if (isAffiliate && !hasShopAccess) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
+            <Route path="/auth" element={<AuthRouteRedirect fallback="/affiliate-dashboard" realm="garage" />} />
+            <Route path="/affiliate-login" element={<Navigate to="/affiliate-dashboard" replace />} />
+            {publicRoutesAuthed.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
+            <Route path="*" element={<Navigate to="/affiliate-dashboard" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
+
   if (shouldUseMarketRoutes) {
     return (
       <ChunkErrorBoundary>

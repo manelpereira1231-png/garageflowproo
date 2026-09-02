@@ -822,9 +822,9 @@ export default function Services() {
             <col className="w-[7%]" />
             <col className="w-[17%]" />
             <col className="w-[13%] hidden xl:table-column" />
-            <col className="w-[35%]" />
+            <col className="w-[28%]" />
             <col className="w-[6%] hidden xl:table-column" />
-            <col className="w-[11%] hidden xl:table-column" />
+            <col className="w-[18%] hidden xl:table-column" />
             <col className="w-[11%]" />
           </colgroup>
           <TableHeader>
@@ -892,7 +892,7 @@ export default function Services() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden xl:table-cell px-3 py-3 align-middle font-semibold mono whitespace-nowrap overflow-hidden">{formatMoney(s.total)}</TableCell>
-                <TableCell className="hidden xl:table-cell px-3 py-3 align-middle overflow-hidden">
+                <TableCell className="hidden xl:table-cell px-2 py-3 align-middle">
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}

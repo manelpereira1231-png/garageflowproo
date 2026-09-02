@@ -887,7 +887,7 @@ export default function Services() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell px-3 py-3 align-middle min-w-0">
-                  <div className="max-w-[190px] min-w-0">
+                  <div className="w-full min-w-0">
                     <RepairTimeline status={s.status as ServiceStatus} />
                   </div>
                 </TableCell>

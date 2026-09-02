@@ -3,6 +3,7 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -142,6 +143,9 @@ export default function Services() {
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSaving, setCancelSaving] = useState(false);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
@@ -498,11 +502,39 @@ export default function Services() {
     fetchServices();
   };
 
-  const cancelService = async (id: string) => {
+  const cancelService = async (id: string, reason?: string) => {
     if (!can("work_orders.delete")) return;
-    const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id).eq("shop_id", activeShopId);
+    const updates: any = { status: 'cancelled' };
+    if (reason) updates.cancellation_reason = reason;
+    const { error } = await supabase.from("work_orders").update(updates).eq("id", id).eq("shop_id", activeShopId);
     if (error) toastError(error, "Não foi possível cancelar o serviço");
     else { toast.success(t('service.cancelled')); fetchServices(); }
+  };
+
+  /**
+   * Cancelamento de OS em estado "Aberto" exige confirmação + motivo obrigatório
+   * (validado também no backend pelo trigger enforce_work_order_cancellation_reason).
+   * Nos restantes estados mantém-se o comportamento direto anterior.
+   */
+  const requestCancel = (s: any) => {
+    if (!can("work_orders.delete")) return;
+    if (s.status === 'open') {
+      setCancelReason("");
+      setCancelTarget(s);
+    } else {
+      cancelService(s.id);
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) return;
+    setCancelSaving(true);
+    await cancelService(cancelTarget.id, reason);
+    setCancelSaving(false);
+    setCancelTarget(null);
+    setCancelReason("");
   };
 
   /**
@@ -773,7 +805,7 @@ export default function Services() {
                   </Button>
                 )}
                 {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
-                  <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => cancelService(s.id)}>
+                  <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => requestCancel(s)}>
                     <XCircle className="w-4 h-4 mr-1" />Cancelar
                   </Button>
                 )}
@@ -917,7 +949,7 @@ export default function Services() {
                         </Button>
                       )}
                       {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
-                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => requestCancel(s)}>
                           <XCircle className="w-3 h-3" />
                         </Button>
                       )}
@@ -989,6 +1021,50 @@ export default function Services() {
             <Button onClick={() => completeWithReminder(true)} disabled={!reminderDate}>
               <CalendarClock className="w-4 h-4 mr-2" />
               {t('reminders.createReminder')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancelamento de OS aberta — confirmação com motivo obrigatório */}
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => { if (!o && !cancelSaving) { setCancelTarget(null); setCancelReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Cancelar serviço {cancelTarget?.number ? ` ${cancelTarget.number}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Este serviço está <span className="font-semibold text-foreground">Aberto</span> e estás prestes a cancelá-lo.
+            Esta ação é definitiva. Indica o motivo do cancelamento para continuar.
+          </p>
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: cliente desistiu do serviço, marcação duplicada…"
+              rows={3}
+              maxLength={500}
+              autoFocus
+            />
+            {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+              <p className="text-xs text-destructive">O motivo deve ter pelo menos 5 caracteres.</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => { setCancelTarget(null); setCancelReason(""); }} disabled={cancelSaving}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+              disabled={cancelSaving || cancelReason.trim().length < 5}
+            >
+              {cancelSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
             </Button>
           </DialogFooter>
         </DialogContent>

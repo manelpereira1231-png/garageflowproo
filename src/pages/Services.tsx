@@ -822,9 +822,9 @@ export default function Services() {
             <col className="w-[7%]" />
             <col className="w-[17%]" />
             <col className="w-[13%] hidden xl:table-column" />
-            <col className="w-[38%]" />
+            <col className="w-[35%]" />
             <col className="w-[6%] hidden xl:table-column" />
-            <col className="w-[8%] hidden xl:table-column" />
+            <col className="w-[11%] hidden xl:table-column" />
             <col className="w-[11%]" />
           </colgroup>
           <TableHeader>

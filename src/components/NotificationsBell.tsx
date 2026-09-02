@@ -85,7 +85,7 @@ export default function NotificationsBell() {
           aria-label={`${unreadCount} notificações por ler`}
           title="Notificações"
         >
-          <Bell className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <BellRing className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-background">
               {unreadCount > 9 ? "9+" : unreadCount}

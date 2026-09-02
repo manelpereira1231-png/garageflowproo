@@ -11,10 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
+import {
   Users, TrendingUp, DollarSign, CreditCard, Building2, Trophy, Copy, 
   CheckCircle, Clock, Target, Sparkles, Link as LinkIcon, Download,
-  Smartphone, LogOut, Share2, MessageCircle
+  Smartphone, LogOut, MessageCircle, AlertTriangle, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -41,6 +41,8 @@ export default function AffiliateDashboard() {
   const [payouts, setPayouts] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({});
   const [editingPayout, setEditingPayout] = useState(false);
   const [savingPayout, setSavingPayout] = useState(false);
   const [payoutForm, setPayoutForm] = useState({
@@ -56,19 +58,22 @@ export default function AffiliateDashboard() {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
+    setLoadError(null);
+    setSectionErrors({});
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      const { data: partnerData } = await supabase
+      const { data: partnerData, error: partnerError } = await supabase
         .from("partners")
-        .select("*")
+        .select("id, name, type, api_key, payout_method, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank, status, created_at, auth_user_id, country_code")
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
+      if (partnerError) throw partnerError;
       if (!partnerData) {
-        navigate("/dashboard");
-        return;
+        throw new Error("Não foi possível encontrar o seu registo de afiliado.");
       }
 
       setPartner(partnerData);
@@ -87,12 +92,20 @@ export default function AffiliateDashboard() {
         supabase.from("partner_logs").select("*").eq("partner_id", partnerData.id).order("created_at", { ascending: false }).limit(20),
       ]);
 
+      const nextSectionErrors: Record<string, string> = {};
+      if (invRes.error) nextSectionErrors.invites = "Não foi possível carregar os convites.";
+      if (comRes.error) nextSectionErrors.commissions = "Não foi possível carregar as comissões.";
+      if (payRes.error) nextSectionErrors.payouts = "Não foi possível carregar os pagamentos.";
+      if (logRes.error) nextSectionErrors.logs = "Não foi possível carregar a atividade.";
+      setSectionErrors(nextSectionErrors);
       setInvites(invRes.data || []);
       setCommissions(comRes.data || []);
       setPayouts(payRes.data || []);
       setLogs(logRes.data || []);
     } catch (err) {
       console.error("Error loading affiliate data:", err);
+      setPartner(null);
+      setLoadError(err instanceof Error ? err.message : "Não foi possível carregar o painel de afiliado.");
     } finally {
       setLoading(false);
     }
@@ -190,7 +203,34 @@ export default function AffiliateDashboard() {
     );
   }
 
-  if (!partner) return null;
+  if (loadError || !partner) {
+    return (
+      <LandingLayout>
+        <div className="container mx-auto px-4 py-16 max-w-lg">
+          <Card className="border-destructive/30">
+            <CardContent className="py-10 text-center">
+              <AlertTriangle className="w-10 h-10 text-destructive mx-auto mb-4" />
+              <h1 className="text-xl font-bold mb-2">Não foi possível carregar o painel</h1>
+              <p className="text-sm text-muted-foreground mb-6">{loadError || "Tenta novamente dentro de alguns instantes."}</p>
+              <Button onClick={loadData} className="gap-2 min-h-[44px]">
+                <RefreshCw className="w-4 h-4" /> Tentar novamente
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </LandingLayout>
+    );
+  }
+
+  const SectionError = ({ name }: { name: string }) => sectionErrors[name] ? (
+    <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+      <AlertTriangle className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{sectionErrors[name]}</span>
+      <Button variant="outline" size="sm" onClick={loadData} className="gap-1">
+        <RefreshCw className="h-3.5 w-3.5" /> Repetir
+      </Button>
+    </div>
+  ) : null;
 
   return (
     <LandingLayout>
@@ -304,6 +344,7 @@ export default function AffiliateDashboard() {
                 <CardTitle className="text-lg">{t('affiliate.invitedShops') || "Oficinas Convidadas"}</CardTitle>
               </CardHeader>
               <CardContent>
+                <SectionError name="invites" />
                 {invites.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -397,6 +438,7 @@ export default function AffiliateDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
+                <SectionError name="commissions" />
                 {commissions.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
@@ -647,6 +689,7 @@ export default function AffiliateDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  <SectionError name="payouts" />
                   {payouts.length === 0 ? (
                     <div className="text-center py-10">
                       <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
@@ -704,6 +747,7 @@ export default function AffiliateDashboard() {
                 <CardTitle className="text-lg">{t('affiliate.recentActivity') || "Atividade Recente"}</CardTitle>
               </CardHeader>
               <CardContent>
+                <SectionError name="logs" />
                 {logs.length === 0 ? (
                   <div className="text-center py-10">
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">

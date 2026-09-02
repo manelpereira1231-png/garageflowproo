@@ -934,18 +934,18 @@ export default function Services() {
                         </Link>
                       )}
                     </div>
-                    {/* Baixo: Avançar no progresso | Cancelar serviço */}
-                    <div className="inline-flex items-center justify-end gap-0.5 flex-wrap">
+                    {/* Baixo: Avançar no progresso | Cancelar serviço — sempre na mesma linha */}
+                    <div className="flex items-center justify-end gap-1">
                       {can("work_orders.complete") && !['delivered', 'cancelled'].includes(s.status) && (
                         <Button
                           variant="default"
                           size="sm"
-                          className="h-7 px-2 text-[11px] shrink-0"
+                          className="h-7 px-2 text-[11px] min-w-0 shrink"
                           onClick={() => advanceStatus(s)}
                           title={`Avançar para ${t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}`}
                         >
                           <ChevronRightIcon className="w-3 h-3 mr-1 shrink-0" />
-                          <span className="whitespace-nowrap">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
+                          <span className="truncate">{t(`service.${statusFlow[statusFlow.indexOf(s.status as ServiceStatus) + 1] || s.status}`)}</span>
                         </Button>
                       )}
                       {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (

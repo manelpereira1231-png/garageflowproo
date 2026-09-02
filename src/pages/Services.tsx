@@ -620,7 +620,7 @@ export default function Services() {
         <div className="min-w-0 flex-1">
           <h1 className="page-title">{t('services.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            <span className="font-medium text-foreground">Gestão administrativa</span> · {totalCount} ordens · emitir faturas, imprimir, exportar
+            <span className="font-medium text-foreground">Gestão administrativa</span> · {totalCount} ordens
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
             Precisa registar tempo, checklist, fotos ou trabalhar na bancada?{" "}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, CheckCheck, FileCheck2, CreditCard, Info } from "lucide-react";
+import { BellRing, CheckCheck, FileCheck2, CreditCard, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useShopContext } from "@/hooks/useShopContext";

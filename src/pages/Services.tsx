@@ -1025,6 +1025,50 @@ export default function Services() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cancelamento de OS aberta — confirmação com motivo obrigatório */}
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => { if (!o && !cancelSaving) { setCancelTarget(null); setCancelReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Cancelar serviço {cancelTarget?.number ? ` ${cancelTarget.number}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Este serviço está <span className="font-semibold text-foreground">Aberto</span> e estás prestes a cancelá-lo.
+            Esta ação é definitiva. Indica o motivo do cancelamento para continuar.
+          </p>
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: cliente desistiu do serviço, marcação duplicada…"
+              rows={3}
+              maxLength={500}
+              autoFocus
+            />
+            {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+              <p className="text-xs text-destructive">O motivo deve ter pelo menos 5 caracteres.</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => { setCancelTarget(null); setCancelReason(""); }} disabled={cancelSaving}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+              disabled={cancelSaving || cancelReason.trim().length < 5}
+            >
+              {cancelSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

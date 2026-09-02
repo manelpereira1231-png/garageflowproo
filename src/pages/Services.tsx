@@ -896,7 +896,7 @@ export default function Services() {
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 inline-flex items-center justify-center text-center`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[13px] font-semibold px-2.5 py-1 inline-flex items-center justify-center text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>

@@ -805,7 +805,7 @@ export default function Services() {
                   </Button>
                 )}
                 {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
-                  <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => cancelService(s.id)}>
+                  <Button variant="ghost" size="sm" className="text-xs h-9 px-3 text-destructive shrink-0" onClick={() => requestCancel(s)}>
                     <XCircle className="w-4 h-4 mr-1" />Cancelar
                   </Button>
                 )}
@@ -949,7 +949,7 @@ export default function Services() {
                         </Button>
                       )}
                       {can("work_orders.delete") && !['completed', 'delivered', 'cancelled'].includes(s.status) && (
-                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => cancelService(s.id)}>
+                        <Button variant="ghost" size="icon" aria-label={t('common.cancel') || 'Cancelar'} className="h-7 w-7 shrink-0 text-destructive" title={t('common.cancel') || 'Cancelar'} onClick={() => requestCancel(s)}>
                           <XCircle className="w-3 h-3" />
                         </Button>
                       )}

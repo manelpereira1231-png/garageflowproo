@@ -3,6 +3,7 @@ import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -142,6 +143,9 @@ export default function Services() {
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderKm, setReminderKm] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSaving, setCancelSaving] = useState(false);
   const [statusCountsAll, setStatusCountsAll] = useState<Record<string, number>>({});
   const [monthRevenue, setMonthRevenue] = useState<number>(0);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
@@ -498,11 +502,39 @@ export default function Services() {
     fetchServices();
   };
 
-  const cancelService = async (id: string) => {
+  const cancelService = async (id: string, reason?: string) => {
     if (!can("work_orders.delete")) return;
-    const { error } = await supabase.from("work_orders").update({ status: 'cancelled' }).eq("id", id).eq("shop_id", activeShopId);
+    const updates: any = { status: 'cancelled' };
+    if (reason) updates.cancellation_reason = reason;
+    const { error } = await supabase.from("work_orders").update(updates).eq("id", id).eq("shop_id", activeShopId);
     if (error) toastError(error, "Não foi possível cancelar o serviço");
     else { toast.success(t('service.cancelled')); fetchServices(); }
+  };
+
+  /**
+   * Cancelamento de OS em estado "Aberto" exige confirmação + motivo obrigatório
+   * (validado também no backend pelo trigger enforce_work_order_cancellation_reason).
+   * Nos restantes estados mantém-se o comportamento direto anterior.
+   */
+  const requestCancel = (s: any) => {
+    if (!can("work_orders.delete")) return;
+    if (s.status === 'open') {
+      setCancelReason("");
+      setCancelTarget(s);
+    } else {
+      cancelService(s.id);
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) return;
+    setCancelSaving(true);
+    await cancelService(cancelTarget.id, reason);
+    setCancelSaving(false);
+    setCancelTarget(null);
+    setCancelReason("");
   };
 
   /**

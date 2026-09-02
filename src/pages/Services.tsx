@@ -98,16 +98,16 @@ function RepairTimeline({
 
         return (
           <div key={s} className={`flex items-center min-w-0 ${i < statusFlow.length - 1 ? 'flex-1' : ''}`}>
-            <div className={`flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 transition-all shrink-0
+            <div className={`flex items-center justify-center w-[30px] h-[30px] rounded-full border-2 transition-all shrink-0
               ${isCancelled ? 'border-destructive/30 bg-destructive/5' :
                 isActive ? 'border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/20' :
                 isDone ? 'border-success bg-success/10 text-success' :
                 'border-border bg-muted/30 text-muted-foreground/40'}`}
             >
-              <Icon className="w-2.5 h-2.5" />
+              <Icon className="w-[15px] h-[15px]" />
             </div>
             {i < statusFlow.length - 1 && (
-              <div className={`flex-1 min-w-[4px] h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
+              <div className={`flex-1 min-w-[6px] h-0.5 ${isDone ? 'bg-success' : 'bg-border'}`} />
             )}
           </div>
         );
@@ -115,16 +115,16 @@ function RepairTimeline({
 
       {showAdvance && onAdvance && status !== 'cancelled' && status !== 'delivered' && (
         <>
-          <div className={`w-1 h-0.5 ${currentIdx >= statusFlow.length - 1 ? 'bg-success' : 'bg-border'}`} />
+          <div className={`w-1.5 h-0.5 ${currentIdx >= statusFlow.length - 1 ? 'bg-success' : 'bg-border'}`} />
           <Button
             variant="default"
             size="icon"
             onClick={onAdvance}
-            className="h-[18px] w-[18px] shrink-0 ml-0.5"
+            className="h-[22px] w-[22px] shrink-0 ml-1"
             aria-label={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
             title={`Avançar para ${statusFlow[statusFlow.indexOf(status) + 1] || status}`}
           >
-            <ChevronRightIcon className="w-2 h-2" />
+            <ChevronRightIcon className="w-3 h-3" />
           </Button>
         </>
       )}
@@ -816,16 +816,16 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
-        <Table className="table-fixed min-w-[640px]">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl sticky-thead">
+        <Table className="table-fixed min-w-[760px]">
           <colgroup>
-            <col className="w-[9%]" />
-            <col className="w-[14%]" />
+            <col className="w-[7%]" />
+            <col className="w-[17%]" />
             <col className="w-[13%] hidden xl:table-column" />
-            <col className="w-[18%]" />
+            <col className="w-[38%]" />
+            <col className="w-[6%] hidden xl:table-column" />
             <col className="w-[8%] hidden xl:table-column" />
-            <col className="w-[18%] hidden xl:table-column" />
-            <col className="w-[20%]" />
+            <col className="w-[11%]" />
           </colgroup>
           <TableHeader>
             <TableRow>
@@ -887,7 +887,7 @@ export default function Services() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell px-3 py-3 align-middle min-w-0">
-                  <div className="max-w-[190px] min-w-0">
+                  <div className="w-full min-w-0">
                     <RepairTimeline status={s.status as ServiceStatus} />
                   </div>
                 </TableCell>
@@ -896,7 +896,7 @@ export default function Services() {
                   <Badge
                     variant="secondary"
                     title={t(`service.${s.status}`)}
-                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 inline-flex items-center justify-center text-center`}
+                    className={`${statusColors[s.status as ServiceStatus]} whitespace-nowrap text-[13px] font-semibold px-2.5 py-1 inline-flex items-center justify-center text-center`}
                   >
                     {t(`service.${s.status}`)}
                   </Badge>

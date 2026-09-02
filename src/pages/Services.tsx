@@ -816,16 +816,16 @@ export default function Services() {
       </div>
 
       {/* Desktop: Table view */}
-      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl overflow-x-auto sticky-thead">
-        <Table className="table-fixed min-w-[640px]">
+      <div className="hidden sm:block w-full min-w-0 bg-card border border-border rounded-xl sticky-thead">
+        <Table className="table-fixed min-w-[760px]">
           <colgroup>
-            <col className="w-[9%]" />
-            <col className="w-[14%]" />
+            <col className="w-[7%]" />
+            <col className="w-[17%]" />
             <col className="w-[13%] hidden xl:table-column" />
-            <col className="w-[18%]" />
+            <col className="w-[38%]" />
+            <col className="w-[6%] hidden xl:table-column" />
             <col className="w-[8%] hidden xl:table-column" />
-            <col className="w-[18%] hidden xl:table-column" />
-            <col className="w-[20%]" />
+            <col className="w-[11%]" />
           </colgroup>
           <TableHeader>
             <TableRow>

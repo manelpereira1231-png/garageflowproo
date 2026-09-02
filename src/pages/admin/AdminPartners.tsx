@@ -71,7 +71,7 @@ export default function AdminPartners() {
   const loadData = async () => {
     setLoading(true);
     const [p, i, c, po, lg, ref] = await Promise.all([
-      supabase.from("partners").select("*").order("created_at", { ascending: false }),
+      supabase.from("partners").select("id, name, type, contact_email, contact_phone, commission_percentage, discount_percentage, payout_method, status, created_at, api_key, payout_holder_name, payout_iban, payout_mbway_phone, payout_bank").order("created_at", { ascending: false }),
       supabase.from("partner_invites").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_commissions").select("*").order("created_at", { ascending: false }),
       supabase.from("partner_payouts").select("*").order("created_at", { ascending: false }),

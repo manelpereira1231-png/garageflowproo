@@ -6,6 +6,7 @@
  * o contexto de plano (Start / Pro / Garage) APENAS na oficina demo.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { resetActiveShopOnLogout } from "@/lib/shopContextSync";
 
 export type DemoPlan = "free" | "pro" | "garage";
 
@@ -75,21 +76,56 @@ export async function resetDemo(plan: DemoPlan = currentDemoPlan()) {
   await callDemo("reset", plan);
 }
 
+/** Limpeza local — síncrona e infalível. Só corre em sessões demo. */
+function wipeDemoLocalState() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("gf_sales_demo") || k.startsWith("gf_demo"))) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+    [
+      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, ACTIVE_SHOP_KEY,
+      "garageflow_app_mode", "garageflow_onboarding_status",
+      "garageflow_onboarding_completed", "gf_auto_onboarding_dismissed",
+    ].forEach((k) => localStorage.removeItem(k));
+  } catch { /* storage pode estar desativado */ }
+  try {
+    const sKeys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && (k.startsWith("gf_sales_demo") || k.startsWith("gf_demo"))) sKeys.push(k);
+    }
+    sKeys.forEach((k) => sessionStorage.removeItem(k));
+  } catch { /* noop */ }
+}
+
+const withTimeout = (p: Promise<unknown>, ms = 4000) =>
+  Promise.race([p.catch(() => undefined), new Promise((r) => setTimeout(r, ms))]);
+
 /** Termina o modo demonstração e limpa a sessão. */
 export async function endDemo() {
-  if (isDemoSession()) {
-    try { await callDemo("end", currentDemoPlan()); } catch { /* expiry cleanup remains as fallback */ }
+  const wasDemo = isDemoSession();
+  const plan = currentDemoPlan();
+  wipeDemoLocalState();
+  if (wasDemo) {
+    // Melhor esforço: o TTL do tenant demo garante a limpeza mesmo se falhar.
+    await withTimeout(callDemo("end", plan));
   }
-  try {
-    localStorage.removeItem(DEMO_FLAG);
-    localStorage.removeItem(DEMO_PLAN_KEY);
-    localStorage.removeItem(DEMO_BAR_HIDDEN);
-    localStorage.removeItem(DEMO_MODE_KEY);
-    localStorage.removeItem(ACTIVE_SHOP_KEY);
-    localStorage.removeItem("garageflow_app_mode");
-    localStorage.removeItem("garageflow_onboarding_status");
-    localStorage.removeItem("garageflow_onboarding_completed");
-    localStorage.removeItem("gf_auto_onboarding_dismissed");
-  } catch { /* storage pode estar desativado */ }
-  await supabase.auth.signOut();
+  await resetActiveShopOnLogout();
+  await withTimeout(supabase.auth.signOut());
 }
+
+/**
+ * CTA final da Demo: termina o contexto demo por completo e leva o visitante
+ * ao registo real. Usa navegação "hard" para garantir que nenhum estado em
+ * memória (contexto de oficina, caches de query) sobrevive à transição.
+ */
+export async function exitDemoToSignup() {
+  try { await endDemo(); } catch { /* estado local já foi limpo */ }
+  wipeDemoLocalState();
+  window.location.replace("/auth?mode=signup");
+}
+
+

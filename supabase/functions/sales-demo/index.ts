@@ -86,8 +86,10 @@ serve(async (req) => {
       });
       if (error || !created.user) return json({ error: error?.message || "Não foi possível criar a sessão Demo." }, 400);
       userId = created.user.id;
-      // Utilizador acabado de criar: nunca tem oficina, evita-se uma query.
-      shop = null;
+      // Um trigger pode criar automaticamente a oficina do novo utilizador.
+      const existing = await admin
+        .from("shops").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
+      shop = existing.data;
     } else {
       if (!token) return json({ error: "Sessão Demo necessária." }, 401);
       const { data: authData, error: authError } = await admin.auth.getUser(token);

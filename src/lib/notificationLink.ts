@@ -7,17 +7,26 @@ type NotificationLinkInput = {
   } | null;
 };
 
+/**
+ * Notificações de orçamento abrem SEMPRE a listagem de Orçamentos com a
+ * pesquisa pré-preenchida pelo número real do orçamento (ex.: ORC-0042).
+ * Nunca abrem a edição de serviço/orçamento.
+ */
 export function resolveNotificationLink(notification: NotificationLinkInput): string | null {
-  const quoteId = notification.data?.quote_id?.trim();
+  const quoteNumber = notification.data?.quote_number?.trim();
   const isQuoteNotification =
     notification.data?.event === "quote_approved" ||
     notification.data?.event === "quote_rejected" ||
     Boolean(notification.data?.quote_id) ||
-    notification.link?.startsWith("/quotes/edit/");
+    Boolean(quoteNumber) ||
+    notification.link?.startsWith("/quotes");
 
   if (isQuoteNotification) {
-    if (quoteId) return `/quotes/edit/${encodeURIComponent(quoteId)}`;
-    return notification.link?.startsWith("/quotes/edit/") ? notification.link : "/quotes";
+    if (quoteNumber) return `/quotes?search=${encodeURIComponent(quoteNumber)}`;
+    // Links antigos já no formato correto são preservados; caso contrário
+    // abre a listagem geral (nunca a edição).
+    if (notification.link?.startsWith("/quotes?search=")) return notification.link;
+    return "/quotes";
   }
 
   return notification.link;

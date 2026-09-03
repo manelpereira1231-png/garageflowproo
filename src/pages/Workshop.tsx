@@ -300,7 +300,7 @@ export default function Workshop() {
         </div>
 
         <p className="text-[11px] text-muted-foreground mt-2">
-          Quer emitir faturas, imprimir OS ou exportar CSV?{" "}
+          Quer contactar o Cliente?{" "}
           <a href="/services" className="text-primary hover:underline font-medium">Abrir Serviços (gestão) →</a>
         </p>
       </div>

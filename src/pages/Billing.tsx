@@ -624,23 +624,35 @@ export default function Billing() {
           return (
             <div
               key={key}
-              className={`relative bg-card border rounded-xl p-6 transition-all ${
-                isCurrentPlan ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
+              className={`relative flex flex-col overflow-hidden bg-card border-2 rounded-2xl transition-all duration-200 ${
+                isCurrentPlan
+                  ? 'border-primary shadow-lg shadow-primary/10'
+                  : isFeatured
+                    ? 'border-primary shadow-xl shadow-primary/15 ring-1 ring-primary/20 md:-translate-y-1'
+                    : 'border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5'
               }`}
             >
               {showBadge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="gradient-primary text-primary-foreground px-3 py-1">
-                    {row.badge_label || t('billing.popular')}
-                  </Badge>
+                <div className={`px-4 py-2 text-center text-[11px] font-bold uppercase tracking-wider ${
+                  isFeatured ? 'gradient-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                }`}>
+                  {row.badge_label || t('billing.popular')}
                 </div>
               )}
 
-              <div className="text-center mb-6">
-                <Icon className={`w-8 h-8 mx-auto mb-3 ${color}`} />
-                <h3 className="text-xl font-bold">{getPlanName(key, row?.label || row?.name || key)}</h3>
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
+                {/* Plano + posicionamento */}
+                <div className="text-center">
+                  <Icon className={`w-8 h-8 mx-auto mb-2 ${color}`} />
+                  <h3 className="text-lg font-bold tracking-tight">{getPlanName(key, row?.label || row?.name || key)}</h3>
+                  {row.description && (
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{row.description}</p>
+                  )}
+                </div>
+
+                {/* Preço */}
                 {row.show_price !== false && (
-                  <div className="mt-3">
+                  <div className="mt-4 pb-4 border-b border-border/70 text-center">
                     <PriceWithPromo
                       basePrice={price}
                       country={getCountryCode()}
@@ -652,26 +664,32 @@ export default function Billing() {
                     />
                   </div>
                 )}
-              </div>
 
-              <PlanLimitsList limits={row.limits} />
-              <ul className="space-y-3 mb-6">
-                {items.map((item) => (
-                  <li
-                    key={item.slug}
-                    className={`flex items-start gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
-                  >
-                    {item.enabled ? (
-                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
-                    ) : (
-                      <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                    )}
-                    <span>{item.name}</span>
-                  </li>
-                ))}
-              </ul>
+                {/* Limites principais */}
+                <div className="mt-4">
+                  <PlanLimitsList limits={row.limits} />
+                </div>
 
-              {cta.visible && (() => {
+                {/* Funcionalidades incluídas */}
+                <ul className="space-y-2.5 sm:space-y-3 mb-6 flex-1">
+                  {items.map((item) => (
+                    <li
+                      key={item.slug}
+                      className={`flex items-start gap-2.5 text-sm leading-snug ${item.enabled ? "text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {item.enabled ? (
+                        <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
+                      ) : (
+                        <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground/70" />
+                      )}
+                      <span>{item.name}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <div className="mt-auto">
+                {cta.visible && (() => {
                 // Modos que abrem checkout Stripe / trial → handler local
                 // Modos demo/contact/custom_url → navegação
                 const mode = cta.mode;
@@ -711,7 +729,9 @@ export default function Billing() {
                     <Button className={btnClass}>{cta.label}</Button>
                   </Link>
                 );
-              })()}
+                })()}
+                </div>
+              </div>
             </div>
           );
         })}

@@ -314,13 +314,12 @@ async function seed(admin: any, shopId: string) {
     { vehicle: anaVehicle, date: dateFromNow(1), time: "09:00", service_type: "Revisão periódica", duration_minutes: 90, status: "confirmed", client_name: "Ana Marques", client_phone: "+351 912 000 111", client_email: "ana.marques@exemplo.pt" },
     { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: "Transportes Belém, Lda.", client_phone: "+351 213 000 222", client_email: "frota@belem-exemplo.pt" },
     { vehicle: sofiaVehicle, date: dateFromNow(2), time: "15:30", service_type: "Teste de bateria", duration_minutes: 45, status: "pending", client_name: "Sofia Almeida", client_phone: "+351 927 000 444", client_email: "sofia.almeida@exemplo.pt", source: "portal" },
-  ].map((appointment) => ({
+  ].map(({ vehicle, ...appointment }) => ({
     shop_id: shopId,
-    client_id: appointment.vehicle?.client_id,
-    vehicle_id: appointment.vehicle?.id,
+    client_id: vehicle?.client_id,
+    vehicle_id: vehicle?.id,
     source: "manual",
     ...appointment,
-    vehicle: undefined,
   }));
   const { error: appointmentsError } = await admin.from("appointments").insert(appointments);
   if (appointmentsError) throw new Error("seed appointments: " + appointmentsError.message);

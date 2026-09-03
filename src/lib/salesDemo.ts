@@ -23,7 +23,7 @@ export const PLAN_LABEL: Record<DemoPlan, string> = {
 
 export function isDemoSession(): boolean {
   try {
-    return sessionStorage.getItem(DEMO_FLAG) === "1";
+    return localStorage.getItem(DEMO_FLAG) === "1";
   } catch {
     return false;
   }
@@ -31,7 +31,7 @@ export function isDemoSession(): boolean {
 
 export function currentDemoPlan(): DemoPlan {
   try {
-    const p = sessionStorage.getItem(DEMO_PLAN_KEY);
+    const p = localStorage.getItem(DEMO_PLAN_KEY);
     return p === "free" || p === "pro" || p === "garage" ? p : "pro";
   } catch {
     return "pro";
@@ -58,16 +58,16 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   localStorage.setItem("garageflow_onboarding_completed", "true");
   localStorage.setItem("gf_auto_onboarding_dismissed", "1");
   localStorage.setItem("garageflow_language", "pt");
-  sessionStorage.setItem(DEMO_FLAG, "1");
-  sessionStorage.setItem(DEMO_PLAN_KEY, plan);
-  sessionStorage.setItem(DEMO_MODE_KEY, mode);
+  localStorage.setItem(DEMO_FLAG, "1");
+  localStorage.setItem(DEMO_PLAN_KEY, plan);
+  localStorage.setItem(DEMO_MODE_KEY, mode);
   return res.shop_id;
 }
 
 /** Muda apenas o contexto de plano da oficina demo. */
 export async function switchDemoPlan(plan: DemoPlan) {
   await callDemo("plan", plan);
-  sessionStorage.setItem(DEMO_PLAN_KEY, plan);
+  localStorage.setItem(DEMO_PLAN_KEY, plan);
 }
 
 /** Repõe os dados fictícios da oficina demo para a próxima apresentação. */
@@ -81,10 +81,10 @@ export async function endDemo() {
     try { await callDemo("end", currentDemoPlan()); } catch { /* expiry cleanup remains as fallback */ }
   }
   try {
-    sessionStorage.removeItem(DEMO_FLAG);
-    sessionStorage.removeItem(DEMO_PLAN_KEY);
-    sessionStorage.removeItem(DEMO_BAR_HIDDEN);
-    sessionStorage.removeItem(DEMO_MODE_KEY);
+    localStorage.removeItem(DEMO_FLAG);
+    localStorage.removeItem(DEMO_PLAN_KEY);
+    localStorage.removeItem(DEMO_BAR_HIDDEN);
+    localStorage.removeItem(DEMO_MODE_KEY);
     localStorage.removeItem(ACTIVE_SHOP_KEY);
     localStorage.removeItem("garageflow_app_mode");
     localStorage.removeItem("garageflow_onboarding_status");

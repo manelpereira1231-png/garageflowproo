@@ -251,7 +251,7 @@ async function seed(admin: any, shopId: string) {
       created_at: daysAgo(q.days), ...totals(q.lines),
     };
   });
-  const { error: quotesError } = await admin.from("quotes").insert(quotes);
+  const { data: insertedQuotes, error: quotesError } = await admin.from("quotes").insert(quotes).select("id,number,status,client_id,vehicle_id,total");
   if (quotesError) throw new Error("seed quotes: " + quotesError.message);
 
   const woDefs = [
@@ -274,6 +274,84 @@ async function seed(admin: any, shopId: string) {
       ...totals(w.lines),
     };
   });
-  const { error: woError } = await admin.from("work_orders").insert(workOrders);
+  const { data: insertedWorkOrders, error: woError } = await admin.from("work_orders").insert(workOrders).select("id,number,client_id,vehicle_id,total,status");
   if (woError) throw new Error("seed work_orders: " + woError.message);
+
+  const quoteByNumber = (number: string) => insertedQuotes?.find((quote: any) => quote.number === number);
+  const workOrderByNumber = (number: string) => insertedWorkOrders?.find((order: any) => order.number === number);
+  const paidOrder = workOrderByNumber("OS-0001");
+  const completedOrder = workOrderByNumber("OS-0004");
+
+  if (paidOrder && completedOrder) {
+    const invoices = [
+      { order: paidOrder, number: "FT-D001", status: "paid", days: 9 },
+      { order: completedOrder, number: "FT-D002", status: "sent", days: 3 },
+    ].map(({ order, number, status, days }) => ({
+      shop_id: shopId,
+      client_id: order.client_id,
+      vehicle_id: order.vehicle_id,
+      work_order_id: order.id,
+      number,
+      status,
+      subtotal: +(Number(order.total) / 1.23).toFixed(2),
+      vat_total: +(Number(order.total) - Number(order.total) / 1.23).toFixed(2),
+      total: order.total,
+      currency: "EUR",
+      due_date: daysAgo(days - 30).slice(0, 10),
+      notes: "Documento fictício de demonstração — sem validade fiscal.",
+      created_at: daysAgo(days),
+    }));
+    const { error } = await admin.from("invoices").insert(invoices);
+    if (error) throw new Error("seed invoices: " + error.message);
+  }
+
+  const today = new Date();
+  const dateFromNow = (days: number) => new Date(today.getTime() + days * 86400000).toISOString().slice(0, 10);
+  const anaVehicle = byPlate("AA-11-BB");
+  const fleetVehicle = byPlate("AB-22-CD");
+  const sofiaVehicle = byPlate("AE-55-FG");
+  const appointments = [
+    { vehicle: anaVehicle, date: dateFromNow(1), time: "09:00", service_type: "Revisão periódica", duration_minutes: 90, status: "confirmed", client_name: "Ana Marques", client_phone: "+351 912 000 111", client_email: "ana.marques@exemplo.pt" },
+    { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: "Transportes Belém, Lda.", client_phone: "+351 213 000 222", client_email: "frota@belem-exemplo.pt" },
+    { vehicle: sofiaVehicle, date: dateFromNow(2), time: "15:30", service_type: "Teste de bateria", duration_minutes: 45, status: "pending", client_name: "Sofia Almeida", client_phone: "+351 927 000 444", client_email: "sofia.almeida@exemplo.pt", source: "portal" },
+  ].map(({ vehicle, ...appointment }) => ({
+    shop_id: shopId,
+    client_id: vehicle?.client_id,
+    vehicle_id: vehicle?.id,
+    source: "manual",
+    ...appointment,
+  }));
+  const { error: appointmentsError } = await admin.from("appointments").insert(appointments);
+  if (appointmentsError) throw new Error("seed appointments: " + appointmentsError.message);
+
+  const approvedQuote = quoteByNumber("ORC-0001");
+  const rejectedQuote = quoteByNumber("ORC-0005");
+  const notifications = [
+    approvedQuote && {
+      shop_id: shopId,
+      type: "success",
+      title: "Orçamento aprovado",
+      message: "Ana Marques aprovou o orçamento ORC-0001.",
+      link: `/quotes/edit/${approvedQuote.id}`,
+      data: { event: "quote_approved", quote_id: approvedQuote.id, quote_number: approvedQuote.number },
+      created_at: daysAgo(1),
+    },
+    rejectedQuote && {
+      shop_id: shopId,
+      type: "warning",
+      title: "Orçamento rejeitado",
+      message: "O orçamento ORC-0005 foi rejeitado pelo cliente.",
+      link: `/quotes/edit/${rejectedQuote.id}`,
+      data: { event: "quote_rejected", quote_id: rejectedQuote.id, quote_number: rejectedQuote.number },
+      created_at: daysAgo(2),
+    },
+  ].filter(Boolean);
+  const { error: notificationsError } = await admin.from("notifications").insert(notifications);
+  if (notificationsError) throw new Error("seed notifications: " + notificationsError.message);
+
+  const { error: alertsError } = await admin.from("alerts").insert([
+    { shop_id: shopId, client_id: byName("Rui Cardoso"), vehicle_id: byPlate("AD-44-EF")?.id, type: "inspection", title: "Inspeção periódica próxima", message: "BMW Série 3 — inspeção prevista para os próximos 15 dias.", due_date: dateFromNow(15), priority: "high" },
+    { shop_id: shopId, client_id: byName("Miguel Tavares"), vehicle_id: byPlate("AF-66-GH")?.id, type: "maintenance", title: "Revisão recomendada", message: "Mercedes-Benz Classe A atingiu o intervalo recomendado de manutenção.", due_date: dateFromNow(7), priority: "medium" },
+  ]);
+  if (alertsError) throw new Error("seed alerts: " + alertsError.message);
 }

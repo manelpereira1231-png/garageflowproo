@@ -27,10 +27,10 @@ export default function SalesDemoBar() {
   const [console_, setConsole] = useState(false);
   const [priceTick, setPriceTick] = useState(0);
   const [hidden, setHidden] = useState(() => {
-    try { return sessionStorage.getItem(DEMO_BAR_HIDDEN) === "1"; } catch { return false; }
+    try { return localStorage.getItem(DEMO_BAR_HIDDEN) === "1"; } catch { return false; }
   });
   const isSalesMode = (() => {
-    try { return sessionStorage.getItem(DEMO_MODE_KEY) === "sales"; } catch { return false; }
+    try { return localStorage.getItem(DEMO_MODE_KEY) === "sales"; } catch { return false; }
   })();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function SalesDemoBar() {
 
   const toggleHidden = (v: boolean) => {
     setHidden(v);
-    try { sessionStorage.setItem(DEMO_BAR_HIDDEN, v ? "1" : "0"); } catch { /* noop */ }
+    try { localStorage.setItem(DEMO_BAR_HIDDEN, v ? "1" : "0"); } catch { /* noop */ }
   };
 
   if (hidden) {

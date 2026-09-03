@@ -63,9 +63,13 @@ Deno.serve(async (req) => {
 
     const { data: shop } = await admin
       .from("shops")
-      .select("name, currency, stripe_connect_account_id, stripe_connect_charges_enabled")
+      .select("name, currency, stripe_connect_account_id, stripe_connect_charges_enabled, is_demo")
       .eq("id", inv.shop_id)
       .maybeSingle();
+
+    if (shop?.is_demo === true) {
+      return json({ error: "Os pagamentos externos estão desativados na conta Demo.", code: "demo_simulation" }, 409);
+    }
 
     // Se a oficina tem Stripe Connect ativo o dinheiro entra diretamente na
     // oficina; caso contrário usamos a conta Stripe da plataforma (a mesma dos

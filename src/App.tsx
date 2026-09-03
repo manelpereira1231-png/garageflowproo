@@ -897,22 +897,6 @@ function AuthenticatedRoutes() {
       </Suspense>
     );
   }
-  if (typeof window !== "undefined" && window.location.pathname === "/demo") {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <SelfDemoPage />
-      </Suspense>
-    );
-  }
-  if (typeof window !== "undefined" && window.location.pathname === "/demo-demonstracao") {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <SalesDemoPage />
-      </Suspense>
-    );
-  }
-
-
   if (adminLoading || commercialLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

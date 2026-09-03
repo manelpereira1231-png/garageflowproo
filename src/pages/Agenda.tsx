@@ -124,6 +124,7 @@ export default function Agenda() {
           to: appt.client_email,
           subject: `Marcação confirmada — ${appt.date} ${String(appt.time).slice(0,5)}`,
           html: `<p>Olá ${appt.client_name || ''},</p><p>A sua marcação foi <strong>confirmada</strong> para <strong>${appt.date} às ${String(appt.time).slice(0,5)}</strong>.</p><p>Serviço: ${appt.service_type}</p><p>Obrigado.</p>`,
+          shop_id: activeShopId,
         },
       }).catch(() => {});
     }
@@ -148,6 +149,7 @@ export default function Agenda() {
           to: rescheduleAppt.client_email,
           subject: `Marcação reagendada — ${rescheduleData.date} ${rescheduleData.time}`,
           html: `<p>Olá ${rescheduleAppt.client_name || ''},</p><p>A sua marcação foi <strong>reagendada</strong> para <strong>${rescheduleData.date} às ${rescheduleData.time}</strong>.</p><p>Serviço: ${rescheduleAppt.service_type}</p>`,
+          shop_id: activeShopId,
         },
       }).catch(() => {});
     }
@@ -165,6 +167,7 @@ export default function Agenda() {
           to: appt.client_email,
           subject: 'Marcação não confirmada',
           html: `<p>Olá ${appt.client_name || ''},</p><p>Lamentamos, a sua marcação para ${appt.date} ${String(appt.time).slice(0,5)} não pôde ser confirmada. Por favor escolha outra data no portal.</p>`,
+          shop_id: activeShopId,
         },
       }).catch(() => {});
     }

@@ -83,6 +83,10 @@ Deno.serve(async (req) => {
     const shopIds = Array.isArray(ids) ? ids.map((r: any) => r.get_user_shop_ids ?? r) : [];
     if (!shopIds.includes(inv.shop_id)) return json({ error: "Sem permissão nesta fatura" }, 403);
 
+    if (inv.shops?.is_demo === true) {
+      return json({ error: "A emissão fiscal externa está desativada na conta Demo.", code: "demo_simulation" }, 409);
+    }
+
     const { data: canEmit, error: capErr } = await supa.rpc("has_capability", {
       _shop_id: inv.shop_id, _cap: "invoices.create",
     });

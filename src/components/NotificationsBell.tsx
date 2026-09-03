@@ -6,6 +6,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { getCountryConfig } from "@/lib/regionConfig";
+import { resolveNotificationLink } from "@/lib/notificationLink";
 
 type Notif = {
   id: string;
@@ -13,6 +14,7 @@ type Notif = {
   title: string;
   message: string;
   link: string | null;
+  data: { event?: string; quote_id?: string; quote_number?: string } | null;
   read: boolean;
   created_at: string;
 };
@@ -35,7 +37,7 @@ export default function NotificationsBell() {
     if (!ids.length) return;
     const { data } = await supabase
       .from("notifications")
-      .select("id,type,title,message,link,read,created_at")
+      .select("id,type,title,message,link,data,read,created_at")
       .in("shop_id", ids)
       .is("archived_at", null)
       .eq("read", false)
@@ -110,6 +112,7 @@ export default function NotificationsBell() {
         ) : (
           <div className="divide-y divide-border/60">
             {items.map((n) => {
+              const destination = resolveNotificationLink(n);
               const body = (
                 <div className="flex items-start gap-2">
                   {iconFor(n)}
@@ -124,8 +127,8 @@ export default function NotificationsBell() {
                 </div>
               );
               const cls = `block p-3 hover:bg-muted/40 ${n.read ? "" : "bg-amber-500/5"}`;
-              return n.link ? (
-                <Link key={n.id} to={n.link} className={cls} onClick={() => { setOpen(false); markRead(n.id); }}>
+              return destination ? (
+                <Link key={n.id} to={destination} className={cls} onClick={() => { setOpen(false); markRead(n.id); }}>
                   {body}
                 </Link>
               ) : (

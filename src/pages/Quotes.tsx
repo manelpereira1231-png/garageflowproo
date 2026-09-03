@@ -14,7 +14,7 @@ import { openWhatsApp } from "@/lib/whatsapp";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { QuoteStatus } from "@/types/garage";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
@@ -47,6 +47,7 @@ const defaultQuotesFilters: QuotesFilters = { search: "", status: "all", clientI
 export default function Quotes() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { limits, plan, shopId, checkQuoteLimit, canUseFeature, isEntryPlan } = useSubscription();
   const [refreshKey, setRefreshKey] = useState(0);
   const [clientOptions, setClientOptions] = useState<[string, string][]>([]);
@@ -67,6 +68,13 @@ export default function Quotes() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+
+  useEffect(() => {
+    const notificationSearch = searchParams.get("search")?.trim();
+    if (!notificationSearch) return;
+    updateFilter("search", notificationSearch);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams, updateFilter]);
 
   const SORT_COLUMNS: Record<string, string> = {
     number: "number", created_at: "created_at", total: "total",

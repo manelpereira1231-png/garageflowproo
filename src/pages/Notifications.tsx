@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getCountryConfig } from "@/lib/regionConfig";
 import ListSkeleton from "@/components/ListSkeleton";
+import { resolveNotificationLink } from "@/lib/notificationLink";
 
 type Notif = {
   id: string;
@@ -18,6 +19,7 @@ type Notif = {
   title: string;
   message: string | null;
   link: string | null;
+  data: { event?: string; quote_id?: string; quote_number?: string } | null;
   read: boolean;
   created_at: string;
 };
@@ -71,7 +73,7 @@ export default function Notifications() {
     if (!shopIds.length) { setLoading(false); return; }
     const { data } = await supabase
       .from("notifications")
-      .select("id,type,title,message,link,read,created_at")
+      .select("id,type,title,message,link,data,read,created_at")
       .in("shop_id", shopIds)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
@@ -180,6 +182,7 @@ export default function Notifications() {
       ) : (
         <div className="space-y-2">
           {visible.map((n) => {
+            const destination = resolveNotificationLink(n);
             const meta = KIND_META[kindOf(n)];
             const Icon = meta.icon;
             const inner = (
@@ -194,14 +197,14 @@ export default function Notifications() {
                   {n.message && <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{n.message}</p>}
                   <p className="text-[11px] text-muted-foreground mt-1">{fmt(n.created_at)}</p>
                 </div>
-                {n.link && <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />}
+                {destination && <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />}
               </div>
             );
             const cls = `block p-4 rounded-lg border transition-colors hover:bg-muted/40 ${
               n.read ? "border-border/60 bg-card" : "border-warning/30 bg-warning/5"
             }`;
-            return n.link ? (
-              <Link key={n.id} to={n.link} className={cls} onClick={() => markRead(n.id)}>
+            return destination ? (
+              <Link key={n.id} to={destination} className={cls} onClick={() => markRead(n.id)}>
                 {inner}
               </Link>
             ) : (

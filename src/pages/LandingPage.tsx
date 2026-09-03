@@ -258,6 +258,7 @@ export default function LandingPage() {
       // A informação "30 dias grátis · sem cartão" está no subtítulo da secção
       // de preços; repeti-la em cada cartão era ruído visual.
       subtitleKey: undefined,
+      subtitle: p.description ?? undefined,
 
       limits: p.limits,
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),

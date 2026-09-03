@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { usePlansCatalog } from "@/hooks/usePlansCatalog";
+import { useShopOverrides } from "@/hooks/useShopOverrides";
 import {
   loadPlatformSettings,
   getCachedPlatformSettings,
@@ -176,6 +177,7 @@ export function useSubscription() {
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(getCachedPlatformSettings());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const { data: plansCatalog } = usePlansCatalog();
+  const shopOverrides = useShopOverrides(shopId ?? activeShopId ?? null);
 
   // Entry plan slug — resolvido dinamicamente do catálogo (plano com preço 0
   // ou primeiro por sort_order). Fallback defensivo: "free".

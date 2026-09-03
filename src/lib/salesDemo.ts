@@ -76,15 +76,9 @@ export async function resetDemo(plan: DemoPlan = currentDemoPlan()) {
   await callDemo("reset", plan);
 }
 
-/** Termina o modo demonstração e limpa a sessão. */
-export async function endDemo() {
-  if (isDemoSession()) {
-    try { await callDemo("end", currentDemoPlan()); } catch { /* expiry cleanup remains as fallback */ }
-  }
+/** Limpeza local — síncrona e infalível. Só corre em sessões demo. */
+function wipeDemoLocalState() {
   try {
-    // Limpa TODO o estado local da demo (flags, plano, tour, consola comercial)
-    // e o ponteiro de oficina ativa — nunca toca em contas reais porque este
-    // caminho só corre em sessões marcadas como demo.
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -105,8 +99,22 @@ export async function endDemo() {
     }
     sKeys.forEach((k) => sessionStorage.removeItem(k));
   } catch { /* noop */ }
+}
+
+const withTimeout = (p: Promise<unknown>, ms = 4000) =>
+  Promise.race([p.catch(() => undefined), new Promise((r) => setTimeout(r, ms))]);
+
+/** Termina o modo demonstração e limpa a sessão. */
+export async function endDemo() {
+  const wasDemo = isDemoSession();
+  const plan = currentDemoPlan();
+  wipeDemoLocalState();
+  if (wasDemo) {
+    // Melhor esforço: o TTL do tenant demo garante a limpeza mesmo se falhar.
+    await withTimeout(callDemo("end", plan));
+  }
   await resetActiveShopOnLogout();
-  await supabase.auth.signOut();
+  await withTimeout(supabase.auth.signOut());
 }
 
 /**
@@ -115,7 +123,9 @@ export async function endDemo() {
  * memória (contexto de oficina, caches de query) sobrevive à transição.
  */
 export async function exitDemoToSignup() {
-  try { await endDemo(); } catch { /* segue mesmo assim: o estado local já foi limpo */ }
+  try { await endDemo(); } catch { /* estado local já foi limpo */ }
+  wipeDemoLocalState();
   window.location.replace("/auth?mode=signup");
 }
+
 

@@ -435,11 +435,26 @@ export function useSubscription() {
   if (cQuotes !== undefined) catalogOverrides.maxQuotesPerMonth = cQuotes;
   const cUsers = catalogNum("max_users") ?? catalogNum("max_team_members");
   if (cUsers !== undefined) catalogOverrides.maxUsers = cUsers;
+
+  // Exceções por oficina (Admin > Oficina > Exceções) — prioridade máxima.
+  const shopNum = (key: string): number | undefined => {
+    const v = shopOverrides.limits?.[key];
+    if (typeof v !== "number") return undefined;
+    return v < 0 ? Infinity : v;
+  };
+  const shopLimitOverrides: Partial<PlanLimits> = {};
+  const sQuotes = shopNum("max_quotes_per_month");
+  if (sQuotes !== undefined) shopLimitOverrides.maxQuotesPerMonth = sQuotes;
+  const sUsers = shopNum("max_users") ?? shopNum("max_team_members");
+  if (sUsers !== undefined) shopLimitOverrides.maxUsers = sUsers;
+
   const baseLimits: PlanLimits = {
     ...PLAN_LIMITS[legacyKey],
     ...(overrides as Partial<PlanLimits>),
     ...catalogOverrides,
+    ...shopLimitOverrides,
   };
+
 
   // When mustSubscribe is true, lock EVERY feature (no free access at all).
   const LOCKED_LIMITS: PlanLimits = {

@@ -11320,7 +11320,6 @@ export type Database = {
         Returns: boolean
       }
       is_commercial_admin: { Args: { _user_id?: string }; Returns: boolean }
-      is_demo_shop: { Args: { _shop_id: string }; Returns: boolean }
       is_group_owner: { Args: { _shop_id: string }; Returns: boolean }
       is_regional_admin_for: {
         Args: { _country_code: string; _user_id: string }

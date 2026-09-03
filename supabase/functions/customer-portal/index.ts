@@ -29,6 +29,15 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user?.email) throw new Error("Not authenticated");
 
+    const { data: demoShop } = await supabaseClient
+      .from("shops")
+      .select("id")
+      .eq("user_id", userData.user.id)
+      .eq("is_demo", true)
+      .limit(1)
+      .maybeSingle();
+    if (demoShop) throw new Error("A gestão de pagamentos está desativada na conta Demo.");
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: userData.user.email, limit: 1 });
     if (customers.data.length === 0) throw new Error("No Stripe customer found");

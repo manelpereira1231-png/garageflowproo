@@ -82,12 +82,15 @@ serve(async (req) => {
       // não recebia o JWT do utilizador, pelo que a RLS bloqueava sempre a leitura.
       const { data: shop } = await supabaseAdmin
         .from("shops")
-        .select("id, stripe_connect_account_id, country, user_id, group_owner_id")
+        .select("id, stripe_connect_account_id, country, user_id, group_owner_id, is_demo")
         .eq("id", shopId)
         .maybeSingle();
       if (!shop) throw new Error("Oficina não encontrada");
       if (shop.user_id !== user.id && shop.group_owner_id !== user.id) {
         throw new Error("Sem permissão para configurar pagamentos desta oficina");
+      }
+      if (shop.is_demo === true) {
+        throw new Error("A configuração de pagamentos está desativada na conta Demo.");
       }
       accountId = shop.stripe_connect_account_id;
       countryCode = (shop.country || "PT").toUpperCase();

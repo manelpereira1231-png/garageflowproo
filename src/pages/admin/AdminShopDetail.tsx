@@ -19,6 +19,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/auditLog";
+import { Sparkles } from "lucide-react";
+import { ShopOverridesPanel } from "@/components/admin/ShopOverridesPanel";
 
 interface ShopDetail {
   id: string; name: string; email: string; phone: string; country: string;
@@ -570,8 +572,15 @@ export default function AdminShopDetail() {
           <TabsTrigger value="history" className="gap-1">
             <History className="w-3 h-3" /> Histórico
           </TabsTrigger>
+          <TabsTrigger value="overrides" className="gap-1">
+            <Sparkles className="w-3 h-3" /> Exceções
+          </TabsTrigger>
           <TabsTrigger value="logs">Auditoria</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overrides">
+          <ShopOverridesPanel shopId={id!} shopName={shop?.name} />
+        </TabsContent>
 
         <TabsContent value="overview">
           <div className="stat-card">

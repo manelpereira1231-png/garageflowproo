@@ -1,10 +1,9 @@
 /**
  * SALES DEMO — camada mínima de suporte a /demo-demonstracao.
  *
- * Não altera Auth, Billing, Permissões nem qualquer funcionalidade do ERP.
- * Apenas: pede uma sessão da conta de demonstração ao edge function
+ * Pede uma sessão temporária e isolada ao edge function
  * `sales-demo`, marca a sessão como "modo demonstração" e permite trocar
- * o contexto de plano (Free / Pro / Garage) APENAS na oficina demo.
+ * o contexto de plano (Start / Pro / Garage) APENAS na oficina demo.
  */
 import { supabase } from "@/integrations/supabase/client";
 

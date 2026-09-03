@@ -1,14 +1,15 @@
 /**
  * SALES DEMO — sessão de demonstração comercial.
  *
- * Cria/garante UMA conta de demonstração isolada (oficina "AutoPrime Lisboa"),
+ * Cria uma conta temporária e isolada por visitante (oficina "AutoPrime Lisboa"),
  * com dados fictícios, e devolve uma sessão pronta a usar no ERP real.
  * Nunca toca em contas, planos ou dados de clientes reais.
  *
  * Actions:
  *   start  -> garante conta + dados + plano escolhido, devolve session
- *   plan   -> muda o plano APENAS da oficina demo
+ *   plan   -> muda o plano APENAS da oficina demo autenticada
  *   reset  -> apaga e volta a semear os dados da oficina demo
+ *   end    -> elimina imediatamente o tenant temporário
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -18,8 +19,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEMO_EMAIL = "demo@garageflow.pt";
 const DEMO_SHOP_NAME = "AutoPrime Lisboa";
+const DEMO_TTL_HOURS = 4;
 const PLANS = ["free", "pro", "garage"] as const;
 type Plan = typeof PLANS[number];
 
@@ -47,35 +48,57 @@ serve(async (req) => {
     const action: string = body.action || "start";
     const plan: Plan = PLANS.includes(body.plan) ? body.plan : "pro";
 
-    /* ---------------------------------------------------------- demo user */
-    let userId: string | null = null;
-    const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    userId = list?.users?.find((u) => u.email?.toLowerCase() === DEMO_EMAIL)?.id ?? null;
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-    const password = randomPassword();
-    if (!userId) {
+    // Remove tenants whose TTL elapsed. This opportunistic sweep avoids any
+    // dependency on pg_cron and runs before provisioning each new visitor.
+    const { data: expired } = await admin
+      .from("shops")
+      .select("id,user_id")
+      .eq("is_demo", true)
+      .lt("demo_expires_at", new Date().toISOString())
+      .limit(25);
+    for (const row of expired ?? []) {
+      await admin.from("shops").delete().eq("id", row.id).eq("is_demo", true);
+      if (row.user_id) await admin.auth.admin.deleteUser(row.user_id);
+    }
+
+    let userId: string;
+    let demoEmail: string;
+    let password = "";
+    let shop: { id: string } | null = null;
+
+    if (action === "start") {
+      const visitorId = crypto.randomUUID();
+      demoEmail = `demo+${visitorId}@garageflow.invalid`;
+      password = randomPassword();
       const { data: created, error } = await admin.auth.admin.createUser({
-        email: DEMO_EMAIL,
+        email: demoEmail,
         password,
         email_confirm: true,
         user_metadata: { full_name: "GarageFlow Demo", is_demo: true },
       });
-      if (error) return json({ error: error.message }, 400);
-      userId = created.user!.id;
+      if (error || !created.user) return json({ error: error?.message || "Não foi possível criar a sessão Demo." }, 400);
+      userId = created.user.id;
+      const existing = await admin
+        .from("shops").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
+      shop = existing.data;
     } else {
-      // rotaciona a password a cada demonstração (nunca é exposta ao browser)
-      const { error } = await admin.auth.admin.updateUserById(userId, { password, email_confirm: true });
-      if (error) return json({ error: error.message }, 400);
+      if (!token) return json({ error: "Sessão Demo necessária." }, 401);
+      const { data: authData, error: authError } = await admin.auth.getUser(token);
+      if (authError || !authData.user) return json({ error: "Sessão Demo inválida." }, 401);
+      userId = authData.user.id;
+      demoEmail = authData.user.email || "demo@garageflow.invalid";
+      const existing = await admin.from("shops").select("id").eq("user_id", userId).eq("is_demo", true).maybeSingle();
+      shop = existing.data;
+      if (!shop) return json({ error: "Esta ação só está disponível numa conta Demo." }, 403);
     }
 
     /* ---------------------------------------------------------- demo shop */
-    // O signup cria automaticamente uma oficina — reutilizamo-la (sem criar mais).
-    let { data: shop } = await admin
-      .from("shops").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
-
     const shopFields = {
       name: DEMO_SHOP_NAME,
-      email: DEMO_EMAIL,
+      email: demoEmail,
       phone: "+351 210 000 000",
       address: "Av. da República 120, Lisboa",
       currency: "EUR",
@@ -86,6 +109,8 @@ serve(async (req) => {
       nif: "999999990",
       status: "active",
       onboarding_completed_at: new Date().toISOString(),
+      is_demo: true,
+      demo_expires_at: new Date(Date.now() + DEMO_TTL_HOURS * 3600000).toISOString(),
     };
 
     if (shop) {
@@ -103,6 +128,12 @@ serve(async (req) => {
     }
     const shopId = shop!.id as string;
 
+    if (action === "end") {
+      await admin.from("shops").delete().eq("id", shopId).eq("is_demo", true);
+      await admin.auth.admin.deleteUser(userId);
+      return json({ ok: true, shop_id: shopId, plan });
+    }
+
     /* ------------------------------------------------------------- plano */
     const { data: sub } = await admin.from("subscriptions").select("id").eq("shop_id", shopId).maybeSingle();
     if (sub) {
@@ -115,7 +146,7 @@ serve(async (req) => {
 
     /* -------------------------------------------------------- seed / reset */
     const wipe = async () => {
-      for (const table of ["invoices", "work_orders", "quotes", "vehicles", "clients", "parts"]) {
+      for (const table of ["notifications", "alerts", "appointments", "invoices", "work_orders", "quotes", "vehicles", "clients", "parts"]) {
         await admin.from(table).delete().eq("shop_id", shopId);
       }
     };
@@ -133,7 +164,7 @@ serve(async (req) => {
     /* ---------------------------------------------------------- sessão */
     const anon = createClient(url, anonKey, { auth: { persistSession: false } });
     const { data: signIn, error: signInError } = await anon.auth.signInWithPassword({
-      email: DEMO_EMAIL, password,
+      email: demoEmail, password,
     });
     if (signInError) return json({ error: signInError.message }, 400);
 

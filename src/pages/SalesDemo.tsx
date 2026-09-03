@@ -1,8 +1,7 @@
 /**
  * GARAGEFLOW SALES DEMO — /demo-demonstracao
  *
- * Entrada da apresentação comercial: escolher o contexto (Start / Pro / Garage)
- * e começar. 100% simulada — sem login, sem conta real, sem faturação.
+ * Entrada da apresentação comercial numa conta temporária do SaaS real.
  */
 import { useEffect, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";

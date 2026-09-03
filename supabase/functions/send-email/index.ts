@@ -197,6 +197,14 @@ serve(async (req: Request) => {
       }
 
       if (scopedShopIds.length > 0) {
+        const { data: demoShops } = await admin
+          .from("shops").select("id").in("id", scopedShopIds).eq("is_demo", true).limit(1);
+        if ((demoShops ?? []).length > 0) {
+          console.log("Demo email simulated; no external message was sent.");
+          return new Response(JSON.stringify({ success: true, simulated: true, provider: "demo" }),
+            { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
+        }
+
         const { data: clientRows } = await admin
           .from("clients").select("email").in("shop_id", scopedShopIds);
         for (const c of clientRows ?? []) {

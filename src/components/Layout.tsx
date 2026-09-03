@@ -558,7 +558,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }`}
       >
 
-        <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-4 lg:px-5"}`}>
+        <div className={`h-14 lg:h-16 flex items-center border-b border-sidebar-border shrink-0 ${sidebarCompact ? "px-2 justify-center" : "px-2 lg:px-3"}`}>
           <div className="flex flex-1 items-center gap-2.5 min-w-0">
             <img src="/icon-192-v8.png" alt="GarageFlow" className="w-8 h-8 rounded-lg object-contain shrink-0" />
             {!sidebarCompact && (

@@ -120,8 +120,11 @@ export function ShopOverridesPanel({ shopId, shopName }: Props) {
     setSaving(false);
     if (error) { toast.error("Não foi possível guardar: " + error.message); return; }
     invalidateShopOverrides(shopId);
-    void logAudit("shop_overrides_updated", "shop", shopId, {
-      features: featOverrides, limits, shop: shopName,
+    void logAudit({
+      action: "shop_overrides_updated",
+      entityType: "shop",
+      entityId: shopId,
+      details: { features: featOverrides, limits, shop: shopName },
     });
     toast.success("Exceções aplicadas — a oficina vê já as alterações.");
   };

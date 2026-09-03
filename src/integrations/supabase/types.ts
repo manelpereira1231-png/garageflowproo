@@ -8211,6 +8211,41 @@ export type Database = {
           },
         ]
       }
+      shop_overrides: {
+        Row: {
+          created_at: string
+          features: Json
+          limits: Json
+          notes: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features?: Json
+          limits?: Json
+          notes?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          limits?: Json
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_overrides_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_payouts: {
         Row: {
           amount: number

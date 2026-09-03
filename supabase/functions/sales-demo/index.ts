@@ -219,7 +219,7 @@ async function seed(admin: any, shopId: string) {
   if (vehiclesError) throw new Error("seed vehicles: " + vehiclesError.message);
   const byPlate = (p: string) => insVehicles?.find((v: any) => v.plate === p);
 
-  await admin.from("parts").insert([
+  const partsPromise = admin.from("parts").insert([
     { shop_id: shopId, name: "Filtro de óleo", reference: "OF-1042", supplier: "Bosch", internal_cost: 6.4, sale_price: 14.9, vat_rate: 23, stock_quantity: 24, min_stock: 6 },
     { shop_id: shopId, name: "Pastilhas travão dianteiras", reference: "BP-2210", supplier: "Brembo", internal_cost: 28.5, sale_price: 62, vat_rate: 23, stock_quantity: 9, min_stock: 4 },
     { shop_id: shopId, name: "Óleo 5W30 (litro)", reference: "OIL-5W30", supplier: "Castrol", internal_cost: 5.2, sale_price: 11.5, vat_rate: 23, stock_quantity: 60, min_stock: 20 },
@@ -257,8 +257,7 @@ async function seed(admin: any, shopId: string) {
       created_at: daysAgo(q.days), ...totals(q.lines),
     };
   });
-  const { data: insertedQuotes, error: quotesError } = await admin.from("quotes").insert(quotes).select("id,number,status,client_id,vehicle_id,total");
-  if (quotesError) throw new Error("seed quotes: " + quotesError.message);
+  const quotesPromise = admin.from("quotes").insert(quotes).select("id,number,status,client_id,vehicle_id,total");
 
   const woDefs = [
     { plate: "AA-11-BB", n: "OS-0001", status: "delivered", tech: "Carlos Nunes", desc: "Revisão de 15.000 km", lines: [line("Filtro de óleo", 1, 14.9, 6.4), line("Óleo 5W30 (litro)", 4, 11.5, 5.2), labor(1)], days: 10 },
@@ -280,14 +279,21 @@ async function seed(admin: any, shopId: string) {
       ...totals(w.lines),
     };
   });
-  const { data: insertedWorkOrders, error: woError } = await admin.from("work_orders").insert(workOrders).select("id,number,client_id,vehicle_id,total,status");
-  if (woError) throw new Error("seed work_orders: " + woError.message);
+  const [quotesRes, woRes] = await Promise.all([
+    quotesPromise,
+    admin.from("work_orders").insert(workOrders).select("id,number,client_id,vehicle_id,total,status"),
+  ]);
+  if (quotesRes.error) throw new Error("seed quotes: " + quotesRes.error.message);
+  if (woRes.error) throw new Error("seed work_orders: " + woRes.error.message);
+  const insertedQuotes = quotesRes.data;
+  const insertedWorkOrders = woRes.data;
 
   const quoteByNumber = (number: string) => insertedQuotes?.find((quote: any) => quote.number === number);
   const workOrderByNumber = (number: string) => insertedWorkOrders?.find((order: any) => order.number === number);
   const paidOrder = workOrderByNumber("OS-0001");
   const completedOrder = workOrderByNumber("OS-0004");
 
+  let invoicesPromise: Promise<any> | null = null;
   if (paidOrder && completedOrder) {
     const invoices = [
       { order: paidOrder, number: "FT-D001", status: "paid", days: 9 },
@@ -307,8 +313,7 @@ async function seed(admin: any, shopId: string) {
       notes: "Documento fictício de demonstração — sem validade fiscal.",
       created_at: daysAgo(days),
     }));
-    const { error } = await admin.from("invoices").insert(invoices);
-    if (error) throw new Error("seed invoices: " + error.message);
+    invoicesPromise = admin.from("invoices").insert(invoices);
   }
 
   const today = new Date();
@@ -327,8 +332,7 @@ async function seed(admin: any, shopId: string) {
     source: "manual",
     ...appointment,
   }));
-  const { error: appointmentsError } = await admin.from("appointments").insert(appointments);
-  if (appointmentsError) throw new Error("seed appointments: " + appointmentsError.message);
+  const appointmentsPromise = admin.from("appointments").insert(appointments);
 
   const approvedQuote = quoteByNumber("ORC-0001");
   const rejectedQuote = quoteByNumber("ORC-0005");
@@ -352,12 +356,17 @@ async function seed(admin: any, shopId: string) {
       created_at: daysAgo(2),
     },
   ].filter(Boolean);
-  const { error: notificationsError } = await admin.from("notifications").insert(notifications);
-  if (notificationsError) throw new Error("seed notifications: " + notificationsError.message);
+  const notificationsPromise = admin.from("notifications").insert(notifications);
 
-  const { error: alertsError } = await admin.from("alerts").insert([
+  const alertsPromise = admin.from("alerts").insert([
     { shop_id: shopId, client_id: byName("Rui Cardoso"), vehicle_id: byPlate("AD-44-EF")?.id, type: "inspection", title: "Inspeção periódica próxima", message: "BMW Série 3 — inspeção prevista para os próximos 15 dias.", due_date: dateFromNow(15), priority: "high" },
     { shop_id: shopId, client_id: byName("Miguel Tavares"), vehicle_id: byPlate("AF-66-GH")?.id, type: "maintenance", title: "Revisão recomendada", message: "Mercedes-Benz Classe A atingiu o intervalo recomendado de manutenção.", due_date: dateFromNow(7), priority: "medium" },
   ]);
-  if (alertsError) throw new Error("seed alerts: " + alertsError.message);
+
+  const results = await Promise.all([
+    partsPromise, invoicesPromise ?? Promise.resolve({ error: null }),
+    appointmentsPromise, notificationsPromise, alertsPromise,
+  ]);
+  const failed = results.find((r: any) => r?.error);
+  if (failed) throw new Error("seed: " + failed.error.message);
 }

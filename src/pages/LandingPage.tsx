@@ -823,6 +823,7 @@ export default function LandingPage() {
                 ) : (
                   <div className="mb-5 sm:mb-6" />
                 )}
+                <PlanLimitsList limits={plan.limits} />
                 <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
                   {plan.items.map(item => (
                     <li

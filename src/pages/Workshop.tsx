@@ -392,7 +392,7 @@ export default function Workshop() {
 
       {/* Work orders grid - tablet optimized */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {loading && workOrders.length === 0 ? (
+        {loading && visibleOrders.length === 0 ? (
           <>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-card border-2 border-border rounded-2xl p-4 space-y-3 animate-pulse">
@@ -406,11 +406,11 @@ export default function Workshop() {
               </div>
             ))}
           </>
-        ) : !loading && workOrders.length === 0 ? (
+        ) : !loading && visibleOrders.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground">
-            {t('workshop.noOrders')}
+            {extraActiveCount > 0 || term ? 'Sem resultados para os filtros aplicados.' : t('workshop.noOrders')}
           </div>
-        ) : workOrders.map(wo => {
+        ) : visibleOrders.map(wo => {
           const cfg = statusConfig[wo.status] || statusConfig.open;
           const Icon = cfg.icon;
           const nextAction = getNextAction(wo.status);

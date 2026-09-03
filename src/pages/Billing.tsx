@@ -22,6 +22,7 @@ import {
 import { usePlanNames } from "@/hooks/usePlanNames";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
 import { usePlansCatalog, publicPlans, planLimit } from "@/hooks/usePlansCatalog";
+import { PlanLimitsList } from "@/components/plans/PlanLimitsList";
 import { resolvePlanCta } from "@/lib/planCta";
 
 function ReferralFreeMonths() {
@@ -653,6 +654,7 @@ export default function Billing() {
                 )}
               </div>
 
+              <PlanLimitsList limits={row.limits} />
               <ul className="space-y-3 mb-6">
                 {items.map((item) => (
                   <li

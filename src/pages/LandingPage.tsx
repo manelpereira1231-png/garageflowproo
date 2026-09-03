@@ -9,6 +9,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import type { Language } from "@/i18n/translations";
 import { getRegionalPricing, getCountryCode } from "@/lib/regionConfig";
 import { useFeatureMatrix, buildPlanFeatureItems } from "@/lib/features";
+import { PlanLimitsList } from "@/components/plans/PlanLimitsList";
 import { captureAdsParams, trackCtaClick, trackPricingView, trackScrollDepth } from "@/lib/gadsTracking";
 import { trackLandingVisit } from "@/lib/landingTracker";
 import SEOHead from "@/components/SEOHead";
@@ -258,6 +259,7 @@ export default function LandingPage() {
       // de preços; repeti-la em cada cartão era ruído visual.
       subtitleKey: undefined,
 
+      limits: p.limits,
       items: buildPlanFeatureItems(p.slug as any, fxFeatures, fxMatrix),
       cta,
       badgeLabel,
@@ -823,6 +825,7 @@ export default function LandingPage() {
                 ) : (
                   <div className="mb-5 sm:mb-6" />
                 )}
+                <PlanLimitsList limits={plan.limits} />
                 <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
                   {plan.items.map(item => (
                     <li

@@ -280,6 +280,30 @@ export default function Workshop() {
     return map[status] || null;
   };
 
+  // Filtros adicionais (mesma lógica dos Orçamentos): pesquisa, estado, técnico, datas.
+  const technicianOptions = Array.from(new Set(
+    workOrders.map(w => (w.technician || '').trim()).filter(Boolean)
+  )).sort().map(name => ({ value: name, label: name }));
+
+  const term = search.trim().toLowerCase();
+  const visibleOrders = workOrders.filter(wo => {
+    if (fStatus !== 'all' && wo.status !== fStatus) return false;
+    if (fTechnician !== 'all' && (wo.technician || '') !== fTechnician) return false;
+    if (fDateFrom && wo.created_at < fDateFrom) return false;
+    if (fDateTo && wo.created_at.slice(0, 10) > fDateTo) return false;
+    if (term) {
+      const c = wo.clients as any;
+      const v = wo.vehicles as any;
+      const hay = [wo.number, c?.name, c?.phone, c?.email, v?.make, v?.model, v?.plate]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    return true;
+  });
+
+  const extraActiveCount = [fStatus !== 'all', fTechnician !== 'all', !!fDateFrom, !!fDateTo].filter(Boolean).length;
+  const clearExtraFilters = () => { setSearch(''); setFStatus('all'); setFTechnician('all'); setFDateFrom(''); setFDateTo(''); };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}

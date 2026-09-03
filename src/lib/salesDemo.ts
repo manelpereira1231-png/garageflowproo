@@ -7,6 +7,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { resetActiveShopOnLogout } from "@/lib/shopContextSync";
+import { trackDemoEnter, trackDemoEvent } from "@/lib/demoTracker";
 
 export type DemoPlan = "free" | "pro" | "garage";
 
@@ -62,6 +63,7 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   localStorage.setItem(DEMO_FLAG, "1");
   localStorage.setItem(DEMO_PLAN_KEY, plan);
   localStorage.setItem(DEMO_MODE_KEY, mode);
+  trackDemoEnter();
   return res.shop_id;
 }
 
@@ -69,6 +71,7 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
 export async function switchDemoPlan(plan: DemoPlan) {
   await callDemo("plan", plan);
   localStorage.setItem(DEMO_PLAN_KEY, plan);
+  trackDemoEvent("plan_switch", { label: plan });
 }
 
 /** Repõe os dados fictícios da oficina demo para a próxima apresentação. */
@@ -108,6 +111,7 @@ const withTimeout = (p: Promise<unknown>, ms = 4000) =>
 export async function endDemo() {
   const wasDemo = isDemoSession();
   const plan = currentDemoPlan();
+  if (wasDemo) trackDemoEvent("demo_end");
   wipeDemoLocalState();
   if (wasDemo) {
     // Melhor esforço: o TTL do tenant demo garante a limpeza mesmo se falhar.
@@ -123,6 +127,9 @@ export async function endDemo() {
  * memória (contexto de oficina, caches de query) sobrevive à transição.
  */
 export async function exitDemoToSignup() {
+  if (isDemoSession()) trackDemoEvent("cta_signup");
+  // Pequena margem para o evento sair antes da navegação hard.
+  await withTimeout(new Promise((r) => setTimeout(r, 300)), 500);
   try { await endDemo(); } catch { /* estado local já foi limpo */ }
   wipeDemoLocalState();
   window.location.replace("/auth?mode=signup");

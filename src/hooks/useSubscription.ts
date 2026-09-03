@@ -422,7 +422,25 @@ export function useSubscription() {
       ? (effectivePlan as LegacyPlan)
       : 'garage';
   const overrides = limitOverridesFor(legacyKey, platformSettings);
-  const baseLimits: PlanLimits = { ...PLAN_LIMITS[legacyKey], ...(overrides as Partial<PlanLimits>) };
+  // Fonte de verdade dos limites numéricos: catálogo de planos gerido no Admin
+  // (`plans.limits` + `plan_limits_catalog`). -1 = ilimitado.
+  const catalogRow = plansCatalog?.plans?.find((p) => p.slug === effectivePlan);
+  const catalogNum = (key: string): number | undefined => {
+    const v = catalogRow?.limits?.[key];
+    if (typeof v !== "number") return undefined;
+    return v < 0 ? Infinity : v;
+  };
+  const catalogOverrides: Partial<PlanLimits> = {};
+  const cQuotes = catalogNum("max_quotes_per_month");
+  if (cQuotes !== undefined) catalogOverrides.maxQuotesPerMonth = cQuotes;
+  const cUsers = catalogNum("max_users") ?? catalogNum("max_team_members");
+  if (cUsers !== undefined) catalogOverrides.maxUsers = cUsers;
+  const baseLimits: PlanLimits = {
+    ...PLAN_LIMITS[legacyKey],
+    ...(overrides as Partial<PlanLimits>),
+    ...catalogOverrides,
+  };
+
   // When mustSubscribe is true, lock EVERY feature (no free access at all).
   const LOCKED_LIMITS: PlanLimits = {
     maxQuotesPerMonth: 0,

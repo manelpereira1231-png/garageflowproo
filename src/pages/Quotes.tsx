@@ -386,10 +386,29 @@ export default function Quotes() {
         </div>
         <div className="flex items-center gap-2">
           {isEntryPlan && limits.maxQuotesPerMonth !== Infinity && (
-            <Badge variant="outline" className={isLimitReached ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-muted text-muted-foreground"}>
-              {t('quotes.quotesUsed').replace('{used}', String(monthlyUsed)).replace('{limit}', String(limits.maxQuotesPerMonth))}
-            </Badge>
+            <button
+              type="button"
+              onClick={() => navigate("/billing")}
+              title={t('quotes.quotesUsed').replace('{used}', String(monthlyUsed)).replace('{limit}', String(limits.maxQuotesPerMonth))}
+              className={`group hidden sm:flex items-center gap-2.5 h-9 pl-3 pr-3.5 rounded-full border transition-colors ${
+                isLimitReached
+                  ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/15"
+                  : "border-border bg-muted/40 hover:bg-muted"
+              }`}
+            >
+              <span className={`text-xs font-semibold tabular-nums ${isLimitReached ? "text-destructive" : "text-foreground"}`}>
+                {monthlyUsed}<span className="text-muted-foreground font-normal">/{limits.maxQuotesPerMonth}</span>
+              </span>
+              <span className="relative w-16 h-1.5 rounded-full bg-border overflow-hidden">
+                <span
+                  className={`absolute inset-y-0 left-0 rounded-full ${isLimitReached ? "bg-destructive" : "bg-primary"}`}
+                  style={{ width: `${Math.min(100, (monthlyUsed / Math.max(1, limits.maxQuotesPerMonth)) * 100)}%` }}
+                />
+              </span>
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">{t('quotes.title').toLowerCase()}/mês</span>
+            </button>
           )}
+
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
             <FileDown className="w-4 h-4 mr-1" />CSV
           </Button>

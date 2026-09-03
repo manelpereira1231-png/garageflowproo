@@ -8,7 +8,7 @@ type NotificationLinkInput = {
 };
 
 export function resolveNotificationLink(notification: NotificationLinkInput): string | null {
-  const quoteNumber = notification.data?.quote_number?.trim();
+  const quoteId = notification.data?.quote_id?.trim();
   const isQuoteNotification =
     notification.data?.event === "quote_approved" ||
     notification.data?.event === "quote_rejected" ||
@@ -16,7 +16,8 @@ export function resolveNotificationLink(notification: NotificationLinkInput): st
     notification.link?.startsWith("/quotes/edit/");
 
   if (isQuoteNotification) {
-    return quoteNumber ? `/quotes?search=${encodeURIComponent(quoteNumber)}` : "/quotes";
+    if (quoteId) return `/quotes/edit/${encodeURIComponent(quoteId)}`;
+    return notification.link?.startsWith("/quotes/edit/") ? notification.link : "/quotes";
   }
 
   return notification.link;

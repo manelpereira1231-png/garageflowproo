@@ -17,6 +17,8 @@ interface Shop {
   logo_url: string | null;
   currency: string;
   language: string;
+  is_demo: boolean;
+  demo_expires_at: string | null;
 }
 
 const STORAGE_KEY = ACTIVE_SHOP_STORAGE_KEY;
@@ -71,7 +73,7 @@ export function useShopContext() {
       const { data: groupShops } = await Promise.race([
         supabase
           .from("shops")
-          .select("id, name, logo_url, currency, language")
+          .select("id, name, logo_url, currency, language, is_demo, demo_expires_at")
           .eq("group_owner_id", user.id)
           .order("created_at", { ascending: true }),
         timeoutResult({ data: [] }),
@@ -82,7 +84,7 @@ export function useShopContext() {
       const { data: directOwnedShops } = await Promise.race([
         supabase
           .from("shops")
-          .select("id, name, logo_url, currency, language")
+          .select("id, name, logo_url, currency, language, is_demo, demo_expires_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: true }),
         timeoutResult({ data: [] }),
@@ -112,7 +114,7 @@ export function useShopContext() {
         const { data } = await Promise.race([
           supabase
             .from("shops")
-            .select("id, name, logo_url, currency, language")
+            .select("id, name, logo_url, currency, language, is_demo, demo_expires_at")
             .in("id", memberShopIds),
           timeoutResult({ data: [] }),
         ]);
@@ -150,7 +152,7 @@ export function useShopContext() {
           const { data: impersonated } = await Promise.race([
             supabase
               .from("shops")
-              .select("id, name, logo_url, currency, language")
+              .select("id, name, logo_url, currency, language, is_demo, demo_expires_at")
               .eq("id", stored)
               .maybeSingle(),
             timeoutResult({ data: null } as any),

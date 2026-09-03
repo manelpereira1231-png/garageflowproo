@@ -5,11 +5,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3, Target } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3, Target, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   currentDemoPlan, isDemoSession, resetDemo, switchDemoPlan, endDemo,
-  DEMO_BAR_HIDDEN, PLAN_LABEL, type DemoPlan,
+  DEMO_BAR_HIDDEN, DEMO_MODE_KEY, PLAN_LABEL, type DemoPlan,
 } from "@/lib/salesDemo";
 import { getCountryConfig, loadCountriesFromDB, formatPrice } from "@/lib/regionConfig";
 import DemoPlanCompare from "./DemoPlanCompare";
@@ -29,6 +29,9 @@ export default function SalesDemoBar() {
   const [hidden, setHidden] = useState(() => {
     try { return sessionStorage.getItem(DEMO_BAR_HIDDEN) === "1"; } catch { return false; }
   });
+  const isSalesMode = (() => {
+    try { return sessionStorage.getItem(DEMO_MODE_KEY) === "sales"; } catch { return false; }
+  })();
 
   useEffect(() => {
     let alive = true;
@@ -96,14 +99,14 @@ export default function SalesDemoBar() {
   return (
     <>
       <div className="fixed bottom-3 left-3 z-50 flex flex-wrap items-center gap-1 rounded-2xl border border-border/70 bg-card/90 backdrop-blur px-2 py-1.5 shadow-lg max-w-[calc(100vw-1.5rem)]">
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground px-1.5">Sales Demo</span>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground px-1.5">Conta Demo</span>
         <Button
           variant="ghost" size="sm" className="h-7 px-2 text-xs"
-          onClick={async () => { await endDemo(); navigate("/demo-demonstracao"); }}
+          onClick={async () => { await endDemo(); navigate(isSalesMode ? "/demo-demonstracao" : "/demo"); }}
         >
           <Home className="w-3.5 h-3.5 mr-1" />Início
         </Button>
-        {PLANS.map((p) => (
+        {isSalesMode && PLANS.map((p) => (
           <Button
             key={p}
             variant={p === plan ? "default" : "ghost"}
@@ -123,21 +126,24 @@ export default function SalesDemoBar() {
             )}
           </Button>
         ))}
-        <Button
+        {isSalesMode && <Button
           variant="ghost" size="sm" className="h-7 px-2 text-xs whitespace-nowrap"
           onClick={() => setConsole(true)}
         >
           <Target className="w-3.5 h-3.5 mr-1" />Consola
-        </Button>
-        <Button
+        </Button>}
+        {isSalesMode && <Button
           variant="ghost" size="sm" className="h-7 px-2 text-xs whitespace-nowrap"
           onClick={() => { trackEvent("sales_demo_compare_opened", { plan }); setCompare(true); }}
         >
           <BarChart3 className="w-3.5 h-3.5 mr-1" />Comparar planos
-        </Button>
+        </Button>}
         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={busy !== null} onClick={doReset}>
           {busy === "reset" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 mr-1" />}
           Reset
+        </Button>
+        <Button variant="default" size="sm" className="h-7 px-2 text-xs" onClick={async () => { await endDemo(); window.location.assign("/auth?mode=signup"); }}>
+          <Rocket className="w-3.5 h-3.5 mr-1" /> Experimentar gratuitamente
         </Button>
         <Button variant="ghost" size="icon" className="h-7 w-7" title="Modo cliente (esconder)" aria-label="Modo cliente" onClick={() => toggleHidden(true)}>
           <EyeOff className="w-3.5 h-3.5" />

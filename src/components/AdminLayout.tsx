@@ -22,6 +22,7 @@ const navSections = [
     label: "Plataforma",
     items: [
       { path: "/admin", label: "Centro de Controlo", icon: LayoutDashboard },
+      { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: "notifications" },
       { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
       { path: "/admin/system", label: "Kill Switches & Flags", icon: ToggleLeft },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },

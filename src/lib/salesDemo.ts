@@ -6,6 +6,7 @@
  * o contexto de plano (Start / Pro / Garage) APENAS na oficina demo.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { resetActiveShopOnLogout } from "@/lib/shopContextSync";
 
 export type DemoPlan = "free" | "pro" | "garage";
 
@@ -81,15 +82,40 @@ export async function endDemo() {
     try { await callDemo("end", currentDemoPlan()); } catch { /* expiry cleanup remains as fallback */ }
   }
   try {
-    localStorage.removeItem(DEMO_FLAG);
-    localStorage.removeItem(DEMO_PLAN_KEY);
-    localStorage.removeItem(DEMO_BAR_HIDDEN);
-    localStorage.removeItem(DEMO_MODE_KEY);
-    localStorage.removeItem(ACTIVE_SHOP_KEY);
-    localStorage.removeItem("garageflow_app_mode");
-    localStorage.removeItem("garageflow_onboarding_status");
-    localStorage.removeItem("garageflow_onboarding_completed");
-    localStorage.removeItem("gf_auto_onboarding_dismissed");
+    // Limpa TODO o estado local da demo (flags, plano, tour, consola comercial)
+    // e o ponteiro de oficina ativa — nunca toca em contas reais porque este
+    // caminho só corre em sessões marcadas como demo.
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("gf_sales_demo") || k.startsWith("gf_demo"))) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+    [
+      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, ACTIVE_SHOP_KEY,
+      "garageflow_app_mode", "garageflow_onboarding_status",
+      "garageflow_onboarding_completed", "gf_auto_onboarding_dismissed",
+    ].forEach((k) => localStorage.removeItem(k));
   } catch { /* storage pode estar desativado */ }
+  try {
+    const sKeys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && (k.startsWith("gf_sales_demo") || k.startsWith("gf_demo"))) sKeys.push(k);
+    }
+    sKeys.forEach((k) => sessionStorage.removeItem(k));
+  } catch { /* noop */ }
+  await resetActiveShopOnLogout();
   await supabase.auth.signOut();
 }
+
+/**
+ * CTA final da Demo: termina o contexto demo por completo e leva o visitante
+ * ao registo real. Usa navegação "hard" para garantir que nenhum estado em
+ * memória (contexto de oficina, caches de query) sobrevive à transição.
+ */
+export async function exitDemoToSignup() {
+  try { await endDemo(); } catch { /* segue mesmo assim: o estado local já foi limpo */ }
+  window.location.replace("/auth?mode=signup");
+}
+

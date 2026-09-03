@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3, Target, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  currentDemoPlan, isDemoSession, resetDemo, switchDemoPlan, endDemo,
+  currentDemoPlan, isDemoSession, resetDemo, switchDemoPlan, endDemo, exitDemoToSignup,
   DEMO_BAR_HIDDEN, DEMO_MODE_KEY, PLAN_LABEL, type DemoPlan,
 } from "@/lib/salesDemo";
 import { getCountryConfig, loadCountriesFromDB, formatPrice } from "@/lib/regionConfig";
@@ -142,9 +142,21 @@ export default function SalesDemoBar() {
           {busy === "reset" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 mr-1" />}
           Reset
         </Button>
-        <Button variant="default" size="sm" className="h-7 px-2 text-xs" onClick={async () => { await endDemo(); window.location.assign("/auth?mode=signup"); }}>
-          <Rocket className="w-3.5 h-3.5 mr-1" /> Experimentar gratuitamente
+        <Button
+          variant="default" size="sm" className="h-7 px-2.5 text-xs font-semibold"
+          disabled={busy !== null}
+          onClick={async () => {
+            setBusy("signup");
+            trackEvent(isSalesMode ? "sales_demo_cta_signup" : "self_demo_cta_signup", { plan });
+            await exitDemoToSignup();
+          }}
+        >
+          {busy === "signup"
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            : <Rocket className="w-3.5 h-3.5 mr-1" />}
+          {isSalesMode ? "Começar agora" : "Criar a minha conta"}
         </Button>
+
         <Button variant="ghost" size="icon" className="h-7 w-7" title="Modo cliente (esconder)" aria-label="Modo cliente" onClick={() => toggleHidden(true)}>
           <EyeOff className="w-3.5 h-3.5" />
         </Button>

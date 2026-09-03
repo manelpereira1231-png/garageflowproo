@@ -152,6 +152,7 @@ const AdminLogs = lazyRetry(() => import("@/pages/admin/AdminLogs"));
 const AdminReports = lazyRetry(() => import("@/pages/admin/AdminReports"));
 const AdminBilling = lazyRetry(() => import("@/pages/admin/AdminBilling"));
 const AdminAlerts = lazyRetry(() => import("@/pages/admin/AdminAlerts"));
+const AdminNotifications = lazyRetry(() => import("@/pages/admin/AdminNotifications"));
 const AdminSettings = lazyRetry(() => import("@/pages/admin/AdminSettings"));
 const AdminFeatureMatrix = lazyRetry(() => import("@/pages/admin/AdminFeatureMatrix"));
 const AdminPlans = lazyRetry(() => import("@/pages/admin/AdminPlans"));
@@ -458,6 +459,7 @@ const adminRoutes = [
   { path: "/admin/shops/:id", element: <AdminShopDetail /> },
   { path: "/admin/billing", element: <AdminBilling /> },
   { path: "/admin/alerts", element: <AdminAlerts /> },
+  { path: "/admin/notifications", element: <AdminNotifications /> },
   { path: "/admin/reports", element: <AdminReports /> },
   { path: "/admin/emails", element: <AdminEmailLogs /> },
   { path: "/admin/adoption", element: <AdminFeatureAdoption /> },

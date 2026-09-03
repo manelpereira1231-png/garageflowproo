@@ -12,6 +12,7 @@ import { signOutRealm } from "@/integrations/supabase/realmBridge";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 // Arquitetura aprovada: 7 grupos, cada opção existe UMA única vez.
 // Páginas legadas (AdminSettings, AdminAlerts, AdminGrowth, AdminGrowthOpportunities,
@@ -22,6 +23,7 @@ const navSections = [
     label: "Plataforma",
     items: [
       { path: "/admin", label: "Centro de Controlo", icon: LayoutDashboard },
+      { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: "notifications" },
       { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
       { path: "/admin/system", label: "Kill Switches & Flags", icon: ToggleLeft },
       { path: "/admin/logs", label: "Auditoria", icon: FileText },
@@ -109,6 +111,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);
+  const { unreadCount: adminUnread } = useAdminNotifications(40);
 
   // Painel de administração — força sempre PT-PT (regra obrigatória)
   useEffect(() => {
@@ -208,6 +211,11 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                       }`}>
                       <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
                       <span className="flex-1">{item.label}</span>
+                      {item.badge === "notifications" && adminUnread > 0 && (
+                        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                          {adminUnread > 99 ? "99+" : adminUnread}
+                        </span>
+                      )}
                       {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
                     </Link>
 
@@ -290,6 +298,18 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <Link
+              to="/admin/notifications"
+              aria-label="Notificações"
+              className="relative p-2 rounded-lg hover:bg-accent min-h-10 min-w-10 flex items-center justify-center"
+            >
+              <Bell className="w-5 h-5" />
+              {adminUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                  {adminUnread > 99 ? "99+" : adminUnread}
+                </span>
+              )}
+            </Link>
             <div className="hidden sm:flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Painel de Administração</span>

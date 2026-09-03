@@ -6,6 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
 import { Mail, Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";

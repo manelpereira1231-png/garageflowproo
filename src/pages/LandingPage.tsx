@@ -794,81 +794,102 @@ export default function LandingPage() {
               : planConfigs.length === 3 ? 'md:grid-cols-3'
               : planConfigs.length === 2 ? 'md:grid-cols-2' : ''
           }`}>
-            {planConfigs.map(plan => (
+            {planConfigs.map(plan => {
+              const badgeText = plan.badgeLabel || (plan.highlighted ? t('landing.popular') : null);
+              return (
               <div
                 key={plan.slug}
-                className={`bg-card rounded-xl p-5 sm:p-6 border-2 transition-all ${
+                className={`relative flex flex-col overflow-hidden rounded-2xl bg-card border-2 transition-all duration-200 ${
                   plan.highlighted
-                    ? "border-primary shadow-lg shadow-primary/10 md:scale-[1.02]"
-                    : "border-border hover:border-primary/30"
+                    ? "border-primary shadow-xl shadow-primary/15 ring-1 ring-primary/20 md:-translate-y-1"
+                    : "border-border hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
                 }`}
               >
-                {plan.badgeLabel ? (
-                  <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{plan.badgeLabel}</div>
-                ) : plan.highlighted ? (
-                  <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t('landing.popular')}</div>
-                ) : null}
-                <h3 className="text-xl font-bold">{getPlanName(plan.slug, plan.displayName)}</h3>
-                {plan.showPrice ? (
-                  <div className="mt-2 mb-2">
-                    <PriceWithPromo
-                      basePrice={plan.basePrice}
-                      country={countryCode}
-                      plan={plan.slug}
-                      cycle={billingCycle}
-                      periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
-                      size="lg"
-                    />
+                {badgeText && (
+                  <div className={`px-4 py-2 text-center text-[11px] font-bold uppercase tracking-wider ${
+                    plan.highlighted ? "gradient-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                  }`}>
+                    {badgeText}
                   </div>
-                ) : <div className="mt-2 mb-2" />}
-                {plan.subtitleKey ? (
-                  <p className="text-xs text-muted-foreground mb-5 sm:mb-6">{t(plan.subtitleKey)}</p>
-                ) : (
-                  <div className="mb-5 sm:mb-6" />
                 )}
-                <PlanLimitsList limits={plan.limits} />
-                <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                  {plan.items.map(item => (
-                    <li
-                      key={item.slug}
-                      className={`flex items-center gap-2 text-sm ${item.enabled ? "" : "text-muted-foreground"}`}
-                    >
-                      {item.enabled ? (
-                        <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                      ) : (
-                        <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      )}
-                      {t(`feature.${item.slug}`, item.name)}
-                    </li>
-                  ))}
-                </ul>
-                {plan.cta.visible && (
-                  plan.cta.disabled ? (
-                    <Button className="w-full" variant="outline" disabled>
-                      {plan.cta.label}
-                    </Button>
-                  ) : plan.cta.external ? (
-                    <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
-<Button
-                        className="w-full gradient-primary text-primary-foreground"
-                        variant="default"
+
+                <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  {/* Plano + posicionamento */}
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tight">{getPlanName(plan.slug, plan.displayName)}</h3>
+                    {plan.subtitle && (
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{plan.subtitle}</p>
+                    )}
+                  </div>
+
+                  {/* Preço */}
+                  {plan.showPrice ? (
+                    <div className="mt-4 pb-4 border-b border-border/70">
+                      <PriceWithPromo
+                        basePrice={plan.basePrice}
+                        country={countryCode}
+                        plan={plan.slug}
+                        cycle={billingCycle}
+                        periodLabel={plan.periodKey ? t(plan.periodKey) : undefined}
+                        size="lg"
+                      />
+                    </div>
+                  ) : <div className="mt-4 pb-4 border-b border-border/70" />}
+
+                  {/* Limites principais */}
+                  <div className="mt-4">
+                    <PlanLimitsList limits={plan.limits} />
+                  </div>
+
+                  {/* Funcionalidades incluídas */}
+                  <ul className="space-y-2.5 sm:space-y-3 mb-6 flex-1">
+                    {plan.items.map(item => (
+                      <li
+                        key={item.slug}
+                        className={`flex items-start gap-2.5 text-sm leading-snug ${item.enabled ? "text-foreground" : "text-muted-foreground"}`}
                       >
+                        {item.enabled ? (
+                          <CheckCircle className="w-4 h-4 mt-0.5 text-success flex-shrink-0" />
+                        ) : (
+                          <Lock className="w-4 h-4 mt-0.5 text-muted-foreground/70 flex-shrink-0" />
+                        )}
+                        <span>{t(`feature.${item.slug}`, item.name)}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  <div className="mt-auto">
+                  {plan.cta.visible && (
+                    plan.cta.disabled ? (
+                      <Button className="w-full" variant="outline" disabled>
                         {plan.cta.label}
                       </Button>
-                    </a>
-                  ) : (
-                    <Link to={plan.cta.href}>
-<Button
-                        className="w-full gradient-primary text-primary-foreground"
-                        variant="default"
-                      >
-                        {plan.cta.label}
-                      </Button>
-                    </Link>
-                  )
-                )}
+                    ) : plan.cta.external ? (
+                      <a href={plan.cta.href} target="_blank" rel="noopener noreferrer">
+                        <Button
+                          className="w-full gradient-primary text-primary-foreground"
+                          variant="default"
+                        >
+                          {plan.cta.label}
+                        </Button>
+                      </a>
+                    ) : (
+                      <Link to={plan.cta.href}>
+                        <Button
+                          className="w-full gradient-primary text-primary-foreground"
+                          variant="default"
+                        >
+                          {plan.cta.label}
+                        </Button>
+                      </Link>
+                    )
+                  )}
+                  </div>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

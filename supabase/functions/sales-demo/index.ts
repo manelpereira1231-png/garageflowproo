@@ -51,18 +51,23 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-    // Remove tenants whose TTL elapsed. This opportunistic sweep avoids any
-    // dependency on pg_cron and runs before provisioning each new visitor.
-    const { data: expired } = await admin
-      .from("shops")
-      .select("id,user_id")
-      .eq("is_demo", true)
-      .lt("demo_expires_at", new Date().toISOString())
-      .limit(25);
-    for (const row of expired ?? []) {
-      await admin.from("shops").delete().eq("id", row.id).eq("is_demo", true);
-      if (row.user_id) await admin.auth.admin.deleteUser(row.user_id);
-    }
+    // Remove tenants whose TTL elapsed. Corre em segundo plano para não
+    // atrasar o arranque da demonstração do visitante atual.
+    const sweepExpired = async () => {
+      const { data: expired } = await admin
+        .from("shops")
+        .select("id,user_id")
+        .eq("is_demo", true)
+        .lt("demo_expires_at", new Date().toISOString())
+        .limit(25);
+      await Promise.all((expired ?? []).map(async (row: any) => {
+        await admin.from("shops").delete().eq("id", row.id).eq("is_demo", true);
+        if (row.user_id) await admin.auth.admin.deleteUser(row.user_id);
+      }));
+    };
+    const bg = (globalThis as any).EdgeRuntime?.waitUntil;
+    if (typeof bg === "function") bg(sweepExpired().catch(() => {}));
+    else sweepExpired().catch(() => {});
 
     let userId: string;
     let demoEmail: string;
@@ -81,9 +86,8 @@ serve(async (req) => {
       });
       if (error || !created.user) return json({ error: error?.message || "Não foi possível criar a sessão Demo." }, 400);
       userId = created.user.id;
-      const existing = await admin
-        .from("shops").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
-      shop = existing.data;
+      // Utilizador acabado de criar: nunca tem oficina, evita-se uma query.
+      shop = null;
     } else {
       if (!token) return json({ error: "Sessão Demo necessária." }, 401);
       const { data: authData, error: authError } = await admin.auth.getUser(token);
@@ -151,12 +155,14 @@ serve(async (req) => {
       }
     };
 
-    const { count: clientCount } = await admin
-      .from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId);
-
-    if (action === "reset" || !clientCount) {
+    if (action === "reset") {
       await wipe();
       await seed(admin, shopId);
+    } else {
+      const { count: clientCount } = await admin
+        .from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId);
+      // Oficina nova (start) nunca tem dados — evita-se o wipe de 9 tabelas.
+      if (!clientCount) await seed(admin, shopId);
     }
 
     if (action === "reset") return json({ ok: true, shop_id: shopId, plan });

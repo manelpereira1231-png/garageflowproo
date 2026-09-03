@@ -27,6 +27,7 @@ import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -441,8 +442,76 @@ export default function Invoices() {
         </div>
       )}
 
-      {/* Smart filters row */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-2 mb-4">
+      {/* Mobile: filtros agrupados no mesmo padrão dos Orçamentos */}
+      <div className="md:hidden">
+        <CompactFilterBar
+          activeCount={[
+            filters.status !== 'all',
+            !!filters.clientId,
+            !!filters.dateFrom,
+            !!filters.dateTo,
+            !!filters.minTotal,
+          ].filter(Boolean).length}
+          onClear={hasActiveFilters ? clearFilters : undefined}
+          search={
+            <>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t('invoices.search') || 'Pesquisar…'}
+                value={search}
+                onChange={e => updateFilter('search', e.target.value)}
+                className="pl-9 h-10"
+              />
+            </>
+          }
+          filters={(stacked) => (
+            <>
+              <FilterCombobox
+                fullWidth={stacked}
+                value={filters.status}
+                onChange={(value) => updateFilter('status', value)}
+                placeholder="Todos os estados"
+                searchPlaceholder="Estado…"
+                options={[
+                  { value: 'all', label: 'Todos os estados' },
+                  { value: 'draft', label: t('invoices.status_draft') },
+                  { value: 'issued', label: t('invoices.status_issued') },
+                  { value: 'paid', label: t('invoices.status_paid') },
+                  { value: 'partial', label: t('invoices.status_partial') },
+                  { value: 'overdue', label: 'Vencidas' },
+                  { value: 'cancelled', label: t('invoices.status_cancelled') },
+                ]}
+              />
+              <FilterCombobox
+                fullWidth={stacked}
+                value={filters.clientId}
+                onChange={(value) => updateFilter('clientId', value)}
+                placeholder="Todos os clientes"
+                searchPlaceholder="Pesquisar cliente…"
+                options={[{ value: '', label: 'Todos os clientes' }, ...clientOptions.map(([id, name]) => ({ value: id, label: name }))]}
+              />
+              <FilterDateRange
+                fullWidth={stacked}
+                from={filters.dateFrom}
+                to={filters.dateTo}
+                onFrom={(value) => updateFilter('dateFrom', value)}
+                onTo={(value) => updateFilter('dateTo', value)}
+              />
+              <Input
+                type="number"
+                min="0"
+                placeholder="Total mínimo"
+                value={filters.minTotal}
+                onChange={e => updateFilter('minTotal', e.target.value)}
+                className="h-10"
+              />
+            </>
+          )}
+        />
+      </div>
+
+      {/* Desktop: filtros atuais */}
+      <div className="hidden md:grid md:grid-cols-7 gap-2 mb-4">
         <div className="relative md:col-span-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder={t('invoices.search') || 'Pesquisar…'} value={search} onChange={e => updateFilter('search', e.target.value)} className="pl-9" />

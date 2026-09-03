@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense, useMemo, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDemoTracking } from "@/hooks/useDemoTracking";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
 import {
   LayoutDashboard,
@@ -139,6 +140,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   );
   const sidebarPrefs = useSidebarPrefs(activeShopId);
   const { width: sidebarWidth, compact: sidebarCompact, toggle: toggleSidebarCollapse } = useResizableSidebar();
+  // Analytics da experiência Demo (inócuo fora de sessões demo)
+  useDemoTracking();
 
   const touchStartRef = useRef<{ x: number; y: number; path: string } | null>(null);
 

@@ -2538,6 +2538,54 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_events: {
+        Row: {
+          campaign: string
+          created_at: string
+          device_type: string
+          event: string
+          id: string
+          label: string
+          medium: string
+          metadata: Json
+          mode: string
+          path: string
+          referrer: string
+          session_id: string
+          source: string
+        }
+        Insert: {
+          campaign?: string
+          created_at?: string
+          device_type?: string
+          event: string
+          id?: string
+          label?: string
+          medium?: string
+          metadata?: Json
+          mode?: string
+          path?: string
+          referrer?: string
+          session_id: string
+          source?: string
+        }
+        Update: {
+          campaign?: string
+          created_at?: string
+          device_type?: string
+          event?: string
+          id?: string
+          label?: string
+          medium?: string
+          metadata?: Json
+          mode?: string
+          path?: string
+          referrer?: string
+          session_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       demo_requests: {
         Row: {
           archived_at: string | null

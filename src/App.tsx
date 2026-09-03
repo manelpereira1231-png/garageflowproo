@@ -459,6 +459,7 @@ const adminRoutes = [
   { path: "/admin/shops/:id", element: <AdminShopDetail /> },
   { path: "/admin/billing", element: <AdminBilling /> },
   { path: "/admin/alerts", element: <AdminAlerts /> },
+  { path: "/admin/notifications", element: <AdminNotifications /> },
   { path: "/admin/reports", element: <AdminReports /> },
   { path: "/admin/emails", element: <AdminEmailLogs /> },
   { path: "/admin/adoption", element: <AdminFeatureAdoption /> },

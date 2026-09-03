@@ -331,6 +331,59 @@ export default function Workshop() {
           </div>
         </div>
 
+        {/* Filtros (mesma lógica dos Orçamentos): desktop em linha, mobile em painel */}
+        <div className="mt-2">
+          <CompactFilterBar
+            activeCount={extraActiveCount}
+            onClear={extraActiveCount > 0 || term ? clearExtraFilters : undefined}
+            search={
+              <>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar nº, cliente, matrícula…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-10 md:h-9"
+                />
+              </>
+            }
+            filters={(stacked) => (
+              <>
+                <FilterCombobox
+                  fullWidth={stacked}
+                  value={fStatus}
+                  onChange={setFStatus}
+                  placeholder="Todos os estados"
+                  searchPlaceholder="Estado…"
+                  options={[
+                    { value: 'all', label: 'Todos os estados' },
+                    ...statusFlow.map(s => ({ value: s, label: statusConfig[s].label })),
+                    { value: 'cancelled', label: t('status.cancelled') || 'Cancelado' },
+                  ]}
+                />
+                <FilterCombobox
+                  fullWidth={stacked}
+                  value={fTechnician}
+                  onChange={setFTechnician}
+                  placeholder="Todos os técnicos"
+                  searchPlaceholder="Técnico…"
+                  options={[
+                    { value: 'all', label: 'Todos os técnicos' },
+                    ...technicianOptions,
+                  ]}
+                />
+                <FilterDateRange
+                  fullWidth={stacked}
+                  from={fDateFrom}
+                  to={fDateTo}
+                  onFrom={setFDateFrom}
+                  onTo={setFDateTo}
+                />
+              </>
+            )}
+          />
+        </div>
+
         <p className="text-[11px] text-muted-foreground mt-2">
           Quer contactar o Cliente?{" "}
           <a href="/services" className="text-primary hover:underline font-medium">Abrir Serviços (gestão) →</a>

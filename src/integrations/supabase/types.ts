@@ -8493,11 +8493,13 @@ export type Database = {
           country_code: string
           created_at: string
           currency: string
+          demo_expires_at: string | null
           email: string
           group_owner_id: string
           health_score: number | null
           id: string
           is_carity_partner: boolean
+          is_demo: boolean
           labor_rate: number
           language: string
           last_seen_at: string | null
@@ -8532,11 +8534,13 @@ export type Database = {
           country_code?: string
           created_at?: string
           currency?: string
+          demo_expires_at?: string | null
           email?: string
           group_owner_id: string
           health_score?: number | null
           id?: string
           is_carity_partner?: boolean
+          is_demo?: boolean
           labor_rate?: number
           language?: string
           last_seen_at?: string | null
@@ -8571,11 +8575,13 @@ export type Database = {
           country_code?: string
           created_at?: string
           currency?: string
+          demo_expires_at?: string | null
           email?: string
           group_owner_id?: string
           health_score?: number | null
           id?: string
           is_carity_partner?: boolean
+          is_demo?: boolean
           labor_rate?: number
           language?: string
           last_seen_at?: string | null
@@ -11314,6 +11320,7 @@ export type Database = {
         Returns: boolean
       }
       is_commercial_admin: { Args: { _user_id?: string }; Returns: boolean }
+      is_demo_shop: { Args: { _shop_id: string }; Returns: boolean }
       is_group_owner: { Args: { _shop_id: string }; Returns: boolean }
       is_regional_admin_for: {
         Args: { _country_code: string; _user_id: string }

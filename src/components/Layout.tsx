@@ -55,6 +55,7 @@ import { useAuthReady } from "@/hooks/useAuthReady";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ShopSwitcher from "@/components/ShopSwitcher";
 import SalesDemoBar from "@/components/salesdemo/SalesDemoBar";
+import DemoGuide from "@/components/demo/DemoGuide";
 import SupportFab from "@/components/SupportFab";
 import ThemeToggle from "@/components/ThemeToggle";
 import AppModeToggle from "@/components/AppModeToggle";
@@ -664,6 +665,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               const navLink = (
                 <Link
                   to={item.path}
+                  data-tour={item.path}
                   onClick={handleClick}
                   onPointerDown={handlePointerDown}
                   onPointerUp={handlePointerUp}
@@ -954,6 +956,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       <SalesDemoBar />
+      <DemoGuide />
     </div>
 
   );

@@ -53,6 +53,11 @@ export default function Workshop() {
     { key: 'all', label: t('workshop.filterAll') },
   ];
   const [filter, setFilter] = useState('active');
+  const [search, setSearch] = useState('');
+  const [fStatus, setFStatus] = useState('all');
+  const [fTechnician, setFTechnician] = useState('all');
+  const [fDateFrom, setFDateFrom] = useState('');
+  const [fDateTo, setFDateTo] = useState('');
   const _initShop = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _wCache = pageCache.get<any[]>(`workshop:${_initShop}:active`);
   const [workOrders, setWorkOrders] = useState<any[]>(_wCache ?? []);

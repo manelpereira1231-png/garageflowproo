@@ -50,6 +50,10 @@ function useTargetRect(path: string | null, tick: number) {
     const measure = () => {
       const el = document.querySelector<HTMLElement>(`[data-tour="${path}"]`);
       if (!el) { setRect(null); return; }
+      const box = el.getBoundingClientRect();
+      if (box.top < 8 || box.bottom > window.innerHeight - 8) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
       const r = el.getBoundingClientRect();
       setRect(r.width > 0 && r.height > 0 && r.top < window.innerHeight ? r : null);
     };
@@ -130,7 +134,7 @@ export default function DemoGuide() {
   };
 
   const tooltipStyle = useMemo<React.CSSProperties>(() => {
-    const W = 320;
+    const W = 360;
     if (!rect || window.innerWidth < 768) {
       return { left: "50%", bottom: 16, transform: "translateX(-50%)", width: `min(${W}px, calc(100vw - 24px))` };
     }
@@ -181,18 +185,24 @@ export default function DemoGuide() {
       {step && !finalStep && (
         <div className="fixed inset-0 z-[85]">
           {rect ? (
-            <div
-              className="pointer-events-none absolute rounded-xl ring-2 ring-primary transition-all duration-200"
-              style={{
-                left: rect.left - 4, top: rect.top - 4, width: rect.width + 8, height: rect.height + 8,
-                boxShadow: "0 0 0 9999px hsl(var(--background) / 0.78)",
-              }}
-            />
+            <>
+              <div
+                className="pointer-events-none absolute rounded-xl transition-all duration-200"
+                style={{
+                  left: rect.left - 6, top: rect.top - 6, width: rect.width + 12, height: rect.height + 12,
+                  boxShadow: "0 0 0 9999px hsl(var(--background) / 0.92), 0 0 0 3px hsl(var(--primary)), 0 0 28px 6px hsl(var(--primary) / 0.55)",
+                }}
+              />
+              <div
+                className="pointer-events-none absolute animate-ping rounded-xl border-2 border-primary/70"
+                style={{ left: rect.left - 10, top: rect.top - 10, width: rect.width + 20, height: rect.height + 20 }}
+              />
+            </>
           ) : (
-            <div className="absolute inset-0 bg-background/78" />
+            <div className="absolute inset-0 bg-background/92" />
           )}
 
-          <div className="absolute rounded-2xl border border-border bg-card p-4 shadow-2xl" style={tooltipStyle}>
+          <div className="absolute rounded-2xl border-2 border-primary/60 bg-card p-5 shadow-[0_20px_60px_-10px_hsl(var(--primary)/0.45)] ring-1 ring-primary/20" style={tooltipStyle}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
                 Passo {tourStep! + 1} de {STEPS.length + 1}
@@ -204,8 +214,8 @@ export default function DemoGuide() {
             <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((tourStep! + 1) / (STEPS.length + 1)) * 100}%` }} />
             </div>
-            <h3 className="text-base font-bold">{step.title}</h3>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+            <h3 className="text-lg font-bold leading-tight">{step.title}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             <div className="mt-4 flex items-center gap-2">
               <Button variant="ghost" size="sm" className="min-h-10" disabled={tourStep === 0} onClick={() => goStep(tourStep! - 1)}>
                 <ChevronLeft className="mr-1 h-4 w-4" />Voltar

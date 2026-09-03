@@ -14,6 +14,13 @@ import { startDemo } from "@/lib/salesDemo";
 export default function SelfDemo() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const stages = [900, 1800, 2600];
+    const timers = stages.map((ms, i) => window.setTimeout(() => setStage(i + 1), ms));
+    return () => timers.forEach(window.clearTimeout);
+  }, [attempt]);
 
   useEffect(() => {
     let active = true;
@@ -43,7 +50,12 @@ export default function SelfDemo() {
         </> : <>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
           <h1 className="mt-4 text-xl font-semibold">A preparar a AutoPrime Lisboa</h1>
-          <p className="mt-2 text-sm text-muted-foreground">A abrir a aplicação GarageFlow real com dados de demonstração.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {["A criar a oficina de demonstração…", "A carregar clientes e viaturas…", "A preparar orçamentos e reparações…", "Quase pronto — a abrir o painel…"][Math.min(stage, 3)]}
+          </p>
+          <div className="mx-auto mt-4 h-1 w-56 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${25 + stage * 22}%` }} />
+          </div>
         </>}
       </div>
     </div>

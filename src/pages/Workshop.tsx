@@ -6,6 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { CompactFilterBar, FilterCombobox, FilterDateRange } from "@/components/filters/CompactFilters";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useShopContext } from "@/hooks/useShopContext";
 import { Mail, Play, Pause, CheckCircle, Wrench, Clock, Car, User, Stethoscope, ThumbsUp, Truck, Timer, ClipboardCheck, MessageSquare, ChevronRight, Brain, Package } from "lucide-react";
@@ -50,6 +53,11 @@ export default function Workshop() {
     { key: 'all', label: t('workshop.filterAll') },
   ];
   const [filter, setFilter] = useState('active');
+  const [search, setSearch] = useState('');
+  const [fStatus, setFStatus] = useState('all');
+  const [fTechnician, setFTechnician] = useState('all');
+  const [fDateFrom, setFDateFrom] = useState('');
+  const [fDateTo, setFDateTo] = useState('');
   const _initShop = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
   const _wCache = pageCache.get<any[]>(`workshop:${_initShop}:active`);
   const [workOrders, setWorkOrders] = useState<any[]>(_wCache ?? []);
@@ -272,6 +280,30 @@ export default function Workshop() {
     return map[status] || null;
   };
 
+  // Filtros adicionais (mesma lógica dos Orçamentos): pesquisa, estado, técnico, datas.
+  const technicianOptions = Array.from(new Set(
+    workOrders.map(w => (w.technician || '').trim()).filter(Boolean)
+  )).sort().map(name => ({ value: name, label: name }));
+
+  const term = search.trim().toLowerCase();
+  const visibleOrders = workOrders.filter(wo => {
+    if (fStatus !== 'all' && wo.status !== fStatus) return false;
+    if (fTechnician !== 'all' && (wo.technician || '') !== fTechnician) return false;
+    if (fDateFrom && wo.created_at < fDateFrom) return false;
+    if (fDateTo && wo.created_at.slice(0, 10) > fDateTo) return false;
+    if (term) {
+      const c = wo.clients as any;
+      const v = wo.vehicles as any;
+      const hay = [wo.number, c?.name, c?.phone, c?.email, v?.make, v?.model, v?.plate]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    return true;
+  });
+
+  const extraActiveCount = [fStatus !== 'all', fTechnician !== 'all', !!fDateFrom, !!fDateTo].filter(Boolean).length;
+  const clearExtraFilters = () => { setSearch(''); setFStatus('all'); setFTechnician('all'); setFDateFrom(''); setFDateTo(''); };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
@@ -299,6 +331,59 @@ export default function Workshop() {
           </div>
         </div>
 
+        {/* Filtros (mesma lógica dos Orçamentos): desktop em linha, mobile em painel */}
+        <div className="mt-2">
+          <CompactFilterBar
+            activeCount={extraActiveCount}
+            onClear={extraActiveCount > 0 || term ? clearExtraFilters : undefined}
+            search={
+              <>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar nº, cliente, matrícula…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-10 md:h-9"
+                />
+              </>
+            }
+            filters={(stacked) => (
+              <>
+                <FilterCombobox
+                  fullWidth={stacked}
+                  value={fStatus}
+                  onChange={setFStatus}
+                  placeholder="Todos os estados"
+                  searchPlaceholder="Estado…"
+                  options={[
+                    { value: 'all', label: 'Todos os estados' },
+                    ...statusFlow.map(s => ({ value: s, label: statusConfig[s].label })),
+                    { value: 'cancelled', label: t('status.cancelled') || 'Cancelado' },
+                  ]}
+                />
+                <FilterCombobox
+                  fullWidth={stacked}
+                  value={fTechnician}
+                  onChange={setFTechnician}
+                  placeholder="Todos os técnicos"
+                  searchPlaceholder="Técnico…"
+                  options={[
+                    { value: 'all', label: 'Todos os técnicos' },
+                    ...technicianOptions,
+                  ]}
+                />
+                <FilterDateRange
+                  fullWidth={stacked}
+                  from={fDateFrom}
+                  to={fDateTo}
+                  onFrom={setFDateFrom}
+                  onTo={setFDateTo}
+                />
+              </>
+            )}
+          />
+        </div>
+
         <p className="text-[11px] text-muted-foreground mt-2">
           Quer contactar o Cliente?{" "}
           <a href="/services" className="text-primary hover:underline font-medium">Abrir Serviços (gestão) →</a>
@@ -307,7 +392,7 @@ export default function Workshop() {
 
       {/* Work orders grid - tablet optimized */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {loading && workOrders.length === 0 ? (
+        {loading && visibleOrders.length === 0 ? (
           <>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-card border-2 border-border rounded-2xl p-4 space-y-3 animate-pulse">
@@ -321,11 +406,11 @@ export default function Workshop() {
               </div>
             ))}
           </>
-        ) : !loading && workOrders.length === 0 ? (
+        ) : !loading && visibleOrders.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground">
-            {t('workshop.noOrders')}
+            {extraActiveCount > 0 || term ? 'Sem resultados para os filtros aplicados.' : t('workshop.noOrders')}
           </div>
-        ) : workOrders.map(wo => {
+        ) : visibleOrders.map(wo => {
           const cfg = statusConfig[wo.status] || statusConfig.open;
           const Icon = cfg.icon;
           const nextAction = getNextAction(wo.status);

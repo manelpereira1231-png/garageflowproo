@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription, type Plan } from "@/hooks/useSubscription";
+import { useShopOverrides } from "@/hooks/useShopOverrides";
 
 export interface FeatureRow {
   slug: string;
@@ -193,13 +194,17 @@ export function useCurrentPlan(): string {
 /** Hook: can the current user use a given feature slug? */
 export function useFeature(slug: string): { allowed: boolean; loaded: boolean; limits: Record<string, any> } {
   const { matrix, features, loaded } = useFeatureMatrix();
-  const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe } = useSubscription();
+  const { plan: currentPlan, loading: subscriptionLoading, subscriptionLoaded, mustSubscribe, shopId } = useSubscription();
+  const shopOverrides = useShopOverrides(shopId);
+  const shopOverride = shopOverrides.features?.[slug];
   const plan: string = currentPlan || "free";
   const isLegacy = plan === "free" || plan === "pro" || plan === "garage";
   const subscriptionReady = subscriptionLoaded && !subscriptionLoading;
   return useMemo(() => {
     if (!subscriptionReady) return { allowed: false, loaded: false, limits: {} };
     if (mustSubscribe) return { allowed: false, loaded: true, limits: {} };
+    // Exceção definida pelo Admin para esta oficina específica tem prioridade.
+    if (typeof shopOverride === "boolean") return { allowed: shopOverride, loaded: true, limits: {} };
     // Legacy hardcoded restriction — only applies to legacy plans while
     // the DB matrix hasn't loaded yet. Custom plans go straight to matrix.
     if (isLegacy && GARAGE_ONLY_FEATURES.has(slug) && plan !== "garage" && (!loaded || matrix.length === 0)) {
@@ -216,7 +221,7 @@ export function useFeature(slug: string): { allowed: boolean; loaded: boolean; l
       loaded,
       limits: row?.limits ?? {},
     };
-  }, [matrix, features, plan, slug, loaded, subscriptionReady, mustSubscribe]);
+  }, [matrix, features, plan, slug, loaded, subscriptionReady, mustSubscribe, shopOverride]);
 }
 
 /** Returns the full list of feature slugs the current user is allowed to access. */

@@ -147,8 +147,9 @@ export default function DemoGuide() {
 
   const overlay = (
     <>
-      {/* Indicador permanente de conta demo */}
-      <div className="pointer-events-none fixed top-2 left-1/2 z-[70] -translate-x-1/2">
+      {/* Indicador permanente de conta demo (apenas desktop — em mobile
+          o estado demo é mostrado na barra inferior, evitando sobreposições) */}
+      <div className="pointer-events-none fixed top-2 left-1/2 z-[70] hidden -translate-x-1/2 md:block">
         <span className="rounded-full border border-primary/40 bg-background/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary shadow-sm backdrop-blur">
           Conta Demo · Dados fictícios
         </span>
@@ -260,7 +261,7 @@ export default function DemoGuide() {
 
       {/* Checklist + CTA permanente */}
       {!welcome && tourStep === null && !checklistHidden && (
-        <div className="fixed bottom-3 right-3 z-[60] w-[min(280px,calc(100vw-1.5rem))] rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur">
+        <div className="fixed bottom-[6.5rem] right-3 z-30 w-[min(280px,calc(100vw-1.5rem))] rounded-2xl border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur md:bottom-3 md:z-[60]">
           <div className="mb-2 flex items-center gap-2">
             <ListChecks className="h-4 w-4 text-primary" />
             <span className="text-xs font-bold">Explore o GarageFlow</span>

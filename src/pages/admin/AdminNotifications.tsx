@@ -1,10 +1,9 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Building2, CreditCard, Sparkles, CheckCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAdminNotifications, markAdminNotifsRead } from "@/hooks/useAdminNotifications";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 const ICONS = {
   shop_signup: Building2,
@@ -13,12 +12,7 @@ const ICONS = {
 } as const;
 
 export default function AdminNotifications() {
-  const { items, loading, unreadCount, readAt } = useAdminNotifications(80);
-
-  useEffect(() => {
-    const t = setTimeout(() => markAdminNotifsRead(), 1500);
-    return () => clearTimeout(t);
-  }, []);
+  const { items, loading, unreadCount, isRead, markRead, markAllRead } = useAdminNotifications(80);
 
   return (
     <div className="space-y-4">
@@ -29,7 +23,7 @@ export default function AdminNotifications() {
           </h1>
           <p className="text-sm text-muted-foreground">Registos de oficinas, pagamentos e subscrições em tempo real.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => markAdminNotifsRead()}>
+        <Button variant="outline" size="sm" onClick={() => markAllRead()}>
           <CheckCheck className="w-4 h-4 mr-2" /> Marcar como lidas
         </Button>
       </div>
@@ -49,11 +43,12 @@ export default function AdminNotifications() {
             <div className="divide-y divide-border">
               {items.map((n) => {
                 const Icon = ICONS[n.kind];
-                const isNew = new Date(n.at).getTime() > new Date(readAt).getTime();
+                const isNew = !isRead(n.id);
                 return (
                   <Link
                     key={n.id}
                     to={n.link}
+                    onClick={() => markRead(n.id)}
                     className={`flex items-start gap-3 px-4 py-3 hover:bg-accent/50 transition-colors ${isNew ? "bg-primary/5" : ""}`}
                   >
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

@@ -69,7 +69,7 @@ export default function AdminDashboard() {
   const fetchStats = useCallback(async () => {
     try {
       const [shops, clients, vehicles, workOrders, alerts, subscriptions, quotes] = await Promise.all([
-        supabase.from("shops").select("id, name, email, status, created_at"),
+        supabase.from("shops").select("id, name, email, status, created_at").eq("is_demo", false),
         supabase.from("clients").select("id, shop_id"),
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),

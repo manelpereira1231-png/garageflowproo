@@ -43,11 +43,12 @@ export default function AdminNotifications() {
             <div className="divide-y divide-border">
               {items.map((n) => {
                 const Icon = ICONS[n.kind];
-                const isNew = new Date(n.at).getTime() > new Date(readAt).getTime();
+                const isNew = !isRead(n.id);
                 return (
                   <Link
                     key={n.id}
                     to={n.link}
+                    onClick={() => markRead(n.id)}
                     className={`flex items-start gap-3 px-4 py-3 hover:bg-accent/50 transition-colors ${isNew ? "bg-primary/5" : ""}`}
                   >
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

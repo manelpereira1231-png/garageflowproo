@@ -186,30 +186,60 @@ export default function Quotes() {
   const convertToService = async (quote: any) => {
     if (quote.status === 'converted') return;
     setConverting(quote.id);
-    const shopId = localStorage.getItem("garageflow_active_shop");
-    if (!shopId) { toast.error(t('common.configureShop')); setConverting(null); return; }
-    const { data: countData } = await supabase.from("work_orders").select("id", { count: "exact" }).eq("shop_id", shopId);
-    const num = `SRV-${String((countData?.length || 0) + 1).padStart(4, '0')}`;
-    // Enviar ≠ Aprovar: só um orçamento efetivamente aprovado pelo cliente autoriza a execução.
-    // Orçamentos em rascunho/enviados geram uma OS que fica a aguardar aprovação.
-    const clientApproved = quote.status === 'approved';
-    const { error: insertError } = await supabase.from("work_orders").insert({
-      shop_id: shopId, number: num, origin: 'quote', quote_id: quote.id,
-      client_id: quote.client_id, vehicle_id: quote.vehicle_id, entry_mileage: 0,
-      lines: quote.lines, labor_hours: quote.labor_hours || 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
-      total: quote.total, cost_total: quote.cost_total, profit: quote.profit,
-      status: clientApproved ? 'approved' : 'waiting_approval', notes: quote.notes,
-    });
-    if (insertError) { toastError(insertError, "Não foi possível converter em serviço"); setConverting(null); return; }
-    // Só marcamos como 'converted' quando o cliente já aprovou — caso contrário o orçamento
-    // continua no pipeline (rascunho/enviado) até haver decisão do cliente.
-    if (clientApproved) {
-      await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
+    try {
+      const shopId = localStorage.getItem("garageflow_active_shop");
+      if (!shopId) { toast.error(t('common.configureShop')); return; }
+
+      // Já existe uma OS ligada a este orçamento? (evita duplicados e erro silencioso)
+      const { data: existing } = await supabase
+        .from("work_orders").select("id, number").eq("quote_id", quote.id).maybeSingle();
+      if (existing?.id) {
+        toast.info(`Já existe o serviço ${existing.number} para este orçamento.`);
+        fetchQuotes();
+        return;
+      }
+
+      if (!quote.client_id || !quote.vehicle_id) {
+        toast.error("O orçamento tem de ter cliente e viatura para gerar um serviço.");
+        return;
+      }
+
+      // Enviar ≠ Aprovar: só um orçamento efetivamente aprovado pelo cliente autoriza a execução.
+      // Orçamentos em rascunho/enviados geram uma OS que fica a aguardar aprovação.
+      const clientApproved = quote.status === 'approved';
+
+      // Numeração atómica com retry — o número sequencial é único por oficina.
+      const { error: insertError } = await insertWithNumber({
+        getNumber: () => nextDocNumber(shopId, 'SRV'),
+        insert: (number) => supabase.from("work_orders").insert({
+          shop_id: shopId, number, origin: 'quote', quote_id: quote.id,
+          client_id: quote.client_id, vehicle_id: quote.vehicle_id, entry_mileage: 0,
+          lines: quote.lines, labor_hours: quote.labor_hours || 0, subtotal: quote.subtotal, vat_total: quote.vat_total,
+          total: quote.total, cost_total: quote.cost_total, profit: quote.profit,
+          status: clientApproved ? 'approved' : 'waiting_approval', notes: quote.notes,
+        }).select("id").single() as any,
+      });
+
+      if (insertError) {
+        console.error('[Quotes] convertToService failed', insertError);
+        toast.error("Não foi possível converter em serviço", { description: friendlyDocError(insertError) });
+        return;
+      }
+      // Só marcamos como 'converted' quando o cliente já aprovou — caso contrário o orçamento
+      // continua no pipeline (rascunho/enviado) até haver decisão do cliente.
+      if (clientApproved) {
+        await supabase.from("quotes").update({ status: 'converted' }).eq("id", quote.id);
+      }
+      toast.success(clientApproved ? t('quotes.converted') : 'Serviço criado — aguarda aprovação do cliente');
+      fetchQuotes();
+    } catch (e: any) {
+      console.error('[Quotes] convertToService exception', e);
+      toast.error("Não foi possível converter em serviço", { description: e?.message || 'Erro inesperado' });
+    } finally {
+      setConverting(null);
     }
-    toast.success(clientApproved ? t('quotes.converted') : 'Serviço criado — aguarda aprovação do cliente');
-    setConverting(null);
-    fetchQuotes();
   };
+
 
 
   const sendQuoteEmail = async (q: any) => {

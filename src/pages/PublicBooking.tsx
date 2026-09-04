@@ -125,7 +125,7 @@ export default function PublicBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 sm:pt-16">
+    <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 sm:pt-16 pb-48 sm:pb-24">
       <Card className="max-w-lg w-full">
         <CardHeader className="text-center pb-2">
           {shop.logo_url && (

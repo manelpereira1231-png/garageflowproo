@@ -11548,6 +11548,10 @@ export type Database = {
         Args: { _shop_id: string }
         Returns: undefined
       }
+      shop_exists_for_public_booking: {
+        Args: { _shop_id: string }
+        Returns: boolean
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       touch_user_activity: { Args: { _shop_id?: string }; Returns: undefined }

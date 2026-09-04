@@ -78,7 +78,7 @@ export default function PublicBooking() {
     setSubmitting(false);
 
     if (insertError) {
-      setError(t('booking.error'));
+      setError(`${t('booking.error')} (${insertError.message})`);
       return;
     }
 
@@ -125,7 +125,7 @@ export default function PublicBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 sm:pt-16">
+    <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 sm:pt-16 pb-48 sm:pb-24">
       <Card className="max-w-lg w-full">
         <CardHeader className="text-center pb-2">
           {shop.logo_url && (
@@ -143,7 +143,7 @@ export default function PublicBooking() {
               <Label>{t('booking.name')} *</Label>
               <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder={t('booking.namePlaceholder')} required />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t('booking.phone')}</Label>
                 <Input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} placeholder="912 345 678" />
@@ -162,7 +162,7 @@ export default function PublicBooking() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t('booking.date')} *</Label>
                 <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} min={format(new Date(), "yyyy-MM-dd")} required />

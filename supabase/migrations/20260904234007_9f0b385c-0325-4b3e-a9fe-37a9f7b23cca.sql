@@ -1,0 +1,1 @@
+DELETE FROM public.appointments WHERE client_name LIKE 'QA %' AND source = 'public';

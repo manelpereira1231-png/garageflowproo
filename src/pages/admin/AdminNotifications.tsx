@@ -3,7 +3,7 @@ import { Bell, Building2, CreditCard, Sparkles, CheckCheck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAdminNotifications, markAdminNotifsRead } from "@/hooks/useAdminNotifications";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 const ICONS = {
   shop_signup: Building2,
@@ -12,12 +12,7 @@ const ICONS = {
 } as const;
 
 export default function AdminNotifications() {
-  const { items, loading, unreadCount, readAt } = useAdminNotifications(80);
-
-  useEffect(() => {
-    const t = setTimeout(() => markAdminNotifsRead(), 1500);
-    return () => clearTimeout(t);
-  }, []);
+  const { items, loading, unreadCount, isRead, markRead, markAllRead } = useAdminNotifications(80);
 
   return (
     <div className="space-y-4">
@@ -28,7 +23,7 @@ export default function AdminNotifications() {
           </h1>
           <p className="text-sm text-muted-foreground">Registos de oficinas, pagamentos e subscrições em tempo real.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => markAdminNotifsRead()}>
+        <Button variant="outline" size="sm" onClick={() => markAllRead()}>
           <CheckCheck className="w-4 h-4 mr-2" /> Marcar como lidas
         </Button>
       </div>

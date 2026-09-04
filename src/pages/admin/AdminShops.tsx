@@ -55,7 +55,7 @@ export default function AdminShops() {
   const fetchShops = useCallback(async () => {
     setLoading(true);
     const [shopsRes, subsRes, clientsRes, woRes, alertsRes] = await Promise.all([
-      supabase.from("shops").select("id, name, email, phone, country, currency, timezone, status, created_at"),
+      supabase.from("shops").select("id, name, email, phone, country, currency, timezone, status, created_at").eq("is_demo", false),
       supabase.from("subscriptions").select("shop_id, plan, status, trial_end, current_period_end, stripe_subscription_id, discount_percent"),
       supabase.from("clients").select("id, shop_id"),
       supabase.from("work_orders").select("id, shop_id, total, status"),

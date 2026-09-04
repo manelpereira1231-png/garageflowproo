@@ -50,7 +50,7 @@ export default function AdminTraffic() {
         .gte("created_at", sinceStr)
         .order("created_at", { ascending: false })
         .limit(5000),
-      supabase.from("shops").select("created_at")
+      supabase.from("shops").select("created_at").eq("is_demo", false)
         .gte("created_at", sinceStr)
         .order("created_at", { ascending: false }),
     ]);

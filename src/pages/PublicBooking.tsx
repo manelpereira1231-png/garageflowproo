@@ -143,7 +143,7 @@ export default function PublicBooking() {
               <Label>{t('booking.name')} *</Label>
               <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder={t('booking.namePlaceholder')} required />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t('booking.phone')}</Label>
                 <Input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} placeholder="912 345 678" />
@@ -162,7 +162,7 @@ export default function PublicBooking() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t('booking.date')} *</Label>
                 <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} min={format(new Date(), "yyyy-MM-dd")} required />

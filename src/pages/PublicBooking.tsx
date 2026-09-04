@@ -78,7 +78,7 @@ export default function PublicBooking() {
     setSubmitting(false);
 
     if (insertError) {
-      setError(t('booking.error'));
+      setError(`${t('booking.error')} (${insertError.message})`);
       return;
     }
 

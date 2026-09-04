@@ -17,6 +17,8 @@ import type { QuoteStatus } from "@/types/garage";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
+import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
+
 import { generatePdf, exportToCsv } from "@/lib/pdfGenerator";
 import { formatLocalDate } from "@/lib/marketPrice";
 import { sendEmail, quoteEmailHtml, isValidEmail } from "@/lib/emailService";

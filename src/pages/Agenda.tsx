@@ -16,6 +16,9 @@ import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "dat
 import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
+import { sendRescheduleEmail, sendRescheduleWhatsApp, type RescheduleNotifyContext } from "@/lib/appointmentNotify";
+import { isValidEmail } from "@/lib/emailService";
+import { Mail, MessageCircle } from "lucide-react";
 
 interface Appointment {
   id: string;
@@ -114,6 +117,12 @@ export default function Agenda() {
   // Reschedule dialog state
   const [rescheduleAppt, setRescheduleAppt] = useState<Appointment | null>(null);
   const [rescheduleData, setRescheduleData] = useState({ date: '', time: '09:00' });
+  const [notifyChannels, setNotifyChannels] = useState<{ email: boolean; whatsapp: boolean }>({ email: false, whatsapp: false });
+  const [rescheduling, setRescheduling] = useState(false);
+  /** Guardado quando a marcação já foi reagendada mas a notificação falhou (permite tentar de novo). */
+  const [notifyRetry, setNotifyRetry] = useState<RescheduleNotifyContext | null>(null);
+  const [shopInfo, setShopInfo] = useState<{ name: string; phone: string | null }>({ name: '', phone: null });
+
 
   const acceptAppointment = async (appt: Appointment) => {
     const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', appt.id);
@@ -132,31 +141,112 @@ export default function Agenda() {
     loadData();
   };
 
-  const openReschedule = (appt: Appointment) => {
+  /** Contactos resolvidos do cliente (da própria marcação ou da ficha de cliente). */
+  const [rescheduleContact, setRescheduleContact] = useState<{ name: string; email: string | null; phone: string | null }>({ name: '', email: null, phone: null });
+
+  const openReschedule = async (appt: Appointment) => {
     setRescheduleAppt(appt);
     setRescheduleData({ date: appt.date, time: String(appt.time).slice(0, 5) });
+    setNotifyRetry(null);
+
+    let name = appt.client_name || '';
+    let email = appt.client_email || null;
+    let phone = appt.client_phone || null;
+    if (appt.client_id && (!email || !phone || !name)) {
+      const { data } = await supabase.from('clients').select('name, email, phone').eq('id', appt.client_id).maybeSingle();
+      if (data) {
+        name = name || (data as any).name || '';
+        email = email || (data as any).email || null;
+        phone = phone || (data as any).phone || null;
+      }
+    }
+    setRescheduleContact({ name, email, phone });
+    setNotifyChannels({ email: isValidEmail(email), whatsapp: !isValidEmail(email) && !!phone });
+  };
+
+  const buildNotifyContext = (appt: Appointment): RescheduleNotifyContext => {
+    const veh = vehicles.find(v => v.id === appt.vehicle_id);
+    return {
+      appointmentId: appt.id,
+      shopId: activeShopId || appt.shop_id,
+      shopName: shopInfo.name || undefined,
+      shopPhone: shopInfo.phone,
+      clientName: rescheduleContact.name || appt.client_name,
+      clientEmail: rescheduleContact.email,
+      clientPhone: rescheduleContact.phone,
+      serviceType: appt.service_type,
+      vehicleLabel: veh ? `${[veh.make, veh.model].filter(Boolean).join(' ')}${veh.plate ? ` — ${veh.plate}` : ''}`.trim() : null,
+      oldDate: appt.date,
+      oldTime: String(appt.time).slice(0, 5),
+      newDate: rescheduleData.date,
+      newTime: rescheduleData.time,
+    };
+  };
+
+  /** Envia pelos canais escolhidos. Devolve os canais entregues; lança se todos falharem. */
+  const runNotifications = async (ctx: RescheduleNotifyContext, channels: { email: boolean; whatsapp: boolean }) => {
+    const sent: string[] = [];
+    const failed: string[] = [];
+    if (channels.email) {
+      try { await sendRescheduleEmail(ctx); sent.push('email'); } catch { failed.push('email'); }
+    }
+    if (channels.whatsapp) {
+      try { await sendRescheduleWhatsApp(ctx); sent.push('WhatsApp'); } catch { failed.push('WhatsApp'); }
+    }
+    return { sent, failed };
   };
 
   const submitReschedule = async () => {
-    if (!rescheduleAppt) return;
+    if (!rescheduleAppt || rescheduling) return;
+    if (!rescheduleData.date || !rescheduleData.time) {
+      toast({ title: 'Indique a nova data e hora', variant: 'destructive' });
+      return;
+    }
+    setRescheduling(true);
+    const appt = rescheduleAppt;
     const { error } = await supabase.from('appointments')
       .update({ date: rescheduleData.date, time: rescheduleData.time, status: 'confirmed' } as any)
-      .eq('id', rescheduleAppt.id);
-    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
-    if (rescheduleAppt.client_email) {
-      supabase.functions.invoke('send-email', {
-        body: {
-          to: rescheduleAppt.client_email,
-          subject: `Marcação reagendada — ${rescheduleData.date} ${rescheduleData.time}`,
-          html: `<p>Olá ${rescheduleAppt.client_name || ''},</p><p>A sua marcação foi <strong>reagendada</strong> para <strong>${rescheduleData.date} às ${rescheduleData.time}</strong>.</p><p>Serviço: ${rescheduleAppt.service_type}</p>`,
-          shop_id: activeShopId,
-        },
-      }).catch(() => {});
+      .eq('id', appt.id);
+    if (error) {
+      setRescheduling(false);
+      toast({ title: t('common.error'), description: 'Não foi possível guardar a nova data.', variant: 'destructive' });
+      return;
     }
+
+    const ctx = buildNotifyContext(appt);
+    const channels = { ...notifyChannels };
     setRescheduleAppt(null);
-    toast({ title: t('agenda.rescheduled') || 'Reagendada e cliente notificado' });
+    setRescheduling(false);
     loadData();
+
+    if (!channels.email && !channels.whatsapp) {
+      toast({ title: 'Marcação reagendada' });
+      return;
+    }
+
+    const { sent, failed } = await runNotifications(ctx, channels);
+    if (sent.length && !failed.length) {
+      toast({ title: `Marcação reagendada e cliente notificado por ${sent.join(' e ')}.` });
+    } else if (sent.length) {
+      setNotifyRetry(ctx);
+      toast({ title: `Marcação reagendada. Notificação enviada por ${sent.join(' e ')}, mas falhou por ${failed.join(' e ')}.`, variant: 'destructive' });
+    } else {
+      setNotifyRetry(ctx);
+      toast({ title: 'Marcação reagendada com sucesso, mas não foi possível enviar a notificação ao cliente.', variant: 'destructive' });
+    }
   };
+
+  const retryNotification = async () => {
+    if (!notifyRetry) return;
+    const { sent, failed } = await runNotifications(notifyRetry, notifyChannels);
+    if (sent.length && !failed.length) {
+      setNotifyRetry(null);
+      toast({ title: `Cliente notificado por ${sent.join(' e ')}.` });
+    } else {
+      toast({ title: 'Continua a não ser possível notificar o cliente.', variant: 'destructive' });
+    }
+  };
+
 
   const rejectAppointment = async (appt: Appointment) => {
     const { error } = await supabase.from('appointments').update({ status: 'cancelled' } as any).eq('id', appt.id);
@@ -175,7 +265,7 @@ export default function Agenda() {
   };
 
   const pendingPortalAppts = useMemo(
-    () => appointments.filter(a => a.status === 'pending' && a.source === 'portal'),
+    () => appointments.filter(a => a.status === 'pending' && (a.source === 'portal' || a.source === 'public')),
     [appointments]
   );
 
@@ -192,7 +282,7 @@ export default function Agenda() {
         .order("time"),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
-      supabase.from("shops").select("slug, opening_hours").eq("id", activeShopId).maybeSingle(),
+      supabase.from("shops").select("slug, opening_hours, name, phone").eq("id", activeShopId).maybeSingle(),
       supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),
       supabase.from("shop_users").select("id, user_id, role").eq("shop_id", activeShopId),
     ]);
@@ -201,6 +291,7 @@ export default function Agenda() {
     if (clientRes.data) setClients(clientRes.data);
     if (vehicleRes.data) setVehicles(vehicleRes.data);
     if (shopRes.data?.slug) setShopSlug(shopRes.data.slug);
+    if (shopRes.data) setShopInfo({ name: (shopRes.data as any).name || '', phone: (shopRes.data as any).phone || null });
     if ((shopRes.data as any)?.opening_hours) setOpeningHours((shopRes.data as any).opening_hours as OpeningHours);
     if (catalogRes.data) setCatalog(catalogRes.data as CatalogItem[]);
 
@@ -481,22 +572,73 @@ export default function Agenda() {
             <DialogTitle>Reagendar marcação</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>Nova data</Label>
-              <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Nova data</Label>
+                <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+              </div>
+              <div>
+                <Label>Nova hora</Label>
+                <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+              </div>
             </div>
-            <div>
-              <Label>Nova hora</Label>
-              <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+
+            {/* Notificação ao cliente */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div>
+                <p className="text-sm font-semibold">Notificação ao cliente</p>
+                <p className="text-xs text-muted-foreground">Informe o cliente automaticamente sobre a alteração da marcação.</p>
+              </div>
+              {(isValidEmail(rescheduleContact.email) || rescheduleContact.phone) ? (
+                <div className="flex flex-wrap gap-2">
+                  {isValidEmail(rescheduleContact.email) && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyChannels.email ? 'default' : 'outline'}
+                      onClick={() => setNotifyChannels(c => ({ ...c, email: !c.email }))}
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5" /> Email
+                    </Button>
+                  )}
+                  {rescheduleContact.phone && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyChannels.whatsapp ? 'default' : 'outline'}
+                      onClick={() => setNotifyChannels(c => ({ ...c, whatsapp: !c.whatsapp }))}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> WhatsApp
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Este cliente não tem email nem telefone registados.</p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">O cliente recebe email com a nova data e a marcação fica confirmada.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRescheduleAppt(null)}>Cancelar</Button>
-            <Button onClick={submitReschedule}>Confirmar e notificar cliente</Button>
+            <Button variant="outline" onClick={() => setRescheduleAppt(null)} disabled={rescheduling}>Cancelar</Button>
+            <Button onClick={submitReschedule} disabled={rescheduling}>
+              {rescheduling ? 'A guardar...' : (notifyChannels.email || notifyChannels.whatsapp) ? 'Confirmar e notificar cliente' : 'Confirmar reagendamento'}
+            </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
+
+      {/* Falha ao notificar — permitir tentar novamente */}
+      {notifyRetry && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="py-3 px-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <p className="text-sm flex-1">Marcação reagendada com sucesso, mas não foi possível enviar a notificação ao cliente.</p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={retryNotification}>Tentar novamente</Button>
+              <Button size="sm" variant="ghost" onClick={() => setNotifyRetry(null)}>Dispensar</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Booking link info */}
       {bookingUrl && (
@@ -593,6 +735,11 @@ export default function Agenda() {
                             )}
                             {(app.status === "scheduled" || app.status === "confirmed") && (
                               <button onClick={() => updateStatus(app.id, "completed")} className="text-[9px] bg-muted px-1 rounded hover:bg-muted/80">✔</button>
+                            )}
+                            {(app.source === 'portal' || app.source === 'public') && app.status !== 'pending' && (
+                              <button onClick={() => openReschedule(app)} title="Reagendar e notificar cliente" className="text-[9px] bg-amber-500/15 text-amber-700 dark:text-amber-400 px-1 rounded hover:bg-amber-500/25">
+                                <CalendarClock className="w-2.5 h-2.5 inline" />
+                              </button>
                             )}
                             <button onClick={() => openEdit(app)} className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">
                               <Edit className="w-2.5 h-2.5 inline" />

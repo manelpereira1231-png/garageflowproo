@@ -598,11 +598,29 @@ export default function Agenda() {
               <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-md bg-card border border-border">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{a.client_name || 'Cliente'} <span className="text-muted-foreground font-normal">— {a.service_type}</span></p>
-                  <p className="text-xs text-muted-foreground">
-                    {a.date} às {String(a.time).slice(0, 5)}
-                    {a.client_phone && <> · {a.client_phone}</>}
-                    {a.client_email && <> · {a.client_email}</>}
-                  </p>
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
+                    <p className="flex flex-wrap items-center gap-x-1.5">
+                      <span className="font-medium text-foreground">{a.date} às {String(a.time).slice(0, 5)}</span>
+                      {a.duration_minutes ? <span>· {a.duration_minutes} min</span> : null}
+                      {pendingAvailability[a.id] === 'free' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-green-400 text-green-700 dark:text-green-400">Horário livre</Badge>
+                      )}
+                      {pendingAvailability[a.id] === 'busy' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-destructive/50 text-destructive">Horário ocupado</Badge>
+                      )}
+                      {pendingAvailability[a.id] === 'closed' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-amber-400 text-amber-700 dark:text-amber-400">Oficina encerrada</Badge>
+                      )}
+                    </p>
+                    <p>Viatura: {vehicleLabelOf(a) || 'não indicada'}</p>
+                    {(a.client_phone || a.client_email) && (
+                      <p>
+                        {a.client_phone}
+                        {a.client_phone && a.client_email ? ' · ' : ''}
+                        {a.client_email}
+                      </p>
+                    )}
+                  </div>
                   {a.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{a.notes}"</p>}
                 </div>
                 <div className="flex flex-wrap gap-1.5">

@@ -136,17 +136,17 @@ export default function AdminDashboard() {
       const approvedQuotes = (quotes.data || []).filter(q => q.status === 'approved').length;
       const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
-      const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+      const PLAN_PRICES: Record<string, number> = { free: 0, start: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
-      
-      // REGRA: Apenas subscrições com pagamento Stripe real contam como receita
-      const stripePaidSubs = activeSubs.filter(s => 
-        s.revenue_type === 'stripe_paid' || (s.stripe_subscription_id && s.plan !== 'free')
-      );
-      const manualAdminSubs = activeSubs.filter(s => 
-        s.revenue_type === 'manual_admin' || (!s.stripe_subscription_id && s.plan !== 'free' && s.status === 'active')
-      );
-      
+
+      // REGRA ÚNICA (src/lib/platformFinance.ts): só há receita com pagamento Stripe
+      // confirmado. Trials, ofertas e atribuições manuais valem €0.
+      const stripePaidSubs = activeSubs.filter(s => classifySubscription(s as any) === 'stripe_paid');
+      const manualAdminSubs = activeSubs.filter(s => {
+        const k = classifySubscription(s as any);
+        return k === 'manual_admin' || k === 'gift';
+      });
+
       // MRR REAL: apenas Stripe paid
       const mrr = stripePaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
       const mrrWithDiscounts = stripePaidSubs.reduce((sum, s) => {

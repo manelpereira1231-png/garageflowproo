@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp, CircleDollarSign,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp, CircleDollarSign, ReceiptText,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
   Package, Inbox, Sparkles, Languages, Coins, Layers, Percent, FileCheck2, Upload,
 } from "lucide-react";
@@ -47,6 +47,7 @@ const navSections = [
     label: "Financeiro",
     items: [
       { path: "/admin/finance-center", label: "Centro Financeiro", icon: CircleDollarSign },
+      { path: "/admin/platform-billing", label: "Faturação GarageFlow", icon: ReceiptText },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
       { path: "/admin/payment-fees", label: "Comissões de Pagamento", icon: Percent },

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { markInvoicePaidFromSession } from "../_shared/markInvoicePaid.ts";
+import { recordPlatformInvoice } from "../_shared/recordPlatformInvoice.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2025-08-27.basil",
@@ -201,8 +202,13 @@ serve(async (req) => {
         } else {
           log("No subscription found for invoice.paid", { customerId });
         }
+
+        // Faturação GarageFlow → oficina: regista a cobrança (não emite nada).
+        // Nunca lança; a subscrição já foi ativada acima.
+        await recordPlatformInvoice(supabaseAdmin, invoice, sub ?? null);
         break;
       }
+
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;

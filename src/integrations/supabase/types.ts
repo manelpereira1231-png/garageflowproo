@@ -7292,6 +7292,90 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_billing_settings: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          address: string | null
+          checklist: Json
+          city: string | null
+          country: string
+          created_at: string
+          fiscal_billing_active: boolean
+          id: string
+          ix_account_name: string | null
+          ix_api_key_encrypted: string | null
+          ix_connection_ok: boolean
+          ix_document_type: string
+          ix_last_check_at: string | null
+          ix_last_error: string | null
+          ix_sequence_id: string | null
+          legal_name: string | null
+          notes: string | null
+          paying_shops_target: number
+          postal_code: string | null
+          singleton: boolean
+          tax_id: string | null
+          updated_at: string
+          vat_rate: number
+          vat_regime: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          address?: string | null
+          checklist?: Json
+          city?: string | null
+          country?: string
+          created_at?: string
+          fiscal_billing_active?: boolean
+          id?: string
+          ix_account_name?: string | null
+          ix_api_key_encrypted?: string | null
+          ix_connection_ok?: boolean
+          ix_document_type?: string
+          ix_last_check_at?: string | null
+          ix_last_error?: string | null
+          ix_sequence_id?: string | null
+          legal_name?: string | null
+          notes?: string | null
+          paying_shops_target?: number
+          postal_code?: string | null
+          singleton?: boolean
+          tax_id?: string | null
+          updated_at?: string
+          vat_rate?: number
+          vat_regime?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          address?: string | null
+          checklist?: Json
+          city?: string | null
+          country?: string
+          created_at?: string
+          fiscal_billing_active?: boolean
+          id?: string
+          ix_account_name?: string | null
+          ix_api_key_encrypted?: string | null
+          ix_connection_ok?: boolean
+          ix_document_type?: string
+          ix_last_check_at?: string | null
+          ix_last_error?: string | null
+          ix_sequence_id?: string | null
+          legal_name?: string | null
+          notes?: string | null
+          paying_shops_target?: number
+          postal_code?: string | null
+          singleton?: boolean
+          tax_id?: string | null
+          updated_at?: string
+          vat_rate?: number
+          vat_regime?: string | null
+        }
+        Relationships: []
+      }
       platform_commissions: {
         Row: {
           created_at: string
@@ -7576,6 +7660,163 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      platform_invoice_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          level: string
+          message: string | null
+          payload: Json | null
+          platform_invoice_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          platform_invoice_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          platform_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_invoice_events_platform_invoice_id_fkey"
+            columns: ["platform_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "platform_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_invoices: {
+        Row: {
+          amount_net: number
+          amount_total: number
+          attempts: number
+          billing_cycle: string | null
+          billing_snapshot: Json | null
+          created_at: string
+          currency: string
+          email_error: string | null
+          email_sent_at: string | null
+          email_status: string
+          fiscal_status: string
+          id: string
+          issued_at: string | null
+          last_error: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          plan: string | null
+          provider: string | null
+          provider_invoice_id: string | null
+          provider_number: string | null
+          provider_pdf_url: string | null
+          provider_series: string | null
+          shop_id: string | null
+          stripe_customer_id: string | null
+          stripe_hosted_url: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_status: string | null
+          stripe_subscription_id: string | null
+          subscription_id: string | null
+          updated_at: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          amount_net?: number
+          amount_total?: number
+          attempts?: number
+          billing_cycle?: string | null
+          billing_snapshot?: Json | null
+          created_at?: string
+          currency?: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          email_status?: string
+          fiscal_status?: string
+          id?: string
+          issued_at?: string | null
+          last_error?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan?: string | null
+          provider?: string | null
+          provider_invoice_id?: string | null
+          provider_number?: string | null
+          provider_pdf_url?: string | null
+          provider_series?: string | null
+          shop_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_hosted_url?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          amount_net?: number
+          amount_total?: number
+          attempts?: number
+          billing_cycle?: string | null
+          billing_snapshot?: Json | null
+          created_at?: string
+          currency?: string
+          email_error?: string | null
+          email_sent_at?: string | null
+          email_status?: string
+          fiscal_status?: string
+          id?: string
+          issued_at?: string | null
+          last_error?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan?: string | null
+          provider?: string | null
+          provider_invoice_id?: string | null
+          provider_number?: string | null
+          provider_pdf_url?: string | null
+          provider_series?: string | null
+          shop_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_hosted_url?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_invoices_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_settings: {
         Row: {

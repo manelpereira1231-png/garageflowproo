@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  capturePartnerFromUrl,
+  clearPartnerAttribution,
+  resolveValidPartnerId,
+} from "@/lib/partnerAttribution";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +25,6 @@ import { setCountryCode, listActiveCountries, getCountryCode } from "@/lib/regio
 // country from country_settings is shown afterwards under "Outros países".
 const PREFERRED_COUNTRIES = ["PT", "BR", "ES", "FR", "DE", "UK", "US", "IN"];
 
-const PARTNER_STORAGE_KEY = "garageflow_affiliate_partner";
 const LOGIN_PROFILE_TIMEOUT_MS = 3000;
 
 const getSafeGarageRedirectPath = (candidate: string | null) => {
@@ -126,18 +130,18 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
   })();
 
   const urlPartnerId = searchParams.get('partner');
-  
+  // Só consideramos que existe convite de parceiro depois de o servidor
+  // confirmar que a referência é real e está ativa (ver partnerAttribution.ts).
+  const [validPartnerId, setValidPartnerId] = useState<string | null>(null);
+
   useEffect(() => {
     captureAdsParams();
     if (initialMode === 'signup') trackSignupPageView();
-    if (urlPartnerId) {
-      localStorage.setItem(PARTNER_STORAGE_KEY, urlPartnerId);
-    }
+    capturePartnerFromUrl(urlPartnerId);
+    let cancelled = false;
+    resolveValidPartnerId().then((id) => { if (!cancelled) setValidPartnerId(id); });
+    return () => { cancelled = true; };
   }, [urlPartnerId]);
-
-  const getPartnerId = (): string | null => {
-    return urlPartnerId || localStorage.getItem(PARTNER_STORAGE_KEY);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +244,9 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
           }
         }
 
-        const partnerId = getPartnerId();
+        // Atribuição de parceiro apenas com referência explícita e validada.
+        // Registos normais (incluindo os que vêm do CTA da /demo) não têm parceiro.
+        const partnerId = await resolveValidPartnerId();
         if (partnerId && signUpData?.user) {
           try {
             await supabase.functions.invoke("track-affiliate-signup", {
@@ -251,7 +257,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
                 shop_name: shopName,
               },
             });
-            localStorage.removeItem(PARTNER_STORAGE_KEY);
+            clearPartnerAttribution();
           } catch (partnerErr) {
             console.warn("Partner tracking failed:", partnerErr);
           }
@@ -305,7 +311,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
           <p className="text-muted-foreground text-sm mt-1">
             {mode === 'signup' ? t('auth.signupTagline', 'Software de gestão para oficinas') : t('app.tagline')}
           </p>
-          {getPartnerId() && mode === 'signup' && (
+          {validPartnerId && mode === 'signup' && (
             <div className="mt-3 inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">
               <User className="w-3 h-3" />
               {t('auth.partnerInviteActive')}

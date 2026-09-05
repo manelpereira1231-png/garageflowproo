@@ -11882,6 +11882,10 @@ export type Database = {
         Args: { _prefix: string; _shop_id: string }
         Returns: string
       }
+      partner_referral_is_valid: {
+        Args: { _partner_id: string }
+        Returns: boolean
+      }
       plan_has_feature: {
         Args: { _feature: string; _plan: string }
         Returns: boolean

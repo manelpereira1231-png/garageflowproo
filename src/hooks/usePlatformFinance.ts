@@ -213,8 +213,9 @@ export function usePlatformFinance(range: DateRange) {
       monthly, periodExpenses, expenseSummary, monthlyCost, profitability, breakEven,
       cac, ltv, ltvCacRatio: ltvCac(cac.cac), cashFlow, knownCash, stripeBalance, burnRate, runway,
       distribution, vatCharged, vatOnExpenses, assumptions, totalShops: shops.length,
+      contractedMonthly, nonPayingAccess: nonPaying.length, classCounts,
     };
-  }, [subs, expenses, shops, settings, stripe, range]);
+  }, [subs, expenses, shops, settings, stripe, range, demoShopIds]);
 
   return {
     loading, error, expenses, settings, stripe, stripeLoading, metrics, shops,

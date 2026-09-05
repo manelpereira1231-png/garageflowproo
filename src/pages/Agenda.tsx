@@ -269,6 +269,63 @@ export default function Agenda() {
     [appointments]
   );
 
+  /** Etiqueta legível da viatura associada à marcação (quando existe). */
+  const vehicleLabelOf = (appt: Appointment) => {
+    const veh = vehicles.find(v => v.id === appt.vehicle_id);
+    if (!veh) return null;
+    return `${[veh.make, veh.model].filter(Boolean).join(' ')}${veh.plate ? ` — ${veh.plate}` : ''}`.trim();
+  };
+
+  /** Disponibilidade da oficina no horário pedido por cada marcação pendente. */
+  const [pendingAvailability, setPendingAvailability] = useState<Record<string, 'free' | 'busy' | 'closed'>>({});
+
+  useEffect(() => {
+    if (!activeShopId || pendingPortalAppts.length === 0) { setPendingAvailability({}); return; }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(pendingPortalAppts.map(async (a) => {
+        const slots = await getDaySlots({
+          shopId: activeShopId,
+          date: a.date,
+          durationMinutes: a.duration_minutes || 60,
+          openingHours,
+          excludeAppointmentId: a.id,
+        });
+        if (slots.length === 0) return [a.id, 'closed'] as const;
+        const conflict = await detectConflict({
+          shopId: activeShopId,
+          date: a.date,
+          time: String(a.time).slice(0, 5),
+          durationMinutes: a.duration_minutes || 60,
+          excludeId: a.id,
+        });
+        return [a.id, conflict ? 'busy' : 'free'] as const;
+      }));
+      if (!cancelled) setPendingAvailability(Object.fromEntries(entries));
+    })();
+    return () => { cancelled = true; };
+  }, [activeShopId, pendingPortalAppts, openingHours]);
+
+  /** Horários do dia escolhido no reagendamento rápido. */
+  const [rescheduleSlots, setRescheduleSlots] = useState<{ time: string; free: boolean }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    if (!rescheduleAppt || !activeShopId || !rescheduleData.date) { setRescheduleSlots([]); return; }
+    let cancelled = false;
+    setLoadingSlots(true);
+    getDaySlots({
+      shopId: activeShopId,
+      date: rescheduleData.date,
+      durationMinutes: rescheduleAppt.duration_minutes || 60,
+      openingHours,
+      excludeAppointmentId: rescheduleAppt.id,
+    })
+      .then(s => { if (!cancelled) setRescheduleSlots(s); })
+      .finally(() => { if (!cancelled) setLoadingSlots(false); });
+    return () => { cancelled = true; };
+  }, [rescheduleAppt, rescheduleData.date, activeShopId, openingHours]);
+
   const loadData = async () => {
     if (!activeShopId) return;
     setLoading(true);

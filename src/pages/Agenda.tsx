@@ -282,7 +282,7 @@ export default function Agenda() {
         .order("time"),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
-      supabase.from("shops").select("slug, opening_hours").eq("id", activeShopId).maybeSingle(),
+      supabase.from("shops").select("slug, opening_hours, name, phone").eq("id", activeShopId).maybeSingle(),
       supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),
       supabase.from("shop_users").select("id, user_id, role").eq("shop_id", activeShopId),
     ]);
@@ -291,6 +291,7 @@ export default function Agenda() {
     if (clientRes.data) setClients(clientRes.data);
     if (vehicleRes.data) setVehicles(vehicleRes.data);
     if (shopRes.data?.slug) setShopSlug(shopRes.data.slug);
+    if (shopRes.data) setShopInfo({ name: (shopRes.data as any).name || '', phone: (shopRes.data as any).phone || null });
     if ((shopRes.data as any)?.opening_hours) setOpeningHours((shopRes.data as any).opening_hours as OpeningHours);
     if (catalogRes.data) setCatalog(catalogRes.data as CatalogItem[]);
 

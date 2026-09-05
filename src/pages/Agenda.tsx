@@ -626,6 +626,19 @@ export default function Agenda() {
         </DialogContent>
       </Dialog>
 
+      {/* Falha ao notificar — permitir tentar novamente */}
+      {notifyRetry && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="py-3 px-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <p className="text-sm flex-1">Marcação reagendada com sucesso, mas não foi possível enviar a notificação ao cliente.</p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={retryNotification}>Tentar novamente</Button>
+              <Button size="sm" variant="ghost" onClick={() => setNotifyRetry(null)}>Dispensar</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Booking link info */}
       {bookingUrl && (
         <Card className="border-primary/20 bg-primary/5">

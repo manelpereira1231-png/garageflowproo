@@ -95,7 +95,7 @@ export default function AdminReports() {
   const fetchData = async () => {
     const months = parseInt(period);
     const [shopsRes, subsRes, woRes, invRes, clientsRes, vehiclesRes, quotesRes, trialRes] = await Promise.all([
-      supabase.from("shops").select("id, name, status, created_at"),
+      supabase.from("shops").select("id, name, status, created_at").eq("is_demo", false),
       supabase.from("subscriptions").select("plan, status, trial_end, created_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id"),
       supabase.from("work_orders").select("total, status, created_at, shop_id"),
       supabase.from("invoices").select("total, status, created_at, shop_id"),

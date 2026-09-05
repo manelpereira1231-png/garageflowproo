@@ -271,12 +271,9 @@ export default function AdminAccounting() {
     subs.forEach((s) => {
       invoiceIdx++;
       const cust = shops.findIndex((x) => x.id === s.shop_id);
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-      const gross = base * factor * disc;
-      const net = +(gross / 1.23).toFixed(2);
-      const tax = +(gross - net).toFixed(2);
+      const gross = Number(s.gross) || 0;
+      const net = Number(s.net) || +(gross / 1.23).toFixed(2);
+      const tax = Number(s.vat) || +(gross - net).toFixed(2);
       invoices.push(`
       <Invoice>
         <InvoiceNo>FT GF/${String(invoiceIdx).padStart(5, "0")}</InvoiceNo>

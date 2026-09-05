@@ -82,6 +82,23 @@ export default function Support() {
       return;
     }
 
+    // Reclamações formais alimentam o painel de Reclamações do admin (com SLA via trigger).
+    if (form.category === "complaint" && user) {
+      const severityMap: Record<string, string> = { low: "low", normal: "medium", high: "high", urgent: "critical" };
+      supabase
+        .from("complaints" as any)
+        .insert({
+          user_id: user.id,
+          context: form.context,
+          category: form.category,
+          subject: form.subject,
+          description: `Contacto: ${form.name || "—"} <${form.email}>${form.phone ? ` · ${form.phone}` : ""}\n\n${form.message}`,
+          severity: severityMap[form.priority] ?? "medium",
+          status: "new",
+        })
+        .then(({ error: cErr }) => { if (cErr) console.warn("complaints insert failed:", cErr); });
+    }
+
     // Notify admin by email — non-blocking
     supabase.functions.invoke("notify-support-ticket", {
       body: {
@@ -171,6 +188,7 @@ export default function Support() {
                         <SelectItem value="kyc">{t("cat_kyc")}</SelectItem>
                         <SelectItem value="inspection">{t("cat_inspection")}</SelectItem>
                         <SelectItem value="dispute">{t("cat_dispute")}</SelectItem>
+                        <SelectItem value="complaint">{t("cat_complaint")}</SelectItem>
                         <SelectItem value="rgpd">{t("cat_rgpd")}</SelectItem>
                         <SelectItem value="other">{t("cat_other")}</SelectItem>
                       </SelectContent>

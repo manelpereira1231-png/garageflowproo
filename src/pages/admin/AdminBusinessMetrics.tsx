@@ -41,6 +41,7 @@ const fmtPct = (v: number | null | undefined) =>
 export default function AdminBusinessMetrics() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [health, setHealth] = useState<Health[]>([]);
+  const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
 

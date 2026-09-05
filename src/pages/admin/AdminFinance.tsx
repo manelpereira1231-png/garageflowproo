@@ -34,6 +34,7 @@ interface FinanceState {
   expansionMrr: number;
 }
 
+import { isRealPaidSubscription } from "@/lib/platformFinance";
 const PLAN_PRICE_EUR: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 

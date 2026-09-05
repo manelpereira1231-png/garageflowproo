@@ -112,7 +112,7 @@ export default function AdminFinanceCenter() {
       .eq("singleton", true);
     if (upError) { toast.error("Não foi possível guardar as definições."); return; }
     toast.success("Definições guardadas.");
-    setSettingsLocal(prev => ({ ...prev, ...(patch as never) }));
+    setSettingsLocal(prev => Object.assign({}, prev, patch) as typeof prev);
     reload();
   };
 

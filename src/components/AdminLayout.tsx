@@ -113,13 +113,13 @@ const navSections = [
 
 /** Localiza a página atual no menu, para o cabeçalho indicar sempre onde estamos. */
 function findCurrent(pathname: string) {
-  let best: { section: string; label: string } | null = null;
+  let best: { section: string; label: string; len: number } | null = null;
   for (const section of navSections) {
     for (const item of section.items) {
       const itemPath = item.path.split("?")[0];
       const matches = pathname === itemPath || (itemPath !== "/admin" && pathname.startsWith(itemPath + "/"));
-      if (matches && (!best || itemPath.length > 0)) {
-        if (!best || itemPath.length >= 0) best = { section: section.label, label: item.label };
+      if (matches && (!best || itemPath.length > best.len)) {
+        best = { section: section.label, label: item.label, len: itemPath.length };
       }
     }
   }

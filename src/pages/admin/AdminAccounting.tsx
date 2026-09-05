@@ -22,6 +22,7 @@ import { FileDown, FileText, Loader2, AlertTriangle, Building2, Save, Send, Chec
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { Textarea } from "@/components/ui/textarea";
+import { classifySubscription, contractedMonthlyValue, SUBSCRIPTION_CLASS_LABEL } from "@/lib/platformFinance";
 
 type Period = "month" | "quarter" | "year" | "custom";
 
@@ -60,8 +61,10 @@ function firstDayOfQuarter(d = new Date()) {
 }
 function firstDayOfYear(d = new Date()) { return new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10); }
 
-// Preços mensais aproximados por plano (fallback caso não existam em country_settings).
-const PLAN_PRICE_EUR: Record<string, number> = { pro: 39, garage: 99, free: 0 };
+// NOTA DE VERACIDADE FINANCEIRA:
+// Esta página NUNCA converte "plano atribuído" em receita. Só entram aqui
+// documentos com evidência de pagamento (platform_invoices pagas via Stripe)
+// e comissões de marketplace efetivamente capturadas (market_escrow).
 
 function xmlEscape(s: string | null | undefined): string {
   if (!s) return "";
@@ -84,6 +87,7 @@ export default function AdminAccounting() {
 
   const [shops, setShops] = useState<{ id: string; name: string; nif: string | null }[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const [accessSubs, setAccessSubs] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -118,12 +122,21 @@ export default function AdminAccounting() {
       const fromISO = new Date(dateFrom + "T00:00:00").toISOString();
       const toISO = new Date(dateTo + "T23:59:59").toISOString();
 
-      let subsQ = supabase
+      // RECEITA REAL: apenas faturas da plataforma com pagamento Stripe registado.
+      let invQ = supabase
+        .from("platform_invoices")
+        .select("id, shop_id, plan, currency, amount_net, vat_amount, amount_total, fiscal_status, stripe_invoice_id, paid_at, created_at")
+        .not("paid_at", "is", null)
+        .gte("paid_at", fromISO)
+        .lte("paid_at", toISO);
+      if (shopFilter !== "all") invQ = invQ.eq("shop_id", shopFilter);
+
+      // INFORMATIVO (não é receita): acessos ativos ao plano no período.
+      let accessQ = supabase
         .from("subscriptions")
-        .select("id, shop_id, plan, billing_cycle, status, stripe_subscription_id, current_period_end, created_at, discount_percent")
-        .gte("created_at", fromISO)
-        .lte("created_at", toISO);
-      if (shopFilter !== "all") subsQ = subsQ.eq("shop_id", shopFilter);
+        .select("id, shop_id, plan, billing_cycle, status, stripe_subscription_id, current_period_end, created_at, discount_percent, revenue_type")
+        .in("status", ["active", "trialing"]);
+      if (shopFilter !== "all") accessQ = accessQ.eq("shop_id", shopFilter);
 
       let escQ = supabase
         .from("market_escrow")
@@ -132,8 +145,22 @@ export default function AdminAccounting() {
         .gte("captured_at", fromISO)
         .lte("captured_at", toISO);
 
-      const [{ data: subsData }, { data: escData }] = await Promise.all([subsQ, escQ]);
-      setSubs(subsData || []);
+      const [{ data: invData }, { data: accessData }, { data: escData }] = await Promise.all([invQ, accessQ, escQ]);
+
+      const docs = (invData || []).map((i: any) => ({
+        id: i.id,
+        shop_id: i.shop_id,
+        plan: i.plan,
+        billing_cycle: "—",
+        status: i.fiscal_status,
+        stripe_invoice_id: i.stripe_invoice_id,
+        created_at: i.paid_at || i.created_at,
+        gross: Number(i.amount_total) || 0,
+        net: Number(i.amount_net) || 0,
+        vat: Number(i.vat_amount) || 0,
+      }));
+      setSubs(docs);
+      setAccessSubs(accessData || []);
       setEscrows(escData || []);
     } catch (e: any) {
       toast.error(e?.message || "Erro a carregar dados");
@@ -145,12 +172,7 @@ export default function AdminAccounting() {
   useEffect(() => { loadData(); /* eslint-disable-next-line */ }, [dateFrom, dateTo, shopFilter]);
 
   const totals = useMemo(() => {
-    const subsRevenue = subs.reduce((sum, s) => {
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-      return sum + base * factor * disc;
-    }, 0);
+    const subsRevenue = subs.reduce((sum, s) => sum + (Number(s.gross) || 0), 0);
     const marketCommissions = escrows.reduce((sum, e) => sum + (Number(e.platform_fee) || 0), 0);
     return { subsRevenue, marketCommissions, total: subsRevenue + marketCommissions };
   }, [subs, escrows]);
@@ -160,6 +182,19 @@ export default function AdminAccounting() {
     shops.forEach((s) => m.set(s.id, { name: s.name, nif: s.nif }));
     return m;
   }, [shops]);
+
+  // Acessos atribuídos SEM pagamento confirmado — nunca contam como receita.
+  const accessBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let contracted = 0;
+    (accessSubs || []).forEach((s) => {
+      if (!shopById.has(s.shop_id)) return; // oficina demo/removida
+      const k = classifySubscription(s as any);
+      counts[k] = (counts[k] || 0) + 1;
+      if (k !== 'stripe_paid') contracted += contractedMonthlyValue(s as any);
+    });
+    return { counts, contracted, total: Object.values(counts).reduce((a, b) => a + b, 0) };
+  }, [accessSubs, shopById]);
 
   const saveInfo = async () => {
     setSavingInfo(true);
@@ -185,15 +220,12 @@ export default function AdminAccounting() {
     const rows: any[] = [];
     subs.forEach((s) => {
       const shop = shopById.get(s.shop_id);
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
       rows.push({
-        Tipo: "Subscrição", Data: (s.created_at || "").slice(0, 10),
+        Tipo: "Subscrição paga (Stripe)", Data: (s.created_at || "").slice(0, 10),
         Oficina: shop?.name || s.shop_id, NIF_Cliente: shop?.nif || "",
         Plano: s.plan, Ciclo: s.billing_cycle, Estado: s.status,
-        Valor_EUR: (base * factor * disc).toFixed(2),
-        Stripe_Sub: s.stripe_subscription_id || "",
+        Valor_EUR: (Number(s.gross) || 0).toFixed(2),
+        Stripe_Sub: s.stripe_invoice_id || "",
       });
     });
     escrows.forEach((e) => {
@@ -239,12 +271,9 @@ export default function AdminAccounting() {
     subs.forEach((s) => {
       invoiceIdx++;
       const cust = shops.findIndex((x) => x.id === s.shop_id);
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-      const gross = base * factor * disc;
-      const net = +(gross / 1.23).toFixed(2);
-      const tax = +(gross - net).toFixed(2);
+      const gross = Number(s.gross) || 0;
+      const net = Number(s.net) || +(gross / 1.23).toFixed(2);
+      const tax = Number(s.vat) || +(gross - net).toFixed(2);
       invoices.push(`
       <Invoice>
         <InvoiceNo>FT GF/${String(invoiceIdx).padStart(5, "0")}</InvoiceNo>
@@ -313,11 +342,8 @@ export default function AdminAccounting() {
     const rowsHtml = [
       ...subs.map((s) => {
         const sh = shopById.get(s.shop_id);
-        const base = PLAN_PRICE_EUR[s.plan] || 0;
-        const factor = s.billing_cycle === "yearly" ? 12 : 1;
-        const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-        const gross = (base * factor * disc).toFixed(2);
-        return `<tr><td>${(s.created_at || "").slice(0, 10)}</td><td>Subscrição</td><td>${xmlEscape(sh?.name || "—")}</td><td>${xmlEscape(sh?.nif || "")}</td><td>${xmlEscape(s.plan)}</td><td style="text-align:right">€${gross}</td></tr>`;
+        const gross = (Number(s.gross) || 0).toFixed(2);
+        return `<tr><td>${(s.created_at || "").slice(0, 10)}</td><td>Subscrição paga</td><td>${xmlEscape(sh?.name || "—")}</td><td>${xmlEscape(sh?.nif || "")}</td><td>${xmlEscape(s.plan)}</td><td style="text-align:right">€${gross}</td></tr>`;
       }),
       ...escrows.map((e) => {
         const sh = shopById.get(e.seller_id);
@@ -506,24 +532,53 @@ ${autoprint ? "<script>window.print();</script>" : ""}
         </div>
       </section>
 
-      {/* Totais */}
+      {/* Totais — SÓ dinheiro com evidência de pagamento */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Subscrições Stripe</p>
+          <p className="text-xs text-muted-foreground">Subscrições pagas (Stripe)</p>
           <p className="text-2xl font-bold mono mt-1">€{totals.subsRevenue.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-1">{subs.length} subscrições</p>
+          <p className="text-xs text-muted-foreground mt-1">{subs.length} pagamentos confirmados</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Comissões Marketplace</p>
+          <p className="text-xs text-muted-foreground">Comissões Marketplace recebidas</p>
           <p className="text-2xl font-bold mono mt-1">€{totals.marketCommissions.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">{escrows.length} transações</p>
         </div>
         <div className="bg-card border border-primary/30 rounded-xl p-4 bg-primary/5">
-          <p className="text-xs text-muted-foreground">Total período</p>
+          <p className="text-xs text-muted-foreground">Receita recebida no período</p>
           <p className="text-2xl font-bold mono mt-1 text-primary">€{totals.total.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">{dateFrom} → {dateTo}</p>
         </div>
       </div>
+
+      {/* Acessos atribuídos — NÃO é receita */}
+      <section className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
+          <div className="flex-1">
+            <h2 className="font-semibold text-sm">Acessos ativos sem pagamento confirmado (não é receita)</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Planos atribuídos manualmente, ofertas e períodos de teste. Valor de tabela apenas para referência —{" "}
+              <strong>não entra na contabilidade nem nas exportações</strong>.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {Object.entries(accessBreakdown.counts).map(([k, n]) => (
+                <Badge key={k} variant="outline" className="text-xs">
+                  {SUBSCRIPTION_CLASS_LABEL[k as keyof typeof SUBSCRIPTION_CLASS_LABEL] || k}: {n}
+                </Badge>
+              ))}
+              {accessBreakdown.total === 0 && <span className="text-xs text-muted-foreground">Sem acessos ativos.</span>}
+            </div>
+            {accessBreakdown.contracted > 0 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                Valor de tabela não cobrado: <span className="mono">€{accessBreakdown.contracted.toFixed(2)}/mês</span>{" "}
+                <Badge variant="outline" className="ml-1 text-[10px]">ESTIMATIVA</Badge>
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
 
       {/* Exportações manuais */}
       <section className="bg-card border border-border rounded-xl p-5">
@@ -631,17 +686,14 @@ ${autoprint ? "<script>window.print();</script>" : ""}
                   <>
                     {subs.map((s) => {
                       const sh = shopById.get(s.shop_id);
-                      const base = PLAN_PRICE_EUR[s.plan] || 0;
-                      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-                      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
                       return (
                         <TableRow key={s.id}>
                           <TableCell className="mono text-xs">{(s.created_at || "").slice(0, 10)}</TableCell>
-                          <TableCell><Badge variant="secondary">Subscrição</Badge></TableCell>
+                          <TableCell><Badge variant="secondary">Subscrição paga</Badge></TableCell>
                           <TableCell>{sh?.name || "—"}</TableCell>
                           <TableCell className="mono text-xs">{sh?.nif || "—"}</TableCell>
-                          <TableCell>{s.plan} · {s.billing_cycle}</TableCell>
-                          <TableCell className="text-right mono font-semibold">€{(base * factor * disc).toFixed(2)}</TableCell>
+                          <TableCell>{s.plan}</TableCell>
+                          <TableCell className="text-right mono font-semibold">€{(Number(s.gross) || 0).toFixed(2)}</TableCell>
                         </TableRow>
                       );
                     })}

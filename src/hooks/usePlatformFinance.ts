@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type ExpenseRow, type SubscriptionRow, type DateRange, type ProjectionAssumptions,
   DEFAULT_ASSUMPTIONS, isRealPaidSubscription, subscriptionMrr, summariseExpenses,
+  classifySubscription, hasActivePlanAccess, contractedMonthlyValue,
   computeMonthlyCost, computeProfitability, computeBreakEven, computeCac, computeLtv,
   buildCashFlow, computeRunway, simulateDistribution, inRange, monthlyEquivalent,
 } from "@/lib/platformFinance";
@@ -58,16 +59,19 @@ export function usePlatformFinance(range: DateRange) {
   const [settings, setSettings] = useState<FinanceSettings>(DEFAULT_SETTINGS);
   const [stripe, setStripe] = useState<StripeFinancials | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [demoShopIds, setDemoShopIds] = useState<Set<string>>(new Set());
 
   const loadCore = useCallback(async () => {
     setLoading(true);
     try {
-      const [shopsRes, subsRes, expRes, setRes] = await Promise.all([
+      const [shopsRes, demoRes, subsRes, expRes, setRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at, is_demo").eq("is_demo", false),
+        supabase.from("shops").select("id").eq("is_demo", true),
         supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
         supabase.from("platform_expenses").select("*").order("expense_date", { ascending: false }),
         supabase.from("platform_finance_settings").select("*").limit(1).maybeSingle(),
       ]);
+      setDemoShopIds(new Set((demoRes.data || []).map((r: any) => r.id)));
       if (shopsRes.data) setShops(shopsRes.data as any);
       if (subsRes.data) setSubs(subsRes.data as any);
       if (expRes.data) setExpenses(expRes.data as any);
@@ -107,10 +111,21 @@ export function usePlatformFinance(range: DateRange) {
 
   // ------------------------------------------------------------ Derivados
   const metrics = useMemo(() => {
-    const paying = subs.filter(isRealPaidSubscription);
+    const isDemo = (s: SubscriptionRow) => demoShopIds.has(s.shop_id);
+    const paying = subs.filter(s => isRealPaidSubscription(s, { isDemoShop: isDemo(s) }));
     const mrr = paying.reduce((s, x) => s + subscriptionMrr(x), 0);
     const payingCustomers = paying.length;
     const arpu = payingCustomers > 0 ? mrr / payingCustomers : null;
+
+    // Valor de tabela contratado (acesso ativo, com ou sem pagamento) — NÃO é receita.
+    const accessSubs = subs.filter(s => !isDemo(s) && hasActivePlanAccess(s));
+    const contractedMonthly = accessSubs.reduce((sum, s) => sum + contractedMonthlyValue(s), 0);
+    const nonPaying = accessSubs.filter(s => !isRealPaidSubscription(s, { isDemoShop: false }));
+    const classCounts = accessSubs.reduce<Record<string, number>>((acc, s) => {
+      const k = classifySubscription(s, { isDemoShop: false });
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {});
 
     const newSubsInPeriod = paying.filter(s => inRange(s.created_at, range)).length;
     const cancelledInPeriod = subs.filter(s =>
@@ -198,8 +213,9 @@ export function usePlatformFinance(range: DateRange) {
       monthly, periodExpenses, expenseSummary, monthlyCost, profitability, breakEven,
       cac, ltv, ltvCacRatio: ltvCac(cac.cac), cashFlow, knownCash, stripeBalance, burnRate, runway,
       distribution, vatCharged, vatOnExpenses, assumptions, totalShops: shops.length,
+      contractedMonthly, nonPayingAccess: nonPaying.length, classCounts,
     };
-  }, [subs, expenses, shops, settings, stripe, range]);
+  }, [subs, expenses, shops, settings, stripe, range, demoShopIds]);
 
   return {
     loading, error, expenses, settings, stripe, stripeLoading, metrics, shops,

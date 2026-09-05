@@ -34,7 +34,9 @@ interface FinanceState {
   expansionMrr: number;
 }
 
+import { isRealPaidSubscription } from "@/lib/platformFinance";
 const PLAN_PRICE_EUR: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+
 
 export default function AdminFinance() {
   const [state, setState] = useState<FinanceState | null>(null);
@@ -52,12 +54,12 @@ export default function AdminFinance() {
       const shops = shopsRes.data || [];
       const subs = (subsRes.data || []) as any[];
 
-      // 🔴 REGRA: Apenas subscrições com Stripe confirmado contam como receita real.
-      // Excluímos manual_admin, trials internos, seed data e qualquer plano sem stripe_subscription_id.
+      // 🔴 REGRA ÚNICA (src/lib/platformFinance.ts): só conta receita com evidência
+      // de pagamento Stripe. Exclui manual_admin, ofertas, trials, planos de entrada
+      // e qualquer subscrição de oficina demo.
+      const nonDemoShopIds = new Set(shops.map(s => s.id));
       const isRealPaid = (s: any) =>
-        (s.status === "active") &&
-        s.plan !== "free" &&
-        (s.revenue_type === "stripe_paid" || !!s.stripe_subscription_id);
+        nonDemoShopIds.has(s.shop_id) && isRealPaidSubscription(s);
 
       const paying = subs.filter(isRealPaid);
       const mrr = paying.reduce((sum, s) => {

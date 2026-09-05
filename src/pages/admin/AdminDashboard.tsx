@@ -9,6 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import AdminMarketOverview from "@/components/AdminMarketOverview";
+import { classifySubscription } from "@/lib/platformFinance";
 
 interface AdminStats {
   totalShops: number;
@@ -136,17 +137,17 @@ export default function AdminDashboard() {
       const approvedQuotes = (quotes.data || []).filter(q => q.status === 'approved').length;
       const pendingAlerts = (alerts.data || []).filter(a => a.status === 'pending').length;
 
-      const PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
+      const PLAN_PRICES: Record<string, number> = { free: 0, start: 0, pro: 49, garage: 99 };
       const activeSubs = (subscriptions.data || []).filter(s => s.status === 'active' || s.status === 'trialing');
-      
-      // REGRA: Apenas subscrições com pagamento Stripe real contam como receita
-      const stripePaidSubs = activeSubs.filter(s => 
-        s.revenue_type === 'stripe_paid' || (s.stripe_subscription_id && s.plan !== 'free')
-      );
-      const manualAdminSubs = activeSubs.filter(s => 
-        s.revenue_type === 'manual_admin' || (!s.stripe_subscription_id && s.plan !== 'free' && s.status === 'active')
-      );
-      
+
+      // REGRA ÚNICA (src/lib/platformFinance.ts): só há receita com pagamento Stripe
+      // confirmado. Trials, ofertas e atribuições manuais valem €0.
+      const stripePaidSubs = activeSubs.filter(s => classifySubscription(s as any) === 'stripe_paid');
+      const manualAdminSubs = activeSubs.filter(s => {
+        const k = classifySubscription(s as any);
+        return k === 'manual_admin' || k === 'gift';
+      });
+
       // MRR REAL: apenas Stripe paid
       const mrr = stripePaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
       const mrrWithDiscounts = stripePaidSubs.reduce((sum, s) => {
@@ -166,7 +167,7 @@ export default function AdminDashboard() {
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
-      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24;
+      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : 0; // sem churn real não há LTV calculável
       const trialCount = activeSubs.filter(s => s.status === 'trialing').length;
       const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
 

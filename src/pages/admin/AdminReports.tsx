@@ -1,3 +1,4 @@
+import { classifySubscription } from "@/lib/platformFinance";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -138,9 +139,8 @@ export default function AdminReports() {
 
     // === MRR/ARR — APENAS STRIPE PAID (receita real) ===
     const activeSubs = subscriptions.filter(s => s.status === "active" || s.status === "trialing");
-    const stripePaidSubs = activeSubs.filter(s => 
-      s.revenue_type === 'stripe_paid' || ((s as any).stripe_subscription_id && s.plan !== entryPlanSlug)
-    );
+    // REGRA ÚNICA (src/lib/platformFinance.ts): só pagamento Stripe confirmado é receita.
+    const stripePaidSubs = activeSubs.filter(s => classifySubscription(s as any) === 'stripe_paid');
     let mrrReal = 0;
     let discountImpact = 0;
     stripePaidSubs.forEach(s => {

@@ -657,17 +657,14 @@ ${autoprint ? "<script>window.print();</script>" : ""}
                   <>
                     {subs.map((s) => {
                       const sh = shopById.get(s.shop_id);
-                      const base = PLAN_PRICE_EUR[s.plan] || 0;
-                      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-                      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
                       return (
                         <TableRow key={s.id}>
                           <TableCell className="mono text-xs">{(s.created_at || "").slice(0, 10)}</TableCell>
-                          <TableCell><Badge variant="secondary">Subscrição</Badge></TableCell>
+                          <TableCell><Badge variant="secondary">Subscrição paga</Badge></TableCell>
                           <TableCell>{sh?.name || "—"}</TableCell>
                           <TableCell className="mono text-xs">{sh?.nif || "—"}</TableCell>
-                          <TableCell>{s.plan} · {s.billing_cycle}</TableCell>
-                          <TableCell className="text-right mono font-semibold">€{(base * factor * disc).toFixed(2)}</TableCell>
+                          <TableCell>{s.plan}</TableCell>
+                          <TableCell className="text-right mono font-semibold">€{(Number(s.gross) || 0).toFixed(2)}</TableCell>
                         </TableRow>
                       );
                     })}

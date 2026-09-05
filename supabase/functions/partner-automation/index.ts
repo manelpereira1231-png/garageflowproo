@@ -119,11 +119,17 @@ Deno.serve(async (req) => {
       if (!existing && ref.subscription_id) {
         const { data: sub } = await supabase
           .from("subscriptions")
-          .select("plan, status, shop_id")
+          .select("plan, status, shop_id, revenue_type, stripe_subscription_id")
           .eq("id", ref.subscription_id)
           .maybeSingle();
 
-        if (sub && sub.status === "active") {
+        // REGRA: só há comissão sobre dinheiro realmente pago (Stripe).
+        // Planos atribuídos manualmente, ofertas e trials não geram comissão.
+        const paidEvidence = !!sub && sub.status === "active" &&
+          (sub.revenue_type === "stripe_paid" || !!sub.stripe_subscription_id) &&
+          sub.revenue_type !== "manual_admin" && sub.revenue_type !== "gift";
+
+        if (paidEvidence) {
           // Preço base do plano lido dinamicamente de plan_country_prices
           // (país da oficina). Sem hardcodes 99/49; suporta qualquer plano
           // novo criado no Admin.

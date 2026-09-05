@@ -22,6 +22,7 @@ import { FileDown, FileText, Loader2, AlertTriangle, Building2, Save, Send, Chec
 import { toast } from "sonner";
 import { exportToCsv } from "@/lib/pdfGenerator";
 import { Textarea } from "@/components/ui/textarea";
+import { classifySubscription, contractedMonthlyValue, SUBSCRIPTION_CLASS_LABEL } from "@/lib/platformFinance";
 
 type Period = "month" | "quarter" | "year" | "custom";
 

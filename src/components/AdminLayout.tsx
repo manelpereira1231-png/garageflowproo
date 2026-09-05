@@ -47,6 +47,7 @@ const navSections = [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
       { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
+      { path: "/admin/finance-center", label: "Centro Financeiro", icon: CircleDollarSign },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
       { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },

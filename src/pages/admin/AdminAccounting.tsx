@@ -60,8 +60,10 @@ function firstDayOfQuarter(d = new Date()) {
 }
 function firstDayOfYear(d = new Date()) { return new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10); }
 
-// Preços mensais aproximados por plano (fallback caso não existam em country_settings).
-const PLAN_PRICE_EUR: Record<string, number> = { pro: 39, garage: 99, free: 0 };
+// NOTA DE VERACIDADE FINANCEIRA:
+// Esta página NUNCA converte "plano atribuído" em receita. Só entram aqui
+// documentos com evidência de pagamento (platform_invoices pagas via Stripe)
+// e comissões de marketplace efetivamente capturadas (market_escrow).
 
 function xmlEscape(s: string | null | undefined): string {
   if (!s) return "";

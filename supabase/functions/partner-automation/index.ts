@@ -134,14 +134,17 @@ Deno.serve(async (req) => {
           // (país da oficina). Sem hardcodes 99/49; suporta qualquer plano
           // novo criado no Admin.
           let country = "PT";
+          let isDemoShop = false;
           if (sub.shop_id) {
             const { data: shop } = await supabase
               .from("shops")
-              .select("country")
+              .select("country, is_demo")
               .eq("id", sub.shop_id)
               .maybeSingle();
             if (shop?.country) country = shop.country;
+            isDemoShop = !!shop?.is_demo;
           }
+          if (isDemoShop) continue; // contas demo nunca geram comissão
           const { data: priceRow } = await supabase
             .from("plan_country_prices")
             .select("amount")

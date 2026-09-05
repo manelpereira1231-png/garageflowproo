@@ -736,6 +736,11 @@ export default function Agenda() {
                             {(app.status === "scheduled" || app.status === "confirmed") && (
                               <button onClick={() => updateStatus(app.id, "completed")} className="text-[9px] bg-muted px-1 rounded hover:bg-muted/80">✔</button>
                             )}
+                            {(app.source === 'portal' || app.source === 'public') && app.status !== 'pending' && (
+                              <button onClick={() => openReschedule(app)} title="Reagendar e notificar cliente" className="text-[9px] bg-amber-500/15 text-amber-700 dark:text-amber-400 px-1 rounded hover:bg-amber-500/25">
+                                <CalendarClock className="w-2.5 h-2.5 inline" />
+                              </button>
+                            )}
                             <button onClick={() => openEdit(app)} className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">
                               <Edit className="w-2.5 h-2.5 inline" />
                             </button>

@@ -647,6 +647,17 @@ export default function Agenda() {
             <DialogTitle>Reagendar marcação</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {rescheduleAppt && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-0.5">
+                <p className="text-sm font-semibold">{rescheduleContact.name || rescheduleAppt.client_name || 'Cliente'}</p>
+                <p className="text-muted-foreground">Serviço: {rescheduleAppt.service_type}</p>
+                <p className="text-muted-foreground">Viatura: {vehicleLabelOf(rescheduleAppt) || 'não indicada'}</p>
+                <p className="text-muted-foreground">
+                  Pedido para {rescheduleAppt.date} às {String(rescheduleAppt.time).slice(0, 5)}
+                  {rescheduleAppt.duration_minutes ? ` · ${rescheduleAppt.duration_minutes} min` : ''}
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Nova data</Label>
@@ -657,6 +668,38 @@ export default function Agenda() {
                 <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
               </div>
             </div>
+
+            {/* Horários disponíveis nesse dia (mesma disponibilidade da Agenda) */}
+            <div>
+              <Label className="text-xs">Horários disponíveis</Label>
+              {loadingSlots ? (
+                <p className="text-xs text-muted-foreground mt-1">A carregar horários...</p>
+              ) : rescheduleSlots.length === 0 ? (
+                <p className="text-xs text-muted-foreground mt-1">A oficina está encerrada nesta data. Escolha outro dia.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-1.5 mt-1 max-h-40 overflow-y-auto">
+                    {rescheduleSlots.map(s => (
+                      <Button
+                        key={s.time}
+                        type="button"
+                        size="sm"
+                        variant={rescheduleData.time === s.time ? 'default' : 'outline'}
+                        disabled={!s.free}
+                        onClick={() => setRescheduleData(d => ({ ...d, time: s.time }))}
+                        className={`h-7 px-2 text-xs ${!s.free ? 'opacity-40 line-through' : ''}`}
+                      >
+                        {s.time}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {rescheduleSlots.filter(s => s.free).length} horário(s) livre(s) neste dia. Os riscados já estão ocupados.
+                  </p>
+                </>
+              )}
+            </div>
+
 
             {/* Notificação ao cliente */}
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">

@@ -532,24 +532,53 @@ ${autoprint ? "<script>window.print();</script>" : ""}
         </div>
       </section>
 
-      {/* Totais */}
+      {/* Totais — SÓ dinheiro com evidência de pagamento */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Subscrições Stripe</p>
+          <p className="text-xs text-muted-foreground">Subscrições pagas (Stripe)</p>
           <p className="text-2xl font-bold mono mt-1">€{totals.subsRevenue.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-1">{subs.length} subscrições</p>
+          <p className="text-xs text-muted-foreground mt-1">{subs.length} pagamentos confirmados</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Comissões Marketplace</p>
+          <p className="text-xs text-muted-foreground">Comissões Marketplace recebidas</p>
           <p className="text-2xl font-bold mono mt-1">€{totals.marketCommissions.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">{escrows.length} transações</p>
         </div>
         <div className="bg-card border border-primary/30 rounded-xl p-4 bg-primary/5">
-          <p className="text-xs text-muted-foreground">Total período</p>
+          <p className="text-xs text-muted-foreground">Receita recebida no período</p>
           <p className="text-2xl font-bold mono mt-1 text-primary">€{totals.total.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">{dateFrom} → {dateTo}</p>
         </div>
       </div>
+
+      {/* Acessos atribuídos — NÃO é receita */}
+      <section className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
+          <div className="flex-1">
+            <h2 className="font-semibold text-sm">Acessos ativos sem pagamento confirmado (não é receita)</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Planos atribuídos manualmente, ofertas e períodos de teste. Valor de tabela apenas para referência —{" "}
+              <strong>não entra na contabilidade nem nas exportações</strong>.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {Object.entries(accessBreakdown.counts).map(([k, n]) => (
+                <Badge key={k} variant="outline" className="text-xs">
+                  {SUBSCRIPTION_CLASS_LABEL[k as keyof typeof SUBSCRIPTION_CLASS_LABEL] || k}: {n}
+                </Badge>
+              ))}
+              {accessBreakdown.total === 0 && <span className="text-xs text-muted-foreground">Sem acessos ativos.</span>}
+            </div>
+            {accessBreakdown.contracted > 0 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                Valor de tabela não cobrado: <span className="mono">€{accessBreakdown.contracted.toFixed(2)}/mês</span>{" "}
+                <Badge variant="outline" className="ml-1 text-[10px]">ESTIMATIVA</Badge>
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
 
       {/* Exportações manuais */}
       <section className="bg-card border border-border rounded-xl p-5">

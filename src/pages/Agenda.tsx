@@ -141,31 +141,112 @@ export default function Agenda() {
     loadData();
   };
 
-  const openReschedule = (appt: Appointment) => {
+  /** Contactos resolvidos do cliente (da própria marcação ou da ficha de cliente). */
+  const [rescheduleContact, setRescheduleContact] = useState<{ name: string; email: string | null; phone: string | null }>({ name: '', email: null, phone: null });
+
+  const openReschedule = async (appt: Appointment) => {
     setRescheduleAppt(appt);
     setRescheduleData({ date: appt.date, time: String(appt.time).slice(0, 5) });
+    setNotifyRetry(null);
+
+    let name = appt.client_name || '';
+    let email = appt.client_email || null;
+    let phone = appt.client_phone || null;
+    if (appt.client_id && (!email || !phone || !name)) {
+      const { data } = await supabase.from('clients').select('name, email, phone').eq('id', appt.client_id).maybeSingle();
+      if (data) {
+        name = name || (data as any).name || '';
+        email = email || (data as any).email || null;
+        phone = phone || (data as any).phone || null;
+      }
+    }
+    setRescheduleContact({ name, email, phone });
+    setNotifyChannels({ email: isValidEmail(email), whatsapp: !isValidEmail(email) && !!phone });
+  };
+
+  const buildNotifyContext = (appt: Appointment): RescheduleNotifyContext => {
+    const veh = vehicles.find(v => v.id === appt.vehicle_id);
+    return {
+      appointmentId: appt.id,
+      shopId: activeShopId || appt.shop_id,
+      shopName: shopInfo.name || undefined,
+      shopPhone: shopInfo.phone,
+      clientName: rescheduleContact.name || appt.client_name,
+      clientEmail: rescheduleContact.email,
+      clientPhone: rescheduleContact.phone,
+      serviceType: appt.service_type,
+      vehicleLabel: veh ? `${[veh.make, veh.model].filter(Boolean).join(' ')}${veh.plate ? ` — ${veh.plate}` : ''}`.trim() : null,
+      oldDate: appt.date,
+      oldTime: String(appt.time).slice(0, 5),
+      newDate: rescheduleData.date,
+      newTime: rescheduleData.time,
+    };
+  };
+
+  /** Envia pelos canais escolhidos. Devolve os canais entregues; lança se todos falharem. */
+  const runNotifications = async (ctx: RescheduleNotifyContext, channels: { email: boolean; whatsapp: boolean }) => {
+    const sent: string[] = [];
+    const failed: string[] = [];
+    if (channels.email) {
+      try { await sendRescheduleEmail(ctx); sent.push('email'); } catch { failed.push('email'); }
+    }
+    if (channels.whatsapp) {
+      try { await sendRescheduleWhatsApp(ctx); sent.push('WhatsApp'); } catch { failed.push('WhatsApp'); }
+    }
+    return { sent, failed };
   };
 
   const submitReschedule = async () => {
-    if (!rescheduleAppt) return;
+    if (!rescheduleAppt || rescheduling) return;
+    if (!rescheduleData.date || !rescheduleData.time) {
+      toast({ title: 'Indique a nova data e hora', variant: 'destructive' });
+      return;
+    }
+    setRescheduling(true);
+    const appt = rescheduleAppt;
     const { error } = await supabase.from('appointments')
       .update({ date: rescheduleData.date, time: rescheduleData.time, status: 'confirmed' } as any)
-      .eq('id', rescheduleAppt.id);
-    if (error) { toast({ title: t('common.error'), description: error.message, variant: 'destructive' }); return; }
-    if (rescheduleAppt.client_email) {
-      supabase.functions.invoke('send-email', {
-        body: {
-          to: rescheduleAppt.client_email,
-          subject: `Marcação reagendada — ${rescheduleData.date} ${rescheduleData.time}`,
-          html: `<p>Olá ${rescheduleAppt.client_name || ''},</p><p>A sua marcação foi <strong>reagendada</strong> para <strong>${rescheduleData.date} às ${rescheduleData.time}</strong>.</p><p>Serviço: ${rescheduleAppt.service_type}</p>`,
-          shop_id: activeShopId,
-        },
-      }).catch(() => {});
+      .eq('id', appt.id);
+    if (error) {
+      setRescheduling(false);
+      toast({ title: t('common.error'), description: 'Não foi possível guardar a nova data.', variant: 'destructive' });
+      return;
     }
+
+    const ctx = buildNotifyContext(appt);
+    const channels = { ...notifyChannels };
     setRescheduleAppt(null);
-    toast({ title: t('agenda.rescheduled') || 'Reagendada e cliente notificado' });
+    setRescheduling(false);
     loadData();
+
+    if (!channels.email && !channels.whatsapp) {
+      toast({ title: 'Marcação reagendada' });
+      return;
+    }
+
+    const { sent, failed } = await runNotifications(ctx, channels);
+    if (sent.length && !failed.length) {
+      toast({ title: `Marcação reagendada e cliente notificado por ${sent.join(' e ')}.` });
+    } else if (sent.length) {
+      setNotifyRetry(ctx);
+      toast({ title: `Marcação reagendada. Notificação enviada por ${sent.join(' e ')}, mas falhou por ${failed.join(' e ')}.`, variant: 'destructive' });
+    } else {
+      setNotifyRetry(ctx);
+      toast({ title: 'Marcação reagendada com sucesso, mas não foi possível enviar a notificação ao cliente.', variant: 'destructive' });
+    }
   };
+
+  const retryNotification = async () => {
+    if (!notifyRetry) return;
+    const { sent, failed } = await runNotifications(notifyRetry, notifyChannels);
+    if (sent.length && !failed.length) {
+      setNotifyRetry(null);
+      toast({ title: `Cliente notificado por ${sent.join(' e ')}.` });
+    } else {
+      toast({ title: 'Continua a não ser possível notificar o cliente.', variant: 'destructive' });
+    }
+  };
+
 
   const rejectAppointment = async (appt: Appointment) => {
     const { error } = await supabase.from('appointments').update({ status: 'cancelled' } as any).eq('id', appt.id);

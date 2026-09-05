@@ -50,8 +50,17 @@ async function callDemo(action: "start" | "plan" | "reset" | "end", plan: DemoPl
 
 /** Inicia a demonstração: sessão em background + contexto de plano. */
 export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self") {
+  // A /demo é uma entrada comercial própria: se esta visita não trouxer um
+  // link de parceiro, qualquer atribuição antiga deste browser deixa de valer.
+  // Um parceiro que envie tráfego com ?partner=... continua a ser respeitado,
+  // porque esse parâmetro é capturado na mesma visita.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get("partner") && !params.get("ref")) clearPartnerAttribution();
+  } catch { /* ignore */ }
   const res = await callDemo("start", plan);
   if (!res.session) throw new Error("Sessão de demonstração indisponível");
+
   const { error } = await supabase.auth.setSession(res.session);
   if (error) throw new Error(error.message);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);

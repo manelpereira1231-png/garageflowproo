@@ -76,7 +76,13 @@ export default function AdminBusinessMetrics() {
       supabase.from("customer_health_scores" as any).select("*").order("health_score", { ascending: true }).limit(50),
     ]);
     setMetrics((m.data as any) ?? []);
-    setHealth((h.data as any) ?? []);
+    const rows = (h.data as any[]) ?? [];
+    setHealth(rows as any);
+    const ids = [...new Set(rows.map(r => r.shop_id).filter(Boolean))];
+    if (ids.length > 0) {
+      const { data: shops } = await supabase.from("shops").select("id,name").in("id", ids);
+      setShopNames(Object.fromEntries((shops ?? []).map((s: any) => [s.id, s.name])));
+    }
     setLoading(false);
   };
 
@@ -618,28 +624,29 @@ export default function AdminBusinessMetrics() {
       {/* ==================== CUSTOMER HEALTH ==================== */}
       <Card className="p-4">
         <h2 className="font-semibold mb-3">Customer Health — Risco de Churn</h2>
-        <p className="text-xs text-muted-foreground mb-3">Top 50 entidades por score (mais baixo = maior risco).</p>
+        <p className="text-xs text-muted-foreground mb-3">Top 50 oficinas por score de saúde (mais baixo = maior risco).</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
-              <tr><th className="text-left py-2">Entidade</th><th className="text-left">ID</th><th className="text-right">Score</th><th className="text-left">Risco</th><th className="text-left">Atualizado</th></tr>
+              <tr><th className="text-left py-2">Oficina</th><th className="text-right">Score</th><th className="text-left">Risco</th><th className="text-right">Atividade 30d</th><th className="text-left">Ação recomendada</th><th className="text-left">Atualizado</th></tr>
             </thead>
             <tbody>
-              {health.map(h => (
-                <tr key={`${h.entity_type}-${h.entity_id}`} className="border-b border-border/50">
-                  <td className="py-2">{h.entity_type}</td>
-                  <td className="font-mono text-xs">{h.entity_id.slice(0, 8)}…</td>
-                  <td className="text-right font-semibold">{h.score}</td>
+              {health.map((h: any) => (
+                <tr key={h.shop_id} className="border-b border-border/50">
+                  <td className="py-2">{shopNames[h.shop_id] ?? `${String(h.shop_id).slice(0, 8)}…`}</td>
+                  <td className="text-right font-semibold">{h.health_score ?? "—"}</td>
                   <td>
-                    <Badge variant={h.risk_level === "high" ? "destructive" : h.risk_level === "medium" ? "secondary" : "outline"}>
-                      {h.risk_level}
+                    <Badge variant={h.churn_risk === "high" ? "destructive" : h.churn_risk === "medium" ? "secondary" : "outline"}>
+                      {h.churn_risk ?? "—"}
                     </Badge>
                   </td>
-                  <td className="text-xs text-muted-foreground">{new Date(h.updated_at).toLocaleString("pt-PT")}</td>
+                  <td className="text-right">{h.activity_30d ?? 0}</td>
+                  <td className="text-xs text-muted-foreground">{h.recommended_action ?? "—"}</td>
+                  <td className="text-xs text-muted-foreground">{h.updated_at ? new Date(h.updated_at).toLocaleString("pt-PT") : "—"}</td>
                 </tr>
               ))}
               {health.length === 0 && !loading && (
-                <tr><td colSpan={5} className="py-4 text-center text-muted-foreground">Sem dados de health ainda.</td></tr>
+                <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">Sem dados de health ainda.</td></tr>
               )}
             </tbody>
           </table>
@@ -657,6 +664,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (

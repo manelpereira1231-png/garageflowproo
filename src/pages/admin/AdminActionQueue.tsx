@@ -71,7 +71,7 @@ export default function AdminActionQueue() {
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={runWorker}><RefreshCw className="h-4 w-4 mr-2" />Executar worker</Button>
           <Button size="sm" variant="outline" onClick={runMaintenance}>Executar manutenção</Button>
-          <Button size="sm" variant="ghost" onClick={load}>Refresh</Button>
+          <Button size="sm" variant="ghost" onClick={load}>Atualizar</Button>
         </div>
       </div>
 

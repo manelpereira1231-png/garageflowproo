@@ -132,6 +132,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
   const [searchResults, setSearchResults] = useState<{id: string; name: string; email: string}[]>([]);
   const [showResults, setShowResults] = useState(false);
   const location = useLocation();
+  const current = findCurrent(location.pathname);
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);

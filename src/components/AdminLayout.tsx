@@ -292,6 +292,16 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
             <Menu className="w-5 h-5" />
           </button>
 
+          {/* Onde estou — secção e página atual */}
+          <div className="hidden md:flex flex-col justify-center min-w-0 mr-1">
+            <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground leading-none">
+              Administração{current ? ` · ${current.section}` : ""}
+            </span>
+            <span className="text-sm font-semibold truncate leading-tight mt-0.5">
+              {current?.label ?? "Painel de Controlo"}
+            </span>
+          </div>
+
           {/* Global search */}
           <div className="relative flex-1 max-w-md" ref={searchRef}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

@@ -110,10 +110,21 @@ export function usePlatformFinance(range: DateRange) {
 
   // ------------------------------------------------------------ Derivados
   const metrics = useMemo(() => {
-    const paying = subs.filter(isRealPaidSubscription);
+    const isDemo = (s: SubscriptionRow) => demoShopIds.has(s.shop_id);
+    const paying = subs.filter(s => isRealPaidSubscription(s, { isDemoShop: isDemo(s) }));
     const mrr = paying.reduce((s, x) => s + subscriptionMrr(x), 0);
     const payingCustomers = paying.length;
     const arpu = payingCustomers > 0 ? mrr / payingCustomers : null;
+
+    // Valor de tabela contratado (acesso ativo, com ou sem pagamento) — NÃO é receita.
+    const accessSubs = subs.filter(s => !isDemo(s) && hasActivePlanAccess(s));
+    const contractedMonthly = accessSubs.reduce((sum, s) => sum + contractedMonthlyValue(s), 0);
+    const nonPaying = accessSubs.filter(s => !isRealPaidSubscription(s, { isDemoShop: false }));
+    const classCounts = accessSubs.reduce<Record<string, number>>((acc, s) => {
+      const k = classifySubscription(s, { isDemoShop: false });
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {});
 
     const newSubsInPeriod = paying.filter(s => inRange(s.created_at, range)).length;
     const cancelledInPeriod = subs.filter(s =>

@@ -59,14 +59,72 @@ export interface ExpenseRow {
 /** Preços base por plano (EUR/mês). Mantém a mesma tabela usada no AdminFinance. */
 export const PLAN_PRICE_EUR: Record<string, number> = { free: 0, start: 0, pro: 49, garage: 99 };
 
+/** Planos de entrada (sem preço) — nunca contam como receita. */
+export const ENTRY_PLAN_SLUGS = ['free', 'start'];
+
+/**
+ * CLASSIFICAÇÃO FINANCEIRA ÚNICA DE UMA SUBSCRIÇÃO.
+ * Regra de ouro: plano atribuído ≠ plano pago. Só existe receita quando há
+ * evidência de pagamento (Stripe). Tudo o resto é acesso, não é dinheiro.
+ */
+export type SubscriptionClass =
+  | 'stripe_paid'    // pagamento confirmado pelo Stripe → conta como receita
+  | 'manual_admin'   // plano atribuído manualmente pelo Admin → acesso, €0
+  | 'gift'           // oferta (100% desconto ou marcado como oferta) → €0
+  | 'trial'          // período de teste → €0
+  | 'demo'           // conta de demonstração/teste interno → €0
+  | 'cancelled'      // subscrição cancelada → não gera MRR futuro
+  | 'past_due'       // pagamento pendente/falhado → não é receita recebida
+  | 'entry';         // plano gratuito de entrada → €0
+
+export const SUBSCRIPTION_CLASS_LABEL: Record<SubscriptionClass, string> = {
+  stripe_paid: 'Pago (Stripe)',
+  manual_admin: 'Atribuição manual',
+  gift: 'Oferta',
+  trial: 'Período de teste',
+  demo: 'Conta demo',
+  cancelled: 'Cancelado',
+  past_due: 'Pagamento pendente/falhado',
+  entry: 'Gratuito',
+};
+
+/** Só esta classe representa dinheiro recorrente realmente pago. */
+export function classifySubscription(
+  s: SubscriptionRow,
+  opts: { isDemoShop?: boolean } = {},
+): SubscriptionClass {
+  if (opts.isDemoShop) return 'demo';
+
+  const status = String(s.status || '').toLowerCase();
+  const plan = String(s.plan || '').toLowerCase();
+  const rt = String(s.revenue_type || '').toLowerCase();
+
+  if (status === 'canceled' || status === 'cancelled') return 'cancelled';
+  if (ENTRY_PLAN_SLUGS.includes(plan)) return 'entry';
+  if (status === 'trialing' || status === 'trial' || status === 'trial_expired') return 'trial';
+  if (status === 'past_due' || status === 'unpaid' || status === 'incomplete') return 'past_due';
+
+  if (rt === 'gift' || rt === 'offer') return 'gift';
+  if (rt === 'manual_admin') return 'manual_admin';
+  if ((Number(s.discount_percent) || 0) >= 100) return 'gift';
+
+  // Evidência de pagamento obrigatória.
+  if (rt === 'stripe_paid') return status === 'active' ? 'stripe_paid' : 'past_due';
+  if (s.stripe_subscription_id) return status === 'active' ? 'stripe_paid' : 'past_due';
+
+  // Plano pago, ativo, sem qualquer evidência de pagamento → atribuição manual.
+  return 'manual_admin';
+}
+
 /** Regra única de "receita real": só Stripe confirmado conta. */
-export function isRealPaidSubscription(s: SubscriptionRow): boolean {
-  return (
-    s.status === 'active' &&
-    s.plan !== 'free' &&
-    s.plan !== 'start' &&
-    (s.revenue_type === 'stripe_paid' || !!s.stripe_subscription_id)
-  );
+export function isRealPaidSubscription(s: SubscriptionRow, opts: { isDemoShop?: boolean } = {}): boolean {
+  return classifySubscription(s, opts) === 'stripe_paid';
+}
+
+/** Acesso ativo ao plano (pode existir sem qualquer pagamento). */
+export function hasActivePlanAccess(s: SubscriptionRow): boolean {
+  const status = String(s.status || '').toLowerCase();
+  return status === 'active' || status === 'trialing';
 }
 
 export function subscriptionMrr(s: SubscriptionRow, priceMap: Record<string, number> = PLAN_PRICE_EUR): number {
@@ -74,6 +132,15 @@ export function subscriptionMrr(s: SubscriptionRow, priceMap: Record<string, num
   const disc = s.discount_percent || 0;
   return base * (1 - disc / 100);
 }
+
+/**
+ * Valor de tabela mensal contratado (SEM evidência de pagamento).
+ * Usar apenas em métricas explicitamente marcadas como ESTIMATIVA/PROJEÇÃO.
+ */
+export function contractedMonthlyValue(s: SubscriptionRow, priceMap: Record<string, number> = PLAN_PRICE_EUR): number {
+  return subscriptionMrr(s, priceMap);
+}
+
 
 // ---------------------------------------------------------------- Categorias
 

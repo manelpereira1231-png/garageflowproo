@@ -45,6 +45,8 @@ function normalizePlate(p: string) {
   return p.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
+const PAGE_SIZE = 60;
+
 export default function AdminVehiclesGlobal() {
   const [params] = useSearchParams();
   const initial = params.get("q") || "";
@@ -52,33 +54,54 @@ export default function AdminVehiclesGlobal() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [searched, setSearched] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totals, setTotals] = useState<{ erp: number; market: number } | null>(null);
 
   useEffect(() => {
-    if (initial.trim().length >= 2) void search();
+    void load(initial, 0);
+    void loadTotals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const search = async () => {
-    const term = q.trim();
-    if (term.length < 2) return;
+  const loadTotals = async () => {
+    const [erpC, mktC] = await Promise.all([
+      supabase.from("vehicles").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("carity_listings").select("id", { count: "exact", head: true }),
+    ]);
+    setTotals({ erp: erpC.count ?? 0, market: mktC.count ?? 0 });
+  };
+
+  const load = async (rawTerm: string, pageIndex: number) => {
+    const term = rawTerm.trim();
+    const isSearch = term.length >= 2;
     setLoading(true);
-    setSearched(true);
+    setSearched(isSearch);
+    setPage(pageIndex);
     try {
       const like = `%${term}%`;
-      const plateLike = `%${normalizePlate(term)}%`;
+      const from = pageIndex * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      let erpQuery = supabase
+        .from("vehicles")
+        .select("id, shop_id, plate, vin, make, model, year, mileage, client_id, created_at")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      let marketQuery = supabase
+        .from("carity_listings")
+        .select("id, seller_id, plate, vin, make, model, year, mileage, status, price, created_at")
+        .order("created_at", { ascending: false });
+
+      if (isSearch) {
+        const filter = `plate.ilike.${like},vin.ilike.${like},make.ilike.${like},model.ilike.${like}`;
+        erpQuery = erpQuery.or(filter);
+        marketQuery = marketQuery.or(filter);
+      }
 
       const [erpRes, marketRes] = await Promise.all([
-        supabase
-          .from("vehicles")
-          .select("id, shop_id, plate, vin, make, model, year, mileage, client_id, created_at")
-          .or(`plate.ilike.${like},vin.ilike.${like},make.ilike.${like},model.ilike.${like}`)
-          .is("deleted_at", null)
-          .limit(50),
-        supabase
-          .from("carity_listings")
-          .select("id, seller_id, plate, vin, make, model, year, mileage, status, price, created_at")
-          .or(`plate.ilike.${like},vin.ilike.${like},make.ilike.${like},model.ilike.${like}`)
-          .limit(50),
+        erpQuery.range(from, to),
+        marketQuery.range(from, to),
       ]);
 
       if (erpRes.error) throw erpRes.error;
@@ -102,22 +125,13 @@ export default function AdminVehiclesGlobal() {
         ...v,
       }));
 
-      // Loose plate match override (in case of dashes/spaces in DB)
-      const np = normalizePlate(term);
-      const extraFilter = (r: Row) => {
-        if (np.length < 4) return true;
-        return normalizePlate(r.plate || "").includes(np)
-          || (r.vin || "").toUpperCase().includes(term.toUpperCase())
-          || `${r.make} ${r.model}`.toLowerCase().includes(term.toLowerCase());
-      };
-
       const merged: Row[] = [...erpRows, ...marketRows]
-        .filter(extraFilter)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      setRows(merged);
+      setHasMore((erpRes.data?.length ?? 0) === PAGE_SIZE || (marketRes.data?.length ?? 0) === PAGE_SIZE);
+      setRows(prev => (pageIndex === 0 ? merged : [...prev, ...merged]));
     } catch (e: any) {
-      toastError(e, "Não foi possível pesquisar veículos");
+      toastError(e, "Não foi possível carregar veículos");
     } finally {
       setLoading(false);
     }
@@ -129,61 +143,80 @@ export default function AdminVehiclesGlobal() {
   return (
     <div className="space-y-6 p-1">
       <div>
-        <h1 className="text-2xl font-bold">Veículos — Pesquisa Global</h1>
+        <h1 className="text-2xl font-bold">Veículos (Global)</h1>
         <p className="text-sm text-muted-foreground">
-          Procura por matrícula, VIN, marca ou modelo em todas as oficinas (ERP) e anúncios (Market).
+          Todos os veículos das oficinas (ERP) e anúncios (Market). Pesquise por matrícula, VIN, marca ou modelo.
         </p>
       </div>
 
       <Card>
         <CardContent className="pt-4">
           <form
-            onSubmit={(e) => { e.preventDefault(); search(); }}
-            className="flex gap-2"
+            onSubmit={(e) => { e.preventDefault(); void load(q, 0); }}
+            className="flex flex-col sm:flex-row gap-2"
           >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                autoFocus
                 placeholder="Ex: 12-AB-34, WVWZZZ1KZAW..., BMW Serie 3"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                className="pl-9 h-10"
+                className="pl-9 h-11"
               />
             </div>
-            <Button type="submit" disabled={loading || q.trim().length < 2}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pesquisar"}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={loading} className="min-h-[44px]">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pesquisar"}
+              </Button>
+              {(q || searched) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-[44px]"
+                  onClick={() => { setQ(""); void load("", 0); }}
+                >
+                  Limpar
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      {searched && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="gap-1"><Wrench className="w-3 h-3" /> ERP: {erpCount}</Badge>
-          <Badge variant="outline" className="gap-1"><Store className="w-3 h-3" /> Market: {marketCount}</Badge>
-          <span className="ml-auto">{rows.length} resultado(s)</span>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <Badge variant="outline" className="gap-1"><Wrench className="w-3 h-3" /> ERP: {erpCount}{totals && !searched ? ` de ${totals.erp}` : ""}</Badge>
+        <Badge variant="outline" className="gap-1"><Store className="w-3 h-3" /> Market: {marketCount}{totals && !searched ? ` de ${totals.market}` : ""}</Badge>
+        <span className="ml-auto">{rows.length} {searched ? "resultado(s)" : "em lista"}</span>
+      </div>
 
-      {loading ? (
+      {loading && rows.length === 0 ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
         </div>
-      ) : searched && rows.length === 0 ? (
+      ) : rows.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nenhum veículo encontrado para "{q}".
+            {searched ? `Nenhum veículo encontrado para "${q}".` : "Ainda não existem veículos registados."}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {rows.map(r => <VehicleCard key={`${r.source}-${r.id}`} row={r} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {rows.map(r => <VehicleCard key={`${r.source}-${r.id}`} row={r} />)}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center">
+              <Button variant="outline" disabled={loading} onClick={() => void load(q, page + 1)} className="min-h-[44px]">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Carregar mais"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
 
 function VehicleCard({ row }: { row: Row }) {
   const isErp = row.source === "erp";

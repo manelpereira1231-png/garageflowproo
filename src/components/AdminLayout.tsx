@@ -18,54 +18,51 @@ import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 // Páginas legadas (AdminSettings, AdminAlerts, AdminGrowth, AdminGrowthOpportunities,
 // AdminMarketingAutopilot, AdminTraffic, AdminFeatureAdoption) saem do menu mas as rotas
 // continuam acessíveis por URL — serão absorvidas como tabs em lotes seguintes.
+// Organização visual do menu (apenas UI): as mesmas páginas, agrupadas por área
+// de trabalho e por ordem de utilização — Visão Geral → Negócio → Financeiro →
+// Marketplace → Marketing → Suporte → Conteúdo → Operações → Sistema.
+// Nenhuma rota foi adicionada, removida ou alterada.
 const navSections = [
   {
-    label: "Plataforma",
+    label: "Visão Geral",
     items: [
-      { path: "/admin", label: "Centro de Controlo", icon: LayoutDashboard },
+      { path: "/admin", label: "Painel de Controlo", icon: LayoutDashboard },
       { path: "/admin/notifications", label: "Notificações", icon: Bell, badge: "notifications" },
-      { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
-      { path: "/admin/system", label: "Kill Switches & Flags", icon: ToggleLeft },
-      { path: "/admin/logs", label: "Auditoria", icon: FileText },
-      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
-      { path: "/admin/rate-limits", label: "Rate Limits", icon: Activity },
+      { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
-    label: "Planos",
-    items: [
-      { path: "/admin/plans", label: "Planos", icon: CreditCard },
-      { path: "/admin/features", label: "Funcionalidades", icon: Layers },
-      { path: "/admin/countries", label: "Preços por País", icon: Globe },
-      { path: "/admin/coupons", label: "Cupões & Promoções", icon: Tag },
-      { path: "/admin/ai-control", label: "IA (Custos & Orçamento)", icon: Sparkles },
-    ],
-  },
-  {
-    label: "Clientes",
+    label: "Negócio",
     items: [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
       { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
+      { path: "/admin/plans", label: "Planos", icon: CreditCard },
+      { path: "/admin/features", label: "Funcionalidades dos Planos", icon: Layers },
+      { path: "/admin/countries", label: "Preços por País", icon: Globe },
+      { path: "/admin/coupons", label: "Cupões & Promoções", icon: Tag },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
       { path: "/admin/finance-center", label: "Centro Financeiro", icon: CircleDollarSign },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
-      { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },
+      { path: "/admin/payment-fees", label: "Comissões de Pagamento", icon: Percent },
       { path: "/admin/saft-certification", label: "SAF-T · Certificação", icon: FileCheck2 },
-
-      { path: "/admin/reports", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
     label: "Marketplace",
     items: [
-      { path: "/admin/market-dashboard", label: "Marketplace", icon: Store },
+      { path: "/admin/market-dashboard", label: "Visão do Marketplace", icon: Store },
       { path: "/admin/market-listings", label: "Anúncios", icon: Car },
       { path: "/admin/market", label: "Inspeções", icon: Wrench },
       { path: "/admin/market-escrows", label: "Escrow & Disputas", icon: ShieldCheck },
-      { path: "/admin/market-kyc", label: "KYC", icon: IdCard },
+      { path: "/admin/market-kyc", label: "Verificação de Identidade", icon: IdCard },
       { path: "/admin/market-activations", label: "Adesões", icon: Package },
-      { path: "/admin/risk-engine", label: "Risk Engine", icon: ShieldAlert },
+      { path: "/admin/risk-engine", label: "Motor de Risco", icon: ShieldAlert },
     ],
   },
   {
@@ -73,15 +70,15 @@ const navSections = [
     items: [
       { path: "/admin/marketing", label: "Campanhas & Automatizações", icon: Megaphone },
       { path: "/admin/seo", label: "SEO", icon: Search },
-      { path: "/admin/seo-blog", label: "Blog", icon: FileText },
+      { path: "/admin/seo-blog", label: "Blogue", icon: FileText },
     ],
   },
   {
     label: "Suporte",
     items: [
-      { path: "/admin/action-queue", label: "Inbox Operacional", icon: Inbox },
+      { path: "/admin/action-queue", label: "Caixa Operacional", icon: Inbox },
       { path: "/admin/complaints", label: "Reclamações", icon: ShieldAlert },
-      { path: "/admin/support", label: "Suporte", icon: LifeBuoy },
+      { path: "/admin/support", label: "Pedidos de Suporte", icon: LifeBuoy },
       { path: "/admin/demos", label: "Demonstrações", icon: Users },
       { path: "/admin/partners", label: "Parceiros", icon: Handshake },
     ],
@@ -101,7 +98,33 @@ const navSections = [
       { path: "/admin/supplier-network", label: "Rede de Fornecedores", icon: Store },
     ],
   },
+  {
+    label: "Sistema",
+    items: [
+      { path: "/admin/system-health", label: "Saúde do Sistema", icon: HeartPulse },
+      { path: "/admin/system", label: "Interruptores & Funcionalidades", icon: ToggleLeft },
+      { path: "/admin/ai-control", label: "IA — Custos & Orçamento", icon: Sparkles },
+      { path: "/admin/logs", label: "Registo de Auditoria", icon: FileText },
+      { path: "/admin/emails", label: "Registo de Emails", icon: Mail },
+      { path: "/admin/rate-limits", label: "Limites de Utilização", icon: Activity },
+    ],
+  },
 ];
+
+/** Localiza a página atual no menu, para o cabeçalho indicar sempre onde estamos. */
+function findCurrent(pathname: string) {
+  let best: { section: string; label: string } | null = null;
+  for (const section of navSections) {
+    for (const item of section.items) {
+      const itemPath = item.path.split("?")[0];
+      const matches = pathname === itemPath || (itemPath !== "/admin" && pathname.startsWith(itemPath + "/"));
+      if (matches && (!best || itemPath.length > 0)) {
+        if (!best || itemPath.length >= 0) best = { section: section.label, label: item.label };
+      }
+    }
+  }
+  return best;
+}
 
 export default function AdminLayout({ children }: { children?: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

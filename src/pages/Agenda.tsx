@@ -16,6 +16,9 @@ import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "dat
 import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
+import { sendRescheduleEmail, sendRescheduleWhatsApp, type RescheduleNotifyContext } from "@/lib/appointmentNotify";
+import { isValidEmail } from "@/lib/emailService";
+import { Mail, MessageCircle } from "lucide-react";
 
 interface Appointment {
   id: string;

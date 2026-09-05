@@ -157,7 +157,7 @@ export default function AdminGrowthOpportunities() {
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{s.name || "(sem nome)"}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {s.owner_email} · {s.country || "?"} · registo {new Date(s.created_at).toLocaleDateString("pt-PT")}
+                    {s.email} · {s.country || "?"} · registo {new Date(s.created_at).toLocaleDateString("pt-PT")}
                   </div>
                 </div>
                 <Link to={`/admin/shops/${s.id}`}><Button variant="ghost" size="sm">Abrir</Button></Link>
@@ -180,7 +180,7 @@ export default function AdminGrowthOpportunities() {
             {noConvPages.map((p) => (
               <li key={p.path} className="py-2 flex items-center justify-between gap-2 text-sm">
                 <code className="text-xs truncate flex-1">{p.path}</code>
-                <Badge variant="secondary">{p.views} visitas</Badge>
+                <Badge variant="secondary">{p.views_count ?? 0} visitas</Badge>
               </li>
             ))}
           </ul>

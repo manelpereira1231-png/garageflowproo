@@ -230,3 +230,50 @@ export async function detectConflict(params: {
     return overlap({ start, end: start + (a.duration_minutes || 60) }, slot);
   });
 }
+
+/**
+ * Lista os slots do dia (dentro do horário da oficina) marcando os que estão
+ * livres para uma duração. Usado no reagendamento rápido de marcações do
+ * portal — reutiliza exatamente a mesma disponibilidade da Agenda.
+ */
+export async function getDaySlots(params: {
+  shopId: string;
+  date: string;
+  durationMinutes: number;
+  openingHours: OpeningHours;
+  mechanicId?: string | null;
+  excludeAppointmentId?: string;
+  stepMinutes?: number;
+}): Promise<{ time: string; free: boolean }[]> {
+  const { shopId, date, durationMinutes, openingHours, mechanicId, excludeAppointmentId, stepMinutes = 30 } = params;
+  const dayKey = DAY_KEYS[parseISO(date).getDay()];
+  const opening = openingHours[dayKey] || DEFAULT_OPENING_HOURS[dayKey];
+  const windows = dayWindows(opening);
+  if (!windows.length) return [];
+
+  const busy = await getBusyIntervals(shopId, date, mechanicId);
+  let excluded: Interval | null = null;
+  if (excludeAppointmentId) {
+    const { data } = await supabase
+      .from("appointments")
+      .select("time,duration_minutes")
+      .eq("id", excludeAppointmentId)
+      .maybeSingle();
+    if (data) {
+      const s = toMin(String((data as any).time).slice(0, 5));
+      excluded = { start: s, end: s + ((data as any).duration_minutes || 60) };
+    }
+  }
+  const effectiveBusy = excluded
+    ? busy.filter((b) => !(b.start === excluded!.start && b.end === excluded!.end))
+    : busy;
+
+  const slots: { time: string; free: boolean }[] = [];
+  for (const [wStart, wEnd] of windows) {
+    for (let t = wStart; t + durationMinutes <= wEnd; t += stepMinutes) {
+      const slot: Interval = { start: t, end: t + durationMinutes };
+      slots.push({ time: fromMin(t), free: !effectiveBusy.some((b) => overlap(b, slot)) });
+    }
+  }
+  return slots;
+}

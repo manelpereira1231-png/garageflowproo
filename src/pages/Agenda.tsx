@@ -15,7 +15,7 @@ import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Copy, ExternalLink, T
 import { format, startOfWeek, addDays, isSameDay, addWeeks, subWeeks } from "date-fns";
 import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
-import { suggestSlots, detectConflict, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
+import { suggestSlots, detectConflict, getDaySlots, DEFAULT_OPENING_HOURS, type OpeningHours, type SlotSuggestion } from "@/lib/schedulingEngine";
 import { sendRescheduleEmail, sendRescheduleWhatsApp, type RescheduleNotifyContext } from "@/lib/appointmentNotify";
 import { isValidEmail } from "@/lib/emailService";
 import { Mail, MessageCircle } from "lucide-react";
@@ -268,6 +268,63 @@ export default function Agenda() {
     () => appointments.filter(a => a.status === 'pending' && (a.source === 'portal' || a.source === 'public')),
     [appointments]
   );
+
+  /** Etiqueta legível da viatura associada à marcação (quando existe). */
+  const vehicleLabelOf = (appt: Appointment) => {
+    const veh = vehicles.find(v => v.id === appt.vehicle_id);
+    if (!veh) return null;
+    return `${[veh.make, veh.model].filter(Boolean).join(' ')}${veh.plate ? ` — ${veh.plate}` : ''}`.trim();
+  };
+
+  /** Disponibilidade da oficina no horário pedido por cada marcação pendente. */
+  const [pendingAvailability, setPendingAvailability] = useState<Record<string, 'free' | 'busy' | 'closed'>>({});
+
+  useEffect(() => {
+    if (!activeShopId || pendingPortalAppts.length === 0) { setPendingAvailability({}); return; }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(pendingPortalAppts.map(async (a) => {
+        const slots = await getDaySlots({
+          shopId: activeShopId,
+          date: a.date,
+          durationMinutes: a.duration_minutes || 60,
+          openingHours,
+          excludeAppointmentId: a.id,
+        });
+        if (slots.length === 0) return [a.id, 'closed'] as const;
+        const conflict = await detectConflict({
+          shopId: activeShopId,
+          date: a.date,
+          time: String(a.time).slice(0, 5),
+          durationMinutes: a.duration_minutes || 60,
+          excludeId: a.id,
+        });
+        return [a.id, conflict ? 'busy' : 'free'] as const;
+      }));
+      if (!cancelled) setPendingAvailability(Object.fromEntries(entries));
+    })();
+    return () => { cancelled = true; };
+  }, [activeShopId, pendingPortalAppts, openingHours]);
+
+  /** Horários do dia escolhido no reagendamento rápido. */
+  const [rescheduleSlots, setRescheduleSlots] = useState<{ time: string; free: boolean }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    if (!rescheduleAppt || !activeShopId || !rescheduleData.date) { setRescheduleSlots([]); return; }
+    let cancelled = false;
+    setLoadingSlots(true);
+    getDaySlots({
+      shopId: activeShopId,
+      date: rescheduleData.date,
+      durationMinutes: rescheduleAppt.duration_minutes || 60,
+      openingHours,
+      excludeAppointmentId: rescheduleAppt.id,
+    })
+      .then(s => { if (!cancelled) setRescheduleSlots(s); })
+      .finally(() => { if (!cancelled) setLoadingSlots(false); });
+    return () => { cancelled = true; };
+  }, [rescheduleAppt, rescheduleData.date, activeShopId, openingHours]);
 
   const loadData = async () => {
     if (!activeShopId) return;
@@ -541,11 +598,29 @@ export default function Agenda() {
               <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-md bg-card border border-border">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{a.client_name || 'Cliente'} <span className="text-muted-foreground font-normal">— {a.service_type}</span></p>
-                  <p className="text-xs text-muted-foreground">
-                    {a.date} às {String(a.time).slice(0, 5)}
-                    {a.client_phone && <> · {a.client_phone}</>}
-                    {a.client_email && <> · {a.client_email}</>}
-                  </p>
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
+                    <p className="flex flex-wrap items-center gap-x-1.5">
+                      <span className="font-medium text-foreground">{a.date} às {String(a.time).slice(0, 5)}</span>
+                      {a.duration_minutes ? <span>· {a.duration_minutes} min</span> : null}
+                      {pendingAvailability[a.id] === 'free' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-green-400 text-green-700 dark:text-green-400">Horário livre</Badge>
+                      )}
+                      {pendingAvailability[a.id] === 'busy' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-destructive/50 text-destructive">Horário ocupado</Badge>
+                      )}
+                      {pendingAvailability[a.id] === 'closed' && (
+                        <Badge variant="outline" className="text-[10px] py-0 border-amber-400 text-amber-700 dark:text-amber-400">Oficina encerrada</Badge>
+                      )}
+                    </p>
+                    <p>Viatura: {vehicleLabelOf(a) || 'não indicada'}</p>
+                    {(a.client_phone || a.client_email) && (
+                      <p>
+                        {a.client_phone}
+                        {a.client_phone && a.client_email ? ' · ' : ''}
+                        {a.client_email}
+                      </p>
+                    )}
+                  </div>
                   {a.notes && <p className="text-xs text-muted-foreground mt-1 italic">"{a.notes}"</p>}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -572,6 +647,17 @@ export default function Agenda() {
             <DialogTitle>Reagendar marcação</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {rescheduleAppt && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-0.5">
+                <p className="text-sm font-semibold">{rescheduleContact.name || rescheduleAppt.client_name || 'Cliente'}</p>
+                <p className="text-muted-foreground">Serviço: {rescheduleAppt.service_type}</p>
+                <p className="text-muted-foreground">Viatura: {vehicleLabelOf(rescheduleAppt) || 'não indicada'}</p>
+                <p className="text-muted-foreground">
+                  Pedido para {rescheduleAppt.date} às {String(rescheduleAppt.time).slice(0, 5)}
+                  {rescheduleAppt.duration_minutes ? ` · ${rescheduleAppt.duration_minutes} min` : ''}
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Nova data</Label>
@@ -582,6 +668,38 @@ export default function Agenda() {
                 <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
               </div>
             </div>
+
+            {/* Horários disponíveis nesse dia (mesma disponibilidade da Agenda) */}
+            <div>
+              <Label className="text-xs">Horários disponíveis</Label>
+              {loadingSlots ? (
+                <p className="text-xs text-muted-foreground mt-1">A carregar horários...</p>
+              ) : rescheduleSlots.length === 0 ? (
+                <p className="text-xs text-muted-foreground mt-1">A oficina está encerrada nesta data. Escolha outro dia.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-1.5 mt-1 max-h-40 overflow-y-auto">
+                    {rescheduleSlots.map(s => (
+                      <Button
+                        key={s.time}
+                        type="button"
+                        size="sm"
+                        variant={rescheduleData.time === s.time ? 'default' : 'outline'}
+                        disabled={!s.free}
+                        onClick={() => setRescheduleData(d => ({ ...d, time: s.time }))}
+                        className={`h-7 px-2 text-xs ${!s.free ? 'opacity-40 line-through' : ''}`}
+                      >
+                        {s.time}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {rescheduleSlots.filter(s => s.free).length} horário(s) livre(s) neste dia. Os riscados já estão ocupados.
+                  </p>
+                </>
+              )}
+            </div>
+
 
             {/* Notificação ao cliente */}
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">

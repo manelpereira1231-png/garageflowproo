@@ -114,6 +114,12 @@ export default function Agenda() {
   // Reschedule dialog state
   const [rescheduleAppt, setRescheduleAppt] = useState<Appointment | null>(null);
   const [rescheduleData, setRescheduleData] = useState({ date: '', time: '09:00' });
+  const [notifyChannels, setNotifyChannels] = useState<{ email: boolean; whatsapp: boolean }>({ email: false, whatsapp: false });
+  const [rescheduling, setRescheduling] = useState(false);
+  /** Guardado quando a marcação já foi reagendada mas a notificação falhou (permite tentar de novo). */
+  const [notifyRetry, setNotifyRetry] = useState<RescheduleNotifyContext | null>(null);
+  const [shopInfo, setShopInfo] = useState<{ name: string; phone: string | null }>({ name: '', phone: null });
+
 
   const acceptAppointment = async (appt: Appointment) => {
     const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', appt.id);

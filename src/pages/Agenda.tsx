@@ -265,7 +265,7 @@ export default function Agenda() {
   };
 
   const pendingPortalAppts = useMemo(
-    () => appointments.filter(a => a.status === 'pending' && a.source === 'portal'),
+    () => appointments.filter(a => a.status === 'pending' && (a.source === 'portal' || a.source === 'public')),
     [appointments]
   );
 

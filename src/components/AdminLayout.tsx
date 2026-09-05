@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronRight, Shield, ShieldAlert, FileText, BarChart3,
-  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp,
+  CreditCard, Bell, Settings, Users, Search, Globe, Mail, Activity, Megaphone, ToggleLeft, Tag, TrendingUp, CircleDollarSign,
   Store, Car, Wrench, ShieldCheck, IdCard, LifeBuoy, HeartPulse, Handshake, Rocket, Zap,
   Package, Inbox, Sparkles, Languages, Coins, Layers, Percent, FileCheck2, Upload,
 } from "lucide-react";
@@ -47,6 +47,7 @@ const navSections = [
       { path: "/admin/shops", label: "Oficinas", icon: Building2 },
       { path: "/admin/users", label: "Utilizadores", icon: Users },
       { path: "/admin/billing", label: "Subscrições & Faturas", icon: CreditCard },
+      { path: "/admin/finance-center", label: "Centro Financeiro", icon: CircleDollarSign },
       { path: "/admin/finance", label: "Receita", icon: TrendingUp },
       { path: "/admin/accounting", label: "Contabilidade", icon: Coins },
       { path: "/admin/payment-fees", label: "Comissões Stripe", icon: Percent },

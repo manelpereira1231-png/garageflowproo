@@ -7394,6 +7394,189 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_expense_categories: {
+        Row: {
+          cost_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          parent_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          parent_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          parent_category?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_expenses: {
+        Row: {
+          acquisition_channel: string | null
+          amount_net: number
+          amount_total: number
+          category: string
+          cost_type: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          document_url: string | null
+          expense_date: string
+          frequency: string | null
+          id: string
+          is_paid: boolean
+          is_recurring: boolean
+          next_due_date: string | null
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          source: string
+          subcategory: string | null
+          updated_at: string
+          vat_amount: number
+          vendor: string | null
+        }
+        Insert: {
+          acquisition_channel?: string | null
+          amount_net?: number
+          amount_total?: number
+          category: string
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          document_url?: string | null
+          expense_date?: string
+          frequency?: string | null
+          id?: string
+          is_paid?: boolean
+          is_recurring?: boolean
+          next_due_date?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          source?: string
+          subcategory?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vendor?: string | null
+        }
+        Update: {
+          acquisition_channel?: string | null
+          amount_net?: number
+          amount_total?: number
+          category?: string
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          document_url?: string | null
+          expense_date?: string
+          frequency?: string | null
+          id?: string
+          is_paid?: boolean
+          is_recurring?: boolean
+          next_due_date?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          source?: string
+          subcategory?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      platform_finance_audit: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_finance_settings: {
+        Row: {
+          alert_thresholds: Json
+          assumptions: Json
+          created_at: string
+          id: string
+          known_bank_balance: number | null
+          known_bank_balance_updated_at: string | null
+          min_cash_reserve: number
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alert_thresholds?: Json
+          assumptions?: Json
+          created_at?: string
+          id?: string
+          known_bank_balance?: number | null
+          known_bank_balance_updated_at?: string | null
+          min_cash_reserve?: number
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alert_thresholds?: Json
+          assumptions?: Json
+          created_at?: string
+          id?: string
+          known_bank_balance?: number | null
+          known_bank_balance_updated_at?: string | null
+          min_cash_reserve?: number
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           id: string

@@ -176,27 +176,24 @@ export default function AdminAccounting() {
     return { subsRevenue, marketCommissions, total: subsRevenue + marketCommissions };
   }, [subs, escrows]);
 
-  // Acessos atribuídos SEM pagamento confirmado — nunca contam como receita.
-  const accessBreakdown = useMemo(() => {
-    const counts: Record<string, number> = {};
-    let contracted = 0;
-    (accessSubs || []).forEach((s) => {
-      const known = shopById.has(s.shop_id);
-      if (!known) return; // oficina demo/removida
-      const k = classifySubscription(s as any);
-      counts[k] = (counts[k] || 0) + 1;
-      if (k !== 'stripe_paid') contracted += contractedMonthlyValue(s as any);
-    });
-    return { counts, contracted, total: Object.values(counts).reduce((a, b) => a + b, 0) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessSubs, shops]);
-
-
   const shopById = useMemo(() => {
     const m = new Map<string, { name: string; nif: string | null }>();
     shops.forEach((s) => m.set(s.id, { name: s.name, nif: s.nif }));
     return m;
   }, [shops]);
+
+  // Acessos atribuídos SEM pagamento confirmado — nunca contam como receita.
+  const accessBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let contracted = 0;
+    (accessSubs || []).forEach((s) => {
+      if (!shopById.has(s.shop_id)) return; // oficina demo/removida
+      const k = classifySubscription(s as any);
+      counts[k] = (counts[k] || 0) + 1;
+      if (k !== 'stripe_paid') contracted += contractedMonthlyValue(s as any);
+    });
+    return { counts, contracted, total: Object.values(counts).reduce((a, b) => a + b, 0) };
+  }, [accessSubs, shopById]);
 
   const saveInfo = async () => {
     setSavingInfo(true);

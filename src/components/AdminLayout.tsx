@@ -354,7 +354,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
             </Link>
             <div className="hidden sm:flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Painel de Administração</span>
+              <span className="text-sm font-medium text-muted-foreground">Super Admin</span>
             </div>
           </div>
         </header>

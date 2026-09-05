@@ -44,7 +44,7 @@ export default function AdminFinance() {
     if (!silent) setLoading(true);
     try {
       const [shopsRes, subsRes, ordersRes] = await Promise.all([
-        supabase.from("shops").select("id, name, country, created_at"),
+        supabase.from("shops").select("id, name, country, created_at").eq("is_demo", false),
         supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
         supabase.from("work_orders").select("total, status, created_at, shop_id"),
       ]);

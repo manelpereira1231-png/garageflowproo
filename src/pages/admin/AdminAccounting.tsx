@@ -105,7 +105,7 @@ export default function AdminAccounting() {
     (async () => {
       const [{ data: infoRows }, { data: shopRows }] = await Promise.all([
         supabase.from("platform_company_info").select("*").limit(1),
-        supabase.from("shops").select("id, name, nif").order("name"),
+        supabase.from("shops").select("id, name, nif").eq("is_demo", false).order("name"),
       ]);
       if (infoRows && infoRows[0]) setInfo({ ...DEFAULT_INFO, ...infoRows[0] });
       if (shopRows) setShops(shopRows as any);

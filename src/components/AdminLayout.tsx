@@ -282,7 +282,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         <header className="h-14 lg:h-16 border-b border-border flex items-center px-4 lg:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
           {/* Mobile menu button */}
           <button

@@ -29,7 +29,7 @@ export default function AdminGrowthOpportunities() {
       // 1) Oficinas frias: criadas há >7d, 0 clientes, 0 viaturas
       const { data: shops } = await supabase
         .from("shops")
-        .select("id, name, owner_email, created_at, country")
+        .select("id, name, email, created_at, country")
         .lt("created_at", sevenDaysAgo)
         .order("created_at", { ascending: false })
         .limit(200);
@@ -50,17 +50,28 @@ export default function AdminGrowthOpportunities() {
       setStaleShops(stale.slice(0, 50));
 
       // 2) Páginas com tráfego mas zero conversões (últimos 30 dias)
-      const { data: visits } = await supabase
-        .from("landing_visits")
-        .select("landing_path, converted_signup, converted_paid")
-        .gte("created_at", thirtyDaysAgo);
+      // As conversões vivem em seo_conversions (landing_visits só regista tráfego).
+      const [{ data: visits }, { data: conversions }] = await Promise.all([
+        supabase
+          .from("landing_visits")
+          .select("landing_path")
+          .gte("created_at", thirtyDaysAgo),
+        supabase
+          .from("seo_conversions")
+          .select("landing_path")
+          .gte("created_at", thirtyDaysAgo),
+      ]);
 
       const pageStats: Record<string, { views: number; conv: number }> = {};
       (visits || []).forEach((v: any) => {
         const p = v.landing_path || "(unknown)";
         if (!pageStats[p]) pageStats[p] = { views: 0, conv: 0 };
         pageStats[p].views++;
-        if (v.converted_signup || v.converted_paid) pageStats[p].conv++;
+      });
+      (conversions || []).forEach((c: any) => {
+        const p = c.landing_path || "(unknown)";
+        if (!pageStats[p]) pageStats[p] = { views: 0, conv: 0 };
+        pageStats[p].conv++;
       });
       const noConv = Object.entries(pageStats)
         .filter(([_, s]) => s.views >= 20 && s.conv === 0)
@@ -72,11 +83,11 @@ export default function AdminGrowthOpportunities() {
       // 3) Posts de blog publicados sem visitas
       const { data: posts } = await supabase
         .from("seo_blog_posts")
-        .select("id, slug, title, views, published_at")
+        .select("id, slug, title, views_count, published_at")
         .eq("status", "published")
         .order("published_at", { ascending: false })
         .limit(100);
-      const zeroViews = (posts || []).filter((p: any) => (p.views || 0) === 0);
+      const zeroViews = (posts || []).filter((p: any) => (p.views_count || 0) === 0);
       setZeroViewPosts(zeroViews.slice(0, 30));
 
       // 4) Anúncios Market sem views (>30d)
@@ -146,7 +157,7 @@ export default function AdminGrowthOpportunities() {
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{s.name || "(sem nome)"}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {s.owner_email} · {s.country || "?"} · registo {new Date(s.created_at).toLocaleDateString("pt-PT")}
+                    {s.email} · {s.country || "?"} · registo {new Date(s.created_at).toLocaleDateString("pt-PT")}
                   </div>
                 </div>
                 <Link to={`/admin/shops/${s.id}`}><Button variant="ghost" size="sm">Abrir</Button></Link>
@@ -169,7 +180,7 @@ export default function AdminGrowthOpportunities() {
             {noConvPages.map((p) => (
               <li key={p.path} className="py-2 flex items-center justify-between gap-2 text-sm">
                 <code className="text-xs truncate flex-1">{p.path}</code>
-                <Badge variant="secondary">{p.views} visitas</Badge>
+                <Badge variant="secondary">{p.views_count ?? 0} visitas</Badge>
               </li>
             ))}
           </ul>

@@ -8,6 +8,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { resetActiveShopOnLogout } from "@/lib/shopContextSync";
 import { trackDemoEnter, trackDemoEvent } from "@/lib/demoTracker";
+import { clearPartnerAttribution } from "@/lib/partnerAttribution";
 
 export type DemoPlan = "free" | "pro" | "garage";
 

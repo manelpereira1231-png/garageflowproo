@@ -220,15 +220,12 @@ export default function AdminAccounting() {
     const rows: any[] = [];
     subs.forEach((s) => {
       const shop = shopById.get(s.shop_id);
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
       rows.push({
-        Tipo: "Subscrição", Data: (s.created_at || "").slice(0, 10),
+        Tipo: "Subscrição paga (Stripe)", Data: (s.created_at || "").slice(0, 10),
         Oficina: shop?.name || s.shop_id, NIF_Cliente: shop?.nif || "",
         Plano: s.plan, Ciclo: s.billing_cycle, Estado: s.status,
-        Valor_EUR: (base * factor * disc).toFixed(2),
-        Stripe_Sub: s.stripe_subscription_id || "",
+        Valor_EUR: (Number(s.gross) || 0).toFixed(2),
+        Stripe_Sub: s.stripe_invoice_id || "",
       });
     });
     escrows.forEach((e) => {

@@ -201,8 +201,13 @@ serve(async (req) => {
         } else {
           log("No subscription found for invoice.paid", { customerId });
         }
+
+        // Faturação GarageFlow → oficina: regista a cobrança (não emite nada).
+        // Nunca lança; a subscrição já foi ativada acima.
+        await recordPlatformInvoice(supabaseAdmin, invoice, sub ?? null);
         break;
       }
+
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;

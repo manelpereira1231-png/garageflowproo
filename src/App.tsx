@@ -171,6 +171,7 @@ const AdminCountries = lazyRetry(() => import("@/pages/admin/AdminCountries"));
 const AdminMarketing = lazyRetry(() => import("@/pages/admin/AdminMarketingHub"));
 const AdminFinance = lazyRetry(() => import("@/pages/admin/AdminFinance"));
 const AdminFinanceCenter = lazyRetry(() => import("@/pages/admin/AdminFinanceCenter"));
+const AdminPlatformBilling = lazyRetry(() => import("@/pages/admin/AdminPlatformBilling"));
 const AdminSystemControl = lazyRetry(() => import("@/pages/admin/AdminSystemControl"));
 const AdminCoupons = lazyRetry(() => import("@/pages/admin/AdminCoupons"));
 const AdminRiskEngine = lazyRetry(() => import("@/pages/admin/AdminRiskEngine"));
@@ -483,6 +484,7 @@ const adminRoutes = [
   { path: "/admin/marketing", element: <AdminMarketing /> },
   { path: "/admin/finance", element: <AdminFinance /> },
   { path: "/admin/finance-center", element: <AdminFinanceCenter /> },
+  { path: "/admin/platform-billing", element: <AdminPlatformBilling /> },
   { path: "/admin/system", element: <AdminSystemControl /> },
   { path: "/admin/coupons", element: <AdminCoupons /> },
   { path: "/admin/risk-engine", element: <AdminRiskEngine /> },

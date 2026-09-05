@@ -6,6 +6,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getRegionalPricing, isBrazil, getCountryCode } from "@/lib/regionConfig";
 import PriceWithPromo from "@/components/PriceWithPromo";
+import SubscriptionInvoices from "@/components/billing/SubscriptionInvoices";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -737,6 +738,8 @@ export default function Billing() {
         })}
       </div>
 
+
+      <SubscriptionInvoices />
 
       {/* Cancel Subscription Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

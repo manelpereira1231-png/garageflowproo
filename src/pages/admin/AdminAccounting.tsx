@@ -342,11 +342,8 @@ export default function AdminAccounting() {
     const rowsHtml = [
       ...subs.map((s) => {
         const sh = shopById.get(s.shop_id);
-        const base = PLAN_PRICE_EUR[s.plan] || 0;
-        const factor = s.billing_cycle === "yearly" ? 12 : 1;
-        const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-        const gross = (base * factor * disc).toFixed(2);
-        return `<tr><td>${(s.created_at || "").slice(0, 10)}</td><td>Subscrição</td><td>${xmlEscape(sh?.name || "—")}</td><td>${xmlEscape(sh?.nif || "")}</td><td>${xmlEscape(s.plan)}</td><td style="text-align:right">€${gross}</td></tr>`;
+        const gross = (Number(s.gross) || 0).toFixed(2);
+        return `<tr><td>${(s.created_at || "").slice(0, 10)}</td><td>Subscrição paga</td><td>${xmlEscape(sh?.name || "—")}</td><td>${xmlEscape(sh?.nif || "")}</td><td>${xmlEscape(s.plan)}</td><td style="text-align:right">€${gross}</td></tr>`;
       }),
       ...escrows.map((e) => {
         const sh = shopById.get(e.seller_id);

@@ -86,6 +86,7 @@ export default function AdminAccounting() {
 
   const [shops, setShops] = useState<{ id: string; name: string; nif: string | null }[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const [accessSubs, setAccessSubs] = useState<any[]>([]);
   const [escrows, setEscrows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 

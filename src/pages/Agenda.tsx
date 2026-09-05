@@ -571,20 +571,58 @@ export default function Agenda() {
             <DialogTitle>Reagendar marcação</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>Nova data</Label>
-              <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Nova data</Label>
+                <Input type="date" value={rescheduleData.date} onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })} />
+              </div>
+              <div>
+                <Label>Nova hora</Label>
+                <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+              </div>
             </div>
-            <div>
-              <Label>Nova hora</Label>
-              <Input type="time" value={rescheduleData.time} onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })} />
+
+            {/* Notificação ao cliente */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div>
+                <p className="text-sm font-semibold">Notificação ao cliente</p>
+                <p className="text-xs text-muted-foreground">Informe o cliente automaticamente sobre a alteração da marcação.</p>
+              </div>
+              {(isValidEmail(rescheduleContact.email) || rescheduleContact.phone) ? (
+                <div className="flex flex-wrap gap-2">
+                  {isValidEmail(rescheduleContact.email) && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyChannels.email ? 'default' : 'outline'}
+                      onClick={() => setNotifyChannels(c => ({ ...c, email: !c.email }))}
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5" /> Email
+                    </Button>
+                  )}
+                  {rescheduleContact.phone && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={notifyChannels.whatsapp ? 'default' : 'outline'}
+                      onClick={() => setNotifyChannels(c => ({ ...c, whatsapp: !c.whatsapp }))}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> WhatsApp
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Este cliente não tem email nem telefone registados.</p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">O cliente recebe email com a nova data e a marcação fica confirmada.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRescheduleAppt(null)}>Cancelar</Button>
-            <Button onClick={submitReschedule}>Confirmar e notificar cliente</Button>
+            <Button variant="outline" onClick={() => setRescheduleAppt(null)} disabled={rescheduling}>Cancelar</Button>
+            <Button onClick={submitReschedule} disabled={rescheduling}>
+              {rescheduling ? 'A guardar...' : (notifyChannels.email || notifyChannels.whatsapp) ? 'Confirmar e notificar cliente' : 'Confirmar reagendamento'}
+            </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 

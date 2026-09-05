@@ -36,6 +36,7 @@ interface FinanceState {
 
 const PLAN_PRICE_EUR: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
+
 export default function AdminFinance() {
   const [state, setState] = useState<FinanceState | null>(null);
   const [loading, setLoading] = useState(true);

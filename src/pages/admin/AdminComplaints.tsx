@@ -12,14 +12,14 @@ type Complaint = {
   id: string;
   shop_id: string | null;
   user_id: string | null;
+  context: string | null;
   category: string | null;
   subject: string | null;
   description: string | null;
   status: string;
   severity: string | null;
-  sla_response_due_at: string | null;
-  sla_resolution_due_at: string | null;
-  responded_at: string | null;
+  sla_due_at: string | null;
+  sla_breached: boolean | null;
   resolved_at: string | null;
   resolution_notes: string | null;
   created_at: string;
@@ -48,7 +48,6 @@ export default function AdminComplaints() {
 
   const updateStatus = async (id: string, status: string) => {
     const patch: any = { status };
-    if (status === "ack" || status === "in_progress") patch.responded_at = new Date().toISOString();
     if (status === "resolved" || status === "rejected") {
       patch.resolved_at = new Date().toISOString();
       patch.resolution_notes = notes || null;
@@ -65,9 +64,9 @@ export default function AdminComplaints() {
 
   const slaState = (c: Complaint): { label: string; tone: "ok" | "warn" | "danger" } => {
     if (c.resolved_at) return { label: "Resolvido", tone: "ok" };
-    const due = c.sla_resolution_due_at || c.sla_response_due_at;
-    if (!due) return { label: "Sem SLA", tone: "ok" };
-    const ms = new Date(due).getTime() - Date.now();
+    if (c.sla_breached) return { label: "SLA BREACH", tone: "danger" };
+    if (!c.sla_due_at) return { label: "Sem SLA", tone: "ok" };
+    const ms = new Date(c.sla_due_at).getTime() - Date.now();
     if (ms < 0) return { label: "SLA BREACH", tone: "danger" };
     if (ms < 4 * 3600 * 1000) return { label: "<4h", tone: "warn" };
     return { label: `${Math.round(ms / 3600000)}h`, tone: "ok" };

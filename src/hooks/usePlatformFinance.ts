@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type ExpenseRow, type SubscriptionRow, type DateRange, type ProjectionAssumptions,
   DEFAULT_ASSUMPTIONS, isRealPaidSubscription, subscriptionMrr, summariseExpenses,
+  classifySubscription, hasActivePlanAccess, contractedMonthlyValue,
   computeMonthlyCost, computeProfitability, computeBreakEven, computeCac, computeLtv,
   buildCashFlow, computeRunway, simulateDistribution, inRange, monthlyEquivalent,
 } from "@/lib/platformFinance";

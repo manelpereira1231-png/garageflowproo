@@ -9,6 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import AdminMarketOverview from "@/components/AdminMarketOverview";
+import { classifySubscription } from "@/lib/platformFinance";
 
 interface AdminStats {
   totalShops: number;
@@ -166,7 +167,7 @@ export default function AdminDashboard() {
       const canceledCount = (subscriptions.data || []).filter(s => s.status === 'canceled' || s.status === 'cancelled').length;
       const totalSubCount = (subscriptions.data || []).length;
       const churnRate = totalSubCount > 0 ? (canceledCount / totalSubCount) * 100 : 0;
-      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : arpu * 24;
+      const ltv = churnRate > 0 ? (arpu / (churnRate / 100)) : 0; // sem churn real não há LTV calculável
       const trialCount = activeSubs.filter(s => s.status === 'trialing').length;
       const conversionRate = (trialCount + paidCount) > 0 ? (paidCount / (trialCount + paidCount)) * 100 : 0;
 

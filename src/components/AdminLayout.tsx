@@ -212,16 +212,21 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto">
-          {navSections.map((section) => (
-            <div key={section.label}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">{section.label}</p>
+        <nav className="flex-1 py-3 px-3 overflow-y-auto">
+          {navSections.map((section, sectionIndex) => (
+            <div
+              key={section.label}
+              className={sectionIndex === 0 ? "" : "mt-4 pt-4 border-t border-sidebar-border/60"}
+            >
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em] px-3 mb-2">{section.label}</p>
               <div className="space-y-0.5">
                 {section.items.map((item: any) => {
                   const [itemPath, itemQuery] = item.path.split("?");
                   const itemTab = itemQuery ? new URLSearchParams(itemQuery).get("tab") : null;
                   const currentTab = new URLSearchParams(location.search).get("tab");
-                  const isActive = location.pathname === itemPath && (itemTab ? itemTab === currentTab : !currentTab || location.pathname !== "/admin/market");
+                  const onPath = location.pathname === itemPath
+                    || (itemPath !== "/admin" && location.pathname.startsWith(itemPath + "/"));
+                  const isActive = onPath && (itemTab ? itemTab === currentTab : !currentTab || location.pathname !== "/admin/market");
                   return (
                     <Link
                       key={item.path}
@@ -230,19 +235,21 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
                       onMouseEnter={() => prefetchRoute(itemPath)}
                       onFocus={() => prefetchRoute(itemPath)}
                       onTouchStart={() => prefetchRoute(itemPath)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
-                        isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      aria-current={isActive ? "page" : undefined}
+                      className={`relative flex items-center gap-3 pl-3 pr-2.5 py-2 rounded-lg text-sm font-medium transition-colors duration-150 group ${
+                        isActive
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}>
-                      <item.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                      <span className="flex-1">{item.label}</span>
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? '' : 'text-muted-foreground group-hover:text-sidebar-accent-foreground'}`} />
+                      <span className="flex-1 leading-tight">{item.label}</span>
                       {item.badge === "notifications" && adminUnread > 0 && (
                         <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                           {adminUnread > 99 ? "99+" : adminUnread}
                         </span>
                       )}
-                      {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                      {isActive && <ChevronRight className="w-3.5 h-3.5" />}
                     </Link>
-
                   );
                 })}
               </div>

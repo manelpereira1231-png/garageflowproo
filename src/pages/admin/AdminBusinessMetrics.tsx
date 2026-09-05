@@ -73,7 +73,7 @@ export default function AdminBusinessMetrics() {
     setLoading(true);
     const [m, h] = await Promise.all([
       supabase.from("business_metrics_daily" as any).select("*").order("snapshot_date", { ascending: false }).limit(30),
-      supabase.from("customer_health_scores" as any).select("*").order("score", { ascending: true }).limit(50),
+      supabase.from("customer_health_scores" as any).select("*").order("health_score", { ascending: true }).limit(50),
     ]);
     setMetrics((m.data as any) ?? []);
     setHealth((h.data as any) ?? []);

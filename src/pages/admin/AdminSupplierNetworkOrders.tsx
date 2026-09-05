@@ -29,11 +29,24 @@ export default function AdminSupplierNetworkOrders() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      // gsn_orders não tem chave estrangeira para shops — a oficina compradora
+      // é resolvida numa segunda consulta (embed direto devolveria erro PGRST200).
       const { data } = await supabase
         .from("gsn_orders" as any)
-        .select("id,status,total,currency,commission_total,created_at,supplier:gsn_suppliers(company_name),buyer_shop:shops(name)")
+        .select("id,status,total,currency,commission_total,created_at,buyer_shop_id,supplier:gsn_suppliers(company_name)")
         .order("created_at", { ascending: false }).limit(200);
-      setRows((data as any) ?? []);
+
+      const orders = (data as any[]) ?? [];
+      const shopIds = [...new Set(orders.map(o => o.buyer_shop_id).filter(Boolean))];
+      let shopNames: Record<string, string> = {};
+      if (shopIds.length > 0) {
+        const { data: shops } = await supabase.from("shops").select("id,name").in("id", shopIds);
+        shopNames = Object.fromEntries((shops ?? []).map((s: any) => [s.id, s.name]));
+      }
+      setRows(orders.map(o => ({
+        ...o,
+        buyer_shop: o.buyer_shop_id ? { name: shopNames[o.buyer_shop_id] ?? "—" } : null,
+      })) as any);
       setLoading(false);
     })();
   }, []);

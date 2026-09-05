@@ -121,12 +121,21 @@ export default function AdminAccounting() {
       const fromISO = new Date(dateFrom + "T00:00:00").toISOString();
       const toISO = new Date(dateTo + "T23:59:59").toISOString();
 
-      let subsQ = supabase
+      // RECEITA REAL: apenas faturas da plataforma com pagamento Stripe registado.
+      let invQ = supabase
+        .from("platform_invoices")
+        .select("id, shop_id, plan, currency, amount_net, vat_amount, amount_total, fiscal_status, stripe_invoice_id, paid_at, created_at")
+        .not("paid_at", "is", null)
+        .gte("paid_at", fromISO)
+        .lte("paid_at", toISO);
+      if (shopFilter !== "all") invQ = invQ.eq("shop_id", shopFilter);
+
+      // INFORMATIVO (não é receita): acessos ativos ao plano no período.
+      let accessQ = supabase
         .from("subscriptions")
-        .select("id, shop_id, plan, billing_cycle, status, stripe_subscription_id, current_period_end, created_at, discount_percent")
-        .gte("created_at", fromISO)
-        .lte("created_at", toISO);
-      if (shopFilter !== "all") subsQ = subsQ.eq("shop_id", shopFilter);
+        .select("id, shop_id, plan, billing_cycle, status, stripe_subscription_id, current_period_end, created_at, discount_percent, revenue_type")
+        .in("status", ["active", "trialing"]);
+      if (shopFilter !== "all") accessQ = accessQ.eq("shop_id", shopFilter);
 
       let escQ = supabase
         .from("market_escrow")
@@ -135,8 +144,22 @@ export default function AdminAccounting() {
         .gte("captured_at", fromISO)
         .lte("captured_at", toISO);
 
-      const [{ data: subsData }, { data: escData }] = await Promise.all([subsQ, escQ]);
-      setSubs(subsData || []);
+      const [{ data: invData }, { data: accessData }, { data: escData }] = await Promise.all([invQ, accessQ, escQ]);
+
+      const docs = (invData || []).map((i: any) => ({
+        id: i.id,
+        shop_id: i.shop_id,
+        plan: i.plan,
+        billing_cycle: "—",
+        status: i.fiscal_status,
+        stripe_invoice_id: i.stripe_invoice_id,
+        created_at: i.paid_at || i.created_at,
+        gross: Number(i.amount_total) || 0,
+        net: Number(i.amount_net) || 0,
+        vat: Number(i.vat_amount) || 0,
+      }));
+      setSubs(docs);
+      setAccessSubs(accessData || []);
       setEscrows(escData || []);
     } catch (e: any) {
       toast.error(e?.message || "Erro a carregar dados");
@@ -148,15 +171,26 @@ export default function AdminAccounting() {
   useEffect(() => { loadData(); /* eslint-disable-next-line */ }, [dateFrom, dateTo, shopFilter]);
 
   const totals = useMemo(() => {
-    const subsRevenue = subs.reduce((sum, s) => {
-      const base = PLAN_PRICE_EUR[s.plan] || 0;
-      const factor = s.billing_cycle === "yearly" ? 12 : 1;
-      const disc = 1 - (Number(s.discount_percent) || 0) / 100;
-      return sum + base * factor * disc;
-    }, 0);
+    const subsRevenue = subs.reduce((sum, s) => sum + (Number(s.gross) || 0), 0);
     const marketCommissions = escrows.reduce((sum, e) => sum + (Number(e.platform_fee) || 0), 0);
     return { subsRevenue, marketCommissions, total: subsRevenue + marketCommissions };
   }, [subs, escrows]);
+
+  // Acessos atribuídos SEM pagamento confirmado — nunca contam como receita.
+  const accessBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let contracted = 0;
+    (accessSubs || []).forEach((s) => {
+      const known = shopById.has(s.shop_id);
+      if (!known) return; // oficina demo/removida
+      const k = classifySubscription(s as any);
+      counts[k] = (counts[k] || 0) + 1;
+      if (k !== 'stripe_paid') contracted += contractedMonthlyValue(s as any);
+    });
+    return { counts, contracted, total: Object.values(counts).reduce((a, b) => a + b, 0) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessSubs, shops]);
+
 
   const shopById = useMemo(() => {
     const m = new Map<string, { name: string; nif: string | null }>();

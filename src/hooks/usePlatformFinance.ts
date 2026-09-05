@@ -58,6 +58,7 @@ export function usePlatformFinance(range: DateRange) {
   const [settings, setSettings] = useState<FinanceSettings>(DEFAULT_SETTINGS);
   const [stripe, setStripe] = useState<StripeFinancials | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [demoShopIds, setDemoShopIds] = useState<Set<string>>(new Set());
 
   const loadCore = useCallback(async () => {
     setLoading(true);

@@ -62,12 +62,14 @@ export function usePlatformFinance(range: DateRange) {
   const loadCore = useCallback(async () => {
     setLoading(true);
     try {
-      const [shopsRes, subsRes, expRes, setRes] = await Promise.all([
+      const [shopsRes, demoRes, subsRes, expRes, setRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at, is_demo").eq("is_demo", false),
+        supabase.from("shops").select("id").eq("is_demo", true),
         supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
         supabase.from("platform_expenses").select("*").order("expense_date", { ascending: false }),
         supabase.from("platform_finance_settings").select("*").limit(1).maybeSingle(),
       ]);
+      setDemoShopIds(new Set((demoRes.data || []).map((r: any) => r.id)));
       if (shopsRes.data) setShops(shopsRes.data as any);
       if (subsRes.data) setSubs(subsRes.data as any);
       if (expRes.data) setExpenses(expRes.data as any);

@@ -181,8 +181,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [mustSubscribe, isSuperAdmin, isChildShopContext, location.pathname, navigate]);
 
+  // Lock the browser window scroll while the app shell is mounted: the only
+  // scroll container is <main>. Removes the phantom page scroll on narrow windows.
+  useEffect(() => {
+    document.documentElement.classList.add("gf-applock");
+    return () => document.documentElement.classList.remove("gf-applock");
+  }, []);
 
   useEffect(() => {
+
     if (!activeShopId) return;
     let cancelled = false;
     const loadAlertCount = async () => {

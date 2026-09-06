@@ -412,6 +412,18 @@ html, body, #root {
   overflow-x: hidden;
 }
 
+/* App shell lock: inside the authenticated app the browser window itself must
+   never scroll — scrolling happens inside <main>. Prevents the phantom
+   "infinite scroll" on narrow windows. Public/marketing pages are unaffected. */
+html.gf-applock,
+html.gf-applock body,
+html.gf-applock #root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+
 /* Media never overflows its container — kills the #1 cause of horizontal scroll */
 img, svg, video, canvas, iframe, object, embed {
   max-width: 100%;

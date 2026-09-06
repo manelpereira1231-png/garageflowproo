@@ -7702,6 +7702,7 @@ export type Database = {
       platform_invoices: {
         Row: {
           amount_net: number
+          amount_refunded: number
           amount_total: number
           attempts: number
           billing_cycle: string | null
@@ -7724,7 +7725,11 @@ export type Database = {
           provider_number: string | null
           provider_pdf_url: string | null
           provider_series: string | null
+          refund_mismatch: boolean
+          refund_status: string
+          refund_sync_at: string | null
           shop_id: string | null
+          stripe_charge_id: string | null
           stripe_customer_id: string | null
           stripe_hosted_url: string | null
           stripe_invoice_id: string | null
@@ -7738,6 +7743,7 @@ export type Database = {
         }
         Insert: {
           amount_net?: number
+          amount_refunded?: number
           amount_total?: number
           attempts?: number
           billing_cycle?: string | null
@@ -7760,7 +7766,11 @@ export type Database = {
           provider_number?: string | null
           provider_pdf_url?: string | null
           provider_series?: string | null
+          refund_mismatch?: boolean
+          refund_status?: string
+          refund_sync_at?: string | null
           shop_id?: string | null
+          stripe_charge_id?: string | null
           stripe_customer_id?: string | null
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
@@ -7774,6 +7784,7 @@ export type Database = {
         }
         Update: {
           amount_net?: number
+          amount_refunded?: number
           amount_total?: number
           attempts?: number
           billing_cycle?: string | null
@@ -7796,7 +7807,11 @@ export type Database = {
           provider_number?: string | null
           provider_pdf_url?: string | null
           provider_series?: string | null
+          refund_mismatch?: boolean
+          refund_status?: string
+          refund_sync_at?: string | null
           shop_id?: string | null
+          stripe_charge_id?: string | null
           stripe_customer_id?: string | null
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
@@ -7814,6 +7829,80 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_refunds: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          currency: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          notes: string | null
+          platform_invoice_id: string | null
+          raw_status: string | null
+          reason: string | null
+          requested_by: string | null
+          requested_by_email: string | null
+          shop_id: string | null
+          status: string
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          notes?: string | null
+          platform_invoice_id?: string | null
+          raw_status?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          requested_by_email?: string | null
+          shop_id?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          notes?: string | null
+          platform_invoice_id?: string | null
+          raw_status?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          requested_by_email?: string | null
+          shop_id?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_refunds_platform_invoice_id_fkey"
+            columns: ["platform_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "platform_invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -11913,6 +12002,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      recalc_platform_invoice_refunds: {
+        Args: { _invoice_id: string }
+        Returns: undefined
       }
       recalculate_all_growth_opportunities: { Args: never; Returns: Json }
       recalculate_trust_score: {

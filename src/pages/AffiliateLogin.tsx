@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorMessages";
 import { Link, useNavigate } from "react-router-dom";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,7 +70,7 @@ export default function AffiliateLogin() {
       toast.success("Bem-vindo de volta! 🎉");
       navigate("/affiliate-dashboard", { replace: true });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao entrar");
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

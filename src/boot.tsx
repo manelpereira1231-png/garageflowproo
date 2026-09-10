@@ -94,6 +94,7 @@ createRoot(document.getElementById("root")!).render(
   <RootErrorBoundary>
     <HelmetProvider>
       <App />
+      <ConnectivityBanner />
     </HelmetProvider>
   </RootErrorBoundary>
 );

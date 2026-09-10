@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { getErrorMessage } from "@/lib/errorMessages";
 import { useSearchParams, Link, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { marketSupabase } from "@/integrations/supabase/realmClients";
@@ -195,7 +196,7 @@ export default function MarketAuth() {
       toast.success("Confirme o seu email para ativar a conta. Verifique a caixa de entrada (e spam).", { duration: 8000 });
       setMode("login");
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

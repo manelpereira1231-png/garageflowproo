@@ -22,6 +22,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { resilientFetch } from "@/lib/resilientFetch";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -138,6 +139,9 @@ function makeClient(storageKey: string, realm: Realm): SupabaseClient<Database> 
       // child-shop link can never consume, overwrite, or reuse an open mother-shop session.
       detectSessionInUrl: !isPasswordActivationPath && detectRealm() === realm,
     },
+    // Timeout + safe retry for every Auth/REST/RPC/Storage/Function call.
+    // Reads retry with backoff; writes never do (no duplicated invoices/checkouts).
+    global: { fetch: (input, init) => resilientFetch(input as RequestInfo | URL, init) },
   }) as SupabaseClient<Database>;
 }
 

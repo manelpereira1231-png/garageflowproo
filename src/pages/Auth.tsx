@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getErrorMessage } from "@/lib/errorMessages";
 import { trackSignupConversion, trackSignupPageView, captureAdsParams } from "@/lib/gadsTracking";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -273,7 +274,7 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         }
       }
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

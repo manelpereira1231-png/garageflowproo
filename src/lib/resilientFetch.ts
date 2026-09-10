@@ -123,14 +123,15 @@ export async function resilientFetch(input: RequestInfo | URL, init?: RequestIni
       consecutiveFailures++;
       if (consecutiveFailures >= 1) emitHealth("degraded");
 
-      throw new Error(
+      const wrapped = new Error(
         isTimeout
           ? "O servidor demorou demasiado tempo a responder."
           : offline
             ? "Sem ligação à internet."
             : "Não foi possível contactar o servidor.",
-        { cause: error },
       );
+      (wrapped as Error & { cause?: unknown }).cause = error;
+      throw wrapped;
     } finally {
       clearTimeout(timer);
       if (external) external.removeEventListener("abort", onExternalAbort);

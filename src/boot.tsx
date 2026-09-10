@@ -7,6 +7,7 @@ import { loadPlatformSettings, notifyPlatformSettingsUpdated } from "@/lib/platf
 import { ensurePromotionsLoaded, clearPromotionsCache } from "@/lib/planPromotions";
 import { supabase } from "@/integrations/supabase/client";
 import RootErrorBoundary from "@/components/RootErrorBoundary";
+import ConnectivityBanner from "@/components/ConnectivityBanner";
 import { initSentry } from "@/lib/sentry";
 
 // Boot Sentry as early as possible (no-op if VITE_SENTRY_DSN unset).

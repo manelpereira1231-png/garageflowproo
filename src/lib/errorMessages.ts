@@ -25,13 +25,30 @@ interface MessageMap {
 
 // Match common Supabase / Postgres error signatures to friendly messages.
 // Order matters — first match wins.
+const isOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
+
 const PATTERNS: Array<{ test: (msg: string, code?: string) => boolean; msg: MessageMap }> = [
   {
-    test: (m) => /failed to fetch|network ?error|networkerror|load failed/i.test(m),
+    // Only a real offline device gets the "check your network" copy.
+    test: (m) =>
+      isOffline() &&
+      /failed to fetch|network ?error|networkerror|load failed|sem liga(ç|c)ão/i.test(m),
     msg: {
       pt: "Sem ligação à internet. Verifica a tua rede e tenta novamente.",
       en: "No internet connection. Check your network and try again.",
       es: "Sin conexión a internet. Verifica tu red e inténtalo de nuevo.",
+    },
+  },
+  {
+    // Device is online but the backend did not answer — never show "Load failed".
+    test: (m) =>
+      /failed to fetch|network ?error|networkerror|load failed|contactar o servidor|502|503|504|bad gateway|service unavailable|gateway timeout/i.test(
+        m,
+      ),
+    msg: {
+      pt: "Estamos com dificuldades temporárias em contactar o servidor. Os teus dados não foram perdidos. Tenta novamente dentro de instantes.",
+      en: "We are having temporary trouble reaching the server. Your data has not been lost. Please try again shortly.",
+      es: "Tenemos dificultades temporales para contactar el servidor. Tus datos no se han perdido. Inténtalo de nuevo en unos instantes.",
     },
   },
   {

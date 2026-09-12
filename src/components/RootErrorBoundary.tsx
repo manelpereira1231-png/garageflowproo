@@ -112,16 +112,6 @@ export class RootErrorBoundary extends Component<{ children: ReactNode }, State>
               {t("home")}
             </button>
           </div>
-          {this.state.error?.message && (
-            <details className="mt-6 text-left">
-              <summary className="text-xs text-muted-foreground cursor-pointer">
-                {t("details")}
-              </summary>
-              <pre className="mt-2 text-[10px] text-muted-foreground bg-muted/40 p-2 rounded overflow-auto max-h-32">
-                {this.state.error.message}
-              </pre>
-            </details>
-          )}
         </div>
       </div>
     );

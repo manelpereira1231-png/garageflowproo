@@ -1,4 +1,7 @@
 import "./index.css";
+import { installUserFacingErrorGuard } from "./lib/userFacingErrorGuard";
+
+installUserFacingErrorGuard();
 
 /** O #root deixa de estar "vazio": contém o splash `#gf-boot` e, nas rotas SSG, o HTML
  *  pré-renderizado. Só consideramos a app montada quando existe conteúdo do React. */
@@ -11,11 +14,6 @@ const renderFatalBootError = (error: unknown) => {
   // Se o arranque falhou, o splash tem de sair para o utilizador ver a mensagem.
   document.getElementById("gf-boot")?.remove();
 
-  const message = error instanceof Error ? error.message : "Erro inesperado ao iniciar a aplicação.";
-  const escapedMessage = message.replace(/[&<>"]/g, (char) => {
-    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" };
-    return entities[char] ?? char;
-  });
   console.error("[GarageFlow boot error]", error);
   root.innerHTML = `
     <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f14;color:#f5f5f4;padding:24px;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -24,10 +22,6 @@ const renderFatalBootError = (error: unknown) => {
         <h1 style="font-size:22px;line-height:1.2;margin:0 0 10px;font-weight:800;letter-spacing:0;">A aplicação não carregou corretamente</h1>
         <p style="font-size:14px;line-height:1.5;color:#cbd5e1;margin:0 0 18px;">Foi detetado um erro de arranque. Recarrega a página para obter a versão mais recente.</p>
         <button id="gf-reload" style="min-height:44px;width:100%;border:0;border-radius:8px;background:#f59e0b;color:#111827;font-weight:800;font-size:14px;cursor:pointer;">Recarregar GarageFlow</button>
-        <details style="margin-top:16px;color:#94a3b8;font-size:12px;">
-          <summary>Detalhes técnicos</summary>
-          <pre style="white-space:pre-wrap;overflow:auto;max-height:120px;background:rgba(255,255,255,.04);padding:10px;border-radius:8px;">${escapedMessage}</pre>
-        </details>
       </section>
     </main>`;
   document.getElementById("gf-reload")?.addEventListener("click", async () => {

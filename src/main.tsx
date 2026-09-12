@@ -1,4 +1,7 @@
 import "./index.css";
+import { installUserFacingErrorGuard } from "./lib/userFacingErrorGuard";
+
+installUserFacingErrorGuard();
 
 /** O #root deixa de estar "vazio": contém o splash `#gf-boot` e, nas rotas SSG, o HTML
  *  pré-renderizado. Só consideramos a app montada quando existe conteúdo do React. */

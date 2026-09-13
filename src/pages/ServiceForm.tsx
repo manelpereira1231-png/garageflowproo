@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { syncQuoteFromWorkOrder } from "@/lib/ensureQuoteForWorkOrder";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
@@ -166,7 +167,13 @@ export default function ServiceForm() {
       }).eq("id", editId).eq("shop_id", shopId);
 
       if (error) toast.error(error.message);
-      else { toast.success(t('services.updated')); navigate("/services"); }
+      else {
+        // Mantém o orçamento pendente (e o link já enviado ao cliente) alinhado
+        // com as alterações feitas ao serviço.
+        try { await syncQuoteFromWorkOrder(editId, shopId); } catch {}
+        toast.success(t('services.updated'));
+        navigate("/services");
+      }
     } else {
       const { data: inserted, number: num, error } = await insertWithNumber<{ id: string }>({
         getNumber: () => nextDocNumber(shopId, "SRV"),

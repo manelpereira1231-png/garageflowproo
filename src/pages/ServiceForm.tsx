@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
+import { syncQuoteFromWorkOrder } from "@/lib/ensureQuoteForWorkOrder";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";

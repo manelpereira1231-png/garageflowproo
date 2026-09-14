@@ -165,10 +165,11 @@ serve(async (req) => {
     }
 
     // ── Ensure Stripe Product exists for this country/plan ──
-    let productId: string | null = (countryRow as any)[productCol] ?? null;
+    let productId: string | null =
+      (isLegacyPlan ? (countryRow as any)[productCol] : null) ?? (pcpRow as any)?.stripe_product_id ?? null;
     if (!productId) {
       const product = await stripe.products.create({
-        name: `GarageFlow ${plan === "pro" ? "Pro" : plan === "garage" ? "Garage" : "Entrada"} — ${country}`,
+        name: `GarageFlow ${plan === "pro" ? "Pro" : plan === "garage" ? "Garage" : plan === "free" ? "Entrada" : plan} — ${country}`,
         metadata: { country, plan, source: "admin-update-plan-price" },
       });
       productId = product.id;

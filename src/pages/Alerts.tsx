@@ -83,7 +83,7 @@ export default function Alerts() {
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("open");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [commsAlert, setCommsAlert] = useState<UnifiedAlert | null>(null);
@@ -125,17 +125,73 @@ export default function Alerts() {
     }
   };
 
+  /* Opções construídas a partir dos alertas reais — nunca listas fixas
+     desatualizadas. Cada opção mostra quantos alertas existem. */
+  const typeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    alerts.forEach((a) => counts.set(a.type, (counts.get(a.type) || 0) + 1));
+    return [
+      { value: "all", label: `${t("alerts.allTypes")} (${alerts.length})` },
+      ...[...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, n]) => ({ value: type, label: `${typeLabel(type)} (${n})` })),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
+
+  const priorityOptions = useMemo(() => [
+    { value: "all", label: "Todas as prioridades" },
+    { value: "critical", label: `Críticos (${countsByPriority.critical})` },
+    { value: "high", label: `Importantes (${countsByPriority.high})` },
+    { value: "low", label: `Atenção (${countsByPriority.low})` },
+  ], [countsByPriority]);
+
+  const statusOptions = useMemo(() => {
+    const n = (s: string) => alerts.filter((a) => a.status === s).length;
+    const openN = alerts.filter((a) => a.status === "pending" || a.status === "sent").length;
+    return [
+      { value: "open", label: `Por tratar (${openN})` },
+      { value: "all", label: `${t("alerts.allStatus")} (${alerts.length})` },
+      { value: "pending", label: `${t("alerts.statusPending")} (${n("pending")})` },
+      { value: "sent", label: `${t("alerts.statusSent")} (${n("sent")})` },
+      { value: "resolved", label: `${t("alerts.statusResolved")} (${n("resolved")})` },
+      { value: "dismissed", label: `${t("alerts.statusDismissed")} (${n("dismissed")})` },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
+
+  const activeFilterCount =
+    (search.trim() ? 1 : 0) +
+    (filterType !== "all" ? 1 : 0) +
+    (filterPriority !== "all" ? 1 : 0) +
+    (filterStatus !== "open" ? 1 : 0);
+
+  const clearFilters = () => {
+    setSearch("");
+    setFilterType("all");
+    setFilterPriority("all");
+    setFilterStatus("open");
+  };
+
   const filtered = alerts.filter((a) => {
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
     const matchSearch = !q
       || a.title?.toLowerCase().includes(q)
+      || (a.subtitle || "").toLowerCase().includes(q)
       || (a.message || "").toLowerCase().includes(q)
-      || (a.clientName || "").toLowerCase().includes(q);
+      || (a.clientName || "").toLowerCase().includes(q)
+      || (a.plate || "").toLowerCase().includes(q);
     const matchType = filterType === "all" || a.type === filterType;
-    const matchStatus = filterStatus === "all" || a.status === filterStatus;
+    const matchStatus =
+      filterStatus === "all"
+        ? true
+        : filterStatus === "open"
+          ? a.status === "pending" || a.status === "sent"
+          : a.status === filterStatus;
     const matchPriority = filterPriority === "all" || a.priority === filterPriority;
     return matchSearch && matchType && matchStatus && matchPriority;
   });
+
 
   const exportCSV = () => {
     const headers = [t("alerts.typeCol"), t("alerts.titleCol"), t("alerts.clientCol"), t("alerts.vehicleCol"), t("alerts.dateCol"), t("alerts.statusCol")];

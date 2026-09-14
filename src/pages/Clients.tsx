@@ -39,6 +39,17 @@ const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!ok) toast.error("Não foi possível abrir o WhatsApp");
 };
 
+/** Número em formato internacional para links `tel:` (assume +351 quando não há indicativo). */
+const telHref = (phone: string) => {
+  let cleaned = (phone || "").replace(/[^0-9+]/g, "");
+  if (cleaned.startsWith("00")) cleaned = "+" + cleaned.slice(2);
+  if (!cleaned.startsWith("+")) cleaned = (cleaned.startsWith("351") ? "+" : "+351") + cleaned;
+  return `tel:${cleaned}`;
+};
+
+const callClient = (phone: string) => { window.location.href = telHref(phone); };
+const emailClient = (email: string) => { window.location.href = `mailto:${email}`; };
+
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
   company: string | null; nif: string | null; notes: string | null; created_at: string;

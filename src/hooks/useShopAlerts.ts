@@ -50,23 +50,18 @@ export type UnifiedAlert = {
   raw: any;
 };
 
-const DERIVED_READ_KEY = "garageflow_derived_alerts_read";
+/**
+ * Estado guardado (partilhado por toda a oficina) dos alertas calculados.
+ * Vive na tabela alert_states para que "lido" e "resolvido" persistam
+ * após refresh, logout e em qualquer dispositivo.
+ */
+type DerivedState = {
+  signature: string | null;
+  read_at: string | null;
+  resolved_at: string | null;
+  status: AlertStatus | null;
+};
 
-function readDerivedRead(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(DERIVED_READ_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeDerivedRead(map: Record<string, string>) {
-  try {
-    localStorage.setItem(DERIVED_READ_KEY, JSON.stringify(map));
-  } catch {
-    /* storage indisponível — o alerta apenas continua por ler */
-  }
-}
 
 const money = (v: any) =>
   new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v || 0));

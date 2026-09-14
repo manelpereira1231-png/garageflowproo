@@ -5,7 +5,7 @@
  * apenas sobrepõe boas-vindas, visita guiada com spotlight sobre o menu real,
  * checklist de exploração e CTA de conversão.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { isDemoSession, exitDemoToSignup } from "@/lib/salesDemo";
 import { trackDemoEvent } from "@/lib/demoTracker";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const K_WELCOME = "gf_demo_guide_seen";
 const K_TOUR = "gf_demo_tour_done";
@@ -42,10 +43,10 @@ const CHECKLIST: { path: string; label: string }[] = [
 const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* noop */ } };
 
-function useTargetRect(path: string | null, tick: number) {
+function useTargetRect(path: string | null, tick: number, enabled: boolean) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   useLayoutEffect(() => {
-    if (!path) { setRect(null); return; }
+    if (!path || !enabled) { setRect(null); return; }
     let raf = 0;
     const measure = () => {
       const el = document.querySelector<HTMLElement>(`[data-tour="${path}"]`);
@@ -66,7 +67,7 @@ function useTargetRect(path: string | null, tick: number) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [path, tick]);
+  }, [path, tick, enabled]);
   return rect;
 }
 
@@ -74,6 +75,7 @@ export default function DemoGuide() {
   const navigate = useNavigate();
   const location = useLocation();
   const active = isDemoSession();
+  const isMobile = useIsMobile();
 
   const [welcome, setWelcome] = useState(false);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -105,7 +107,9 @@ export default function DemoGuide() {
   useEffect(() => { if (allDone) setCelebrated(true); }, [allDone]);
 
   const step = tourStep !== null ? STEPS[tourStep] : null;
-  const rect = useTargetRect(step?.path ?? null, tick);
+  // Em mobile o menu real está fechado: não há alvo para destacar e o
+  // scroll suave de medição roubava os toques. Sem spotlight, sem bug.
+  const rect = useTargetRect(step?.path ?? null, tick, !isMobile);
 
   const goStep = useCallback((i: number) => {
     const s = STEPS[i];
@@ -114,11 +118,24 @@ export default function DemoGuide() {
     setTick((t) => t + 1);
   }, [navigate, location.pathname]);
 
+  // Em mobile o mesmo toque dispara pointerup e click: só a primeira vale.
+  const choice = useRef(false);
+
   const startTour = () => {
+    if (choice.current) return;
+    choice.current = true;
     write(K_WELCOME, "1");
     setWelcome(false);
     trackDemoEvent("click", { label: "demo_tour_start" });
     goStep(0);
+  };
+
+  const exploreFree = () => {
+    if (choice.current) return;
+    choice.current = true;
+    write(K_WELCOME, "1");
+    setWelcome(false);
+    trackDemoEvent("click", { label: "demo_explore_free" });
   };
 
   const closeTour = (reason: string) => {
@@ -136,7 +153,8 @@ export default function DemoGuide() {
   const tooltipStyle = useMemo<React.CSSProperties>(() => {
     const W = 360;
     if (!rect || window.innerWidth < 768) {
-      return { left: "50%", bottom: 16, transform: "translateX(-50%)", width: `min(${W}px, calc(100vw - 24px))` };
+      // Acima da barra inferior do telemóvel, para os botões não ficarem tapados.
+      return { left: "50%", bottom: 96, transform: "translateX(-50%)", width: `min(${W}px, calc(100vw - 24px))` };
     }
     const left = Math.min(rect.right + 16, window.innerWidth - W - 16);
     const top = Math.min(Math.max(rect.top - 8, 16), window.innerHeight - 260);
@@ -157,7 +175,7 @@ export default function DemoGuide() {
 
       {/* Boas-vindas */}
       {welcome && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[95] flex touch-manipulation items-center justify-center overscroll-contain bg-background/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary"><Car className="h-5 w-5" /></span>
@@ -168,12 +186,17 @@ export default function DemoGuide() {
               GarageFlow pode ajudar a gerir uma oficina de forma mais simples e organizada.
             </p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <Button className="min-h-11 flex-1 font-semibold" onClick={startTour}>
+              <Button
+                className="min-h-12 flex-1 touch-manipulation font-semibold"
+                onPointerUp={startTour}
+                onClick={startTour}
+              >
                 <Sparkles className="mr-2 h-4 w-4" />Começar visita guiada
               </Button>
               <Button
-                variant="outline" className="min-h-11 flex-1"
-                onClick={() => { write(K_WELCOME, "1"); setWelcome(false); trackDemoEvent("click", { label: "demo_explore_free" }); }}
+                variant="outline" className="min-h-12 flex-1 touch-manipulation"
+                onPointerUp={exploreFree}
+                onClick={exploreFree}
               >
                 Explorar livremente
               </Button>

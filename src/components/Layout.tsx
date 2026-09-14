@@ -155,6 +155,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
   const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
   const { enabled: supplierNetworkEnabled } = useSystemFeature("supplier_network_enabled");
+  const { unreadCount: alertsUnreadCount } = useShopAlerts();
 
   // MFA (TOTP) guided onboarding for group/billing owners. Never blocks access.
   const { mfaRequired, hasTotp, refresh: refreshMfa } = useMfaGuard();

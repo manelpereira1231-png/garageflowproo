@@ -251,7 +251,14 @@ serve(async (req) => {
       );
     }
 
-    const canTrial = !eligibilityError && eligible === true && !stripeHadTrial && trialDays > 0;
+    // A avaliação gratuita pertence exclusivamente ao Start. Mesmo que um
+    // plano pago seja configurado por engano com trial_days no Admin, um
+    // upgrade nunca pode adiar a primeira cobrança.
+    const canTrial = isEntryPlan
+      && !eligibilityError
+      && eligible === true
+      && !stripeHadTrial
+      && trialDays > 0;
 
     // Always use the custom domain
     const rawOrigin = req.headers.get("origin") || "";
@@ -264,16 +271,36 @@ serve(async (req) => {
       customer_email: customerId || !validEmail ? undefined : user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      // Let Stripe auto-select activated payment methods from dashboard (avoids errors when a method isn't enabled)
+      // Paid plans must settle synchronously. Debit methods can remain pending
+      // for days and made upgrades look like "future payments".
+      ...(isEntryPlan ? {} : {
+        payment_method_types: ["card"],
+        payment_method_collection: "always",
+      }),
       automatic_tax: { enabled: false },
       billing_address_collection: "auto",
       allow_promotion_codes: true,
       success_url: `${origin}/billing?success=true`,
       cancel_url: `${origin}/billing?canceled=true`,
+      metadata: {
+        user_id: user.id,
+        shop_id: shopData?.id || "",
+        plan_slug: plan,
+        billing_cycle: cycle,
+        immediate_charge: isEntryPlan ? "false" : "true",
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          shop_id: shopData?.id || "",
+          plan_slug: plan,
+          billing_cycle: cycle,
+        },
+      },
     };
 
     if (canTrial) {
-      sessionParams.subscription_data = { trial_period_days: trialDays };
+      sessionParams.subscription_data.trial_period_days = trialDays;
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

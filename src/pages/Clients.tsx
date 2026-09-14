@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Phone, Mail, Building2, Pencil, Trash2, Link2, MessageCircle, X } from "lucide-react";
 import { useTableState } from "@/hooks/useTableState";
+import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
 import { toast } from "sonner";

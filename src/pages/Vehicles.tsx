@@ -81,6 +81,8 @@ export default function Vehicles() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+  // Alertas/notificações abrem esta lista já pesquisada pela matrícula.
+  useUrlSearchFilter((v) => updateFilter("search", v));
 
   const [refreshKey, setRefreshKey] = useState(0);
 

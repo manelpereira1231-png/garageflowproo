@@ -69,6 +69,8 @@ export default function Invoices() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+  // Alertas/notificações abrem esta lista já pesquisada pelo número da fatura.
+  useUrlSearchFilter((v) => updateFilter("search", v));
 
   const todayIso = new Date().toISOString().slice(0, 10);
 

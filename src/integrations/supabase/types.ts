@@ -422,6 +422,42 @@ export type Database = {
           },
         ]
       }
+      alert_states: {
+        Row: {
+          alert_key: string
+          created_at: string
+          id: string
+          read_at: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          shop_id: string
+          signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          alert_key: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          shop_id: string
+          signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alert_key?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          shop_id?: string
+          signature?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           client_id: string | null

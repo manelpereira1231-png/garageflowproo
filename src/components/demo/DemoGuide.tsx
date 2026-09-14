@@ -118,11 +118,24 @@ export default function DemoGuide() {
     setTick((t) => t + 1);
   }, [navigate, location.pathname]);
 
+  // Em mobile o mesmo toque dispara pointerup e click: só a primeira vale.
+  const choice = useRef(false);
+
   const startTour = () => {
+    if (choice.current) return;
+    choice.current = true;
     write(K_WELCOME, "1");
     setWelcome(false);
     trackDemoEvent("click", { label: "demo_tour_start" });
     goStep(0);
+  };
+
+  const exploreFree = () => {
+    if (choice.current) return;
+    choice.current = true;
+    write(K_WELCOME, "1");
+    setWelcome(false);
+    trackDemoEvent("click", { label: "demo_explore_free" });
   };
 
   const closeTour = (reason: string) => {

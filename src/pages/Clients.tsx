@@ -198,7 +198,9 @@ export default function Clients() {
 
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
+      phone_secondary: form.phone_secondary || null,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
+
       is_fleet: !!form.is_fleet, fleet_name: form.is_fleet ? (form.fleet_name || null) : null,
       fleet_manager: form.is_fleet ? (form.fleet_manager || null) : null,
     };
@@ -259,7 +261,7 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
+    setForm({ name: c.name, phone: c.phone, phone_secondary: c.phone_secondary || "", email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
     setOpen(true);
   };
 

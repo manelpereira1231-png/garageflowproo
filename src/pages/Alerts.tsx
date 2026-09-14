@@ -181,22 +181,26 @@ export default function Alerts() {
         </div>
       </div>
 
+      {/* Resumo por prioridade real — clicar filtra a lista. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-warning">{pendingCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusPending")}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-info">{sentCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusSent")}</p>
-        </div>
+        {([
+          { key: "critical", label: "Críticos", value: countsByPriority.critical, color: "text-destructive" },
+          { key: "high", label: "Importantes", value: countsByPriority.high, color: "text-warning" },
+          { key: "low", label: "Atenção", value: countsByPriority.low, color: "text-info" },
+        ] as const).map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => setFilterPriority(filterPriority === c.key ? "all" : c.key)}
+            className={`bg-card border rounded-lg p-3 text-center transition-colors ${filterPriority === c.key ? "border-primary" : "border-border hover:bg-muted/50"}`}
+          >
+            <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+            <p className="text-xs text-muted-foreground">{c.label}</p>
+          </button>
+        ))}
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-success">{resolvedCount}</p>
           <p className="text-xs text-muted-foreground">{t("alerts.statusResolved")}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-muted-foreground">{dismissedCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusDismissed")}</p>
         </div>
       </div>
 

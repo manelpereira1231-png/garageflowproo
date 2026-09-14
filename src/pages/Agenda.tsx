@@ -63,6 +63,7 @@ const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
 
 export default function Agenda() {
   const { activeShopId } = useShopContext();
+  const [agendaParams, setAgendaParams] = useSearchParams();
   const { t, language } = useLanguage();
   const locale = language === "pt" ? pt
     : language === "pt-BR" ? ptBR
@@ -390,6 +391,24 @@ export default function Agenda() {
     setSuggestions([]);
     setDialogOpen(true);
   };
+
+  // Um alerta de marcação abre diretamente essa marcação (/agenda?appointment=ID),
+  // mesmo que seja noutra semana.
+  useEffect(() => {
+    const id = agendaParams.get("appointment");
+    if (!id || !activeShopId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("appointments").select("*").eq("id", id).eq("shop_id", activeShopId).maybeSingle();
+      if (!cancelled && data) openEdit(data as any);
+      const next = new URLSearchParams(agendaParams);
+      next.delete("appointment");
+      setAgendaParams(next, { replace: true });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agendaParams, activeShopId]);
 
   const openCreate = () => {
     setEditingAppt(null);

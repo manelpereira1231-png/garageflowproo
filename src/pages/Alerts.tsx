@@ -55,7 +55,8 @@ const alertTypeColors: Record<string, string> = {
 export default function Alerts() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading } = useSubscription();
-  const { alerts, unreadCount, loading, reload, markRead, markAllRead, resolve, dismiss } = useShopAlerts();
+  const { alerts, unreadCount, countsByPriority, loading, reload, markRead, markAllRead, resolve, dismiss } = useShopAlerts();
+  const [filterPriority, setFilterPriority] = useState<string>("all");
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -107,7 +108,8 @@ export default function Alerts() {
       || (a.clientName || "").toLowerCase().includes(q);
     const matchType = filterType === "all" || a.type === filterType;
     const matchStatus = filterStatus === "all" || a.status === filterStatus;
-    return matchSearch && matchType && matchStatus;
+    const matchPriority = filterPriority === "all" || a.priority === filterPriority;
+    return matchSearch && matchType && matchStatus && matchPriority;
   });
 
   const exportCSV = () => {
@@ -179,22 +181,26 @@ export default function Alerts() {
         </div>
       </div>
 
+      {/* Resumo por prioridade real — clicar filtra a lista. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-warning">{pendingCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusPending")}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-info">{sentCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusSent")}</p>
-        </div>
+        {([
+          { key: "critical", label: "Críticos", value: countsByPriority.critical, color: "text-destructive" },
+          { key: "high", label: "Importantes", value: countsByPriority.high, color: "text-warning" },
+          { key: "low", label: "Atenção", value: countsByPriority.low, color: "text-info" },
+        ] as const).map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => setFilterPriority(filterPriority === c.key ? "all" : c.key)}
+            className={`bg-card border rounded-lg p-3 text-center transition-colors ${filterPriority === c.key ? "border-primary" : "border-border hover:bg-muted/50"}`}
+          >
+            <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+            <p className="text-xs text-muted-foreground">{c.label}</p>
+          </button>
+        ))}
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-success">{resolvedCount}</p>
           <p className="text-xs text-muted-foreground">{t("alerts.statusResolved")}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-muted-foreground">{dismissedCount}</p>
-          <p className="text-xs text-muted-foreground">{t("alerts.statusDismissed")}</p>
         </div>
       </div>
 
@@ -259,6 +265,7 @@ export default function Alerts() {
                       {!a.read && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
                       <div className="min-w-0">
                         <p className={`truncate ${a.read ? "font-medium" : "font-semibold"}`}>{a.title}</p>
+                        {a.subtitle && <p className="text-xs text-muted-foreground line-clamp-1">{a.subtitle}</p>}
                         {a.message && <p className="text-xs text-muted-foreground line-clamp-1">{a.message}</p>}
                       </div>
                     </div>
@@ -335,6 +342,7 @@ export default function Alerts() {
                   {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
                 </Badge>
               </div>
+              {a.subtitle && <p className="text-xs font-medium">{a.subtitle}</p>}
               {a.message && <p className="text-xs text-muted-foreground">{a.message}</p>}
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 {a.clientName && <span>👤 {a.clientName}</span>}

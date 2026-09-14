@@ -460,7 +460,12 @@ export default function Alerts() {
                   {t("alerts.contact") || "Contactar"}
                 </Button>
               )}
-              {!a.derived && a.status === "pending" && (
+              {!a.read && (a.status === "pending" || a.status === "sent") && (
+                <Button variant="ghost" size="sm" onClick={() => void markRead(a)} className="w-full text-xs h-11 gap-1">
+                  <CheckCheck className="w-3.5 h-3.5" /> Marcar como lida
+                </Button>
+              )}
+              {(a.status === "pending" || a.status === "sent") && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => void resolve(a)} className="flex-1 text-xs text-success h-11">
                     <CheckCircle className="w-3.5 h-3.5 mr-1" />
@@ -471,6 +476,12 @@ export default function Alerts() {
                   </Button>
                 </div>
               )}
+              {(a.status === "resolved" || a.status === "dismissed") && (
+                <Button variant="ghost" size="sm" onClick={() => void reopen(a)} className="w-full text-xs h-11 gap-1">
+                  <RotateCcw className="w-3.5 h-3.5" /> Reabrir
+                </Button>
+              )}
+
             </div>
           );
         })}

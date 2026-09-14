@@ -140,9 +140,18 @@ export default function AcceptInvite() {
             throw signUpErr;
           }
         } else if (!signUpData.session) {
-          // Auto-confirm ativo mas sessão ainda não foi entregue — pequeno retry
-          const err = await trySignIn(5);
+          // Sem sessão imediata: pode ser propagação lenta OU confirmação de
+          // email obrigatória (mailer autoconfirm desligado). Tentamos entrar e,
+          // se o email ainda não estiver confirmado, explicamos o passo seguinte
+          // em vez de mostrar um erro genérico — o convite continua válido.
+          const err = await trySignIn(4);
           if (err) {
+            const m = (err || "").toLowerCase();
+            if (m.includes("confirm")) {
+              toast.success("Conta criada. Confirme o email que lhe enviámos e volte a abrir este link para entrar na equipa.");
+              setSubmitting(false);
+              return;
+            }
             throw new Error("Conta criada mas o login falhou. Tente novamente em alguns segundos.");
           }
         }

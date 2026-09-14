@@ -105,7 +105,9 @@ export default function DemoGuide() {
   useEffect(() => { if (allDone) setCelebrated(true); }, [allDone]);
 
   const step = tourStep !== null ? STEPS[tourStep] : null;
-  const rect = useTargetRect(step?.path ?? null, tick);
+  // Em mobile o menu real está fechado: não há alvo para destacar e o
+  // scroll suave de medição roubava os toques. Sem spotlight, sem bug.
+  const rect = useTargetRect(step?.path ?? null, tick, !isMobile);
 
   const goStep = useCallback((i: number) => {
     const s = STEPS[i];

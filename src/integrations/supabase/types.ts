@@ -9427,6 +9427,7 @@ export type Database = {
       subscriptions: {
         Row: {
           billing_cycle: string
+          cancel_at_period_end: boolean
           created_at: string
           current_period_end: string | null
           discount_applied_at: string | null
@@ -9446,6 +9447,7 @@ export type Database = {
         }
         Insert: {
           billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           discount_applied_at?: string | null
@@ -9465,6 +9467,7 @@ export type Database = {
         }
         Update: {
           billing_cycle?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
           discount_applied_at?: string | null

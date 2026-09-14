@@ -10,10 +10,40 @@ const corsHeaders = {
 const log = (msg: string, data?: any) =>
   console.log(`[CHECK-SUB] ${msg}`, data ? JSON.stringify(data) : "");
 
-function resolvePlan(amount: number): string {
-  if (amount >= 9900) return "garage";
-  if (amount >= 4900) return "pro";
-  return "free";
+async function resolvePlan(subscription: Stripe.Subscription, supabaseClient: any): Promise<string> {
+  const item = subscription.items.data[0];
+  const priceId = item?.price?.id;
+  const productId = typeof item?.price?.product === "string"
+    ? item.price.product
+    : item?.price?.product?.id;
+
+  // Price IDs are the authoritative mapping. Amount thresholds are invalid
+  // with promotions, regional prices and prices edited from the Admin.
+  if (priceId) {
+    const { data: priceRow } = await supabaseClient
+      .from("plan_country_prices")
+      .select("plan_slug")
+      .eq("stripe_price_id", priceId)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (priceRow?.plan_slug) return priceRow.plan_slug;
+  }
+
+  if (productId) {
+    const { data: planRow } = await supabaseClient
+      .from("plans")
+      .select("slug")
+      .eq("stripe_product_id", productId)
+      .limit(1)
+      .maybeSingle();
+    if (planRow?.slug) return planRow.slug;
+  }
+
+  const metadataPlan = String(subscription.metadata?.plan_slug || "").trim();
+  if (metadataPlan) return metadataPlan;
+
+  throw new Error(`Unable to resolve plan for Stripe price ${priceId || "unknown"}`);
 }
 
 serve(async (req) => {
@@ -193,11 +223,16 @@ serve(async (req) => {
     }
 
     // Active subscription found — sync to DB
-    const amount = activeSub.items.data[0]?.price?.unit_amount || 0;
-    const plan = resolvePlan(amount);
-    const interval = activeSub.items.data[0]?.price?.recurring?.interval;
+    const plan = await resolvePlan(activeSub, supabaseClient);
+    const activeItem = activeSub.items.data[0];
+    const interval = activeItem?.price?.recurring?.interval;
     const billingCycle = interval === "year" ? "yearly" : "monthly";
-    const subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+    // Stripe's current API exposes the billing period on the subscription
+    // item. Keep the top-level field as a compatibility fallback.
+    const periodEndSeconds = activeItem?.current_period_end ?? activeSub.current_period_end;
+    const subscriptionEnd = periodEndSeconds
+      ? new Date(periodEndSeconds * 1000).toISOString()
+      : null;
     const trialEnd = activeSub.trial_end ? new Date(activeSub.trial_end * 1000).toISOString() : null;
     const status = activeSub.status === "trialing" ? "trialing" : "active";
 

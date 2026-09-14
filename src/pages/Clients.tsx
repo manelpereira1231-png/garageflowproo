@@ -108,6 +108,8 @@ export default function Clients() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+  // Alertas/notificações abrem esta lista já pesquisada (?search=...)
+  useUrlSearchFilter((v) => updateFilter("search", v));
 
   // Server-side sort: the table header keys map 1:1 to real columns.
   const SORT_COLUMNS: Record<string, string> = {

@@ -194,17 +194,21 @@ serve(async (req) => {
       }
     }
 
-    // ── Persist new price + product id + amount in country_settings ──
-    const updatePayload: Record<string, unknown> = {
-      [priceCol]: newPrice.id,
-      [productCol]: productId,
-      [amountCol]: amount,
-    };
-    const { error: updErr } = await supabase
-      .from("country_settings")
-      .update(updatePayload)
-      .eq("code", country);
-    if (updErr) throw updErr;
+    // ── Persist new price + product id + amount ──
+    if (isLegacyPlan) {
+      const updatePayload: Record<string, unknown> = {
+        [priceCol]: newPrice.id,
+        [productCol]: productId,
+        [amountCol]: amount,
+      };
+      const { error: updErr } = await supabase
+        .from("country_settings")
+        .update(updatePayload)
+        .eq("code", country);
+      if (updErr) throw updErr;
+    }
+
+    await savePriceRow({ amount, stripe_price_id: newPrice.id, stripe_product_id: productId });
 
     // ── Audit log ──
     await supabase.from("plan_price_history").insert({

@@ -4,10 +4,12 @@
  * Dashboard, badge do menu e página /alerts consomem EXATAMENTE este hook:
  * mesma query, mesmos estados, mesmos links, mesmo lido/não lido.
  *
- * Inclui dois alertas derivados de condições ativas (stock baixo e faturas
- * vencidas). São calculados aqui — e não no Dashboard — para que apareçam
- * iguais em todo o lado. Nunca duplicam um alerta real equivalente já
- * existente na base de dados.
+ * FILOSOFIA
+ * - Alerta = problema, risco ou ação que merece atenção. Nunca um log.
+ * - Cada alerta abre SEMPRE o objeto exato que lhe deu origem.
+ * - Cada situação real gera UM alerta (nunca um por dia). Como os alertas
+ *   derivados são calculados a partir do estado atual, desaparecem sozinhos
+ *   quando a situação é resolvida (fatura paga, stock reposto, etc.).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,14 +17,19 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { resolveAlertLink } from "@/lib/alertLink";
 
 export type AlertStatus = "pending" | "sent" | "resolved" | "dismissed";
+/** critical = a oficina está a perder dinheiro/parada; high = precisa de ação; low = vigiar. */
+export type AlertPriority = "critical" | "high" | "low";
 
 export type UnifiedAlert = {
   id: string;
   derived: boolean;
   type: string;
   title: string;
+  /** Linha curta de contexto: entidade + identificação. */
+  subtitle: string | null;
+  /** Linha curta de detalhe: valor, prazo, estado. */
   message: string | null;
-  priority: string;
+  priority: AlertPriority;
   status: AlertStatus;
   read: boolean;
   createdAt: string;
@@ -57,6 +64,48 @@ function writeDerivedRead(map: Record<string, string>) {
   }
 }
 
+const money = (v: any) =>
+  new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v || 0));
+
+const daysSince = (iso: string | null | undefined) => {
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+};
+
+const dayLabel = (n: number) => (n === 1 ? "há 1 dia" : `há ${n} dias`);
+
+function normalizePriority(p: any): AlertPriority {
+  const v = String(p || "").toLowerCase();
+  if (v === "critical" || v === "urgent") return "critical";
+  if (v === "low") return "low";
+  return "high";
+}
+
+/** Base comum de um alerta derivado — evita repetir 15 campos por caso. */
+function derivedAlert(a: Partial<UnifiedAlert> & { id: string; type: string; title: string }): UnifiedAlert {
+  return {
+    derived: true,
+    subtitle: null,
+    message: null,
+    priority: "high",
+    status: "pending",
+    read: false,
+    createdAt: new Date().toISOString(),
+    dueDate: null,
+    clientId: null,
+    vehicleId: null,
+    clientName: null,
+    clientPhone: null,
+    clientEmail: null,
+    make: null,
+    model: null,
+    plate: null,
+    link: null,
+    raw: null,
+    ...a,
+  } as UnifiedAlert;
+}
+
 function mapRow(row: any): UnifiedAlert {
   const client = row.clients || null;
   const vehicle = row.vehicles || null;
@@ -67,13 +116,15 @@ function mapRow(row: any): UnifiedAlert {
     clientName: client?.name ?? null,
     plate: vehicle?.plate ?? null,
   };
+  const parts = [client?.name, vehicle?.plate].filter(Boolean);
   return {
     id: row.id,
     derived: false,
     type: row.type,
     title: row.title,
+    subtitle: parts.length ? parts.join(" · ") : null,
     message: row.message ?? null,
-    priority: row.priority || "medium",
+    priority: normalizePriority(row.priority),
     status: (row.status || "pending") as AlertStatus,
     read: Boolean(row.read_at),
     createdAt: row.created_at,
@@ -91,6 +142,8 @@ function mapRow(row: any): UnifiedAlert {
   };
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const { activeShopId, shops } = useShopContext();
   const contextIds = useMemo(
@@ -106,116 +159,203 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const [derivedRead, setDerivedRead] = useState<Record<string, string>>(() => readDerivedRead());
 
   const load = useCallback(async () => {
-    if (!shopIds.length) {
+    const ids = idsKey ? idsKey.split(",") : [];
+    if (!ids.length) {
       setRows([]);
       setDerived([]);
       setLoading(false);
       return;
     }
 
-    const [alertsRes, partsRes, overdueRes] = await Promise.all([
+    const [alertsRes, partsRes, overdueRes, apptRes, ordersRes, quotesRes] = await Promise.all([
       supabase
         .from("alerts")
         .select("*, clients(name, phone, email), vehicles(make, model, plate)")
-        .in("shop_id", shopIds)
+        .in("shop_id", ids)
         .order("created_at", { ascending: false })
         .limit(300),
       supabase
         .from("parts")
-        .select("id, name, stock_quantity, min_stock")
-        .in("shop_id", shopIds)
+        .select("id, name, reference, stock_quantity, min_stock")
+        .in("shop_id", ids)
         .eq("active", true),
       supabase
         .from("invoices")
-        .select("id, number, total, due_date")
-        .in("shop_id", shopIds)
+        .select("id, number, total, due_date, clients(name)")
+        .in("shop_id", ids)
         .in("status", ["issued", "partial"])
-        .lt("due_date", new Date().toISOString().slice(0, 10)),
+        .lt("due_date", today()),
+      supabase
+        .from("appointments")
+        .select("id, date, time, service_type, status, source, client_name, clients(name)")
+        .in("shop_id", ids)
+        .eq("status", "pending")
+        .order("date", { ascending: true })
+        .limit(30),
+      supabase
+        .from("work_orders")
+        .select("id, number, status, created_at, completed_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .in("shop_id", ids)
+        .in("status", ["in_progress", "waiting_parts", "completed"])
+        .limit(200),
+      supabase
+        .from("quotes")
+        .select("id, number, status, total, date, created_at, clients(name)")
+        .in("shop_id", ids)
+        .in("status", ["sent", "approved"])
+        .limit(200),
     ]);
 
     const dbAlerts = ((alertsRes.data as any[]) || []).map(mapRow);
     setRows(dbAlerts);
 
-    const now = new Date().toISOString();
     const out: UnifiedAlert[] = [];
-
-    const lowStock = ((partsRes.data as any[]) || []).filter(
-      (p) => Number(p.min_stock) > 0 && Number(p.stock_quantity) <= Number(p.min_stock),
+    const openDbTypes = new Set(
+      dbAlerts.filter((a) => a.status === "pending" || a.status === "sent").map((a) => a.type),
     );
-    if (lowStock.length > 0) {
-      const names = lowStock.slice(0, 3).map((p) => p.name).join(", ");
-      out.push({
-        id: `derived:stock_low:${lowStock.length}`,
-        derived: true,
-        type: "stock_low",
-        title:
-          lowStock.length === 1
-            ? `Stock baixo: ${lowStock[0].name}`
-            : `${lowStock.length} peças com stock abaixo do mínimo`,
-        message: `Repor stock: ${names}${lowStock.length > 3 ? "…" : ""}`,
-        priority: "medium",
-        status: "pending",
-        read: false,
-        createdAt: now,
-        dueDate: null,
-        clientId: null,
-        vehicleId: null,
-        clientName: null,
-        clientPhone: null,
-        clientEmail: null,
-        make: null,
-        model: null,
-        plate: null,
-        link: "/stock",
-        raw: null,
-      });
+
+    // ---- STOCK: um alerta por peça, com link para a peça ----
+    for (const p of ((partsRes.data as any[]) || [])) {
+      const min = Number(p.min_stock || 0);
+      const qty = Number(p.stock_quantity || 0);
+      if (min <= 0 || qty > min) continue;
+      const rupture = qty <= 0;
+      out.push(
+        derivedAlert({
+          id: `derived:part:${p.id}`,
+          type: rupture ? "stock_out" : "stock_low",
+          title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
+          subtitle: p.reference ? `Ref. ${p.reference}` : null,
+          message: `Stock atual: ${qty} · mínimo: ${min}`,
+          priority: rupture ? "critical" : "high",
+          link: `/stock?search=${encodeURIComponent(p.reference || p.name)}`,
+        }),
+      );
     }
 
-    const overdue = (overdueRes.data as any[]) || [];
-    // Nunca duplica: se já existe um alerta real de pagamento por resolver,
-    // o alerta derivado não é criado.
-    const hasPaymentAlert = dbAlerts.some(
-      (a) => a.type === "payment_failed" && (a.status === "pending" || a.status === "sent"),
-    );
-    if (overdue.length > 0 && !hasPaymentAlert) {
-      const total = overdue.reduce((s, i) => s + Number(i.total || 0), 0);
-      const single = overdue.length === 1 ? overdue[0] : null;
-      out.push({
-        id: `derived:overdue:${overdue.length}`,
-        derived: true,
-        type: "payment_failed",
-        title: single
-          ? `Fatura ${single.number} vencida`
-          : `${overdue.length} faturas vencidas por receber`,
-        message: single
-          ? `Vencida em ${single.due_date}. Valor em dívida: ${Number(single.total || 0).toFixed(2)}.`
-          : `Total em dívida: ${total.toFixed(2)}.`,
-        priority: "high",
-        status: "pending",
-        read: false,
-        createdAt: now,
-        dueDate: single?.due_date ?? null,
-        clientId: null,
-        vehicleId: null,
-        clientName: null,
-        clientPhone: null,
-        clientEmail: null,
-        make: null,
-        model: null,
-        plate: null,
-        link: single ? `/invoices?search=${encodeURIComponent(single.number)}` : "/invoices",
-        raw: null,
-      });
+    // ---- FINANCEIRO: um alerta por fatura vencida, com link para a fatura ----
+    for (const inv of ((overdueRes.data as any[]) || [])) {
+      const late = daysSince(inv.due_date);
+      out.push(
+        derivedAlert({
+          id: `derived:invoice:${inv.id}`,
+          type: "invoice_overdue",
+          title: `Fatura ${inv.number} vencida`,
+          subtitle: (inv.clients as any)?.name || null,
+          message: `${money(inv.total)} · vencida ${dayLabel(late)}`,
+          priority: late >= 30 ? "critical" : "high",
+          dueDate: inv.due_date,
+          link: `/invoices?search=${encodeURIComponent(inv.number)}`,
+        }),
+      );
     }
 
-    setDerived(out);
+    // ---- MARCAÇÕES: pedidos por responder, com link para a marcação ----
+    for (const ap of ((apptRes.data as any[]) || [])) {
+      const name = (ap.clients as any)?.name || ap.client_name || "Cliente";
+      const when = `${new Date(ap.date).toLocaleDateString("pt-PT")} às ${String(ap.time).slice(0, 5)}`;
+      out.push(
+        derivedAlert({
+          id: `derived:appointment:${ap.id}`,
+          type: "appointment_new",
+          title: "Nova marcação recebida",
+          subtitle: name,
+          message: `${when}${ap.service_type ? ` · ${ap.service_type}` : ""}`,
+          priority: "high",
+          dueDate: ap.date,
+          link: `/agenda?appointment=${ap.id}`,
+        }),
+      );
+    }
+
+    // ---- SERVIÇOS: atrasados e veículos prontos por levantar ----
+    const orders = (ordersRes.data as any[]) || [];
+    const convertedQuoteIds = new Set(orders.map((o) => o.quote_id).filter(Boolean));
+    for (const o of orders) {
+      const veh = (o.vehicles as any) || null;
+      const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
+      const subtitle = [(o.clients as any)?.name, vehLabel].filter(Boolean).join(" · ") || null;
+
+      if (o.status === "completed") {
+        // Só depois de 2 dias — evita alertar logo após marcar como pronto.
+        const waiting = daysSince(o.completed_at || o.created_at);
+        if (waiting >= 2) {
+          out.push(
+            derivedAlert({
+              id: `derived:pickup:${o.id}`,
+              type: "vehicle_ready",
+              title: `Veículo pronto por levantar — ${o.number}`,
+              subtitle,
+              message: `Concluído ${dayLabel(waiting)}`,
+              priority: waiting >= 7 ? "critical" : "high",
+              link: `/services?search=${encodeURIComponent(o.number)}`,
+            }),
+          );
+        }
+        continue;
+      }
+
+      const running = daysSince(o.created_at);
+      if (running >= 7) {
+        out.push(
+          derivedAlert({
+            id: `derived:late-order:${o.id}`,
+            type: "service_late",
+            title: `Serviço atrasado — ${o.number}`,
+            subtitle,
+            message: `Em curso ${dayLabel(running)}`,
+            priority: running >= 14 ? "critical" : "high",
+            link: `/services?search=${encodeURIComponent(o.number)}`,
+          }),
+        );
+      }
+    }
+
+    // ---- ORÇAMENTOS: aprovados sem ação e enviados sem resposta ----
+    for (const q of ((quotesRes.data as any[]) || [])) {
+      const clientName = (q.clients as any)?.name || null;
+      if (q.status === "approved") {
+        // Já convertido em serviço = ação tratada, não gera alerta.
+        if (convertedQuoteIds.has(q.id)) continue;
+        out.push(
+          derivedAlert({
+            id: `derived:quote-approved:${q.id}`,
+            type: "quote_approved",
+            title: `Orçamento ${q.number} aprovado`,
+            subtitle: clientName,
+            message: `${money(q.total)} · falta abrir o serviço`,
+            priority: "high",
+            link: `/quotes?search=${encodeURIComponent(q.number)}`,
+          }),
+        );
+        continue;
+      }
+      const sentDays = daysSince(q.created_at || q.date);
+      if (sentDays >= 3) {
+        out.push(
+          derivedAlert({
+            id: `derived:quote-pending:${q.id}`,
+            type: "quote_pending",
+            title: `Orçamento ${q.number} aguarda aprovação`,
+            subtitle: clientName,
+            message: `${money(q.total)} · enviado ${dayLabel(sentDays)}`,
+            priority: "low",
+            link: `/quotes?search=${encodeURIComponent(q.number)}`,
+          }),
+        );
+      }
+    }
+
+    // Nunca duplicar: se a base de dados já tem um alerta aberto do mesmo
+    // tipo, o derivado equivalente não é mostrado.
+    setDerived(out.filter((a) => !openDbTypes.has(a.type)));
     setLoading(false);
   }, [idsKey]);
 
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
-    if (!shopIds.length) return;
+    if (!idsKey) return;
     const ch = supabase
       .channel(`gf-alerts-${idsKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, () => void load())
@@ -223,12 +363,19 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     return () => { supabase.removeChannel(ch); };
   }, [idsKey, load]);
 
+  const PRIORITY_ORDER: Record<AlertPriority, number> = { critical: 0, high: 1, low: 2 };
+
   const alerts = useMemo(() => {
     const all = [
       ...derived.map((d) => ({ ...d, read: Boolean(derivedRead[d.id]) })),
       ...rows,
     ];
-    return all;
+    return all.sort((a, b) => {
+      const p = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+      if (p !== 0) return p;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [derived, rows, derivedRead]);
 
   /** Abrir um alerta (em qualquer ecrã) marca-o como lido em todo o sistema. */
@@ -271,10 +418,21 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   /** Badge: apenas alertas por tratar E por ler. Nunca conta itens técnicos. */
   const unreadCount = open.filter((a) => !a.read).length;
 
+  const countsByPriority = useMemo(
+    () => ({
+      critical: open.filter((a) => a.priority === "critical").length,
+      high: open.filter((a) => a.priority === "high").length,
+      low: open.filter((a) => a.priority === "low").length,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [alerts],
+  );
+
   return {
     alerts,
     open,
     unreadCount,
+    countsByPriority,
     pendingCount: alerts.filter((a) => a.status === "pending").length,
     loading,
     reload: load,

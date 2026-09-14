@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { isDemoSession, exitDemoToSignup } from "@/lib/salesDemo";
 import { trackDemoEvent } from "@/lib/demoTracker";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const K_WELCOME = "gf_demo_guide_seen";
 const K_TOUR = "gf_demo_tour_done";

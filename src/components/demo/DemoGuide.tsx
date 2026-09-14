@@ -42,10 +42,10 @@ const CHECKLIST: { path: string; label: string }[] = [
 const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* noop */ } };
 
-function useTargetRect(path: string | null, tick: number) {
+function useTargetRect(path: string | null, tick: number, enabled: boolean) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   useLayoutEffect(() => {
-    if (!path) { setRect(null); return; }
+    if (!path || !enabled) { setRect(null); return; }
     let raf = 0;
     const measure = () => {
       const el = document.querySelector<HTMLElement>(`[data-tour="${path}"]`);

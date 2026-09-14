@@ -487,7 +487,9 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         } as any,
         { onConflict: "shop_id,alert_key" },
       );
+      notifyAlertSync();
     },
+
     [derivedState],
   );
 

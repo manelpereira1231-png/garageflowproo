@@ -395,7 +395,18 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
   const alerts = useMemo(() => {
     const all = [
-      ...derived.map((d) => ({ ...d, read: Boolean(derivedRead[d.id]) })),
+      ...derived.map((d) => {
+        const st = derivedState[d.id];
+        // Assinatura diferente = a situação mudou desde que foi tratada:
+        // o alerta reabre sozinho e volta a ficar por ler.
+        const valid = st && (!st.signature || !d.signature || st.signature === d.signature);
+        if (!valid) return d;
+        return {
+          ...d,
+          read: Boolean(st!.read_at) || Boolean(st!.resolved_at),
+          status: (st!.status || (st!.resolved_at ? "resolved" : "pending")) as AlertStatus,
+        };
+      }),
       ...rows,
     ];
     return all.sort((a, b) => {
@@ -404,43 +415,71 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [derived, rows, derivedRead]);
+  }, [derived, rows, derivedState]);
 
-  /** Abrir um alerta (em qualquer ecrã) marca-o como lido em todo o sistema. */
+  /** Guarda (ou limpa) o estado de um alerta derivado na base de dados. */
+  const persistDerived = useCallback(
+    async (alert: UnifiedAlert, patch: { read?: boolean; status?: AlertStatus | null }) => {
+      const shopId = alert.shopId;
+      if (!shopId) return;
+      const now = new Date().toISOString();
+      const prev = derivedState[alert.id];
+
+      if (patch.status === null) {
+        // Reabrir: apagar o estado guardado devolve o alerta a "por tratar".
+        setDerivedState((m) => { const n = { ...m }; delete n[alert.id]; return n; });
+        await supabase.from("alert_states").delete().eq("shop_id", shopId).eq("alert_key", alert.id);
+        return;
+      }
+
+      const next: DerivedState = {
+        signature: alert.signature,
+        read_at: patch.read || patch.status ? (prev?.read_at || now) : (prev?.read_at ?? null),
+        resolved_at: patch.status ? now : (prev?.resolved_at ?? null),
+        status: patch.status ?? prev?.status ?? null,
+      };
+      setDerivedState((m) => ({ ...m, [alert.id]: next }));
+      const { data: auth } = await supabase.auth.getUser();
+      await supabase.from("alert_states").upsert(
+        {
+          shop_id: shopId,
+          alert_key: alert.id,
+          signature: alert.signature,
+          read_at: next.read_at,
+          resolved_at: next.resolved_at,
+          resolved_by: next.resolved_at ? auth?.user?.id ?? null : null,
+        } as any,
+        { onConflict: "shop_id,alert_key" },
+      );
+    },
+    [derivedState],
+  );
+
+  /** Abrir (ou marcar) um alerta deixa-o lido em todo o sistema. */
   const markRead = useCallback(async (alert: UnifiedAlert) => {
     if (alert.read) return;
-    if (alert.derived) {
-      const next = { ...readDerivedRead(), [alert.id]: new Date().toISOString() };
-      writeDerivedRead(next);
-      setDerivedRead(next);
-      return;
-    }
+    if (alert.derived) { await persistDerived(alert, { read: true }); return; }
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, read: true } : a)));
     await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).eq("id", alert.id);
-  }, []);
+  }, [persistDerived]);
 
-  const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus) => {
-    if (alert.derived) return;
-    setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status } : a)));
-    const { error } = await supabase.from("alerts").update({ status } as any).eq("id", alert.id);
+  const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus | null) => {
+    if (alert.derived) { await persistDerived(alert, { status }); return; }
+    const next = status ?? "pending";
+    setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status: next } : a)));
+    const { error } = await supabase.from("alerts").update({ status: next } as any).eq("id", alert.id);
     if (error) void load();
-  }, [load]);
+  }, [load, persistDerived]);
 
   const markAllRead = useCallback(async () => {
     const unread = alerts.filter((a) => !a.read);
     const dbIds = unread.filter((a) => !a.derived).map((a) => a.id);
-    const derivedIds = unread.filter((a) => a.derived).map((a) => a.id);
-    if (derivedIds.length) {
-      const map = readDerivedRead();
-      derivedIds.forEach((id) => { map[id] = new Date().toISOString(); });
-      writeDerivedRead(map);
-      setDerivedRead(map);
-    }
+    for (const a of unread.filter((x) => x.derived)) await persistDerived(a, { read: true });
     if (dbIds.length) {
       setRows((prev) => prev.map((a) => (dbIds.includes(a.id) ? { ...a, read: true } : a)));
       await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).in("id", dbIds);
     }
-  }, [alerts]);
+  }, [alerts, persistDerived]);
 
   const open = alerts.filter((a) => a.status === "pending" || a.status === "sent");
   /** Badge: apenas alertas por tratar E por ler. Nunca conta itens técnicos. */
@@ -468,5 +507,8 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     markAllRead,
     resolve: (a: UnifiedAlert) => setStatus(a, "resolved"),
     dismiss: (a: UnifiedAlert) => setStatus(a, "dismissed"),
+    /** Reabrir: o alerta volta a "por tratar" e por ler. */
+    reopen: (a: UnifiedAlert) => setStatus(a, null),
   };
 }
+

@@ -104,14 +104,11 @@ Deno.serve(async (req) => {
           client_id: vehicle.client_id,
         });
 
-        // Create notification
-        await supabase.from("notifications").insert({
-          shop_id: vehicle.shop_id,
-          type: "reminder",
-          title: "Lembrete de revisão",
-          message: `${vehicle.plate} - ${vehicle.make} ${vehicle.model} necessita de revisão.`,
-          link: `/vehicles`,
-        });
+        // Nota: NÃO criamos notificação aqui. O mesmo acontecimento já é
+        // comunicado pelo alerta acima — duplicar criaria dois avisos
+        // diferentes para o mesmo veículo.
+
+
 
         results.push({
           vehicle: `${vehicle.make} ${vehicle.model} (${vehicle.plate})`,

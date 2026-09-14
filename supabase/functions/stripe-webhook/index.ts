@@ -241,6 +241,15 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          // Ignore late events from the previous Start trial after a paid
+          // upgrade has already linked the shop to the new subscription.
+          if (sub.stripe_subscription_id && sub.stripe_subscription_id !== subscription.id) {
+            log("Ignoring update from superseded subscription", {
+              eventSubscriptionId: subscription.id,
+              activeSubscriptionId: sub.stripe_subscription_id,
+            });
+            break;
+          }
           const plan = await resolvePlan(subscription);
           const billingCycle = resolveBillingCycle(subscription);
           
@@ -280,6 +289,13 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          if (sub.stripe_subscription_id && sub.stripe_subscription_id !== subscription.id) {
+            log("Ignoring deletion of superseded subscription", {
+              deletedSubscriptionId: subscription.id,
+              activeSubscriptionId: sub.stripe_subscription_id,
+            });
+            break;
+          }
           // IMPORTANT: after a Stripe cancellation reaches its period end the
           // user must NOT be silently placed on any other plan. We only flip
           // the status to "canceled" and drop the Stripe subscription id.

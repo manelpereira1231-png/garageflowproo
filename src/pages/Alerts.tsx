@@ -214,7 +214,7 @@ export default function Alerts() {
     toast.success(t("common.exported"));
   };
 
-  const alertTypes = ["revision", "oil", "inspection", "warranty", "inactive_client", "expired_quote", "payment_failed", "service_due", "quote_pending", "stock_low", "custom"];
+  
 
   if (subLoading) {
     return (

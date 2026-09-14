@@ -577,7 +577,21 @@ serve(async (req) => {
         const plan = await resolvePlan(stripeSub);
         const billingCycle = resolveBillingCycle(stripeSub);
 
-        const sub = await findSubscription(customerId);
+        let sub = await findSubscription(customerId);
+        // Rede de segurança: o checkout carrega sempre o shop_id em metadata.
+        // Se o cliente Stripe ainda não estava associado, usamos essa referência
+        // para não perder a ativação do plano pago.
+        if (!sub && session.metadata?.shop_id) {
+          const { data: byShop } = await supabaseAdmin
+            .from("subscriptions")
+            .select("id, shop_id, stripe_subscription_id")
+            .eq("shop_id", session.metadata.shop_id)
+            .maybeSingle();
+          if (byShop) {
+            sub = byShop;
+            log("Subscription matched by checkout metadata shop_id", { shopId: session.metadata.shop_id });
+          }
+        }
         if (sub) {
           const previousStripeSubscriptionId = sub.stripe_subscription_id;
           await supabaseAdmin

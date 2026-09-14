@@ -861,12 +861,14 @@ export default function Agenda() {
                         <div key={app.id}
                           className={`text-[11px] rounded px-1.5 py-1 mb-0.5 border cursor-pointer hover:opacity-80 transition-opacity ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
                           <div className="font-medium truncate">{app.service_type}</div>
-                          <div className="flex items-center gap-1 text-[10px] opacity-75">
-                            <Clock className="w-3 h-3" />
-                            {app.time.slice(0, 5)}
-                            {app.duration_minutes > 0 && <span>({app.duration_minutes}m)</span>}
-                            {app.client_name && <span>· {app.client_name}</span>}
+                          <div className="flex items-center gap-1 text-[10px] opacity-75 min-w-0">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span className="whitespace-nowrap">{app.time.slice(0, 5)}</span>
+                            {app.duration_minutes > 0 && <span className="whitespace-nowrap">({app.duration_minutes}m)</span>}
                           </div>
+                          {app.client_name && (
+                            <div className="text-[10px] opacity-75 truncate">{app.client_name}</div>
+                          )}
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {app.status === "scheduled" && (
                               <button onClick={() => updateStatus(app.id, "confirmed")} className="text-[9px] bg-green-500/20 text-green-700 px-1 rounded hover:bg-green-500/30">✓</button>

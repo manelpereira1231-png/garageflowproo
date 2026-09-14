@@ -642,44 +642,44 @@ export default function QuoteApproval() {
                 <FileText className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">{t('quoteDetails')}</span>
               </div>
-              <div className="border border-border rounded-xl overflow-hidden">
+              <div className="border border-border rounded-xl overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/70">
                       <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">{t('description')}</th>
-                      <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase w-16">{t('qty')}</th>
-                      <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">{t('price')}</th>
-                      <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">{t('total')}</th>
+                      <th className="text-center p-2 sm:p-3 text-xs font-semibold text-muted-foreground uppercase w-12 sm:w-16 whitespace-nowrap">{t('qty')}</th>
+                      <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell whitespace-nowrap">{t('price')}</th>
+                      <th className="text-right p-2 sm:p-3 text-xs font-semibold text-muted-foreground uppercase whitespace-nowrap">{t('total')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lines.map((line: any, i: number) => (
                       <tr key={i} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
-                        <td className="p-3">
-                          <span className="font-medium">{line.name}</span>
+                        <td className="p-2 sm:p-3 min-w-0">
+                          <span className="font-medium break-words">{line.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">
                             {line.type === 'service' ? t('service') : t('part')}
                           </Badge>
                         </td>
-                        <td className="p-3 text-center font-mono text-muted-foreground">{line.quantity}</td>
-                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(line.unit_price)}</td>
-                        <td className="p-3 text-right font-mono font-semibold">{money(line.quantity * line.unit_price)}</td>
+                        <td className="p-2 sm:p-3 text-center font-mono text-muted-foreground whitespace-nowrap">{line.quantity}</td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">{money(line.unit_price)}</td>
+                        <td className="p-2 sm:p-3 text-right font-mono font-semibold whitespace-nowrap">{money(line.quantity * line.unit_price)}</td>
                       </tr>
                     ))}
                     {laborLine && (
                       <tr className="border-t border-border/50 bg-primary/5">
-                        <td className="p-3">
-                          <span className="font-medium">{laborLine.name}</span>
+                        <td className="p-2 sm:p-3 min-w-0">
+                          <span className="font-medium break-words">{laborLine.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>
                           <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
                             {laborLine.quantity.toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h × {money(laborLine.unit_price)}/h
                           </div>
                         </td>
-                        <td className="p-3 text-center font-mono text-muted-foreground">
+                        <td className="p-2 sm:p-3 text-center font-mono text-muted-foreground whitespace-nowrap">
                           {laborLine.quantity.toLocaleString(shopLocale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}h
                         </td>
-                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell">{money(laborLine.unit_price)}</td>
-                        <td className="p-3 text-right font-mono font-semibold">{money(laborLine.quantity * laborLine.unit_price)}</td>
+                        <td className="p-3 text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">{money(laborLine.unit_price)}</td>
+                        <td className="p-2 sm:p-3 text-right font-mono font-semibold whitespace-nowrap">{money(laborLine.quantity * laborLine.unit_price)}</td>
                       </tr>
                     )}
                   </tbody>
@@ -689,18 +689,18 @@ export default function QuoteApproval() {
 
             {/* Totals */}
             <div className="flex justify-end">
-              <div className="w-72 bg-muted/30 rounded-xl p-4 space-y-2">
+              <div className="w-full sm:w-72 bg-muted/30 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('subtotal')}</span>
-                  <span className="font-mono">{money(quote.subtotal)}</span>
+                  <span className="font-mono whitespace-nowrap">{money(quote.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{vatLabel}</span>
-                  <span className="font-mono">{money(quote.vat_total)}</span>
+                  <span className="font-mono whitespace-nowrap">{money(quote.vat_total)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">
                   <span>{t('total')}</span>
-                  <span className="font-mono text-primary">{money(quote.total)}</span>
+                  <span className="font-mono text-primary whitespace-nowrap">{money(quote.total)}</span>
                 </div>
               </div>
             </div>

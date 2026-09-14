@@ -396,7 +396,12 @@ export default function Alerts() {
                           {t("alerts.contact") || "Contactar"}
                         </Button>
                       )}
-                      {!a.derived && a.status === "pending" && (
+                      {!a.read && (a.status === "pending" || a.status === "sent") && (
+                        <Button variant="ghost" size="sm" onClick={() => void markRead(a)} className="text-xs gap-1">
+                          <CheckCheck className="w-3.5 h-3.5" /> Lida
+                        </Button>
+                      )}
+                      {(a.status === "pending" || a.status === "sent") && (
                         <>
                           <Button variant="ghost" size="sm" onClick={() => void resolve(a)} className="text-xs text-success">
                             <CheckCircle className="w-3.5 h-3.5 mr-1" />
@@ -407,6 +412,12 @@ export default function Alerts() {
                           </Button>
                         </>
                       )}
+                      {(a.status === "resolved" || a.status === "dismissed") && (
+                        <Button variant="ghost" size="sm" onClick={() => void reopen(a)} className="text-xs gap-1">
+                          <RotateCcw className="w-3.5 h-3.5" /> Reabrir
+                        </Button>
+                      )}
+
                     </div>
                   </TableCell>
                 </TableRow>

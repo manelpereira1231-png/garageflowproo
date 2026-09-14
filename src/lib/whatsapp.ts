@@ -294,10 +294,10 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   if (params.pdfBlob) {
     downloadPdfBlob(params.pdfBlob, filename);
   }
-  // Also stash the message in the clipboard as a safety net if WhatsApp Web
-  // ever fails to pre-fill (rare, but avoids losing the personalised text).
-  await copyToClipboardSilent(message);
+  // Abrir primeiro (mantém o gesto do utilizador) e só depois copiar o texto
+  // para a área de transferência como rede de segurança.
   openUrl(url, mobile);
+  void copyToClipboardSilent(message);
   return true;
 }
 

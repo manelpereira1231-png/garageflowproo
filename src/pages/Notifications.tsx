@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { getCountryConfig } from "@/lib/regionConfig";
 import ListSkeleton from "@/components/ListSkeleton";
-import { resolveNotificationLink } from "@/lib/notificationLink";
+import { resolveNotificationLink, isUserFacingNotification } from "@/lib/notificationLink";
 
 type Notif = {
   id: string;
@@ -78,7 +78,8 @@ export default function Notifications() {
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(200);
-    setItems(((data as any) ?? []) as Notif[]);
+    // Eventos técnicos ficam no histórico do sistema, não aqui.
+    setItems((((data as any) ?? []) as Notif[]).filter(isUserFacingNotification));
     setLoading(false);
   }, [idsKey]);
 

@@ -194,7 +194,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         .limit(30),
       supabase
         .from("work_orders")
-        .select("id, number, status, created_at, completed_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .select("id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .in("status", ["in_progress", "waiting_parts", "completed"])
         .limit(200),
@@ -210,8 +210,12 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     setRows(dbAlerts);
 
     const out: UnifiedAlert[] = [];
-    const openDbTypes = new Set(
-      dbAlerts.filter((a) => a.status === "pending" || a.status === "sent").map((a) => a.type),
+    // Dedupe por SITUAÇÃO concreta (tipo + título), nunca por tipo inteiro:
+    // um alerta guardado não pode apagar todos os derivados da mesma família.
+    const openDbKeys = new Set(
+      dbAlerts
+        .filter((a) => a.status === "pending" || a.status === "sent")
+        .map((a) => `${a.type}|${(a.title || "").toLowerCase()}`),
     );
 
     // ---- STOCK: um alerta por peça, com link para a peça ----
@@ -276,6 +280,8 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
       const subtitle = [(o.clients as any)?.name, vehLabel].filter(Boolean).join(" · ") || null;
 
+      // Veículo já entregue = situação encerrada, sem alerta.
+      if (o.delivered_at) continue;
       if (o.status === "completed") {
         // Só depois de 2 dias — evita alertar logo após marcar como pronto.
         const waiting = daysSince(o.completed_at || o.created_at);
@@ -346,21 +352,28 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       }
     }
 
-    // Nunca duplicar: se a base de dados já tem um alerta aberto do mesmo
-    // tipo, o derivado equivalente não é mostrado.
-    setDerived(out.filter((a) => !openDbTypes.has(a.type)));
+    setDerived(out.filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`)));
     setLoading(false);
   }, [idsKey]);
 
   useEffect(() => { void load(); }, [load]);
 
+  // Tempo real: além dos alertas guardados, escutamos as origens reais para
+  // que um alerta desapareça sozinho quando a situação é resolvida
+  // (fatura paga, stock reposto, marcação tratada, serviço entregue).
   useEffect(() => {
     if (!idsKey) return;
-    const ch = supabase
-      .channel(`gf-alerts-${idsKey}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, () => void load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let timer: any;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void load(), 600);
+    };
+    let ch = supabase.channel(`gf-alerts-${idsKey}`);
+    for (const table of ["alerts", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
+      ch = ch.on("postgres_changes", { event: "*", schema: "public", table }, schedule);
+    }
+    ch.subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(ch); };
   }, [idsKey, load]);
 
   const PRIORITY_ORDER: Record<AlertPriority, number> = { critical: 0, high: 1, low: 2 };

@@ -6,7 +6,7 @@ import { useShopContext } from "@/hooks/useShopContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { getCountryConfig } from "@/lib/regionConfig";
-import { resolveNotificationLink } from "@/lib/notificationLink";
+import { resolveNotificationLink, isUserFacingNotification } from "@/lib/notificationLink";
 
 type Notif = {
   id: string;
@@ -43,7 +43,8 @@ export default function NotificationsBell() {
       .eq("read", false)
       .order("created_at", { ascending: false })
       .limit(30);
-    setItems((data as any) ?? []);
+    // O contador do sino conta apenas Notificações reais por ler.
+    setItems((((data as any) ?? []) as Notif[]).filter(isUserFacingNotification));
   }, [ids.join(",")]);
 
   useEffect(() => { load(); }, [load]);
@@ -99,7 +100,7 @@ export default function NotificationsBell() {
         <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
           <div>
             <div className="font-semibold text-sm">Notificações</div>
-            <div className="text-xs text-muted-foreground">Orçamentos, pagamentos e alertas</div>
+            <div className="text-xs text-muted-foreground">Aconteceu algo importante que deve saber</div>
           </div>
           {unreadCount > 0 && (
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={markAllRead}>

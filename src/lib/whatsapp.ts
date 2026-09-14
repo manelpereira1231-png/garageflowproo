@@ -35,6 +35,9 @@ export interface WhatsAppMessageParams {
   shopName?: string;
   /** Overrides the generated text (used by the workshop client-comms dialog). */
   customMessage?: string;
+  /** Janela já aberta no momento do clique (anti popup-blocker): se existir,
+   *  o WhatsApp abre nessa janela em vez de criar uma nova. */
+  preopenedWindow?: Window | null;
 }
 
 function vehicleLabel(p: WhatsAppMessageParams): string {
@@ -296,7 +299,15 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   }
   // Abrir primeiro (mantém o gesto do utilizador) e só depois copiar o texto
   // para a área de transferência como rede de segurança.
-  openUrl(url, mobile);
+  if (params.preopenedWindow) {
+    try {
+      params.preopenedWindow.location.href = url;
+    } catch {
+      openUrl(url, mobile);
+    }
+  } else {
+    openUrl(url, mobile);
+  }
   void copyToClipboardSilent(message);
   return true;
 }

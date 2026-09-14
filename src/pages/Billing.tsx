@@ -455,8 +455,8 @@ export default function Billing() {
                 {t('billing.manage')}
               </Button>
             )}
-            {/* Cancel button — only when there is an active plan */}
-            {!noActivePlan && (
+            {/* Cancel button — only when there is an active plan not already cancelled */}
+            {!noActivePlan && !cancelPending && (
               <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={() => setCancelDialogOpen(true)}>
                 <XCircle className="w-4 h-4 mr-2" />
                 {t('billing.cancelSubscription')}

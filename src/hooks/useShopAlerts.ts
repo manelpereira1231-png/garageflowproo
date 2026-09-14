@@ -23,6 +23,10 @@ export type AlertPriority = "critical" | "high" | "low";
 export type UnifiedAlert = {
   id: string;
   derived: boolean;
+  /** Oficina a que o alerta pertence (necessário para guardar o estado). */
+  shopId: string | null;
+  /** Assinatura da situação: se mudar, um alerta resolvido reabre. */
+  signature: string | null;
   type: string;
   title: string;
   /** Linha curta de contexto: entidade + identificação. */
@@ -46,23 +50,18 @@ export type UnifiedAlert = {
   raw: any;
 };
 
-const DERIVED_READ_KEY = "garageflow_derived_alerts_read";
+/**
+ * Estado guardado (partilhado por toda a oficina) dos alertas calculados.
+ * Vive na tabela alert_states para que "lido" e "resolvido" persistam
+ * após refresh, logout e em qualquer dispositivo.
+ */
+type DerivedState = {
+  signature: string | null;
+  read_at: string | null;
+  resolved_at: string | null;
+  status: AlertStatus | null;
+};
 
-function readDerivedRead(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(DERIVED_READ_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeDerivedRead(map: Record<string, string>) {
-  try {
-    localStorage.setItem(DERIVED_READ_KEY, JSON.stringify(map));
-  } catch {
-    /* storage indisponível — o alerta apenas continua por ler */
-  }
-}
 
 const money = (v: any) =>
   new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v || 0));
@@ -85,6 +84,8 @@ function normalizePriority(p: any): AlertPriority {
 function derivedAlert(a: Partial<UnifiedAlert> & { id: string; type: string; title: string }): UnifiedAlert {
   return {
     derived: true,
+    shopId: null,
+    signature: null,
     subtitle: null,
     message: null,
     priority: "high",
@@ -120,6 +121,8 @@ function mapRow(row: any): UnifiedAlert {
   return {
     id: row.id,
     derived: false,
+    shopId: row.shop_id ?? null,
+    signature: null,
     type: row.type,
     title: row.title,
     subtitle: parts.length ? parts.join(" · ") : null,
@@ -156,7 +159,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const [rows, setRows] = useState<UnifiedAlert[]>([]);
   const [derived, setDerived] = useState<UnifiedAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [derivedRead, setDerivedRead] = useState<Record<string, string>>(() => readDerivedRead());
+  const [derivedState, setDerivedState] = useState<Record<string, DerivedState>>({});
 
   const load = useCallback(async () => {
     const ids = idsKey ? idsKey.split(",") : [];
@@ -176,31 +179,31 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         .limit(300),
       supabase
         .from("parts")
-        .select("id, name, reference, stock_quantity, min_stock")
+        .select("id, shop_id, name, reference, stock_quantity, min_stock")
         .in("shop_id", ids)
         .eq("active", true),
       supabase
         .from("invoices")
-        .select("id, number, total, due_date, clients(name)")
+        .select("id, shop_id, number, total, due_date, clients(name)")
         .in("shop_id", ids)
         .in("status", ["issued", "partial"])
         .lt("due_date", today()),
       supabase
         .from("appointments")
-        .select("id, date, time, service_type, status, source, client_name, clients(name)")
+        .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .order("date", { ascending: true })
         .limit(30),
       supabase
         .from("work_orders")
-        .select("id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .in("status", ["in_progress", "waiting_parts", "completed"])
         .limit(200),
       supabase
         .from("quotes")
-        .select("id, number, status, total, date, created_at, clients(name)")
+        .select("id, shop_id, number, status, total, date, created_at, clients(name)")
         .in("shop_id", ids)
         .in("status", ["sent", "approved"])
         .limit(200),
@@ -227,6 +230,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:part:${p.id}`,
+          shopId: p.shop_id,
           type: rupture ? "stock_out" : "stock_low",
           title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
           subtitle: p.reference ? `Ref. ${p.reference}` : null,
@@ -243,6 +247,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:invoice:${inv.id}`,
+          shopId: inv.shop_id,
           type: "invoice_overdue",
           title: `Fatura ${inv.number} vencida`,
           subtitle: (inv.clients as any)?.name || null,
@@ -261,6 +266,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:appointment:${ap.id}`,
+          shopId: ap.shop_id,
           type: "appointment_new",
           title: "Nova marcação recebida",
           subtitle: name,
@@ -289,6 +295,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
           out.push(
             derivedAlert({
               id: `derived:pickup:${o.id}`,
+              shopId: o.shop_id,
               type: "vehicle_ready",
               title: `Veículo pronto por levantar — ${o.number}`,
               subtitle,
@@ -306,6 +313,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:late-order:${o.id}`,
+            shopId: o.shop_id,
             type: "service_late",
             title: `Serviço atrasado — ${o.number}`,
             subtitle,
@@ -326,6 +334,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-approved:${q.id}`,
+            shopId: q.shop_id,
             type: "quote_approved",
             title: `Orçamento ${q.number} aprovado`,
             subtitle: clientName,
@@ -341,6 +350,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-pending:${q.id}`,
+            shopId: q.shop_id,
             type: "quote_pending",
             title: `Orçamento ${q.number} aguarda aprovação`,
             subtitle: clientName,
@@ -352,9 +362,37 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       }
     }
 
-    setDerived(out.filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`)));
+    const visible = out
+      .filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`))
+      // Assinatura = estado concreto da situação. Se mudar (novo valor,
+      // mais dias de atraso, outra prioridade) o alerta reabre sozinho.
+      .map((a) => ({ ...a, signature: `${a.priority}|${a.message ?? ""}` }));
+    setDerived(visible);
+
+    // Estado guardado (lido/resolvido) dos alertas calculados.
+    const keys = visible.map((a) => a.id);
+    if (keys.length) {
+      const { data: states } = await supabase
+        .from("alert_states")
+        .select("alert_key, signature, read_at, resolved_at")
+        .in("shop_id", ids)
+        .in("alert_key", keys);
+      const map: Record<string, DerivedState> = {};
+      for (const s of ((states as any[]) || [])) {
+        map[s.alert_key] = {
+          signature: s.signature ?? null,
+          read_at: s.read_at ?? null,
+          resolved_at: s.resolved_at ?? null,
+          status: s.resolved_at ? "resolved" : null,
+        };
+      }
+      setDerivedState(map);
+    } else {
+      setDerivedState({});
+    }
     setLoading(false);
   }, [idsKey]);
+
 
   useEffect(() => { void load(); }, [load]);
 
@@ -380,7 +418,18 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
   const alerts = useMemo(() => {
     const all = [
-      ...derived.map((d) => ({ ...d, read: Boolean(derivedRead[d.id]) })),
+      ...derived.map((d) => {
+        const st = derivedState[d.id];
+        // Assinatura diferente = a situação mudou desde que foi tratada:
+        // o alerta reabre sozinho e volta a ficar por ler.
+        const valid = st && (!st.signature || !d.signature || st.signature === d.signature);
+        if (!valid) return d;
+        return {
+          ...d,
+          read: Boolean(st!.read_at) || Boolean(st!.resolved_at),
+          status: (st!.status || (st!.resolved_at ? "resolved" : "pending")) as AlertStatus,
+        };
+      }),
       ...rows,
     ];
     return all.sort((a, b) => {
@@ -389,43 +438,71 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [derived, rows, derivedRead]);
+  }, [derived, rows, derivedState]);
 
-  /** Abrir um alerta (em qualquer ecrã) marca-o como lido em todo o sistema. */
+  /** Guarda (ou limpa) o estado de um alerta derivado na base de dados. */
+  const persistDerived = useCallback(
+    async (alert: UnifiedAlert, patch: { read?: boolean; status?: AlertStatus | null }) => {
+      const shopId = alert.shopId;
+      if (!shopId) return;
+      const now = new Date().toISOString();
+      const prev = derivedState[alert.id];
+
+      if (patch.status === null) {
+        // Reabrir: apagar o estado guardado devolve o alerta a "por tratar".
+        setDerivedState((m) => { const n = { ...m }; delete n[alert.id]; return n; });
+        await supabase.from("alert_states").delete().eq("shop_id", shopId).eq("alert_key", alert.id);
+        return;
+      }
+
+      const next: DerivedState = {
+        signature: alert.signature,
+        read_at: patch.read || patch.status ? (prev?.read_at || now) : (prev?.read_at ?? null),
+        resolved_at: patch.status ? now : (prev?.resolved_at ?? null),
+        status: patch.status ?? prev?.status ?? null,
+      };
+      setDerivedState((m) => ({ ...m, [alert.id]: next }));
+      const { data: auth } = await supabase.auth.getUser();
+      await supabase.from("alert_states").upsert(
+        {
+          shop_id: shopId,
+          alert_key: alert.id,
+          signature: alert.signature,
+          read_at: next.read_at,
+          resolved_at: next.resolved_at,
+          resolved_by: next.resolved_at ? auth?.user?.id ?? null : null,
+        } as any,
+        { onConflict: "shop_id,alert_key" },
+      );
+    },
+    [derivedState],
+  );
+
+  /** Abrir (ou marcar) um alerta deixa-o lido em todo o sistema. */
   const markRead = useCallback(async (alert: UnifiedAlert) => {
     if (alert.read) return;
-    if (alert.derived) {
-      const next = { ...readDerivedRead(), [alert.id]: new Date().toISOString() };
-      writeDerivedRead(next);
-      setDerivedRead(next);
-      return;
-    }
+    if (alert.derived) { await persistDerived(alert, { read: true }); return; }
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, read: true } : a)));
     await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).eq("id", alert.id);
-  }, []);
+  }, [persistDerived]);
 
-  const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus) => {
-    if (alert.derived) return;
-    setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status } : a)));
-    const { error } = await supabase.from("alerts").update({ status } as any).eq("id", alert.id);
+  const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus | null) => {
+    if (alert.derived) { await persistDerived(alert, { status }); return; }
+    const next = status ?? "pending";
+    setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status: next } : a)));
+    const { error } = await supabase.from("alerts").update({ status: next } as any).eq("id", alert.id);
     if (error) void load();
-  }, [load]);
+  }, [load, persistDerived]);
 
   const markAllRead = useCallback(async () => {
     const unread = alerts.filter((a) => !a.read);
     const dbIds = unread.filter((a) => !a.derived).map((a) => a.id);
-    const derivedIds = unread.filter((a) => a.derived).map((a) => a.id);
-    if (derivedIds.length) {
-      const map = readDerivedRead();
-      derivedIds.forEach((id) => { map[id] = new Date().toISOString(); });
-      writeDerivedRead(map);
-      setDerivedRead(map);
-    }
+    for (const a of unread.filter((x) => x.derived)) await persistDerived(a, { read: true });
     if (dbIds.length) {
       setRows((prev) => prev.map((a) => (dbIds.includes(a.id) ? { ...a, read: true } : a)));
       await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).in("id", dbIds);
     }
-  }, [alerts]);
+  }, [alerts, persistDerived]);
 
   const open = alerts.filter((a) => a.status === "pending" || a.status === "sent");
   /** Badge: apenas alertas por tratar E por ler. Nunca conta itens técnicos. */
@@ -453,5 +530,8 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     markAllRead,
     resolve: (a: UnifiedAlert) => setStatus(a, "resolved"),
     dismiss: (a: UnifiedAlert) => setStatus(a, "dismissed"),
+    /** Reabrir: o alerta volta a "por tratar" e por ler. */
+    reopen: (a: UnifiedAlert) => setStatus(a, null),
   };
 }
+

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, Phone, ExternalLink, CheckCheck } from "lucide-react";
+import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, Phone, ExternalLink, CheckCheck, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -78,7 +78,7 @@ const DERIVED_TYPE_LABELS: Record<string, string> = {
 export default function Alerts() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading } = useSubscription();
-  const { alerts, unreadCount, countsByPriority, loading, reload, markRead, markAllRead, resolve, dismiss } = useShopAlerts();
+  const { alerts, unreadCount, countsByPriority, loading, reload, markRead, markAllRead, resolve, dismiss, reopen } = useShopAlerts();
   const [filterPriority, setFilterPriority] = useState<string>("all");
 
   const [search, setSearch] = useState("");
@@ -396,7 +396,12 @@ export default function Alerts() {
                           {t("alerts.contact") || "Contactar"}
                         </Button>
                       )}
-                      {!a.derived && a.status === "pending" && (
+                      {!a.read && (a.status === "pending" || a.status === "sent") && (
+                        <Button variant="ghost" size="sm" onClick={() => void markRead(a)} className="text-xs gap-1">
+                          <CheckCheck className="w-3.5 h-3.5" /> Lida
+                        </Button>
+                      )}
+                      {(a.status === "pending" || a.status === "sent") && (
                         <>
                           <Button variant="ghost" size="sm" onClick={() => void resolve(a)} className="text-xs text-success">
                             <CheckCircle className="w-3.5 h-3.5 mr-1" />
@@ -407,6 +412,12 @@ export default function Alerts() {
                           </Button>
                         </>
                       )}
+                      {(a.status === "resolved" || a.status === "dismissed") && (
+                        <Button variant="ghost" size="sm" onClick={() => void reopen(a)} className="text-xs gap-1">
+                          <RotateCcw className="w-3.5 h-3.5" /> Reabrir
+                        </Button>
+                      )}
+
                     </div>
                   </TableCell>
                 </TableRow>
@@ -460,7 +471,12 @@ export default function Alerts() {
                   {t("alerts.contact") || "Contactar"}
                 </Button>
               )}
-              {!a.derived && a.status === "pending" && (
+              {!a.read && (a.status === "pending" || a.status === "sent") && (
+                <Button variant="ghost" size="sm" onClick={() => void markRead(a)} className="w-full text-xs h-11 gap-1">
+                  <CheckCheck className="w-3.5 h-3.5" /> Marcar como lida
+                </Button>
+              )}
+              {(a.status === "pending" || a.status === "sent") && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => void resolve(a)} className="flex-1 text-xs text-success h-11">
                     <CheckCircle className="w-3.5 h-3.5 mr-1" />
@@ -471,6 +487,12 @@ export default function Alerts() {
                   </Button>
                 </div>
               )}
+              {(a.status === "resolved" || a.status === "dismissed") && (
+                <Button variant="ghost" size="sm" onClick={() => void reopen(a)} className="w-full text-xs h-11 gap-1">
+                  <RotateCcw className="w-3.5 h-3.5" /> Reabrir
+                </Button>
+              )}
+
             </div>
           );
         })}

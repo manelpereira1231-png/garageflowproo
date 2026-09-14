@@ -198,14 +198,21 @@ function openUrl(url: string, sameTab: boolean) {
     window.location.href = url;
     return;
   }
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener,noreferrer';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  // Depois de operações assíncronas (gerar PDF, sincronizar orçamento) o
+  // browser já não considera o clique "recente" e pode bloquear a nova janela.
+  // Tentamos abrir numa nova janela e, se for bloqueada, navegamos na própria
+  // janela — assim o WhatsApp abre sempre.
+  let win: Window | null = null;
+  try {
+    win = window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    win = null;
+  }
+  if (!win) {
+    window.location.href = url;
+  }
 }
+
 
 /**
  * Documentos já entregues ao disco (chave = nome + tamanho do ficheiro,

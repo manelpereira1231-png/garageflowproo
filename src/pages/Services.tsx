@@ -324,13 +324,24 @@ export default function Services() {
     if (!can("work_orders.send_whatsapp")) return;
     const phone = (s.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-    const quoteToken: string | undefined = (await ensureQuoteTokenForWorkOrder(s)) || undefined;
+    let quoteToken: string | undefined;
+    try {
+      quoteToken = (await ensureQuoteTokenForWorkOrder(s)) || undefined;
+    } catch (err) {
+      console.warn('[whatsapp] quote sync failed', err);
+    }
 
     const link = quoteToken ? `${window.location.origin}/quote/${quoteToken}` : undefined;
     // Anexa o PDF: no mobile via Web Share (partilha nativa direta para o WhatsApp),
     // no desktop faz download automático para arrastar para o WhatsApp Web.
     // O URL já é wa.me (abre app / WhatsApp Web diretamente, sem página intermédia).
-    const pdf = await buildServicePdfBlob(s);
+    let pdf: { blob: Blob; filename: string } | null = null;
+    try {
+      pdf = (await buildServicePdfBlob(s)) as any;
+    } catch (err) {
+      console.warn('[whatsapp] pdf build failed', err);
+    }
+
     openWhatsApp({
       phone,
       clientName: (s.clients as any)?.name,

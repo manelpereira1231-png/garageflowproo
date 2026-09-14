@@ -338,6 +338,7 @@ serve(async (req) => {
               plan,
               billing_cycle: billingCycle,
               stripe_subscription_id: subscription.id,
+              cancel_at_period_end: subscription.cancel_at_period_end === true,
               revenue_type: status === "trialing" ? "trial" : "stripe_paid",
               current_period_end: subscription.current_period_end
                 ? new Date(subscription.current_period_end * 1000).toISOString()

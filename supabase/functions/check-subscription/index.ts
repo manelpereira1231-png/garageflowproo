@@ -261,6 +261,7 @@ serve(async (req) => {
       revenue_type: status === "active" && plan !== "free" ? "stripe_paid" : status === "trialing" ? "trial" : "free",
       stripe_customer_id: customerId,
       stripe_subscription_id: activeSub.id,
+      cancel_at_period_end: activeSub.cancel_at_period_end === true,
       trial_end: trialEnd,
       current_period_end: subscriptionEnd,
       updated_at: new Date().toISOString(),
@@ -274,6 +275,7 @@ serve(async (req) => {
       status,
       billing_cycle: billingCycle,
       subscription_end: subscriptionEnd,
+      cancel_at_period_end: activeSub.cancel_at_period_end === true,
       trial_end: trialEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

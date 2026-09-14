@@ -32,6 +32,7 @@ export interface Subscription {
   stripe_subscription_id: string | null;
   trial_end: string | null;
   current_period_end: string | null;
+  cancel_at_period_end?: boolean | null;
 }
 
 export interface PlanLimits {

@@ -175,6 +175,8 @@ export default function Billing() {
   // resubscribe. `mustSubscribe` (from useSubscription) is the single source of
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
+  // Cancelada no Stripe mas ainda paga até ao fim do período atual.
+  const cancelPending = subscription?.cancel_at_period_end === true && !noActivePlan;
 
   // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
   // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin
@@ -413,6 +415,12 @@ export default function Billing() {
                     {t('billing.statusCanceled') || 'Expirado'}
                   </Badge>
                 )}
+                {cancelPending && (
+                  <Badge variant="secondary" className="bg-warning/10 text-warning">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Subscrição cancelada
+                  </Badge>
+                )}
                 {isAdminManaged && !noActivePlan && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary">
                     <Shield className="w-3 h-3 mr-1" />
@@ -424,6 +432,8 @@ export default function Billing() {
                 {noActivePlan
                   ? (t('billing.mustSubscribeMessage')
                     || 'A sua subscrição expirou. Escolha um plano para continuar a utilizar todas as funcionalidades do GarageFlow.')
+                  : cancelPending
+                  ? `A sua subscrição foi cancelada e não será renovada. Mantém acesso completo até ${subscription?.current_period_end ? formatDate(subscription.current_period_end) : 'ao fim do período pago'}.`
                   : isAdminManaged
                   ? t('billing.adminManagedNote')
                   : subscription?.current_period_end
@@ -445,8 +455,8 @@ export default function Billing() {
                 {t('billing.manage')}
               </Button>
             )}
-            {/* Cancel button — only when there is an active plan */}
-            {!noActivePlan && (
+            {/* Cancel button — only when there is an active plan not already cancelled */}
+            {!noActivePlan && !cancelPending && (
               <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={() => setCancelDialogOpen(true)}>
                 <XCircle className="w-4 h-4 mr-2" />
                 {t('billing.cancelSubscription')}

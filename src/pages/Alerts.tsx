@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
 import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 import { useShopAlerts, type UnifiedAlert } from "@/hooks/useShopAlerts";
+import { CompactFilterBar, FilterCombobox } from "@/components/filters/CompactFilters";
+
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -50,7 +52,28 @@ const alertTypeColors: Record<string, string> = {
   inspection: "text-info",
   inactive_client: "text-info",
   custom: "text-primary",
+  stock_out: "text-destructive",
+  invoice_overdue: "text-destructive",
+  service_late: "text-destructive",
+  vehicle_ready: "text-warning",
+  appointment_new: "text-info",
+  quote_approved: "text-info",
 };
+
+/** Rótulos dos alertas calculados a partir dos dados reais (sem tradução própria). */
+const DERIVED_TYPE_LABELS: Record<string, string> = {
+  stock_low: "Stock baixo",
+  stock_out: "Rutura de stock",
+  invoice_overdue: "Fatura vencida",
+  appointment_new: "Nova marcação",
+  vehicle_ready: "Veículo por levantar",
+  service_late: "Serviço atrasado",
+  quote_approved: "Orçamento aprovado",
+  quote_pending: "Orçamento por aprovar",
+  custom: "Manual",
+};
+
+
 
 export default function Alerts() {
   const { t } = useLanguage();
@@ -60,7 +83,7 @@ export default function Alerts() {
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("open");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [commsAlert, setCommsAlert] = useState<UnifiedAlert | null>(null);
@@ -68,8 +91,10 @@ export default function Alerts() {
 
   const typeLabel = (type: string) => {
     const label = t(`alerts.type.${type}`);
-    return label === `alerts.type.${type}` ? type : label;
+    if (label !== `alerts.type.${type}`) return label;
+    return DERIVED_TYPE_LABELS[type] || type;
   };
+
 
   const handleCreateAlert = async () => {
     if (!shopId || !newAlert.title.trim() || !newAlert.message.trim()) return;
@@ -100,17 +125,73 @@ export default function Alerts() {
     }
   };
 
+  /* Opções construídas a partir dos alertas reais — nunca listas fixas
+     desatualizadas. Cada opção mostra quantos alertas existem. */
+  const typeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    alerts.forEach((a) => counts.set(a.type, (counts.get(a.type) || 0) + 1));
+    return [
+      { value: "all", label: `${t("alerts.allTypes")} (${alerts.length})` },
+      ...[...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, n]) => ({ value: type, label: `${typeLabel(type)} (${n})` })),
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
+
+  const priorityOptions = useMemo(() => [
+    { value: "all", label: "Todas as prioridades" },
+    { value: "critical", label: `Críticos (${countsByPriority.critical})` },
+    { value: "high", label: `Importantes (${countsByPriority.high})` },
+    { value: "low", label: `Atenção (${countsByPriority.low})` },
+  ], [countsByPriority]);
+
+  const statusOptions = useMemo(() => {
+    const n = (s: string) => alerts.filter((a) => a.status === s).length;
+    const openN = alerts.filter((a) => a.status === "pending" || a.status === "sent").length;
+    return [
+      { value: "open", label: `Por tratar (${openN})` },
+      { value: "all", label: `${t("alerts.allStatus")} (${alerts.length})` },
+      { value: "pending", label: `${t("alerts.statusPending")} (${n("pending")})` },
+      { value: "sent", label: `${t("alerts.statusSent")} (${n("sent")})` },
+      { value: "resolved", label: `${t("alerts.statusResolved")} (${n("resolved")})` },
+      { value: "dismissed", label: `${t("alerts.statusDismissed")} (${n("dismissed")})` },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
+
+  const activeFilterCount =
+    (search.trim() ? 1 : 0) +
+    (filterType !== "all" ? 1 : 0) +
+    (filterPriority !== "all" ? 1 : 0) +
+    (filterStatus !== "open" ? 1 : 0);
+
+  const clearFilters = () => {
+    setSearch("");
+    setFilterType("all");
+    setFilterPriority("all");
+    setFilterStatus("open");
+  };
+
   const filtered = alerts.filter((a) => {
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
     const matchSearch = !q
       || a.title?.toLowerCase().includes(q)
+      || (a.subtitle || "").toLowerCase().includes(q)
       || (a.message || "").toLowerCase().includes(q)
-      || (a.clientName || "").toLowerCase().includes(q);
+      || (a.clientName || "").toLowerCase().includes(q)
+      || (a.plate || "").toLowerCase().includes(q);
     const matchType = filterType === "all" || a.type === filterType;
-    const matchStatus = filterStatus === "all" || a.status === filterStatus;
+    const matchStatus =
+      filterStatus === "all"
+        ? true
+        : filterStatus === "open"
+          ? a.status === "pending" || a.status === "sent"
+          : a.status === filterStatus;
     const matchPriority = filterPriority === "all" || a.priority === filterPriority;
     return matchSearch && matchType && matchStatus && matchPriority;
   });
+
 
   const exportCSV = () => {
     const headers = [t("alerts.typeCol"), t("alerts.titleCol"), t("alerts.clientCol"), t("alerts.vehicleCol"), t("alerts.dateCol"), t("alerts.statusCol")];
@@ -133,7 +214,7 @@ export default function Alerts() {
     toast.success(t("common.exported"));
   };
 
-  const alertTypes = ["revision", "oil", "inspection", "warranty", "inactive_client", "expired_quote", "payment_failed", "service_due", "quote_pending", "stock_low", "custom"];
+  
 
   if (subLoading) {
     return (
@@ -204,31 +285,48 @@ export default function Alerts() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t("alerts.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder={t("alerts.filterType")} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("alerts.allTypes")}</SelectItem>
-            {alertTypes.map((type) => (
-              <SelectItem key={type} value={type}>{typeLabel(type)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("alerts.allStatus")}</SelectItem>
-            <SelectItem value="pending">{t("alerts.statusPending")}</SelectItem>
-            <SelectItem value="sent">{t("alerts.statusSent")}</SelectItem>
-            <SelectItem value="resolved">{t("alerts.statusResolved")}</SelectItem>
-            <SelectItem value="dismissed">{t("alerts.statusDismissed")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <CompactFilterBar
+        activeCount={activeFilterCount}
+        onClear={clearFilters}
+        search={
+          <>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t("alerts.search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </>
+        }
+        filters={(stacked) => (
+          <>
+            <FilterCombobox
+              value={filterType}
+              onChange={setFilterType}
+              options={typeOptions}
+              placeholder={t("alerts.allTypes")}
+              searchPlaceholder={t("alerts.filterType")}
+              fullWidth={stacked}
+            />
+            <FilterCombobox
+              value={filterPriority}
+              onChange={setFilterPriority}
+              options={priorityOptions}
+              placeholder="Prioridade"
+              fullWidth={stacked}
+            />
+            <FilterCombobox
+              value={filterStatus}
+              onChange={setFilterStatus}
+              options={statusOptions}
+              placeholder={t("alerts.allStatus")}
+              fullWidth={stacked}
+            />
+          </>
+        )}
+      />
+
 
       {/* Desktop table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden hidden sm:block">

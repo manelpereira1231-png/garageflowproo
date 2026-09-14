@@ -403,11 +403,18 @@ export default function Clients() {
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
                 {client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title="Ligar"><Phone className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
+                )}
+                {client.phone_secondary && (
+                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary!)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone_secondary}`}><Phone className="w-5 h-5 opacity-70" /></Button>
                 )}
                 {client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone}`}><MessageCircle className="w-5 h-5" /></Button>
                 )}
+                {client.phone_secondary && (
+                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary! })} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone_secondary}`}><MessageCircle className="w-5 h-5 opacity-70" /></Button>
+                )}
+
                 {client.email && (
                   <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-11 p-0" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}

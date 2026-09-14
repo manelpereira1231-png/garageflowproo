@@ -459,7 +459,9 @@ export default function Clients() {
                 <TableCell className="font-medium">{client.name}</TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-0.5 text-sm">
-                    {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone}</span>}
+                    {client.phone && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone}</span>}
+                    {client.phone_secondary && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone_secondary}</span>}
+
                     {client.email && <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-muted-foreground" />{client.email}</span>}
                   </div>
                 </TableCell>

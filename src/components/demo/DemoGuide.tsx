@@ -5,7 +5,7 @@
  * apenas sobrepõe boas-vindas, visita guiada com spotlight sobre o menu real,
  * checklist de exploração e CTA de conversão.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {

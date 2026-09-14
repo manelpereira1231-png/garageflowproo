@@ -472,11 +472,17 @@ export default function Clients() {
                 <TableCell>
                   <div className="flex gap-1 items-center">
                     {client.phone && (
-                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title="Ligar">
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title={`Ligar ${client.phone}`}>
                         <Phone className="w-3.5 h-3.5 mr-1" />Ligar
                       </Button>
                     )}
+                    {client.phone_secondary && (
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary!)} className="text-xs text-primary" title={`Ligar ${client.phone_secondary}`}>
+                        <Phone className="w-3.5 h-3.5 mr-1 opacity-70" />Ligar 2
+                      </Button>
+                    )}
                     {client.email && (
+
                       <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="text-xs" title="Email">
                         <Mail className="w-3.5 h-3.5 mr-1" />Email
                       </Button>

@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type Plan = "free" | "pro" | "garage";
+type Plan = string;
 type Cycle = "monthly" | "yearly";
 
 interface UpdateRequest {
@@ -67,7 +67,7 @@ serve(async (req) => {
     const amount = Number(body.amount);
 
     if (!country) return badRequest("country_code_required");
-    if (plan !== "free" && plan !== "pro" && plan !== "garage") return badRequest("plan_invalid");
+    if (!plan || !/^[a-z0-9_-]+$/.test(String(plan))) return badRequest("plan_invalid");
     if (cycle !== "monthly" && cycle !== "yearly") return badRequest("cycle_invalid");
     // Free plan may legitimately be priced at 0 (no Stripe price needed).
     if (!Number.isFinite(amount) || amount < 0) return badRequest("amount_invalid");
@@ -87,12 +87,46 @@ serve(async (req) => {
 
     const currency = (body.currency || countryRow.currency || "EUR").toLowerCase();
 
+    // Legacy per-country columns only exist for the three built-in plans.
+    const isLegacyPlan = plan === "free" || plan === "pro" || plan === "garage";
     const productCol = `stripe_${plan}_product_id`;
     const priceCol = `stripe_${plan}_${cycle}`;          // stripe_pro_monthly, etc.
     const amountCol = `saas_${plan}_${cycle}`;           // saas_pro_monthly, etc.
 
-    const oldPriceId: string | null = (countryRow as any)[priceCol] ?? null;
-    const oldAmount: number | null = (countryRow as any)[amountCol] ?? null;
+    // Canonical price row (plan_country_prices) — source of truth for all plans.
+    const { data: pcpRow } = await supabase
+      .from("plan_country_prices")
+      .select("*")
+      .eq("plan_slug", plan)
+      .eq("country_code", country)
+      .eq("cycle", cycle)
+      .maybeSingle();
+
+    const oldPriceId: string | null =
+      (isLegacyPlan ? (countryRow as any)[priceCol] : null) ?? (pcpRow as any)?.stripe_price_id ?? null;
+    const oldAmount: number | null =
+      (isLegacyPlan ? (countryRow as any)[amountCol] : null) ?? (pcpRow as any)?.amount ?? null;
+
+    const savePriceRow = async (payload: {
+      amount: number;
+      stripe_price_id: string | null;
+      stripe_product_id: string | null;
+    }) => {
+      const { error } = await supabase.from("plan_country_prices").upsert(
+        {
+          plan_slug: plan,
+          country_code: country,
+          cycle,
+          currency: currency.toUpperCase(),
+          amount: payload.amount,
+          stripe_price_id: payload.stripe_price_id,
+          stripe_product_id: payload.stripe_product_id,
+          active: true,
+        },
+        { onConflict: "plan_slug,country_code,cycle" },
+      );
+      if (error) throw error;
+    };
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
@@ -104,18 +138,22 @@ serve(async (req) => {
         try { await stripe.prices.update(oldPriceId, { active: false }); }
         catch (e) { console.warn("Could not deactivate old free price:", oldPriceId, e); }
       }
-      const { error: updErr } = await supabase
-        .from("country_settings")
-        .update({ [priceCol]: null, [amountCol]: 0 })
-        .eq("code", country);
-      if (updErr) throw updErr;
+      if (isLegacyPlan) {
+        const { error: updErr } = await supabase
+          .from("country_settings")
+          .update({ [priceCol]: null, [amountCol]: 0 })
+          .eq("code", country);
+        if (updErr) throw updErr;
+      }
+
+      await savePriceRow({ amount: 0, stripe_price_id: null, stripe_product_id: (pcpRow as any)?.stripe_product_id ?? null });
 
       await supabase.from("plan_price_history").insert({
         country_code: country, plan, cycle,
         currency: currency.toUpperCase(),
         old_amount: oldAmount, new_amount: 0,
         old_stripe_price_id: oldPriceId, new_stripe_price_id: null,
-        stripe_product_id: (countryRow as any)[productCol] ?? null,
+        stripe_product_id: (isLegacyPlan ? (countryRow as any)[productCol] : null) ?? (pcpRow as any)?.stripe_product_id ?? null,
         changed_by: userData.user.id,
         notes: body.notes ?? "free_plan_zero_price",
       });
@@ -127,10 +165,11 @@ serve(async (req) => {
     }
 
     // ── Ensure Stripe Product exists for this country/plan ──
-    let productId: string | null = (countryRow as any)[productCol] ?? null;
+    let productId: string | null =
+      (isLegacyPlan ? (countryRow as any)[productCol] : null) ?? (pcpRow as any)?.stripe_product_id ?? null;
     if (!productId) {
       const product = await stripe.products.create({
-        name: `GarageFlow ${plan === "pro" ? "Pro" : plan === "garage" ? "Garage" : "Entrada"} — ${country}`,
+        name: `GarageFlow ${plan === "pro" ? "Pro" : plan === "garage" ? "Garage" : plan === "free" ? "Entrada" : plan} — ${country}`,
         metadata: { country, plan, source: "admin-update-plan-price" },
       });
       productId = product.id;
@@ -155,17 +194,21 @@ serve(async (req) => {
       }
     }
 
-    // ── Persist new price + product id + amount in country_settings ──
-    const updatePayload: Record<string, unknown> = {
-      [priceCol]: newPrice.id,
-      [productCol]: productId,
-      [amountCol]: amount,
-    };
-    const { error: updErr } = await supabase
-      .from("country_settings")
-      .update(updatePayload)
-      .eq("code", country);
-    if (updErr) throw updErr;
+    // ── Persist new price + product id + amount ──
+    if (isLegacyPlan) {
+      const updatePayload: Record<string, unknown> = {
+        [priceCol]: newPrice.id,
+        [productCol]: productId,
+        [amountCol]: amount,
+      };
+      const { error: updErr } = await supabase
+        .from("country_settings")
+        .update(updatePayload)
+        .eq("code", country);
+      if (updErr) throw updErr;
+    }
+
+    await savePriceRow({ amount, stripe_price_id: newPrice.id, stripe_product_id: productId });
 
     // ── Audit log ──
     await supabase.from("plan_price_history").insert({

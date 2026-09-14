@@ -324,12 +324,40 @@ export default function AdminPlans() {
     const country = countries.find((c) => c.code === countryCode);
     const currency = patch.currency ?? country?.currency ?? "EUR";
     const existing = prices.find((p) => p.plan_slug === planSlug && p.country_code === countryCode && p.cycle === cycle);
+    const nextAmount = patch.amount ?? existing?.amount ?? 0;
+    const amountChanged = Number(nextAmount) !== Number(existing?.amount ?? -1);
+
+    // Price changes must be created in Stripe (new Price object) — never only in the database,
+    // otherwise checkout would keep charging the old value.
+    if (amountChanged) {
+      const { data, error } = await supabase.functions.invoke("admin-update-plan-price", {
+        body: {
+          country_code: countryCode,
+          plan: planSlug,
+          cycle,
+          amount: Number(nextAmount),
+          currency,
+          notes: "admin_plans_ui",
+        },
+      });
+      const errCode = (data as any)?.error;
+      if (error || errCode) {
+        if (errCode === "paid_plan_below_stripe_minimum") {
+          return toast.error("Valor demasiado baixo. O mínimo cobrável pelo Stripe é 0,50 (na moeda do país).");
+        }
+        return toast.error("Erro ao atualizar preço no Stripe: " + (errCode || error?.message));
+      }
+      await load();
+      return toast.success(`Preço ${planSlug}/${countryCode}/${cycle} atualizado no Stripe e na app`);
+    }
+
+    // No amount change — only metadata/toggle updates.
     const merged = {
       plan_slug: planSlug,
       country_code: countryCode,
       cycle,
       currency,
-      amount: patch.amount ?? existing?.amount ?? 0,
+      amount: nextAmount,
       stripe_product_id: patch.stripe_product_id ?? existing?.stripe_product_id ?? null,
       stripe_price_id: patch.stripe_price_id ?? existing?.stripe_price_id ?? null,
       active: patch.active ?? existing?.active ?? true,

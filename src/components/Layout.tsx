@@ -156,6 +156,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
   const { enabled: supplierNetworkEnabled } = useSystemFeature("supplier_network_enabled");
 
+  // MFA (TOTP) guided onboarding for group/billing owners. Never blocks access.
+  const { mfaRequired, hasTotp, refresh: refreshMfa } = useMfaGuard();
+  const [mfaDismissed, setMfaDismissed] = useState(() => mfaPromptDismissed());
+
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
   }, [shopMarketRow?.name]);

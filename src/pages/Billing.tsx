@@ -432,6 +432,8 @@ export default function Billing() {
                 {noActivePlan
                   ? (t('billing.mustSubscribeMessage')
                     || 'A sua subscrição expirou. Escolha um plano para continuar a utilizar todas as funcionalidades do GarageFlow.')
+                  : cancelPending
+                  ? `A sua subscrição foi cancelada e não será renovada. Mantém acesso completo até ${subscription?.current_period_end ? formatDate(subscription.current_period_end) : 'ao fim do período pago'}.`
                   : isAdminManaged
                   ? t('billing.adminManagedNote')
                   : subscription?.current_period_end

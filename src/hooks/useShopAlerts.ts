@@ -463,8 +463,10 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         // Reabrir: apagar o estado guardado devolve o alerta a "por tratar".
         setDerivedState((m) => { const n = { ...m }; delete n[alert.id]; return n; });
         await supabase.from("alert_states").delete().eq("shop_id", shopId).eq("alert_key", alert.id);
+        notifyAlertSync();
         return;
       }
+
 
       const next: DerivedState = {
         signature: alert.signature,

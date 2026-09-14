@@ -362,9 +362,37 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       }
     }
 
-    setDerived(out.filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`)));
+    const visible = out
+      .filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`))
+      // Assinatura = estado concreto da situação. Se mudar (novo valor,
+      // mais dias de atraso, outra prioridade) o alerta reabre sozinho.
+      .map((a) => ({ ...a, signature: `${a.priority}|${a.message ?? ""}` }));
+    setDerived(visible);
+
+    // Estado guardado (lido/resolvido) dos alertas calculados.
+    const keys = visible.map((a) => a.id);
+    if (keys.length) {
+      const { data: states } = await supabase
+        .from("alert_states")
+        .select("alert_key, signature, read_at, resolved_at")
+        .in("shop_id", ids)
+        .in("alert_key", keys);
+      const map: Record<string, DerivedState> = {};
+      for (const s of ((states as any[]) || [])) {
+        map[s.alert_key] = {
+          signature: s.signature ?? null,
+          read_at: s.read_at ?? null,
+          resolved_at: s.resolved_at ?? null,
+          status: s.resolved_at ? "resolved" : null,
+        };
+      }
+      setDerivedState(map);
+    } else {
+      setDerivedState({});
+    }
     setLoading(false);
   }, [idsKey]);
+
 
   useEffect(() => { void load(); }, [load]);
 

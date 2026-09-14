@@ -95,8 +95,11 @@ export default function MarketAuth() {
       }
 
       if (mode === "login") {
+        const { ensureLoginAllowed, recordLoginFailure, clearLoginFailures } = await import("@/lib/loginGuard");
+        await ensureLoginAllowed(email, "market");
         const { data: signInData, error } = await marketSupabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) { recordLoginFailure(email, "market"); throw error; }
+        clearLoginFailures(email);
 
         // Lote A: contas unificadas. Uma oficina que activou o Market pode
         // fazer login aqui com a mesma conta. Só rejeita se for uma conta

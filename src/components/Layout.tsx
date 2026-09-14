@@ -2,6 +2,8 @@ import { useState, useEffect, Suspense, useMemo, useCallback, useRef } from "rea
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDemoTracking } from "@/hooks/useDemoTracking";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
+import MfaSetupDialog, { mfaPromptDismissed } from "@/components/security/MfaSetupDialog";
+import { useMfaGuard } from "@/hooks/useMfaGuard";
 import {
   LayoutDashboard,
   Users,
@@ -153,6 +155,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { ready: marketStatusReady, isPartner, isActive, isMarketEnabled: isCarityPartner, shop: shopMarketRow } = useShopMarketStatus(activeShopId);
   const { enabled: globalMarketEnabled } = useGlobalMarketEnabled();
   const { enabled: supplierNetworkEnabled } = useSystemFeature("supplier_network_enabled");
+
+  // MFA (TOTP) guided onboarding for group/billing owners. Never blocks access.
+  const { mfaRequired, hasTotp, refresh: refreshMfa } = useMfaGuard();
+  const [mfaDismissed, setMfaDismissed] = useState(() => mfaPromptDismissed());
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");
@@ -558,6 +564,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex w-full bg-background overflow-hidden">
+      {mfaRequired && hasTotp === false && !mfaDismissed && (
+        <MfaSetupDialog
+          open
+          onClose={() => setMfaDismissed(true)}
+          onEnrolled={() => { setMfaDismissed(true); void refreshMfa(); }}
+        />
+      )}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}

@@ -160,6 +160,8 @@ export default function Services() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+  // Alertas abrem esta lista já pesquisada pelo número da OS.
+  useUrlSearchFilter((v) => updateFilter("search", v));
   const statusFilter = filters.status;
 
   /**

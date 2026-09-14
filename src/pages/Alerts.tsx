@@ -265,6 +265,7 @@ export default function Alerts() {
                       {!a.read && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
                       <div className="min-w-0">
                         <p className={`truncate ${a.read ? "font-medium" : "font-semibold"}`}>{a.title}</p>
+                        {a.subtitle && <p className="text-xs text-muted-foreground line-clamp-1">{a.subtitle}</p>}
                         {a.message && <p className="text-xs text-muted-foreground line-clamp-1">{a.message}</p>}
                       </div>
                     </div>
@@ -341,6 +342,7 @@ export default function Alerts() {
                   {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
                 </Badge>
               </div>
+              {a.subtitle && <p className="text-xs font-medium">{a.subtitle}</p>}
               {a.message && <p className="text-xs text-muted-foreground">{a.message}</p>}
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 {a.clientName && <span>👤 {a.clientName}</span>}

@@ -129,7 +129,7 @@ serve(async (req) => {
     // Any plan created in the admin (Enterprise, Business, custom…) works here.
     const { data: priceRow } = await supabaseClient
       .from("plan_country_prices")
-      .select("stripe_price_id, active")
+      .select("stripe_price_id, amount, currency, active")
       .eq("plan_slug", plan)
       .eq("country_code", resolvedCountry)
       .eq("cycle", cycle)
@@ -149,6 +149,9 @@ serve(async (req) => {
     let priceId = priceRow?.stripe_price_id
       || legacyMap[key]
       || (FALLBACK_EUR as any)[key];
+    let expectedAmount = priceRow?.amount != null
+      ? Number(priceRow.amount)
+      : Number((countryConfig as any)?.[`saas_${key}`]);
 
     // ─── PROMOTION OVERRIDE ───
     // If there is an active promotion for this country/plan/cycle at now(),
@@ -165,6 +168,7 @@ serve(async (req) => {
       const promo = Array.isArray(promoRows) ? promoRows[0] : promoRows;
       if (promo?.stripe_price_id) {
         priceId = promo.stripe_price_id;
+        expectedAmount = Number(promo.promo_price);
       }
     } catch (e) {
       console.warn("[create-checkout] promo lookup failed, using base price", e);
@@ -192,6 +196,16 @@ serve(async (req) => {
       }
       if (price.type !== "recurring" || !price.recurring) {
         throw new Error(`Stripe Price is not recurring: ${priceId}`);
+      }
+      const unitAmount = price.unit_amount;
+      const expectedMinor = Number.isFinite(expectedAmount)
+        ? Math.round(expectedAmount * 100)
+        : null;
+      if (!isEntryPlan && (!unitAmount || unitAmount < 50)) {
+        throw new Error(`Preço inválido para cobrança imediata de ${plan}/${cycle}. Corrija o valor no Admin.`);
+      }
+      if (expectedMinor != null && unitAmount !== expectedMinor) {
+        throw new Error(`O preço Stripe de ${plan}/${cycle} não corresponde ao valor configurado no Admin.`);
       }
       const expectedInterval = cycle === "yearly" ? "year" : "month";
       if (price.recurring.interval !== expectedInterval) {

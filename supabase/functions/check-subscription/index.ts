@@ -46,6 +46,17 @@ async function resolvePlan(subscription: Stripe.Subscription, supabaseClient: an
   throw new Error(`Unable to resolve plan for Stripe price ${priceId || "unknown"}`);
 }
 
+async function hasConfirmedFirstPayment(subscription: Stripe.Subscription, stripe: Stripe): Promise<boolean> {
+  if (subscription.status === "trialing") return true;
+  const invoiceRef = subscription.latest_invoice;
+  const invoiceId = typeof invoiceRef === "string" ? invoiceRef : invoiceRef?.id;
+  if (!invoiceId) return false;
+  const invoice = typeof invoiceRef === "string"
+    ? await stripe.invoices.retrieve(invoiceId)
+    : invoiceRef;
+  return invoice.status === "paid" && Number(invoice.amount_paid || 0) > 0;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -190,8 +201,15 @@ serve(async (req) => {
 
     // Prefer a paid active subscription over an older Start trial. During an
     // upgrade both can briefly coexist until the webhook cancels the trial.
-    const eligibleSubscriptions = subscriptions.data
-      .filter((s: any) => ["active", "trialing"].includes(s.status))
+    const candidates = subscriptions.data
+      .filter((s: any) => ["active", "trialing"].includes(s.status));
+    const paidBacked = await Promise.all(candidates.map(async (s: Stripe.Subscription) => ({
+      subscription: s,
+      confirmed: await hasConfirmedFirstPayment(s, stripe),
+    })));
+    const eligibleSubscriptions = paidBacked
+      .filter(({ confirmed }) => confirmed)
+      .map(({ subscription }) => subscription)
       .sort((a: any, b: any) => {
         if (a.status === "active" && b.status !== "active") return -1;
         if (b.status === "active" && a.status !== "active") return 1;

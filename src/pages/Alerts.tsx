@@ -78,7 +78,7 @@ const DERIVED_TYPE_LABELS: Record<string, string> = {
 export default function Alerts() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading } = useSubscription();
-  const { alerts, unreadCount, countsByPriority, loading, reload, markRead, markAllRead, resolve, dismiss } = useShopAlerts();
+  const { alerts, unreadCount, countsByPriority, loading, reload, markRead, markAllRead, resolve, dismiss, reopen } = useShopAlerts();
   const [filterPriority, setFilterPriority] = useState<string>("all");
 
   const [search, setSearch] = useState("");

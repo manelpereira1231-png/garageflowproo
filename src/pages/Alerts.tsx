@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
 import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 import { useShopAlerts, type UnifiedAlert } from "@/hooks/useShopAlerts";
+import { CompactFilterBar, FilterCombobox } from "@/components/filters/CompactFilters";
+
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,

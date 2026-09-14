@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,28 @@ const alertTypeColors: Record<string, string> = {
   inspection: "text-info",
   inactive_client: "text-info",
   custom: "text-primary",
+  stock_out: "text-destructive",
+  invoice_overdue: "text-destructive",
+  service_late: "text-destructive",
+  vehicle_ready: "text-warning",
+  appointment_new: "text-info",
+  quote_approved: "text-info",
 };
+
+/** Rótulos dos alertas calculados a partir dos dados reais (sem tradução própria). */
+const DERIVED_TYPE_LABELS: Record<string, string> = {
+  stock_low: "Stock baixo",
+  stock_out: "Rutura de stock",
+  invoice_overdue: "Fatura vencida",
+  appointment_new: "Nova marcação",
+  vehicle_ready: "Veículo por levantar",
+  service_late: "Serviço atrasado",
+  quote_approved: "Orçamento aprovado",
+  quote_pending: "Orçamento por aprovar",
+  custom: "Manual",
+};
+
+
 
 export default function Alerts() {
   const { t } = useLanguage();
@@ -70,8 +91,10 @@ export default function Alerts() {
 
   const typeLabel = (type: string) => {
     const label = t(`alerts.type.${type}`);
-    return label === `alerts.type.${type}` ? type : label;
+    if (label !== `alerts.type.${type}`) return label;
+    return DERIVED_TYPE_LABELS[type] || type;
   };
+
 
   const handleCreateAlert = async () => {
     if (!shopId || !newAlert.title.trim() || !newAlert.message.trim()) return;

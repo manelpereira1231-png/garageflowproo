@@ -235,7 +235,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:part:${p.id}`,
-          shopId: SHOP_PLACEHOLDER,
+          shopId: p.shop_id,
           type: rupture ? "stock_out" : "stock_low",
           title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
           subtitle: p.reference ? `Ref. ${p.reference}` : null,
@@ -252,7 +252,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:invoice:${inv.id}`,
-          shopId: SHOP_PLACEHOLDER,
+          shopId: inv.shop_id,
           type: "invoice_overdue",
           title: `Fatura ${inv.number} vencida`,
           subtitle: (inv.clients as any)?.name || null,
@@ -271,7 +271,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:appointment:${ap.id}`,
-          shopId: SHOP_PLACEHOLDER,
+          shopId: ap.shop_id,
           type: "appointment_new",
           title: "Nova marcação recebida",
           subtitle: name,
@@ -300,7 +300,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
           out.push(
             derivedAlert({
               id: `derived:pickup:${o.id}`,
-              shopId: SHOP_PLACEHOLDER,
+              shopId: o.shop_id,
               type: "vehicle_ready",
               title: `Veículo pronto por levantar — ${o.number}`,
               subtitle,
@@ -318,7 +318,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:late-order:${o.id}`,
-            shopId: SHOP_PLACEHOLDER,
+            shopId: o.shop_id,
             type: "service_late",
             title: `Serviço atrasado — ${o.number}`,
             subtitle,
@@ -339,7 +339,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-approved:${q.id}`,
-            shopId: SHOP_PLACEHOLDER,
+            shopId: q.shop_id,
             type: "quote_approved",
             title: `Orçamento ${q.number} aprovado`,
             subtitle: clientName,
@@ -355,7 +355,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-pending:${q.id}`,
-            shopId: SHOP_PLACEHOLDER,
+            shopId: q.shop_id,
             type: "quote_pending",
             title: `Orçamento ${q.number} aguarda aprovação`,
             subtitle: clientName,

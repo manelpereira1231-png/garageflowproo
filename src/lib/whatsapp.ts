@@ -299,7 +299,12 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   }
   // Abrir primeiro (mantém o gesto do utilizador) e só depois copiar o texto
   // para a área de transferência como rede de segurança.
-  if (params.preopenedWindow) {
+  if (params.preopenedWindow && mobile) {
+    // No telemóvel o deep link `whatsapp://` não abre numa aba em branco:
+    // fechamos essa aba e navegamos na própria página.
+    try { params.preopenedWindow.close(); } catch { /* ignore */ }
+    openUrl(url, true);
+  } else if (params.preopenedWindow) {
     try {
       params.preopenedWindow.location.href = url;
     } catch {

@@ -181,6 +181,25 @@ export async function sendWorkOrderWhatsApp(
 ): Promise<boolean> {
   if (!ctx.clientPhone) throw new Error("O cliente não tem telefone registado.");
 
+  const base = {
+    phone: ctx.clientPhone,
+    clientName: ctx.clientName,
+    type: "service" as const,
+    number: ctx.number,
+    plate: ctx.plate,
+    model: `${ctx.vehicleMake || ""} ${ctx.vehicleModel || ""}`.trim(),
+    serviceStage: ctx.status as any,
+    total: ctx.total,
+    shopName: ctx.shopName,
+  };
+
+  // Só o estado "aguarda aprovação" precisa do link do orçamento (e por isso
+  // de trabalho assíncrono antes de abrir). Em todos os outros estados abrimos
+  // o WhatsApp de imediato, dentro do gesto do utilizador — sem popup blocker.
+  if (ctx.status !== "waiting_approval") {
+    return openWhatsApp({ ...base, customMessage: body });
+  }
+
   // Abrir a janela de imediato, ainda dentro do gesto do utilizador — depois
   // de awaits (sincronizar orçamento) o browser bloquearia o popup.
   let preopened: Window | null = null;
@@ -217,17 +236,5 @@ export async function sendWorkOrderWhatsApp(
     console.warn("[client-comms] quote link failed", err);
   }
 
-  return openWhatsApp({
-    phone: ctx.clientPhone,
-    clientName: ctx.clientName,
-    type: "service",
-    number: ctx.number,
-    plate: ctx.plate,
-    model: `${ctx.vehicleMake || ""} ${ctx.vehicleModel || ""}`.trim(),
-    serviceStage: ctx.status as any,
-    total: ctx.total,
-    shopName: ctx.shopName,
-    customMessage: finalBody,
-    preopenedWindow: preopened,
-  });
+  return openWhatsApp({ ...base, customMessage: finalBody, preopenedWindow: preopened });
 }

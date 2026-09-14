@@ -358,13 +358,22 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Tempo real: além dos alertas guardados, escutamos as origens reais para
+  // que um alerta desapareça sozinho quando a situação é resolvida
+  // (fatura paga, stock reposto, marcação tratada, serviço entregue).
   useEffect(() => {
     if (!idsKey) return;
-    const ch = supabase
-      .channel(`gf-alerts-${idsKey}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, () => void load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let timer: any;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void load(), 600);
+    };
+    let ch = supabase.channel(`gf-alerts-${idsKey}`);
+    for (const table of ["alerts", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
+      ch = ch.on("postgres_changes", { event: "*", schema: "public", table }, schedule);
+    }
+    ch.subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(ch); };
   }, [idsKey, load]);
 
   const PRIORITY_ORDER: Record<AlertPriority, number> = { critical: 0, high: 1, low: 2 };

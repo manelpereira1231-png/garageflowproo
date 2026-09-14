@@ -496,6 +496,12 @@ export default function Clients() {
                         <MessageCircle className="w-3.5 h-3.5 opacity-40" />—
                       </span>
                     )}
+                    {client.phone_secondary && (
+                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary! })} className="text-xs text-green-600 dark:text-green-500 justify-start" title={`WhatsApp ${client.phone_secondary}`}>
+                        <MessageCircle className="w-3.5 h-3.5 mr-1 opacity-70" />WhatsApp 2
+                      </Button>
+                    )}
+
 
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}

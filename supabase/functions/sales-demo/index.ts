@@ -193,13 +193,29 @@ serve(async (req) => {
 /* ------------------------------------------------------------------ seed */
 
 async function seed(admin: any, shopId: string) {
+  // Contactos de teste da DEMO: TODOS os clientes demo partilham exatamente
+  // os mesmos dois telefones e o mesmo email (legacy_dup_ok ignora a regra de
+  // contactos únicos por oficina, que continua ativa em contas reais).
+  const DEMO_PHONE = "+351 934 368 304";
+  const DEMO_PHONE_2 = "+351 927 332 810";
+  const DEMO_EMAIL = "contact@garageflow.pt";
+
   const clients = [
-    { name: "Ana Marques", phone: "+351 934 368 304", email: "contact@garageflow.pt", nif: "210000001" },
-    { name: "Transportes Belém, Lda.", phone: "+351 927 332 810", email: "contact+demo@garageflow.pt", company: "Transportes Belém", nif: "510000002", is_fleet: true, fleet_name: "Frota Belém" },
-    { name: "Rui Cardoso", phone: "+351 936 000 333", email: "rui.cardoso@exemplo.pt", nif: "210000003" },
-    { name: "Sofia Almeida", phone: "+351 927 000 444", email: "sofia.almeida@exemplo.pt", nif: "210000004" },
-    { name: "Miguel Tavares", phone: "+351 918 000 555", email: "miguel.tavares@exemplo.pt", nif: "210000005" },
-  ].map((c) => ({ is_fleet: false, ...c, shop_id: shopId }));
+    { name: "Ana Marques", nif: "210000001" },
+    { name: "Transportes Belém, Lda.", company: "Transportes Belém", nif: "510000002", is_fleet: true, fleet_name: "Frota Belém" },
+    { name: "Rui Cardoso", nif: "210000003" },
+    { name: "Sofia Almeida", nif: "210000004" },
+    { name: "Miguel Tavares", nif: "210000005" },
+  ].map((c) => ({
+    is_fleet: false,
+    ...c,
+    phone: DEMO_PHONE,
+    phone_secondary: DEMO_PHONE_2,
+    email: DEMO_EMAIL,
+    legacy_dup_ok: true,
+    shop_id: shopId,
+  }));
+
 
   const { data: insClients, error: clientsError } = await admin.from("clients").insert(clients).select("id, name");
   if (clientsError) throw new Error("seed clients: " + clientsError.message);
@@ -324,10 +340,11 @@ async function seed(admin: any, shopId: string) {
   const fleetVehicle = byPlate("AB-22-CD");
   const sofiaVehicle = byPlate("AE-55-FG");
   const appointments = [
-    { vehicle: anaVehicle, date: dateFromNow(1), time: "09:00", service_type: "Revisão periódica", duration_minutes: 90, status: "confirmed", client_name: "Ana Marques", client_phone: "+351 934 368 304", client_email: "contact@garageflow.pt" },
-    { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: "Transportes Belém, Lda.", client_phone: "+351 927 332 810", client_email: "contact+demo@garageflow.pt" },
-    { vehicle: sofiaVehicle, date: dateFromNow(2), time: "15:30", service_type: "Teste de bateria", duration_minutes: 45, status: "pending", client_name: "Sofia Almeida", client_phone: "+351 927 000 444", client_email: "sofia.almeida@exemplo.pt", source: "portal" },
+    { vehicle: anaVehicle, date: dateFromNow(1), time: "09:00", service_type: "Revisão periódica", duration_minutes: 90, status: "confirmed", client_name: "Ana Marques", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL },
+    { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: "Transportes Belém, Lda.", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL },
+    { vehicle: sofiaVehicle, date: dateFromNow(2), time: "15:30", service_type: "Teste de bateria", duration_minutes: 45, status: "pending", client_name: "Sofia Almeida", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL, source: "portal" },
   ].map(({ vehicle, ...appointment }) => ({
+
     shop_id: shopId,
     client_id: vehicle?.client_id,
     vehicle_id: vehicle?.id,

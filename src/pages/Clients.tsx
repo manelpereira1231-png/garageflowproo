@@ -52,10 +52,12 @@ const emailClient = (email: string) => { window.location.href = `mailto:${email}
 
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
+  phone_secondary?: string | null;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
   is_fleet?: boolean | null; fleet_name?: string | null; fleet_manager?: string | null;
   portal_token: string | null;
 }
+
 
 const PAGE_SIZE = 50;
 const FETCH_LIMIT = 2000;
@@ -106,9 +108,10 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const [form, setForm] = useState({ name: "", phone: "", phone_secondary: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
-  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const resetForm = () => setForm({ name: "", phone: "", phone_secondary: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+
 
   const getActiveShopId = (): string | null => activeShopId;
 
@@ -195,7 +198,9 @@ export default function Clients() {
 
     const payload = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
+      phone_secondary: form.phone_secondary || null,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
+
       is_fleet: !!form.is_fleet, fleet_name: form.is_fleet ? (form.fleet_name || null) : null,
       fleet_manager: form.is_fleet ? (form.fleet_manager || null) : null,
     };
@@ -256,7 +261,7 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
+    setForm({ name: c.name, phone: c.phone, phone_secondary: c.phone_secondary || "", email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
     setOpen(true);
   };
 
@@ -294,6 +299,11 @@ export default function Clients() {
                   <Label>{t('clients.phone')}</Label>
                   <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Telefone alternativo</Label>
+                  <Input value={form.phone_secondary} onChange={e => setForm({...form, phone_secondary: e.target.value})} />
+                </div>
+
                 <div className="space-y-1.5">
                   <Label>{t('clients.email')}</Label>
                   <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
@@ -393,11 +403,18 @@ export default function Clients() {
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
                 {client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title="Ligar"><Phone className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
+                )}
+                {client.phone_secondary && (
+                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary!)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone_secondary}`}><Phone className="w-5 h-5 opacity-70" /></Button>
                 )}
                 {client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone}`}><MessageCircle className="w-5 h-5" /></Button>
                 )}
+                {client.phone_secondary && (
+                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary! })} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone_secondary}`}><MessageCircle className="w-5 h-5 opacity-70" /></Button>
+                )}
+
                 {client.email && (
                   <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-11 p-0" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}
@@ -408,6 +425,8 @@ export default function Clients() {
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+              {client.phone_secondary && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone_secondary}</span>}
+
               {client.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>}
               {client.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{client.company}</span>}
             </div>
@@ -440,7 +459,9 @@ export default function Clients() {
                 <TableCell className="font-medium">{client.name}</TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-0.5 text-sm">
-                    {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone}</span>}
+                    {client.phone && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone}</span>}
+                    {client.phone_secondary && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone_secondary}</span>}
+
                     {client.email && <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-muted-foreground" />{client.email}</span>}
                   </div>
                 </TableCell>
@@ -451,11 +472,17 @@ export default function Clients() {
                 <TableCell>
                   <div className="flex gap-1 items-center">
                     {client.phone && (
-                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title="Ligar">
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title={`Ligar ${client.phone}`}>
                         <Phone className="w-3.5 h-3.5 mr-1" />Ligar
                       </Button>
                     )}
+                    {client.phone_secondary && (
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary!)} className="text-xs text-primary" title={`Ligar ${client.phone_secondary}`}>
+                        <Phone className="w-3.5 h-3.5 mr-1 opacity-70" />Ligar 2
+                      </Button>
+                    )}
                     {client.email && (
+
                       <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="text-xs" title="Email">
                         <Mail className="w-3.5 h-3.5 mr-1" />Email
                       </Button>
@@ -469,6 +496,12 @@ export default function Clients() {
                         <MessageCircle className="w-3.5 h-3.5 opacity-40" />—
                       </span>
                     )}
+                    {client.phone_secondary && (
+                      <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary! })} className="text-xs text-green-600 dark:text-green-500 justify-start" title={`WhatsApp ${client.phone_secondary}`}>
+                        <MessageCircle className="w-3.5 h-3.5 mr-1 opacity-70" />WhatsApp 2
+                      </Button>
+                    )}
+
 
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}

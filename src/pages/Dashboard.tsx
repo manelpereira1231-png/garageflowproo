@@ -20,6 +20,7 @@ import { setActiveShopAndSync } from "@/lib/shopContextSync";
 import { formatMoney } from "@/lib/money";
 import { getCountryConfig } from "@/lib/regionConfig";
 import { useMoneyAtStake } from "@/hooks/useMoneyAtStake";
+import { useShopAlerts } from "@/hooks/useShopAlerts";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.
@@ -125,7 +126,12 @@ function OwnerDashboard() {
   const fmt = useCallback((v: number) => formatMoney(v, currency), [currency]);
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
-  const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
+  // Alertas: fonte única de verdade partilhada com /alerts e com o menu.
+  const { open: openAlerts, markRead: markAlertRead } = useShopAlerts({ shopIds: stakeShopIds });
+  const pendingAlerts = useMemo(
+    () => [...openAlerts].sort((a, b) => Number(a.read) - Number(b.read)).slice(0, 5),
+    [openAlerts],
+  );
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; profit: number }[]>([]);
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
   const [conversionRate, setConversionRate] = useState(0);
@@ -187,7 +193,7 @@ function OwnerDashboard() {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-        const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
+        const [ordersRes, quotesRes, clientsRes, allOrdersRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
             .select("shop_id, total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
             .in("shop_id", shopIds)
@@ -201,26 +207,11 @@ function OwnerDashboard() {
             .select("client_id")
             .in("shop_id", shopIds)
             .gte("created_at", monthStart),
-          supabase.from("alerts")
-            .select("id, title, type, status, due_date, created_at")
-            .in("shop_id", shopIds)
-            .eq("status", "pending")
-            .order("created_at", { ascending: false })
-            .limit(5),
           supabase.from("work_orders")
             .select("shop_id, total, profit, status, created_at")
             .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo)
             .in("status", ['completed', 'delivered']),
-          supabase.from("parts")
-            .select("id, name, stock_quantity, min_stock")
-            .in("shop_id", shopIds)
-            .eq("active", true),
-          supabase.from("invoices")
-            .select("id, number, total, due_date, clients(name)")
-            .in("shop_id", shopIds)
-            .in("status", ['issued', 'partial'])
-            .lt("due_date", new Date().toISOString().slice(0, 10)),
           supabase.from("quotes")
             .select("id, status")
             .in("shop_id", shopIds)
@@ -291,34 +282,9 @@ function OwnerDashboard() {
 
         setRecentServices(orders.slice(0, 5));
 
-      // Auto-generated alerts
-        const dbAlerts = alertsRes.data || [];
-        const autoAlerts: any[] = [];
+      // Os alertas do Dashboard vêm do hook partilhado `useShopAlerts`
+      // (mesma fonte de dados da página /alerts e do badge do menu).
 
-        const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
-        if (lowStockParts.length > 0) {
-          autoAlerts.push({
-            id: 'auto-low-stock',
-            title: `${lowStockParts.length} ${lowStockParts.length === 1 ? t('dashboard.lowStockSingle') || 'peça com stock baixo' : t('dashboard.lowStockPlural') || 'peças com stock baixo'}`,
-            type: 'stock_low',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        const overdueInvoices = overdueRes.data || [];
-        if (overdueInvoices.length > 0) {
-          const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-          autoAlerts.push({
-            id: 'auto-overdue',
-            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${fmt(overdueTotal)})`,
-            type: 'payment_failed',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        setPendingAlerts([...autoAlerts, ...dbAlerts].slice(0, 8));
 
       // Monthly revenue chart
         const allOrders = allOrdersRes.data || [];
@@ -1032,23 +998,34 @@ function OwnerDashboard() {
             </Link>
           </div>
           <div className="space-y-2">
-            {pendingAlerts.map(alert => (
-              <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border group hover:bg-muted/80 transition-colors">
-                <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{alert.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t(`alerts.type.${alert.type}`)} · {alert.due_date ? new Date(alert.due_date).toLocaleDateString() : new Date(alert.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <Link to="/alerts" className="shrink-0">
-                  <Button variant="ghost" size="sm" className="text-xs gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Bell className="w-3 h-3" />
-                    {t('common.view') || 'Ver'}
-                  </Button>
+            {pendingAlerts.map(alert => {
+              const typeLabel = t(`alerts.type.${alert.type}`) === `alerts.type.${alert.type}` ? alert.type : t(`alerts.type.${alert.type}`);
+              const body = (
+                <>
+                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm truncate ${alert.read ? 'font-medium' : 'font-semibold'}`}>{alert.title}</p>
+                    {alert.message && <p className="text-xs text-muted-foreground line-clamp-1">{alert.message}</p>}
+                    <p className="text-xs text-muted-foreground">
+                      {typeLabel} · {alert.dueDate ? new Date(alert.dueDate).toLocaleDateString() : new Date(alert.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!alert.read && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
+                </>
+              );
+              const cls = `flex items-center gap-3 p-3 rounded-lg border transition-colors ${alert.read ? 'bg-muted/50 border-border hover:bg-muted/80' : 'bg-warning/5 border-warning/30 hover:bg-warning/10'}`;
+              // O destino é o mesmo que a página /alerts usa, e abrir aqui
+              // marca o alerta como lido em todo o sistema.
+              return alert.link ? (
+                <Link key={alert.id} to={alert.link} className={cls} onClick={() => void markAlertRead(alert)}>
+                  {body}
                 </Link>
-              </div>
-            ))}
+              ) : (
+                <Link key={alert.id} to="/alerts" className={cls} onClick={() => void markAlertRead(alert)}>
+                  {body}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

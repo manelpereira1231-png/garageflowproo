@@ -433,6 +433,7 @@ export type Database = {
           message: string
           next_follow_up_at: string | null
           priority: string
+          read_at: string | null
           shop_id: string
           status: string
           title: string
@@ -449,6 +450,7 @@ export type Database = {
           message: string
           next_follow_up_at?: string | null
           priority?: string
+          read_at?: string | null
           shop_id: string
           status?: string
           title: string
@@ -465,6 +467,7 @@ export type Database = {
           message?: string
           next_follow_up_at?: string | null
           priority?: string
+          read_at?: string | null
           shop_id?: string
           status?: string
           title?: string

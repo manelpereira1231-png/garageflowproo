@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +82,8 @@ export default function Vehicles() {
   });
   const { filters, updateFilter, clearFilters, hasActiveFilters, sort, toggleSort, page, setPage } = table;
   const search = filters.search;
+  // Alertas/notificações abrem esta lista já pesquisada pela matrícula.
+  useUrlSearchFilter((v) => updateFilter("search", v));
 
   const [refreshKey, setRefreshKey] = useState(0);
 

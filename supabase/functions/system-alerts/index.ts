@@ -23,8 +23,10 @@ async function notify(type: string, title: string, body: string, severity: "info
     .limit(5);
   const ids = (u ?? []).map((r: any) => r.user_id);
   for (const uid of ids) {
+    // `message` é o campo lido por toda a aplicação (o antigo `body` era
+    // gravado num campo que nunca é apresentado).
     await admin.from("notifications").insert({
-      user_id: uid, type: `system_alert:${type}`, title, body,
+      user_id: uid, type: `system_alert:${type}`, title, message: body,
     }).then(() => {}, () => {});
   }
   // Also send email to hardcoded super admin

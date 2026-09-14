@@ -603,8 +603,10 @@ serve(async (req) => {
               revenue_type: stripeSub.status === "trialing" ? "trial" : "stripe_paid",
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
-              current_period_end: stripeSub.current_period_end
-                ? new Date(stripeSub.current_period_end * 1000).toISOString()
+              current_period_end: (stripeSub.items?.data[0]?.current_period_end
+                ?? (stripeSub as any).current_period_end)
+                ? new Date(((stripeSub.items?.data[0]?.current_period_end
+                  ?? (stripeSub as any).current_period_end) as number) * 1000).toISOString()
                 : null,
               trial_end: stripeSub.trial_end
                 ? new Date(stripeSub.trial_end * 1000).toISOString()

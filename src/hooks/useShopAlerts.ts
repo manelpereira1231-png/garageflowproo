@@ -147,6 +147,17 @@ function mapRow(row: any): UnifiedAlert {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * Sincronização imediata entre todos os sítios que mostram alertas
+ * (contador do menu, dashboard e página de alertas). Quando um alerta é
+ * lido/resolvido/reaberto num sítio, os outros atualizam no mesmo instante.
+ */
+const alertSyncListeners = new Set<() => void>();
+function notifyAlertSync() {
+  for (const fn of Array.from(alertSyncListeners)) fn();
+}
+
+
 export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const { activeShopId, shops } = useShopContext();
   const contextIds = useMemo(

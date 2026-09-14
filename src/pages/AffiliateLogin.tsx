@@ -46,11 +46,14 @@ export default function AffiliateLogin() {
         return;
       }
 
+      const { ensureLoginAllowed, recordLoginFailure, clearLoginFailures } = await import("@/lib/loginGuard");
+      await ensureLoginAllowed(email.trim(), "affiliate");
       const { data, error } = await erpSupabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-      if (error) throw error;
+      if (error) { recordLoginFailure(email.trim(), "affiliate"); throw error; }
+      clearLoginFailures(email.trim());
       if (!data.user) throw new Error("Login falhou");
 
       // Verify this user is actually a registered affiliate

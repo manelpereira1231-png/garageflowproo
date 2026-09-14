@@ -156,8 +156,11 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         toast.success(t('auth.resetSent'));
         setMode('login');
       } else if (mode === 'login') {
+        const { ensureLoginAllowed, recordLoginFailure, clearLoginFailures } = await import("@/lib/loginGuard");
+        await ensureLoginAllowed(email, "erp");
         const { data: signInData, error } = await erpSupabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) { recordLoginFailure(email, "erp"); throw error; }
+        clearLoginFailures(email);
 
         // Lote A: contas unificadas. Só bloqueia se a conta for exclusivamente
         // Market (particular sem shop nem role ERP). Contas de oficina que

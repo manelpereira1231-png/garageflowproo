@@ -194,31 +194,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => document.documentElement.classList.remove("gf-applock");
   }, []);
 
+  // Badge de Alertas — mesma fonte de verdade do Dashboard e da página /alerts
+  // (hook `useShopAlerts`). Conta apenas alertas por tratar e por abrir.
   useEffect(() => {
-
-    if (!activeShopId) return;
-    let cancelled = false;
-    const loadAlertCount = async () => {
-      const { count } = await supabase
-        .from("alerts")
-        .select("id", { count: "exact", head: true })
-        .eq("shop_id", activeShopId)
-        .eq("status", "pending");
-      if (!cancelled) setPendingAlertCount(count || 0);
-    };
-    loadAlertCount();
-
-    // Realtime: any change to this shop's alerts → refresh badge instantly.
-    const channel = supabase
-      .channel(`global-alerts-${activeShopId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "alerts", filter: `shop_id=eq.${activeShopId}` },
-        () => loadAlertCount(),
-      )
-      .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(channel); };
-  }, [activeShopId]);
+    setPendingAlertCount(alertsUnreadCount);
+  }, [alertsUnreadCount]);
 
   // Badge de Notificações — conta apenas as por ler (persistido na BD).
   useEffect(() => {

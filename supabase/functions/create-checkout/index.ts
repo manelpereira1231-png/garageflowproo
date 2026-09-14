@@ -159,6 +159,8 @@ serve(async (req) => {
     // active + start/end window. If the promo has no Stripe price yet
     // (e.g. admin defined it without applying), fall back to the base price
     // so checkout never breaks.
+    const isEntryPlan = plan === "free";
+
     try {
       const { data: promoRows } = await supabaseClient.rpc("get_active_promotion", {
         _country_code: resolvedCountry,
@@ -179,7 +181,6 @@ serve(async (req) => {
     // Período grátis: apenas o plano de entrada (Start) tem trial.
     // Planos pagos (Pro, Garage, …) são cobrados de imediato e a renovação
     // fica ancorada na data exata do 1.º pagamento.
-    const isEntryPlan = plan === "free";
     const trialDays =
       planRow.trial_days != null
         ? Number(planRow.trial_days)

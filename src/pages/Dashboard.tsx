@@ -291,34 +291,9 @@ function OwnerDashboard() {
 
         setRecentServices(orders.slice(0, 5));
 
-      // Auto-generated alerts
-        const dbAlerts = alertsRes.data || [];
-        const autoAlerts: any[] = [];
+      // Os alertas do Dashboard vêm do hook partilhado `useShopAlerts`
+      // (mesma fonte de dados da página /alerts e do badge do menu).
 
-        const lowStockParts = (lowStockRes.data || []).filter((p: any) => p.stock_quantity <= p.min_stock && p.min_stock > 0);
-        if (lowStockParts.length > 0) {
-          autoAlerts.push({
-            id: 'auto-low-stock',
-            title: `${lowStockParts.length} ${lowStockParts.length === 1 ? t('dashboard.lowStockSingle') || 'peça com stock baixo' : t('dashboard.lowStockPlural') || 'peças com stock baixo'}`,
-            type: 'stock_low',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        const overdueInvoices = overdueRes.data || [];
-        if (overdueInvoices.length > 0) {
-          const overdueTotal = overdueInvoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-          autoAlerts.push({
-            id: 'auto-overdue',
-            title: `${overdueInvoices.length} ${t('dashboard.overdueInvoices') || 'faturas vencidas'} (${fmt(overdueTotal)})`,
-            type: 'payment_failed',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        setPendingAlerts([...autoAlerts, ...dbAlerts].slice(0, 8));
 
       // Monthly revenue chart
         const allOrders = allOrdersRes.data || [];

@@ -42,11 +42,21 @@ const listeners = new Set<(v: LegalSettings | null) => void>();
 async function load(): Promise<LegalSettings | null> {
   if (inflight) return inflight;
   inflight = (async () => {
-    const { data } = await supabase
+    // Authenticated users read the full row. Anonymous visitors have no SELECT
+    // grant on the table (NIF / morada / capital are not public) and fall back
+    // to the public RPC, which returns only the non-sensitive fields.
+    const { data, error } = await supabase
       .from("legal_settings" as any)
       .select("*")
       .maybeSingle();
-    cache = (data as any) ?? null;
+
+    let row: any = data ?? null;
+    if (!row || error) {
+      const { data: pub } = await supabase.rpc("get_public_legal_settings" as any);
+      row = (pub as any) ?? null;
+    }
+
+    cache = row;
     listeners.forEach((cb) => cb(cache));
     return cache;
   })();
@@ -55,8 +65,10 @@ async function load(): Promise<LegalSettings | null> {
 
 export function isLegalConfigured(s: LegalSettings | null): boolean {
   if (!s) return false;
-  // Considered configured only when at least a company name AND (tax id OR address) exist.
-  return !!(s.company_name && (s.tax_id || s.address));
+  // Configured when a company name exists. Anonymous visitors legitimately get
+  // no tax_id / address (those are authenticated-only), so they must not fall
+  // back to the "not configured" placeholder.
+  return !!(s.company_name && (s.tax_id || s.address || s.contact_email));
 }
 
 export function useLegalSettings() {

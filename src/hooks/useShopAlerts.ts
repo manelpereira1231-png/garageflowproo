@@ -194,7 +194,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         .limit(30),
       supabase
         .from("work_orders")
-        .select("id, number, status, created_at, completed_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .select("id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .in("status", ["in_progress", "waiting_parts", "completed"])
         .limit(200),

@@ -138,18 +138,22 @@ serve(async (req) => {
         try { await stripe.prices.update(oldPriceId, { active: false }); }
         catch (e) { console.warn("Could not deactivate old free price:", oldPriceId, e); }
       }
-      const { error: updErr } = await supabase
-        .from("country_settings")
-        .update({ [priceCol]: null, [amountCol]: 0 })
-        .eq("code", country);
-      if (updErr) throw updErr;
+      if (isLegacyPlan) {
+        const { error: updErr } = await supabase
+          .from("country_settings")
+          .update({ [priceCol]: null, [amountCol]: 0 })
+          .eq("code", country);
+        if (updErr) throw updErr;
+      }
+
+      await savePriceRow({ amount: 0, stripe_price_id: null, stripe_product_id: (pcpRow as any)?.stripe_product_id ?? null });
 
       await supabase.from("plan_price_history").insert({
         country_code: country, plan, cycle,
         currency: currency.toUpperCase(),
         old_amount: oldAmount, new_amount: 0,
         old_stripe_price_id: oldPriceId, new_stripe_price_id: null,
-        stripe_product_id: (countryRow as any)[productCol] ?? null,
+        stripe_product_id: (isLegacyPlan ? (countryRow as any)[productCol] : null) ?? (pcpRow as any)?.stripe_product_id ?? null,
         changed_by: userData.user.id,
         notes: body.notes ?? "free_plan_zero_price",
       });

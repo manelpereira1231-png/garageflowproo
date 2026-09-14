@@ -153,7 +153,8 @@ export default function DemoGuide() {
   const tooltipStyle = useMemo<React.CSSProperties>(() => {
     const W = 360;
     if (!rect || window.innerWidth < 768) {
-      return { left: "50%", bottom: 16, transform: "translateX(-50%)", width: `min(${W}px, calc(100vw - 24px))` };
+      // Acima da barra inferior do telemóvel, para os botões não ficarem tapados.
+      return { left: "50%", bottom: 96, transform: "translateX(-50%)", width: `min(${W}px, calc(100vw - 24px))` };
     }
     const left = Math.min(rect.right + 16, window.innerWidth - W - 16);
     const top = Math.min(Math.max(rect.top - 8, 16), window.innerHeight - 260);

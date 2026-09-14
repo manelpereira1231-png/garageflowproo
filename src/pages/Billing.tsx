@@ -175,6 +175,8 @@ export default function Billing() {
   // resubscribe. `mustSubscribe` (from useSubscription) is the single source of
   // truth — do NOT reintroduce a "free" plan fallback anywhere on this page.
   const noActivePlan = mustSubscribe || isCanceled;
+  // Cancelada no Stripe mas ainda paga até ao fim do período atual.
+  const cancelPending = subscription?.cancel_at_period_end === true && !noActivePlan;
 
   // ✅ Catálogo dinâmico: lê `plans` da BD, filtra visible_on_billing e ordena por sort_order.
   // Nenhuma lista de planos hardcoded. Adicionar um plano novo no Super Admin

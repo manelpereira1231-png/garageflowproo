@@ -68,6 +68,19 @@ function resolveBillingCycle(subscription: Stripe.Subscription): string {
   return interval === "year" ? "yearly" : "monthly";
 }
 
+// A API atual expõe a subscrição da fatura em `parent.subscription_details`;
+// versões antigas usavam `invoice.subscription`. Suportamos ambas.
+function extractSubscriptionId(invoice: any): string | null {
+  const direct = invoice?.subscription;
+  if (typeof direct === "string") return direct;
+  if (direct?.id) return direct.id;
+  const nested = invoice?.parent?.subscription_details?.subscription;
+  if (typeof nested === "string") return nested;
+  if (nested?.id) return nested.id;
+  const lineSub = invoice?.lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+  return typeof lineSub === "string" ? lineSub : null;
+}
+
 // Find subscription record by stripe_customer_id
 async function findSubByCustomer(customerId: string) {
   const { data } = await supabaseAdmin
@@ -194,11 +207,43 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          // O pagamento confirmado é a fonte de verdade do plano. Se a fatura
+          // pertence a uma subscrição, sincronizamos plano/ciclo/renovação aqui
+          // também — assim o upgrade fica ativo mesmo que o evento de checkout
+          // tenha chegado antes de o cliente Stripe estar associado à oficina.
+          const stripeSubId = extractSubscriptionId(invoice);
+          const update: Record<string, unknown> = {
+            status: "active",
+            revenue_type: "stripe_paid",
+            updated_at: new Date().toISOString(),
+          };
+
+          if (stripeSubId) {
+            try {
+              const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+              update.plan = await resolvePlan(stripeSub);
+              update.billing_cycle = resolveBillingCycle(stripeSub);
+              update.stripe_subscription_id = stripeSubId;
+              update.stripe_customer_id = customerId;
+              update.trial_end = null;
+              const periodEnd = stripeSub.items?.data[0]?.current_period_end
+                ?? (stripeSub as any).current_period_end;
+              update.current_period_end = periodEnd
+                ? new Date(periodEnd * 1000).toISOString()
+                : null;
+            } catch (e) {
+              log("Could not sync plan from paid invoice subscription", {
+                stripeSubId,
+                error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+
           await supabaseAdmin
             .from("subscriptions")
-            .update({ status: "active", revenue_type: "stripe_paid", updated_at: new Date().toISOString() })
+            .update(update)
             .eq("id", sub.id);
-          log("Invoice paid — subscription activated", { customerId, subId: sub.id });
+          log("Invoice paid — subscription activated", { customerId, subId: sub.id, plan: update.plan });
         } else {
           log("No subscription found for invoice.paid", { customerId });
         }
@@ -532,7 +577,21 @@ serve(async (req) => {
         const plan = await resolvePlan(stripeSub);
         const billingCycle = resolveBillingCycle(stripeSub);
 
-        const sub = await findSubscription(customerId);
+        let sub = await findSubscription(customerId);
+        // Rede de segurança: o checkout carrega sempre o shop_id em metadata.
+        // Se o cliente Stripe ainda não estava associado, usamos essa referência
+        // para não perder a ativação do plano pago.
+        if (!sub && session.metadata?.shop_id) {
+          const { data: byShop } = await supabaseAdmin
+            .from("subscriptions")
+            .select("id, shop_id, stripe_subscription_id")
+            .eq("shop_id", session.metadata.shop_id)
+            .maybeSingle();
+          if (byShop) {
+            sub = byShop;
+            log("Subscription matched by checkout metadata shop_id", { shopId: session.metadata.shop_id });
+          }
+        }
         if (sub) {
           const previousStripeSubscriptionId = sub.stripe_subscription_id;
           await supabaseAdmin
@@ -544,8 +603,10 @@ serve(async (req) => {
               revenue_type: stripeSub.status === "trialing" ? "trial" : "stripe_paid",
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
-              current_period_end: stripeSub.current_period_end
-                ? new Date(stripeSub.current_period_end * 1000).toISOString()
+              current_period_end: (stripeSub.items?.data[0]?.current_period_end
+                ?? (stripeSub as any).current_period_end)
+                ? new Date(((stripeSub.items?.data[0]?.current_period_end
+                  ?? (stripeSub as any).current_period_end) as number) * 1000).toISOString()
                 : null,
               trial_end: stripeSub.trial_end
                 ? new Date(stripeSub.trial_end * 1000).toISOString()

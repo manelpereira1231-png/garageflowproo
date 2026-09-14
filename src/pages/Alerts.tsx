@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, ExternalLink, Phone, Eye } from "lucide-react";
+import { Bell, Search, CheckCircle, Clock, AlertTriangle, Download, Info, Plus, Phone, ExternalLink, CheckCheck } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import ListSkeleton from "@/components/ListSkeleton";
-import { pageCache } from "@/lib/pageCache";
 import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
+import { useShopAlerts, type UnifiedAlert } from "@/hooks/useShopAlerts";
 
 const alertTypeIcons: Record<string, any> = {
   revision: Clock,
@@ -28,6 +27,7 @@ const alertTypeIcons: Record<string, any> = {
   payment_failed: AlertTriangle,
   service_due: Clock,
   quote_pending: Clock,
+  stock_low: AlertTriangle,
   custom: Bell,
 };
 
@@ -46,6 +46,7 @@ const alertTypeColors: Record<string, string> = {
   oil: "text-warning",
   service_due: "text-warning",
   quote_pending: "text-warning",
+  stock_low: "text-warning",
   inspection: "text-info",
   inactive_client: "text-info",
   custom: "text-primary",
@@ -53,95 +54,32 @@ const alertTypeColors: Record<string, string> = {
 
 export default function Alerts() {
   const { t } = useLanguage();
-  const { shopId, loading: subLoading, validatePlanAction } = useSubscription();
-  const _shopInit = typeof window !== "undefined" ? localStorage.getItem("garageflow_active_shop") : null;
-  const _aCache = pageCache.get<any[]>(`alerts:${_shopInit}`);
-  const [alerts, setAlerts] = useState<any[]>(_aCache ?? []);
+  const { shopId, loading: subLoading } = useSubscription();
+  const { alerts, unreadCount, loading, reload, markRead, markAllRead, resolve, dismiss } = useShopAlerts();
+
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [commsAlert, setCommsAlert] = useState<any | null>(null);
-  const [dataLoading, setDataLoading] = useState(!_aCache);
-  const [newAlert, setNewAlert] = useState({
-    title: "",
-    message: "",
-    type: "custom",
-    priority: "medium",
-  });
+  const [commsAlert, setCommsAlert] = useState<UnifiedAlert | null>(null);
+  const [newAlert, setNewAlert] = useState({ title: "", message: "", type: "custom", priority: "medium" });
 
-  const fetchAlerts = async () => {
-    if (!shopId) { setDataLoading(false); return; }
-    const key = `alerts:${shopId}`;
-    const cc = pageCache.get<any[]>(key);
-    if (cc) { setAlerts(cc); setDataLoading(false); } else { setDataLoading(true); }
-    try {
-      const { data } = await supabase
-        .from("alerts")
-        .select("*, clients(name, phone, email), vehicles(make, model, plate)")
-        .eq("shop_id", shopId)
-        .order("created_at", { ascending: false })
-        .limit(300);
-      if (data) { setAlerts(data); pageCache.set(key, data); }
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  useEffect(() => { if (shopId) fetchAlerts(); }, [shopId]);
-
-  // Realtime: live updates for alerts
-  useEffect(() => {
-    if (!shopId) return;
-    const channel = supabase
-      .channel(`alerts-${shopId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'alerts',
-        filter: `shop_id=eq.${shopId}`,
-      }, () => {
-        fetchAlerts();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [shopId]);
-
-  const resolveAlert = async (id: string) => {
-    const { error } = await supabase.from("alerts").update({ status: 'resolved' }).eq("id", id).eq("shop_id", shopId);
-    if (error) toast.error(error.message);
-    else { toast.success(t('alerts.resolved')); fetchAlerts(); }
-  };
-
-  const dismissAlert = async (id: string) => {
-    const { error } = await supabase.from("alerts").update({ status: 'dismissed' }).eq("id", id).eq("shop_id", shopId);
-    if (error) toast.error(error.message);
-    else fetchAlerts();
+  const typeLabel = (type: string) => {
+    const label = t(`alerts.type.${type}`);
+    return label === `alerts.type.${type}` ? type : label;
   };
 
   const handleCreateAlert = async () => {
     if (!shopId || !newAlert.title.trim() || !newAlert.message.trim()) return;
     setCreating(true);
     try {
-      // Backend validation via RPC
-      const { data: canCreate, error: rpcError } = await supabase.rpc('validate_plan_limit', {
-        _action_type: 'create_basic_alert',
+      const { data: canCreate, error: rpcError } = await supabase.rpc("validate_plan_limit", {
+        _action_type: "create_basic_alert",
         _shop_id: shopId,
       });
-      
-      console.log("[Alerts] validate_plan_limit result:", { canCreate, rpcError, shopId });
-      
-      if (rpcError) {
-        console.error("[Alerts] RPC error:", rpcError);
-        toast.error(rpcError.message);
-        return;
-      }
-      
-      if (!canCreate) {
-        toast.error(t('alerts.planLimitReached'));
-        return;
-      }
+      if (rpcError) { toast.error(rpcError.message); return; }
+      if (!canCreate) { toast.error(t("alerts.planLimitReached")); return; }
 
       const { error } = await supabase.from("alerts").insert({
         shop_id: shopId,
@@ -151,51 +89,49 @@ export default function Alerts() {
         priority: newAlert.priority,
         status: "pending",
       });
-
-      if (error) {
-        console.error("[Alerts] Insert error:", error);
-        toast.error(error.message);
-      } else {
-        toast.success(t('alerts.created'));
-        setCreateOpen(false);
-        setNewAlert({ title: "", message: "", type: "custom", priority: "medium" });
-        fetchAlerts();
-      }
+      if (error) { toast.error(error.message); return; }
+      toast.success(t("alerts.created"));
+      setCreateOpen(false);
+      setNewAlert({ title: "", message: "", type: "custom", priority: "medium" });
+      void reload();
     } finally {
       setCreating(false);
     }
   };
 
-  const exportCSV = () => {
-    const headers = [t('alerts.typeCol'), t('alerts.titleCol'), t('alerts.clientCol'), t('alerts.vehicleCol'), t('alerts.dateCol'), t('alerts.statusCol')];
-    const rows = filtered.map(a => [
-      t(`alerts.type.${a.type}`),
-      a.title,
-      (a.clients as any)?.name || '',
-      (a.vehicles as any) ? `${(a.vehicles as any).make} ${(a.vehicles as any).model}` : '',
-      a.due_date || new Date(a.created_at).toLocaleDateString(),
-      t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`),
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `alertas_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success(t('common.exported'));
-  };
-
-  const filtered = alerts.filter(a => {
-    const matchSearch = a.title?.toLowerCase().includes(search.toLowerCase()) ||
-      (a.clients as any)?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchType = filterType === 'all' || a.type === filterType;
-    const matchStatus = filterStatus === 'all' || a.status === filterStatus;
+  const filtered = alerts.filter((a) => {
+    const q = search.toLowerCase();
+    const matchSearch = !q
+      || a.title?.toLowerCase().includes(q)
+      || (a.message || "").toLowerCase().includes(q)
+      || (a.clientName || "").toLowerCase().includes(q);
+    const matchType = filterType === "all" || a.type === filterType;
+    const matchStatus = filterStatus === "all" || a.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
 
-  const alertTypes = ['revision', 'oil', 'inspection', 'warranty', 'inactive_client', 'expired_quote', 'payment_failed', 'service_due', 'quote_pending', 'custom'];
+  const exportCSV = () => {
+    const headers = [t("alerts.typeCol"), t("alerts.titleCol"), t("alerts.clientCol"), t("alerts.vehicleCol"), t("alerts.dateCol"), t("alerts.statusCol")];
+    const rows = filtered.map((a) => [
+      typeLabel(a.type),
+      a.title,
+      a.clientName || "",
+      a.make ? `${a.make} ${a.model ?? ""}`.trim() : "",
+      a.dueDate || new Date(a.createdAt).toLocaleDateString(),
+      a.status,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `alertas_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("common.exported"));
+  };
+
+  const alertTypes = ["revision", "oil", "inspection", "warranty", "inactive_client", "expired_quote", "payment_failed", "service_due", "quote_pending", "stock_low", "custom"];
 
   if (subLoading) {
     return (
@@ -205,74 +141,85 @@ export default function Alerts() {
     );
   }
 
-  const pendingCount = alerts.filter(a => a.status === 'pending').length;
-  const resolvedCount = alerts.filter(a => a.status === 'resolved').length;
-  const sentCount = alerts.filter(a => a.status === 'sent').length;
-  const dismissedCount = alerts.filter(a => a.status === 'dismissed').length;
+  const pendingCount = alerts.filter((a) => a.status === "pending").length;
+  const resolvedCount = alerts.filter((a) => a.status === "resolved").length;
+  const sentCount = alerts.filter((a) => a.status === "sent").length;
+  const dismissedCount = alerts.filter((a) => a.status === "dismissed").length;
+
+  const OpenLink = ({ a, className, children }: { a: UnifiedAlert; className?: string; children: React.ReactNode }) =>
+    a.link ? (
+      <Link to={a.link} className={className} onClick={() => void markRead(a)}>{children}</Link>
+    ) : (
+      <span className={className}>{children}</span>
+    );
 
   return (
     <div>
       <div className="page-header flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="page-title">{t('alerts.title')}</h1>
+          <h1 className="page-title">{t("alerts.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {pendingCount} {t('alerts.pending')}
+            {pendingCount} {t("alerts.pending")}{unreadCount > 0 ? ` · ${unreadCount} por abrir` : ""}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={() => void markAllRead()} className="gap-2">
+              <CheckCheck className="w-4 h-4" /> Marcar como lidos
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
             <Download className="w-4 h-4" />
-            {t('alerts.export')}
+            {t("alerts.export")}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
             <Plus className="w-4 h-4" />
-            {t('alerts.create')}
+            {t("alerts.create")}
           </Button>
         </div>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-warning">{pendingCount}</p>
-          <p className="text-xs text-muted-foreground">{t('alerts.statusPending')}</p>
+          <p className="text-xs text-muted-foreground">{t("alerts.statusPending")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-info">{sentCount}</p>
-          <p className="text-xs text-muted-foreground">{t('alerts.statusSent')}</p>
+          <p className="text-xs text-muted-foreground">{t("alerts.statusSent")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-success">{resolvedCount}</p>
-          <p className="text-xs text-muted-foreground">{t('alerts.statusResolved')}</p>
+          <p className="text-xs text-muted-foreground">{t("alerts.statusResolved")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-muted-foreground">{dismissedCount}</p>
-          <p className="text-xs text-muted-foreground">{t('alerts.statusDismissed')}</p>
+          <p className="text-xs text-muted-foreground">{t("alerts.statusDismissed")}</p>
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t('alerts.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("alerts.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('alerts.filterType')} /></SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder={t("alerts.filterType")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('alerts.allTypes')}</SelectItem>
-            {alertTypes.map(type => (
-              <SelectItem key={type} value={type}>{t(`alerts.type.${type}`)}</SelectItem>
+            <SelectItem value="all">{t("alerts.allTypes")}</SelectItem>
+            {alertTypes.map((type) => (
+              <SelectItem key={type} value={type}>{typeLabel(type)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('alerts.allStatus')}</SelectItem>
-            <SelectItem value="pending">{t('alerts.statusPending')}</SelectItem>
-            <SelectItem value="sent">{t('alerts.statusSent')}</SelectItem>
-            <SelectItem value="resolved">{t('alerts.statusResolved')}</SelectItem>
-            <SelectItem value="dismissed">{t('alerts.statusDismissed')}</SelectItem>
+            <SelectItem value="all">{t("alerts.allStatus")}</SelectItem>
+            <SelectItem value="pending">{t("alerts.statusPending")}</SelectItem>
+            <SelectItem value="sent">{t("alerts.statusSent")}</SelectItem>
+            <SelectItem value="resolved">{t("alerts.statusResolved")}</SelectItem>
+            <SelectItem value="dismissed">{t("alerts.statusDismissed")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -282,77 +229,77 @@ export default function Alerts() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('alerts.typeCol')}</TableHead>
-              <TableHead>{t('alerts.titleCol')}</TableHead>
-              <TableHead>{t('alerts.clientCol')}</TableHead>
-              <TableHead>{t('alerts.vehicleCol')}</TableHead>
-              <TableHead>{t('alerts.dateCol')}</TableHead>
-              <TableHead>{t('alerts.statusCol')}</TableHead>
+              <TableHead>{t("alerts.typeCol")}</TableHead>
+              <TableHead>{t("alerts.titleCol")}</TableHead>
+              <TableHead>{t("alerts.clientCol")}</TableHead>
+              <TableHead>{t("alerts.vehicleCol")}</TableHead>
+              <TableHead>{t("alerts.dateCol")}</TableHead>
+              <TableHead>{t("alerts.statusCol")}</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {dataLoading && alerts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell>
-              </TableRow>
+            {loading && alerts.length === 0 ? (
+              <TableRow><TableCell colSpan={7} className="py-6"><ListSkeleton rows={4} variant="row" /></TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {t('alerts.empty')}
-                </TableCell>
-              </TableRow>
-            ) : filtered.map(a => {
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("alerts.empty")}</TableCell></TableRow>
+            ) : filtered.map((a) => {
               const Icon = alertTypeIcons[a.type] || Bell;
-              const typeColor = alertTypeColors[a.type] || 'text-warning';
+              const typeColor = alertTypeColors[a.type] || "text-warning";
               return (
-                <TableRow key={a.id} className="hover:bg-muted/50">
+                <TableRow key={a.id} className={`hover:bg-muted/50 ${a.read ? "" : "bg-warning/5"}`}>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Icon className={`w-4 h-4 ${typeColor}`} />
-                      <span className="text-xs">{t(`alerts.type.${a.type}`)}</span>
+                      <span className="text-xs">{typeLabel(a.type)}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{a.title}</TableCell>
-                  <TableCell>{(a.clients as any)?.name || '—'}</TableCell>
                   <TableCell>
-                    {(a.vehicles as any) ? `${(a.vehicles as any).make} ${(a.vehicles as any).model}` : '—'}
+                    <div className="flex items-center gap-2">
+                      {!a.read && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
+                      <div className="min-w-0">
+                        <p className={`truncate ${a.read ? "font-medium" : "font-semibold"}`}>{a.title}</p>
+                        {a.message && <p className="text-xs text-muted-foreground line-clamp-1">{a.message}</p>}
+                      </div>
+                    </div>
                   </TableCell>
+                  <TableCell>{a.clientName || "—"}</TableCell>
+                  <TableCell>{a.make ? `${a.make} ${a.model ?? ""}`.trim() : "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {a.due_date || new Date(a.created_at).toLocaleDateString()}
+                    {a.dueDate || new Date(a.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={alertStatusStyles[a.status] || ''}>
-                      {a.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                      {a.status === 'sent' && <Info className="w-3 h-3 mr-1" />}
-                      {a.status === 'resolved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                    <Badge variant="outline" className={alertStatusStyles[a.status] || ""}>
+                      {a.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                      {a.status === "sent" && <Info className="w-3 h-3 mr-1" />}
+                      {a.status === "resolved" && <CheckCircle className="w-3 h-3 mr-1" />}
                       {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {a.vehicle_id && (
-                        <Link to="/workshop">
+                      {a.link && (
+                        <OpenLink a={a}>
                           <Button variant="ghost" size="sm" className="text-xs gap-1">
-                            <Eye className="w-3.5 h-3.5" />
-                            OS
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            {t("common.open") || "Abrir"}
                           </Button>
-                        </Link>
+                        </OpenLink>
                       )}
-                      {(a.clients as any)?.name && a.client_id && (
+                      {a.clientName && a.clientId && (
                         <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => setCommsAlert(a)}>
                           <Phone className="w-3.5 h-3.5" />
-                          {t('alerts.contact') || 'Contactar'}
+                          {t("alerts.contact") || "Contactar"}
                         </Button>
                       )}
-                      {a.status === 'pending' && (
+                      {!a.derived && a.status === "pending" && (
                         <>
-                          <Button variant="ghost" size="sm" onClick={() => resolveAlert(a.id)} className="text-xs text-success">
+                          <Button variant="ghost" size="sm" onClick={() => void resolve(a)} className="text-xs text-success">
                             <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                            {t('alerts.resolve')}
+                            {t("alerts.resolve")}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id)} className="text-xs text-muted-foreground">
-                            {t('alerts.dismiss')}
+                          <Button variant="ghost" size="sm" onClick={() => void dismiss(a)} className="text-xs text-muted-foreground">
+                            {t("alerts.dismiss")}
                           </Button>
                         </>
                       )}
@@ -365,48 +312,57 @@ export default function Alerts() {
         </Table>
       </div>
 
-      {/* Mobile cards */}
+      {/* Mobile cards — mesma informação e mesmas ações do desktop */}
       <div className="sm:hidden space-y-3">
-        {dataLoading && alerts.length === 0 ? (
+        {loading && alerts.length === 0 ? (
           <ListSkeleton rows={5} />
         ) : filtered.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">{t('alerts.empty')}</div>
-        ) : filtered.map(a => {
+          <div className="text-center py-8 text-muted-foreground">{t("alerts.empty")}</div>
+        ) : filtered.map((a) => {
           const Icon = alertTypeIcons[a.type] || Bell;
-          const typeColor = alertTypeColors[a.type] || 'text-warning';
+          const typeColor = alertTypeColors[a.type] || "text-warning";
           return (
-            <div key={a.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div key={a.id} className={`bg-card border rounded-xl p-4 space-y-3 ${a.read ? "border-border" : "border-warning/40 bg-warning/5"}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <Icon className={`w-4 h-4 shrink-0 ${typeColor}`} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{t(`alerts.type.${a.type}`)}</p>
+                    <p className={`text-sm truncate ${a.read ? "font-medium" : "font-semibold"}`}>{a.title}</p>
+                    <p className="text-xs text-muted-foreground">{typeLabel(a.type)}</p>
                   </div>
                 </div>
-                <Badge variant="outline" className={`shrink-0 text-[10px] ${alertStatusStyles[a.status] || ''}`}>
+                <Badge variant="outline" className={`shrink-0 text-[10px] ${alertStatusStyles[a.status] || ""}`}>
                   {t(`alerts.status${a.status.charAt(0).toUpperCase() + a.status.slice(1)}`)}
                 </Badge>
               </div>
+              {a.message && <p className="text-xs text-muted-foreground">{a.message}</p>}
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                {(a.clients as any)?.name && <span>👤 {(a.clients as any).name}</span>}
-                {(a.vehicles as any) && <span>🚗 {(a.vehicles as any).make} {(a.vehicles as any).model}</span>}
-                <span>📅 {a.due_date || new Date(a.created_at).toLocaleDateString()}</span>
+                {a.clientName && <span>👤 {a.clientName}</span>}
+                {a.make && <span>🚗 {a.make} {a.model}</span>}
+                <span>📅 {a.dueDate || new Date(a.createdAt).toLocaleDateString()}</span>
               </div>
-              {(a.clients as any)?.name && a.client_id && (
-                <Button variant="outline" size="sm" className="w-full text-xs h-9 gap-1" onClick={() => setCommsAlert(a)}>
+              {a.link && (
+                <OpenLink a={a} className="block">
+                  <Button variant="default" size="sm" className="w-full text-xs h-11 gap-1">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {t("common.open") || "Abrir"}
+                  </Button>
+                </OpenLink>
+              )}
+              {a.clientName && a.clientId && (
+                <Button variant="outline" size="sm" className="w-full text-xs h-11 gap-1" onClick={() => setCommsAlert(a)}>
                   <Phone className="w-3.5 h-3.5" />
-                  {t('alerts.contact') || 'Contactar'}
+                  {t("alerts.contact") || "Contactar"}
                 </Button>
               )}
-              {a.status === 'pending' && (
+              {!a.derived && a.status === "pending" && (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => resolveAlert(a.id)} className="flex-1 text-xs text-success h-9">
+                  <Button variant="outline" size="sm" onClick={() => void resolve(a)} className="flex-1 text-xs text-success h-11">
                     <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                    {t('alerts.resolve')}
+                    {t("alerts.resolve")}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id)} className="text-xs text-muted-foreground h-9">
-                    {t('alerts.dismiss')}
+                  <Button variant="ghost" size="sm" onClick={() => void dismiss(a)} className="text-xs text-muted-foreground h-11">
+                    {t("alerts.dismiss")}
                   </Button>
                 </div>
               )}
@@ -415,81 +371,79 @@ export default function Alerts() {
         })}
       </div>
 
-      {/* Comunicação com o cliente do alerta */}
       {commsAlert && shopId && (
         <ClientCommsDialog
           open={!!commsAlert}
           onOpenChange={(v) => { if (!v) setCommsAlert(null); }}
           ctx={{
             workOrderId: commsAlert.id,
-            number: commsAlert.title || '—',
-            status: 'pending',
+            number: commsAlert.title || "—",
+            status: "pending",
             shopId,
-            clientName: (commsAlert.clients as any)?.name,
-            clientPhone: (commsAlert.clients as any)?.phone,
-            clientEmail: (commsAlert.clients as any)?.email,
-            vehicleMake: (commsAlert.vehicles as any)?.make,
-            vehicleModel: (commsAlert.vehicles as any)?.model,
-            plate: (commsAlert.vehicles as any)?.plate,
+            clientName: commsAlert.clientName ?? undefined,
+            clientPhone: commsAlert.clientPhone ?? undefined,
+            clientEmail: commsAlert.clientEmail ?? undefined,
+            vehicleMake: commsAlert.make ?? undefined,
+            vehicleModel: commsAlert.model ?? undefined,
+            plate: commsAlert.plate ?? undefined,
           }}
         />
       )}
 
-      {/* Create Alert Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>{t('alerts.create')}</DialogTitle>
+            <DialogTitle>{t("alerts.create")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t('alerts.titleCol')} *</Label>
+              <Label>{t("alerts.titleCol")} *</Label>
               <Input
                 value={newAlert.title}
-                onChange={e => setNewAlert(p => ({ ...p, title: e.target.value }))}
-                placeholder={t('alerts.titlePlaceholder')}
+                onChange={(e) => setNewAlert((p) => ({ ...p, title: e.target.value }))}
+                placeholder={t("alerts.titlePlaceholder")}
                 autoFocus
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('alerts.messageLabel')} *</Label>
+              <Label>{t("alerts.messageLabel")} *</Label>
               <Textarea
                 value={newAlert.message}
-                onChange={e => setNewAlert(p => ({ ...p, message: e.target.value }))}
-                placeholder={t('alerts.messagePlaceholder')}
+                onChange={(e) => setNewAlert((p) => ({ ...p, message: e.target.value }))}
+                placeholder={t("alerts.messagePlaceholder")}
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>{t('alerts.typeCol')}</Label>
-                <Select value={newAlert.type} onValueChange={v => setNewAlert(p => ({ ...p, type: v }))}>
+                <Label>{t("alerts.typeCol")}</Label>
+                <Select value={newAlert.type} onValueChange={(v) => setNewAlert((p) => ({ ...p, type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="custom">{t('alerts.type.custom')}</SelectItem>
-                    <SelectItem value="revision">{t('alerts.type.revision')}</SelectItem>
-                    <SelectItem value="service_due">{t('alerts.type.service_due')}</SelectItem>
-                    <SelectItem value="inspection">{t('alerts.type.inspection')}</SelectItem>
+                    <SelectItem value="custom">{typeLabel("custom")}</SelectItem>
+                    <SelectItem value="revision">{typeLabel("revision")}</SelectItem>
+                    <SelectItem value="service_due">{typeLabel("service_due")}</SelectItem>
+                    <SelectItem value="inspection">{typeLabel("inspection")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('alerts.priorityLabel')}</Label>
-                <Select value={newAlert.priority} onValueChange={v => setNewAlert(p => ({ ...p, priority: v }))}>
+                <Label>{t("alerts.priorityLabel")}</Label>
+                <Select value={newAlert.priority} onValueChange={(v) => setNewAlert((p) => ({ ...p, priority: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">{t('alerts.priorityLow')}</SelectItem>
-                    <SelectItem value="medium">{t('alerts.priorityMedium')}</SelectItem>
-                    <SelectItem value="high">{t('alerts.priorityHigh')}</SelectItem>
+                    <SelectItem value="low">{t("alerts.priorityLow")}</SelectItem>
+                    <SelectItem value="medium">{t("alerts.priorityMedium")}</SelectItem>
+                    <SelectItem value="high">{t("alerts.priorityHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleCreateAlert} disabled={!newAlert.title.trim() || !newAlert.message.trim() || creating}>
-              {creating ? t('common.loading') : t('alerts.create')}
+              {creating ? t("common.loading") : t("alerts.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

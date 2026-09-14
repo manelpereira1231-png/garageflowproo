@@ -75,6 +75,7 @@ import { canOpenPath } from "@/lib/rolePaths";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
 import { useSystemFeature } from "@/hooks/useSystemFeature";
+import { useShopAlerts } from "@/hooks/useShopAlerts";
 import { Store, ShoppingCart, Truck, History, BellRing } from "lucide-react";
 
 // Group-level admin surfaces: only visible / navigable from the "Oficina Mãe"

@@ -163,12 +163,59 @@ export async function sendWorkOrderEmail(
   }
 }
 
-/** Abre o WhatsApp (app ou Web) com a mensagem escolhida pré-preenchida. */
+/**
+ * Abre o WhatsApp (app ou Web) com a mensagem escolhida pré-preenchida.
+ *
+ * Usa a MESMA lógica do botão WhatsApp da lista de Serviços: quando a OS
+ * aguarda aprovação, garante/sincroniza o orçamento ligado e junta o link
+ * público de aprovação à mensagem — o link enviado antes (e qualquer envio
+ * futuro) mostra sempre a versão atual do orçamento.
+ *
+ * A janela do WhatsApp abre-se no próprio clique (antes de qualquer await),
+ * para o browser nunca a bloquear.
+ */
 export async function sendWorkOrderWhatsApp(
   ctx: WorkOrderCommsContext,
   body: string,
 ): Promise<boolean> {
   if (!ctx.clientPhone) throw new Error("O cliente não tem telefone registado.");
+
+  // Abrir a janela de imediato, ainda dentro do gesto do utilizador — depois
+  // de awaits (sincronizar orçamento) o browser bloquearia o popup.
+  let preopened: Window | null = null;
+  try {
+    preopened = window.open("", "_blank", "noopener,noreferrer");
+    preopened?.document?.write?.(
+      "<p style=\"font-family:sans-serif;color:#666;padding:24px;\">A abrir o WhatsApp…</p>",
+    );
+  } catch {
+    preopened = null;
+  }
+
+  let finalBody = body;
+  try {
+    const { data: wo } = await supabase
+      .from("work_orders")
+      .select(
+        "id, shop_id, quote_id, client_id, vehicle_id, lines, labor_hours, subtotal, vat_total, total, cost_total, profit, notes, diagnosis, status",
+      )
+      .eq("id", ctx.workOrderId)
+      .maybeSingle();
+
+    if (wo) {
+      const token = await ensureQuoteTokenForWorkOrder(wo);
+      if (token && (wo.status === "waiting_approval" || ctx.status === "waiting_approval")) {
+        const link = `${window.location.origin}/quote/${token}`;
+        if (!finalBody.includes(link)) {
+          finalBody = `${finalBody.trim()}\n\n📄 Consultar e aprovar o orçamento:\n${link}`;
+        }
+      }
+    }
+  } catch (err) {
+    // Se a preparação do link falhar, a mensagem segue na mesma.
+    console.warn("[client-comms] quote link failed", err);
+  }
+
   return openWhatsApp({
     phone: ctx.clientPhone,
     clientName: ctx.clientName,
@@ -179,6 +226,7 @@ export async function sendWorkOrderWhatsApp(
     serviceStage: ctx.status as any,
     total: ctx.total,
     shopName: ctx.shopName,
-    customMessage: body,
+    customMessage: finalBody,
+    preopenedWindow: preopened,
   });
 }

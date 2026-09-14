@@ -52,10 +52,12 @@ const emailClient = (email: string) => { window.location.href = `mailto:${email}
 
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
+  phone_secondary?: string | null;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
   is_fleet?: boolean | null; fleet_name?: string | null; fleet_manager?: string | null;
   portal_token: string | null;
 }
+
 
 const PAGE_SIZE = 50;
 const FETCH_LIMIT = 2000;
@@ -106,9 +108,10 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const [form, setForm] = useState({ name: "", phone: "", phone_secondary: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
 
-  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const resetForm = () => setForm({ name: "", phone: "", phone_secondary: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+
 
   const getActiveShopId = (): string | null => activeShopId;
 

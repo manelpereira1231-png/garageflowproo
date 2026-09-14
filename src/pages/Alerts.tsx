@@ -204,31 +204,48 @@ export default function Alerts() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={t("alerts.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder={t("alerts.filterType")} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("alerts.allTypes")}</SelectItem>
-            {alertTypes.map((type) => (
-              <SelectItem key={type} value={type}>{typeLabel(type)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("alerts.allStatus")}</SelectItem>
-            <SelectItem value="pending">{t("alerts.statusPending")}</SelectItem>
-            <SelectItem value="sent">{t("alerts.statusSent")}</SelectItem>
-            <SelectItem value="resolved">{t("alerts.statusResolved")}</SelectItem>
-            <SelectItem value="dismissed">{t("alerts.statusDismissed")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <CompactFilterBar
+        activeCount={activeFilterCount}
+        onClear={clearFilters}
+        search={
+          <>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t("alerts.search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </>
+        }
+        filters={(stacked) => (
+          <>
+            <FilterCombobox
+              value={filterType}
+              onChange={setFilterType}
+              options={typeOptions}
+              placeholder={t("alerts.allTypes")}
+              searchPlaceholder={t("alerts.filterType")}
+              fullWidth={stacked}
+            />
+            <FilterCombobox
+              value={filterPriority}
+              onChange={setFilterPriority}
+              options={priorityOptions}
+              placeholder="Prioridade"
+              fullWidth={stacked}
+            />
+            <FilterCombobox
+              value={filterStatus}
+              onChange={setFilterStatus}
+              options={statusOptions}
+              placeholder={t("alerts.allStatus")}
+              fullWidth={stacked}
+            />
+          </>
+        )}
+      />
+
 
       {/* Desktop table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden hidden sm:block">

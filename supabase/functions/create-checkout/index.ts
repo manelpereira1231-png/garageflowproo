@@ -87,7 +87,7 @@ serve(async (req) => {
     if (!plan || typeof plan !== "string") throw new Error("Plano inválido.");
     const { data: planRow, error: planErr } = await supabaseClient
       .from("plans")
-      .select("slug, name, active, archived_at")
+      .select("slug, name, active, archived_at, trial_days")
       .eq("slug", plan)
       .maybeSingle();
     if (planErr) throw new Error("Erro a validar plano: " + planErr.message);

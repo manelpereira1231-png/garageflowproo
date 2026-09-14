@@ -236,17 +236,5 @@ export async function sendWorkOrderWhatsApp(
     console.warn("[client-comms] quote link failed", err);
   }
 
-  return openWhatsApp({
-    phone: ctx.clientPhone,
-    clientName: ctx.clientName,
-    type: "service",
-    number: ctx.number,
-    plate: ctx.plate,
-    model: `${ctx.vehicleMake || ""} ${ctx.vehicleModel || ""}`.trim(),
-    serviceStage: ctx.status as any,
-    total: ctx.total,
-    shopName: ctx.shopName,
-    customMessage: finalBody,
-    preopenedWindow: preopened,
-  });
+  return openWhatsApp({ ...base, customMessage: finalBody, preopenedWindow: preopened });
 }

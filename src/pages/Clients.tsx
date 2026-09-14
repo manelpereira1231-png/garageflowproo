@@ -450,6 +450,16 @@ export default function Clients() {
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1 items-center">
+                    {client.phone && (
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title="Ligar">
+                        <Phone className="w-3.5 h-3.5 mr-1" />Ligar
+                      </Button>
+                    )}
+                    {client.email && (
+                      <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="text-xs" title="Email">
+                        <Mail className="w-3.5 h-3.5 mr-1" />Email
+                      </Button>
+                    )}
                     {client.phone ? (
                       <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500 w-[110px] justify-start" title="WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp

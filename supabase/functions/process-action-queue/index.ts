@@ -50,13 +50,8 @@ async function executeAction(a: Action): Promise<{ ok: boolean; error?: string }
       }
       case "feature_in_homepage":
       case "price_review": {
-        // Mark via notifications; soft action
-        await admin.from("notifications").insert({
-          user_id: null,
-          type: a.action_type,
-          title: a.action_type,
-          body: JSON.stringify(a.payload ?? {}),
-        }).then(() => {}, () => {});
+        // Evento interno: não é escrito em `notifications` (essa tabela é
+        // exclusivamente para conteúdo útil ao utilizador).
         return { ok: true };
       }
       default:

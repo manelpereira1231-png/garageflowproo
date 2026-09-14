@@ -210,8 +210,12 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     setRows(dbAlerts);
 
     const out: UnifiedAlert[] = [];
-    const openDbTypes = new Set(
-      dbAlerts.filter((a) => a.status === "pending" || a.status === "sent").map((a) => a.type),
+    // Dedupe por SITUAÇÃO concreta (tipo + título), nunca por tipo inteiro:
+    // um alerta guardado não pode apagar todos os derivados da mesma família.
+    const openDbKeys = new Set(
+      dbAlerts
+        .filter((a) => a.status === "pending" || a.status === "sent")
+        .map((a) => `${a.type}|${(a.title || "").toLowerCase()}`),
     );
 
     // ---- STOCK: um alerta por peça, com link para a peça ----
@@ -276,6 +280,8 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
       const subtitle = [(o.clients as any)?.name, vehLabel].filter(Boolean).join(" · ") || null;
 
+      // Veículo já entregue = situação encerrada, sem alerta.
+      if (o.delivered_at) continue;
       if (o.status === "completed") {
         // Só depois de 2 dias — evita alertar logo após marcar como pronto.
         const waiting = daysSince(o.completed_at || o.created_at);
@@ -346,9 +352,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       }
     }
 
-    // Nunca duplicar: se a base de dados já tem um alerta aberto do mesmo
-    // tipo, o derivado equivalente não é mostrado.
-    setDerived(out.filter((a) => !openDbTypes.has(a.type)));
+    setDerived(out.filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`)));
     setLoading(false);
   }, [idsKey]);
 

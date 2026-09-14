@@ -74,6 +74,7 @@ export default function DemoGuide() {
   const navigate = useNavigate();
   const location = useLocation();
   const active = isDemoSession();
+  const isMobile = useIsMobile();
 
   const [welcome, setWelcome] = useState(false);
   const [tourStep, setTourStep] = useState<number | null>(null);

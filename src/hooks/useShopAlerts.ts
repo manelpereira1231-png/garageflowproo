@@ -159,7 +159,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const [rows, setRows] = useState<UnifiedAlert[]>([]);
   const [derived, setDerived] = useState<UnifiedAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [derivedRead, setDerivedRead] = useState<Record<string, string>>(() => readDerivedRead());
+  const [derivedState, setDerivedState] = useState<Record<string, DerivedState>>({});
 
   const load = useCallback(async () => {
     const ids = idsKey ? idsKey.split(",") : [];

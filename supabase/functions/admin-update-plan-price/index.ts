@@ -67,7 +67,7 @@ serve(async (req) => {
     const amount = Number(body.amount);
 
     if (!country) return badRequest("country_code_required");
-    if (plan !== "free" && plan !== "pro" && plan !== "garage") return badRequest("plan_invalid");
+    if (!plan || !/^[a-z0-9_-]+$/.test(String(plan))) return badRequest("plan_invalid");
     if (cycle !== "monthly" && cycle !== "yearly") return badRequest("cycle_invalid");
     // Free plan may legitimately be priced at 0 (no Stripe price needed).
     if (!Number.isFinite(amount) || amount < 0) return badRequest("amount_invalid");
@@ -87,12 +87,46 @@ serve(async (req) => {
 
     const currency = (body.currency || countryRow.currency || "EUR").toLowerCase();
 
+    // Legacy per-country columns only exist for the three built-in plans.
+    const isLegacyPlan = plan === "free" || plan === "pro" || plan === "garage";
     const productCol = `stripe_${plan}_product_id`;
     const priceCol = `stripe_${plan}_${cycle}`;          // stripe_pro_monthly, etc.
     const amountCol = `saas_${plan}_${cycle}`;           // saas_pro_monthly, etc.
 
-    const oldPriceId: string | null = (countryRow as any)[priceCol] ?? null;
-    const oldAmount: number | null = (countryRow as any)[amountCol] ?? null;
+    // Canonical price row (plan_country_prices) — source of truth for all plans.
+    const { data: pcpRow } = await supabase
+      .from("plan_country_prices")
+      .select("*")
+      .eq("plan_slug", plan)
+      .eq("country_code", country)
+      .eq("cycle", cycle)
+      .maybeSingle();
+
+    const oldPriceId: string | null =
+      (isLegacyPlan ? (countryRow as any)[priceCol] : null) ?? (pcpRow as any)?.stripe_price_id ?? null;
+    const oldAmount: number | null =
+      (isLegacyPlan ? (countryRow as any)[amountCol] : null) ?? (pcpRow as any)?.amount ?? null;
+
+    const savePriceRow = async (payload: {
+      amount: number;
+      stripe_price_id: string | null;
+      stripe_product_id: string | null;
+    }) => {
+      const { error } = await supabase.from("plan_country_prices").upsert(
+        {
+          plan_slug: plan,
+          country_code: country,
+          cycle,
+          currency: currency.toUpperCase(),
+          amount: payload.amount,
+          stripe_price_id: payload.stripe_price_id,
+          stripe_product_id: payload.stripe_product_id,
+          active: true,
+        },
+        { onConflict: "plan_slug,country_code,cycle" },
+      );
+      if (error) throw error;
+    };
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 

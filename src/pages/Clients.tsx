@@ -39,6 +39,17 @@ const sendWhatsAppHello = (client: { phone: string; name: string }) => {
   if (!ok) toast.error("Não foi possível abrir o WhatsApp");
 };
 
+/** Número em formato internacional para links `tel:` (assume +351 quando não há indicativo). */
+const telHref = (phone: string) => {
+  let cleaned = (phone || "").replace(/[^0-9+]/g, "");
+  if (cleaned.startsWith("00")) cleaned = "+" + cleaned.slice(2);
+  if (!cleaned.startsWith("+")) cleaned = (cleaned.startsWith("351") ? "+" : "+351") + cleaned;
+  return `tel:${cleaned}`;
+};
+
+const callClient = (phone: string) => { window.location.href = telHref(phone); };
+const emailClient = (email: string) => { window.location.href = `mailto:${email}`; };
+
 interface ClientRow {
   id: string; name: string; phone: string; email: string;
   company: string | null; nif: string | null; notes: string | null; created_at: string;
@@ -382,7 +393,13 @@ export default function Clients() {
               <span className="font-semibold text-sm">{client.name}</span>
               <div className="flex gap-1">
                 {client.phone && (
+                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title="Ligar"><Phone className="w-5 h-5" /></Button>
+                )}
+                {client.phone && (
                   <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title="WhatsApp"><MessageCircle className="w-5 h-5" /></Button>
+                )}
+                {client.email && (
+                  <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-11 p-0" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}
                 <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-11 p-0"><Pencil className="w-4 h-4" /></Button>
@@ -433,6 +450,16 @@ export default function Clients() {
                 <TableCell className="mono text-sm">{client.nif || "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1 items-center">
+                    {client.phone && (
+                      <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="text-xs text-primary" title="Ligar">
+                        <Phone className="w-3.5 h-3.5 mr-1" />Ligar
+                      </Button>
+                    )}
+                    {client.email && (
+                      <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="text-xs" title="Email">
+                        <Mail className="w-3.5 h-3.5 mr-1" />Email
+                      </Button>
+                    )}
                     {client.phone ? (
                       <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="text-xs text-green-600 dark:text-green-500 w-[110px] justify-start" title="WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />WhatsApp

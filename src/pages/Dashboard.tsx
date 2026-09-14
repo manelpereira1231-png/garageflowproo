@@ -193,7 +193,7 @@ function OwnerDashboard() {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-        const [ordersRes, quotesRes, clientsRes, alertsRes, allOrdersRes, lowStockRes, overdueRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
+        const [ordersRes, quotesRes, clientsRes, allOrdersRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
             .select("shop_id, total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
             .in("shop_id", shopIds)

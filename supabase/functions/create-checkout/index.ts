@@ -129,7 +129,7 @@ serve(async (req) => {
     // Any plan created in the admin (Enterprise, Business, custom…) works here.
     const { data: priceRow } = await supabaseClient
       .from("plan_country_prices")
-      .select("stripe_price_id, active")
+      .select("stripe_price_id, amount, currency, active")
       .eq("plan_slug", plan)
       .eq("country_code", resolvedCountry)
       .eq("cycle", cycle)
@@ -149,6 +149,9 @@ serve(async (req) => {
     let priceId = priceRow?.stripe_price_id
       || legacyMap[key]
       || (FALLBACK_EUR as any)[key];
+    let expectedAmount = priceRow?.amount != null
+      ? Number(priceRow.amount)
+      : Number((countryConfig as any)?.[`saas_${key}`]);
 
     // ─── PROMOTION OVERRIDE ───
     // If there is an active promotion for this country/plan/cycle at now(),
@@ -156,6 +159,8 @@ serve(async (req) => {
     // active + start/end window. If the promo has no Stripe price yet
     // (e.g. admin defined it without applying), fall back to the base price
     // so checkout never breaks.
+    const isEntryPlan = plan === "free";
+
     try {
       const { data: promoRows } = await supabaseClient.rpc("get_active_promotion", {
         _country_code: resolvedCountry,
@@ -165,6 +170,7 @@ serve(async (req) => {
       const promo = Array.isArray(promoRows) ? promoRows[0] : promoRows;
       if (promo?.stripe_price_id) {
         priceId = promo.stripe_price_id;
+        expectedAmount = Number(promo.promo_price);
       }
     } catch (e) {
       console.warn("[create-checkout] promo lookup failed, using base price", e);
@@ -175,7 +181,6 @@ serve(async (req) => {
     // Período grátis: apenas o plano de entrada (Start) tem trial.
     // Planos pagos (Pro, Garage, …) são cobrados de imediato e a renovação
     // fica ancorada na data exata do 1.º pagamento.
-    const isEntryPlan = plan === "free";
     const trialDays =
       planRow.trial_days != null
         ? Number(planRow.trial_days)
@@ -192,6 +197,16 @@ serve(async (req) => {
       }
       if (price.type !== "recurring" || !price.recurring) {
         throw new Error(`Stripe Price is not recurring: ${priceId}`);
+      }
+      const unitAmount = price.unit_amount;
+      const expectedMinor = Number.isFinite(expectedAmount)
+        ? Math.round(expectedAmount * 100)
+        : null;
+      if (!isEntryPlan && (!unitAmount || unitAmount < 50)) {
+        throw new Error(`Preço inválido para cobrança imediata de ${plan}/${cycle}. Corrija o valor no Admin.`);
+      }
+      if (expectedMinor != null && unitAmount !== expectedMinor) {
+        throw new Error(`O preço Stripe de ${plan}/${cycle} não corresponde ao valor configurado no Admin.`);
       }
       const expectedInterval = cycle === "yearly" ? "year" : "month";
       if (price.recurring.interval !== expectedInterval) {

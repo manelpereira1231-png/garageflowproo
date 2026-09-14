@@ -72,6 +72,9 @@ serve(async (req) => {
     // Free plan may legitimately be priced at 0 (no Stripe price needed).
     if (!Number.isFinite(amount) || amount < 0) return badRequest("amount_invalid");
     if (amount === 0 && plan !== "free") return badRequest("amount_invalid");
+    if (plan !== "free" && Math.round(amount * 100) < 50) {
+      return badRequest("paid_plan_below_stripe_minimum");
+    }
 
     // ── Load country config ──
     const { data: countryRow, error: countryErr } = await supabase

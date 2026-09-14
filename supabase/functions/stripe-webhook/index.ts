@@ -205,6 +205,18 @@ serve(async (req) => {
         const customerId = invoice.customer as string;
         if (!customerId) break;
 
+        // Stripe can mark tiny invoices as paid without creating a charge
+        // (below the currency minimum). A paid SaaS plan requires money to
+        // have actually been collected, not merely a `paid` invoice status.
+        if (Number(invoice.amount_paid || 0) <= 0) {
+          log("Invoice paid with no money collected — plan activation blocked", {
+            invoiceId: invoice.id,
+            amountDue: invoice.amount_due,
+            amountPaid: invoice.amount_paid,
+          });
+          break;
+        }
+
         const sub = await findSubscription(customerId);
         if (sub) {
           // O pagamento confirmado é a fonte de verdade do plano. Se a fatura
@@ -294,6 +306,20 @@ serve(async (req) => {
               activeSubscriptionId: sub.stripe_subscription_id,
             });
             break;
+          }
+          if (subscription.status === "active") {
+            const invoiceId = typeof subscription.latest_invoice === "string"
+              ? subscription.latest_invoice
+              : subscription.latest_invoice?.id;
+            const invoice = invoiceId ? await stripe.invoices.retrieve(invoiceId) : null;
+            if (!invoice || invoice.status !== "paid" || Number(invoice.amount_paid || 0) <= 0) {
+              log("Active Stripe subscription has no collected payment — update ignored", {
+                subscriptionId: subscription.id,
+                invoiceId,
+                amountPaid: invoice?.amount_paid ?? 0,
+              });
+              break;
+            }
           }
           const plan = await resolvePlan(subscription);
           const billingCycle = resolveBillingCycle(subscription);
@@ -561,8 +587,14 @@ serve(async (req) => {
         // It becomes effective only when Stripe confirms that the first
         // invoice was paid (or through async_payment_succeeded).
         const requiresImmediateCharge = session.metadata?.immediate_charge === "true";
-        const paymentConfirmed = session.payment_status === "paid"
-          || event.type === "checkout.session.async_payment_succeeded";
+        let paymentConfirmed = false;
+        if (session.payment_status === "paid" || event.type === "checkout.session.async_payment_succeeded") {
+          const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
+          const invoice = invoiceId ? await stripe.invoices.retrieve(invoiceId) : null;
+          paymentConfirmed = !!invoice
+            && invoice.status === "paid"
+            && Number(invoice.amount_paid || 0) > 0;
+        }
         if (requiresImmediateCharge && !paymentConfirmed) {
           log("Paid checkout completed without confirmed payment — activation deferred", {
             sessionId: session.id,

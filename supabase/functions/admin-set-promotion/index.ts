@@ -132,6 +132,9 @@ serve(async (req) => {
     // ── UPSERT: create/update promotion ──
     const promoPrice = Number(body.promo_price);
     if (!Number.isFinite(promoPrice) || promoPrice < 0) return badRequest("promo_price_invalid");
+    if (plan !== "free" && Math.round(promoPrice * 100) < 50) {
+      return badRequest("paid_plan_promotion_below_stripe_minimum");
+    }
     if (baseAmount > 0 && promoPrice >= baseAmount) return badRequest("promo_price_must_be_less_than_base");
 
     const activeFlag = body.active !== false; // default true

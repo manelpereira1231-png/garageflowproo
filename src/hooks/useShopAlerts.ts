@@ -499,6 +499,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     if (alert.derived) { await persistDerived(alert, { read: true }); return; }
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, read: true } : a)));
     await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).eq("id", alert.id);
+    notifyAlertSync();
   }, [persistDerived]);
 
   const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus | null) => {
@@ -507,6 +508,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status: next } : a)));
     const { error } = await supabase.from("alerts").update({ status: next } as any).eq("id", alert.id);
     if (error) void load();
+    notifyAlertSync();
   }, [load, persistDerived]);
 
   const markAllRead = useCallback(async () => {
@@ -517,7 +519,9 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       setRows((prev) => prev.map((a) => (dbIds.includes(a.id) ? { ...a, read: true } : a)));
       await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).in("id", dbIds);
     }
+    notifyAlertSync();
   }, [alerts, persistDerived]);
+
 
   const open = alerts.filter((a) => a.status === "pending" || a.status === "sent");
   /** Badge: apenas alertas por tratar E por ler. Nunca conta itens técnicos. */

@@ -425,6 +425,8 @@ export default function Clients() {
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+              {client.phone_secondary && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone_secondary}</span>}
+
               {client.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>}
               {client.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{client.company}</span>}
             </div>

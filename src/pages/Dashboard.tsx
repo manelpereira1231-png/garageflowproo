@@ -1013,23 +1013,34 @@ function OwnerDashboard() {
             </Link>
           </div>
           <div className="space-y-2">
-            {pendingAlerts.map(alert => (
-              <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border group hover:bg-muted/80 transition-colors">
-                <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{alert.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t(`alerts.type.${alert.type}`)} · {alert.due_date ? new Date(alert.due_date).toLocaleDateString() : new Date(alert.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <Link to="/alerts" className="shrink-0">
-                  <Button variant="ghost" size="sm" className="text-xs gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Bell className="w-3 h-3" />
-                    {t('common.view') || 'Ver'}
-                  </Button>
+            {pendingAlerts.map(alert => {
+              const typeLabel = t(`alerts.type.${alert.type}`) === `alerts.type.${alert.type}` ? alert.type : t(`alerts.type.${alert.type}`);
+              const body = (
+                <>
+                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${alertTypeColors[alert.type] || 'text-warning'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm truncate ${alert.read ? 'font-medium' : 'font-semibold'}`}>{alert.title}</p>
+                    {alert.message && <p className="text-xs text-muted-foreground line-clamp-1">{alert.message}</p>}
+                    <p className="text-xs text-muted-foreground">
+                      {typeLabel} · {alert.dueDate ? new Date(alert.dueDate).toLocaleDateString() : new Date(alert.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!alert.read && <span className="w-2 h-2 rounded-full bg-warning shrink-0" />}
+                </>
+              );
+              const cls = `flex items-center gap-3 p-3 rounded-lg border transition-colors ${alert.read ? 'bg-muted/50 border-border hover:bg-muted/80' : 'bg-warning/5 border-warning/30 hover:bg-warning/10'}`;
+              // O destino é o mesmo que a página /alerts usa, e abrir aqui
+              // marca o alerta como lido em todo o sistema.
+              return alert.link ? (
+                <Link key={alert.id} to={alert.link} className={cls} onClick={() => void markAlertRead(alert)}>
+                  {body}
                 </Link>
-              </div>
-            ))}
+              ) : (
+                <Link key={alert.id} to="/alerts" className={cls} onClick={() => void markAlertRead(alert)}>
+                  {body}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

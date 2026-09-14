@@ -20,6 +20,7 @@ import { setActiveShopAndSync } from "@/lib/shopContextSync";
 import { formatMoney } from "@/lib/money";
 import { getCountryConfig } from "@/lib/regionConfig";
 import { useMoneyAtStake } from "@/hooks/useMoneyAtStake";
+import { useShopAlerts } from "@/hooks/useShopAlerts";
 
 // Lazy-loaded role-specific dashboards. Owner/Admin/Manager/Super Admin keep
 // the full dashboard below; the other roles get lean, focused screens.
@@ -125,7 +126,12 @@ function OwnerDashboard() {
   const fmt = useCallback((v: number) => formatMoney(v, currency), [currency]);
   const [shopName, setShopName] = useState("");
   const [shopLogoUrl, setShopLogoUrl] = useState<string | null>(null);
-  const [pendingAlerts, setPendingAlerts] = useState<any[]>([]);
+  // Alertas: fonte única de verdade partilhada com /alerts e com o menu.
+  const { open: openAlerts, markRead: markAlertRead } = useShopAlerts({ shopIds: stakeShopIds });
+  const pendingAlerts = useMemo(
+    () => [...openAlerts].sort((a, b) => Number(a.read) - Number(b.read)).slice(0, 5),
+    [openAlerts],
+  );
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number; profit: number }[]>([]);
   const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
   const [conversionRate, setConversionRate] = useState(0);

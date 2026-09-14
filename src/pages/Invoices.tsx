@@ -1,4 +1,5 @@
 import { exportSaftInBackground } from "@/lib/saftExport";
+import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";

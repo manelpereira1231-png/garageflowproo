@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";

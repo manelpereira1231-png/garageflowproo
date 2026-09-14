@@ -642,7 +642,7 @@ export default function QuoteApproval() {
                 <FileText className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">{t('quoteDetails')}</span>
               </div>
-              <div className="border border-border rounded-xl overflow-hidden">
+              <div className="border border-border rounded-xl overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/70">

@@ -1899,6 +1899,7 @@ export type Database = {
           nif: string | null
           notes: string | null
           phone: string
+          phone_secondary: string | null
           portal_token: string | null
           shop_id: string
         }
@@ -1916,6 +1917,7 @@ export type Database = {
           nif?: string | null
           notes?: string | null
           phone?: string
+          phone_secondary?: string | null
           portal_token?: string | null
           shop_id: string
         }
@@ -1933,6 +1935,7 @@ export type Database = {
           nif?: string | null
           notes?: string | null
           phone?: string
+          phone_secondary?: string | null
           portal_token?: string | null
           shop_id?: string
         }

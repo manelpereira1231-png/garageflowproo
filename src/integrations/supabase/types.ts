@@ -11792,6 +11792,15 @@ export type Database = {
       get_public_legal_settings: { Args: never; Returns: Json }
       get_public_platform_stats: { Args: never; Returns: Json }
       get_public_shop_by_slug: { Args: { _slug: string }; Returns: Json }
+      get_public_trust_score: {
+        Args: { _user_id: string }
+        Returns: {
+          avg_rating: number
+          score_points: number
+          successful_sales: number
+          trust_level: string
+        }[]
+      }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_seller_emails: {
         Args: { seller_ids: string[] }

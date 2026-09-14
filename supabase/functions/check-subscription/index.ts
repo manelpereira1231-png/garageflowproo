@@ -224,9 +224,15 @@ serve(async (req) => {
 
     // Active subscription found — sync to DB
     const plan = await resolvePlan(activeSub, supabaseClient);
-    const interval = activeSub.items.data[0]?.price?.recurring?.interval;
+    const activeItem = activeSub.items.data[0];
+    const interval = activeItem?.price?.recurring?.interval;
     const billingCycle = interval === "year" ? "yearly" : "monthly";
-    const subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+    // Stripe's current API exposes the billing period on the subscription
+    // item. Keep the top-level field as a compatibility fallback.
+    const periodEndSeconds = activeItem?.current_period_end ?? activeSub.current_period_end;
+    const subscriptionEnd = periodEndSeconds
+      ? new Date(periodEndSeconds * 1000).toISOString()
+      : null;
     const trialEnd = activeSub.trial_end ? new Date(activeSub.trial_end * 1000).toISOString() : null;
     const status = activeSub.status === "trialing" ? "trialing" : "active";
 

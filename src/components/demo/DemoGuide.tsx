@@ -66,7 +66,7 @@ function useTargetRect(path: string | null, tick: number, enabled: boolean) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [path, tick]);
+  }, [path, tick, enabled]);
   return rect;
 }
 

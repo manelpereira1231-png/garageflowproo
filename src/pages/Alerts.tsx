@@ -89,11 +89,10 @@ export default function Alerts() {
   const [commsAlert, setCommsAlert] = useState<UnifiedAlert | null>(null);
   const [newAlert, setNewAlert] = useState({ title: "", message: "", type: "custom", priority: "medium" });
 
-  const typeLabel = (type: string) => {
-    const label = t(`alerts.type.${type}`);
-    if (label !== `alerts.type.${type}`) return label;
-    return DERIVED_TYPE_LABELS[type] || type;
-  };
+  // t() humaniza a chave quando não há tradução (e.g. "Stock Low"),
+  // o que deixaria tipos derivados em inglês. Passamos o rótulo PT como
+  // defaultValue: só é usado quando a tradução alerts.type.<type> não existe.
+  const typeLabel = (type: string) => t(`alerts.type.${type}`, DERIVED_TYPE_LABELS[type]);
 
 
   const handleCreateAlert = async () => {

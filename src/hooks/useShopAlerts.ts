@@ -23,6 +23,10 @@ export type AlertPriority = "critical" | "high" | "low";
 export type UnifiedAlert = {
   id: string;
   derived: boolean;
+  /** Oficina a que o alerta pertence (necessário para guardar o estado). */
+  shopId: string | null;
+  /** Assinatura da situação: se mudar, um alerta resolvido reabre. */
+  signature: string | null;
   type: string;
   title: string;
   /** Linha curta de contexto: entidade + identificação. */
@@ -85,6 +89,8 @@ function normalizePriority(p: any): AlertPriority {
 function derivedAlert(a: Partial<UnifiedAlert> & { id: string; type: string; title: string }): UnifiedAlert {
   return {
     derived: true,
+    shopId: null,
+    signature: null,
     subtitle: null,
     message: null,
     priority: "high",
@@ -120,6 +126,8 @@ function mapRow(row: any): UnifiedAlert {
   return {
     id: row.id,
     derived: false,
+    shopId: row.shop_id ?? null,
+    signature: null,
     type: row.type,
     title: row.title,
     subtitle: parts.length ? parts.join(" · ") : null,
@@ -176,31 +184,31 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         .limit(300),
       supabase
         .from("parts")
-        .select("id, name, reference, stock_quantity, min_stock")
+        .select("id, shop_id, name, reference, stock_quantity, min_stock")
         .in("shop_id", ids)
         .eq("active", true),
       supabase
         .from("invoices")
-        .select("id, number, total, due_date, clients(name)")
+        .select("id, shop_id, number, total, due_date, clients(name)")
         .in("shop_id", ids)
         .in("status", ["issued", "partial"])
         .lt("due_date", today()),
       supabase
         .from("appointments")
-        .select("id, date, time, service_type, status, source, client_name, clients(name)")
+        .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .order("date", { ascending: true })
         .limit(30),
       supabase
         .from("work_orders")
-        .select("id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .in("status", ["in_progress", "waiting_parts", "completed"])
         .limit(200),
       supabase
         .from("quotes")
-        .select("id, number, status, total, date, created_at, clients(name)")
+        .select("id, shop_id, number, status, total, date, created_at, clients(name)")
         .in("shop_id", ids)
         .in("status", ["sent", "approved"])
         .limit(200),
@@ -227,6 +235,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:part:${p.id}`,
+          shopId: SHOP_PLACEHOLDER,
           type: rupture ? "stock_out" : "stock_low",
           title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
           subtitle: p.reference ? `Ref. ${p.reference}` : null,
@@ -243,6 +252,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:invoice:${inv.id}`,
+          shopId: SHOP_PLACEHOLDER,
           type: "invoice_overdue",
           title: `Fatura ${inv.number} vencida`,
           subtitle: (inv.clients as any)?.name || null,
@@ -261,6 +271,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       out.push(
         derivedAlert({
           id: `derived:appointment:${ap.id}`,
+          shopId: SHOP_PLACEHOLDER,
           type: "appointment_new",
           title: "Nova marcação recebida",
           subtitle: name,
@@ -289,6 +300,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
           out.push(
             derivedAlert({
               id: `derived:pickup:${o.id}`,
+              shopId: SHOP_PLACEHOLDER,
               type: "vehicle_ready",
               title: `Veículo pronto por levantar — ${o.number}`,
               subtitle,
@@ -306,6 +318,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:late-order:${o.id}`,
+            shopId: SHOP_PLACEHOLDER,
             type: "service_late",
             title: `Serviço atrasado — ${o.number}`,
             subtitle,
@@ -326,6 +339,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-approved:${q.id}`,
+            shopId: SHOP_PLACEHOLDER,
             type: "quote_approved",
             title: `Orçamento ${q.number} aprovado`,
             subtitle: clientName,
@@ -341,6 +355,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         out.push(
           derivedAlert({
             id: `derived:quote-pending:${q.id}`,
+            shopId: SHOP_PLACEHOLDER,
             type: "quote_pending",
             title: `Orçamento ${q.number} aguarda aprovação`,
             subtitle: clientName,

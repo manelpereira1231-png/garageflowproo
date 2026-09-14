@@ -300,6 +300,11 @@ export default function Clients() {
                   <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
                 </div>
                 <div className="space-y-1.5">
+                  <Label>Telefone alternativo</Label>
+                  <Input value={form.phone_secondary} onChange={e => setForm({...form, phone_secondary: e.target.value})} />
+                </div>
+
+                <div className="space-y-1.5">
                   <Label>{t('clients.email')}</Label>
                   <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
                 </div>

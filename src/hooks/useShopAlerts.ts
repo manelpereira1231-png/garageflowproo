@@ -147,6 +147,17 @@ function mapRow(row: any): UnifiedAlert {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * Sincronização imediata entre todos os sítios que mostram alertas
+ * (contador do menu, dashboard e página de alertas). Quando um alerta é
+ * lido/resolvido/reaberto num sítio, os outros atualizam no mesmo instante.
+ */
+const alertSyncListeners = new Set<() => void>();
+function notifyAlertSync() {
+  for (const fn of Array.from(alertSyncListeners)) fn();
+}
+
+
 export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const { activeShopId, shops } = useShopContext();
   const contextIds = useMemo(
@@ -452,8 +463,10 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         // Reabrir: apagar o estado guardado devolve o alerta a "por tratar".
         setDerivedState((m) => { const n = { ...m }; delete n[alert.id]; return n; });
         await supabase.from("alert_states").delete().eq("shop_id", shopId).eq("alert_key", alert.id);
+        notifyAlertSync();
         return;
       }
+
 
       const next: DerivedState = {
         signature: alert.signature,
@@ -474,7 +487,9 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         } as any,
         { onConflict: "shop_id,alert_key" },
       );
+      notifyAlertSync();
     },
+
     [derivedState],
   );
 
@@ -484,6 +499,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     if (alert.derived) { await persistDerived(alert, { read: true }); return; }
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, read: true } : a)));
     await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).eq("id", alert.id);
+    notifyAlertSync();
   }, [persistDerived]);
 
   const setStatus = useCallback(async (alert: UnifiedAlert, status: AlertStatus | null) => {
@@ -492,6 +508,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status: next } : a)));
     const { error } = await supabase.from("alerts").update({ status: next } as any).eq("id", alert.id);
     if (error) void load();
+    notifyAlertSync();
   }, [load, persistDerived]);
 
   const markAllRead = useCallback(async () => {
@@ -502,7 +519,9 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       setRows((prev) => prev.map((a) => (dbIds.includes(a.id) ? { ...a, read: true } : a)));
       await supabase.from("alerts").update({ read_at: new Date().toISOString() } as any).in("id", dbIds);
     }
+    notifyAlertSync();
   }, [alerts, persistDerived]);
+
 
   const open = alerts.filter((a) => a.status === "pending" || a.status === "sent");
   /** Badge: apenas alertas por tratar E por ler. Nunca conta itens técnicos. */

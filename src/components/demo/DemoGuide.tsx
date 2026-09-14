@@ -161,7 +161,7 @@ export default function DemoGuide() {
 
       {/* Boas-vindas */}
       {welcome && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[95] flex touch-manipulation items-center justify-center overscroll-contain bg-background/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary"><Car className="h-5 w-5" /></span>

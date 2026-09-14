@@ -108,7 +108,8 @@ export default function Alerts() {
       || (a.clientName || "").toLowerCase().includes(q);
     const matchType = filterType === "all" || a.type === filterType;
     const matchStatus = filterStatus === "all" || a.status === filterStatus;
-    return matchSearch && matchType && matchStatus;
+    const matchPriority = filterPriority === "all" || a.priority === filterPriority;
+    return matchSearch && matchType && matchStatus && matchPriority;
   });
 
   const exportCSV = () => {

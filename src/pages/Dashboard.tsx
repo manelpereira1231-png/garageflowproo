@@ -207,26 +207,11 @@ function OwnerDashboard() {
             .select("client_id")
             .in("shop_id", shopIds)
             .gte("created_at", monthStart),
-          supabase.from("alerts")
-            .select("id, title, type, status, due_date, created_at")
-            .in("shop_id", shopIds)
-            .eq("status", "pending")
-            .order("created_at", { ascending: false })
-            .limit(5),
           supabase.from("work_orders")
             .select("shop_id, total, profit, status, created_at")
             .in("shop_id", shopIds)
             .gte("created_at", sixMonthsAgo)
             .in("status", ['completed', 'delivered']),
-          supabase.from("parts")
-            .select("id, name, stock_quantity, min_stock")
-            .in("shop_id", shopIds)
-            .eq("active", true),
-          supabase.from("invoices")
-            .select("id, number, total, due_date, clients(name)")
-            .in("shop_id", shopIds)
-            .in("status", ['issued', 'partial'])
-            .lt("due_date", new Date().toISOString().slice(0, 10)),
           supabase.from("quotes")
             .select("id, status")
             .in("shop_id", shopIds)

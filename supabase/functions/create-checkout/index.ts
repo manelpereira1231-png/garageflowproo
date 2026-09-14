@@ -87,7 +87,7 @@ serve(async (req) => {
     if (!plan || typeof plan !== "string") throw new Error("Plano inválido.");
     const { data: planRow, error: planErr } = await supabaseClient
       .from("plans")
-      .select("slug, name, active, archived_at")
+      .select("slug, name, active, archived_at, trial_days")
       .eq("slug", plan)
       .maybeSingle();
     if (planErr) throw new Error("Erro a validar plano: " + planErr.message);
@@ -172,7 +172,16 @@ serve(async (req) => {
 
     if (!priceId) throw new Error(`No Stripe price configured for ${plan}/${cycle} in ${resolvedCountry}`);
 
-    const trialDays = countryConfig?.saas_trial_days ?? 30;
+    // Período grátis: apenas o plano de entrada (Start) tem trial.
+    // Planos pagos (Pro, Garage, …) são cobrados de imediato e a renovação
+    // fica ancorada na data exata do 1.º pagamento.
+    const isEntryPlan = plan === "free";
+    const trialDays =
+      planRow.trial_days != null
+        ? Number(planRow.trial_days)
+        : isEntryPlan
+          ? (countryConfig?.saas_trial_days ?? 30)
+          : 0;
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 

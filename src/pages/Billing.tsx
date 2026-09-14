@@ -415,6 +415,12 @@ export default function Billing() {
                     {t('billing.statusCanceled') || 'Expirado'}
                   </Badge>
                 )}
+                {cancelPending && (
+                  <Badge variant="secondary" className="bg-warning/10 text-warning">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Subscrição cancelada
+                  </Badge>
+                )}
                 {isAdminManaged && !noActivePlan && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary">
                     <Shield className="w-3 h-3 mr-1" />

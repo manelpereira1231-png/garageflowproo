@@ -172,12 +172,17 @@ export default function DemoGuide() {
               GarageFlow pode ajudar a gerir uma oficina de forma mais simples e organizada.
             </p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <Button className="min-h-11 flex-1 font-semibold" onClick={startTour}>
+              <Button
+                className="min-h-12 flex-1 touch-manipulation font-semibold"
+                onPointerUp={startTour}
+                onClick={startTour}
+              >
                 <Sparkles className="mr-2 h-4 w-4" />Começar visita guiada
               </Button>
               <Button
-                variant="outline" className="min-h-11 flex-1"
-                onClick={() => { write(K_WELCOME, "1"); setWelcome(false); trackDemoEvent("click", { label: "demo_explore_free" }); }}
+                variant="outline" className="min-h-12 flex-1 touch-manipulation"
+                onPointerUp={exploreFree}
+                onClick={exploreFree}
               >
                 Explorar livremente
               </Button>

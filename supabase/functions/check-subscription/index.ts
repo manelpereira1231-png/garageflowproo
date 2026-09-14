@@ -275,6 +275,7 @@ serve(async (req) => {
       status,
       billing_cycle: billingCycle,
       subscription_end: subscriptionEnd,
+      cancel_at_period_end: activeSub.cancel_at_period_end === true,
       trial_end: trialEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

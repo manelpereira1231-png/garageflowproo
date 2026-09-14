@@ -46,7 +46,14 @@ export function useMfaGuard() {
 
   return {
     /** Owner of the group / billing account → MFA is required for them. */
-    mfaRequired: isOwner,
+    /**
+     * Owner of the group / billing account → MFA is required for them.
+     * Contas de demonstração são temporárias (TTL) e não têm dados reais: o
+     * diálogo de MFA abria por cima do ecrã inicial da /demo e roubava o
+     * primeiro clique. Fora da demo o comportamento é exatamente o mesmo.
+     */
+    mfaRequired: isOwner && !isDemoSession(),
+
     /** null = unknown/not checked yet. */
     hasTotp,
     refresh,

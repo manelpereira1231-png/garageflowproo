@@ -13,9 +13,12 @@ export default function SupplierPublic() {
   useEffect(() => {
     if (!supplierSlug) return;
     (async () => {
-      let { data } = await supabase.from("gsn_suppliers" as any).select("*").eq("slug", supplierSlug).maybeSingle();
+      // Public storefront: only non-sensitive columns (never KYC / payout / commission fields).
+      const PUBLIC_COLS =
+        "id,slug,company_name,trade_name,logo_url,banner_url,description,website,phone,email,address,city,country,average_delivery_time,rating_average,rating_count";
+      let { data } = await supabase.from("gsn_suppliers" as any).select(PUBLIC_COLS).eq("slug", supplierSlug).maybeSingle();
       if (!data) {
-        const r = await supabase.from("gsn_suppliers" as any).select("*").eq("id", supplierSlug).maybeSingle();
+        const r = await supabase.from("gsn_suppliers" as any).select(PUBLIC_COLS).eq("id", supplierSlug).maybeSingle();
         data = r.data;
       }
       setSup(data);

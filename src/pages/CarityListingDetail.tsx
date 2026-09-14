@@ -211,12 +211,11 @@ export default function CarityListingDetail({ overrideId }: { overrideId?: strin
     if (sellerRes.data) {
       setSeller(sellerRes.data);
       // Load trust score
+      // Public-safe subset (no dispute counts / user linkage) via SECURITY DEFINER RPC.
       const { data: ts } = await supabase
-        .from("seller_trust_scores" as any)
-        .select("*")
-        .eq("user_id", listingData.seller_id)
-        .maybeSingle();
-      if (ts) setTrustScore(ts);
+        .rpc("get_public_trust_score" as any, { _user_id: listingData.seller_id });
+      const row = Array.isArray(ts) ? ts[0] : ts;
+      if (row) setTrustScore(row);
     }
 
     // Load escrow status for this listing (if buyer or seller)

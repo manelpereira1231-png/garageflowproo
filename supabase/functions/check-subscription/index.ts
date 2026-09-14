@@ -158,7 +158,16 @@ serve(async (req) => {
       limit: 10,
     });
 
-    const activeSub = subscriptions.data.find((s: any) => ["active", "trialing"].includes(s.status));
+    // Prefer a paid active subscription over an older Start trial. During an
+    // upgrade both can briefly coexist until the webhook cancels the trial.
+    const eligibleSubscriptions = subscriptions.data
+      .filter((s: any) => ["active", "trialing"].includes(s.status))
+      .sort((a: any, b: any) => {
+        if (a.status === "active" && b.status !== "active") return -1;
+        if (b.status === "active" && a.status !== "active") return 1;
+        return (b.created || 0) - (a.created || 0);
+      });
+    const activeSub = eligibleSubscriptions[0];
 
     if (!activeSub) {
       // No active subscription — mark as past_due (NO free tier).

@@ -72,7 +72,7 @@ function resolveBillingCycle(subscription: Stripe.Subscription): string {
 async function findSubByCustomer(customerId: string) {
   const { data } = await supabaseAdmin
     .from("subscriptions")
-    .select("id, shop_id")
+    .select("id, shop_id, stripe_subscription_id")
     .eq("stripe_customer_id", customerId)
     .single();
   return data;
@@ -95,7 +95,7 @@ async function findSubByEmail(email: string) {
   
   const { data: sub } = await supabaseAdmin
     .from("subscriptions")
-    .select("id, shop_id")
+    .select("id, shop_id, stripe_subscription_id")
     .eq("shop_id", shop.id)
     .single();
   return sub;
@@ -241,6 +241,15 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          // Ignore late events from the previous Start trial after a paid
+          // upgrade has already linked the shop to the new subscription.
+          if (sub.stripe_subscription_id && sub.stripe_subscription_id !== subscription.id) {
+            log("Ignoring update from superseded subscription", {
+              eventSubscriptionId: subscription.id,
+              activeSubscriptionId: sub.stripe_subscription_id,
+            });
+            break;
+          }
           const plan = await resolvePlan(subscription);
           const billingCycle = resolveBillingCycle(subscription);
           
@@ -280,6 +289,13 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          if (sub.stripe_subscription_id && sub.stripe_subscription_id !== subscription.id) {
+            log("Ignoring deletion of superseded subscription", {
+              deletedSubscriptionId: subscription.id,
+              activeSubscriptionId: sub.stripe_subscription_id,
+            });
+            break;
+          }
           // IMPORTANT: after a Stripe cancellation reaches its period end the
           // user must NOT be silently placed on any other plan. We only flip
           // the status to "canceled" and drop the Stripe subscription id.
@@ -496,6 +512,21 @@ serve(async (req) => {
         const subscriptionId = session.subscription as string;
         if (!customerId || !subscriptionId) break;
 
+        // A paid plan is never activated from a merely completed checkout.
+        // It becomes effective only when Stripe confirms that the first
+        // invoice was paid (or through async_payment_succeeded).
+        const requiresImmediateCharge = session.metadata?.immediate_charge === "true";
+        const paymentConfirmed = session.payment_status === "paid"
+          || event.type === "checkout.session.async_payment_succeeded";
+        if (requiresImmediateCharge && !paymentConfirmed) {
+          log("Paid checkout completed without confirmed payment — activation deferred", {
+            sessionId: session.id,
+            paymentStatus: session.payment_status,
+            subscriptionId,
+          });
+          break;
+        }
+
         // Fetch the full subscription from Stripe
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
         const plan = await resolvePlan(stripeSub);
@@ -503,12 +534,14 @@ serve(async (req) => {
 
         const sub = await findSubscription(customerId);
         if (sub) {
+          const previousStripeSubscriptionId = sub.stripe_subscription_id;
           await supabaseAdmin
             .from("subscriptions")
             .update({
               plan,
               billing_cycle: billingCycle,
               status: stripeSub.status === "trialing" ? "trialing" : "active",
+              revenue_type: stripeSub.status === "trialing" ? "trial" : "stripe_paid",
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
               current_period_end: stripeSub.current_period_end
@@ -520,6 +553,28 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", sub.id);
+
+          // Checkout creates a new subscription. Once its first payment is
+          // confirmed, end the old Start trial immediately to avoid two live
+          // subscriptions and ensure renewal starts on today's payment date.
+          if (
+            requiresImmediateCharge
+            && previousStripeSubscriptionId
+            && previousStripeSubscriptionId !== subscriptionId
+          ) {
+            try {
+              await stripe.subscriptions.cancel(previousStripeSubscriptionId);
+              log("Previous trial/subscription canceled after paid upgrade", {
+                previousStripeSubscriptionId,
+                subscriptionId,
+              });
+            } catch (cancelError) {
+              log("Could not cancel previous subscription after paid upgrade", {
+                previousStripeSubscriptionId,
+                error: cancelError instanceof Error ? cancelError.message : String(cancelError),
+              });
+            }
+          }
 
           log("Checkout completed — subscription synced", { customerId, plan, billingCycle });
         }

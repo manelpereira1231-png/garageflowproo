@@ -15,6 +15,7 @@
 import { messageTemplates, renderTemplate } from "@/lib/messageTemplates";
 import { sendEmail, clientNotificationEmailHtml, isValidEmail } from "@/lib/emailService";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { ensureQuoteTokenForWorkOrder } from "@/lib/ensureQuoteForWorkOrder";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface WorkOrderCommsContext {

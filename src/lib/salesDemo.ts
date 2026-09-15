@@ -142,6 +142,7 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   localStorage.setItem(DEMO_FLAG, "1");
   localStorage.setItem(DEMO_PLAN_KEY, plan);
   localStorage.setItem(DEMO_MODE_KEY, mode);
+  notifyDemoState();
   trackDemoEnter();
   return res.shop_id;
 }

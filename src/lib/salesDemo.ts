@@ -16,7 +16,50 @@ export const DEMO_FLAG = "gf_sales_demo";
 export const DEMO_PLAN_KEY = "gf_sales_demo_plan";
 export const DEMO_BAR_HIDDEN = "gf_sales_demo_bar_hidden";
 export const DEMO_MODE_KEY = "gf_sales_demo_mode";
+/** Utilizador (auth uid) a que esta demonstração pertence. */
+export const DEMO_UID_KEY = "gf_sales_demo_uid";
 const ACTIVE_SHOP_KEY = "garageflow_active_shop";
+
+/* ------------------------------------------------------------------ *
+ * Isolamento DEMO ↔ conta real
+ * A demo NÃO é uma propriedade do browser: pertence a UMA sessão de
+ * utilizador concreta (o utilizador demo criado pela edge function).
+ * Qualquer sessão autenticada com outro uid é, por definição, real.
+ * ------------------------------------------------------------------ */
+
+let authUid: string | null | undefined; // undefined = ainda desconhecido
+const demoListeners = new Set<() => void>();
+
+function notifyDemoState() {
+  demoListeners.forEach((l) => { try { l(); } catch { /* noop */ } });
+}
+
+export function subscribeDemoState(cb: () => void) {
+  demoListeners.add(cb);
+  return () => { demoListeners.delete(cb); };
+}
+
+/** Lê o uid da sessão guardada pelo Supabase, de forma síncrona. */
+function readSessionUidSync(): string | null | undefined {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !/^sb-.*-auth-token$/.test(k)) continue;
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const uid = parsed?.user?.id ?? parsed?.currentSession?.user?.id;
+      if (typeof uid === "string") return uid;
+    }
+    return null;
+  } catch {
+    return undefined;
+  }
+}
+
+function demoUid(): string | null {
+  try { return localStorage.getItem(DEMO_UID_KEY); } catch { return null; }
+}
 
 export const PLAN_LABEL: Record<DemoPlan, string> = {
   free: "Start",
@@ -26,10 +69,33 @@ export const PLAN_LABEL: Record<DemoPlan, string> = {
 
 export function isDemoSession(): boolean {
   try {
-    return localStorage.getItem(DEMO_FLAG) === "1";
+    if (localStorage.getItem(DEMO_FLAG) !== "1") return false;
+    const owner = demoUid();
+    // Demo antiga sem dono registado: não pode "colar-se" a uma conta real.
+    const current = authUid !== undefined ? authUid : readSessionUidSync();
+    if (current === undefined) return !!owner; // storage indisponível: conservador
+    if (!owner) return current === null ? true : false;
+    return current === owner;
   } catch {
     return false;
   }
+}
+
+/**
+ * Liga o ciclo de vida da DEMO ao ciclo de vida da autenticação.
+ * Assim que existir (ou deixar de existir) uma sessão que não é a sessão
+ * demo, o estado local da demo é apagado na origem — não apenas escondido.
+ */
+export function installDemoIsolation() {
+  const apply = (uid: string | null) => {
+    authUid = uid;
+    let flagged = false;
+    try { flagged = localStorage.getItem(DEMO_FLAG) === "1"; } catch { /* noop */ }
+    if (flagged && uid !== demoUid()) wipeDemoLocalState();
+    notifyDemoState();
+  };
+  supabase.auth.getSession().then(({ data }) => apply(data.session?.user?.id ?? null)).catch(() => undefined);
+  supabase.auth.onAuthStateChange((_event, session) => apply(session?.user?.id ?? null));
 }
 
 export function currentDemoPlan(): DemoPlan {
@@ -61,8 +127,11 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   const res = await callDemo("start", plan);
   if (!res.session) throw new Error("Sessão de demonstração indisponível");
 
-  const { error } = await supabase.auth.setSession(res.session);
+  const { data: setData, error } = await supabase.auth.setSession(res.session);
   if (error) throw new Error(error.message);
+  const uid = setData.session?.user?.id ?? null;
+  authUid = uid;
+  if (uid) localStorage.setItem(DEMO_UID_KEY, uid);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);
   // Demonstração: ERP completo em português, sem ecrãs de onboarding.
   localStorage.setItem("garageflow_app_mode", "pro");
@@ -73,6 +142,7 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   localStorage.setItem(DEMO_FLAG, "1");
   localStorage.setItem(DEMO_PLAN_KEY, plan);
   localStorage.setItem(DEMO_MODE_KEY, mode);
+  notifyDemoState();
   trackDemoEnter();
   return res.shop_id;
 }
@@ -99,7 +169,7 @@ function wipeDemoLocalState() {
     }
     keys.forEach((k) => localStorage.removeItem(k));
     [
-      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, ACTIVE_SHOP_KEY,
+      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, DEMO_UID_KEY, ACTIVE_SHOP_KEY,
       "garageflow_app_mode", "garageflow_onboarding_status",
       "garageflow_onboarding_completed", "gf_auto_onboarding_dismissed",
     ].forEach((k) => localStorage.removeItem(k));
@@ -112,6 +182,7 @@ function wipeDemoLocalState() {
     }
     sKeys.forEach((k) => sessionStorage.removeItem(k));
   } catch { /* noop */ }
+  notifyDemoState();
 }
 
 const withTimeout = (p: Promise<unknown>, ms = 4000) =>

@@ -182,6 +182,7 @@ function wipeDemoLocalState() {
     }
     sKeys.forEach((k) => sessionStorage.removeItem(k));
   } catch { /* noop */ }
+  notifyDemoState();
 }
 
 const withTimeout = (p: Promise<unknown>, ms = 4000) =>

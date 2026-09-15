@@ -1051,10 +1051,10 @@ export default function LandingPage() {
       </Reveal>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 z-40">
-        <Link to="/auth?mode=signup">
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-background/95 backdrop-blur-md border-t border-border p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40">
+        <Link to="/auth?mode=signup" className="block">
           <Button className="w-full gradient-primary text-primary-foreground h-12 text-base font-bold btn-interactive">
-            {t('landing.ctaDemo')} <ArrowRight className="w-4 h-4 ml-2" />
+            {t('landing.cta')} <ArrowRight className="w-4 h-4 ml-2 shrink-0" />
           </Button>
         </Link>
       </div>

@@ -127,8 +127,11 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   const res = await callDemo("start", plan);
   if (!res.session) throw new Error("Sessão de demonstração indisponível");
 
-  const { error } = await supabase.auth.setSession(res.session);
+  const { data: setData, error } = await supabase.auth.setSession(res.session);
   if (error) throw new Error(error.message);
+  const uid = setData.session?.user?.id ?? null;
+  authUid = uid;
+  if (uid) localStorage.setItem(DEMO_UID_KEY, uid);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);
   // Demonstração: ERP completo em português, sem ecrãs de onboarding.
   localStorage.setItem("garageflow_app_mode", "pro");

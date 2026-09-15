@@ -16,7 +16,50 @@ export const DEMO_FLAG = "gf_sales_demo";
 export const DEMO_PLAN_KEY = "gf_sales_demo_plan";
 export const DEMO_BAR_HIDDEN = "gf_sales_demo_bar_hidden";
 export const DEMO_MODE_KEY = "gf_sales_demo_mode";
+/** Utilizador (auth uid) a que esta demonstração pertence. */
+export const DEMO_UID_KEY = "gf_sales_demo_uid";
 const ACTIVE_SHOP_KEY = "garageflow_active_shop";
+
+/* ------------------------------------------------------------------ *
+ * Isolamento DEMO ↔ conta real
+ * A demo NÃO é uma propriedade do browser: pertence a UMA sessão de
+ * utilizador concreta (o utilizador demo criado pela edge function).
+ * Qualquer sessão autenticada com outro uid é, por definição, real.
+ * ------------------------------------------------------------------ */
+
+let authUid: string | null | undefined; // undefined = ainda desconhecido
+const demoListeners = new Set<() => void>();
+
+function notifyDemoState() {
+  demoListeners.forEach((l) => { try { l(); } catch { /* noop */ } });
+}
+
+export function subscribeDemoState(cb: () => void) {
+  demoListeners.add(cb);
+  return () => { demoListeners.delete(cb); };
+}
+
+/** Lê o uid da sessão guardada pelo Supabase, de forma síncrona. */
+function readSessionUidSync(): string | null | undefined {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !/^sb-.*-auth-token$/.test(k)) continue;
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const uid = parsed?.user?.id ?? parsed?.currentSession?.user?.id;
+      if (typeof uid === "string") return uid;
+    }
+    return null;
+  } catch {
+    return undefined;
+  }
+}
+
+function demoUid(): string | null {
+  try { return localStorage.getItem(DEMO_UID_KEY); } catch { return null; }
+}
 
 export const PLAN_LABEL: Record<DemoPlan, string> = {
   free: "Start",

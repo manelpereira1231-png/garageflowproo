@@ -179,7 +179,7 @@ export default function HeroMockup() {
       </div>
 
       {/* Floating phone — WhatsApp preview (desktop only) */}
-      <div className="hidden md:block absolute -bottom-6 -right-4 w-44 h-72 rounded-[20px] border-4 border-foreground/80 bg-background shadow-2xl rotate-[6deg] overflow-hidden">
+      <div className="hidden lg:block absolute -bottom-6 right-2 xl:-right-4 w-44 h-72 rounded-[20px] border-4 border-foreground/80 bg-background shadow-2xl rotate-[6deg] overflow-hidden">
         <div className="h-5 bg-foreground/80" />
         <div className="p-2 bg-[#075E54] text-white flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">

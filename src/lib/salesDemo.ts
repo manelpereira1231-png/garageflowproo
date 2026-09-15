@@ -69,10 +69,33 @@ export const PLAN_LABEL: Record<DemoPlan, string> = {
 
 export function isDemoSession(): boolean {
   try {
-    return localStorage.getItem(DEMO_FLAG) === "1";
+    if (localStorage.getItem(DEMO_FLAG) !== "1") return false;
+    const owner = demoUid();
+    // Demo antiga sem dono registado: não pode "colar-se" a uma conta real.
+    const current = authUid !== undefined ? authUid : readSessionUidSync();
+    if (current === undefined) return !!owner; // storage indisponível: conservador
+    if (!owner) return current === null ? true : false;
+    return current === owner;
   } catch {
     return false;
   }
+}
+
+/**
+ * Liga o ciclo de vida da DEMO ao ciclo de vida da autenticação.
+ * Assim que existir (ou deixar de existir) uma sessão que não é a sessão
+ * demo, o estado local da demo é apagado na origem — não apenas escondido.
+ */
+export function installDemoIsolation() {
+  const apply = (uid: string | null) => {
+    authUid = uid;
+    let flagged = false;
+    try { flagged = localStorage.getItem(DEMO_FLAG) === "1"; } catch { /* noop */ }
+    if (flagged && uid !== demoUid()) wipeDemoLocalState();
+    notifyDemoState();
+  };
+  supabase.auth.getSession().then(({ data }) => apply(data.session?.user?.id ?? null)).catch(() => undefined);
+  supabase.auth.onAuthStateChange((_event, session) => apply(session?.user?.id ?? null));
 }
 
 export function currentDemoPlan(): DemoPlan {

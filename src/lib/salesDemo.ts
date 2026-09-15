@@ -169,7 +169,7 @@ function wipeDemoLocalState() {
     }
     keys.forEach((k) => localStorage.removeItem(k));
     [
-      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, ACTIVE_SHOP_KEY,
+      DEMO_FLAG, DEMO_PLAN_KEY, DEMO_BAR_HIDDEN, DEMO_MODE_KEY, DEMO_UID_KEY, ACTIVE_SHOP_KEY,
       "garageflow_app_mode", "garageflow_onboarding_status",
       "garageflow_onboarding_completed", "gf_auto_onboarding_dismissed",
     ].forEach((k) => localStorage.removeItem(k));

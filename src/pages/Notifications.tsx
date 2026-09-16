@@ -20,7 +20,7 @@ type Notif = {
   title: string;
   message: string | null;
   link: string | null;
-  data: { event?: string; quote_id?: string; quote_number?: string } | null;
+  data: { event?: string; quote_id?: string; quote_number?: string; sender_id?: string } | null;
   read: boolean;
   created_at: string;
 };

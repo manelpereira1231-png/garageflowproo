@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,12 @@ import { getTaxLabel } from "@/lib/regionConfig";
 export default function PartsCart() {
   const { items, bySupplier, subtotal, vatTotal, total, updateQuantity, remove, checkout, loading } = useGsnCart();
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
   const onCheckout = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
     const orderIds = await checkout();
     if (!orderIds.length) return;
     const { data, error } = await supabase.functions.invoke("gsn-checkout", { body: { order_ids: orderIds } });
@@ -26,6 +31,9 @@ export default function PartsCart() {
     } else {
       toast.error(sessions[0]?.error || "Falha a criar pagamento");
       navigate("/parts/orders");
+    }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -65,7 +73,7 @@ export default function PartsCart() {
               <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
               <div className="flex justify-between"><span>{getTaxLabel()}</span><span>{formatMoney(vatTotal)}</span></div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span>{formatMoney(total)}</span></div>
-              <Button className="w-full mt-3" size="lg" onClick={onCheckout}>Finalizar compra</Button>
+              <Button className="w-full mt-3" size="lg" onClick={onCheckout} disabled={submitting}>{submitting ? "A enviar pedido..." : "Finalizar compra"}</Button>
               <p className="text-xs text-muted-foreground text-center">Cada fornecedor gera uma encomenda separada.</p>
             </CardContent>
           </Card>

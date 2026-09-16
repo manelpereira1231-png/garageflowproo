@@ -245,6 +245,34 @@ export default function SupplierOrders() {
                           ))}
                         </div>
                       )}
+                      <div className="flex items-center justify-between gap-3 text-sm border-t pt-2">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-semibold">{formatMoney(Number(o.total), o.currency)}</span>
+                      </div>
+
+                      <div className="border-t pt-2">
+                        <p className="text-xs font-medium mb-1">Histórico</p>
+                        {!events[o.id] ? (
+                          <p className="text-xs text-muted-foreground">A carregar histórico...</p>
+                        ) : events[o.id].length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Pedido criado · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}
+                          </p>
+                        ) : (
+                          <ol className="space-y-1">
+                            <li className="text-xs text-muted-foreground">
+                              Pedido criado · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}
+                            </li>
+                            {events[o.id].map((ev) => (
+                              <li key={ev.id} className="text-xs text-muted-foreground">
+                                {STATUS_LABEL[ev.to_status ?? ""] ?? ev.to_status} · {format(new Date(ev.created_at), "dd/MM/yyyy HH:mm")}
+                                {ev.note ? ` · ${ev.note}` : ""}
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+
                       <div className="flex flex-wrap gap-2 pt-1">
                         {(NEXT[o.status] ?? []).length === 0 ? (
                           <p className="text-xs text-muted-foreground">Sem ações disponíveis neste estado.</p>

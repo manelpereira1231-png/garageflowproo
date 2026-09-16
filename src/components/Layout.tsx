@@ -227,6 +227,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [activeShopId]);
 
+  // Badge do Chat — mensagens por ler que não foram enviadas pelo próprio.
+  useEffect(() => {
+    if (!activeShopId) { setUnreadChatCount(0); return; }
+    let cancelled = false;
+    const loadChatCount = async () => {
+      const { data: { user: me } } = await supabase.auth.getUser();
+      let q = supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeShopId)
+        .eq("read", false);
+      if (me?.id) q = q.neq("sender_id", me.id);
+      const { count } = await q;
+      if (!cancelled) setUnreadChatCount(count || 0);
+    };
+    loadChatCount();
+    const onLocal = () => loadChatCount();
+    window.addEventListener("chat-unread-changed", onLocal);
+    const ch = supabase
+      .channel(`global-chat-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_messages", filter: `shop_id=eq.${activeShopId}` },
+        () => loadChatCount(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      window.removeEventListener("chat-unread-changed", onLocal);
+      supabase.removeChannel(ch);
+    };
+  }, [activeShopId]);
+
+
+
   // Global realtime: quote approvals from the public client link.
   // The database creates the notification at approval time; this listener makes
   // the workshop see it immediately without refreshing the ERP.

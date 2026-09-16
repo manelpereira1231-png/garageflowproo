@@ -113,14 +113,21 @@ export default function Chat() {
     const loadUnread = async () => {
       const { data } = await supabase
         .from("chat_messages")
-        .select("client_id, sender_id")
+        .select("client_id, sender_id, recipient_id")
         .eq("shop_id", shopId)
         .eq("read", false);
       if (data) {
         const counts: Record<string, number> = {};
-        data.forEach(m => {
+        (data as any[]).forEach(m => {
           // Mensagens enviadas pelo próprio utilizador nunca contam como "por ler".
           if (m.sender_id && m.sender_id === currentUserId) return;
+          // Conversas privadas só contam para o destinatário.
+          if (m.recipient_id) {
+            if (m.recipient_id !== currentUserId) return;
+            const dmKey = `${DM_PREFIX}${m.sender_id}`;
+            counts[dmKey] = (counts[dmKey] || 0) + 1;
+            return;
+          }
           const key = m.client_id || "all";
           counts[key] = (counts[key] || 0) + 1;
         });

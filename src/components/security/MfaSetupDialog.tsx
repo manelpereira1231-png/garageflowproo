@@ -76,7 +76,7 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
       });
       if (error) throw error;
       toast.success("Verificação em duas etapas ativada.");
-      sessionStorage.setItem(SESSION_KEY, "1");
+      snooze();
       onEnrolled();
       onClose();
     } catch (e: any) {

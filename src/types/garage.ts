@@ -65,7 +65,7 @@ export interface Part {
   active: boolean;
 }
 
-export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'expired' | 'converted';
+export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'cancelled' | 'expired' | 'converted';
 export type ServiceStatus = 'open' | 'diagnosis' | 'waiting_approval' | 'approved' | 'in_progress' | 'completed' | 'delivered' | 'cancelled';
 
 export interface QuoteLine {
@@ -140,7 +140,8 @@ export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
   draft: 'Rascunho',
   sent: 'Enviado',
   approved: 'Aprovado',
-  rejected: 'Rejeitado',
+  rejected: 'Rejeitado pelo cliente',
+  cancelled: 'Cancelado pela oficina',
   expired: 'Expirado',
   converted: 'Convertido',
 };

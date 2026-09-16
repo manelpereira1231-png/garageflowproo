@@ -278,10 +278,14 @@ export default function Alerts() {
             <p className="text-xs text-muted-foreground">{c.label}</p>
           </button>
         ))}
-        <div className="bg-card border border-border rounded-lg p-3 text-center">
+        <button
+          type="button"
+          onClick={() => setFilterStatus(filterStatus === "resolved" ? "open" : "resolved")}
+          className={`bg-card border rounded-lg p-3 text-center transition-colors ${filterStatus === "resolved" ? "border-success" : "border-border hover:bg-muted/50"}`}
+        >
           <p className="text-2xl font-bold text-success">{resolvedCount}</p>
           <p className="text-xs text-muted-foreground">{t("alerts.statusResolved")}</p>
-        </div>
+        </button>
       </div>
 
       <CompactFilterBar

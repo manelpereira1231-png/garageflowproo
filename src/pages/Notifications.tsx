@@ -49,6 +49,7 @@ const KIND_META: Record<string, { icon: any; color: string; label: string }> = {
   quote: { icon: FileCheck2, color: "text-warning", label: "Orçamento" },
   rejected: { icon: FileX2, color: "text-destructive", label: "Orçamento rejeitado" },
   service_cancelled: { icon: XCircle, color: "text-destructive", label: "Serviço cancelado" },
+  chat: { icon: MessageSquare, color: "text-primary", label: "Nova mensagem" },
   payment: { icon: CreditCard, color: "text-success", label: "Pagamento" },
   other: { icon: Info, color: "text-info", label: "Evento" },
 };

@@ -13,6 +13,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const SESSION_KEY = "gf_mfa_prompt_dismissed";
+// Adiar o convite de MFA de forma persistente (30 dias). Antes usava apenas
+// sessionStorage, pelo que o diálogo voltava a abrir por cima de qualquer
+// página (ex.: Chat) em cada nova sessão/separador.
+const SNOOZE_KEY = "gf_mfa_prompt_snooze_until";
+const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function snooze() {
+  try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
+  try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS)); } catch { /* ignore */ }
+}
 
 type Props = { open: boolean; onClose: () => void; onEnrolled: () => void };
 
@@ -66,7 +76,7 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
       });
       if (error) throw error;
       toast.success("Verificação em duas etapas ativada.");
-      sessionStorage.setItem(SESSION_KEY, "1");
+      snooze();
       onEnrolled();
       onClose();
     } catch (e: any) {
@@ -77,7 +87,7 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
   };
 
   const later = () => {
-    sessionStorage.setItem(SESSION_KEY, "1");
+    snooze();
     onClose();
   };
 
@@ -140,5 +150,11 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
 }
 
 export function mfaPromptDismissed(): boolean {
-  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch { return false; }
+  try {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") return true;
+  } catch { /* ignore */ }
+  try {
+    const until = Number(localStorage.getItem(SNOOZE_KEY) || 0);
+    return Number.isFinite(until) && until > Date.now();
+  } catch { return false; }
 }

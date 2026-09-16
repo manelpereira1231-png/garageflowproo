@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
-  Bell, Search, CheckCheck, CreditCard, FileCheck2, FileX2, Info, ExternalLink, Inbox,
+  Bell, Search, CheckCheck, CreditCard, FileCheck2, FileX2, Info, ExternalLink, Inbox, XCircle,
 } from "lucide-react";
 import { getCountryConfig } from "@/lib/regionConfig";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -34,6 +34,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 function kindOf(n: Notif) {
   const txt = `${n.type || ""} ${n.title} ${n.message || ""}`.toLowerCase();
+  if (txt.includes("servi") && (txt.includes("cancel") || txt.includes("cancelad"))) return "service_cancelled";
   if (txt.includes("reject") || txt.includes("rejeit")) return "rejected";
   if (txt.includes("pagament") || txt.includes("payment") || txt.includes("fatura")) return "payment";
   if (txt.includes("orçament") || txt.includes("quote") || txt.includes("aprov")) return "quote";
@@ -43,6 +44,7 @@ function kindOf(n: Notif) {
 const KIND_META: Record<string, { icon: any; color: string; label: string }> = {
   quote: { icon: FileCheck2, color: "text-warning", label: "Orçamento" },
   rejected: { icon: FileX2, color: "text-destructive", label: "Orçamento rejeitado" },
+  service_cancelled: { icon: XCircle, color: "text-destructive", label: "Serviço cancelado" },
   payment: { icon: CreditCard, color: "text-success", label: "Pagamento" },
   other: { icon: Info, color: "text-info", label: "Evento" },
 };

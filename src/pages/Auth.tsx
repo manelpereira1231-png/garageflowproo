@@ -162,6 +162,22 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
         if (error) { recordLoginFailure(email, "erp"); throw error; }
         clearLoginFailures(email);
 
+        // Contas de fornecedor (GSN) têm painel próprio e nunca entram no ERP da oficina.
+        if (signInData.user) {
+          const { data: supplierRow } = await erpSupabase
+            .from("gsn_suppliers" as any)
+            .select("id")
+            .eq("owner_user_id", signInData.user.id)
+            .is("deleted_at", null)
+            .maybeSingle();
+          if ((supplierRow as any)?.id) {
+            toast.success(t('auth.welcomeBack'));
+            navigate("/supplier", { replace: true });
+            return;
+          }
+        }
+
+
         // Lote A: contas unificadas. Só bloqueia se a conta for exclusivamente
         // Market (particular sem shop nem role ERP). Contas de oficina que
         // também activaram o Market continuam a poder entrar no ERP.

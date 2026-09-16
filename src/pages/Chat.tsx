@@ -338,7 +338,13 @@ export default function Chat() {
 
   const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const selectedClientObj = clients.find(c => c.id === selectedClient);
+  const selectedPeerId = dmTarget(selectedClient);
+  const selectedPeer = members.find(m => m.user_id === selectedPeerId);
   const isTeamChat = selectedClient === "all";
+  // Colegas de oficina (exclui o próprio utilizador).
+  const teamMembers = members.filter(
+    m => m.user_id !== currentUserId && m.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
 
   // Get last message per client for sidebar preview

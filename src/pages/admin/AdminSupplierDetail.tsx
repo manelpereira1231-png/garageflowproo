@@ -53,7 +53,7 @@ export default function AdminSupplierDetail() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const patch = async (values: Record<string, boolean>) => {
+  const patch = async (values: Record<string, boolean | string>) => {
     const { error } = await supabase.from("gsn_suppliers" as any).update(values).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Fornecedor atualizado");

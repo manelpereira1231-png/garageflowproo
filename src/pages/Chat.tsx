@@ -477,6 +477,16 @@ export default function Chat() {
                   <span className="font-medium truncate">{t('chat.teamChat')}</span>
                   <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{t('chat.teamOnly')}</Badge>
                 </>
+              ) : selectedPeer ? (
+                <>
+                  <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {selectedPeer.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium truncate">{selectedPeer.name}</span>
+                  <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
+                    {roleLabel(selectedPeer.role)} · Privado
+                  </Badge>
+                </>
               ) : selectedClientObj ? (
                 <>
                   <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">

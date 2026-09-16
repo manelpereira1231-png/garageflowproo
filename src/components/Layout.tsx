@@ -121,6 +121,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [pendingQuoteApprovalCount, setPendingQuoteApprovalCount] = useState(0);
   const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");

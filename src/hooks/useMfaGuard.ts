@@ -53,7 +53,7 @@ export function useMfaGuard() {
      * diálogo de MFA abria por cima do ecrã inicial da /demo e roubava o
      * primeiro clique. Fora da demo o comportamento é exatamente o mesmo.
      */
-    mfaRequired: isOwner && !useIsDemoSession(),
+    mfaRequired: isOwner && !isDemo,
 
     /** null = unknown/not checked yet. */
     hasTotp,

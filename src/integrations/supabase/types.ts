@@ -11908,6 +11908,62 @@ export type Database = {
         }[]
       }
       gsn_accept_invite: { Args: { _token: string }; Returns: string }
+      gsn_admin_suppliers: {
+        Args: { _id?: string }
+        Returns: {
+          active: boolean
+          address: string | null
+          application_source: string | null
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          average_delivery_time: string | null
+          banner_url: string | null
+          city: string | null
+          commission_percentage: number
+          company_name: string
+          country: string | null
+          created_at: string
+          deleted_at: string | null
+          delivery_available: boolean
+          description: string | null
+          district: string | null
+          docs: Json
+          email: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          logo_url: string | null
+          minimum_order: number | null
+          owner_user_id: string | null
+          phone: string | null
+          pickup_available: boolean
+          postal_code: string | null
+          rating_average: number
+          rating_count: number
+          rejection_reason: string | null
+          slug: string | null
+          state: Database["public"]["Enums"]["gsn_supplier_state"]
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_payouts_enabled: boolean
+          subscription_plan: string | null
+          subscription_status: string | null
+          support_email: string | null
+          support_phone: string | null
+          suspended: boolean
+          trade_name: string | null
+          updated_at: string
+          vat_number: string | null
+          website: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "gsn_suppliers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       gsn_approve_application: {
         Args: { _app_id: string; _commission?: number; _owner_user_id: string }
         Returns: string
@@ -11930,6 +11986,62 @@ export type Database = {
           state: Database["public"]["Enums"]["gsn_supplier_state"]
           supplier_id: string
         }[]
+      }
+      gsn_my_supplier: {
+        Args: never
+        Returns: {
+          active: boolean
+          address: string | null
+          application_source: string | null
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          average_delivery_time: string | null
+          banner_url: string | null
+          city: string | null
+          commission_percentage: number
+          company_name: string
+          country: string | null
+          created_at: string
+          deleted_at: string | null
+          delivery_available: boolean
+          description: string | null
+          district: string | null
+          docs: Json
+          email: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          logo_url: string | null
+          minimum_order: number | null
+          owner_user_id: string | null
+          phone: string | null
+          pickup_available: boolean
+          postal_code: string | null
+          rating_average: number
+          rating_count: number
+          rejection_reason: string | null
+          slug: string | null
+          state: Database["public"]["Enums"]["gsn_supplier_state"]
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_payouts_enabled: boolean
+          subscription_plan: string | null
+          subscription_status: string | null
+          support_email: string | null
+          support_phone: string | null
+          suspended: boolean
+          trade_name: string | null
+          updated_at: string
+          vat_number: string | null
+          website: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "gsn_suppliers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       gsn_order_transition: {
         Args: { _note?: string; _order_id: string; _to: string }

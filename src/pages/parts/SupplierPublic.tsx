@@ -13,9 +13,13 @@ export default function SupplierPublic() {
   useEffect(() => {
     if (!supplierSlug) return;
     (async () => {
-      // Public storefront: only non-sensitive columns (never KYC / payout / commission fields).
-      const PUBLIC_COLS =
-        "id,slug,company_name,trade_name,logo_url,banner_url,description,website,phone,email,address,city,country,average_delivery_time,rating_average,rating_count";
+      // Montra pública: só colunas não sensíveis (nunca KYC / payouts / comissões).
+      // Contactos (email/telefone/morada) apenas para utilizadores autenticados —
+      // visitantes anónimos não têm sequer permissão de leitura nessas colunas.
+      const { data: auth } = await supabase.auth.getUser();
+      const BASE_COLS =
+        "id,slug,company_name,trade_name,logo_url,banner_url,description,website,city,country,average_delivery_time,rating_average,rating_count";
+      const PUBLIC_COLS = auth?.user ? `${BASE_COLS},phone,email,address` : BASE_COLS;
       let { data } = await supabase.from("gsn_suppliers" as any).select(PUBLIC_COLS).eq("slug", supplierSlug).maybeSingle();
       if (!data) {
         const r = await supabase.from("gsn_suppliers" as any).select(PUBLIC_COLS).eq("id", supplierSlug).maybeSingle();

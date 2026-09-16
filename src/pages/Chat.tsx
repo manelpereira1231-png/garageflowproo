@@ -93,11 +93,15 @@ export default function Chat() {
       if (shopRes.data) setShopName(shopRes.data.name || "");
       if (membersRes.data) {
         const map: Record<string, string> = {};
+        const list: Member[] = [];
         (membersRes.data as any[]).forEach((m) => {
           const name = (m.shop_user_profiles?.name || "").trim();
-          if (m.user_id) map[m.user_id] = name || roleLabel(m.role);
+          if (!m.user_id) return;
+          map[m.user_id] = name || roleLabel(m.role);
+          list.push({ user_id: m.user_id, name: name || roleLabel(m.role), role: m.role });
         });
         setMemberNames(map);
+        setMembers(list.sort((a, b) => a.name.localeCompare(b.name)));
       }
     };
     load();

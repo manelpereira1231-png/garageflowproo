@@ -267,7 +267,8 @@ export default function Chat() {
     if (!text || !shopId || !currentUserId || sending) return;
     setSending(true);
 
-    const isClientMessage = selectedClient !== "all";
+    const peer = dmTarget(selectedClient);
+    const isClientMessage = !peer && selectedClient !== "all";
     const client = isClientMessage ? clients.find(c => c.id === selectedClient) : null;
 
     // Limpa o campo já (UX) — reposto em caso de falha.
@@ -275,8 +276,10 @@ export default function Chat() {
 
     const { data: inserted, error } = await supabase.from("chat_messages").insert({
       shop_id: shopId, sender_id: currentUserId, sender_type: "staff",
-      client_id: isClientMessage ? selectedClient : null, message: text,
-    }).select("*").single();
+      client_id: isClientMessage ? selectedClient : null,
+      recipient_id: peer,
+      message: text,
+    } as any).select("*").single();
 
     if (error || !inserted) {
       toast.error(error?.message || "Não foi possível enviar a mensagem");

@@ -507,6 +507,7 @@ const adminRoutes = [
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
   { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
   { path: "/admin/supplier-network/applications", element: <AdminSupplierApplications /> },
+  { path: "/admin/supplier-network/:id", element: <AdminSupplierDetail /> },
   { path: "/admin/legal-settings", element: <AdminLegalSettings /> },
   { path: "/admin/testimonials", element: <AdminTestimonials /> },
 ];

@@ -57,6 +57,8 @@ export default function Chat() {
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messagesLoading, setMessagesLoading] = useState(true);
+  // Força recontagem das mensagens por ler assim que algo é marcado como lido.
+  const [unreadTick, setUnreadTick] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function Chat() {
       }
     };
     loadUnread();
-  }, [shopId, messages, currentUserId]);
+  }, [shopId, messages, currentUserId, unreadTick]);
 
   const loadMessages = async () => {
     if (!shopId) { setMessagesLoading(false); return; }
@@ -133,13 +135,20 @@ export default function Chat() {
       const { data } = await query;
       if (data) setMessages(data as ChatMessage[]);
 
+      // A conversa aberta deixa de ter mensagens por ler de imediato (sem esperar
+      // pela resposta da base de dados nem por um refresh da página).
+      const key = selectedClient !== "all" ? selectedClient : "all";
+      setUnreadCounts((prev) => (prev[key] ? { ...prev, [key]: 0 } : prev));
+
       // Marcar como lidas as mensagens da conversa aberta (exceto as próprias)
       if (selectedClient !== "all") {
-        await supabase.from("chat_messages")
+        let clientRead = supabase.from("chat_messages")
           .update({ read: true } as any)
           .eq("shop_id", shopId)
           .eq("client_id", selectedClient)
           .eq("read", false);
+        if (currentUserId) clientRead = clientRead.neq("sender_id", currentUserId);
+        await clientRead;
       } else {
         let teamRead = supabase.from("chat_messages")
           .update({ read: true } as any)
@@ -149,6 +158,8 @@ export default function Chat() {
         if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
         await teamRead;
       }
+      // Só depois da escrita concluir é que vale a pena recontar.
+      setUnreadTick((t) => t + 1);
       window.dispatchEvent(new Event("chat-unread-changed"));
     } finally {
       setMessagesLoading(false);
@@ -172,8 +183,13 @@ export default function Chat() {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
           // Conversa aberta: a mensagem é lida de imediato.
           if (newMsg.sender_id !== currentUserId && !newMsg.read) {
+            const key = selectedClient !== "all" ? selectedClient : "all";
+            setUnreadCounts((prev) => (prev[key] ? { ...prev, [key]: 0 } : prev));
             supabase.from("chat_messages").update({ read: true } as any).eq("id", newMsg.id)
-              .then(() => window.dispatchEvent(new Event("chat-unread-changed")));
+              .then(() => {
+                setUnreadTick((t) => t + 1);
+                window.dispatchEvent(new Event("chat-unread-changed"));
+              });
           }
         }
         window.dispatchEvent(new Event("chat-unread-changed"));

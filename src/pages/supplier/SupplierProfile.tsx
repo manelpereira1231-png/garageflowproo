@@ -16,8 +16,10 @@ export default function SupplierProfile() {
   useEffect(() => {
     if (!supplierId) return;
     (async () => {
-      const { data } = await supabase.from("gsn_suppliers" as any).select("*").eq("id", supplierId).maybeSingle();
-      setData(data);
+      // Registo completo do próprio fornecedor via RPC protegida.
+      const { data } = await supabase.rpc("gsn_my_supplier" as any);
+      const own = (((data as any) ?? []) as any[]).find((s) => s.id === supplierId) ?? null;
+      setData(own);
     })();
   }, [supplierId]);
 

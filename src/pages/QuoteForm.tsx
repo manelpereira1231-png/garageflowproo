@@ -240,7 +240,7 @@ export default function QuoteForm() {
   const [cancelling, setCancelling] = useState(false);
   const handleCancelQuote = async () => {
     if (!editId || !activeShopId) return;
-    if (!window.confirm("Pretende cancelar este orçamento? O orçamento será marcado como "Cancelado pela oficina" e não poderá ser convertido em serviço.")) return;
+    if (!window.confirm("Pretende cancelar este orçamento? Será marcado como cancelado pela oficina e não poderá ser convertido em serviço.")) return;
     setCancelling(true);
     const { error } = await supabase
       .from("quotes")

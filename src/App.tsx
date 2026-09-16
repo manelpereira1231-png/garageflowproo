@@ -572,7 +572,9 @@ const shopRoutes = [
   { path: "/notifications", element: <Notifications /> },
   { path: "/alerts", element: <PlanGate feature="basicAlerts" requiredPlan="pro"><Alerts /></PlanGate> },
   { path: "/team", element: <PlanGate feature="teamManagement" requiredPlan="pro"><Team /></PlanGate> },
-  { path: "/chat", element: <PlanGate feature="chatbot" requiredPlan="garage"><Chat /></PlanGate> },
+  // Chat é uma página normal do ERP: mesmo Layout, mesma navegação, disponível
+  // a todos os perfis da oficina (permissões continuam a ser validadas por RLS).
+  { path: "/chat", element: <Chat /> },
   { path: "/invoices", element: <FeatureGate feature="invoices" requiredPlan="pro"><Invoices /></FeatureGate> },
   { path: "/invoices/new", element: <FeatureGate feature="invoices" requiredPlan="pro"><InvoiceForm /></FeatureGate> },
   { path: "/invoices/:id", element: <FeatureGate feature="invoices" requiredPlan="pro"><InvoiceDetail /></FeatureGate> },

@@ -25,6 +25,24 @@ interface Client {
   email: string;
 }
 
+// Perfis da oficina em português (a BD guarda os valores em inglês).
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Proprietário",
+  admin: "Administrador",
+  manager: "Gestor",
+  reception: "Receção",
+  receptionist: "Receção",
+  technician: "Técnico",
+  mechanic: "Mecânico",
+  staff: "Equipa",
+  viewer: "Consulta",
+};
+
+const roleLabel = (role?: string | null) =>
+  (role && ROLE_LABELS[role.toLowerCase()]) || role || "Equipa";
+
+
+
 export default function Chat() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading } = useSubscription();

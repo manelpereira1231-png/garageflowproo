@@ -71,19 +71,20 @@ export default function Chat() {
     load();
   }, [shopId]);
 
-  // Load unread counts
+  // Load unread counts (inclui mensagens internas de colegas de equipa)
   useEffect(() => {
     if (!shopId) return;
     const loadUnread = async () => {
       const { data } = await supabase
         .from("chat_messages")
-        .select("client_id")
+        .select("client_id, sender_id")
         .eq("shop_id", shopId)
-        .eq("read", false)
-        .neq("sender_type", "staff");
+        .eq("read", false);
       if (data) {
         const counts: Record<string, number> = {};
         data.forEach(m => {
+          // Mensagens enviadas pelo próprio utilizador nunca contam como "por ler".
+          if (m.sender_id && m.sender_id === currentUserId) return;
           const key = m.client_id || "all";
           counts[key] = (counts[key] || 0) + 1;
         });
@@ -91,7 +92,7 @@ export default function Chat() {
       }
     };
     loadUnread();
-  }, [shopId, messages]);
+  }, [shopId, messages, currentUserId]);
 
   const loadMessages = async () => {
     if (!shopId) { setMessagesLoading(false); return; }
@@ -114,20 +115,29 @@ export default function Chat() {
       const { data } = await query;
       if (data) setMessages(data as ChatMessage[]);
 
-      // Mark as read
+      // Marcar como lidas as mensagens da conversa aberta (exceto as próprias)
       if (selectedClient !== "all") {
         await supabase.from("chat_messages")
           .update({ read: true } as any)
           .eq("shop_id", shopId)
           .eq("client_id", selectedClient)
           .eq("read", false);
+      } else {
+        let teamRead = supabase.from("chat_messages")
+          .update({ read: true } as any)
+          .eq("shop_id", shopId)
+          .is("client_id", null)
+          .eq("read", false);
+        if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
+        await teamRead;
       }
+      window.dispatchEvent(new Event("chat-unread-changed"));
     } finally {
       setMessagesLoading(false);
     }
   };
 
-  useEffect(() => { loadMessages(); }, [shopId, selectedClient]);
+  useEffect(() => { loadMessages(); }, [shopId, selectedClient, currentUserId]);
 
   // Realtime
   useEffect(() => {

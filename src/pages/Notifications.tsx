@@ -78,15 +78,24 @@ export default function Notifications() {
 
   const load = useCallback(async () => {
     if (!shopIds.length) { setLoading(false); return; }
-    const { data } = await supabase
-      .from("notifications")
-      .select("id,type,title,message,link,data,read,created_at")
-      .in("shop_id", shopIds)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const [{ data }, { data: auth }] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("id,type,title,message,link,data,read,created_at")
+        .in("shop_id", shopIds)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase.auth.getUser(),
+    ]);
+    const meId = auth?.user?.id;
     // Eventos técnicos ficam no histórico do sistema, não aqui.
-    setItems((((data as any) ?? []) as Notif[]).filter(isUserFacingNotification));
+    // Mensagens enviadas pelo próprio utilizador não geram notificação para ele.
+    setItems(
+      (((data as any) ?? []) as Notif[])
+        .filter(isUserFacingNotification)
+        .filter((n) => !(n.data?.event === "chat_message" && n.data?.sender_id && n.data.sender_id === meId)),
+    );
     setLoading(false);
   }, [idsKey]);
 

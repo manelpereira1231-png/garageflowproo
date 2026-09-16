@@ -148,11 +148,20 @@ export default function Chat() {
         .order("created_at", { ascending: true })
         .limit(200);
 
-      if (selectedClient !== "all") {
-        query = query.eq("client_id", selectedClient);
+      const peer = dmTarget(selectedClient);
+      if (peer) {
+        // Conversa privada entre dois membros da oficina (nos dois sentidos).
+        query = query
+          .is("client_id", null)
+          .not("recipient_id", "is", null)
+          .or(
+            `and(sender_id.eq.${currentUserId},recipient_id.eq.${peer}),and(sender_id.eq.${peer},recipient_id.eq.${currentUserId})`,
+          );
+      } else if (selectedClient !== "all") {
+        query = query.eq("client_id", selectedClient).is("recipient_id", null);
       } else {
-        // Chat de equipa: apenas mensagens internas (sem cliente associado)
-        query = query.is("client_id", null);
+        // Chat de equipa: apenas mensagens internas (sem cliente nem destinatário)
+        query = query.is("client_id", null).is("recipient_id", null);
       }
 
       const { data } = await query;
@@ -164,7 +173,16 @@ export default function Chat() {
       setUnreadCounts((prev) => (prev[key] ? { ...prev, [key]: 0 } : prev));
 
       // Marcar como lidas as mensagens da conversa aberta (exceto as próprias)
-      if (selectedClient !== "all") {
+      if (peer) {
+        if (currentUserId) {
+          await supabase.from("chat_messages")
+            .update({ read: true } as any)
+            .eq("shop_id", shopId)
+            .eq("sender_id", peer)
+            .eq("recipient_id", currentUserId)
+            .eq("read", false);
+        }
+      } else if (selectedClient !== "all") {
         let clientRead = supabase.from("chat_messages")
           .update({ read: true } as any)
           .eq("shop_id", shopId)
@@ -177,6 +195,7 @@ export default function Chat() {
           .update({ read: true } as any)
           .eq("shop_id", shopId)
           .is("client_id", null)
+          .is("recipient_id", null)
           .eq("read", false);
         if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
         await teamRead;
@@ -189,7 +208,7 @@ export default function Chat() {
         .eq("read", false)
         .contains("data", {
           event: "chat_message",
-          conversation: selectedClient !== "all" ? selectedClient : "team",
+          conversation: peer ? `dm:${peer}` : selectedClient !== "all" ? selectedClient : "team",
         });
 
       // Só depois da escrita concluir é que vale a pena recontar.

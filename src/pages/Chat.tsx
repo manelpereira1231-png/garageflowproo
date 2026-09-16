@@ -152,11 +152,17 @@ export default function Chat() {
         const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
         if (belongs) {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
+          // Conversa aberta: a mensagem é lida de imediato.
+          if (newMsg.sender_id !== currentUserId && !newMsg.read) {
+            supabase.from("chat_messages").update({ read: true } as any).eq("id", newMsg.id)
+              .then(() => window.dispatchEvent(new Event("chat-unread-changed")));
+          }
         }
+        window.dispatchEvent(new Event("chat-unread-changed"));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [shopId, selectedClient]);
+  }, [shopId, selectedClient, currentUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

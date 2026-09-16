@@ -381,7 +381,7 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4 space-y-3">
+          <div className="h-[50vh] md:h-auto md:flex-1 md:min-h-0 overflow-y-auto overscroll-contain p-3 md:p-4 space-y-3">
 
             {messagesLoading && messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">

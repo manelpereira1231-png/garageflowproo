@@ -418,8 +418,8 @@ export default function FinancialReports() {
                   <tr key={m.month} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="py-2 px-2 sm:px-3 font-medium">{m.month}</td>
                     <td className="py-2 px-2 sm:px-3 text-right">{m.count}</td>
-                    <td className="py-2 px-2 sm:px-3 text-right font-medium text-green-600">{currency}{m.revenue.toFixed(2)}</td>
-                    <td className="py-2 px-2 sm:px-3 text-right font-medium text-primary">{currency}{m.profit.toFixed(2)}</td>
+                    <td className="py-2 px-2 sm:px-3 text-right font-medium text-amber-600">{currency}{m.revenue.toFixed(2)}</td>
+                    <td className="py-2 px-2 sm:px-3 text-right font-medium text-green-600">{currency}{m.profit.toFixed(2)}</td>
                     <td className="py-2 px-2 sm:px-3 text-right text-muted-foreground">{currency}{m.vat.toFixed(2)}</td>
                   </tr>
                 ))}
@@ -428,8 +428,8 @@ export default function FinancialReports() {
                 <tr className="border-t-2 border-border font-bold">
                   <td className="py-2 px-2 sm:px-3">Total</td>
                   <td className="py-2 px-2 sm:px-3 text-right">{stats.monthlyData.reduce((s, m) => s + m.count, 0)}</td>
-                  <td className="py-2 px-2 sm:px-3 text-right text-green-600">{currency}{stats.monthlyData.reduce((s, m) => s + m.revenue, 0).toFixed(2)}</td>
-                  <td className="py-2 px-2 sm:px-3 text-right text-primary">{currency}{stats.monthlyData.reduce((s, m) => s + m.profit, 0).toFixed(2)}</td>
+                  <td className="py-2 px-2 sm:px-3 text-right text-amber-600">{currency}{stats.monthlyData.reduce((s, m) => s + m.revenue, 0).toFixed(2)}</td>
+                  <td className="py-2 px-2 sm:px-3 text-right text-green-600">{currency}{stats.monthlyData.reduce((s, m) => s + m.profit, 0).toFixed(2)}</td>
                   <td className="py-2 px-2 sm:px-3 text-right text-muted-foreground">{currency}{stats.monthlyData.reduce((s, m) => s + m.vat, 0).toFixed(2)}</td>
                 </tr>
               </tfoot>

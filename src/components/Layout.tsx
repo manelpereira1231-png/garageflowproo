@@ -425,7 +425,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       icon: BellRing,
       badge: unreadNotifCount,
     },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, featureSlug: "chat" },
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle },
 
     // ── Crescimento ──
     { path: "/automations", label: t("nav.automations"), icon: Zap, featureSlug: "automations" },

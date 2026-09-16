@@ -15,9 +15,20 @@ interface ChatMessage {
   sender_type: string;
   sender_id: string | null;
   client_id: string | null;
+  recipient_id?: string | null;
   created_at: string;
   read: boolean;
 }
+
+interface Member {
+  user_id: string;
+  name: string;
+  role: string;
+}
+
+// Conversas privadas usam a chave "u:<user_id>".
+const DM_PREFIX = "u:";
+const dmTarget = (key: string) => (key.startsWith(DM_PREFIX) ? key.slice(DM_PREFIX.length) : null);
 
 interface Client {
   id: string;

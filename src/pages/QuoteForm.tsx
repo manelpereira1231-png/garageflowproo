@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ClientCombobox from "@/components/ClientCombobox";
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE } from "@/lib/sanityLimits";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -236,15 +236,18 @@ export default function QuoteForm() {
     setLoading(false);
   };
 
-  // Cancelar orçamento (apenas ao editar) — marca como rejeitado/cancelado.
+  // Cancelar orçamento (apenas ao editar) — confirmação com motivo obrigatório, igual ao cancelamento de serviço.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const handleCancelQuote = async () => {
     if (!editId || !activeShopId) return;
-    if (!window.confirm("Pretende cancelar este orçamento? Será marcado como cancelado pela oficina e não poderá ser convertido em serviço.")) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) return;
     setCancelling(true);
     const { error } = await supabase
       .from("quotes")
-      .update({ status: "cancelled" })
+      .update({ status: "cancelled", cancellation_reason: reason, cancelled_at: new Date().toISOString() })
       .eq("id", editId)
       .eq("shop_id", activeShopId);
     setCancelling(false);
@@ -496,12 +499,58 @@ export default function QuoteForm() {
             variant="outline"
             className="w-full h-12 text-base text-destructive border-destructive/40 hover:bg-destructive/10"
             disabled={cancelling || loading}
-            onClick={handleCancelQuote}
+            onClick={() => setCancelOpen(true)}
           >
             {cancelling ? "A cancelar…" : "Cancelar Orçamento"}
           </Button>
         )}
       </form>
+
+      {/* Cancelamento de orçamento — confirmação com motivo obrigatório (mesmo fluxo do cancelamento de serviço) */}
+      <Dialog open={cancelOpen} onOpenChange={(o) => { if (!o && !cancelling) { setCancelOpen(false); setCancelReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Cancelar orçamento
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Está prestes a cancelar este orçamento. Esta ação é{" "}
+            <span className="font-semibold text-destructive">irreversível</span> — o orçamento passa a
+            cancelado e não pode ser convertido em serviço. Indique o motivo do cancelamento para continuar.
+          </p>
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="quote-cancel-reason">Motivo do cancelamento *</Label>
+            <Textarea
+              id="quote-cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: cliente desistiu, orçamento duplicado…"
+              rows={3}
+              maxLength={500}
+              autoFocus
+            />
+            {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+              <p className="text-xs text-destructive">O motivo deve ter pelo menos 5 caracteres.</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelReason(""); }} disabled={cancelling}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelQuote}
+              disabled={cancelling || cancelReason.trim().length < 5}
+            >
+              {cancelling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Upgrade Modal */}
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

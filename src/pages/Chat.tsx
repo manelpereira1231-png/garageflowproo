@@ -398,7 +398,44 @@ export default function Chat() {
               </div>
             </button>
 
+            {/* Conversas privadas com membros da oficina */}
+            {teamMembers.length > 0 && (
+              <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Membros da oficina
+              </p>
+            )}
+            {teamMembers.map(m => {
+              const key = `${DM_PREFIX}${m.user_id}`;
+              const unread = unreadCounts[key] || 0;
+              const isActive = selectedClient === key;
+              return (
+                <button
+                  key={m.user_id}
+                  onClick={() => setSelectedClient(key)}
+                  className={`w-full text-left px-3 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors ${isActive ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {m.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-sm font-medium truncate">{m.name}</p>
+                        {unread > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{unread}</Badge>}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">{roleLabel(m.role)}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
             {/* Client conversations */}
+            {filteredClients.length > 0 && (
+              <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Clientes
+              </p>
+            )}
             {filteredClients.map(c => {
               const unread = unreadCounts[c.id] || 0;
               const isActive = selectedClient === c.id;

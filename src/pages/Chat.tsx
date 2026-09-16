@@ -57,6 +57,8 @@ export default function Chat() {
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messagesLoading, setMessagesLoading] = useState(true);
+  // Força recontagem das mensagens por ler assim que algo é marcado como lido.
+  const [unreadTick, setUnreadTick] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

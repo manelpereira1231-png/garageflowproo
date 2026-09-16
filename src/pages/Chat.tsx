@@ -15,9 +15,20 @@ interface ChatMessage {
   sender_type: string;
   sender_id: string | null;
   client_id: string | null;
+  recipient_id?: string | null;
   created_at: string;
   read: boolean;
 }
+
+interface Member {
+  user_id: string;
+  name: string;
+  role: string;
+}
+
+// Conversas privadas usam a chave "u:<user_id>".
+const DM_PREFIX = "u:";
+const dmTarget = (key: string) => (key.startsWith(DM_PREFIX) ? key.slice(DM_PREFIX.length) : null);
 
 interface Client {
   id: string;
@@ -55,6 +66,7 @@ export default function Chat() {
   const [shopName, setShopName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
+  const [members, setMembers] = useState<Member[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messagesLoading, setMessagesLoading] = useState(true);
   // Força recontagem das mensagens por ler assim que algo é marcado como lido.
@@ -81,11 +93,15 @@ export default function Chat() {
       if (shopRes.data) setShopName(shopRes.data.name || "");
       if (membersRes.data) {
         const map: Record<string, string> = {};
+        const list: Member[] = [];
         (membersRes.data as any[]).forEach((m) => {
           const name = (m.shop_user_profiles?.name || "").trim();
-          if (m.user_id) map[m.user_id] = name || roleLabel(m.role);
+          if (!m.user_id) return;
+          map[m.user_id] = name || roleLabel(m.role);
+          list.push({ user_id: m.user_id, name: name || roleLabel(m.role), role: m.role });
         });
         setMemberNames(map);
+        setMembers(list.sort((a, b) => a.name.localeCompare(b.name)));
       }
     };
     load();
@@ -97,14 +113,21 @@ export default function Chat() {
     const loadUnread = async () => {
       const { data } = await supabase
         .from("chat_messages")
-        .select("client_id, sender_id")
+        .select("client_id, sender_id, recipient_id")
         .eq("shop_id", shopId)
         .eq("read", false);
       if (data) {
         const counts: Record<string, number> = {};
-        data.forEach(m => {
+        (data as any[]).forEach(m => {
           // Mensagens enviadas pelo próprio utilizador nunca contam como "por ler".
           if (m.sender_id && m.sender_id === currentUserId) return;
+          // Conversas privadas só contam para o destinatário.
+          if (m.recipient_id) {
+            if (m.recipient_id !== currentUserId) return;
+            const dmKey = `${DM_PREFIX}${m.sender_id}`;
+            counts[dmKey] = (counts[dmKey] || 0) + 1;
+            return;
+          }
           const key = m.client_id || "all";
           counts[key] = (counts[key] || 0) + 1;
         });
@@ -125,11 +148,20 @@ export default function Chat() {
         .order("created_at", { ascending: true })
         .limit(200);
 
-      if (selectedClient !== "all") {
-        query = query.eq("client_id", selectedClient);
+      const peer = dmTarget(selectedClient);
+      if (peer) {
+        // Conversa privada entre dois membros da oficina (nos dois sentidos).
+        query = query
+          .is("client_id", null)
+          .not("recipient_id", "is", null)
+          .or(
+            `and(sender_id.eq.${currentUserId},recipient_id.eq.${peer}),and(sender_id.eq.${peer},recipient_id.eq.${currentUserId})`,
+          );
+      } else if (selectedClient !== "all") {
+        query = query.eq("client_id", selectedClient).is("recipient_id", null);
       } else {
-        // Chat de equipa: apenas mensagens internas (sem cliente associado)
-        query = query.is("client_id", null);
+        // Chat de equipa: apenas mensagens internas (sem cliente nem destinatário)
+        query = query.is("client_id", null).is("recipient_id", null);
       }
 
       const { data } = await query;
@@ -141,7 +173,16 @@ export default function Chat() {
       setUnreadCounts((prev) => (prev[key] ? { ...prev, [key]: 0 } : prev));
 
       // Marcar como lidas as mensagens da conversa aberta (exceto as próprias)
-      if (selectedClient !== "all") {
+      if (peer) {
+        if (currentUserId) {
+          await supabase.from("chat_messages")
+            .update({ read: true } as any)
+            .eq("shop_id", shopId)
+            .eq("sender_id", peer)
+            .eq("recipient_id", currentUserId)
+            .eq("read", false);
+        }
+      } else if (selectedClient !== "all") {
         let clientRead = supabase.from("chat_messages")
           .update({ read: true } as any)
           .eq("shop_id", shopId)
@@ -154,6 +195,7 @@ export default function Chat() {
           .update({ read: true } as any)
           .eq("shop_id", shopId)
           .is("client_id", null)
+          .is("recipient_id", null)
           .eq("read", false);
         if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
         await teamRead;
@@ -166,7 +208,7 @@ export default function Chat() {
         .eq("read", false)
         .contains("data", {
           event: "chat_message",
-          conversation: selectedClient !== "all" ? selectedClient : "team",
+          conversation: peer ? `dm:${peer}` : selectedClient !== "all" ? selectedClient : "team",
         });
 
       // Só depois da escrita concluir é que vale a pena recontar.
@@ -189,7 +231,14 @@ export default function Chat() {
         filter: `shop_id=eq.${shopId}`,
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
-        const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
+        const peer = dmTarget(selectedClient);
+        const belongs = peer
+          ? !!newMsg.recipient_id &&
+            ((newMsg.sender_id === peer && newMsg.recipient_id === currentUserId) ||
+              (newMsg.sender_id === currentUserId && newMsg.recipient_id === peer))
+          : selectedClient === "all"
+            ? !newMsg.client_id && !newMsg.recipient_id
+            : newMsg.client_id === selectedClient && !newMsg.recipient_id;
         if (belongs) {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
           // Conversa aberta: a mensagem é lida de imediato.
@@ -218,7 +267,8 @@ export default function Chat() {
     if (!text || !shopId || !currentUserId || sending) return;
     setSending(true);
 
-    const isClientMessage = selectedClient !== "all";
+    const peer = dmTarget(selectedClient);
+    const isClientMessage = !peer && selectedClient !== "all";
     const client = isClientMessage ? clients.find(c => c.id === selectedClient) : null;
 
     // Limpa o campo já (UX) — reposto em caso de falha.
@@ -226,8 +276,10 @@ export default function Chat() {
 
     const { data: inserted, error } = await supabase.from("chat_messages").insert({
       shop_id: shopId, sender_id: currentUserId, sender_type: "staff",
-      client_id: isClientMessage ? selectedClient : null, message: text,
-    }).select("*").single();
+      client_id: isClientMessage ? selectedClient : null,
+      recipient_id: peer,
+      message: text,
+    } as any).select("*").single();
 
     if (error || !inserted) {
       toast.error(error?.message || "Não foi possível enviar a mensagem");
@@ -286,7 +338,13 @@ export default function Chat() {
 
   const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const selectedClientObj = clients.find(c => c.id === selectedClient);
+  const selectedPeerId = dmTarget(selectedClient);
+  const selectedPeer = members.find(m => m.user_id === selectedPeerId);
   const isTeamChat = selectedClient === "all";
+  // Colegas de oficina (exclui o próprio utilizador).
+  const teamMembers = members.filter(
+    m => m.user_id !== currentUserId && m.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
 
   // Get last message per client for sidebar preview
@@ -340,7 +398,44 @@ export default function Chat() {
               </div>
             </button>
 
+            {/* Conversas privadas com membros da oficina */}
+            {teamMembers.length > 0 && (
+              <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Membros da oficina
+              </p>
+            )}
+            {teamMembers.map(m => {
+              const key = `${DM_PREFIX}${m.user_id}`;
+              const unread = unreadCounts[key] || 0;
+              const isActive = selectedClient === key;
+              return (
+                <button
+                  key={m.user_id}
+                  onClick={() => setSelectedClient(key)}
+                  className={`w-full text-left px-3 py-3 border-b border-border/50 hover:bg-muted/50 transition-colors ${isActive ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {m.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-sm font-medium truncate">{m.name}</p>
+                        {unread > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{unread}</Badge>}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">{roleLabel(m.role)}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
             {/* Client conversations */}
+            {filteredClients.length > 0 && (
+              <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Clientes
+              </p>
+            )}
             {filteredClients.map(c => {
               const unread = unreadCounts[c.id] || 0;
               const isActive = selectedClient === c.id;
@@ -382,6 +477,16 @@ export default function Chat() {
                   <span className="font-medium truncate">{t('chat.teamChat')}</span>
                   <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{t('chat.teamOnly')}</Badge>
                 </>
+              ) : selectedPeer ? (
+                <>
+                  <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {selectedPeer.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-medium truncate">{selectedPeer.name}</span>
+                  <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">
+                    {roleLabel(selectedPeer.role)} · Privado
+                  </Badge>
+                </>
               ) : selectedClientObj ? (
                 <>
                   <div className="w-7 h-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
@@ -402,6 +507,11 @@ export default function Chat() {
                 className="text-xs bg-muted rounded-lg px-2 py-1.5 border border-border max-w-[42vw] truncate"
               >
                 <option value="all">{t('chat.teamChat')}</option>
+                {members.filter(m => m.user_id !== currentUserId).map(m => (
+                  <option key={m.user_id} value={`${DM_PREFIX}${m.user_id}`}>
+                    {m.name} ({roleLabel(m.role)})
+                  </option>
+                ))}
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>

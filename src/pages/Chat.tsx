@@ -158,6 +158,17 @@ export default function Chat() {
         if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
         await teamRead;
       }
+      // A notificação correspondente à conversa aberta também deixa de estar por abrir.
+      await supabase
+        .from("notifications")
+        .update({ read: true } as any)
+        .eq("shop_id", shopId)
+        .eq("read", false)
+        .contains("data", {
+          event: "chat_message",
+          conversation: selectedClient !== "all" ? selectedClient : "team",
+        });
+
       // Só depois da escrita concluir é que vale a pena recontar.
       setUnreadTick((t) => t + 1);
       window.dispatchEvent(new Event("chat-unread-changed"));

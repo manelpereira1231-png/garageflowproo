@@ -12,6 +12,7 @@ import {
   Car, ChevronLeft, ChevronRight, Check, X, Sparkles, Rocket, PartyPopper, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsDemoSession } from "@/hooks/useIsDemoSession";
 import { isDemoSession, exitDemoToSignup } from "@/lib/salesDemo";
 import { trackDemoEvent } from "@/lib/demoTracker";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -74,7 +75,7 @@ function useTargetRect(path: string | null, tick: number, enabled: boolean) {
 export default function DemoGuide() {
   const navigate = useNavigate();
   const location = useLocation();
-  const active = isDemoSession();
+  const active = useIsDemoSession();
   const isMobile = useIsMobile();
 
   const [welcome, setWelcome] = useState(false);

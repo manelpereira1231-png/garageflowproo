@@ -8016,6 +8016,8 @@ export type Database = {
       }
       quotes: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
           client_id: string
           client_notes: string | null
           cost_total: number
@@ -8042,6 +8044,8 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           client_id: string
           client_notes?: string | null
           cost_total?: number
@@ -8068,6 +8072,8 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           client_id?: string
           client_notes?: string | null
           cost_total?: number

@@ -9,7 +9,7 @@ import { Eye, EyeOff, RotateCcw, Home, Loader2, BarChart3, Target, Rocket } from
 import { Button } from "@/components/ui/button";
 import { useIsDemoSession } from "@/hooks/useIsDemoSession";
 import {
-  currentDemoPlan, isDemoSession, resetDemo, switchDemoPlan, endDemo, exitDemoToSignup,
+  currentDemoPlan, resetDemo, switchDemoPlan, endDemo, exitDemoToSignup,
   DEMO_BAR_HIDDEN, DEMO_MODE_KEY, PLAN_LABEL, type DemoPlan,
 } from "@/lib/salesDemo";
 import { getCountryConfig, loadCountriesFromDB, formatPrice } from "@/lib/regionConfig";

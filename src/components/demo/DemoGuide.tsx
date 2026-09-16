@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsDemoSession } from "@/hooks/useIsDemoSession";
-import { isDemoSession, exitDemoToSignup } from "@/lib/salesDemo";
+import { exitDemoToSignup } from "@/lib/salesDemo";
 import { trackDemoEvent } from "@/lib/demoTracker";
 import { useIsMobile } from "@/hooks/use-mobile";
 

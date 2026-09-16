@@ -150,5 +150,11 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
 }
 
 export function mfaPromptDismissed(): boolean {
-  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch { return false; }
+  try {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") return true;
+  } catch { /* ignore */ }
+  try {
+    const until = Number(localStorage.getItem(SNOOZE_KEY) || 0);
+    return Number.isFinite(until) && until > Date.now();
+  } catch { return false; }
 }

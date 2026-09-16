@@ -35,13 +35,15 @@ const FILTERS: { key: Filter; label: string }[] = [
 function kindOf(n: Notif) {
   const txt = `${n.type || ""} ${n.title} ${n.message || ""}`.toLowerCase();
   if (txt.includes("servi") && (txt.includes("cancel") || txt.includes("cancelad"))) return "service_cancelled";
+  if (txt.includes("aprov")) return "approved";
   if (txt.includes("reject") || txt.includes("rejeit")) return "rejected";
   if (txt.includes("pagament") || txt.includes("payment") || txt.includes("fatura")) return "payment";
-  if (txt.includes("orçament") || txt.includes("quote") || txt.includes("aprov")) return "quote";
+  if (txt.includes("orçament") || txt.includes("quote")) return "quote";
   return "other";
 }
 
 const KIND_META: Record<string, { icon: any; color: string; label: string }> = {
+  approved: { icon: FileCheck2, color: "text-success", label: "Orçamento aprovado" },
   quote: { icon: FileCheck2, color: "text-warning", label: "Orçamento" },
   rejected: { icon: FileX2, color: "text-destructive", label: "Orçamento rejeitado" },
   service_cancelled: { icon: XCircle, color: "text-destructive", label: "Serviço cancelado" },

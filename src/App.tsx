@@ -430,8 +430,13 @@ function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { role, loading, shopId, can } = useShopRole();
   const { primaryShopId, loading: primaryLoading } = usePrimaryShopId();
+  const { isSupplier, loading: supplierLoading } = useIsSupplier();
+  const { isSuperAdmin, loading: superLoading } = useSuperAdmin();
 
-  if (loading || primaryLoading) return <PageLoader />;
+  if (loading || primaryLoading || supplierLoading || superLoading) return <PageLoader />;
+
+  // Contas de fornecedor nunca abrem o ERP da oficina — têm painel próprio.
+  if (isSupplier && !isSuperAdmin) return <Navigate to="/supplier" replace />;
   // Sem oficina/role (afiliados, convidados por confirmar, contas novas) não
   // se força o onboarding — evita o ciclo de redirects. O Dashboard fica sempre
   // acessível como home segura do perfil.

@@ -37,6 +37,7 @@ const statusColors: Record<QuoteStatus, string> = {
   sent: "bg-info/10 text-info",
   approved: "bg-success/10 text-success",
   rejected: "bg-destructive/10 text-destructive",
+  cancelled: "bg-warning/10 text-warning",
   expired: "bg-muted text-muted-foreground",
   converted: "bg-primary/10 text-primary",
 };
@@ -256,7 +257,7 @@ export default function Quotes() {
       const vehicleInfo = `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model} — ${(q.vehicles as any)?.plate}`;
       const lang = shop.language || 'pt';
       const langLabels: Record<string, string> = { pt: 'Orçamento', en: 'Quote', es: 'Presupuesto' };
-      const isResolved = ['approved', 'converted', 'rejected', 'expired'].includes(q.status);
+      const isResolved = ['approved', 'converted', 'rejected', 'cancelled', 'expired'].includes(q.status);
       // Only include approval link when the quote is still actionable — never on resolved quotes.
       const approvalUrl = !isResolved && q.token && canUseFeature('quoteApproval') ? `${window.location.origin}/quote/${q.token}` : undefined;
       // Reflect the resolved state in the subject so the recipient sees it immediately.
@@ -363,7 +364,7 @@ export default function Quotes() {
   const sendQuoteWhatsApp = async (q: any) => {
     const phone = (q.clients as any)?.phone;
     if (!phone) { toast.error(t('quotes.noClientPhone') || 'Cliente sem telefone'); return; }
-    const isResolved = ['approved', 'converted', 'rejected', 'expired'].includes(q.status);
+    const isResolved = ['approved', 'converted', 'rejected', 'cancelled', 'expired'].includes(q.status);
     const approvalUrl = !isResolved && q.token ? `${window.location.origin}/quote/${q.token}` : undefined;
     const pdf = await buildQuotePdfBlob(q);
     openWhatsApp({
@@ -406,7 +407,10 @@ export default function Quotes() {
   // 'sent' num orçamento significa que foi enviado ao cliente e aguarda decisão —
   // mostramos "Aguarda aprovação" para não ser confundido com "aprovado".
   const getStatusLabel = (status: QuoteStatus) =>
-    status === 'sent' ? t('status.awaitingApproval') : t(`status.${status}`);
+    status === 'sent' ? t('status.awaitingApproval')
+      : status === 'cancelled' ? t('status.cancelled', 'Cancelado pela oficina')
+      : status === 'rejected' ? t('status.rejected', 'Rejeitado pelo cliente')
+      : t(`status.${status}`);
 
 
   return (
@@ -497,7 +501,8 @@ export default function Quotes() {
                 { value: 'draft', label: t('status.draft') },
                 { value: 'sent', label: t('status.awaitingApproval') },
                 { value: 'approved', label: t('status.approved') },
-                { value: 'rejected', label: t('status.rejected') },
+                { value: 'rejected', label: t('status.rejected', 'Rejeitado pelo cliente') },
+                { value: 'cancelled', label: t('status.cancelled', 'Cancelado pela oficina') },
                 { value: 'expired', label: t('status.expired') },
                 { value: 'converted', label: t('status.converted') },
               ]}
@@ -571,7 +576,7 @@ export default function Quotes() {
                 </Link>
               )}
               <Button variant="ghost" size="sm" onClick={() => downloadPdf(q)} className="text-xs h-7">PDF</Button>
-              {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'expired'].includes(q.status) && (
+              {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'cancelled', 'expired'].includes(q.status) && (
                 <Button variant="ghost" size="sm" className="text-xs h-7" onClick={async () => {
                   const url = `${window.location.origin}/quote/${q.token}`;
                   try { await navigator.clipboard.writeText(url); toast.success('Link copiado'); }
@@ -580,7 +585,7 @@ export default function Quotes() {
                   <Copy className="w-3 h-3 mr-1" />Link
                 </Button>
               )}
-              {!['converted', 'rejected', 'expired'].includes(q.status) && (
+              {!['converted', 'rejected', 'cancelled', 'expired'].includes(q.status) && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} className="text-xs h-7">
                     {sendingEmail === q.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
@@ -662,7 +667,7 @@ export default function Quotes() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPdf(q)} title="PDF" aria-label="PDF">
                       <FileDown className="w-3.5 h-3.5" />
                     </Button>
-                    {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'expired'].includes(q.status) && (
+                    {q.token && canUseFeature('quoteApproval') && !['converted', 'rejected', 'cancelled', 'expired'].includes(q.status) && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Copiar link" aria-label="Copiar link" onClick={async () => {
                         const url = `${window.location.origin}/quote/${q.token}`;
                         try { await navigator.clipboard.writeText(url); toast.success('Link copiado'); }
@@ -671,7 +676,7 @@ export default function Quotes() {
                         <Copy className="w-3.5 h-3.5" />
                       </Button>
                     )}
-                    {!['converted', 'rejected', 'expired'].includes(q.status) && (
+                    {!['converted', 'rejected', 'cancelled', 'expired'].includes(q.status) && (
                       <>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendQuoteEmail(q)} disabled={sendingEmail === q.id} title={t('quotes.sendEmail') || 'Email'} aria-label="Email">
                           {sendingEmail === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}

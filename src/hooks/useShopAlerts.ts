@@ -418,7 +418,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
       timer = setTimeout(() => void load(), 600);
     };
     let ch = supabase.channel(`gf-alerts-${idsKey}`);
-    for (const table of ["alerts", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
+    for (const table of ["alerts", "alert_states", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
       ch = ch.on("postgres_changes", { event: "*", schema: "public", table }, schedule);
     }
     ch.subscribe();

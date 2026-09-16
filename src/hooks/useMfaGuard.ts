@@ -14,6 +14,7 @@ import { useIsDemoSession } from "@/hooks/useIsDemoSession";
 
 export function useMfaGuard() {
   const { isReady, user } = useAuthReady();
+  const isDemo = useIsDemoSession();
   const [isOwner, setIsOwner] = useState(false);
   const [hasTotp, setHasTotp] = useState<boolean | null>(null);
 

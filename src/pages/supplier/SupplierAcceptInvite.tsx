@@ -41,7 +41,11 @@ export default function SupplierAcceptInvite() {
     try {
       const { data: sign, error: signErr } = await supabase.auth.signUp({
         email: invite.email, password,
-        options: { emailRedirectTo: `${window.location.origin}/supplier/pending` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/supplier/pending`,
+          // Conta de fornecedor: nunca deve gerar uma oficina automática.
+          data: { account_type: "supplier", supplier_user: "true", skip_shop_creation: "true" },
+        },
       });
       if (signErr && !/already/i.test(signErr.message)) throw signErr;
       if (!sign?.session) {

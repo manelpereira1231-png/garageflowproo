@@ -1894,6 +1894,7 @@ export type Database = {
           id: string
           message: string
           read: boolean
+          recipient_id: string | null
           sender_id: string | null
           sender_type: string
           shop_id: string
@@ -1904,6 +1905,7 @@ export type Database = {
           id?: string
           message: string
           read?: boolean
+          recipient_id?: string | null
           sender_id?: string | null
           sender_type?: string
           shop_id: string
@@ -1914,6 +1916,7 @@ export type Database = {
           id?: string
           message?: string
           read?: boolean
+          recipient_id?: string | null
           sender_id?: string | null
           sender_type?: string
           shop_id?: string

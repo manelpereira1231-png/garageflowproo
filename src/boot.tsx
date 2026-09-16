@@ -1,3 +1,4 @@
+import { installDemoIsolation } from "@/lib/salesDemo";
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
@@ -12,6 +13,7 @@ import { initSentry } from "@/lib/sentry";
 
 // Boot Sentry as early as possible (no-op if VITE_SENTRY_DSN unset).
 initSentry();
+installDemoIsolation();
 
 const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());

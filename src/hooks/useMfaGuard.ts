@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthReady } from "@/hooks/useAuthReady";
-import { isDemoSession } from "@/lib/salesDemo";
+import { useIsDemoSession } from "@/hooks/useIsDemoSession";
 
 
 export function useMfaGuard() {
@@ -52,7 +52,7 @@ export function useMfaGuard() {
      * diálogo de MFA abria por cima do ecrã inicial da /demo e roubava o
      * primeiro clique. Fora da demo o comportamento é exatamente o mesmo.
      */
-    mfaRequired: isOwner && !isDemoSession(),
+    mfaRequired: isOwner && !useIsDemoSession(),
 
     /** null = unknown/not checked yet. */
     hasTotp,

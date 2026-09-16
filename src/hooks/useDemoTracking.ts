@@ -5,12 +5,12 @@
  */
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { isDemoSession } from "@/lib/salesDemo";
+import { useIsDemoSession } from "@/hooks/useIsDemoSession";
 import { trackDemoEvent } from "@/lib/demoTracker";
 
 export function useDemoTracking() {
   const location = useLocation();
-  const active = isDemoSession();
+  const active = useIsDemoSession();
 
   // Page views
   useEffect(() => {

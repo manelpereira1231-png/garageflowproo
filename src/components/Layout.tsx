@@ -162,6 +162,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // MFA (TOTP) guided onboarding for group/billing owners. Never blocks access.
   const { mfaRequired, hasTotp, refresh: refreshMfa } = useMfaGuard();
   const [mfaDismissed, setMfaDismissed] = useState(() => mfaPromptDismissed());
+  // O banner de cookies é fixo em z-[100] e, em ecrãs pequenos, tapava os
+  // botões do diálogo de MFA (modal) — o utilizador ficava sem forma visível
+  // de sair. O diálogo só abre depois de o consentimento estar respondido.
+  const [cookieConsentDone, setCookieConsentDone] = useState(() => Boolean(getCookieConsent()));
+  useEffect(() => {
+    if (cookieConsentDone) return;
+    const check = () => setCookieConsentDone(Boolean(getCookieConsent()));
+    window.addEventListener("gf-cookie-consent", check);
+    const id = window.setInterval(check, 1000);
+    return () => { window.removeEventListener("gf-cookie-consent", check); window.clearInterval(id); };
+  }, [cookieConsentDone]);
 
   useEffect(() => {
     if (shopMarketRow?.name !== undefined) setShopName(shopMarketRow?.name || "");

@@ -140,6 +140,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { erpSupabase } from "@/integrations/supabase/realmClients";
 import { useShopRole } from "@/hooks/useShopRole";
 import { usePrimaryShopId } from "@/hooks/usePrimaryShopId";
+import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { canOpenPath, homeForRole } from "@/lib/rolePaths";
 import { useGlobalMarketEnabled } from "@/hooks/useGlobalMarketEnabled";
 import PublicRouteTracker from "@/components/PublicRouteTracker";

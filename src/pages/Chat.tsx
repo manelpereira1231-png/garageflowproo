@@ -153,18 +153,34 @@ export default function Chat() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !shopId || !currentUserId) return;
+    const text = newMessage.trim();
+    if (!text || !shopId || !currentUserId || sending) return;
     setSending(true);
 
     const isClientMessage = selectedClient !== "all";
     const client = isClientMessage ? clients.find(c => c.id === selectedClient) : null;
 
-    const { error } = await supabase.from("chat_messages").insert({
-      shop_id: shopId, sender_id: currentUserId, sender_type: "staff",
-      client_id: isClientMessage ? selectedClient : null, message: newMessage.trim(),
-    });
+    // Limpa o campo já (UX) — reposto em caso de falha.
+    setNewMessage("");
 
-    if (error) { toast.error(error.message); setSending(false); return; }
+    const { data: inserted, error } = await supabase.from("chat_messages").insert({
+      shop_id: shopId, sender_id: currentUserId, sender_type: "staff",
+      client_id: isClientMessage ? selectedClient : null, message: text,
+    }).select("*").single();
+
+    if (error || !inserted) {
+      toast.error(error?.message || "Não foi possível enviar a mensagem");
+      setNewMessage(text);
+      setSending(false);
+      return;
+    }
+
+    // Atualização imediata (não depende do evento realtime); o realtime
+    // deduplica por id, por isso nunca aparece duplicada.
+    const saved = inserted as ChatMessage;
+    setMessages(prev => (prev.some(m => m.id === saved.id)
+      ? prev
+      : [...prev, saved].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())));
 
     // Email notification for client messages
     if (isClientMessage && client?.email) {

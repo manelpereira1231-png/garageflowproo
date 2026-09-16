@@ -25,6 +25,24 @@ interface Client {
   email: string;
 }
 
+// Perfis da oficina em português (a BD guarda os valores em inglês).
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Proprietário",
+  admin: "Administrador",
+  manager: "Gestor",
+  reception: "Receção",
+  receptionist: "Receção",
+  technician: "Técnico",
+  mechanic: "Mecânico",
+  staff: "Equipa",
+  viewer: "Consulta",
+};
+
+const roleLabel = (role?: string | null) =>
+  (role && ROLE_LABELS[role.toLowerCase()]) || role || "Equipa";
+
+
+
 export default function Chat() {
   const { t } = useLanguage();
   const { shopId, loading: subLoading } = useSubscription();
@@ -63,7 +81,7 @@ export default function Chat() {
         const map: Record<string, string> = {};
         (membersRes.data as any[]).forEach((m) => {
           const name = (m.shop_user_profiles?.name || "").trim();
-          if (m.user_id) map[m.user_id] = name || (m.role || "Equipa");
+          if (m.user_id) map[m.user_id] = name || roleLabel(m.role);
         });
         setMemberNames(map);
       }
@@ -71,19 +89,20 @@ export default function Chat() {
     load();
   }, [shopId]);
 
-  // Load unread counts
+  // Load unread counts (inclui mensagens internas de colegas de equipa)
   useEffect(() => {
     if (!shopId) return;
     const loadUnread = async () => {
       const { data } = await supabase
         .from("chat_messages")
-        .select("client_id")
+        .select("client_id, sender_id")
         .eq("shop_id", shopId)
-        .eq("read", false)
-        .neq("sender_type", "staff");
+        .eq("read", false);
       if (data) {
         const counts: Record<string, number> = {};
         data.forEach(m => {
+          // Mensagens enviadas pelo próprio utilizador nunca contam como "por ler".
+          if (m.sender_id && m.sender_id === currentUserId) return;
           const key = m.client_id || "all";
           counts[key] = (counts[key] || 0) + 1;
         });
@@ -91,7 +110,7 @@ export default function Chat() {
       }
     };
     loadUnread();
-  }, [shopId, messages]);
+  }, [shopId, messages, currentUserId]);
 
   const loadMessages = async () => {
     if (!shopId) { setMessagesLoading(false); return; }
@@ -114,20 +133,29 @@ export default function Chat() {
       const { data } = await query;
       if (data) setMessages(data as ChatMessage[]);
 
-      // Mark as read
+      // Marcar como lidas as mensagens da conversa aberta (exceto as próprias)
       if (selectedClient !== "all") {
         await supabase.from("chat_messages")
           .update({ read: true } as any)
           .eq("shop_id", shopId)
           .eq("client_id", selectedClient)
           .eq("read", false);
+      } else {
+        let teamRead = supabase.from("chat_messages")
+          .update({ read: true } as any)
+          .eq("shop_id", shopId)
+          .is("client_id", null)
+          .eq("read", false);
+        if (currentUserId) teamRead = teamRead.neq("sender_id", currentUserId);
+        await teamRead;
       }
+      window.dispatchEvent(new Event("chat-unread-changed"));
     } finally {
       setMessagesLoading(false);
     }
   };
 
-  useEffect(() => { loadMessages(); }, [shopId, selectedClient]);
+  useEffect(() => { loadMessages(); }, [shopId, selectedClient, currentUserId]);
 
   // Realtime
   useEffect(() => {
@@ -142,11 +170,17 @@ export default function Chat() {
         const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
         if (belongs) {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
+          // Conversa aberta: a mensagem é lida de imediato.
+          if (newMsg.sender_id !== currentUserId && !newMsg.read) {
+            supabase.from("chat_messages").update({ read: true } as any).eq("id", newMsg.id)
+              .then(() => window.dispatchEvent(new Event("chat-unread-changed")));
+          }
         }
+        window.dispatchEvent(new Event("chat-unread-changed"));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [shopId, selectedClient]);
+  }, [shopId, selectedClient, currentUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

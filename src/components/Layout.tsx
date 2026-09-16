@@ -121,6 +121,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAlertCount, setPendingAlertCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [pendingQuoteApprovalCount, setPendingQuoteApprovalCount] = useState(0);
   const [pendingMarketCount, setPendingMarketCount] = useState(0);
   const [shopName, setShopName] = useState("");
@@ -226,6 +227,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [activeShopId]);
+
+  // Badge do Chat — mensagens por ler que não foram enviadas pelo próprio.
+  useEffect(() => {
+    if (!activeShopId) { setUnreadChatCount(0); return; }
+    let cancelled = false;
+    const loadChatCount = async () => {
+      const { data: { user: me } } = await supabase.auth.getUser();
+      let q = supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", activeShopId)
+        .eq("read", false);
+      if (me?.id) q = q.neq("sender_id", me.id);
+      const { count } = await q;
+      if (!cancelled) setUnreadChatCount(count || 0);
+    };
+    loadChatCount();
+    const onLocal = () => loadChatCount();
+    window.addEventListener("chat-unread-changed", onLocal);
+    const ch = supabase
+      .channel(`global-chat-${activeShopId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_messages", filter: `shop_id=eq.${activeShopId}` },
+        () => loadChatCount(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      window.removeEventListener("chat-unread-changed", onLocal);
+      supabase.removeChannel(ch);
+    };
+  }, [activeShopId]);
+
+
 
   // Global realtime: quote approvals from the public client link.
   // The database creates the notification at approval time; this listener makes
@@ -425,7 +461,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       icon: BellRing,
       badge: unreadNotifCount,
     },
-    { path: "/chat", label: t("nav.chat"), icon: MessageCircle },
+    { path: "/chat", label: t("nav.chat"), icon: MessageCircle, badge: unreadChatCount },
 
     // ── Crescimento ──
     { path: "/automations", label: t("nav.automations"), icon: Zap, featureSlug: "automations" },
@@ -457,7 +493,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/developers", label: "API", icon: Code, featureSlug: "api" },
     { path: "/settings", label: t("nav.settings"), icon: Settings, featureSlug: "settings" },
     { path: "/settings/messages", label: "Mensagens automáticas", icon: Settings, featureSlug: "settings" },
-  ], [pendingAlertCount, unreadNotifCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
+  ], [pendingAlertCount, unreadNotifCount, unreadChatCount, pendingMarketCount, pendingQuoteApprovalCount, t, marketStatusReady, isCarityPartner, globalMarketEnabled, supplierNetworkEnabled]);
 
   // Show every item, but mark the ones the current plan can't use as
   // `locked`. The sidebar renders a padlock + upgrade toast on click —

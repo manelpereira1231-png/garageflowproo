@@ -28,7 +28,7 @@ export default function AdminSupplierDetail() {
     if (!id) return;
     setLoading(true);
     const [{ data: s }, { data: p }, { data: o }] = await Promise.all([
-      supabase.from("gsn_suppliers" as any).select("*").eq("id", id).maybeSingle(),
+      supabase.rpc("gsn_admin_suppliers" as any, { _id: id }).then((r: any) => ({ data: (r.data ?? [])[0] ?? null })),
       supabase.from("gsn_products" as any).select("id,title,sku,price,stock,status,updated_at").eq("supplier_id", id).is("deleted_at", null).order("updated_at", { ascending: false }).limit(200),
       supabase.from("gsn_orders" as any).select("id,order_number,status,total,currency,created_at,buyer_shop_id").eq("supplier_id", id).order("created_at", { ascending: false }).limit(100),
     ]);

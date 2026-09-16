@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
-  Bell, Search, CheckCheck, CreditCard, FileCheck2, FileX2, Info, ExternalLink, Inbox,
+  Bell, Search, CheckCheck, CreditCard, FileCheck2, FileX2, Info, ExternalLink, Inbox, XCircle,
 } from "lucide-react";
 import { getCountryConfig } from "@/lib/regionConfig";
 import ListSkeleton from "@/components/ListSkeleton";

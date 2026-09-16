@@ -153,6 +153,7 @@ export default function CookieConsentBanner() {
   const persist = (consent: CookieConsent) => {
     try {
       saveCookieConsent(consent);
+      window.dispatchEvent(new Event("gf-cookie-consent"));
     } catch {}
   };
 

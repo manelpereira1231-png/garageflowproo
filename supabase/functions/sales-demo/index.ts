@@ -194,10 +194,9 @@ serve(async (req) => {
 
 async function seed(admin: any, shopId: string) {
   // Contactos de teste da DEMO: TODOS os clientes demo partilham exatamente
-  // os mesmos dois telefones e o mesmo email (legacy_dup_ok ignora a regra de
+  // o mesmo telefone e o mesmo email (legacy_dup_ok ignora a regra de
   // contactos únicos por oficina, que continua ativa em contas reais).
   const DEMO_PHONE = "+351 934 368 304";
-  const DEMO_PHONE_2 = "+351 927 332 810";
   const DEMO_EMAIL = "contact@garageflow.pt";
 
   const clients = [
@@ -210,7 +209,6 @@ async function seed(admin: any, shopId: string) {
     is_fleet: false,
     ...c,
     phone: DEMO_PHONE,
-    phone_secondary: DEMO_PHONE_2,
     email: DEMO_EMAIL,
     legacy_dup_ok: true,
     shop_id: shopId,

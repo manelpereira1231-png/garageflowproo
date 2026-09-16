@@ -281,7 +281,7 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
+      <div className="md:flex-1 md:min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
 
         {/* Sidebar - Client list */}
         <div className="w-[260px] border-r border-border flex flex-col shrink-0 hidden md:flex">

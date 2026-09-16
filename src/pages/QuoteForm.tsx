@@ -236,6 +236,26 @@ export default function QuoteForm() {
     setLoading(false);
   };
 
+  // Cancelar orçamento (apenas ao editar) — marca como rejeitado/cancelado.
+  const [cancelling, setCancelling] = useState(false);
+  const handleCancelQuote = async () => {
+    if (!editId || !activeShopId) return;
+    if (!window.confirm("Pretende cancelar este orçamento? O orçamento será marcado como rejeitado e não poderá ser convertido em serviço.")) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from("quotes")
+      .update({ status: "rejected" })
+      .eq("id", editId)
+      .eq("shop_id", activeShopId);
+    setCancelling(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Orçamento cancelado.");
+    navigate("/quotes");
+  };
+
   if (loadingData) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -468,6 +488,19 @@ export default function QuoteForm() {
         <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
           {loading ? (editId ? t('quotes.saving') : t('quotes.creating')) : (editId ? t('quotes.save') : t('quotes.create'))}
         </Button>
+
+        {/* Mobile only — cancelar orçamento ao editar */}
+        {editId && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-12 text-base text-destructive border-destructive/40 hover:bg-destructive/10 sm:hidden"
+            disabled={cancelling || loading}
+            onClick={handleCancelQuote}
+          >
+            {cancelling ? "A cancelar…" : "Cancelar Orçamento"}
+          </Button>
+        )}
       </form>
 
       {/* Upgrade Modal */}

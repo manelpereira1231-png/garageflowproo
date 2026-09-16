@@ -507,6 +507,11 @@ export default function Chat() {
                 className="text-xs bg-muted rounded-lg px-2 py-1.5 border border-border max-w-[42vw] truncate"
               >
                 <option value="all">{t('chat.teamChat')}</option>
+                {members.filter(m => m.user_id !== currentUserId).map(m => (
+                  <option key={m.user_id} value={`${DM_PREFIX}${m.user_id}`}>
+                    {m.name} ({roleLabel(m.role)})
+                  </option>
+                ))}
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>

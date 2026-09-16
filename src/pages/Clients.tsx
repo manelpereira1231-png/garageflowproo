@@ -400,9 +400,9 @@ export default function Clients() {
             {t('clients.noResults')}
           </div>
         ) : filtered.map(client => (
-          <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+          <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div className="flex min-w-0 items-center gap-1">
-              <span className="min-w-0 flex-1 whitespace-nowrap text-sm font-semibold sm:text-base">{client.name}</span>
+              <span className="min-w-0 flex-1 whitespace-nowrap text-base font-semibold leading-snug">{client.name}</span>
               <div className="flex shrink-0 items-center">
                 {!isDemo && client.phone && (
                    <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-8 p-0 text-primary" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>

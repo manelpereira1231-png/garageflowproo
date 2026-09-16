@@ -499,12 +499,58 @@ export default function QuoteForm() {
             variant="outline"
             className="w-full h-12 text-base text-destructive border-destructive/40 hover:bg-destructive/10"
             disabled={cancelling || loading}
-            onClick={handleCancelQuote}
+            onClick={() => setCancelOpen(true)}
           >
             {cancelling ? "A cancelar…" : "Cancelar Orçamento"}
           </Button>
         )}
       </form>
+
+      {/* Cancelamento de orçamento — confirmação com motivo obrigatório (mesmo fluxo do cancelamento de serviço) */}
+      <Dialog open={cancelOpen} onOpenChange={(o) => { if (!o && !cancelling) { setCancelOpen(false); setCancelReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-destructive" />
+              Cancelar orçamento
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Está prestes a cancelar este orçamento. Esta ação é{" "}
+            <span className="font-semibold text-destructive">irreversível</span> — o orçamento passa a
+            cancelado e não pode ser convertido em serviço. Indique o motivo do cancelamento para continuar.
+          </p>
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="quote-cancel-reason">Motivo do cancelamento *</Label>
+            <Textarea
+              id="quote-cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: cliente desistiu, orçamento duplicado…"
+              rows={3}
+              maxLength={500}
+              autoFocus
+            />
+            {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+              <p className="text-xs text-destructive">O motivo deve ter pelo menos 5 caracteres.</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => { setCancelOpen(false); setCancelReason(""); }} disabled={cancelling}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelQuote}
+              disabled={cancelling || cancelReason.trim().length < 5}
+            >
+              {cancelling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Upgrade Modal */}
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

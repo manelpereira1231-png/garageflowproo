@@ -594,7 +594,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex w-full bg-background overflow-hidden">
-      {mfaRequired && hasTotp === false && !mfaDismissed && (
+      {mfaRequired && hasTotp === false && !mfaDismissed && cookieConsentDone && (
         <MfaSetupDialog
           open
           onClose={() => setMfaDismissed(true)}

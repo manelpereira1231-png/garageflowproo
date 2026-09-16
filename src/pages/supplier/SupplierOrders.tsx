@@ -170,6 +170,7 @@ export default function SupplierOrders() {
     setBusy(null);
     if (error) return toast.error(error.message);
     toast.success(`Encomenda atualizada para ${STATUS_LABEL[to] ?? to}`);
+    setEvents((prev) => { const next = { ...prev }; delete next[id]; return next; });
     void load();
   };
 

@@ -196,7 +196,7 @@ export default function Chat() {
                 ${t('chat.emailGreeting').replace('{name}', client.name)},
               </p>
               <div style="background: #f3f4f6; border-left: 4px solid #6366f1; padding: 16px; border-radius: 0 8px 8px 0; margin: 0 0 16px;">
-                <p style="color: #1f2937; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${newMessage.trim()}</p>
+                <p style="color: #1f2937; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${text}</p>
               </div>
               <p style="color: #6b7280; font-size: 13px; margin: 0;">${t('chat.emailFooter')}</p>
             </div>

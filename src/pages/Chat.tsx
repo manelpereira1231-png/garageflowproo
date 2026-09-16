@@ -231,7 +231,14 @@ export default function Chat() {
         filter: `shop_id=eq.${shopId}`,
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
-        const belongs = selectedClient === "all" ? !newMsg.client_id : newMsg.client_id === selectedClient;
+        const peer = dmTarget(selectedClient);
+        const belongs = peer
+          ? !!newMsg.recipient_id &&
+            ((newMsg.sender_id === peer && newMsg.recipient_id === currentUserId) ||
+              (newMsg.sender_id === currentUserId && newMsg.recipient_id === peer))
+          : selectedClient === "all"
+            ? !newMsg.client_id && !newMsg.recipient_id
+            : newMsg.client_id === selectedClient && !newMsg.recipient_id;
         if (belongs) {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
           // Conversa aberta: a mensagem é lida de imediato.

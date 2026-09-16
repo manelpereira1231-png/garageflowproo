@@ -401,29 +401,29 @@ export default function Clients() {
           </div>
         ) : filtered.map(client => (
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div className="min-w-0">
-              <span className="block break-words text-base font-semibold leading-snug">{client.name}</span>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-1 border-t border-border/60 pt-2">
+            <div className="flex min-w-0 items-center gap-1">
+              <span className="min-w-0 flex-1 whitespace-nowrap text-base font-semibold leading-snug">{client.name}</span>
+              <div className="flex shrink-0 items-center">
                 {!isDemo && client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
+                   <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-8 p-0 text-primary" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
                 )}
                 {!isDemo && client.phone_secondary && (
-                  <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary)} className="h-11 w-11 p-0 text-primary" title={`Ligar ${client.phone_secondary}`}><Phone className="w-5 h-5 opacity-70" /></Button>
+                   <Button variant="ghost" size="sm" onClick={() => callClient(client.phone_secondary)} className="h-11 w-8 p-0 text-primary" title={`Ligar ${client.phone_secondary}`}><Phone className="w-5 h-5 opacity-70" /></Button>
                 )}
                 {client.phone && (
-                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone}`}><MessageCircle className="w-5 h-5" /></Button>
+                   <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello(client)} className="h-11 w-8 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone}`}><MessageCircle className="w-5 h-5" /></Button>
                 )}
                 {client.phone_secondary && (
-                  <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary })} className="h-11 w-11 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone_secondary}`}><MessageCircle className="w-5 h-5 opacity-70" /></Button>
+                   <Button variant="ghost" size="sm" onClick={() => sendWhatsAppHello({ name: client.name, phone: client.phone_secondary })} className="h-11 w-8 p-0 text-green-600 dark:text-green-500" title={`WhatsApp ${client.phone_secondary}`}><MessageCircle className="w-5 h-5 opacity-70" /></Button>
                 )}
 
                 {client.email && (
-                  <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-11 p-0" title="Email"><Mail className="w-5 h-5" /></Button>
+                   <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-8 p-0" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-11 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-11 p-0"><Pencil className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-11 p-0 text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                 <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-8 p-0" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
+                 <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-8 p-0"><Pencil className="w-4 h-4" /></Button>
+                 <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-8 p-0 text-destructive"><Trash2 className="w-4 h-4" /></Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}

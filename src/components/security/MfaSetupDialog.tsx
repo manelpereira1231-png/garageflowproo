@@ -83,7 +83,7 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) later(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-primary" />

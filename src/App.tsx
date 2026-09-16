@@ -211,6 +211,7 @@ const AdminDemoRequests = lazyRetry(() => import("@/pages/admin/AdminDemoRequest
 const DemoRequestPage = lazyRetry(() => import("@/pages/DemoRequest"));
 const SalesDemoPage = lazyRetry(() => import("@/pages/SalesDemo"));
 const SelfDemoPage = lazyRetry(() => import("@/pages/SelfDemo"));
+const AdminSupplierDetail = lazyRetry(() => import("@/pages/admin/AdminSupplierDetail"));
 
 const AdminLegalSettings = lazyRetry(() => import("@/pages/admin/AdminLegalSettings"));
 const AdminTestimonials = lazyRetry(() => import("@/pages/admin/AdminTestimonials"));
@@ -507,6 +508,7 @@ const adminRoutes = [
   { path: "/admin/supplier-network", element: <AdminSupplierNetwork /> },
   { path: "/admin/supplier-network/orders", element: <AdminSupplierNetworkOrders /> },
   { path: "/admin/supplier-network/applications", element: <AdminSupplierApplications /> },
+  { path: "/admin/supplier-network/:id", element: <AdminSupplierDetail /> },
   { path: "/admin/legal-settings", element: <AdminLegalSettings /> },
   { path: "/admin/testimonials", element: <AdminTestimonials /> },
 ];

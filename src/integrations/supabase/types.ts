@@ -4076,6 +4076,7 @@ export type Database = {
           id: string
           metadata: Json
           notes: string | null
+          order_number: string | null
           shipping_total: number
           status: string
           subtotal: number
@@ -4096,6 +4097,7 @@ export type Database = {
           id?: string
           metadata?: Json
           notes?: string | null
+          order_number?: string | null
           shipping_total?: number
           status?: string
           subtotal?: number
@@ -4116,6 +4118,7 @@ export type Database = {
           id?: string
           metadata?: Json
           notes?: string | null
+          order_number?: string | null
           shipping_total?: number
           status?: string
           subtotal?: number

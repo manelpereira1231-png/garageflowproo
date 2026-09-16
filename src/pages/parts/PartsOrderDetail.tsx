@@ -44,7 +44,7 @@ export default function PartsOrderDetail() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Encomenda #{order.id.slice(0,8)}</h1>
+          <h1 className="text-2xl font-bold">Encomenda {order.order_number ?? `#${order.id.slice(0,8)}`}</h1>
           <p className="text-sm text-muted-foreground">{order.supplier?.trade_name ?? order.supplier?.company_name} · {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}</p>
         </div>
         <Badge>{order.status}</Badge>

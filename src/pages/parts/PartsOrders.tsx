@@ -16,7 +16,7 @@ export default function PartsOrders() {
     if (!activeShopId) { setRows([]); return; }
     const { data } = await supabase
       .from("gsn_orders" as any)
-      .select("id,status,total,currency,tracking_code,carrier,created_at,supplier:gsn_suppliers(company_name,trade_name)")
+      .select("id,order_number,status,total,currency,tracking_code,carrier,created_at,supplier:gsn_suppliers(company_name,trade_name)")
       .eq("buyer_shop_id", activeShopId)
       .order("created_at", { ascending: false });
     setRows((data as any) ?? []);
@@ -41,7 +41,7 @@ export default function PartsOrders() {
               {rows.map((o) => (
                 <div key={o.id} className="flex items-center justify-between gap-3 p-3 border rounded-md">
                   <div className="min-w-0">
-                    <Link to={`/parts/orders/${o.id}`} className="text-sm font-medium hover:text-primary">#{o.id.slice(0,8)}</Link>
+                    <Link to={`/parts/orders/${o.id}`} className="text-sm font-medium font-mono hover:text-primary">{o.order_number ?? `#${o.id.slice(0,8)}`}</Link>
                     <p className="text-xs text-muted-foreground">{o.supplier?.trade_name ?? o.supplier?.company_name} · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}</p>
                   </div>
                   <div className="text-right">

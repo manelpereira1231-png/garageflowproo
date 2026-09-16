@@ -245,7 +245,7 @@ export default function AdminSupplierNetwork() {
                   {suppliers.map((s) => (
                     <tr key={s.id} className="border-b border-border last:border-0 hover:bg-accent/30">
                       <td className="px-4 py-3">
-                        <div className="font-medium">{s.company_name}</div>
+                        <Link to={`/admin/supplier-network/${s.id}`} className="font-medium hover:text-primary">{s.company_name}</Link>
                         {s.trade_name && <div className="text-xs text-muted-foreground">{s.trade_name}</div>}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{s.email || "—"}</td>

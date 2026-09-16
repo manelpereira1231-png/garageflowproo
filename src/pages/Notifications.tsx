@@ -34,6 +34,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 function kindOf(n: Notif) {
+  if (n.data?.event === "chat_message") return "chat";
   const txt = `${n.type || ""} ${n.title} ${n.message || ""}`.toLowerCase();
   if (txt.includes("servi") && (txt.includes("cancel") || txt.includes("cancelad"))) return "service_cancelled";
   if (txt.includes("aprov")) return "approved";

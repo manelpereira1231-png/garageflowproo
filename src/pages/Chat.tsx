@@ -183,8 +183,13 @@ export default function Chat() {
           setMessages(prev => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]));
           // Conversa aberta: a mensagem é lida de imediato.
           if (newMsg.sender_id !== currentUserId && !newMsg.read) {
+            const key = selectedClient !== "all" ? selectedClient : "all";
+            setUnreadCounts((prev) => (prev[key] ? { ...prev, [key]: 0 } : prev));
             supabase.from("chat_messages").update({ read: true } as any).eq("id", newMsg.id)
-              .then(() => window.dispatchEvent(new Event("chat-unread-changed")));
+              .then(() => {
+                setUnreadTick((t) => t + 1);
+                window.dispatchEvent(new Event("chat-unread-changed"));
+              });
           }
         }
         window.dispatchEvent(new Event("chat-unread-changed"));

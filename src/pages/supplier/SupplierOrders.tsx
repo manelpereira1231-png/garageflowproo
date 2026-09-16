@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,14 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   line_total: number;
+}
+
+interface OrderEvent {
+  id: string;
+  from_status: string | null;
+  to_status: string | null;
+  note: string | null;
+  created_at: string;
 }
 
 interface Order {

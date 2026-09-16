@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,14 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   line_total: number;
+}
+
+interface OrderEvent {
+  id: string;
+  from_status: string | null;
+  to_status: string | null;
+  note: string | null;
+  created_at: string;
 }
 
 interface Order {
@@ -68,11 +77,34 @@ const FILTERS: { key: string; label: string; match: (s: string) => boolean }[] =
 
 export default function SupplierOrders() {
   const { supplierId } = useIsSupplier();
+  const [params, setParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [open, setOpen] = useState<string | null>(null);
+  const filter = params.get("f") ?? "all";
+  const [open, setOpen] = useState<string | null>(params.get("o"));
   const [busy, setBusy] = useState<string | null>(null);
+  const [events, setEvents] = useState<Record<string, OrderEvent[]>>({});
+
+  const setFilter = (k: string) => {
+    const next = new URLSearchParams(params);
+    if (k === "all") next.delete("f"); else next.set("f", k);
+    setParams(next, { replace: true });
+  };
+
+  // Histórico real de estados do pedido aberto
+  useEffect(() => {
+    if (!open || events[open]) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("gsn_order_events" as any)
+        .select("id,from_status,to_status,note,created_at")
+        .eq("order_id", open)
+        .order("created_at", { ascending: true });
+      if (!cancelled) setEvents((prev) => ({ ...prev, [open]: ((data as any) ?? []) as OrderEvent[] }));
+    })();
+    return () => { cancelled = true; };
+  }, [open, events]);
 
   const load = useCallback(async () => {
     if (!supplierId) return;
@@ -138,6 +170,7 @@ export default function SupplierOrders() {
     setBusy(null);
     if (error) return toast.error(error.message);
     toast.success(`Encomenda atualizada para ${STATUS_LABEL[to] ?? to}`);
+    setEvents((prev) => { const next = { ...prev }; delete next[id]; return next; });
     void load();
   };
 
@@ -196,6 +229,10 @@ export default function SupplierOrders() {
 
                   {open === o.id && (
                     <div className="border-t p-3 space-y-3">
+                      <div className="text-sm">
+                        <p className="font-medium">Oficina</p>
+                        <p className="text-muted-foreground">{o.shopName ?? "Oficina GarageFlow"}</p>
+                      </div>
                       {(o.items ?? []).length === 0 ? (
                         <p className="text-xs text-muted-foreground">Sem linhas registadas.</p>
                       ) : (
@@ -209,6 +246,34 @@ export default function SupplierOrders() {
                           ))}
                         </div>
                       )}
+                      <div className="flex items-center justify-between gap-3 text-sm border-t pt-2">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-semibold">{formatMoney(Number(o.total), o.currency)}</span>
+                      </div>
+
+                      <div className="border-t pt-2">
+                        <p className="text-xs font-medium mb-1">Histórico</p>
+                        {!events[o.id] ? (
+                          <p className="text-xs text-muted-foreground">A carregar histórico...</p>
+                        ) : events[o.id].length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Pedido criado · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}
+                          </p>
+                        ) : (
+                          <ol className="space-y-1">
+                            <li className="text-xs text-muted-foreground">
+                              Pedido criado · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}
+                            </li>
+                            {events[o.id].map((ev) => (
+                              <li key={ev.id} className="text-xs text-muted-foreground">
+                                {STATUS_LABEL[ev.to_status ?? ""] ?? ev.to_status} · {format(new Date(ev.created_at), "dd/MM/yyyy HH:mm")}
+                                {ev.note ? ` · ${ev.note}` : ""}
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+
                       <div className="flex flex-wrap gap-2 pt-1">
                         {(NEXT[o.status] ?? []).length === 0 ? (
                           <p className="text-xs text-muted-foreground">Sem ações disponíveis neste estado.</p>

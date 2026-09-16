@@ -532,12 +532,8 @@ export default function Services() {
    */
   const requestCancel = (s: any) => {
     if (!can("work_orders.delete")) return;
-    if (s.status === 'open') {
-      setCancelReason("");
-      setCancelTarget(s);
-    } else {
-      cancelService(s.id);
-    }
+    setCancelReason("");
+    setCancelTarget(s);
   };
 
   const confirmCancel = async () => {
@@ -1050,8 +1046,9 @@ export default function Services() {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Este serviço está <span className="font-semibold text-foreground">Aberto</span> e estás prestes a cancelá-lo.
-            Esta ação é definitiva. Indica o motivo do cancelamento para continuar.
+            Está prestes a cancelar este serviço. Esta ação é{" "}
+            <span className="font-semibold text-destructive">irreversível</span> — o serviço passa a
+            cancelado e não pode ser retomado. Indique o motivo do cancelamento para continuar.
           </p>
           <div className="space-y-2 mt-2">
             <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>

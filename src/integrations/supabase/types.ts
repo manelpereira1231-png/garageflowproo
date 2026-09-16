@@ -11685,6 +11685,10 @@ export type Database = {
         Args: { p_lines?: Json; p_reference?: string; p_work_order_id: string }
         Returns: Json
       }
+      create_invoice_from_work_order: {
+        Args: { _work_order_id: string }
+        Returns: Json
+      }
       create_team_invitation: {
         Args: {
           _email: string

@@ -72,7 +72,16 @@ export default function AdminSupplierNetwork() {
   };
 
   const setApproved = async (id: string, v: boolean) => {
-    const { error } = await supabase.from("gsn_suppliers" as any).update({ approved: v }).eq("id", id);
+    // O painel do fornecedor abre com base no `state`, por isso aprovar tem de
+    // actualizar o estado e não apenas o flag booleano.
+    const { error } = await supabase
+      .from("gsn_suppliers" as any)
+      .update(
+        v
+          ? { approved: true, active: true, state: "approved", approved_at: new Date().toISOString() }
+          : { approved: false, state: "pending_approval" }
+      )
+      .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(v ? "Aprovado" : "Aprovação removida");
     void load();

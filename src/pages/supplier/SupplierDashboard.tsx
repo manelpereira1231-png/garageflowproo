@@ -250,6 +250,23 @@ export default function SupplierDashboard() {
         </CardContent>
       </Card>
 
+      {/* Recebimentos */}
+      {profile && !profile.stripe_charges_enabled && (
+        <Card className="border-amber-500/40">
+          <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-semibold">Ative os recebimentos</p>
+              <p className="text-sm text-muted-foreground">
+                Ainda não tem a conta de pagamentos ativa. Sem esta ativação não recebe diretamente o valor dos pedidos pagos pelas oficinas.
+              </p>
+            </div>
+            <Link to="/supplier/profile" className="shrink-0">
+              <Button variant="outline">Ativar recebimentos</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Alerta de stock */}
       {stats.outOfStock > 0 && (
         <Card className="border-destructive/40">

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
   Bell, Search, CheckCheck, CreditCard, FileCheck2, FileX2, Info, ExternalLink, Inbox, XCircle,
+  MessageSquare,
 } from "lucide-react";
 import { getCountryConfig } from "@/lib/regionConfig";
 import ListSkeleton from "@/components/ListSkeleton";
@@ -19,7 +20,7 @@ type Notif = {
   title: string;
   message: string | null;
   link: string | null;
-  data: { event?: string; quote_id?: string; quote_number?: string } | null;
+  data: { event?: string; quote_id?: string; quote_number?: string; sender_id?: string } | null;
   read: boolean;
   created_at: string;
 };
@@ -33,6 +34,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 function kindOf(n: Notif) {
+  if (n.data?.event === "chat_message") return "chat";
   const txt = `${n.type || ""} ${n.title} ${n.message || ""}`.toLowerCase();
   if (txt.includes("servi") && (txt.includes("cancel") || txt.includes("cancelad"))) return "service_cancelled";
   if (txt.includes("aprov")) return "approved";
@@ -47,6 +49,7 @@ const KIND_META: Record<string, { icon: any; color: string; label: string }> = {
   quote: { icon: FileCheck2, color: "text-warning", label: "Orçamento" },
   rejected: { icon: FileX2, color: "text-destructive", label: "Orçamento rejeitado" },
   service_cancelled: { icon: XCircle, color: "text-destructive", label: "Serviço cancelado" },
+  chat: { icon: MessageSquare, color: "text-primary", label: "Nova mensagem" },
   payment: { icon: CreditCard, color: "text-success", label: "Pagamento" },
   other: { icon: Info, color: "text-info", label: "Evento" },
 };
@@ -75,15 +78,24 @@ export default function Notifications() {
 
   const load = useCallback(async () => {
     if (!shopIds.length) { setLoading(false); return; }
-    const { data } = await supabase
-      .from("notifications")
-      .select("id,type,title,message,link,data,read,created_at")
-      .in("shop_id", shopIds)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const [{ data }, { data: auth }] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("id,type,title,message,link,data,read,created_at")
+        .in("shop_id", shopIds)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase.auth.getUser(),
+    ]);
+    const meId = auth?.user?.id;
     // Eventos técnicos ficam no histórico do sistema, não aqui.
-    setItems((((data as any) ?? []) as Notif[]).filter(isUserFacingNotification));
+    // Mensagens enviadas pelo próprio utilizador não geram notificação para ele.
+    setItems(
+      (((data as any) ?? []) as Notif[])
+        .filter(isUserFacingNotification)
+        .filter((n) => !(n.data?.event === "chat_message" && n.data?.sender_id && n.data.sender_id === meId)),
+    );
     setLoading(false);
   }, [idsKey]);
 

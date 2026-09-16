@@ -220,13 +220,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (!activeShopId) { setUnreadNotifCount(0); return; }
     let cancelled = false;
     const loadNotifCount = async () => {
-      const { count } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("shop_id", activeShopId)
-        .eq("read", false)
-        .is("archived_at", null);
-      if (!cancelled) setUnreadNotifCount(count || 0);
+      const [{ data }, { data: auth }] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("id,data")
+          .eq("shop_id", activeShopId)
+          .eq("read", false)
+          .is("archived_at", null)
+          .limit(500),
+        supabase.auth.getUser(),
+      ]);
+      const meId = auth?.user?.id;
+      // Mensagens enviadas pelo próprio não contam como notificação nova.
+      const rows = ((data as any[]) || []).filter(
+        (n) => !(n?.data?.event === "chat_message" && n?.data?.sender_id && n.data.sender_id === meId),
+      );
+      if (!cancelled) setUnreadNotifCount(rows.length);
     };
     loadNotifCount();
     const ch = supabase

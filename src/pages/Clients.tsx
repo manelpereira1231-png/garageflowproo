@@ -392,8 +392,8 @@ export default function Clients() {
           </div>
         ) : filtered.map(client => (
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div className="flex min-w-0 items-center gap-1 sm:block">
-              <span className="min-w-0 flex-1 whitespace-nowrap text-base font-semibold leading-snug sm:block sm:whitespace-normal sm:break-words">{client.name}</span>
+             <div className="flex min-w-0 items-center gap-1 overflow-hidden sm:block sm:overflow-visible">
+               <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug sm:block sm:whitespace-normal sm:break-words sm:text-base" title={client.name}>{client.name}</span>
               <div className="flex shrink-0 items-center sm:mt-3 sm:flex-wrap sm:justify-between sm:gap-1 sm:border-t sm:border-border/60 sm:pt-2">
                  {client.phone && (
                    <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-8 p-0 text-primary sm:w-11" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
@@ -410,11 +410,11 @@ export default function Clients() {
                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-8 p-0 text-destructive sm:w-11"><Trash2 className="w-4 h-4" /></Button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+             <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-xs text-muted-foreground sm:flex sm:flex-wrap">
+               {client.phone && <span className="flex min-w-0 items-center gap-1"><Phone className="h-3 w-3 shrink-0" />{client.phone}</span>}
 
-              {client.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>}
-              {client.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{client.company}</span>}
+               {client.email && <span className="flex min-w-0 items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><span className="truncate" title={client.email}>{client.email}</span></span>}
+               {client.company && <span className="col-span-2 flex min-w-0 items-center gap-1 sm:col-auto"><Building2 className="h-3 w-3 shrink-0" /><span className="truncate" title={client.company}>{client.company}</span></span>}
             </div>
           </div>
         ))}

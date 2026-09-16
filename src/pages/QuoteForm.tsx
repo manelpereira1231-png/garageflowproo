@@ -236,6 +236,26 @@ export default function QuoteForm() {
     setLoading(false);
   };
 
+  // Cancelar orçamento (apenas ao editar) — marca como rejeitado/cancelado.
+  const [cancelling, setCancelling] = useState(false);
+  const handleCancelQuote = async () => {
+    if (!editId || !activeShopId) return;
+    if (!window.confirm("Pretende cancelar este orçamento? O orçamento será marcado como rejeitado e não poderá ser convertido em serviço.")) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from("quotes")
+      .update({ status: "rejected" })
+      .eq("id", editId)
+      .eq("shop_id", activeShopId);
+    setCancelling(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Orçamento cancelado.");
+    navigate("/quotes");
+  };
+
   if (loadingData) {
     return (
       <div className="flex items-center justify-center py-20">

@@ -35,12 +35,9 @@ export default function AdminSupplierNetwork() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("gsn_suppliers" as any)
-      .select("id,owner_user_id,company_name,trade_name,email,country,active,approved,commission_percentage,rating_average,created_at")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-    setSuppliers((data as any) ?? []);
+    // Dados completos (inclui comissão) só via RPC protegida para super admin.
+    const { data } = await supabase.rpc("gsn_admin_suppliers" as any, { _id: null });
+    setSuppliers((((data as any) ?? []) as any[]).filter((s) => !s.deleted_at));
     setLoading(false);
   };
 

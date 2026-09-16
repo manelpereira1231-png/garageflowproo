@@ -489,12 +489,12 @@ export default function QuoteForm() {
           {loading ? (editId ? t('quotes.saving') : t('quotes.creating')) : (editId ? t('quotes.save') : t('quotes.create'))}
         </Button>
 
-        {/* Mobile only — cancelar orçamento ao editar */}
+        {/* Cancelar orçamento ao editar (web + mobile) */}
         {editId && (
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 text-base text-destructive border-destructive/40 hover:bg-destructive/10 sm:hidden"
+            className="w-full h-12 text-base text-destructive border-destructive/40 hover:bg-destructive/10"
             disabled={cancelling || loading}
             onClick={handleCancelQuote}
           >

@@ -54,7 +54,28 @@ export default function AdminSupplierDetail() {
   useEffect(() => { void load(); }, [load]);
 
   const patch = async (values: Record<string, boolean | string>) => {
-    const { error } = await supabase.from("gsn_suppliers" as any).update(values).eq("id", id);
+    const changesApproval = Object.prototype.hasOwnProperty.call(values, "approved");
+    let matchingIds = id ? [id] : [];
+
+    if (changesApproval && supplier) {
+      const { data: candidates } = await supabase
+        .from("gsn_suppliers" as any)
+        .select("id,owner_user_id,email")
+        .is("deleted_at", null);
+      const normalizedEmail = supplier.email?.trim().toLowerCase() ?? null;
+      matchingIds = ((candidates as any[]) ?? [])
+        .filter((candidate) =>
+          candidate.id === id ||
+          (!!supplier.owner_user_id && candidate.owner_user_id === supplier.owner_user_id) ||
+          (!!normalizedEmail && candidate.email?.trim().toLowerCase() === normalizedEmail)
+        )
+        .map((candidate) => candidate.id);
+    }
+
+    const { error } = await supabase
+      .from("gsn_suppliers" as any)
+      .update(values)
+      .in("id", matchingIds.length > 0 ? matchingIds : id ? [id] : []);
     if (error) return toast.error(error.message);
     toast.success("Fornecedor atualizado");
     void load();

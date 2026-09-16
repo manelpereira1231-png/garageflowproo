@@ -112,7 +112,7 @@ export default function Chat() {
       }
     };
     loadUnread();
-  }, [shopId, messages, currentUserId]);
+  }, [shopId, messages, currentUserId, unreadTick]);
 
   const loadMessages = async () => {
     if (!shopId) { setMessagesLoading(false); return; }

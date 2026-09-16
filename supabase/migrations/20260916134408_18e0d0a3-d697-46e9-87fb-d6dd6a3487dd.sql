@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.admin_set_gsn_supplier_approval(uuid, boolean);

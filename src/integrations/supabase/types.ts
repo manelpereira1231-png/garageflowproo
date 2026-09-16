@@ -11572,10 +11572,6 @@ export type Database = {
         Args: { _new_status: string; _report_id: string }
         Returns: undefined
       }
-      admin_set_gsn_supplier_approval: {
-        Args: { _approved: boolean; _supplier_id: string }
-        Returns: undefined
-      }
       ai_log_cache_hit: {
         Args: { _function_name: string; _prompt_hash: string; _shop_id: string }
         Returns: undefined

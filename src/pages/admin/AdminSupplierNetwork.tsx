@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 interface Supplier {
   id: string;
+  owner_user_id: string | null;
   company_name: string;
   trade_name: string | null;
   email: string | null;
@@ -36,7 +37,7 @@ export default function AdminSupplierNetwork() {
     setLoading(true);
     const { data } = await supabase
       .from("gsn_suppliers" as any)
-      .select("id,company_name,trade_name,email,country,active,approved,commission_percentage,rating_average,created_at")
+      .select("id,owner_user_id,company_name,trade_name,email,country,active,approved,commission_percentage,rating_average,created_at")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
     setSuppliers((data as any) ?? []);
@@ -72,8 +73,16 @@ export default function AdminSupplierNetwork() {
   };
 
   const setApproved = async (id: string, v: boolean) => {
-    // O painel do fornecedor abre com base no `state`, por isso aprovar tem de
-    // actualizar o estado e não apenas o flag booleano.
+    const selected = suppliers.find((supplier) => supplier.id === id);
+    const normalizedEmail = selected?.email?.trim().toLowerCase() ?? null;
+    const matchingIds = suppliers
+      .filter((supplier) =>
+        supplier.id === id ||
+        (!!selected?.owner_user_id && supplier.owner_user_id === selected.owner_user_id) ||
+        (!!normalizedEmail && supplier.email?.trim().toLowerCase() === normalizedEmail)
+      )
+      .map((supplier) => supplier.id);
+
     const { error } = await supabase
       .from("gsn_suppliers" as any)
       .update(
@@ -81,7 +90,7 @@ export default function AdminSupplierNetwork() {
           ? { approved: true, active: true, state: "approved", approved_at: new Date().toISOString() }
           : { approved: false, state: "pending_approval" }
       )
-      .eq("id", id);
+      .in("id", matchingIds.length > 0 ? matchingIds : [id]);
     if (error) return toast.error(error.message);
     toast.success(v ? "Aprovado" : "Aprovação removida");
     void load();

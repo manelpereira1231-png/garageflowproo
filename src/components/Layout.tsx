@@ -2,6 +2,7 @@ import { useState, useEffect, Suspense, useMemo, useCallback, useRef } from "rea
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDemoTracking } from "@/hooks/useDemoTracking";
 import MarketInspectionBanner from "@/components/MarketInspectionBanner";
+import { getCookieConsent } from "@/lib/cookieConsent";
 import MfaSetupDialog, { mfaPromptDismissed } from "@/components/security/MfaSetupDialog";
 import { useMfaGuard } from "@/hooks/useMfaGuard";
 import {

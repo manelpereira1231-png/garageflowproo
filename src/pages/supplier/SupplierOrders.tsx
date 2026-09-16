@@ -68,11 +68,34 @@ const FILTERS: { key: string; label: string; match: (s: string) => boolean }[] =
 
 export default function SupplierOrders() {
   const { supplierId } = useIsSupplier();
+  const [params, setParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [open, setOpen] = useState<string | null>(null);
+  const filter = params.get("f") ?? "all";
+  const [open, setOpen] = useState<string | null>(params.get("o"));
   const [busy, setBusy] = useState<string | null>(null);
+  const [events, setEvents] = useState<Record<string, OrderEvent[]>>({});
+
+  const setFilter = (k: string) => {
+    const next = new URLSearchParams(params);
+    if (k === "all") next.delete("f"); else next.set("f", k);
+    setParams(next, { replace: true });
+  };
+
+  // Histórico real de estados do pedido aberto
+  useEffect(() => {
+    if (!open || events[open]) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("gsn_order_events" as any)
+        .select("id,from_status,to_status,note,created_at")
+        .eq("order_id", open)
+        .order("created_at", { ascending: true });
+      if (!cancelled) setEvents((prev) => ({ ...prev, [open]: ((data as any) ?? []) as OrderEvent[] }));
+    })();
+    return () => { cancelled = true; };
+  }, [open, events]);
 
   const load = useCallback(async () => {
     if (!supplierId) return;

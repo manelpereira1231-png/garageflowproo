@@ -183,7 +183,7 @@ export default function Chat() {
   }, [shopId, selectedClient, currentUserId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   const sendMessage = async () => {
@@ -269,7 +269,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-9rem)] min-h-[420px] md:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col md:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between mb-3 md:mb-4">
         <div className="min-w-0">
           <h1 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
@@ -281,7 +281,7 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
+      <div className="md:flex-1 md:min-h-0 flex border border-border rounded-xl overflow-hidden bg-card">
 
         {/* Sidebar - Client list */}
         <div className="w-[260px] border-r border-border flex flex-col shrink-0 hidden md:flex">
@@ -381,7 +381,7 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4 space-y-3">
+          <div className="h-[50vh] md:h-auto md:flex-1 md:min-h-0 overflow-y-auto overscroll-contain p-3 md:p-4 space-y-3">
 
             {messagesLoading && messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">

@@ -212,7 +212,6 @@ export default function Chat() {
       } catch (e) { console.error("Email failed:", e); }
     }
 
-    setNewMessage("");
     setSending(false);
   };
 

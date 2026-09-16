@@ -425,6 +425,14 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     return () => { clearTimeout(timer); supabase.removeChannel(ch); };
   }, [idsKey, load]);
 
+  // Sincronização instantânea entre o contador do menu, o dashboard e a página
+  // de alertas: ler/resolver num sítio atualiza os outros no mesmo instante.
+  useEffect(() => {
+    const listener = () => { void load(); };
+    alertSyncListeners.add(listener);
+    return () => { alertSyncListeners.delete(listener); };
+  }, [load]);
+
   const PRIORITY_ORDER: Record<AlertPriority, number> = { critical: 0, high: 1, low: 2 };
 
   const alerts = useMemo(() => {

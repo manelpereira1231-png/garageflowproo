@@ -532,12 +532,8 @@ export default function Services() {
    */
   const requestCancel = (s: any) => {
     if (!can("work_orders.delete")) return;
-    if (s.status === 'open') {
-      setCancelReason("");
-      setCancelTarget(s);
-    } else {
-      cancelService(s.id);
-    }
+    setCancelReason("");
+    setCancelTarget(s);
   };
 
   const confirmCancel = async () => {

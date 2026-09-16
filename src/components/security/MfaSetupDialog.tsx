@@ -87,7 +87,7 @@ export default function MfaSetupDialog({ open, onClose, onEnrolled }: Props) {
   };
 
   const later = () => {
-    sessionStorage.setItem(SESSION_KEY, "1");
+    snooze();
     onClose();
   };
 

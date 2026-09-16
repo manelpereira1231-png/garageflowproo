@@ -228,6 +228,10 @@ export default function SupplierOrders() {
 
                   {open === o.id && (
                     <div className="border-t p-3 space-y-3">
+                      <div className="text-sm">
+                        <p className="font-medium">Oficina</p>
+                        <p className="text-muted-foreground">{o.shopName ?? "Oficina GarageFlow"}</p>
+                      </div>
                       {(o.items ?? []).length === 0 ? (
                         <p className="text-xs text-muted-foreground">Sem linhas registadas.</p>
                       ) : (

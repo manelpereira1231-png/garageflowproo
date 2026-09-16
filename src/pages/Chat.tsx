@@ -63,7 +63,7 @@ export default function Chat() {
         const map: Record<string, string> = {};
         (membersRes.data as any[]).forEach((m) => {
           const name = (m.shop_user_profiles?.name || "").trim();
-          if (m.user_id) map[m.user_id] = name || (m.role || "Equipa");
+          if (m.user_id) map[m.user_id] = name || roleLabel(m.role);
         });
         setMemberNames(map);
       }

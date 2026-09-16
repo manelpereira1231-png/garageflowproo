@@ -269,7 +269,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-9rem)] min-h-[420px] md:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col md:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between mb-3 md:mb-4">
         <div className="min-w-0">
           <h1 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">

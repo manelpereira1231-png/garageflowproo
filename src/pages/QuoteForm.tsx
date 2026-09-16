@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ClientCombobox from "@/components/ClientCombobox";
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE } from "@/lib/sanityLimits";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -236,15 +236,18 @@ export default function QuoteForm() {
     setLoading(false);
   };
 
-  // Cancelar orçamento (apenas ao editar) — marca como rejeitado/cancelado.
+  // Cancelar orçamento (apenas ao editar) — confirmação com motivo obrigatório, igual ao cancelamento de serviço.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const handleCancelQuote = async () => {
     if (!editId || !activeShopId) return;
-    if (!window.confirm("Pretende cancelar este orçamento? Será marcado como cancelado pela oficina e não poderá ser convertido em serviço.")) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 5) return;
     setCancelling(true);
     const { error } = await supabase
       .from("quotes")
-      .update({ status: "cancelled" })
+      .update({ status: "cancelled", cancellation_reason: reason, cancelled_at: new Date().toISOString() })
       .eq("id", editId)
       .eq("shop_id", activeShopId);
     setCancelling(false);

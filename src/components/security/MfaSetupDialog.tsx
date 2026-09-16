@@ -13,6 +13,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const SESSION_KEY = "gf_mfa_prompt_dismissed";
+// Adiar o convite de MFA de forma persistente (30 dias). Antes usava apenas
+// sessionStorage, pelo que o diálogo voltava a abrir por cima de qualquer
+// página (ex.: Chat) em cada nova sessão/separador.
+const SNOOZE_KEY = "gf_mfa_prompt_snooze_until";
+const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function snooze() {
+  try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
+  try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS)); } catch { /* ignore */ }
+}
 
 type Props = { open: boolean; onClose: () => void; onEnrolled: () => void };
 

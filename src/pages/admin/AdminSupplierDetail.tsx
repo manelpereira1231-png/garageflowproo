@@ -93,7 +93,17 @@ export default function AdminSupplierDetail() {
           <Badge variant={supplier.approved ? "default" : "secondary"}>{supplier.approved ? "Aprovado" : "Pendente"}</Badge>
           <Badge variant={supplier.active ? "default" : "outline"}>{supplier.active ? "Ativo" : "Inativo"}</Badge>
           {supplier.suspended && <Badge variant="destructive">Suspenso</Badge>}
-          <Button size="sm" variant="outline" onClick={() => patch({ approved: !supplier.approved })}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              patch(
+                supplier.approved
+                  ? { approved: false, state: "pending_approval" }
+                  : { approved: true, active: true, state: "approved", approved_at: new Date().toISOString() }
+              )
+            }
+          >
             {supplier.approved ? "Remover aprovação" : "Aprovar"}
           </Button>
           <Button size="sm" variant="outline" onClick={() => patch({ active: !supplier.active })}>

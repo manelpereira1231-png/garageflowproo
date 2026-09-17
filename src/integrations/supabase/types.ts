@@ -12054,6 +12054,14 @@ export type Database = {
         Args: { _app_id: string; _reason: string }
         Returns: undefined
       }
+      gsn_resolve_my_supplier: {
+        Args: never
+        Returns: {
+          id: string
+          rejection_reason: string
+          state: string
+        }[]
+      }
       gsn_search_products: {
         Args: {
           _brand?: string

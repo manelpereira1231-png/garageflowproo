@@ -427,6 +427,19 @@ const PRIMARY_ONLY_PATHS = new Set<string>([
  * A rota antiga redireciona sempre para o dashboard do perfil.
  */
 
+/**
+ * Impede que uma conta de fornecedor chegue a renderizar o ERP da oficina
+ * (sidebar, dashboard vazio, etc.) — vai direta para o painel de fornecedor.
+ */
+function SupplierAwayFromErp({ children }: { children: ReactNode }) {
+  const { isSupplier, loading } = useIsSupplier();
+  const { isSuperAdmin, loading: superLoading } = useSuperAdmin();
+
+  if (loading || superLoading) return <PageLoader />;
+  if (isSupplier && !isSuperAdmin) return <Navigate to="/supplier" replace />;
+  return <>{children}</>;
+}
+
 function RoleProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { role, loading, shopId, can } = useShopRole();
@@ -1102,7 +1115,7 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}
           </Route>
-          <Route element={<Layout><Outlet /></Layout>}>
+          <Route element={<SupplierAwayFromErp><Layout><Outlet /></Layout></SupplierAwayFromErp>}>
             {shopRoutes.map((route) => (
               <Route
                 key={route.path}

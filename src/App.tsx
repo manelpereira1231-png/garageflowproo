@@ -1102,7 +1102,7 @@ function AuthenticatedRoutes() {
               <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
             ))}
           </Route>
-          <Route element={<Layout><Outlet /></Layout>}>
+          <Route element={<SupplierAwayFromErp><Layout><Outlet /></Layout></SupplierAwayFromErp>}>
             {shopRoutes.map((route) => (
               <Route
                 key={route.path}

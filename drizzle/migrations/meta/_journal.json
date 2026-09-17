@@ -8,6 +8,13 @@
       "when": 1789645255791,
       "tag": "0000_gsn_resolve_my_supplier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789645748469,
+      "tag": "0001_supplier_resolve_auto_accept_invite",
+      "breakpoints": true
     }
   ]
 }

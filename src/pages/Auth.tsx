@@ -164,13 +164,11 @@ export default function Auth({ defaultRedirect }: { defaultRedirect?: string } =
 
         // Contas de fornecedor (GSN) têm painel próprio e nunca entram no ERP da oficina.
         if (signInData.user) {
-          const { data: supplierRow } = await erpSupabase
-            .from("gsn_suppliers" as any)
-            .select("id")
-            .eq("owner_user_id", signInData.user.id)
-            .is("deleted_at", null)
-            .maybeSingle();
-          if ((supplierRow as any)?.id) {
+          const { data: supplierData } = await erpSupabase.rpc("gsn_resolve_my_supplier" as any);
+          const supplierRow: any = Array.isArray(supplierData)
+            ? (supplierData[0] ?? null)
+            : (supplierData ?? null);
+          if (supplierRow?.id) {
             toast.success(t('auth.welcomeBack'));
             navigate("/supplier", { replace: true });
             return;

@@ -23,14 +23,24 @@ export function useIsSupplier() {
     }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("gsn_suppliers" as any)
-        .select("id,state,rejection_reason")
-        .eq("owner_user_id", user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
+      // RPC robusta: tolera registos duplicados e liga automaticamente a conta
+      // a um registo de fornecedor criado pelo Admin/convite que ainda não
+      // tenha owner_user_id — evita que caia no ERP da oficina.
+      let row: any = null;
+      const { data, error } = await supabase.rpc("gsn_resolve_my_supplier" as any);
+      if (!error) {
+        row = Array.isArray(data) ? (data[0] ?? null) : (data ?? null);
+      } else {
+        const { data: fallback } = await supabase
+          .from("gsn_suppliers" as any)
+          .select("id,state,rejection_reason")
+          .eq("owner_user_id", user.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        row = (fallback as any)?.[0] ?? null;
+      }
       if (cancelled) return;
-      const row: any = data ?? null;
       setSupplierId(row?.id ?? null);
       setState((row?.state as SupplierState) ?? null);
       setRejectionReason(row?.rejection_reason ?? null);

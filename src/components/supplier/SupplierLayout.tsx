@@ -113,16 +113,43 @@ export default function SupplierLayout() {
           <button onClick={() => setOpen(true)} aria-label="Abrir menu" className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent min-h-11 min-w-11 flex items-center justify-center">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <Store className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">Rede de Fornecedores</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Store className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm font-medium text-muted-foreground truncate">Rede de Fornecedores</span>
           </div>
+          <Link
+            to="/supplier/products/new"
+            className="ml-auto inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground min-h-11 hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Novo produto</span>
+          </Link>
         </header>
-        <div className="flex-1 p-3 sm:p-4 lg:p-6">
+        <div className="flex-1 p-3 sm:p-4 lg:p-6 pb-20 lg:pb-6">
           <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
             <Outlet />
           </Suspense>
         </div>
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+          {mobileNav.map((item) => {
+            const active = item.end
+              ? location.pathname === item.to
+              : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-14 text-[11px] font-medium ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
       </main>
     </div>
   );

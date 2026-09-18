@@ -2,24 +2,52 @@ import { useState, Suspense } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, FolderTree, Warehouse, ShoppingCart, Users,
-  CreditCard, Truck, FileText, Star, User, Settings, Menu, X, LogOut, Store,
+  CreditCard, Truck, FileText, Star, User, Settings, Menu, X, LogOut, Store, Plus,
 } from "lucide-react";
 import { signOutRealm } from "@/integrations/supabase/realmBridge";
 
-const nav = [
-  { to: "/supplier", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/supplier/products", label: "Produtos", icon: Package },
-  { to: "/supplier/categories", label: "Categorias", icon: FolderTree },
-  { to: "/supplier/stock", label: "Stock", icon: Warehouse },
-  { to: "/supplier/orders", label: "Encomendas", icon: ShoppingCart },
-  { to: "/supplier/customers", label: "Clientes", icon: Users },
-  { to: "/supplier/payments", label: "Pagamentos", icon: CreditCard },
-  { to: "/supplier/carriers", label: "Transportadoras", icon: Truck },
-  { to: "/supplier/invoices", label: "Faturas", icon: FileText },
-  { to: "/supplier/reviews", label: "Avaliações", icon: Star },
-  { to: "/supplier/profile", label: "Perfil", icon: User },
-  { to: "/supplier/settings", label: "Configurações", icon: Settings },
+const groups: { title: string; items: { to: string; label: string; icon: any; end?: boolean }[] }[] = [
+  {
+    title: "Principal",
+    items: [
+      { to: "/supplier", label: "Dashboard", icon: LayoutDashboard, end: true },
+      { to: "/supplier/orders", label: "Encomendas", icon: ShoppingCart },
+    ],
+  },
+  {
+    title: "Catálogo",
+    items: [
+      { to: "/supplier/products", label: "Produtos", icon: Package },
+      { to: "/supplier/categories", label: "Categorias", icon: FolderTree },
+      { to: "/supplier/stock", label: "Stock", icon: Warehouse },
+    ],
+  },
+  {
+    title: "Negócio",
+    items: [
+      { to: "/supplier/customers", label: "Clientes", icon: Users },
+      { to: "/supplier/payments", label: "Pagamentos", icon: CreditCard },
+      { to: "/supplier/invoices", label: "Faturas", icon: FileText },
+      { to: "/supplier/carriers", label: "Transportadoras", icon: Truck },
+      { to: "/supplier/reviews", label: "Avaliações", icon: Star },
+    ],
+  },
+  {
+    title: "Conta",
+    items: [
+      { to: "/supplier/profile", label: "Perfil", icon: User },
+      { to: "/supplier/settings", label: "Configurações", icon: Settings },
+    ],
+  },
 ];
+
+const mobileNav = [
+  { to: "/supplier", label: "Início", icon: LayoutDashboard, end: true },
+  { to: "/supplier/products", label: "Produtos", icon: Package },
+  { to: "/supplier/orders", label: "Encomendas", icon: ShoppingCart },
+  { to: "/supplier/stock", label: "Stock", icon: Warehouse },
+];
+
 
 export default function SupplierLayout() {
   const [open, setOpen] = useState(false);

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, XCircle, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
-import { supabase } from "@/integrations/supabase/client";
+import { signOutRealm } from "@/integrations/supabase/realmBridge";
 
 export default function SupplierPending() {
   const { state, rejectionReason, loading } = useIsSupplier();
@@ -39,7 +39,7 @@ export default function SupplierPending() {
           <p className="text-sm text-muted-foreground">{c.desc}</p>
           <div className="flex justify-center gap-2">
             <Button variant="outline" onClick={() => window.location.reload()}>Atualizar</Button>
-            <Button variant="ghost" onClick={async () => { await supabase.auth.signOut(); window.location.href = "/auth"; }}>
+            <Button variant="ghost" onClick={async () => { await signOutRealm("erp"); window.location.href = "/auth"; }}>
               Terminar sessão
             </Button>
           </div>

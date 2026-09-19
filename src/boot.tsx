@@ -15,6 +15,33 @@ import { initSentry } from "@/lib/sentry";
 initSentry();
 installDemoIsolation();
 
+// ── Anti-contaminação entre sessões ────────────────────────────────────────
+// A identidade guardada no browser (oficina ativa, cache de tipo de conta,
+// cache de fornecedor) pertence SEMPRE ao utilizador que a criou. Se o
+// utilizador autenticado mudar (logout → outro login, fornecedor ↔ oficina),
+// esse estado é descartado antes de qualquer decisão de routing.
+const SESSION_UID_KEY = "garageflow_session_uid";
+const purgePreviousIdentity = () => {
+  try {
+    localStorage.removeItem("garageflow_active_shop");
+    sessionStorage.removeItem("garageflow_user_type_cache");
+  } catch { /* storage indisponível */ }
+  void import("@/hooks/useIsSupplier").then((m) => m.clearSupplierCache());
+};
+try {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "TOKEN_REFRESHED") return;
+    const uid = session?.user?.id ?? null;
+    let previous: string | null = null;
+    try { previous = localStorage.getItem(SESSION_UID_KEY); } catch { /* noop */ }
+    if (previous && previous !== uid) purgePreviousIdentity();
+    try {
+      if (uid) localStorage.setItem(SESSION_UID_KEY, uid);
+      else localStorage.removeItem(SESSION_UID_KEY);
+    } catch { /* noop */ }
+  });
+} catch { /* noop */ }
+
 const bootRegionalConfig = () => {
   void loadCountriesFromDB().then(() => detectCountryByIP());
   // Preload admin-managed platform settings (plan limits + feature gates).

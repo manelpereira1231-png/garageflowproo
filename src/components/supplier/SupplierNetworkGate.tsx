@@ -6,8 +6,11 @@ import { useIsSupplier } from "@/hooks/useIsSupplier";
 
 /**
  * Gate para todas as rotas /supplier/*.
- * - Se o flag global estiver OFF e o utilizador não for Super Admin → 404.
- * - Se o utilizador não for supplier nem super admin → 404.
+ *
+ * REGRA: uma conta de fornecedor NUNCA é expulsa deste universo — mesmo que o
+ * flag global esteja desligado — caso contrário criava-se um ciclo infinito
+ * (/supplier → / → /dashboard → SupplierAwayFromErp → /supplier → …).
+ * O flag global só impede que NÃO-fornecedores entrem aqui.
  */
 export default function SupplierNetworkGate({ children }: { children: ReactNode }) {
   const { enabled, loaded } = useSystemFeature("supplier_network_enabled");
@@ -22,8 +25,7 @@ export default function SupplierNetworkGate({ children }: { children: ReactNode 
     );
   }
 
-  if (!isSuperAdmin && !enabled) return <Navigate to="/" replace />;
-  if (!isSuperAdmin && !isSupplier) return <Navigate to="/" replace />;
-
-  return <>{children}</>;
+  if (isSupplier || isSuperAdmin) return <>{children}</>;
+  if (!enabled) return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/dashboard" replace />;
 }

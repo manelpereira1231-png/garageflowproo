@@ -834,6 +834,9 @@ function AuthenticatedRoutes() {
   const { isSuperAdmin, loading: adminLoading } = useSuperAdmin();
   const { isCommercialAdmin, loading: commercialLoading } = useCommercialAdmin();
   const { isReady: authReady, user } = useAuthReady();
+  // Identidade de fornecedor resolvida ANTES de qualquer decisão de routing:
+  // AUTH USER → role (supplier) → supplier_id → painel de fornecedor.
+  const { isSupplier, loading: supplierIdentityLoading } = useIsSupplier();
 
   // Hydrate from session cache to AVOID the "create-shop / wrong dashboard" flash.
   const cached = readCachedUserType(user?.id);
@@ -926,7 +929,7 @@ function AuthenticatedRoutes() {
       </Suspense>
     );
   }
-  if (adminLoading || commercialLoading || !authReady || !ready) {
+  if (adminLoading || commercialLoading || supplierIdentityLoading || !authReady || !ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1004,6 +1007,29 @@ function AuthenticatedRoutes() {
             <Route path="/affiliate-dashboard" element={<Suspense fallback={<PageLoader />}><AffiliateDashboard /></Suspense>} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    );
+  }
+
+  // ── Conta de FORNECEDOR: universo próprio e fechado ──────────────────
+  // Nunca monta ERP da oficina, nunca Market, nunca onboarding de oficina.
+  // Qualquer rota desconhecida cai em /supplier (sem ciclos de redirect).
+  if (isSupplier) {
+    return (
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<SupplierApprovalGate><SupplierLayout /></SupplierApprovalGate>}>
+              {supplierRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={<Suspense fallback={<PageLoader />}>{route.element}</Suspense>} />
+              ))}
+            </Route>
+            {publicRoutesAuthed.map((route) => (
+              <Route key={`sup-pub-${route.path}`} path={route.path} element={route.element} />
+            ))}
+            <Route path="*" element={<Navigate to="/supplier" replace />} />
           </Routes>
         </Suspense>
       </ChunkErrorBoundary>

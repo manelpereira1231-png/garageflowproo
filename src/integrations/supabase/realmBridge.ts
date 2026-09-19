@@ -17,7 +17,7 @@ export async function signOutRealm(realm: Realm): Promise<void> {
   if (realm === "erp") {
     clearSupplierCache();
     try { await resetActiveShopOnLogout(); } catch { /* noop */ }
-    try { sessionStorage.removeItem("gf_user_type_cache"); } catch { /* noop */ }
+    try { sessionStorage.removeItem("garageflow_user_type_cache"); } catch { /* noop */ }
   }
   await client.auth.signOut().catch(() => {});
 }

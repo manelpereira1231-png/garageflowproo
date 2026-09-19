@@ -15,6 +15,16 @@ let cacheUserId: string | null = null;
 let cacheRow: SupplierRow | undefined;
 let inflight: Promise<SupplierRow> | null = null;
 
+/**
+ * Limpa a identidade de fornecedor em memória. Chamado no logout e sempre que
+ * o utilizador autenticado muda — nunca pode sobrar identidade da conta anterior.
+ */
+export function clearSupplierCache() {
+  cacheUserId = null;
+  cacheRow = undefined;
+  inflight = null;
+}
+
 async function resolveSupplier(userId: string): Promise<SupplierRow> {
   if (cacheUserId === userId && cacheRow !== undefined) return cacheRow;
   if (cacheUserId === userId && inflight) return inflight;

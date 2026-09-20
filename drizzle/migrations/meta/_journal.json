@@ -15,6 +15,13 @@
       "when": 1789645748469,
       "tag": "0001_supplier_resolve_auto_accept_invite",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789929074618,
+      "tag": "0002_supplier_billing_invoicing",
+      "breakpoints": true
     }
   ]
 }

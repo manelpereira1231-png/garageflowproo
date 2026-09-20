@@ -3872,15 +3872,21 @@ export type Database = {
       }
       gsn_invoices: {
         Row: {
+          buyer_shop_id: string | null
           commission_total: number
           created_at: string
           currency: string
           discount_total: number
           id: string
+          issued_at: string | null
+          last_error: string | null
           number: string | null
           order_id: string | null
           pdf_url: string | null
+          provider: string | null
+          provider_invoice_id: string | null
           shipping_total: number
+          status: string
           subtotal: number
           supplier_id: string
           total: number
@@ -3888,15 +3894,21 @@ export type Database = {
           vat_total: number
         }
         Insert: {
+          buyer_shop_id?: string | null
           commission_total?: number
           created_at?: string
           currency?: string
           discount_total?: number
           id?: string
+          issued_at?: string | null
+          last_error?: string | null
           number?: string | null
           order_id?: string | null
           pdf_url?: string | null
+          provider?: string | null
+          provider_invoice_id?: string | null
           shipping_total?: number
+          status?: string
           subtotal?: number
           supplier_id: string
           total?: number
@@ -3904,15 +3916,21 @@ export type Database = {
           vat_total?: number
         }
         Update: {
+          buyer_shop_id?: string | null
           commission_total?: number
           created_at?: string
           currency?: string
           discount_total?: number
           id?: string
+          issued_at?: string | null
+          last_error?: string | null
           number?: string | null
           order_id?: string | null
           pdf_url?: string | null
+          provider?: string | null
+          provider_invoice_id?: string | null
           shipping_total?: number
+          status?: string
           subtotal?: number
           supplier_id?: string
           total?: number
@@ -4978,7 +4996,8 @@ export type Database = {
           provider: string
           refresh_token_encrypted: string | null
           serie_default: string | null
-          shop_id: string
+          shop_id: string | null
+          supplier_id: string | null
           token_expires_at: string | null
           updated_at: string
         }
@@ -4995,7 +5014,8 @@ export type Database = {
           provider: string
           refresh_token_encrypted?: string | null
           serie_default?: string | null
-          shop_id: string
+          shop_id?: string | null
+          supplier_id?: string | null
           token_expires_at?: string | null
           updated_at?: string
         }
@@ -5012,7 +5032,8 @@ export type Database = {
           provider?: string
           refresh_token_encrypted?: string | null
           serie_default?: string | null
-          shop_id?: string
+          shop_id?: string | null
+          supplier_id?: string | null
           token_expires_at?: string | null
           updated_at?: string
         }
@@ -5022,6 +5043,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: true
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integracao_faturacao_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "gsn_suppliers"
             referencedColumns: ["id"]
           },
         ]

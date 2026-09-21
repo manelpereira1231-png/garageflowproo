@@ -483,6 +483,9 @@ export default function Clients() {
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setClaimsClient(client)} className="text-xs" title="Sinistros">
+                      <ShieldAlert className="w-3.5 h-3.5 mr-1" />Sinistros
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">
                       <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
                     </Button>

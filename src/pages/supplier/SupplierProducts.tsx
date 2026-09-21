@@ -167,33 +167,45 @@ export default function SupplierProducts() {
     URL.revokeObjectURL(url);
   };
 
-  const importCsv = async (file: File) => {
-    if (!supplierId) return;
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    if (lines.length < 2) return toast.error("CSV vazio");
-    const header = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase());
-    const idx = (k: string) => header.indexOf(k);
-    const rows: any[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].match(/("([^"]|"")*"|[^,]*)(,|$)/g)?.map((c) => c.replace(/,$/, "").replace(/^"|"$/g, "").replace(/""/g, '"')) ?? [];
-      const title = cols[idx("title")]?.trim();
-      if (!title) continue;
-      rows.push({
-        supplier_id: supplierId,
-        title,
-        sku: idx("sku") >= 0 ? cols[idx("sku")]?.trim() || null : null,
-        brand: idx("brand") >= 0 ? cols[idx("brand")]?.trim() || null : null,
-        category: idx("category") >= 0 ? cols[idx("category")]?.trim() || null : null,
-        price: Number(cols[idx("price")] || 0),
-        stock: Number(cols[idx("stock")] || 0),
-        status: (cols[idx("status")]?.trim() as any) || "draft",
-      });
+  const openCsv = async (file: File) => {
+    const text = await readCsvText(file);
+    const parsed = parseProductCsv(text);
+    setImportState({ parsed, running: false, result: null });
+  };
+
+  const runImport = async () => {
+    const parsed = importState?.parsed;
+    if (!parsed || !supplierId) return;
+    setImportState({ ...importState!, running: true });
+
+    let imported = 0, updated = 0, failed = 0;
+    const errors: { line: number; message: string }[] = [...parsed.errors];
+
+    // SKUs já existentes deste fornecedor (nunca duplicar)
+    const skus = parsed.rows.map((r) => r.sku).filter(Boolean) as string[];
+    const existing = new Map<string, string>();
+    if (skus.length) {
+      const { data } = await supabase.from("gsn_products" as any)
+        .select("id,sku").eq("supplier_id", supplierId).in("sku", skus);
+      ((data as any[]) ?? []).forEach((p) => p.sku && existing.set(p.sku, p.id));
     }
-    if (!rows.length) return toast.error("Sem linhas válidas");
-    const { error } = await supabase.from("gsn_products" as any).insert(rows);
-    if (error) return toast.error(error.message);
-    toast.success(`${rows.length} produtos importados`);
+
+    for (const row of parsed.rows) {
+      const payload = toProductPayload(row, supplierId);
+      const existingId = row.sku ? existing.get(row.sku) : undefined;
+      const { error } = existingId
+        ? await supabase.from("gsn_products" as any).update({ ...payload, updated_at: new Date().toISOString() }).eq("id", existingId)
+        : await supabase.from("gsn_products" as any).insert(payload);
+      if (error) { failed++; errors.push({ line: row.line, message: error.message }); }
+      else if (existingId) updated++;
+      else imported++;
+    }
+
+    setImportState({
+      parsed,
+      running: false,
+      result: { read: parsed.rows.length, imported, updated, failed, errors },
+    });
     void load();
   };
 

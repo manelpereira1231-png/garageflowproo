@@ -24,11 +24,17 @@ interface Supplier {
   commission_percentage: number;
   rating_average: number;
   created_at: string;
+  stripe_account_id?: string | null;
+  stripe_charges_enabled?: boolean | null;
+  stripe_payouts_enabled?: boolean | null;
 }
+
+type BillingLink = { ativo: boolean; provider: string | null; last_error: string | null };
 
 export default function AdminSupplierNetwork() {
   const { enabled, loaded, refresh } = useSystemFeature("supplier_network_enabled");
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [billing, setBilling] = useState<Record<string, BillingLink>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ company_name: "", email: "", owner_user_id: "", commission_percentage: "5" });
@@ -38,6 +44,16 @@ export default function AdminSupplierNetwork() {
     // Dados completos (inclui comissão) só via RPC protegida para super admin.
     const { data } = await supabase.rpc("gsn_admin_suppliers" as any, { _id: null });
     setSuppliers((((data as any) ?? []) as any[]).filter((s) => !s.deleted_at));
+    // Estado real da faturação própria de cada fornecedor (sem inventar estados).
+    const { data: links } = await supabase
+      .from("integracao_faturacao" as any)
+      .select("supplier_id,ativo,provider,last_error")
+      .not("supplier_id", "is", null);
+    const map: Record<string, BillingLink> = {};
+    ((links as any[]) ?? []).forEach((l) => {
+      map[l.supplier_id] = { ativo: !!l.ativo, provider: l.provider ?? null, last_error: l.last_error ?? null };
+    });
+    setBilling(map);
     setLoading(false);
   };
 
@@ -252,6 +268,8 @@ export default function AdminSupplierNetwork() {
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">País</th>
                     <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Pagamentos</th>
+                    <th className="px-4 py-3">Faturação</th>
                     <th className="px-4 py-3">Comissão</th>
                     <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
@@ -270,6 +288,26 @@ export default function AdminSupplierNetwork() {
                           <Badge variant={s.approved ? "default" : "secondary"}>{s.approved ? "Aprovado" : "Pendente"}</Badge>
                           <Badge variant={s.active ? "default" : "outline"}>{s.active ? "Ativo" : "Suspenso"}</Badge>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {!s.stripe_account_id ? (
+                          <Badge variant="outline">Stripe não configurado</Badge>
+                        ) : s.stripe_charges_enabled ? (
+                          <Badge variant="default">Stripe configurado</Badge>
+                        ) : (
+                          <Badge variant="secondary">Stripe pendente</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {!billing[s.id] ? (
+                          <Badge variant="outline">Não ligado</Badge>
+                        ) : billing[s.id].last_error ? (
+                          <Badge variant="destructive">Erro de ligação</Badge>
+                        ) : billing[s.id].ativo ? (
+                          <Badge variant="default">{billing[s.id].provider === "invoicexpress" ? "InvoiceXpress ligado" : "Ligado"}</Badge>
+                        ) : (
+                          <Badge variant="secondary">Desativado</Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Input

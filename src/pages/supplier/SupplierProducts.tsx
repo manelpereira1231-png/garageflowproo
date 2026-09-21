@@ -14,6 +14,13 @@ import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
 import { format } from "date-fns";
+import { readCsvText, parseProductCsv, toProductPayload, type ParseResult } from "@/lib/gsn/csvImport";
+
+type ImportState = {
+  parsed: ParseResult;
+  running: boolean;
+  result: { read: number; imported: number; updated: number; failed: number; errors: { line: number; message: string }[] } | null;
+};
 
 interface Product {
   id: string;
@@ -62,6 +69,7 @@ export default function SupplierProducts() {
   const [editing, setEditing] = useState<{ id: string; stock: string; price: string } | null>(null);
   const [preview, setPreview] = useState<Product | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [importState, setImportState] = useState<ImportState | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 300);
@@ -219,7 +227,7 @@ export default function SupplierProducts() {
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-2" />Exportar</Button>
           <label>
-            <input type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importCsv(f); e.target.value = ""; }} />
+            <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void openCsv(f); e.target.value = ""; }} />
             <Button variant="outline" asChild><span><Upload className="w-4 h-4 mr-2" />Importar CSV</span></Button>
           </label>
           <Link to="/supplier/products/new">
@@ -425,6 +433,80 @@ export default function SupplierProducts() {
                 <Button onClick={() => { void togglePublish(preview); setPreview(null); }}>
                   {preview.status === "active" ? "Despublicar" : "Publicar"}
                 </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!importState} onOpenChange={(o) => { if (!o && !importState?.running) setImportState(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{importState?.result ? "Importação concluída" : "Pré-visualização da importação"}</DialogTitle>
+          </DialogHeader>
+          {importState && !importState.result && (
+            <div className="space-y-4">
+              <p className="text-sm">
+                <span className="font-semibold">{importState.parsed.rows.length} produtos encontrados</span>
+                {importState.parsed.errors.length > 0 && (
+                  <span className="text-muted-foreground"> · {importState.parsed.errors.length} linhas com problemas</span>
+                )}
+              </p>
+              {importState.parsed.rows.length > 0 && (
+                <div className="max-h-72 overflow-auto border rounded-lg">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        {["Título", "SKU", "EAN", "Categoria", "Marca", "Preço", "Stock", "Estado"].map((h) => (
+                          <th key={h} className="text-left p-2 font-medium">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importState.parsed.rows.map((r) => (
+                        <tr key={r.line} className="border-t">
+                          <td className="p-2">{r.title}</td>
+                          <td className="p-2">{r.sku ?? "—"}</td>
+                          <td className="p-2">{r.ean ?? "—"}</td>
+                          <td className="p-2">{r.category ?? "—"}</td>
+                          <td className="p-2">{r.brand ?? "—"}</td>
+                          <td className="p-2">{formatMoney(r.price)}</td>
+                          <td className="p-2">{r.stock}</td>
+                          <td className="p-2">{r.status === "active" ? "Publicado" : r.status === "draft" ? "Rascunho" : "Despublicado"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {importState.parsed.errors.length > 0 && (
+                <ul className="text-xs text-destructive space-y-1 max-h-32 overflow-auto">
+                  {importState.parsed.errors.map((e, i) => <li key={i}>Linha {e.line} — {e.message}</li>)}
+                </ul>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setImportState(null)} disabled={importState.running}>Cancelar</Button>
+                <Button onClick={() => void runImport()} disabled={importState.running || importState.parsed.rows.length === 0}>
+                  {importState.running ? "A importar..." : `Importar ${importState.parsed.rows.length} produtos`}
+                </Button>
+              </div>
+            </div>
+          )}
+          {importState?.result && (
+            <div className="space-y-4">
+              <p className="text-sm font-semibold">
+                {importState.result.read} lidos · {importState.result.imported} importados · {importState.result.updated} atualizados · {importState.result.failed} erros
+              </p>
+              {importState.result.updated > 0 && (
+                <p className="text-xs text-muted-foreground">Produtos já existentes (mesmo SKU) foram atualizados em vez de duplicados.</p>
+              )}
+              {importState.result.errors.length > 0 && (
+                <ul className="text-xs text-destructive space-y-1 max-h-40 overflow-auto">
+                  {importState.result.errors.map((e, i) => <li key={i}>Linha {e.line} — {e.message}</li>)}
+                </ul>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={() => setImportState(null)}>Fechar</Button>
               </div>
             </div>
           )}

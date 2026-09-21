@@ -92,6 +92,8 @@ const Developers = lazyRetry(() => import("@/pages/Developers"));
 const PartnersPortal = lazyRetry(() => import("@/pages/PartnersPortal"));
 const Referrals = lazyRetry(() => import("@/pages/Referrals"));
 const Warranties = lazyRetry(() => import("@/pages/Warranties"));
+const Claims = lazyRetry(() => import("@/pages/Claims"));
+const ClaimDetail = lazyRetry(() => import("@/pages/ClaimDetail"));
 
 // Market pages (GarageFlow Market)
 const CarityMarketplace = lazyRetry(() => import("@/pages/CarityMarketplace"));
@@ -605,6 +607,8 @@ const shopRoutes = [
   { path: "/partners", element: <PartnersPortal /> },
   { path: "/referrals", element: <FeatureGate feature="referrals" requiredPlan="pro"><Referrals /></FeatureGate> },
   { path: "/warranties", element: <FeatureGate feature="warranties" requiredPlan="pro"><Warranties /></FeatureGate> },
+  { path: "/claims", element: <Claims /> },
+  { path: "/claims/:id", element: <ClaimDetail /> },
   // Market = módulo interno do ERP. Para oficinas autenticadas as rotas
   // operacionais Market renderizam DENTRO do Layout ERP (mesmo header, mesma
   // sidebar, mesma sessão). MarketLayout fica reservado a navegação pública

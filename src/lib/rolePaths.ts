@@ -31,6 +31,7 @@ export const PATH_REQUIRED_CAPABILITY: Record<string, Capability> = {
   "/stock": "stock.view",
   "/catalog": "stock.view",
   "/warranties": "work_orders.view",
+  "/claims": "work_orders.view",
   "/team": "team.view",
   "/settings/messages": "settings.manage",
   "/settings/email-templates": "settings.manage",

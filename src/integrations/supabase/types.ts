@@ -3544,6 +3544,8 @@ export type Database = {
           base_price: number
           code: string | null
           created_at: string
+          eta_days: number | null
+          free_above: number | null
           id: string
           metadata: Json
           name: string
@@ -3555,6 +3557,8 @@ export type Database = {
           base_price?: number
           code?: string | null
           created_at?: string
+          eta_days?: number | null
+          free_above?: number | null
           id?: string
           metadata?: Json
           name: string
@@ -3566,6 +3570,8 @@ export type Database = {
           base_price?: number
           code?: string | null
           created_at?: string
+          eta_days?: number | null
+          free_above?: number | null
           id?: string
           metadata?: Json
           name?: string
@@ -12003,7 +12009,10 @@ export type Database = {
         Args: { _product_id: string; _quantity?: number; _shop_id: string }
         Returns: string
       }
-      gsn_cart_checkout: { Args: { _shop_id: string }; Returns: string[] }
+      gsn_cart_checkout: {
+        Args: { _carriers?: Json; _shop_id: string }
+        Returns: string[]
+      }
       gsn_cart_ensure: { Args: { _shop_id: string }; Returns: string }
       gsn_complaint_create: {
         Args: { _body: string; _order_id: string; _subject: string }
@@ -12073,6 +12082,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      gsn_order_ship: {
+        Args: {
+          _carrier_id?: string
+          _carrier_name?: string
+          _order_id: string
+          _tracking_code?: string
+          _tracking_url?: string
+        }
+        Returns: undefined
       }
       gsn_order_transition: {
         Args: { _note?: string; _order_id: string; _to: string }

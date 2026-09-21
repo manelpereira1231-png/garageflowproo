@@ -456,7 +456,7 @@ export default function ClaimDetail() {
                   </Select>
                   <Button variant="outline" onClick={() => navigate("/quotes/new")}>Criar orçamento</Button>
                   {claim.quote_id && (
-                    <Button variant="outline" onClick={() => navigate(`/quotes/${claim.quote_id}`)}>Abrir</Button>
+                    <Button variant="outline" onClick={() => navigate(`/quotes/edit/${claim.quote_id}`)}>Abrir</Button>
                   )}
                 </div>
               </div>

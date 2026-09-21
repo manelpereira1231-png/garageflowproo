@@ -327,6 +327,13 @@ export default function SupplierOrders() {
                         )}
                       </div>
 
+                      {(o.carrier || o.tracking_code) && (
+                        <div className="border-t pt-2 text-xs text-muted-foreground flex items-center gap-2">
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>{o.carrier ?? "Transportadora"}{o.tracking_code ? ` · ${o.tracking_code}` : ""}</span>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-2 pt-1">
                         {(NEXT[o.status] ?? []).length === 0 ? (
                           <p className="text-xs text-muted-foreground">Sem ações disponíveis neste estado.</p>
@@ -337,9 +344,9 @@ export default function SupplierOrders() {
                               size="sm"
                               variant={to === "cancelled" ? "outline" : "default"}
                               disabled={busy === o.id}
-                              onClick={() => transition(o.id, to)}
+                              onClick={() => (to === "shipped" ? openShip(o) : transition(o.id, to))}
                             >
-                              {to === "cancelled" ? "Recusar / Cancelar" : STATUS_LABEL[to] ?? to}
+                              {to === "cancelled" ? "Recusar / Cancelar" : to === "shipped" ? "Expedir" : STATUS_LABEL[to] ?? to}
                             </Button>
                           ))
                         )}
@@ -352,6 +359,53 @@ export default function SupplierOrders() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!shipOrder} onOpenChange={(v) => !v && setShipOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Expedir encomenda {shipOrder?.order_number ?? ""}</DialogTitle>
+          </DialogHeader>
+          {carriers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ainda não tem transportadoras configuradas.{" "}
+              <Link to="/supplier/carriers" className="text-primary hover:underline">Adicionar transportadora</Link>
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Transportadora</Label>
+                <div className="grid gap-2">
+                  {carriers.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setShipCarrier(c.id)}
+                      className={`text-left p-3 rounded-md border min-h-[44px] text-sm ${shipCarrier === c.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="trk">Código de seguimento</Label>
+                <Input id="trk" value={shipTracking} onChange={(e) => setShipTracking(e.target.value)} placeholder="Ex: DL123456789PT" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="trkurl">Link de seguimento (opcional)</Label>
+                <Input id="trkurl" value={shipUrl} onChange={(e) => setShipUrl(e.target.value)} placeholder="https://..." />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShipOrder(null)}>Cancelar</Button>
+            <Button onClick={confirmShip} disabled={!carriers.length || !shipCarrier || busy === shipOrder?.id}>
+              Marcar como enviado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
 }

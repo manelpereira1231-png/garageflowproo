@@ -43,6 +43,13 @@
       "when": 1790003112119,
       "tag": "0005_gsn_carriers_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790005282545,
+      "tag": "0006_insurance_claims_module",
+      "breakpoints": true
     }
   ]
 }

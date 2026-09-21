@@ -19,25 +19,64 @@ export interface CartItem {
   supplier?: { company_name: string } | null;
 }
 
+export interface CartCarrier {
+  id: string;
+  supplier_id: string;
+  name: string;
+  base_price: number;
+  eta_days: number | null;
+  free_above: number | null;
+}
+
 export function useGsnCart() {
   const { activeShopId, enabled, ready } = useSupplierMarket();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [carriers, setCarriers] = useState<CartCarrier[]>([]);
+  const [selectedCarriers, setSelectedCarriers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    if (!ready || !enabled || !activeShopId) { setItems([]); return; }
+    if (!ready || !enabled || !activeShopId) { setItems([]); setCarriers([]); return; }
     setLoading(true);
     const { data: cart } = await supabase.from("gsn_carts" as any).select("id").eq("shop_id", activeShopId).maybeSingle();
-    if (!cart) { setItems([]); setLoading(false); return; }
+    if (!cart) { setItems([]); setCarriers([]); setLoading(false); return; }
     const { data } = await supabase
       .from("gsn_cart_items" as any)
       .select("id,product_id,supplier_id,quantity,unit_price,vat,product:gsn_products(title,image,brand),supplier:gsn_suppliers(company_name)")
       .eq("cart_id", (cart as any).id);
-    setItems((data as any) ?? []);
+    const rows = ((data as any) ?? []) as CartItem[];
+    setItems(rows);
+
+    const supplierIds = Array.from(new Set(rows.map((r) => r.supplier_id)));
+    if (supplierIds.length) {
+      const { data: cs } = await supabase
+        .from("gsn_carriers" as any)
+        .select("id,supplier_id,name,base_price,eta_days,free_above")
+        .in("supplier_id", supplierIds)
+        .eq("active", true)
+        .order("base_price");
+      const list = ((cs as any) ?? []) as CartCarrier[];
+      setCarriers(list);
+      // Pré-selecciona a opção mais barata de cada fornecedor
+      setSelectedCarriers((prev) => {
+        const next = { ...prev };
+        supplierIds.forEach((sid) => {
+          const opts = list.filter((c) => c.supplier_id === sid);
+          if (!opts.length) { delete next[sid]; return; }
+          if (!next[sid] || !opts.some((o) => o.id === next[sid])) next[sid] = opts[0].id;
+        });
+        Object.keys(next).forEach((k) => { if (!supplierIds.includes(k)) delete next[k]; });
+        return next;
+      });
+    } else {
+      setCarriers([]);
+      setSelectedCarriers({});
+    }
     setLoading(false);
   }, [ready, enabled, activeShopId]);
 
   useEffect(() => { void load(); }, [load]);
+
 
   const add = useCallback(async (productId: string, qty = 1) => {
     if (!activeShopId) { toast.error("Sem oficina activa"); return; }

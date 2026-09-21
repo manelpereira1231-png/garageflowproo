@@ -139,7 +139,7 @@ export default function SupplierOrders() {
     setLoading(true);
     const { data, error } = await supabase
       .from("gsn_orders" as any)
-      .select("id,order_number,status,total,currency,tracking_code,buyer_shop_id,created_at")
+      .select("id,order_number,status,total,currency,tracking_code,carrier,buyer_shop_id,created_at")
       .eq("supplier_id", supplierId)
       .order("created_at", { ascending: false })
       .limit(200);

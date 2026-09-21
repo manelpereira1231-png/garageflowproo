@@ -45,6 +45,7 @@ export default function ServiceForm() {
   const [technician, setTechnician] = useState("");
 
   const [notes, setNotes] = useState("");
+  const [processType, setProcessType] = useState("particular");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
     labor_rate: 35,
@@ -94,6 +95,7 @@ export default function ServiceForm() {
           setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
+          setProcessType(service.process_type || "particular");
           const svcLines = Array.isArray(service.lines) ? service.lines : [];
           setLines(svcLines.map((l: any) => ({
             id: l.id || crypto.randomUUID(),

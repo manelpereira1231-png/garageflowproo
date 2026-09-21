@@ -9,7 +9,12 @@ import { useIsSupplier } from "@/hooks/useIsSupplier";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatMoney } from "@/lib/money";
-import { ChevronDown, ChevronUp, Inbox } from "lucide-react";
+import { ChevronDown, ChevronUp, Inbox, Truck } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
+
 
 interface OrderItem {
   id: string;
@@ -35,6 +40,8 @@ interface Order {
   total: number;
   currency: string;
   tracking_code: string | null;
+  carrier?: string | null;
+
   buyer_shop_id: string | null;
   created_at: string;
   items?: OrderItem[];
@@ -84,6 +91,27 @@ export default function SupplierOrders() {
   const [open, setOpen] = useState<string | null>(params.get("o"));
   const [busy, setBusy] = useState<string | null>(null);
   const [events, setEvents] = useState<Record<string, OrderEvent[]>>({});
+  const [carriers, setCarriers] = useState<{ id: string; name: string }[]>([]);
+  const [shipOrder, setShipOrder] = useState<Order | null>(null);
+  const [shipCarrier, setShipCarrier] = useState<string>("");
+  const [shipTracking, setShipTracking] = useState("");
+  const [shipUrl, setShipUrl] = useState("");
+
+  useEffect(() => {
+    if (!supplierId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("gsn_carriers" as any)
+        .select("id,name")
+        .eq("supplier_id", supplierId)
+        .eq("active", true)
+        .order("name");
+      if (!cancelled) setCarriers(((data as any) ?? []) as { id: string; name: string }[]);
+    })();
+    return () => { cancelled = true; };
+  }, [supplierId]);
+
 
   const setFilter = (k: string) => {
     const next = new URLSearchParams(params);
@@ -111,7 +139,7 @@ export default function SupplierOrders() {
     setLoading(true);
     const { data, error } = await supabase
       .from("gsn_orders" as any)
-      .select("id,order_number,status,total,currency,tracking_code,buyer_shop_id,created_at")
+      .select("id,order_number,status,total,currency,tracking_code,carrier,buyer_shop_id,created_at")
       .eq("supplier_id", supplierId)
       .order("created_at", { ascending: false })
       .limit(200);
@@ -163,7 +191,34 @@ export default function SupplierOrders() {
     return () => { void supabase.removeChannel(channel); };
   }, [supplierId, load]);
 
+  const openShip = (o: Order) => {
+    setShipOrder(o);
+    setShipCarrier(carriers[0]?.id ?? "");
+    setShipTracking(o.tracking_code ?? "");
+    setShipUrl("");
+  };
+
+  const confirmShip = async () => {
+    if (!shipOrder) return;
+    if (!shipCarrier) return toast.error("Escolha a transportadora");
+    setBusy(shipOrder.id);
+    const { error } = await supabase.rpc("gsn_order_ship" as any, {
+      _order_id: shipOrder.id,
+      _carrier_id: shipCarrier,
+      _carrier_name: null,
+      _tracking_code: shipTracking || null,
+      _tracking_url: shipUrl || null,
+    });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success("Encomenda expedida");
+    setEvents((prev) => { const next = { ...prev }; delete next[shipOrder.id]; return next; });
+    setShipOrder(null);
+    void load();
+  };
+
   const transition = async (id: string, to: string) => {
+
     if (busy) return;
     setBusy(id);
     const { error } = await supabase.rpc("gsn_order_transition" as any, { _order_id: id, _to: to, _note: null });
@@ -274,6 +329,13 @@ export default function SupplierOrders() {
                         )}
                       </div>
 
+                      {(o.carrier || o.tracking_code) && (
+                        <div className="border-t pt-2 text-xs text-muted-foreground flex items-center gap-2">
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>{o.carrier ?? "Transportadora"}{o.tracking_code ? ` · ${o.tracking_code}` : ""}</span>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-2 pt-1">
                         {(NEXT[o.status] ?? []).length === 0 ? (
                           <p className="text-xs text-muted-foreground">Sem ações disponíveis neste estado.</p>
@@ -284,9 +346,9 @@ export default function SupplierOrders() {
                               size="sm"
                               variant={to === "cancelled" ? "outline" : "default"}
                               disabled={busy === o.id}
-                              onClick={() => transition(o.id, to)}
+                              onClick={() => (to === "shipped" ? openShip(o) : transition(o.id, to))}
                             >
-                              {to === "cancelled" ? "Recusar / Cancelar" : STATUS_LABEL[to] ?? to}
+                              {to === "cancelled" ? "Recusar / Cancelar" : to === "shipped" ? "Expedir" : STATUS_LABEL[to] ?? to}
                             </Button>
                           ))
                         )}
@@ -299,6 +361,53 @@ export default function SupplierOrders() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!shipOrder} onOpenChange={(v) => !v && setShipOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Expedir encomenda {shipOrder?.order_number ?? ""}</DialogTitle>
+          </DialogHeader>
+          {carriers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ainda não tem transportadoras configuradas.{" "}
+              <Link to="/supplier/carriers" className="text-primary hover:underline">Adicionar transportadora</Link>
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Transportadora</Label>
+                <div className="grid gap-2">
+                  {carriers.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setShipCarrier(c.id)}
+                      className={`text-left p-3 rounded-md border min-h-[44px] text-sm ${shipCarrier === c.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="trk">Código de seguimento</Label>
+                <Input id="trk" value={shipTracking} onChange={(e) => setShipTracking(e.target.value)} placeholder="Ex: DL123456789PT" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="trkurl">Link de seguimento (opcional)</Label>
+                <Input id="trkurl" value={shipUrl} onChange={(e) => setShipUrl(e.target.value)} placeholder="https://..." />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShipOrder(null)}>Cancelar</Button>
+            <Button onClick={confirmShip} disabled={!carriers.length || !shipCarrier || busy === shipOrder?.id}>
+              Marcar como enviado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
 }

@@ -43,6 +43,10 @@ export default function PartsOrders() {
                   <div className="min-w-0">
                     <Link to={`/parts/orders/${o.id}`} className="text-sm font-medium font-mono hover:text-primary">{o.order_number ?? `#${o.id.slice(0,8)}`}</Link>
                     <p className="text-xs text-muted-foreground">{o.supplier?.trade_name ?? o.supplier?.company_name} · {format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}</p>
+                    {(o.carrier || o.tracking_code) && (
+                      <p className="text-xs text-muted-foreground truncate">{o.carrier ?? "Envio"}{o.tracking_code ? ` · ${o.tracking_code}` : ""}</p>
+                    )}
+
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">{o.currency} {Number(o.total).toFixed(2)}</p>

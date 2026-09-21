@@ -60,8 +60,10 @@ export default function PartsOrderDetail() {
         ))}
         <div className="pt-2 border-t text-right">
           <p className="text-sm text-muted-foreground">Subtotal {formatMoney(Number(order.subtotal), order.currency)} · {getTaxLabel()} {formatMoney(Number(order.vat_total), order.currency)}</p>
+          <p className="text-sm text-muted-foreground">Portes {Number(order.shipping_total) > 0 ? formatMoney(Number(order.shipping_total), order.currency) : "Grátis"}{order.carrier ? ` · ${order.carrier}` : ""}</p>
           <p className="text-lg font-bold">Total {formatMoney(Number(order.total), order.currency)}</p>
         </div>
+
       </CardContent></Card>
 
       {shipments.length > 0 && (

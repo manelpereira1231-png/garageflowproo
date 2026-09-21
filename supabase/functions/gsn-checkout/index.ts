@@ -43,7 +43,7 @@ serve(async (req) => {
       try {
         const { data: order } = await supa
           .from("gsn_orders")
-          .select("id, supplier_id, buyer_user_id, total, currency, commission_total, status")
+          .select("id, supplier_id, buyer_user_id, total, currency, commission_total, shipping_total, discount_total, status")
           .eq("id", orderId).maybeSingle();
         if (!order) throw new Error("Encomenda não encontrada");
         if (order.buyer_user_id !== user.id) throw new Error("Sem permissão");
@@ -51,6 +51,7 @@ serve(async (req) => {
 
         const { data: items } = await supa
           .from("gsn_order_items").select("title, quantity, unit_price, vat").eq("order_id", orderId);
+        if (!items?.length) throw new Error("Encomenda sem linhas");
 
         const { data: supplier } = await supa
           .from("gsn_suppliers")
@@ -58,8 +59,10 @@ serve(async (req) => {
           .eq("id", order.supplier_id).maybeSingle();
 
         const currency = (order.currency || "eur").toLowerCase();
-        const line_items = (items ?? []).map((it: any) => {
+        let chargedCents = 0;
+        const line_items = items.map((it: any) => {
           const unit = toStripeAmount(Number(it.unit_price) * (1 + Number(it.vat) / 100), currency);
+          chargedCents += unit * Number(it.quantity);
           return {
             price_data: {
               currency,
@@ -70,9 +73,19 @@ serve(async (req) => {
           };
         });
 
-        const useConnect = supplier?.stripe_account_id && supplier?.stripe_charges_enabled;
-        const totalCents = toStripeAmount(Number(order.total), currency);
-        const feeCents = toStripeAmount(Number(order.commission_total), currency);
+        const shippingCents = toStripeAmount(Number(order.shipping_total || 0), currency);
+        if (shippingCents > 0) {
+          line_items.push({
+            price_data: { currency, product_data: { name: "Portes de envio" }, unit_amount: shippingCents },
+            quantity: 1,
+          });
+          chargedCents += shippingCents;
+        }
+
+        const useConnect = !!(supplier?.stripe_account_id && supplier?.stripe_charges_enabled);
+        // A comissão da plataforma nunca pode exceder o valor efetivamente cobrado.
+        const rawFee = toStripeAmount(Number(order.commission_total || 0), currency);
+        const feeCents = Math.max(0, Math.min(rawFee, Math.max(0, chargedCents - 1)));
 
         const session = await stripe.checkout.sessions.create({
           mode: "payment",
@@ -80,20 +93,31 @@ serve(async (req) => {
           success_url: `${origin}/parts/orders/${orderId}?paid=1`,
           cancel_url: `${origin}/parts/cart?cancelled=1`,
           client_reference_id: orderId,
-          metadata: { gsn_order_id: orderId, supplier_id: order.supplier_id },
+          metadata: {
+            gsn_order_id: orderId,
+            supplier_id: order.supplier_id,
+            platform_fee: String(feeCents),
+            connect: useConnect ? "1" : "0",
+          },
           payment_intent_data: useConnect ? {
             application_fee_amount: feeCents,
-            transfer_data: { destination: supplier.stripe_account_id },
-            metadata: { gsn_order_id: orderId },
-          } : { metadata: { gsn_order_id: orderId } },
-        });
+            transfer_data: { destination: supplier!.stripe_account_id as string },
+            metadata: { gsn_order_id: orderId, platform_fee: String(feeCents) },
+          } : { metadata: { gsn_order_id: orderId, platform_fee: String(feeCents) } },
+        }, { idempotencyKey: `gsn_checkout_${orderId}` });
 
         await supa.from("gsn_payments").insert({
           supplier_id: order.supplier_id, order_id: orderId,
           status: "pending", amount: order.total, currency,
           stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
-          metadata: { checkout_session: session.id, connect: !!useConnect },
+          metadata: {
+            checkout_session: session.id,
+            connect: useConnect,
+            application_fee: feeCents,
+            charged: chargedCents,
+          },
         });
+
 
         sessions.push({ order_id: orderId, url: session.url });
       } catch (e) {

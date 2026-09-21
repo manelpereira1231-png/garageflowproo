@@ -268,6 +268,8 @@ export default function AdminSupplierNetwork() {
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">País</th>
                     <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Pagamentos</th>
+                    <th className="px-4 py-3">Faturação</th>
                     <th className="px-4 py-3">Comissão</th>
                     <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
@@ -286,6 +288,26 @@ export default function AdminSupplierNetwork() {
                           <Badge variant={s.approved ? "default" : "secondary"}>{s.approved ? "Aprovado" : "Pendente"}</Badge>
                           <Badge variant={s.active ? "default" : "outline"}>{s.active ? "Ativo" : "Suspenso"}</Badge>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {!s.stripe_account_id ? (
+                          <Badge variant="outline">Stripe não configurado</Badge>
+                        ) : s.stripe_charges_enabled ? (
+                          <Badge variant="default">Stripe configurado</Badge>
+                        ) : (
+                          <Badge variant="secondary">Stripe pendente</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {!billing[s.id] ? (
+                          <Badge variant="outline">Não ligado</Badge>
+                        ) : billing[s.id].last_error ? (
+                          <Badge variant="destructive">Erro de ligação</Badge>
+                        ) : billing[s.id].ativo ? (
+                          <Badge variant="default">{billing[s.id].provider === "invoicexpress" ? "InvoiceXpress ligado" : "Ligado"}</Badge>
+                        ) : (
+                          <Badge variant="secondary">Desativado</Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Input

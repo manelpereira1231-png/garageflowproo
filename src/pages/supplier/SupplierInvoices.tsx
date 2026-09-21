@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { useSupplierLive } from "@/hooks/useSupplierLive";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { FileText, Loader2, Plug, RefreshCw, ShieldCheck } from "lucide-react";
@@ -57,6 +58,7 @@ export default function SupplierInvoices() {
 
   useEffect(() => { void loadStatus(); }, [loadStatus]);
   useEffect(() => { void loadData(); }, [loadData]);
+  useSupplierLive(supplierId, ["gsn_invoices", "gsn_orders"], () => { void loadData(); });
 
   const issuedOrderIds = new Set(rows.filter((r) => r.status === "issued").map((r) => r.order_id));
   const pending = orders.filter((o) => !issuedOrderIds.has(o.id));

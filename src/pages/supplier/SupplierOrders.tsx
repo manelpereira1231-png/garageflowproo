@@ -89,6 +89,27 @@ export default function SupplierOrders() {
   const [open, setOpen] = useState<string | null>(params.get("o"));
   const [busy, setBusy] = useState<string | null>(null);
   const [events, setEvents] = useState<Record<string, OrderEvent[]>>({});
+  const [carriers, setCarriers] = useState<{ id: string; name: string }[]>([]);
+  const [shipOrder, setShipOrder] = useState<Order | null>(null);
+  const [shipCarrier, setShipCarrier] = useState<string>("");
+  const [shipTracking, setShipTracking] = useState("");
+  const [shipUrl, setShipUrl] = useState("");
+
+  useEffect(() => {
+    if (!supplierId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("gsn_carriers" as any)
+        .select("id,name")
+        .eq("supplier_id", supplierId)
+        .eq("active", true)
+        .order("name");
+      if (!cancelled) setCarriers(((data as any) ?? []) as { id: string; name: string }[]);
+    })();
+    return () => { cancelled = true; };
+  }, [supplierId]);
+
 
   const setFilter = (k: string) => {
     const next = new URLSearchParams(params);

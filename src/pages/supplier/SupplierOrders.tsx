@@ -189,7 +189,34 @@ export default function SupplierOrders() {
     return () => { void supabase.removeChannel(channel); };
   }, [supplierId, load]);
 
+  const openShip = (o: Order) => {
+    setShipOrder(o);
+    setShipCarrier(carriers[0]?.id ?? "");
+    setShipTracking(o.tracking_code ?? "");
+    setShipUrl("");
+  };
+
+  const confirmShip = async () => {
+    if (!shipOrder) return;
+    if (!shipCarrier) return toast.error("Escolha a transportadora");
+    setBusy(shipOrder.id);
+    const { error } = await supabase.rpc("gsn_order_ship" as any, {
+      _order_id: shipOrder.id,
+      _carrier_id: shipCarrier,
+      _carrier_name: null,
+      _tracking_code: shipTracking || null,
+      _tracking_url: shipUrl || null,
+    });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success("Encomenda expedida");
+    setEvents((prev) => { const next = { ...prev }; delete next[shipOrder.id]; return next; });
+    setShipOrder(null);
+    void load();
+  };
+
   const transition = async (id: string, to: string) => {
+
     if (busy) return;
     setBusy(id);
     const { error } = await supabase.rpc("gsn_order_transition" as any, { _order_id: id, _to: to, _note: null });

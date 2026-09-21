@@ -24,11 +24,17 @@ interface Supplier {
   commission_percentage: number;
   rating_average: number;
   created_at: string;
+  stripe_account_id?: string | null;
+  stripe_charges_enabled?: boolean | null;
+  stripe_payouts_enabled?: boolean | null;
 }
+
+type BillingLink = { ativo: boolean; provider: string | null; last_error: string | null };
 
 export default function AdminSupplierNetwork() {
   const { enabled, loaded, refresh } = useSystemFeature("supplier_network_enabled");
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [billing, setBilling] = useState<Record<string, BillingLink>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ company_name: "", email: "", owner_user_id: "", commission_percentage: "5" });

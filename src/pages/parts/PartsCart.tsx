@@ -11,9 +11,14 @@ import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
 
 export default function PartsCart() {
-  const { items, bySupplier, subtotal, vatTotal, total, updateQuantity, remove, checkout, loading } = useGsnCart();
+  const {
+    items, bySupplier, subtotal, vatTotal, shippingTotal, shippingBySupplier, total,
+    carriersBySupplier, selectedCarriers, selectCarrier, missingCarrier,
+    updateQuantity, remove, checkout, loading,
+  } = useGsnCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+
 
   const onCheckout = async () => {
     if (submitting) return;

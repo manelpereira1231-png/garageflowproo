@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import ClaimsHistory from "@/components/ClaimsHistory";
+import { ShieldAlert } from "lucide-react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -104,6 +106,7 @@ export default function Clients() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [claimsClient, setClaimsClient] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -406,6 +409,7 @@ export default function Clients() {
                    <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-8 p-0 sm:w-11" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}
                  <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-8 p-0 sm:w-11" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
+                 <Button variant="ghost" size="sm" onClick={() => setClaimsClient(client)} className="h-11 w-8 p-0 sm:w-11" title="Sinistros"><ShieldAlert className="w-4 h-4 text-primary" /></Button>
                  <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-8 p-0 sm:w-11"><Pencil className="w-4 h-4" /></Button>
                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-8 p-0 text-destructive sm:w-11"><Trash2 className="w-4 h-4" /></Button>
               </div>
@@ -534,6 +538,13 @@ export default function Clients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!claimsClient} onOpenChange={(o) => { if (!o) setClaimsClient(null); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Sinistros — {claimsClient?.name}</DialogTitle></DialogHeader>
+          {claimsClient && <ClaimsHistory clientId={claimsClient.id} title="Processos de seguradoras" />}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

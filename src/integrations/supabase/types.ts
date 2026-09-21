@@ -1923,6 +1923,478 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_communications: {
+        Row: {
+          attachments: Json
+          body: string | null
+          claim_id: string
+          contact_id: string | null
+          contact_label: string | null
+          created_at: string
+          direction: string
+          duration_minutes: number | null
+          id: string
+          kind: string
+          next_contact_date: string | null
+          next_step: string | null
+          occurred_at: string
+          outcome: string | null
+          portal_name: string | null
+          portal_reference: string | null
+          portal_url: string | null
+          shop_id: string
+          status: string
+          subject: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          attachments?: Json
+          body?: string | null
+          claim_id: string
+          contact_id?: string | null
+          contact_label?: string | null
+          created_at?: string
+          direction?: string
+          duration_minutes?: number | null
+          id?: string
+          kind?: string
+          next_contact_date?: string | null
+          next_step?: string | null
+          occurred_at?: string
+          outcome?: string | null
+          portal_name?: string | null
+          portal_reference?: string | null
+          portal_url?: string | null
+          shop_id: string
+          status?: string
+          subject?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          attachments?: Json
+          body?: string | null
+          claim_id?: string
+          contact_id?: string | null
+          contact_label?: string | null
+          created_at?: string
+          direction?: string
+          duration_minutes?: number | null
+          id?: string
+          kind?: string
+          next_contact_date?: string | null
+          next_step?: string | null
+          occurred_at?: string
+          outcome?: string | null
+          portal_name?: string | null
+          portal_reference?: string | null
+          portal_url?: string | null
+          shop_id?: string
+          status?: string
+          subject?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_communications_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_communications_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "claim_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_communications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_contacts: {
+        Row: {
+          claim_id: string
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          kind: string
+          name: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          shop_id: string
+        }
+        Insert: {
+          claim_id: string
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          shop_id: string
+        }
+        Update: {
+          claim_id?: string
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_contacts_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_contacts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_documents: {
+        Row: {
+          category: string
+          claim_id: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          notes: string | null
+          shop_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string
+          claim_id: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          notes?: string | null
+          shop_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string
+          claim_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_documents_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_events: {
+        Row: {
+          claim_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          kind: string
+          meta: Json
+          shop_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          kind?: string
+          meta?: Json
+          shop_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_events_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          amount_approved: number | null
+          amount_rejected: number | null
+          amount_requested: number | null
+          approval_date: string | null
+          approval_notes: string | null
+          approval_reference: string | null
+          approval_status: string
+          approved_by: string | null
+          claim_date: string | null
+          claim_number: string | null
+          claim_type: string | null
+          client_id: string | null
+          coverage: string | null
+          created_at: string
+          created_by: string | null
+          deductible: number | null
+          description: string | null
+          expert_company: string | null
+          expert_contact: string | null
+          expert_date: string | null
+          expert_done_date: string | null
+          expert_location: string | null
+          expert_name: string | null
+          expert_notes: string | null
+          expert_report_number: string | null
+          expert_result: string | null
+          expert_status: string
+          expert_time: string | null
+          external_ref: Json
+          id: string
+          insurer_id: string | null
+          insurer_quote_notes: string | null
+          liability: string | null
+          location: string | null
+          next_action: string | null
+          next_action_date: string | null
+          next_action_owner: string | null
+          notes: string | null
+          policy_number: string | null
+          process_number: string | null
+          quote_id: string | null
+          report_date: string | null
+          report_number: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          amount_approved?: number | null
+          amount_rejected?: number | null
+          amount_requested?: number | null
+          approval_date?: string | null
+          approval_notes?: string | null
+          approval_reference?: string | null
+          approval_status?: string
+          approved_by?: string | null
+          claim_date?: string | null
+          claim_number?: string | null
+          claim_type?: string | null
+          client_id?: string | null
+          coverage?: string | null
+          created_at?: string
+          created_by?: string | null
+          deductible?: number | null
+          description?: string | null
+          expert_company?: string | null
+          expert_contact?: string | null
+          expert_date?: string | null
+          expert_done_date?: string | null
+          expert_location?: string | null
+          expert_name?: string | null
+          expert_notes?: string | null
+          expert_report_number?: string | null
+          expert_result?: string | null
+          expert_status?: string
+          expert_time?: string | null
+          external_ref?: Json
+          id?: string
+          insurer_id?: string | null
+          insurer_quote_notes?: string | null
+          liability?: string | null
+          location?: string | null
+          next_action?: string | null
+          next_action_date?: string | null
+          next_action_owner?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          process_number?: string | null
+          quote_id?: string | null
+          report_date?: string | null
+          report_number?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          amount_approved?: number | null
+          amount_rejected?: number | null
+          amount_requested?: number | null
+          approval_date?: string | null
+          approval_notes?: string | null
+          approval_reference?: string | null
+          approval_status?: string
+          approved_by?: string | null
+          claim_date?: string | null
+          claim_number?: string | null
+          claim_type?: string | null
+          client_id?: string | null
+          coverage?: string | null
+          created_at?: string
+          created_by?: string | null
+          deductible?: number | null
+          description?: string | null
+          expert_company?: string | null
+          expert_contact?: string | null
+          expert_date?: string | null
+          expert_done_date?: string | null
+          expert_location?: string | null
+          expert_name?: string | null
+          expert_notes?: string | null
+          expert_report_number?: string | null
+          expert_result?: string | null
+          expert_status?: string
+          expert_time?: string | null
+          external_ref?: Json
+          id?: string
+          insurer_id?: string | null
+          insurer_quote_notes?: string | null
+          liability?: string | null
+          location?: string | null
+          next_action?: string | null
+          next_action_date?: string | null
+          next_action_owner?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          process_number?: string | null
+          quote_id?: string | null
+          report_date?: string | null
+          report_number?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           company: string | null
@@ -4984,6 +5456,62 @@ export type Database = {
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "work_orders_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurers: {
+        Row: {
+          active: boolean
+          claims_contact: string | null
+          claims_email: string | null
+          claims_phone: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          nif: string | null
+          notes: string | null
+          phone: string | null
+          shop_id: string
+          website: string | null
+        }
+        Insert: {
+          active?: boolean
+          claims_contact?: string | null
+          claims_email?: string | null
+          claims_phone?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          nif?: string | null
+          notes?: string | null
+          phone?: string | null
+          shop_id: string
+          website?: string | null
+        }
+        Update: {
+          active?: boolean
+          claims_contact?: string | null
+          claims_email?: string | null
+          claims_phone?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          nif?: string | null
+          notes?: string | null
+          phone?: string | null
+          shop_id?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -10585,6 +11113,7 @@ export type Database = {
           notes: string | null
           number: string
           origin: string
+          process_type: string
           profit: number
           quote_id: string | null
           shop_id: string
@@ -10612,6 +11141,7 @@ export type Database = {
           notes?: string | null
           number: string
           origin?: string
+          process_type?: string
           profit?: number
           quote_id?: string | null
           shop_id: string
@@ -10639,6 +11169,7 @@ export type Database = {
           notes?: string | null
           number?: string
           origin?: string
+          process_type?: string
           profit?: number
           quote_id?: string | null
           shop_id?: string

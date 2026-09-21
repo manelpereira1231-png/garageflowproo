@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ClaimsHistory from "@/components/ClaimsHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -695,6 +696,8 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   </ul>
                 </div>
               )}
+              {/* ─── Histórico de sinistros ─── */}
+              <ClaimsHistory vehicleId={vehicleId} title="Histórico de sinistros" />
             </div>
           </ScrollArea>
         ) : (

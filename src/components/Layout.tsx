@@ -36,6 +36,7 @@ import {
   Search,
   Gift,
   ShieldCheck,
+  ShieldAlert,
   Lock,
   Wallet,
   Star as StarIcon,
@@ -453,6 +454,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { path: "/catalog", label: t("nav.catalog"), icon: BookOpen, featureSlug: "service_catalog" },
     { path: "/stock", label: t("nav.stock"), icon: Package, featureSlug: "stock" },
     { path: "/warranties", label: t("nav.warranties"), icon: ShieldCheck, featureSlug: "warranties" },
+    { path: "/claims", label: "Sinistros", icon: ShieldAlert },
 
     // ── Fornecedor (Supplier Network — B2B parts marketplace) ──
     // Hidden entirely when the global feature flag is OFF.

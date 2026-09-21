@@ -16,6 +16,7 @@ import { useShopRole } from "@/hooks/useShopRole";
 import { useOwnedShops } from "@/hooks/useOwnedShops";
 import { useIsChildShop } from "@/hooks/useIsChildShop";
 import MarketActivityCard from "@/components/MarketActivityCard";
+import ClaimsSummaryCard from "@/components/ClaimsSummaryCard";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
 import { formatMoney } from "@/lib/money";
 import { getCountryConfig } from "@/lib/regionConfig";
@@ -1031,6 +1032,8 @@ function OwnerDashboard() {
       )}
 
       {/* GarageFlow Market activity */}
+      <ClaimsSummaryCard />
+
       <MarketActivityCard shopId={activeShopId} userId={user?.id ?? null} />
 
       {/* Recent Services */}

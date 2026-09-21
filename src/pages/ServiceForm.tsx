@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -45,6 +45,7 @@ export default function ServiceForm() {
   const [technician, setTechnician] = useState("");
 
   const [notes, setNotes] = useState("");
+  const [processType, setProcessType] = useState("particular");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
     labor_rate: 35,
@@ -94,6 +95,7 @@ export default function ServiceForm() {
           setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
+          setProcessType(service.process_type || "particular");
           const svcLines = Array.isArray(service.lines) ? service.lines : [];
           setLines(svcLines.map((l: any) => ({
             id: l.id || crypto.randomUUID(),
@@ -163,7 +165,7 @@ export default function ServiceForm() {
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
-        profit, notes: notes || null,
+        profit, notes: notes || null, process_type: processType,
       }).eq("id", editId).eq("shop_id", shopId);
 
       if (error) toast.error(error.message);
@@ -182,7 +184,7 @@ export default function ServiceForm() {
         entry_mileage: parseInt(entryMileage), client_description: clientDescription || null,
         diagnosis: diagnosis || null, lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         technician: technician || null, subtotal, vat_total: vatTotal, total, cost_total: costTotal,
-        profit, status: 'open', notes: notes || null,
+        profit, status: 'open', notes: notes || null, process_type: processType,
         }).select("id").single() as any,
       });
 
@@ -261,6 +263,29 @@ export default function ServiceForm() {
               <Label>{t('services.technician')}</Label>
               <TechnicianSelect shopId={activeShopId} value={technician} onChange={setTechnician} />
             </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de processo</Label>
+              <Select value={processType} onValueChange={setProcessType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="particular">Particular</SelectItem>
+                  <SelectItem value="empresa">Empresa / Frota</SelectItem>
+                  <SelectItem value="seguradora">Seguradora</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {processType === "seguradora" && (
+              <div className="space-y-1.5 sm:col-span-2 flex flex-col justify-end">
+                <Button type="button" variant="outline" className="min-h-[44px]"
+                  onClick={() => navigate(editId ? `/claims?wo=${editId}` : "/claims")}>
+                  <ShieldAlert className="w-4 h-4 mr-2" />
+                  {editId ? "+ Novo Sinistro para esta OS" : "Abrir processos de seguradoras"}
+                </Button>
+                {!editId && (
+                  <p className="text-xs text-muted-foreground">Guarde o serviço para poder criar o sinistro associado.</p>
+                )}
+              </div>
+            )}
 
 
           </div>

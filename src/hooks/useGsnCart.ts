@@ -101,19 +101,59 @@ export function useGsnCart() {
 
   const checkout = useCallback(async (): Promise<string[]> => {
     if (!activeShopId) { toast.error("Sem oficina activa"); return []; }
-    const { data, error } = await supabase.rpc("gsn_cart_checkout" as any, { _shop_id: activeShopId });
-    if (error) { toast.error(error.message); return []; }
+    const { data, error } = await supabase.rpc("gsn_cart_checkout" as any, {
+      _shop_id: activeShopId,
+      _carriers: selectedCarriers,
+    });
+    if (error) {
+      const msg = error.message.includes("carrier_required")
+        ? "Escolha a transportadora antes de finalizar."
+        : error.message.includes("carrier_invalid")
+          ? "Transportadora indisponível. Escolha outra."
+          : error.message;
+      toast.error(msg);
+      return [];
+    }
     toast.success("Encomenda criada");
     void load();
     return ((data as any) ?? []).map((r: any) => (typeof r === "string" ? r : r.gsn_cart_checkout));
-  }, [activeShopId, load]);
+  }, [activeShopId, load, selectedCarriers]);
 
   const subtotal = items.reduce((s, i) => s + Number(i.unit_price) * i.quantity, 0);
   const vatTotal = items.reduce((s, i) => s + Number(i.unit_price) * i.quantity * Number(i.vat) / 100, 0);
-  const total = subtotal + vatTotal;
   const bySupplier = items.reduce<Record<string, CartItem[]>>((acc, i) => {
     (acc[i.supplier_id] ??= []).push(i); return acc;
   }, {});
 
-  return { items, bySupplier, subtotal, vatTotal, total, loading, add, updateQuantity, remove, checkout, reload: load };
+  const carriersBySupplier = carriers.reduce<Record<string, CartCarrier[]>>((acc, c) => {
+    (acc[c.supplier_id] ??= []).push(c); return acc;
+  }, {});
+
+  // Portes por fornecedor (mesma regra do servidor: grátis acima do limiar)
+  const shippingBySupplier: Record<string, number> = {};
+  Object.entries(bySupplier).forEach(([sid, its]) => {
+    const carrier = carriers.find((c) => c.id === selectedCarriers[sid]);
+    if (!carrier) { shippingBySupplier[sid] = 0; return; }
+    const goods = its.reduce((s, i) => s + Number(i.unit_price) * i.quantity * (1 + Number(i.vat) / 100), 0);
+    shippingBySupplier[sid] = carrier.free_above != null && goods >= Number(carrier.free_above)
+      ? 0
+      : Number(carrier.base_price);
+  });
+  const shippingTotal = Object.values(shippingBySupplier).reduce((s, v) => s + v, 0);
+  const total = subtotal + vatTotal + shippingTotal;
+
+  const missingCarrier = Object.keys(bySupplier).some(
+    (sid) => (carriersBySupplier[sid]?.length ?? 0) > 0 && !selectedCarriers[sid]
+  );
+
+  const selectCarrier = useCallback((supplierId: string, carrierId: string) => {
+    setSelectedCarriers((prev) => ({ ...prev, [supplierId]: carrierId }));
+  }, []);
+
+  return {
+    items, bySupplier, subtotal, vatTotal, shippingTotal, shippingBySupplier, total, loading,
+    carriersBySupplier, selectedCarriers, selectCarrier, missingCarrier,
+    add, updateQuantity, remove, checkout, reload: load,
+  };
 }
+

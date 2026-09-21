@@ -40,6 +40,8 @@ interface Order {
   total: number;
   currency: string;
   tracking_code: string | null;
+  carrier?: string | null;
+
   buyer_shop_id: string | null;
   created_at: string;
   items?: OrderItem[];

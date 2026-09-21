@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { useSupplierLive } from "@/hooks/useSupplierLive";
 import { format } from "date-fns";
 import { formatMoney } from "@/lib/money";
 import { toast } from "sonner";
@@ -29,15 +30,18 @@ export default function SupplierPayments() {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
+  const loadRows = useCallback(async () => {
     if (!supplierId) return;
-    supabase.from("gsn_payments" as any)
+    const { data } = await supabase.from("gsn_payments" as any)
       .select("id,amount,currency,status,stripe_payment_intent_id,created_at,order_id")
       .eq("supplier_id", supplierId)
       .order("created_at", { ascending: false })
-      .limit(200)
-      .then(({ data }) => setRows((data as any) ?? []));
+      .limit(200);
+    setRows((data as any) ?? []);
   }, [supplierId]);
+
+  useEffect(() => { void loadRows(); }, [loadRows]);
+  useSupplierLive(supplierId, ["gsn_payments"], () => { void loadRows(); });
 
   const loadStatus = useCallback(async () => {
     setLoadingStatus(true);

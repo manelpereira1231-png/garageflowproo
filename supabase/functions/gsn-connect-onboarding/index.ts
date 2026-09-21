@@ -31,6 +31,9 @@ serve(async (req) => {
       .from("gsn_suppliers")
       .select("id, stripe_account_id, email, country")
       .eq("owner_user_id", user.id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (!sup) throw new Error("Fornecedor não encontrado");
 
@@ -54,8 +57,8 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://garageflow.pt";
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/supplier/profile?stripe=refresh`,
-      return_url: `${origin}/supplier/profile?stripe=return`,
+      refresh_url: `${origin}/supplier/payments?stripe=refresh`,
+      return_url: `${origin}/supplier/payments?stripe=return`,
       type: "account_onboarding",
     });
 

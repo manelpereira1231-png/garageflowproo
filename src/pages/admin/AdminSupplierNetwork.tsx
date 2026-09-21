@@ -44,6 +44,16 @@ export default function AdminSupplierNetwork() {
     // Dados completos (inclui comissão) só via RPC protegida para super admin.
     const { data } = await supabase.rpc("gsn_admin_suppliers" as any, { _id: null });
     setSuppliers((((data as any) ?? []) as any[]).filter((s) => !s.deleted_at));
+    // Estado real da faturação própria de cada fornecedor (sem inventar estados).
+    const { data: links } = await supabase
+      .from("integracao_faturacao" as any)
+      .select("supplier_id,ativo,provider,last_error")
+      .not("supplier_id", "is", null);
+    const map: Record<string, BillingLink> = {};
+    ((links as any[]) ?? []).forEach((l) => {
+      map[l.supplier_id] = { ativo: !!l.ativo, provider: l.provider ?? null, last_error: l.last_error ?? null };
+    });
+    setBilling(map);
     setLoading(false);
   };
 

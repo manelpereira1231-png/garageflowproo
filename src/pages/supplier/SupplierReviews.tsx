@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { useSupplierLive } from "@/hooks/useSupplierLive";
 import { toast } from "sonner";
 
 export default function SupplierReviews() {
@@ -22,6 +23,7 @@ export default function SupplierReviews() {
   };
 
   useEffect(() => { load(); }, [supplierId]);
+  useSupplierLive(supplierId, ["gsn_reviews"], () => { void load(); });
 
   const saveReply = async (id: string) => {
     const { error } = await supabase.from("gsn_reviews" as any).update({ reply: replies[id] }).eq("id", id);

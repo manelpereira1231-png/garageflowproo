@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { useSupplierLive } from "@/hooks/useSupplierLive";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
 import { format } from "date-fns";
@@ -103,6 +104,7 @@ export default function SupplierProducts() {
   }, [supplierId, debounced, filter]);
 
   useEffect(() => { void load(); }, [load]);
+  useSupplierLive(supplierId, ["gsn_products"], () => { void load(); });
 
   const brands = useMemo(() => Array.from(new Set(items.map((p) => p.brand).filter(Boolean))) as string[], [items]);
   const categories = useMemo(() => Array.from(new Set(items.map((p) => p.category).filter(Boolean))) as string[], [items]);

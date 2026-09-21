@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, TrendingDown, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSupplier } from "@/hooks/useIsSupplier";
+import { useSupplierLive } from "@/hooks/useSupplierLive";
 import { toast } from "sonner";
 
 interface Movement {
@@ -41,6 +42,7 @@ export default function SupplierStock() {
     setLoading(false);
   };
   useEffect(() => { void load(); }, [supplierId]);
+  useSupplierLive(supplierId, ["gsn_stock_movements", "gsn_products"], () => { void load(); });
 
   const submit = async () => {
     if (!productId || !qty || !supplierId) return;

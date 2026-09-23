@@ -208,34 +208,29 @@ export default function CommercialCRM() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex gap-1 p-1 bg-muted rounded-md">
-          <button onClick={() => setTab("leads")} className={`px-3 py-1.5 text-sm rounded ${tab === "leads" ? "bg-background shadow-sm" : ""}`}>
+          <span className="px-3 py-1.5 text-sm rounded bg-background shadow-sm">
             Leads ({leads.length})
-          </button>
-          <button onClick={() => setTab("shops")} className={`px-3 py-1.5 text-sm rounded ${tab === "shops" ? "bg-background shadow-sm" : ""}`}>
-            Oficinas ({shops.length})
-          </button>
+          </span>
         </div>
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Nome, responsável, email, telefone, cidade, país…"
             className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        {tab === "leads" && (
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todos os estados" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os estados</SelectItem>
-              {PIPELINE_STAGES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todos os estados" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estados</SelectItem>
+            {PIPELINE_STAGES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {loading && <div className="text-sm text-muted-foreground">A carregar…</div>}
 
-      {!loading && tab === "leads" && (
+      {!loading && (
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

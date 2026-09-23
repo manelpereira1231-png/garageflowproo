@@ -15,11 +15,6 @@ import {
 import CommercialImportDialog from "@/components/commercial/CommercialImportDialog";
 import CommercialLeadDetail, { PIPELINE_STAGES } from "@/components/commercial/CommercialLeadDetail";
 
-type Shop = {
-  id: string; name: string; email: string; phone?: string; address?: string;
-  country?: string; status?: string; created_at: string; last_seen_at?: string;
-};
-type Sub = { shop_id: string; plan: string; status: string };
 type Lead = {
   id: string; name: string; owner_name?: string; email?: string; phone?: string;
   city?: string; district?: string; country?: string;

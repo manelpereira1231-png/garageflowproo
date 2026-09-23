@@ -20,23 +20,23 @@ const fmtMoney = (v: number) => new Intl.NumberFormat("pt-PT", { style: "currenc
 async function actualFor(o: Objective): Promise<number> {
   const start = o.period_start;
   const endNext = new Date(new Date(o.period_end).getTime() + 86400000).toISOString().slice(0, 10);
-  if (o.metric === "new_shops") {
-    const { count } = await supabase.from("shops").select("id", { count: "exact", head: true }).gte("created_at", start).lt("created_at", endNext);
+  if (o.metric === "new_leads") {
+    const { count } = await supabase.from("crm_leads" as any).select("id", { count: "exact", head: true }).gte("created_at", start).lt("created_at", endNext);
     return count || 0;
-  }
-  if (o.metric === "revenue") {
-    const { data } = await supabase.from("payments").select("amount").gte("paid_at", start).lt("paid_at", endNext);
-    return (data || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   }
   if (o.metric === "conversions") {
-    const { count } = await supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active").gte("created_at", start).lt("created_at", endNext);
+    const { count } = await supabase.from("crm_leads" as any).select("id", { count: "exact", head: true }).eq("pipeline_stage", "customer").gte("updated_at", start).lt("updated_at", endNext);
     return count || 0;
   }
-  if (o.metric === "retention") {
-    const { count: total } = await supabase.from("shops").select("id", { count: "exact", head: true });
-    const { count: cancelled } = await supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "canceled");
-    if (!total) return 0;
-    return ((total - (cancelled || 0)) / total) * 100;
+  if (o.metric === "pipeline_value") {
+    const { data } = await supabase.from("crm_leads" as any).select("estimated_value, pipeline_stage, created_at").gte("created_at", start).lt("created_at", endNext);
+    return ((data as any[]) || [])
+      .filter((l) => !["lost"].includes(l.pipeline_stage))
+      .reduce((s: number, l: any) => s + Number(l.estimated_value || 0), 0);
+  }
+  if (o.metric === "meetings") {
+    const { count } = await supabase.from("crm_meetings" as any).select("id", { count: "exact", head: true }).gte("created_at", start).lt("created_at", endNext);
+    return count || 0;
   }
   return 0;
 }
@@ -44,7 +44,7 @@ async function actualFor(o: Objective): Promise<number> {
 export default function CommercialObjectives() {
   const [objectives, setObjectives] = useState<(Objective & { actual: number })[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", metric: "new_shops", target_value: "", period: "month", period_start: "", period_end: "" });
+  const [form, setForm] = useState({ title: "", metric: "new_leads", target_value: "", period: "month", period_start: "", period_end: "" });
 
   const load = async () => {
     const { data } = await supabase.from("crm_objectives" as any).select("*").order("period_start", { ascending: false });
@@ -70,12 +70,12 @@ export default function CommercialObjectives() {
     if (error) { toast.error(error.message); return; }
     toast.success("Objetivo criado");
     setOpen(false);
-    setForm({ title: "", metric: "new_shops", target_value: "", period: "month", period_start: "", period_end: "" });
+    setForm({ title: "", metric: "new_leads", target_value: "", period: "month", period_start: "", period_end: "" });
     load();
   };
 
-  const label = (m: string) => ({ new_shops: "Novas Oficinas", revenue: "Receita", conversions: "Conversões", retention: "Retenção (%)" }[m] || m);
-  const fmt = (m: string, v: number) => m === "revenue" ? fmtMoney(v) : m === "retention" ? `${v.toFixed(1)}%` : String(Math.round(v));
+  const label = (m: string) => ({ new_leads: "Novos Leads", conversions: "Conversões", pipeline_value: "Valor do Pipeline", meetings: "Reuniões" }[m] || m);
+  const fmt = (m: string, v: number) => m === "pipeline_value" ? fmtMoney(v) : String(Math.round(v));
 
   return (
     <div className="space-y-4">
@@ -96,10 +96,10 @@ export default function CommercialObjectives() {
                   <Select value={form.metric} onValueChange={(v) => setForm({ ...form, metric: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="new_shops">Novas Oficinas</SelectItem>
-                      <SelectItem value="revenue">Receita (€)</SelectItem>
+                      <SelectItem value="new_leads">Novos Leads</SelectItem>
                       <SelectItem value="conversions">Conversões</SelectItem>
-                      <SelectItem value="retention">Retenção (%)</SelectItem>
+                      <SelectItem value="pipeline_value">Valor do Pipeline (€)</SelectItem>
+                      <SelectItem value="meetings">Reuniões</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

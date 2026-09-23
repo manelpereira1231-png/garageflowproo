@@ -89,27 +89,15 @@ export default function CommercialCRM() {
     return leads.filter((l) => {
       if (stageFilter !== "all" && l.pipeline_stage !== stageFilter) return false;
       if (!t) return true;
-      const sub = subs.find((s) => s.shop_id === l.shop_link_id);
       return [
         l.name, l.owner_name, l.email, l.phone,
         l.city, l.district, l.country,
-        STAGE_LABEL[l.pipeline_stage], sub?.plan,
+        STAGE_LABEL[l.pipeline_stage],
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(t));
     });
-  }, [leads, subs, q, stageFilter]);
-
-  const filteredShops = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return shops;
-    return shops.filter((s) => {
-      const sub = subByShop.get(s.id);
-      return [s.name, s.email, s.phone, s.country, sub?.plan, sub?.status]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(t));
-    });
-  }, [shops, subByShop, q]);
+  }, [leads, q, stageFilter]);
 
   const createLead = async () => {
     if (!form.name.trim()) { toast.error("Nome obrigatório"); return; }

@@ -315,56 +315,6 @@ export default function CommercialCRM() {
         </Card>
       )}
 
-      {!loading && tab === "shops" && (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="text-left p-3">Oficina</th>
-                    <th className="text-left p-3">Contacto</th>
-                    <th className="text-left p-3">País</th>
-                    <th className="text-left p-3">Plano</th>
-                    <th className="text-left p-3">Estado</th>
-                    <th className="text-left p-3">Registo</th>
-                    <th className="text-left p-3">Último acesso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredShops.map((s) => {
-                    const sub = subByShop.get(s.id);
-                    return (
-                      <tr key={s.id} className="border-t hover:bg-muted/30">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{s.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 text-xs">
-                          {s.email}<br />{s.phone || "—"}
-                        </td>
-                        <td className="p-3 text-xs">{s.country || "—"}</td>
-                        <td className="p-3"><Badge variant="outline">{sub?.plan || "start"}</Badge></td>
-                        <td className="p-3">
-                          <Badge variant={sub?.status === "active" ? "default" : "secondary"}>
-                            {sub?.status || s.status || "—"}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-xs">{new Date(s.created_at).toLocaleDateString("pt-PT")}</td>
-                        <td className="p-3 text-xs">
-                          {s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString("pt-PT") : "Nunca"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <CommercialImportDialog
         open={openImport}

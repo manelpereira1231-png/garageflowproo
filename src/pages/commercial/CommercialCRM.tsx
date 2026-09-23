@@ -31,12 +31,9 @@ const STAGE_TONE: Record<string, string> = Object.fromEntries(
 );
 
 export default function CommercialCRM() {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [subs, setSubs] = useState<Sub[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [q, setQ] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
-  const [tab, setTab] = useState<"leads" | "shops">("leads");
   const [openNew, setOpenNew] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -48,13 +45,10 @@ export default function CommercialCRM() {
 
   const load = async () => {
     setLoading(true);
-    const [shopsRes, subsRes, leadsRes] = await Promise.all([
-      supabase.from("shops").select("id, name, email, phone, address, country, status, created_at, last_seen_at").order("created_at", { ascending: false }),
-      supabase.from("subscriptions").select("shop_id, plan, status"),
-      supabase.from("crm_leads" as any).select("*").order("created_at", { ascending: false }),
-    ]);
-    setShops(((shopsRes.data as unknown) || []) as Shop[]);
-    setSubs(((subsRes.data as unknown) || []) as Sub[]);
+    const leadsRes = await supabase
+      .from("crm_leads" as any)
+      .select("*")
+      .order("created_at", { ascending: false });
     setLeads(((leadsRes.data as unknown) || []) as Lead[]);
     setLoading(false);
   };
@@ -63,8 +57,6 @@ export default function CommercialCRM() {
     load();
     const ch = supabase
       .channel("commercial-crm-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "crm_leads" }, () => load())
       .subscribe();
     const onFocus = () => load();
@@ -72,12 +64,6 @@ export default function CommercialCRM() {
     const iv = setInterval(load, 30000);
     return () => { supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
   }, []);
-
-  const subByShop = useMemo(() => {
-    const m = new Map<string, Sub>();
-    subs.forEach((s) => m.set(s.shop_id, s));
-    return m;
-  }, [subs]);
 
   const kpis = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
